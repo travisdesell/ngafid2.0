@@ -6,12 +6,12 @@ import java.io.FileReader;
 
 public class ReadFlight {
 
-	public static void main(String[] arguments) throws Exception {
-		// We need to provide file path as the parameter:
-		// double backquote is to avoid compiler interpret words
-		// like \test as \t (ie. as a escape sequence)
+    public static void main(String[] arguments) throws Exception {
+        // We need to provide file path as the parameter:
+        // double backquote is to avoid compiler interpret words
+        // like \test as \t (ie. as a escape sequence)
 
-		System.out.println("Command Line Arguments:");
+        System.out.println("Command Line Arguments:");
         for (int i = 0; i < arguments.length; i++) {
             System.out.println("arguments[" + i + "]: '" + arguments[i] + "'");
         }
@@ -21,12 +21,12 @@ public class ReadFlight {
             System.exit(1);
         }
 
-		File file = new File(arguments[0]);
+        File file = new File(arguments[0]);
 
-		BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
+        BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 
         //file information -- this was the first line
-		String fileInformation = bufferedReader.readLine();
+        String fileInformation = bufferedReader.readLine();
         String[] dataTypes = bufferedReader.readLine().split("\\,", -1);;
         String[] headers = bufferedReader.readLine().split("\\,", -1);;
 
@@ -41,15 +41,15 @@ public class ReadFlight {
         int lineNumber = 2;
 
         String line;
-		while ((line = bufferedReader.readLine()) != null) {
-			//System.out.println(line);
+        while ((line = bufferedReader.readLine()) != null) {
+            //System.out.println(line);
 
             String[] values = line.split("\\,", -1);
             /*
-            for (int i = 0; i < values.length; i++) {
-                System.out.println("\tvalues[" + i + "]: '" + values[i].trim() + "'");
-            }
-            */
+               for (int i = 0; i < values.length; i++) {
+               System.out.println("\tvalues[" + i + "]: '" + values[i].trim() + "'");
+               }
+               */
 
             try {
                 double pitch = Double.parseDouble(values[pitchColumn]);
@@ -69,9 +69,9 @@ public class ReadFlight {
             }
 
             lineNumber++;
-		}
+        }
 
 
-	}
+    }
 
 }
