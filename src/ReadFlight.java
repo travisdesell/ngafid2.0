@@ -50,8 +50,8 @@ public class ReadFlight {
                System.out.println("\tvalues[" + i + "]: '" + values[i].trim() + "'");
                }
                */
-           
-            double NumberX = 0;  
+
+            int exceedenceCount = 0;
             try {
                 double pitch = Double.parseDouble(values[pitchColumn]);
 
