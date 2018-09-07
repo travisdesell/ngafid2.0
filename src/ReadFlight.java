@@ -50,10 +50,15 @@ public class ReadFlight {
                System.out.println("\tvalues[" + i + "]: '" + values[i].trim() + "'");
                }
                */
-
+           
+            double NumberX = 0;  
             try {
                 double pitch = Double.parseDouble(values[pitchColumn]);
-                //System.out.print(pitch);
+
+                // number of start and stop time
+              // double Numberx = Double.parseDouble(NumberField.getText());
+              NumberX = Double.parseDouble(NumberField.getText());  
+              //System.out.print(pitch);
 
                 //Excessive Pitch is defined as pitch in excess of 30 degrees.
                 if (pitch > maxPitch || pitch < -maxPitch) {
@@ -66,7 +71,22 @@ public class ReadFlight {
             } catch (NumberFormatException nfe) {
                 nfe.printStackTrace();
                 System.exit(1);
+            } catch (ArrayIndexOutOfBoundsException aoobe) {
+                aoobe.printStackTrace();
+                System.out.println("line was: " + lineNumber);
+                System.out.println("values were:");
+                for (int i = 0; i < values.length; i++) {
+                    System.out.println("\t" + values[i]);
+                }
+                System.exit(1);
+            } catch (NumberExceedence e){
+              System.out.println("Not enough exceedence");
+
             }
+            if(NumberX <0){
+                System.out.println("No less than three pitch");
+            } 
+            
 
             lineNumber++;
         }
