@@ -35,12 +35,22 @@ public class ReadFlight {
             System.out.println("\theaders[" + i + "]: '" + headers[i].trim() + "' (" + dataTypes[i].trim() + ")");
         }
 
+        int timeColumn = 1;
         int pitchColumn = 13;
         double maxPitch = 10;
+        int exceedenceBuffer = 10; //10 lines (not seconds)
 
         int lineNumber = 2;
 
+
         String line;
+        int exceedenceCount = 0;
+        String exceedenceStartTime = "";
+        int exceedenceStartLine = 0;
+        String exceedenceEndTime = "";
+        int exceedenceEndLine = 0;
+        String previousTime = "";
+
         while ((line = bufferedReader.readLine()) != null) {
             //System.out.println(line);
 
@@ -49,24 +59,46 @@ public class ReadFlight {
                for (int i = 0; i < values.length; i++) {
                System.out.println("\tvalues[" + i + "]: '" + values[i].trim() + "'");
                }
-               */
+             */
 
-            int exceedenceCount = 0;
             try {
                 double pitch = Double.parseDouble(values[pitchColumn]);
-
-                // number of start and stop time
-              // double Numberx = Double.parseDouble(NumberField.getText());
-              NumberX = Double.parseDouble(NumberField.getText());  
-              //System.out.print(pitch);
+                System.out.println(lineNumber + " : " + values[timeColumn] + " : " + pitch);
 
                 //Excessive Pitch is defined as pitch in excess of 30 degrees.
                 if (pitch > maxPitch || pitch < -maxPitch) {
-                    System.out.print(pitch);
-                    System.out.print(" -- PITCH EXCEEDENCE ON LINE " + lineNumber);
-                    System.out.println();
+                    //If we get to this part of the if statement, then the current line's pitch value
+                    //was less than -maxPitch or greater than maxPitch
+
+                    if (exceedenceCount == 0) {
+                        //If the exceedenceCount is zero, that means this was the start of a new exceedence
+
+                        exceedenceStartTime = values[timeColumn];
+                        exceedenceStartLine = lineNumber;
+                        System.out.println("Exceedence started at: " + exceedenceStartTime);
+                        exceedenceCount++;
+                    } else {
+                        //If the exceedenceCount is NOT zero, that means previous lines were also part
+                        //of the exceedence
+
+                        exceedenceCount++;
+                    }
+
+                    System.out.println("PITCH EXCEEDENCE ON LINE " + lineNumber + " AT TIME " + values[timeColumn]);
+
+                } else if (exceedenceCount > 0) {
+                    //If we get to this part of the if statement, pitch was NOT greater than maxPitch or less than -maxPitch
+                    //If the exceedenceCount is greater than 0, then previous lines were part of an exceedence
+
+                    exceedenceEndTime = previousTime;
+                    exceedenceEndLine = lineNumber - 1;
+                    exceedenceCount = 0;
+
+                    System.out.println("Exceedence ended at: " + exceedenceEndTime);
+                    System.out.println("Exceedence ran from: " + exceedenceStartTime + " to " + exceedenceEndTime);
                 }
 
+                previousTime = values[timeColumn];
 
             } catch (NumberFormatException nfe) {
                 nfe.printStackTrace();
@@ -79,14 +111,7 @@ public class ReadFlight {
                     System.out.println("\t" + values[i]);
                 }
                 System.exit(1);
-            } catch (NumberExceedence e){
-              System.out.println("Not enough exceedence");
-
             }
-            if(NumberX <0){
-                System.out.println("No less than three pitch");
-            } 
-            
 
             lineNumber++;
         }
