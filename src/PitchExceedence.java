@@ -14,6 +14,11 @@ public class PitchExceedence {
         this.endLine = endLine;
     }
 
+    public void updateEnd(String newEndTime, int newEndLine) {
+        endTime = newEndTime;
+        endLine = newEndLine;
+    }
+
     public void print() {
         System.out.println("[PITCH EXCEEDENCE: line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
     }

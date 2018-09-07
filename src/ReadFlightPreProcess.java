@@ -143,6 +143,7 @@ public class ReadFlightPreProcess {
 
         ArrayList<PitchExceedence> exceedences = readFlightPreProcess.getPitchExceedences();
 
+        //exceedences.get(0).updateEnd("24:23:02", 84382);
         for (int i = 0; i < exceedences.size(); i++) {
             exceedences.get(i).print();
         }
