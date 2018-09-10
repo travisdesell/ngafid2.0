@@ -1,18 +1,18 @@
-public class Exceedence {
+public class Event {
     private String startTime;
     private String endTime;
 
     private int startLine;
     private int endLine;
 
-    private String exceedenceName;
+    private String eventName;
 
-    public Exceedence(String startTime, String endTime, int startLine, int endLine, String exceedenceName) {
+    public Event(String startTime, String endTime, int startLine, int endLine, String eventName) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.exceedenceName = exceedenceName;
+        this.eventName = eventName;
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
@@ -25,12 +25,10 @@ public class Exceedence {
     }
 
     public void print() {
-        System.out.println("[" + exceedenceName + " EXCEEDENCE: line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
+        System.out.println("[" + eventName + ": line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
     }
 
     public String toString() {
-        return  "[" + exceedenceName + " EXCEEDENCE: line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
+        return  "[" + eventName + ": line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
     }
-
-
 }

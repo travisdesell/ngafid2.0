@@ -100,59 +100,62 @@ public class ReadFlight {
         System.out.println();
     }
 
-    public void getExceedences(ArrayList<Exceedence> exceedences, int exceedenceColumn, double exceedenceLimit, String exceedenceName) {
+    public void getEvents(ArrayList<Event> events, int eventColumn, double eventLimit, String eventName) {
         int timeColumn = 1;
-        int exceedenceBuffer = 10;
+        int eventBuffer = 10;
 
-        Exceedence currentExceedence = null;
+        Event currentEvent = null;
 
         for (int i = 0; i < csvValues.size(); i++) {
             ArrayList<String> current = csvValues.get(i);
 
             String time = current.get(timeColumn);
-            double exceedenceValue = Double.parseDouble(current.get(exceedenceColumn));
+            double eventValue = Double.parseDouble(current.get(eventColumn));
 
-            System.out.println(time + " : " + exceedenceValue);
+            System.out.println(time + " : " + eventValue);
 
-            if (Math.abs(exceedenceValue) >= exceedenceLimit) {
-                if (currentExceedence == null) {
-                    currentExceedence = new Exceedence(time, time, i, i, exceedenceName);
-                    System.out.println("CREATED NEW      " + currentExceedence);
+            if (Math.abs(eventValue) >= eventLimit) {
+                if (currentEvent == null) {
+                    currentEvent = new Event(time, time, i, i, eventName);
+                    System.out.println("CREATED NEW      " + currentEvent);
 
                 } else {
-                    currentExceedence.updateEnd(time, i);
-                    System.out.println("UPDATED END TIME " + currentExceedence);
+                    currentEvent.updateEnd(time, i);
+                    System.out.println("UPDATED END TIME " + currentEvent);
                 }
 
             } else {
-                if (currentExceedence != null) {
-                    if ((i - currentExceedence.getEndLine()) > exceedenceBuffer) {
-                        //we're done with this exceedence
-                        exceedences.add(currentExceedence);
-                        System.out.println("FINISHED         " + currentExceedence);
+                if (currentEvent != null) {
+                    if ((i - currentEvent.getEndLine()) > eventBuffer) {
+                        //we're done with this event
+                        events.add(currentEvent);
+                        System.out.println("FINISHED         " + currentEvent);
 
-                        currentExceedence = null;
+                        currentEvent = null;
                     }
                 }
             }
         }
-
     }
 
-    public ArrayList<Exceedence> getExceedences() {
-        ArrayList<Exceedence> exceedences = new ArrayList<Exceedence>();
+    public ArrayList<Event> getEvents() {
+        ArrayList<Event> events = new ArrayList<Event>();
 
         int pitchColumn = 13;
         double maxPitch = 10.0;
-        getExceedences(exceedences, pitchColumn, maxPitch, "PITCH");
+        getEvents(events, pitchColumn, maxPitch, "Pitch Exceedence");
 
         int rollColumn = 14;
         double maxRoll = 20.0;
-        getExceedences(exceedences, rollColumn, maxRoll, "ROLL");
+        getEvents(events, rollColumn, maxRoll, "Roll Exceedence");
 
-        //do this for the other exceedences on the webpage
+        //do this for the other events on the webpage
 
-        return exceedences;
+        //getLanding(events, "Landing");
+        //getTouchAndGo(events, "Touch And Go");
+        //getGoAround(events, "Go Around");
+
+        return events;
     }
 
 
@@ -176,11 +179,11 @@ public class ReadFlight {
         readFlight.printInformation();
         readFlight.printValues();
 
-        ArrayList<Exceedence> exceedences = readFlight.getExceedences();
+        ArrayList<Event> events = readFlight.getEvents();
 
-        //exceedences.get(0).updateEnd("24:23:02", 84382);
-        for (int i = 0; i < exceedences.size(); i++) {
-            exceedences.get(i).print();
+        //events.get(0).updateEnd("24:23:02", 84382);
+        for (int i = 0; i < events.size(); i++) {
+            events.get(i).print();
         }
 
     }
