@@ -86,6 +86,13 @@ public class ReadFlight {
 
                     System.out.println("PITCH EXCEEDENCE ON LINE " + lineNumber + " AT TIME " + values[timeColumn]);
 
+                    if (exceedenceCount == 0 || lineNumber - exceedenceEndLine < exceedenceBuffer){
+                        exceedenceStartTimeUpdate=exceedenceStartTime;
+                        exceeedenceStartLineUpdate=exceedenceStartLine;
+                        System.out.println("Exceedenced merged started time at:" + exceedenceStartTimeUpdate);
+                        exceedenceCount++;
+                    }
+
                 } else if (exceedenceCount > 0) {
                     //If we get to this part of the if statement, pitch was NOT greater than maxPitch or less than -maxPitch
                     //If the exceedenceCount is greater than 0, then previous lines were part of an exceedence
