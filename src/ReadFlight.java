@@ -11,14 +11,14 @@ import java.lang.Math;
 import java.util.Arrays;
 import java.util.ArrayList;
 
-public class ReadFlightPreProcess {
+public class ReadFlight {
     private String fileInformation;
     private String[] dataTypes;
     private String[] headers;
 
     private ArrayList<ArrayList<String>> csvValues;
 
-    public ReadFlightPreProcess(String flightFilename) {
+    public ReadFlight(String flightFilename) {
         File file = new File(flightFilename);
 
         BufferedReader bufferedReader = null;
@@ -172,11 +172,11 @@ public class ReadFlightPreProcess {
             System.exit(1);
         }
 
-        ReadFlightPreProcess readFlightPreProcess = new ReadFlightPreProcess(arguments[0]);
-        readFlightPreProcess.printInformation();
-        readFlightPreProcess.printValues();
+        ReadFlight readFlight = new ReadFlight(arguments[0]);
+        readFlight.printInformation();
+        readFlight.printValues();
 
-        ArrayList<Exceedence> exceedences = readFlightPreProcess.getExceedences();
+        ArrayList<Exceedence> exceedences = readFlight.getExceedences();
 
         //exceedences.get(0).updateEnd("24:23:02", 84382);
         for (int i = 0; i < exceedences.size(); i++) {
