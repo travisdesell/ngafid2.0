@@ -100,27 +100,23 @@ public class ReadFlightPreProcess {
         System.out.println();
     }
 
-    public ArrayList<Exceedence> getExceedences() {
-        ArrayList<Exceedence> exceedences = new ArrayList<Exceedence>();
-
+    public void getExceedences(ArrayList<Exceedence> exceedences, int exceedenceColumn, double exceedenceLimit, String exceedenceName) {
         int timeColumn = 1;
-        int pitchColumn = 13;
         int exceedenceBuffer = 10;
-        double maxPitch = 10.0;
 
-        PitchExceedence currentExceedence = null;
+        Exceedence currentExceedence = null;
 
         for (int i = 0; i < csvValues.size(); i++) {
             ArrayList<String> current = csvValues.get(i);
 
             String time = current.get(timeColumn);
-            double pitch = Double.parseDouble(current.get(pitchColumn));
+            double exceedenceValue = Double.parseDouble(current.get(exceedenceColumn));
 
-            System.out.println(time + " : " + pitch);
+            System.out.println(time + " : " + exceedenceValue);
 
-            if (Math.abs(pitch) >= maxPitch) {
+            if (Math.abs(exceedenceValue) >= exceedenceLimit) {
                 if (currentExceedence == null) {
-                    currentExceedence = new PitchExceedence(time, time, i, i);
+                    currentExceedence = new Exceedence(time, time, i, i, exceedenceName);
                     System.out.println("CREATED NEW      " + currentExceedence);
 
                 } else {
@@ -141,12 +137,20 @@ public class ReadFlightPreProcess {
             }
         }
 
+    }
 
-        /*
-        exceedences.add( new PitchExceedence("12:00:00", "12:01:15", 0, 10) );
-        exceedences.add( new PitchExceedence("13:30:00", "13:31:00", 113, 200) );
-        exceedences.add( new PitchExceedence("15:15:05", "15:16:19", 5832, 5955) );
-        */
+    public ArrayList<Exceedence> getExceedences() {
+        ArrayList<Exceedence> exceedences = new ArrayList<Exceedence>();
+
+        int pitchColumn = 13;
+        double maxPitch = 10.0;
+        getExceedences(exceedences, pitchColumn, maxPitch, "PITCH");
+
+        int rollColumn = 14;
+        double maxRoll = 20.0;
+        getExceedences(exceedences, rollColumn, maxRoll, "ROLL");
+
+        //do this for the other exceedences on the webpage
 
         return exceedences;
     }
@@ -172,7 +176,7 @@ public class ReadFlightPreProcess {
         readFlightPreProcess.printInformation();
         readFlightPreProcess.printValues();
 
-        ArrayList<PitchExceedence> exceedences = readFlightPreProcess.getPitchExceedences();
+        ArrayList<Exceedence> exceedences = readFlightPreProcess.getExceedences();
 
         //exceedences.get(0).updateEnd("24:23:02", 84382);
         for (int i = 0; i < exceedences.size(); i++) {
