@@ -6,6 +6,8 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
+import java.lang.Math;
+
 import java.util.Arrays;
 import java.util.ArrayList;
 
@@ -98,11 +100,15 @@ public class ReadFlightPreProcess {
         System.out.println();
     }
 
-    public ArrayList<PitchExceedence> getPitchExceedences() {
-        ArrayList<PitchExceedence> exceedences = new ArrayList<PitchExceedence>();
+    public ArrayList<Exceedence> getExceedences() {
+        ArrayList<Exceedence> exceedences = new ArrayList<Exceedence>();
 
         int timeColumn = 1;
         int pitchColumn = 13;
+        int exceedenceBuffer = 10;
+        double maxPitch = 10.0;
+
+        PitchExceedence currentExceedence = null;
 
         for (int i = 0; i < csvValues.size(); i++) {
             ArrayList<String> current = csvValues.get(i);
@@ -111,11 +117,36 @@ public class ReadFlightPreProcess {
             double pitch = Double.parseDouble(current.get(pitchColumn));
 
             System.out.println(time + " : " + pitch);
+
+            if (Math.abs(pitch) >= maxPitch) {
+                if (currentExceedence == null) {
+                    currentExceedence = new PitchExceedence(time, time, i, i);
+                    System.out.println("CREATED NEW      " + currentExceedence);
+
+                } else {
+                    currentExceedence.updateEnd(time, i);
+                    System.out.println("UPDATED END TIME " + currentExceedence);
+                }
+
+            } else {
+                if (currentExceedence != null) {
+                    if ((i - currentExceedence.getEndLine()) > exceedenceBuffer) {
+                        //we're done with this exceedence
+                        exceedences.add(currentExceedence);
+                        System.out.println("FINISHED         " + currentExceedence);
+
+                        currentExceedence = null;
+                    }
+                }
+            }
         }
 
+
+        /*
         exceedences.add( new PitchExceedence("12:00:00", "12:01:15", 0, 10) );
         exceedences.add( new PitchExceedence("13:30:00", "13:31:00", 113, 200) );
         exceedences.add( new PitchExceedence("15:15:05", "15:16:19", 5832, 5955) );
+        */
 
         return exceedences;
     }
