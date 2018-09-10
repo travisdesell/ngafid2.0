@@ -5,20 +5,33 @@
         </div>
     </div>
 
-    <div class="d-flex flex-row" style="overflow:auto;">
-        <div class="p-1 m-0">
-            <button id="next-flights-button" class="btn btn-outline-primary btn-block"><i class="fa fa-chevron-left" style="padding:4 0 4 0;"></i></button>
+    {{#flights}}
+    <div class="d-flex flex-row">
+        <div class="p-0">
+            <i class="fa fa-plane"></i>
+            Aircraft (N Number - Airframe)
         </div>
 
-        {{#pages}}
-        <div class="p-1 m-0" style="flex-basis:15%; flex-grow:0;">
-            <button id="select-flights-button" class="btn btn-outline-primary btn-block" start="{{start}}" end="{{end}}">{{start}} - {{end}}</button>
+        <div class="p-0">
+            Itinerary
         </div>
-        {{/pages}}
 
-        <div class="p-1 m-0">
-            <button id="prev-flights-button" class="btn btn-outline-primary btn-block"><i class="fa fa-chevron-right" style="padding:4 0 4 0;"></i></button>
+        <div class="p-0">
+            Date - Time
+        </div>
+
+        <div class="p-0">
+            Duration
+        </div>
+
+        <div class="p-0">
+            <i class="fa fa-pencil"></i>
+            <i class="fa fa-area-chart"></i>
+            <i class="fa fa-video-camera"></i>
+            <i class="fa fa-download"></i>
         </div>
     </div>
+    {{/flights}}
 
+    <div id="load-more"></div>
 </div>
