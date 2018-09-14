@@ -102,19 +102,19 @@ public class ReadFlight {
 
     public void getEvents(ArrayList<Event> events, int eventColumn, double eventLimit, String eventName) {
         int timeColumn = 1;
-        int eventBuffer = 10;
 
         Event currentEvent = null;
 
         for (int i = 0; i < csvValues.size(); i++) {
-            ArrayList<String> current = csvValues.get(i);
+            ArrayList<String> currentLine = csvValues.get(i);
 
             String time = current.get(timeColumn);
             double eventValue = Double.parseDouble(current.get(eventColumn));
 
             System.out.println(time + " : " + eventValue);
 
-            if (Math.abs(eventValue) >= eventLimit) {
+            //if (Math.abs(eventValue) >= eventLimit) {
+            if (event.isOccuring(currentLine)) {
                 if (currentEvent == null) {
                     currentEvent = new Event(time, time, i, i, eventName);
                     System.out.println("CREATED NEW      " + currentEvent);
@@ -126,7 +126,7 @@ public class ReadFlight {
 
             } else {
                 if (currentEvent != null) {
-                    if ((i - currentEvent.getEndLine()) > eventBuffer) {
+                    if (currentEvent.isOutsideBuffer(i)) {
                         //we're done with this event
                         events.add(currentEvent);
                         System.out.println("FINISHED         " + currentEvent);
@@ -150,7 +150,22 @@ public class ReadFlight {
         getEvents(events, rollColumn, maxRoll, "Roll Exceedence");
 
         //do this for the other events on the webpage
+        int latAcColumn = 15;
+        double maxLatAc = 0.04;
+        getEvents(events, latAcColumn, maxLatAc, "Lateral Accelaration");
 
+        int normAcColumn = 16;
+        double maxNormAc = 0.05;
+        getEvents(events, normAcColumn, maxNormAc, "Vertical (Normal) Exceedence");
+
+        int longAcColumn = 5;
+        double maxLongAc = 96.6199;
+        getEvents(events, longAcColumn, maxLongAc, "Longitudinal Acceleration");
+
+        int vsiColumn = 12;
+        double maxVsi = 16;
+        getEvents(events, vsiColumn, maxVsi, "VSI on Final");
+        
         //getLanding(events, "Landing");
         //getTouchAndGo(events, "Touch And Go");
         //getGoAround(events, "Go Around");
