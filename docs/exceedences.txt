@@ -1,0 +1,58 @@
+
+*************** sp_GenericExceedances ***************
+Excessive Roll: roll_attitude < -60 OR roll_attitude > 60
+Excessive Pitch: pitch_attitude < -30 OR pitch_attitude > 30
+Excessive Lateral Acceleration: lateral_acceleration < -1.7 OR lateral_acceleration > 4.4
+Excessive Vertical Acceleration: vertical_acceleration < -1.76 OR vertical_acceleration > 4.4
+Excessive Longitudinal Acceleration: longitudinal_acceleration < -1.76 OR longitudinal_acceleration > 4.4
+Excessive VSI on Final: vertical_airspeed < -1000 AND radio_altitude_derived < 1000
+
+
+*************** sp_C172Exceedances ***************
+Excessive Speed: indicated_airspeed > 163
+High CHT: eng_1_cht_(1-4) > 500
+High Altitude: msl_altitude > 12800
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8
+Low Oil Pressure: eng_1_oil_press < 20 AND eng_1_rpm > 100
+Low Airspeed on Approach: indicated_airspeed < 57 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Climbout: indicated_airspeed < 52 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+
+
+*************** sp_C182Exceedances ***************
+Excessive Speed: indicated_airspeed > 175
+High CHT: eng_1_cht_(1-6) > 500
+High Altitude: msl_altitude > 15000
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8
+Low Oil Pressure: eng_1_oil_press < 20 AND eng_1_rpm > 100
+Low Airspeed on Approach: indicated_airspeed < 57 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Climbout: indicated_airspeed < 55 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+
+
+*************** sp_PA28Exceedances ***************
+Excessive Speed: indicated_airspeed > 154
+High CHT: N.A.
+High Altitude: msl_altitude > 12800
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.25
+Low Oil Pressure: eng_1_oil_press < 25 AND eng_1_rpm > 100
+Low Airspeed on Approach: indicated_airspeed < 56 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Climbout: indicated_airspeed < 59 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+
+
+*************** sp_PA28Exceedances ***************
+Excessive Speed: indicated_airspeed > 202
+High CHT: eng_1_cht_(1-2) > 500
+High Altitude: msl_altitude > 12800
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.78
+Low Oil Pressure: (eng_1_oil_press < 25 AND eng_1_rpm > 100) OR (eng_2_oil_press < 25 AND eng_2_rpm > 100)
+Low Airspeed on Approach: indicated_airspeed < 66 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Climbout: indicated_airspeed < 70 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+
+
+*************** sp_SR20Exceedances ***************
+Excessive Speed: indicated_airspeed > 200
+High CHT: eng_1_cht_(1-6) > 460
+High Altitude: msl_altitude > 12800
+Low Fuel: N.A.
+Low Oil Pressure: eng_1_oil_press < 10 AND eng_1_rpm > 100
+Low Airspeed on Approach: indicated_airspeed < 67 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Climbout: indicated_airspeed < 60 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
