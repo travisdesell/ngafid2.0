@@ -1,18 +1,18 @@
-public class Event {
+public abstract class Event {
     private String startTime;
     private String endTime;
 
     private int startLine;
     private int endLine;
 
-    private String eventName;
+    private int bufferTime;
 
-    public Event(String startTime, String endTime, int startLine, int endLine, String eventName) {
+    public Event(String startTime, String endTime, int startLine, int endLine, int bufferTime) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.eventName = eventName;
+        this.bufferTime = bufferTime;
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
@@ -25,10 +25,20 @@ public class Event {
     }
 
     public void print() {
-        System.out.println("[" + eventName + ": line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
+        System.out.println("[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
     }
 
     public String toString() {
-        return  "[" + eventName + ": line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
+        return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
+    }
+
+    public abstract boolean isOccuring(ArrayList<String> lineValues);
+
+    public boolean isOutsideBuffer(int currentLine) {
+        if ((currentLine - endLine) >= bufferTime) {
+            return true;
+        } else {
+            return false;
+        }
     }
 }
