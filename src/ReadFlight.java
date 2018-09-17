@@ -101,71 +101,31 @@ public class ReadFlight {
     }
 
     public ArrayList<Event> getEvents() {
-        ArrayList<Event> events = new ArrayList<Event>();
+        EventTracker eventTracker = new EventTracker();
 
-        /*
-        int pitchColumn = 13;
-        double maxPitch = 10.0;
-        getEvents(events, pitchColumn, maxPitch, "Pitch Exceedence");
-
-        int rollColumn = 14;
-        double maxRoll = 20.0;
-        getEvents(events, rollColumn, maxRoll, "Roll Exceedence");
-
-        //do this for the other events on the webpage
-        int latAcColumn = 15;
-        double maxLatAc = 0.04;
-        getEvents(events, latAcColumn, maxLatAc, "Lateral Accelaration");
-
-        int normAcColumn = 16;
-        double maxNormAc = 0.05;
-        getEvents(events, normAcColumn, maxNormAc, "Vertical (Normal) Exceedence");
-
-        int longAcColumn = 5;
-        double maxLongAc = 96.6199;
-        getEvents(events, longAcColumn, maxLongAc, "Longitudinal Acceleration");
-
-        int vsiColumn = 12;
-        double maxVsi = 16;
-        getEvents(events, vsiColumn, maxVsi, "VSI on Final");
-        */
+        ArrayList<Event> events = eventTracker.getEvents(csvValues);
 
         //getLanding(events, "Landing");
         //getTouchAndGo(events, "Touch And Go");
         //getGoAround(events, "Go Around");
 
-        int timeColumn = 1;
 
-        PitchEvent pitchEvent = null;
-
-        for (int i = 0; i < csvValues.size(); i++) {
-            ArrayList<String> currentLine = csvValues.get(i);
-
-            String time = currentLine.get(timeColumn);
-
-            if (PitchEvent.isOccuring(currentLine)) {
-                if (pitchEvent == null) {
-                    pitchEvent = new PitchEvent(time, time, i, i);
-                    System.out.println("CREATED NEW      " + pitchEvent);
-
-                } else {
-                    pitchEvent.updateEnd(time, i);
-                    System.out.println("UPDATED END TIME " + pitchEvent);
-                }
-
-            } else {
-                if (pitchEvent != null) {
-                    if (pitchEvent.isOutsideBuffer(i)) {
-                        //we're done with this event
-                        events.add(pitchEvent);
-                        System.out.println("FINISHED         " + pitchEvent);
-
-                        pitchEvent = null;
-                    }
-                }
-            }
-
-        }
+        // appraoching runaway
+        /*
+        // first i will need to know where the aircraft is
+        getAirplanePoint <- geoPoint
+        //Secon i need to identify the airport
+        getAirPortPoint <- detectAirport
+        //I need to know how far the arcraft is above the airport
+        getAGL <- AircraftAltitiude - airportAltitueAboveSeaLevel
+        if aircraftGeoPoint < 1 mile || AGL  < 500 ft
+        getDistance ,- updateAirplanePoint
+        else if AGL > 200 ft || AGL < 500 ft
+        NewAGL <- updateAGL
+        esle
+        go-around
+        else updateDistance
+        */
 
         return events;
     }
