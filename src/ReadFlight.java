@@ -165,10 +165,30 @@ public class ReadFlight {
         int vsiColumn = 12;
         double maxVsi = 16;
         getEvents(events, vsiColumn, maxVsi, "VSI on Final");
-        
+
         //getLanding(events, "Landing");
         //getTouchAndGo(events, "Touch And Go");
         //getGoAround(events, "Go Around");
+
+        // appraoching runaway
+        /*
+        // first i will need to know where the aircraft is
+        getAirplanePoint <- geoPoint
+        //Secon i need to identify the airport
+        getAirPortPoint <- detectAirport
+        //I need to know how far the arcraft is above the airport
+        getAGL <- AircraftAltitiude - airportAltitueAboveSeaLevel
+        if aircraftGeoPoint < 1 mile || AGL  < 500 ft
+        getDistance ,- updateAirplanePoint
+        else if AGL > 200 ft || AGL < 500 ft
+        NewAGL <- updateAGL
+        esle
+        go-around
+        else updateDistance
+
+
+
+*/
 
         return events;
     }
