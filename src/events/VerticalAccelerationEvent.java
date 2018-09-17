@@ -1,3 +1,5 @@
+package events;
+
 import java.util.ArrayList;
 
 public class VerticalAccelerationEvent extends Event {
