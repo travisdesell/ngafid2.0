@@ -1,3 +1,5 @@
+import java.util.ArrayList;
+
 public abstract class Event {
     private String startTime;
     private String endTime;
@@ -24,15 +26,9 @@ public abstract class Event {
         return endLine;
     }
 
-    public void print() {
-        System.out.println("[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]");
-    }
-
     public String toString() {
         return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
     }
-
-    public abstract boolean isOccuring(ArrayList<String> lineValues);
 
     public boolean isOutsideBuffer(int currentLine) {
         if ((currentLine - endLine) >= bufferTime) {

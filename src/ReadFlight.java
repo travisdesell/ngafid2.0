@@ -100,47 +100,10 @@ public class ReadFlight {
         System.out.println();
     }
 
-    public void getEvents(ArrayList<Event> events, int eventColumn, double eventLimit, String eventName) {
-        int timeColumn = 1;
-
-        Event currentEvent = null;
-
-        for (int i = 0; i < csvValues.size(); i++) {
-            ArrayList<String> currentLine = csvValues.get(i);
-
-            String time = current.get(timeColumn);
-            double eventValue = Double.parseDouble(current.get(eventColumn));
-
-            System.out.println(time + " : " + eventValue);
-
-            //if (Math.abs(eventValue) >= eventLimit) {
-            if (event.isOccuring(currentLine)) {
-                if (currentEvent == null) {
-                    currentEvent = new Event(time, time, i, i, eventName);
-                    System.out.println("CREATED NEW      " + currentEvent);
-
-                } else {
-                    currentEvent.updateEnd(time, i);
-                    System.out.println("UPDATED END TIME " + currentEvent);
-                }
-
-            } else {
-                if (currentEvent != null) {
-                    if (currentEvent.isOutsideBuffer(i)) {
-                        //we're done with this event
-                        events.add(currentEvent);
-                        System.out.println("FINISHED         " + currentEvent);
-
-                        currentEvent = null;
-                    }
-                }
-            }
-        }
-    }
-
     public ArrayList<Event> getEvents() {
         ArrayList<Event> events = new ArrayList<Event>();
 
+        /*
         int pitchColumn = 13;
         double maxPitch = 10.0;
         getEvents(events, pitchColumn, maxPitch, "Pitch Exceedence");
@@ -165,10 +128,44 @@ public class ReadFlight {
         int vsiColumn = 12;
         double maxVsi = 16;
         getEvents(events, vsiColumn, maxVsi, "VSI on Final");
-        
+        */
+
         //getLanding(events, "Landing");
         //getTouchAndGo(events, "Touch And Go");
         //getGoAround(events, "Go Around");
+
+        int timeColumn = 1;
+
+        PitchEvent pitchEvent = null;
+
+        for (int i = 0; i < csvValues.size(); i++) {
+            ArrayList<String> currentLine = csvValues.get(i);
+
+            String time = currentLine.get(timeColumn);
+
+            if (PitchEvent.isOccuring(currentLine)) {
+                if (pitchEvent == null) {
+                    pitchEvent = new PitchEvent(time, time, i, i);
+                    System.out.println("CREATED NEW      " + pitchEvent);
+
+                } else {
+                    pitchEvent.updateEnd(time, i);
+                    System.out.println("UPDATED END TIME " + pitchEvent);
+                }
+
+            } else {
+                if (pitchEvent != null) {
+                    if (pitchEvent.isOutsideBuffer(i)) {
+                        //we're done with this event
+                        events.add(pitchEvent);
+                        System.out.println("FINISHED         " + pitchEvent);
+
+                        pitchEvent = null;
+                    }
+                }
+            }
+
+        }
 
         return events;
     }
@@ -196,9 +193,11 @@ public class ReadFlight {
 
         ArrayList<Event> events = readFlight.getEvents();
 
-        //events.get(0).updateEnd("24:23:02", 84382);
+        System.out.println();
+        System.out.println();
+        System.out.println("ALL EVENTS:");
         for (int i = 0; i < events.size(); i++) {
-            events.get(i).print();
+            System.out.println( events.get(i).toString() );
         }
 
     }
