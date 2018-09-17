@@ -1,26 +1,26 @@
-// Java Program to illustrate reading from FileReader
-// using BufferedReader
+package src.airframes;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 
-import java.lang.Math;
 
 import java.util.Arrays;
 import java.util.ArrayList;
 
-import events.Event;
+import src.EventTracker;
+import src.events.Event;
 
-public class ProcessFlight {
+public class Airframe {
     private String fileInformation;
     private String[] dataTypes;
     private String[] headers;
 
-    private ArrayList<ArrayList<String>> csvValues;
+    protected ArrayList<ArrayList<String>> csvValues;
 
-    public ProcessFlight(String flightFilename) {
+    public Airframe(String flightFilename) {
         File file = new File(flightFilename);
 
         BufferedReader bufferedReader = null;
@@ -103,65 +103,15 @@ public class ProcessFlight {
     }
 
     public ArrayList<Event> getEvents() {
-        EventTracker eventTracker = new EventTracker();
+        EventTracker genericEventTracker = new EventTracker(new String[]{
+                "src.events.PitchEvent",
+                "src.events.RollEvent",
+                "src.events.VerticalAccelerationEvent",
+                "src.events.LateralAccelerationEvent"
+            });
 
-        ArrayList<Event> events = eventTracker.getEvents(csvValues);
-
-        //getLanding(events, "Landing");
-        //getTouchAndGo(events, "Touch And Go");
-        //getGoAround(events, "Go Around");
-
-
-        // appraoching runaway
-        /*
-        // first i will need to know where the aircraft is
-        getAirplanePoint <- geoPoint
-        //Secon i need to identify the airport
-        getAirPortPoint <- detectAirport
-        //I need to know how far the arcraft is above the airport
-        getAGL <- AircraftAltitiude - airportAltitueAboveSeaLevel
-        if aircraftGeoPoint < 1 mile || AGL  < 500 ft
-        getDistance ,- updateAirplanePoint
-        else if AGL > 200 ft || AGL < 500 ft
-        NewAGL <- updateAGL
-        esle
-        go-around
-        else updateDistance
-        */
+        ArrayList<Event> events = genericEventTracker.getEvents(csvValues);
 
         return events;
     }
-
-
-    public static void main(String[] arguments) throws Exception {
-        // We need to provide file path as the parameter:
-        // double backquote is to avoid compiler interpret words
-        // like \test as \t (ie. as a escape sequence)
-
-
-        System.out.println("Command Line Arguments:");
-        for (int i = 0; i < arguments.length; i++) {
-            System.out.println("arguments[" + i + "]: '" + arguments[i] + "'");
-        }
-
-        if (arguments.length == 0) {
-            System.err.println("Incorrect arguments, should take a flight file.");
-            System.exit(1);
-        }
-
-        ProcessFlight readFlight = new ProcessFlight(arguments[0]);
-        readFlight.printInformation();
-        readFlight.printValues();
-
-        ArrayList<Event> events = readFlight.getEvents();
-
-        System.out.println();
-        System.out.println();
-        System.out.println("ALL EVENTS:");
-        for (int i = 0; i < events.size(); i++) {
-            System.out.println( events.get(i).toString() );
-        }
-
-    }
-
 }
