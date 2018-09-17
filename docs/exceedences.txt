@@ -38,7 +38,7 @@ Low Airspeed on Approach: indicated_airspeed < 56 AND vertical_airspeed < 0 AND 
 Low Airspeed on Climbout: indicated_airspeed < 59 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
 
 
-*************** sp_PA28Exceedances ***************
+*************** sp_PA44Exceedances ***************
 Excessive Speed: indicated_airspeed > 202
 High CHT: eng_1_cht_(1-2) > 500
 High Altitude: msl_altitude > 12800
