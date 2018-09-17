@@ -11,6 +11,8 @@ import java.lang.Math;
 import java.util.Arrays;
 import java.util.ArrayList;
 
+import events.Event;
+
 public class ReadFlight {
     private String fileInformation;
     private String[] dataTypes;
