@@ -31,14 +31,52 @@ public class ProcessFlights {
         //          get events
         //          insert the events and flight information into the database
 
+        
+        String filename = arguments[0];
 
-        Airframe airframe = new Airframe(arguments[0]);
-        //C172 airframe = new C172(arguments[0]);
-        //PA22 airframe = new PA22(arguments[0]);
+        ArrayList<Event> events;
+
+        Airframe airframe = null;
+        if (filename.contains("C172")) {
+            System.out.println("Cessna 172 filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new C172(filename);
+
+            /*
+        } else if (filename.contains("PA28")) {
+            System.out.println("PA28 filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new PA28(filename);
+        } else if (filename.contains("PA44")) {
+            System.out.println("PA44 filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new PA44(filename);
+        } else if (filename.contains("SR20")) {
+            System.out.println("SR20 filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new SR20(filename);
+        */
+
+        } else {
+            System.out.println("Generic filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new Airframe(arguments[0]);
+        }
+
         airframe.printInformation();
         airframe.printValues();
 
-        ArrayList<Event> events = airframe.getEvents();
+        events = airframe.getEvents();
 
         System.out.println();
         System.out.println();
