@@ -32,7 +32,7 @@ public abstract class Event {
         return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
     }
 
-    public boolean isOutsideBuffer(int currentLine) {
+    public boolean isFinished(int currentLine, ArrayList<String> lineValues) {
         if ((currentLine - endLine) >= bufferTime) {
             return true;
         } else {

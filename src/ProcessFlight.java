@@ -13,14 +13,14 @@ import java.util.ArrayList;
 
 import events.Event;
 
-public class ReadFlight {
+public class ProcessFlight {
     private String fileInformation;
     private String[] dataTypes;
     private String[] headers;
 
     private ArrayList<ArrayList<String>> csvValues;
 
-    public ReadFlight(String flightFilename) {
+    public ProcessFlight(String flightFilename) {
         File file = new File(flightFilename);
 
         BufferedReader bufferedReader = null;
@@ -149,7 +149,7 @@ public class ReadFlight {
             System.exit(1);
         }
 
-        ReadFlight readFlight = new ReadFlight(arguments[0]);
+        ProcessFlight readFlight = new ProcessFlight(arguments[0]);
         readFlight.printInformation();
         readFlight.printValues();
 
