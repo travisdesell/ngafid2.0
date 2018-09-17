@@ -150,7 +150,22 @@ public class ReadFlight {
         getEvents(events, rollColumn, maxRoll, "Roll Exceedence");
 
         //do this for the other events on the webpage
+        int latAcColumn = 15;
+        double maxLatAc = 0.04;
+        getEvents(events, latAcColumn, maxLatAc, "Lateral Accelaration");
 
+        int normAcColumn = 16;
+        double maxNormAc = 0.05;
+        getEvents(events, normAcColumn, maxNormAc, "Vertical (Normal) Exceedence");
+
+        int longAcColumn = 5;
+        double maxLongAc = 96.6199;
+        getEvents(events, longAcColumn, maxLongAc, "Longitudinal Acceleration");
+
+        int vsiColumn = 12;
+        double maxVsi = 16;
+        getEvents(events, vsiColumn, maxVsi, "VSI on Final");
+        
         //getLanding(events, "Landing");
         //getTouchAndGo(events, "Touch And Go");
         //getGoAround(events, "Go Around");
