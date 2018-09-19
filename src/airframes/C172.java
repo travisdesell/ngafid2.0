@@ -16,14 +16,14 @@ public class C172 extends Airframe {
                 "src.events.PitchEvent",
                 "src.events.RollEvent",
                 "src.events.VerticalAccelerationEvent",
-                "src.events.LateralAccelerationEvent",
-                "src.events.C172IndicatedAirspeedEvent",
-                "src.events.C172HighCHTEvent",
-                "src.events.C172HighAltitudeEvent",
-                "src.events.C172LowFuelEvent",
-                "src.events.C172LowOilPressureEvent",
-                "src.events.C172LowAirspeedOnApproachEvent",
-                "src.events.C172LowAirspeedOnClimboutEvent"
+                "src.events.LateralAccelerationEvent"//,
+                //"src.events.C172IndicatedAirspeedEvent",
+                //"src.events.C172HighCHTEvent",
+                //"src.events.C172HighAltitudeEvent",
+                //"src.events.C172LowFuelEvent",
+               // "src.events.C172LowOilPressureEvent",
+               // "src.events.C172LowAirspeedOnApproachEvent",
+               // "src.events.C172LowAirspeedOnClimboutEvent"
             });
 
         ArrayList<Event> events = c172EventTracker.getEvents(csvValues);
