@@ -37,6 +37,7 @@ public class ProcessFlights {
         ArrayList<Event> events;
 
         Airframe airframe = null;
+            /*
         if (filename.contains("C172")) {
             System.out.println("Cessna 172 filetype detected!");
             System.out.println();
@@ -44,7 +45,6 @@ public class ProcessFlights {
 
             airframe = new C172(filename);
 
-            /*
         } else if (filename.contains("PA28")) {
             System.out.println("PA28 filetype detected!");
             System.out.println();
@@ -65,16 +65,18 @@ public class ProcessFlights {
             airframe = new SR20(filename);
         */
 
-        } else {
+        //} else {
             System.out.println("Generic filetype detected!");
             System.out.println();
             System.out.println();
 
             airframe = new Airframe(arguments[0]);
-        }
+        //}
 
         airframe.printInformation();
         airframe.printValues();
+
+        airframe.calculateAGL(/*altitude MSL column*/ 8, /*latitude column*/ 4, /*longitude column*/ 5);
 
         events = airframe.getEvents();
 
