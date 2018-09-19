@@ -13,10 +13,12 @@ import java.util.ArrayList;
 import src.EventTracker;
 import src.events.Event;
 
+import src.terrain.TerrainCache;
+
 public class Airframe {
     private String fileInformation;
-    private String[] dataTypes;
-    private String[] headers;
+    private ArrayList<String> dataTypes;
+    private ArrayList<String> headers;
 
     protected ArrayList<ArrayList<String>> csvValues;
 
@@ -34,10 +36,13 @@ public class Airframe {
         }
 
         try {
+            dataTypes = new ArrayList<String>();
+            headers = new ArrayList<String>();
+
             //file information -- this was the first line
             fileInformation = bufferedReader.readLine();
-            dataTypes = bufferedReader.readLine().split("\\,", -1);;
-            headers = bufferedReader.readLine().split("\\,", -1);;
+            dataTypes.addAll( Arrays.asList( bufferedReader.readLine().split("\\,", -1) ) );
+            headers.addAll( Arrays.asList( bufferedReader.readLine().split("\\,", -1) ) );
 
             csvValues = new ArrayList<ArrayList<String>>();
 
@@ -73,14 +78,14 @@ public class Airframe {
         System.out.println();
 
         System.out.println("Headers:");
-        for (int i = 0; i < headers.length; i++) {
-            System.out.println("\theaders[" + i + "]: '" + headers[i].trim() + "' (" + dataTypes[i].trim() + ")");
+        for (int i = 0; i < headers.size(); i++) {
+            System.out.println("\theaders[" + i + "]: '" + headers.get(i).trim() + "' (" + dataTypes.get(i).trim() + ")");
         }
         System.out.println();
 
         System.out.println("Data Types:");
-        for (int i = 0; i < dataTypes.length; i++) {
-            System.out.println("\tdataTypes[" + i + "]: '" + dataTypes[i].trim() + "' (" + dataTypes[i].trim() + ")");
+        for (int i = 0; i < dataTypes.size(); i++) {
+            System.out.println("\tdataTypes[" + i + "]: '" + dataTypes.get(i).trim() + "' (" + dataTypes.get(i).trim() + ")");
         }
         System.out.println();
     }
@@ -114,4 +119,23 @@ public class Airframe {
 
         return events;
     }
+
+    public void calculateAGL(int mslColumn, int latitudeColumn, int longitudeColumn) {
+        //calculates altitudeAGL (above ground level) from altitudeMSL (mean sea levl)
+        headers.add("AltAGL");
+        dataTypes.add("ft agl");
+
+        for (int i = 0; i < csvValues.size(); i++) {
+            double altitudeMSL = Double.parseDouble(csvValues.get(i).get(mslColumn));
+            double latitude = Double.parseDouble(csvValues.get(i).get(latitudeColumn));
+            double longitude = Double.parseDouble(csvValues.get(i).get(longitudeColumn));
+
+            double altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
+
+            csvValues.get(i).add(Double.toString(altitudeAGL));
+
+            //System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
+        }
+    }
+
 }
