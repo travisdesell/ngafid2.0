@@ -24,12 +24,13 @@ public class C172LowAirspeedOnClimboutEvent extends Event {
         double c172VerticalAirspeedOn = Double.parseDouble(lineValues.get(c172VerticalAirspeedColumn));
         double c172RadioAltitude = Double.parseDouble(lineValues.get(c172RadioAltitudeColumn));
 
-        if ((c172IndicatedAirspeedOn < c172AirspeedLimit & c172VerticalAirspeed > c172VertialAirspeedLimit) && (c172RadioAltitude < c172RadioAltitudeDerivedLowLimit & c172RadioAltitude > c172RadioAltitudeDerivedHighLimit)) {
+        if ((c172IndicatedAirspeedOn < c172AirspeedLimit) && (c172VerticalAirspeed > c172VertialAirspeedLimit) && (c172RadioAltitude > c172RadioAltitudeDerivedLowLimit) && (c172RadioAltitude < c172RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;
         }
     }*/
+
     private final static int c172HighAltitudeColumn = 8;
     private final static double c172HighAltitudeLimit = 12800;
 

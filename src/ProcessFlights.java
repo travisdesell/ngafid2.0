@@ -76,13 +76,13 @@ public class ProcessFlights {
 
             airframe = new SR20(filename);
 
-        //} else {
+        } else {
             System.out.println("Generic filetype detected!");
             System.out.println();
             System.out.println();
 
             airframe = new Airframe(arguments[0]);
-        //}
+        }
 
         airframe.calculateAGL(/*altitude MSL column*/ 8, /*latitude column*/ 4, /*longitude column*/ 5);
         airframe.calculateAirportProximity(/*latitude column*/ 4, /*longitude column*/ 5);
