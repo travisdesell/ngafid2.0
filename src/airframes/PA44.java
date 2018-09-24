@@ -13,18 +13,21 @@ public class PA44 extends Airframe {
 
     public ArrayList<Event> getEvents() {
         EventTracker pa44EventTracker = new EventTracker(new String[]{
-                "src.events.PitchEvent",
+            "src.events.PitchEvent",
                 "src.events.RollEvent",
                 "src.events.VerticalAccelerationEvent",
-                "src.events.LateralAccelerationEvent"//,
-                // "src.events.PA44IndicatedAirspeedEvent",
-                // "src.events.PA44HighCHTEvent",
-                // "src.events.PA44HighAltitudeEvent",
-                // "src.events.PA44LowFuelEvent",
-                // "src.events.PA44LowOilPressureEvent",
-                // "src.events.PA44LowAirspeedOnApproachEvent",
-                // "src.events.PA44LowAirspeedOnClimboutEvent"
-            });
+                "src.events.LateralAccelerationEvent",
+                "src.events.LongitudinalAccelerationEvent",
+                "src.events.IndicatedAirspeedEvent",
+                "src.events.PA44IndicatedAirspeedEvent",
+                "src.events.PA44HighCHTEvent",
+                "src.events.PA44HighAltitudeEvent",
+                "src.events.PA44LowFuelEvent",
+                "src.events.PA44LowOilPressureEvent",
+                "src.events.PA44LowAirspeedOnApproachEvent",
+                "src.events.PA44LowAirspeedOnClimboutEvent"
+
+        });
 
         ArrayList<Event> events = pa44EventTracker.getEvents(csvValues);
 

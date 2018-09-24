@@ -104,11 +104,14 @@ public class Airframe {
 
     public ArrayList<Event> getEvents() {
         EventTracker genericEventTracker = new EventTracker(new String[]{
-                "src.events.PitchEvent",
+            "src.events.PitchEvent",
                 "src.events.RollEvent",
                 "src.events.VerticalAccelerationEvent",
-                "src.events.LateralAccelerationEvent"
-            });
+                "src.events.LateralAccelerationEvent",
+                //"src.events.IndicatedAirspeedEvent",
+                "src.events.LongitudinalAccelerationEvent",
+                "src.events.VsiEvent"
+        });
 
         ArrayList<Event> events = genericEventTracker.getEvents(csvValues);
 

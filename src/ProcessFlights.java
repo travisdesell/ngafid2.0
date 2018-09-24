@@ -35,7 +35,7 @@ public class ProcessFlights {
         //          get events
         //          insert the events and flight information into the database
 
-        
+
         String filename = arguments[0];
 
         ArrayList<Event> events;
@@ -54,14 +54,14 @@ public class ProcessFlights {
             System.out.println();
 
             airframe = new C182(filename);
-  
+
         } else if (filename.contains("PA28")) {
             System.out.println("PA28 filetype detected!");
             System.out.println();
             System.out.println();
 
             airframe = new PA28(filename);
-         
+
         } else if (filename.contains("PA44")) {
             System.out.println("PA44 filetype detected!");
             System.out.println();
