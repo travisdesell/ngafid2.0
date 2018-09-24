@@ -4,6 +4,10 @@ import java.util.ArrayList;
 
 import src.airframes.Airframe;
 import src.airframes.C172;
+import src.airframes.C182;
+import src.airframes.PA28;
+import src.airframes.PA44;
+import src.airframes.SR20;
 import src.events.Event;
 
 public class ProcessFlights {
@@ -31,13 +35,13 @@ public class ProcessFlights {
         //          get events
         //          insert the events and flight information into the database
 
-        
+
         String filename = arguments[0];
 
         ArrayList<Event> events;
 
         Airframe airframe = null;
-            /*
+
         if (filename.contains("C172")) {
             System.out.println("Cessna 172 filetype detected!");
             System.out.println();
@@ -45,12 +49,20 @@ public class ProcessFlights {
 
             airframe = new C172(filename);
 
+        } else if (filename.contains("C182")) {
+            System.out.println("C182 filetype detected!");
+            System.out.println();
+            System.out.println();
+
+            airframe = new C182(filename);
+
         } else if (filename.contains("PA28")) {
             System.out.println("PA28 filetype detected!");
             System.out.println();
             System.out.println();
 
             airframe = new PA28(filename);
+
         } else if (filename.contains("PA44")) {
             System.out.println("PA44 filetype detected!");
             System.out.println();
@@ -63,7 +75,6 @@ public class ProcessFlights {
             System.out.println();
 
             airframe = new SR20(filename);
-        */
 
         //} else {
             System.out.println("Generic filetype detected!");
