@@ -1,5 +1,4 @@
 //package src.events.c172;
-/*
 package src.events;
 
 import java.util.ArrayList;
@@ -7,6 +6,7 @@ import java.util.ArrayList;
 //Condition: Low Airspeed on Climout: indicated_airspeed < 52 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
 public class C172LowAirspeedOnClimboutEvent extends Event {
 
+    /*
     private static final int c172IndicatedAirspeedColumn = 10;
     private static final int c172VerticalAirspeedColumn = 12;
     private static final int c172RadioAltitudeColumn = 6;
@@ -29,22 +29,7 @@ public class C172LowAirspeedOnClimboutEvent extends Event {
         } else {
             return false;
         }
-    }
-
-    public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
-    }
-}
-*/
-
-//package src.events.c172;
-package src.events;
-
-import java.util.ArrayList;
-
-//condition: High Altitude: msl_altitude > 12800
-public class C172LowAirspeedOnClimboutEvent extends Event {
-
+    }*/
     private final static int c172HighAltitudeColumn = 8;
     private final static double c172HighAltitudeLimit = 12800;
 
@@ -62,8 +47,10 @@ public class C172LowAirspeedOnClimboutEvent extends Event {
     }
 
     public String toString() {
-        return "C172 HIGH ALTITUDE EVENT " + super.toString();
+        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }
+
+
 
 
