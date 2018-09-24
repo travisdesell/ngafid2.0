@@ -17,9 +17,20 @@ public class TerrainCache {
 
     static SRTMTile[][] tiles = new SRTMTile[180][360];
 
-    public static String getTerrainDirectory() {
-        return "/Users/tdesell/Data/terrain";
+    public static final String TERRAIN_DIRECTORY;
+
+    static {
+        //TERRAIN_DIRECTORY = "/Users/travisdesell/Data/ngafid/terrain";
+        if (System.getProperty("TERRAIN_DIRECTORY") == null) {
+            System.err.println("ERROR: 'TERRAIN_DIRECTORY' property not specified at runtime.");
+            System.err.println("This can be specified with:");
+            System.err.println("\tjava -DTERRAIN_DIRECTORY=<path_to_terrain_data> ...");
+            System.exit(1);
+        }
+
+        TERRAIN_DIRECTORY = System.getProperty("TERRAIN_DIRECTORY");
     }
+
 
     //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
@@ -61,7 +72,7 @@ public class TerrainCache {
         return file;
     }
 
-    public static double getAltitudeFt(double msl, double latitude, double longitude) {
+    public static int getAltitudeFt(double msl, double latitude, double longitude) {
         //cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
         int latIndex = -((int)Math.ceil(latitude) - 91);
         int lonIndex = (int)Math.floor(longitude) + 180;
@@ -87,8 +98,8 @@ public class TerrainCache {
         double altitudeFt = tile.getAltitudeFt(latitude, longitude);
 
         //System.out.println("msl: " + msl + ", terrain: " + altitudeFt + ", agl: " + Math.max(0.0, msl - altitudeFt));
-        return altitudeFt;
-        //return Math.max(0.0, msl - altitudeFt);
+        //return (int)altitudeFt;
+        return (int)Math.max(0, msl - altitudeFt);
 
     }
 
@@ -96,14 +107,20 @@ public class TerrainCache {
         //albany airport - should be 267 ft
         double test = getAltitudeFt(0, 42.74871, -73.80550);
         System.out.println("albany airport altitude: " + test + ", should be 267 ft");
+        test = getAltitudeFt(0, 42.74911111094814, -73.80197222206861);
+        System.out.println("albany airport (2) altitude: " + test + ", should be 267 ft");
 
         //grand forks airport - should be 838 ft
         test = getAltitudeFt(0, 47.94286, -97.17658);
         System.out.println("grand forks airport altitude: " + test + ", should be 838 ft");
+        test = getAltitudeFt(0, 47.94727777751542, -97.17377777794896);
+        System.out.println("grand forks airport (2) altitude: " + test + ", should be 838 ft");
 
         //denver airport - should be 5373 ft
         test = getAltitudeFt(0, 39.85610, -104.67374);
         System.out.println("denver airport altitude: " + test + ", should be 5373 ft");
+        test = getAltitudeFt(0, 39.86166666671349, -104.67316666709075);
+        System.out.println("denver airport (2) altitude: " + test + ", should be 5373 ft");
 
         //rochester airport - should be 542 ft
         test = getAltitudeFt(0, 43.12252, -77.66657);
@@ -140,6 +157,7 @@ public class TerrainCache {
         int lonDim = 1201;
         */
 
+        /*
         BufferedImage image = new BufferedImage(lonDim, latDim, BufferedImage.TYPE_INT_RGB);
 
         int max = 0;
@@ -172,6 +190,7 @@ public class TerrainCache {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        */
 
     }
 

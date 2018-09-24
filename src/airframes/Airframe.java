@@ -14,6 +14,11 @@ import src.EventTracker;
 import src.events.Event;
 
 import src.terrain.TerrainCache;
+import src.airports.Airport;
+import src.airports.Airports;
+import src.airports.Runway;
+
+import src.common.MutableDouble;
 
 public class Airframe {
     private String fileInformation;
@@ -43,6 +48,8 @@ public class Airframe {
             fileInformation = bufferedReader.readLine();
             dataTypes.addAll( Arrays.asList( bufferedReader.readLine().split("\\,", -1) ) );
             headers.addAll( Arrays.asList( bufferedReader.readLine().split("\\,", -1) ) );
+            dataTypes.replaceAll(String::trim);
+            headers.replaceAll(String::trim);
 
             csvValues = new ArrayList<ArrayList<String>>();
 
@@ -107,6 +114,37 @@ public class Airframe {
         System.out.println();
     }
 
+    public void printValues(String[] requestedHeaders) {
+        System.out.println("Values:");
+
+        for (int i = 0; i < requestedHeaders.length; i++) {
+            if (i > 0) System.out.print(",");
+            System.out.print(requestedHeaders[i]);
+        }
+        System.out.println();
+
+        boolean first = true;
+
+        for (int i = 0; i < csvValues.size(); i++) {
+            ArrayList<String> current = csvValues.get(i);
+
+            for (int j = 0; j < current.size(); j++) {
+                if (!Arrays.asList(requestedHeaders).contains(headers.get(j))) {
+                    continue;
+                }
+
+                String value = current.get(j);
+
+                if (!first) System.out.print(",");
+                System.out.print(value);
+
+                first = false;
+            }
+            System.out.println();
+        }
+        System.out.println();
+    }
+
     public ArrayList<Event> getEvents() {
         EventTracker genericEventTracker = new EventTracker(new String[]{
                 "src.events.PitchEvent",
@@ -130,11 +168,60 @@ public class Airframe {
             double latitude = Double.parseDouble(csvValues.get(i).get(latitudeColumn));
             double longitude = Double.parseDouble(csvValues.get(i).get(longitudeColumn));
 
-            double altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
+            int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
 
-            csvValues.get(i).add(Double.toString(altitudeAGL));
+            csvValues.get(i).add(Integer.toString(altitudeAGL));
 
             //System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
+        }
+    }
+
+    public void calculateAirportProximity(int latitudeColumn, int longitudeColumn) {
+        //calculates if the aircraft is within maxAirportDistance from an airport
+        headers.add("NearestAirport");
+        dataTypes.add("IATA Code");
+
+        headers.add("AirportDistance");
+        dataTypes.add("ft");
+
+        headers.add("NearestRunway");
+        dataTypes.add("IATA Code");
+
+        headers.add("RunwayDistance");
+        dataTypes.add("ft");
+
+        final double max_distance_ft = 5000;
+
+        for (int i = 0; i < csvValues.size(); i++) {
+            double latitude = Double.parseDouble(csvValues.get(i).get(latitudeColumn));
+            double longitude = Double.parseDouble(csvValues.get(i).get(longitudeColumn));
+
+            MutableDouble airportDistance = new MutableDouble();
+            Airport airport = Airports.getNearestAirportWithin(latitude, longitude, max_distance_ft, airportDistance);
+            if (airport == null) {
+                csvValues.get(i).add(null);
+                csvValues.get(i).add(null);
+                csvValues.get(i).add(null);
+                csvValues.get(i).add(null);
+
+                //System.out.println(latitude + ", " + longitude + ", null, null, null, null");
+            } else {
+                csvValues.get(i).add(airport.iataCode);
+                csvValues.get(i).add(Double.toString(airportDistance.get()));
+
+                MutableDouble runwayDistance = new MutableDouble();
+                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, max_distance_ft, runwayDistance);
+                if (runway == null) {
+                    csvValues.get(i).add(null);
+                    csvValues.get(i).add(null);
+                    //System.out.println(latitude + ", " + longitude + ", " + airport.iataCode + ", " + airportDistance.get() + ", " + null + ", " + null);
+                } else {
+                    csvValues.get(i).add(runway.name);
+                    csvValues.get(i).add(Double.toString(runwayDistance.get()));
+                    //System.out.println(latitude + ", " + longitude + ", " + airport.iataCode + ", " + airportDistance.get() + ", " + runway.name + ", " + runwayDistance.get());
+                }
+            }
+
         }
     }
 

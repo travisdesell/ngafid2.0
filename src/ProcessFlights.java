@@ -73,10 +73,19 @@ public class ProcessFlights {
             airframe = new Airframe(arguments[0]);
         //}
 
-        airframe.printInformation();
-        airframe.printValues();
-
         airframe.calculateAGL(/*altitude MSL column*/ 8, /*latitude column*/ 4, /*longitude column*/ 5);
+        airframe.calculateAirportProximity(/*latitude column*/ 4, /*longitude column*/ 5);
+
+        airframe.printInformation();
+        airframe.printValues(new String[]{
+            "Latitude",
+            "Longitude",
+            "AltAGL",
+            "NearestAirport",
+            "AirportDistance",
+            "NearestRunway",
+            "RunwayDistance"
+        });
 
         events = airframe.getEvents();
 
