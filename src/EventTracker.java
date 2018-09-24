@@ -68,7 +68,7 @@ public class EventTracker {
 
                         } else {
                             currentEvent.updateEnd(time, line);
-                            System.out.println("UPDATED END TIME " + currentEvent);
+                            //System.out.println("UPDATED END TIME " + currentEvent);
                         }
                     } else {
                         if (currentEvent != null) {

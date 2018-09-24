@@ -31,7 +31,7 @@ public class SRTMTile {
         System.out.println("loading terrain from: '" + directory + "/" + filename + "'");
         System.out.println("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
 
-        Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + directory + "/" + filename);
+        Path path = Paths.get(TerrainCache.TERRAIN_DIRECTORY + "/" + directory + "/" + filename);
         //Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
 
         bytes = null;
