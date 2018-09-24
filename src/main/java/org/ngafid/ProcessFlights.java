@@ -91,6 +91,8 @@ public class ProcessFlights {
         airframe.printValues(new String[]{
             "Latitude",
             "Longitude",
+            "Pitch",
+            "Roll",
             "AltAGL",
             "NearestAirport",
             "AirportDistance",
