@@ -124,11 +124,11 @@ public class Airframe {
         }
         System.out.println();
 
-        boolean first = true;
 
         for (int i = 0; i < csvValues.size(); i++) {
             ArrayList<String> current = csvValues.get(i);
 
+            boolean first = true;
             for (int j = 0; j < current.size(); j++) {
                 if (!Arrays.asList(requestedHeaders).contains(headers.get(j))) {
                     continue;
