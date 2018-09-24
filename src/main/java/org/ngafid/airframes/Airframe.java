@@ -44,6 +44,7 @@ public class Airframe {
             dataTypes = new ArrayList<String>();
             headers = new ArrayList<String>();
 
+
             //file information -- this was the first line
             fileInformation = bufferedReader.readLine();
             dataTypes.addAll( Arrays.asList( bufferedReader.readLine().split("\\,", -1) ) );
