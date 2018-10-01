@@ -6,14 +6,6 @@ import org.ngafid.EventTracker;
 
 import org.ngafid.events.Event;
 
-//import org.ngafid.events.c172.C172IndicatedAirspeedEvent;
-// import org.ngafid.events.c172.C172HighAltitudeEvent;
-// import org.ngafid.events.c172.C172LowFuelEvent;
-// import org.ngafid.events.c172.C172HighCHTEvent;
-// import org.ngafid.events.c172.C172LowAirspeedOnApproachEvent;
-// import org.ngafid.events.c172.C172LowAirspeedOnClimboutEvent;
-// import org.ngafid.events.c172.C172LowOilPressureEvent;
-
 public class C172 extends Airframe {
     public C172(String flightFilename) {
         super(flightFilename);

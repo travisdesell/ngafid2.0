@@ -1,4 +1,4 @@
-package org.ngafid.events;
+package org.ngafid.events.c182;
 
 import java.util.ArrayList;
 

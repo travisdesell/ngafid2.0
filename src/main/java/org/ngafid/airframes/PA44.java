@@ -18,14 +18,14 @@ public class PA44 extends Airframe {
                 "org.ngafid.events.VerticalAccelerationEvent",
                 "org.ngafid.events.LateralAccelerationEvent",
                 "org.ngafid.events.LongitudinalAccelerationEvent",
-                "org.ngafid.events.IndicatedAirspeedEvent",
-                "org.ngafid.events.PA44IndicatedAirspeedEvent",
-                "org.ngafid.events.PA44HighCHTEvent",
-                "org.ngafid.events.PA44HighAltitudeEvent",
-                "org.ngafid.events.PA44LowFuelEvent",
-                "org.ngafid.events.PA44LowOilPressureEvent",
-                "org.ngafid.events.PA44LowAirspeedOnApproachEvent",
-                "org.ngafid.events.PA44LowAirspeedOnClimboutEvent"
+                "org.ngafid.events.VsiEvent",
+                "org.ngafid.events.pa44.PA44IndicatedAirspeedEvent",
+                "org.ngafid.events.pa44.PA44HighCHTEvent",
+                "org.ngafid.events.pa44.PA44HighAltitudeEvent",
+                "org.ngafid.events.pa44.PA44LowFuelEvent",
+                "org.ngafid.events.pa44.PA44LowOilPressureEvent",
+                "org.ngafid.events.pa44.PA44LowAirspeedOnApproachEvent",
+                "org.ngafid.events.pa44.PA44LowAirspeedOnClimboutEvent"
 
         });
 
