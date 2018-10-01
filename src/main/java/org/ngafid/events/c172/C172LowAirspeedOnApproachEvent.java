@@ -25,7 +25,7 @@ public class C172LowAirspeedOnApproachEvent extends Event {
         double c172VerticalAirspeed = Double.parseDouble(lineValues.get(c172VerticalAirspeedColumn));
         double c172RadioAltitude = Double.parseDouble(lineValues.get(c172RadioAltitudeColumn));
 
-        if ((c172IndicatedAirspeed < c172AirspeedLimit & c172VerticalAirspeed < c172VertialAirspeedLimit) && (c172RadioAltitude < c172RadioAltitudeDerivedLowLimit & c172RadioAltitude > c172RadioAltitudeDerivedHighLimit)) {
+        if ((c172IndicatedAirspeed < c172AirspeedLimit && c172VerticalAirspeed < c172VertialAirspeedLimit) && (c172RadioAltitude < c172RadioAltitudeDerivedLowLimit && c172RadioAltitude > c172RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;
