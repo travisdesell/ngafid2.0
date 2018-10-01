@@ -1,4 +1,4 @@
-package org.ngafid.events;
+package org.ngafid.events.sr20;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,7 @@ public class SR20LowAirspeedOnApproachEvent extends Event {
         double sr20VerticalAirspeed = Double.parseDouble(lineValues.get(sr20VerticalAirspeedColumn));
         double sr20RadioAltitude = Double.parseDouble(lineValues.get(sr20RadioAltitudeColumn));
 
-        if ((sr20IndicatedAirspeed < sr20AirspeedLimit & sr20VerticalAirspeed < sr20VertialAirspeedLimit) && (sr20RadioAltitude < sr20RadioAltitudeDerivedLowLimit & sr20RadioAltitude > sr20RadioAltitudeDerivedHighLimit)) {
+        if ((sr20IndicatedAirspeed < sr20AirspeedLimit && sr20VerticalAirspeed < sr20VertialAirspeedLimit) && (sr20RadioAltitude < sr20RadioAltitudeDerivedLowLimit && sr20RadioAltitude > sr20RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;

@@ -1,4 +1,4 @@
-package org.ngafid.events;
+package org.ngafid.events.pa44;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,7 @@ public class PA44LowAirspeedOnApproachEvent extends Event {
         double pa44VerticalAirspeed = Double.parseDouble(lineValues.get(pa44VerticalAirspeedColumn));
         double pa44RadioAltitude = Double.parseDouble(lineValues.get(pa44RadioAltitudeColumn));
 
-        if ((pa44IndicatedAirspeed < pa44AirspeedLimit & pa44VerticalAirspeed < pa44VertialAirspeedLimit) && (pa44RadioAltitude < pa44RadioAltitudeDerivedLowLimit & pa44RadioAltitude > pa44RadioAltitudeDerivedHighLimit)) {
+        if ((pa44IndicatedAirspeed < pa44AirspeedLimit && pa44VerticalAirspeed < pa44VertialAirspeedLimit) && (pa44RadioAltitude < pa44RadioAltitudeDerivedLowLimit && pa44RadioAltitude > pa44RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;

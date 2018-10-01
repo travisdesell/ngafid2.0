@@ -18,14 +18,14 @@ public class SR20 extends Airframe {
                 "org.ngafid.events.VerticalAccelerationEvent",
                 "org.ngafid.events.LateralAccelerationEvent",
                 "org.ngafid.events.LongitudinalAccelerationEvent",
-                "org.ngafid.events.IndicatedAirspeedEvent",
-                "org.ngafid.events.SR20IndicatedAirspeedEvent",
-                "org.ngafid.events.SR20HighCHTEvent",
-                "org.ngafid.events.SR20HighAltitudeEvent",
-                "org.ngafid.events.SR20LowFuelEvent",
-                "org.ngafid.events.SR20LowOilPressureEvent",
-                "org.ngafid.events.SR20LowAirspeedOnApproachEvent",
-                "org.ngafid.events.SR20LowAirspeedOnClimboutEvent"
+                "org.ngafid.events.VsiEvent",
+                "org.ngafid.events.sr20.SR20IndicatedAirspeedEvent",
+                "org.ngafid.events.sr20.SR20HighCHTEvent",
+                "org.ngafid.events.sr20.SR20HighAltitudeEvent",
+                "org.ngafid.events.sr20.SR20LowFuelEvent",
+                "org.ngafid.events.sr20.SR20LowOilPressureEvent",
+                "org.ngafid.events.sr20.SR20LowAirspeedOnApproachEvent",
+                "org.ngafid.events.sr20.SR20LowAirspeedOnClimboutEvent"
 
         });
 
