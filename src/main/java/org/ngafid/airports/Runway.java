@@ -32,6 +32,10 @@ public class Runway {
         this.hasCoordinates = true;
     }
 
+    /**
+     *  Modified from:
+     *  https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+     */
     public double getDistanceFt(double point_latitude, double point_longitude) {
         double A = point_longitude - lon1;
         double B = point_latitude - lat1;

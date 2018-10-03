@@ -1,6 +1,11 @@
 package org.ngafid;
 
+import java.io.InputStream;
+
 import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import org.ngafid.airframes.Airframe;
 import org.ngafid.airframes.C172;
@@ -8,7 +13,10 @@ import org.ngafid.airframes.C182;
 import org.ngafid.airframes.PA28;
 import org.ngafid.airframes.PA44;
 import org.ngafid.airframes.SR20;
+
 import org.ngafid.events.Event;
+
+import org.ngafid.flights.Flight;
 
 public class ProcessFlights {
     public static void main(String[] arguments) throws Exception {
@@ -35,8 +43,54 @@ public class ProcessFlights {
         //          get events
         //          insert the events and flight information into the database
 
+        ZipFile zipFile = new ZipFile(arguments[0]);
+
+        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
+            String name = entry.getName();
+
+            if (entry.isDirectory()) {
+                //System.err.println("SKIPPING: " + entry.getName());
+                continue;
+            }
+
+            if (name.contains("__MACOSX")) {
+                //System.err.println("SKIPPING: " + entry.getName());
+                continue;
+            }
+
+            System.err.println("PROCESSING: " + name);
+            if (true) continue;
+
+            String[] parts = entry.getName().split("/");
+            for (int i = 0; i < parts.length; i++) {
+                System.err.println(parts[i]);
+            }
+
+            if (entry.getName().contains(".csv")) {
+                //InputStream stream = zipFile.getInputStream(entry);
+                //Flight flight = new Flight(entry.getName(), stream);
+            }
+        }
 
         String filename = arguments[0];
+
+        Flight flight = new Flight(filename);
+        flight.calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
+        flight.calculateAirportProximity("Latitude", "Longitude");
+        flight.calculateEvents();
+
+        flight.printValues(new String[]{
+            "Latitude",
+            "Longitude",
+            "AltAGL",
+            "NearestAirport",
+            "AirportDistance",
+            "NearestRunway",
+            "RunwayDistance"
+        });
 
         ArrayList<Event> events;
 
