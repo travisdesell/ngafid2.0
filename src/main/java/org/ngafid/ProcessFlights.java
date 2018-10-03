@@ -70,8 +70,8 @@ public class ProcessFlights {
             }
 
             if (entry.getName().contains(".csv")) {
-                //InputStream stream = zipFile.getInputStream(entry);
-                //Flight flight = new Flight(entry.getName(), stream);
+                InputStream stream = zipFile.getInputStream(entry);
+                Flight flight = new Flight(entry.getName(), stream);
             }
         }
 
