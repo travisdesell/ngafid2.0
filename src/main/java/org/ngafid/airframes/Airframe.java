@@ -21,11 +21,16 @@ import org.ngafid.airports.Runway;
 import org.ngafid.common.MutableDouble;
 
 public class Airframe {
+
+    final static double MAX_AIRPORT_DISTANCE_FT = 10000;
+    final static double MAX_RUNWAY_DISTANCE_FT = 100;
+
     private String fileInformation;
     private ArrayList<String> dataTypes;
     private ArrayList<String> headers;
 
     protected ArrayList<ArrayList<String>> csvValues;
+
 
     public Airframe(String flightFilename) {
         File file = new File(flightFilename);
@@ -194,14 +199,12 @@ public class Airframe {
         headers.add("RunwayDistance");
         dataTypes.add("ft");
 
-        final double max_distance_ft = 5000;
-
         for (int i = 0; i < csvValues.size(); i++) {
             double latitude = Double.parseDouble(csvValues.get(i).get(latitudeColumn));
             double longitude = Double.parseDouble(csvValues.get(i).get(longitudeColumn));
 
             MutableDouble airportDistance = new MutableDouble();
-            Airport airport = Airports.getNearestAirportWithin(latitude, longitude, max_distance_ft, airportDistance);
+            Airport airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
             if (airport == null) {
                 csvValues.get(i).add(null);
                 csvValues.get(i).add(null);
@@ -214,7 +217,7 @@ public class Airframe {
                 csvValues.get(i).add(Double.toString(airportDistance.get()));
 
                 MutableDouble runwayDistance = new MutableDouble();
-                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, max_distance_ft, runwayDistance);
+                Runway runway = airport.getNearestRunwayWithin(latitude, longitude, MAX_RUNWAY_DISTANCE_FT, runwayDistance);
                 if (runway == null) {
                     csvValues.get(i).add(null);
                     csvValues.get(i).add(null);
