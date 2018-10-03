@@ -18,14 +18,14 @@ public class C182 extends Airframe {
                 "org.ngafid.events.VerticalAccelerationEvent",
                 "org.ngafid.events.LateralAccelerationEvent",
                 "org.ngafid.events.LongitudinalAccelerationEvent",
-                "org.ngafid.events.IndicatedAirspeedEvent",
-                "org.ngafid.events.C182IndicatedAirspeedEvent",
-                "org.ngafid.events.C182HighCHTEvent",
-                "org.ngafid.events.C182HighAltitudeEvent",
-                "org.ngafid.events.C182LowFuelEvent",
-                "org.ngafid.events.C182LowOilPressureEvent",
-                "org.ngafid.events.C182LowAirspeedOnApproachEvent",
-                "org.ngafid.events.C182LowAirspeedOnClimboutEvent"
+                "org.ngafid.events.VsiEvent",
+                "org.ngafid.events.c182.C182IndicatedAirspeedEvent",
+                "org.ngafid.events.c182.C182HighCHTEvent",
+                "org.ngafid.events.c182.C182HighAltitudeEvent",
+                "org.ngafid.events.c182.C182LowFuelEvent",
+                "org.ngafid.events.c182.C182LowOilPressureEvent",
+                "org.ngafid.events.c182.C182LowAirspeedOnApproachEvent",
+                "org.ngafid.events.c182.C182LowAirspeedOnClimboutEvent"
 
         });
 
