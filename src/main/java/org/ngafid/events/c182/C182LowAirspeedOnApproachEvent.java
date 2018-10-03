@@ -1,4 +1,4 @@
-package org.ngafid.events;
+package org.ngafid.events.c182;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,7 @@ public class C182LowAirspeedOnApproachEvent extends Event {
         double c182VerticalAirspeed = Double.parseDouble(lineValues.get(c182VerticalAirspeedColumn));
         double c182RadioAltitude = Double.parseDouble(lineValues.get(c182RadioAltitudeColumn));
 
-        if ((c182IndicatedAirspeed < c182AirspeedLimit & c182VerticalAirspeed < c182VertialAirspeedLimit) && (c182RadioAltitude < c182RadioAltitudeDerivedLowLimit & c182RadioAltitude > c182RadioAltitudeDerivedHighLimit)) {
+        if ((c182IndicatedAirspeed < c182AirspeedLimit && c182VerticalAirspeed < c182VertialAirspeedLimit) && (c182RadioAltitude < c182RadioAltitudeDerivedLowLimit && c182RadioAltitude > c182RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;

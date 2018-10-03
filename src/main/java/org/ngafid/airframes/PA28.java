@@ -18,14 +18,14 @@ public class PA28 extends Airframe {
                 "org.ngafid.events.VerticalAccelerationEvent",
                 "org.ngafid.events.LateralAccelerationEvent",
                 "org.ngafid.events.LongitudinalAccelerationEvent",
-                "org.ngafid.events.IndicatedAirspeedEvent",
-                "org.ngafid.events.PA28IndicatedAirspeedEvent",
-                "org.ngafid.events.PA28HighCHTEvent",
-                "org.ngafid.events.PA28HighAltitudeEvent",
-                "org.ngafid.events.PA28LowFuelEvent",
-                "org.ngafid.events.PA28LowOilPressureEvent",
-                "org.ngafid.events.PA28LowAirspeedOnApproachEvent",
-                "org.ngafid.events.PA28LowAirspeedOnClimboutEvent"
+                "org.ngafid.events.VsiEvent",
+                "org.ngafid.events.pa28.PA28IndicatedAirspeedEvent",
+                "org.ngafid.events.pa28.PA28HighCHTEvent",
+                "org.ngafid.events.pa28.PA28HighAltitudeEvent",
+                "org.ngafid.events.pa28.PA28LowFuelEvent",
+                "org.ngafid.events.pa28.PA28LowOilPressureEvent",
+                "org.ngafid.events.pa28.PA28LowAirspeedOnApproachEvent",
+                "org.ngafid.events.pa28.PA28LowAirspeedOnClimboutEvent"
 
         });
 

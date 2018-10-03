@@ -1,4 +1,4 @@
-package org.ngafid.events;
+package org.ngafid.events.pa28;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,7 @@ public class PA28LowAirspeedOnClimboutEvent extends Event {
         double pa28VerticalAirspeed = Double.parseDouble(lineValues.get(pa28VerticalAirspeedColumn));
         double pa28RadioAltitude = Double.parseDouble(lineValues.get(pa28RadioAltitudeColumn));
 
-        if ((pa28IndicatedAirspeed < pa28AirspeedLimit & pa28VerticalAirspeed > pa28VertialAirspeedLimit) && (pa28RadioAltitude < pa28RadioAltitudeDerivedLowLimit & pa28RadioAltitude > pa28RadioAltitudeDerivedHighLimit)) {
+        if ((pa28IndicatedAirspeed < pa28AirspeedLimit && pa28VerticalAirspeed > pa28VertialAirspeedLimit) && (pa28RadioAltitude < pa28RadioAltitudeDerivedLowLimit && pa28RadioAltitude > pa28RadioAltitudeDerivedHighLimit)) {
             return true;
         } else {
             return false;
