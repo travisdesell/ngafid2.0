@@ -9,9 +9,9 @@ import org.ngafid.events.Event;
 public class C172LowOilPressureEvent extends Event {
 
     private static final int c172LowOilPressurePressColumn = 27;
+    private static final double c172LowOilPressurePressLimit = 59; // correct value is 20. 59 is test only
     private static final int c172LowOilPressureRpmColumn = 28;
-    private static final double c172LowOilPressurePressLimit = 20;
-    private static final double c172LowOilPressureRpmLimit = 100;
+    private static final double c172LowOilPressureRpmLimit = 580.0; // the value 580 is only for test the correct value is 100.0
 
     public C172LowOilPressureEvent(String startTime, String endTime, int startLine, int endLine) {
         super(startTime, endTime, startLine, endLine, 10);
@@ -20,8 +20,7 @@ public class C172LowOilPressureEvent extends Event {
     public static boolean isOccuring(ArrayList<String> lineValues) {
         double c172LowOilPressurePress = Double.parseDouble(lineValues.get(c172LowOilPressurePressColumn));
         double c172LowOilPressureRpm = Double.parseDouble(lineValues.get(c172LowOilPressureRpmColumn));
-
-        if (c172LowOilPressurePress < c172LowOilPressurePressLimit && c172LowOilPressureRpm > c172LowOilPressureRpmLimit) {
+        if ((c172LowOilPressurePress < c172LowOilPressurePressLimit) && (c172LowOilPressureRpm > c172LowOilPressureRpmLimit)) {
             return true;
         } else {
             return false;
