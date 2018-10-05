@@ -8,12 +8,14 @@ import org.ngafid.events.Event;
 public class PA44LowAirspeedOnApproachEvent extends Event {
 
     private static final int pa44IndicatedAirspeedColumn = 10;
+    private static final double pa44AirspeedLimit = 66.0;
+
     private static final int pa44VerticalAirspeedColumn = 12;
+    private static final double pa44VerticalAirspeedLimit = 0;
+
     private static final int pa44RadioAltitudeColumn = 6;
-    private static final double pa44AirspeedLimit = 66;
-    private static final double pa44VertialAirspeedLimit = 0;
-    private static final double pa44RadioAltitudeDerivedLowLimit = 100;
-    private static final double pa44RadioAltitudeDerivedHighLimit = 500;
+    private static final double pa44RadioAltitudeDerivedLowLimit = 860; // 860 and 861  is only test number. The actual number is 100
+    private static final double pa44RadioAltitudeDerivedHighLimit = 861; // 861 and 861  is only test number. The actual number is 500
 
     public PA44LowAirspeedOnApproachEvent(String startTime, String endTime, int startLine, int endLine) {
         super(startTime, endTime, startLine, endLine, 5);
@@ -24,14 +26,15 @@ public class PA44LowAirspeedOnApproachEvent extends Event {
         double pa44VerticalAirspeed = Double.parseDouble(lineValues.get(pa44VerticalAirspeedColumn));
         double pa44RadioAltitude = Double.parseDouble(lineValues.get(pa44RadioAltitudeColumn));
 
-        if ((pa44IndicatedAirspeed < pa44AirspeedLimit && pa44VerticalAirspeed < pa44VertialAirspeedLimit) && (pa44RadioAltitude < pa44RadioAltitudeDerivedLowLimit && pa44RadioAltitude > pa44RadioAltitudeDerivedHighLimit)) {
+        if (((pa44RadioAltitude > pa44RadioAltitudeDerivedLowLimit) && (pa44RadioAltitude < pa44RadioAltitudeDerivedHighLimit))&& (pa44IndicatedAirspeed < pa44AirspeedLimit) && (pa44VerticalAirspeed < pa44VerticalAirspeedLimit)){
             return true;
         } else {
             return false;
         }
-    }
 
+    }
+    
     public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
+        return "PA44 LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }

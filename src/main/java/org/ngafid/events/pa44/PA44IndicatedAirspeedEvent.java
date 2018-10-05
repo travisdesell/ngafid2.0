@@ -25,6 +25,6 @@ public class PA44IndicatedAirspeedEvent extends Event {
     }
 
     public String toString() {
-        return "INDICATED AIR SPEED EVENT " + super.toString();
+        return "PA44 INDICATED AIR SPEED EVENT " + super.toString();
     }
 }

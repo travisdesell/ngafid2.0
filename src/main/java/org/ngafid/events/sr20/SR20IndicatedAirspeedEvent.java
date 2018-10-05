@@ -25,6 +25,6 @@ public class SR20IndicatedAirspeedEvent extends Event {
     }
 
     public String toString() {
-        return "INDICATED AIR SPEED EVENT " + super.toString();
+        return "SR20 INDICATED AIR SPEED EVENT " + super.toString();
     }
 }
