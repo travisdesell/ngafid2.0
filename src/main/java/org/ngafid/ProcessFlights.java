@@ -97,7 +97,6 @@ public class ProcessFlights {
             "NearestAirport",
             "AirportDistance",
             "NearestRunway",
-            //"IndicatedAirSpeed",
             "RunwayDistance"
         });
 

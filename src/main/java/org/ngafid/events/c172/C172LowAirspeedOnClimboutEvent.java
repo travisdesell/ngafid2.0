@@ -1,5 +1,4 @@
 package org.ngafid.events.c172;
-//package org.ngafid.events;
 
 import java.util.ArrayList;
 
@@ -33,6 +32,6 @@ public class C172LowAirspeedOnClimboutEvent extends Event {
     }
 
     public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
+        return "C172 LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }

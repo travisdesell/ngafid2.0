@@ -27,6 +27,6 @@ public class C182LowFuelEvent extends Event {
     }
 
     public String toString() {
-        return "LOW FUEL EVENT " + super.toString();
+        return "C182 LOW FUEL EVENT " + super.toString();
     }
 }

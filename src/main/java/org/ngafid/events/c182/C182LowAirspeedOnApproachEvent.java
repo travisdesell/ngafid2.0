@@ -8,12 +8,14 @@ import org.ngafid.events.Event;
 public class C182LowAirspeedOnApproachEvent extends Event {
 
     private static final int c182IndicatedAirspeedColumn = 10;
+    private static final double c182AirspeedLimit = 57.0;
+
     private static final int c182VerticalAirspeedColumn = 12;
+    private static final double c182VerticalAirspeedLimit = 0;
+
     private static final int c182RadioAltitudeColumn = 6;
-    private static final double c182AirspeedLimit = 57;
-    private static final double c182VertialAirspeedLimit = 0;
-    private static final double c182RadioAltitudeDerivedLowLimit = 100;
-    private static final double c182RadioAltitudeDerivedHighLimit = 500;
+    private static final double c182RadioAltitudeDerivedLowLimit = 860; // 860 and 861  is only test number. The actual number is 100
+    private static final double c182RadioAltitudeDerivedHighLimit = 861; // 861 and 861  is only test number. The actual number is 500
 
     public C182LowAirspeedOnApproachEvent(String startTime, String endTime, int startLine, int endLine) {
         super(startTime, endTime, startLine, endLine, 5);
@@ -24,14 +26,15 @@ public class C182LowAirspeedOnApproachEvent extends Event {
         double c182VerticalAirspeed = Double.parseDouble(lineValues.get(c182VerticalAirspeedColumn));
         double c182RadioAltitude = Double.parseDouble(lineValues.get(c182RadioAltitudeColumn));
 
-        if ((c182IndicatedAirspeed < c182AirspeedLimit && c182VerticalAirspeed < c182VertialAirspeedLimit) && (c182RadioAltitude < c182RadioAltitudeDerivedLowLimit && c182RadioAltitude > c182RadioAltitudeDerivedHighLimit)) {
+        if (((c182RadioAltitude > c182RadioAltitudeDerivedLowLimit) && (c182RadioAltitude < c182RadioAltitudeDerivedHighLimit))&& (c182IndicatedAirspeed < c182AirspeedLimit) && (c182VerticalAirspeed < c182VerticalAirspeedLimit)){
             return true;
         } else {
             return false;
         }
-    }
 
+    }
+    
     public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
+        return "C182 LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }
