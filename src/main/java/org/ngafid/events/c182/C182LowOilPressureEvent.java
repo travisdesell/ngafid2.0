@@ -26,6 +26,6 @@ public class C182LowOilPressureEvent extends Event {
     }
 
     public String toString() {
-        return "LOW OIL PRESSURE EVENT " + super.toString();
+        return "C182 LOW OIL PRESSURE EVENT " + super.toString();
     }
 }

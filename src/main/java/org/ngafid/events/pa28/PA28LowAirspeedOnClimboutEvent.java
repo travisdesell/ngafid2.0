@@ -4,13 +4,13 @@ import java.util.ArrayList;
 
 import org.ngafid.events.Event;
 
-//Condition: Low Airspeed on Climbout: indicated_airspeed < 52 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+//Condition: Low Airspeed on Climbout: indicated_airspeed < 59 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
 public class PA28LowAirspeedOnClimboutEvent extends Event {
 
     private static final int pa28IndicatedAirspeedColumn = 10;
     private static final int pa28VerticalAirspeedColumn = 12;
     private static final int pa28RadioAltitudeColumn = 6;
-    private static final double pa28AirspeedLimit = 52;
+    private static final double pa28AirspeedLimit = 59;
     private static final double pa28VertialAirspeedLimit = 0;
     private static final double pa28RadioAltitudeDerivedLowLimit = 100;
     private static final double pa28RadioAltitudeDerivedHighLimit = 500;

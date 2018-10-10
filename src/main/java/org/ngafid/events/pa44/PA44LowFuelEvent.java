@@ -27,6 +27,6 @@ public class PA44LowFuelEvent extends Event {
     }
 
     public String toString() {
-        return "LOW FUEL EVENT " + super.toString();
+        return "PA44 LOW FUEL EVENT " + super.toString();
     }
 }

@@ -8,12 +8,14 @@ import org.ngafid.events.Event;
 public class SR20LowAirspeedOnApproachEvent extends Event {
 
     private static final int sr20IndicatedAirspeedColumn = 10;
+    private static final double sr20AirspeedLimit = 67.0;
+
     private static final int sr20VerticalAirspeedColumn = 12;
+    private static final double sr20VerticalAirspeedLimit = 0;
+
     private static final int sr20RadioAltitudeColumn = 6;
-    private static final double sr20AirspeedLimit = 67;
-    private static final double sr20VertialAirspeedLimit = 0;
-    private static final double sr20RadioAltitudeDerivedLowLimit = 100;
-    private static final double sr20RadioAltitudeDerivedHighLimit = 500;
+    private static final double sr20RadioAltitudeDerivedLowLimit = 860; // 860 and 861  is only test number. The actual number is 100
+    private static final double sr20RadioAltitudeDerivedHighLimit = 861; // 861 and 861  is only test number. The actual number is 500
 
     public SR20LowAirspeedOnApproachEvent(String startTime, String endTime, int startLine, int endLine) {
         super(startTime, endTime, startLine, endLine, 5);
@@ -24,14 +26,16 @@ public class SR20LowAirspeedOnApproachEvent extends Event {
         double sr20VerticalAirspeed = Double.parseDouble(lineValues.get(sr20VerticalAirspeedColumn));
         double sr20RadioAltitude = Double.parseDouble(lineValues.get(sr20RadioAltitudeColumn));
 
-        if ((sr20IndicatedAirspeed < sr20AirspeedLimit && sr20VerticalAirspeed < sr20VertialAirspeedLimit) && (sr20RadioAltitude < sr20RadioAltitudeDerivedLowLimit && sr20RadioAltitude > sr20RadioAltitudeDerivedHighLimit)) {
+        if (((sr20RadioAltitude > sr20RadioAltitudeDerivedLowLimit) && (sr20RadioAltitude < sr20RadioAltitudeDerivedHighLimit))&& (sr20IndicatedAirspeed < sr20AirspeedLimit) && (sr20VerticalAirspeed < sr20VerticalAirspeedLimit)){
             return true;
         } else {
             return false;
         }
-    }
 
+    }
+    
     public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
+        return "SR20 LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }
+

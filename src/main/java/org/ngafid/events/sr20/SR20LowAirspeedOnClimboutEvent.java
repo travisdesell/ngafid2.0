@@ -4,13 +4,13 @@ import java.util.ArrayList;
 
 import org.ngafid.events.Event;
 
-//Condition: Low Airspeed on Climbout: indicated_airspeed < 52 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+//Condition: Low Airspeed on Climbout: indicated_airspeed < 60 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
 public class SR20LowAirspeedOnClimboutEvent extends Event {
 
     private static final int sr20IndicatedAirspeedColumn = 10;
     private static final int sr20VerticalAirspeedColumn = 12;
     private static final int sr20RadioAltitudeColumn = 6;
-    private static final double sr20AirspeedLimit = 52;
+    private static final double sr20AirspeedLimit = 60;
     private static final double sr20VertialAirspeedLimit = 0;
     private static final double sr20RadioAltitudeDerivedLowLimit = 100;
     private static final double sr20RadioAltitudeDerivedHighLimit = 500;
@@ -32,6 +32,6 @@ public class SR20LowAirspeedOnClimboutEvent extends Event {
     }
 
     public String toString() {
-        return "LOW AIR SPEED ON APPROACH EVENT " + super.toString();
+        return "SR20 LOW AIR SPEED ON APPROACH EVENT " + super.toString();
     }
 }
