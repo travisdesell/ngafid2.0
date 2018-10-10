@@ -1,5 +1,4 @@
 package org.ngafid.events.c172;
-//package org.ngafid.events;
 
 import java.util.ArrayList;
 
@@ -28,6 +27,6 @@ public class C172LowOilPressureEvent extends Event {
     }
 
     public String toString() {
-        return "LOW OIL PRESSURE EVENT " + super.toString();
+        return "C172 LOW OIL PRESSURE EVENT " + super.toString();
     }
 }

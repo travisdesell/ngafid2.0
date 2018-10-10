@@ -8,13 +8,9 @@ import org.ngafid.events.Event;
 public class SR20LowOilPressureEvent extends Event {
 
     private static final int sr20LowOilPressurePressColumn = 27;
-    //private static final double sr20LowOilPressurePressLimit = 10;
-    // Correct value for c182LowOilPressurePressLimit is 10. The 59 is test
-    private static final double sr20LowOilPressurePressLimit = 59;
+    private static final double sr20LowOilPressurePressLimit = 59; // Correct value for c182LowOilPressurePressLimit is 10. The 59 is test
     private static final int sr20LowOilPressureRpmColumn = 28;
-    //private static final double sr20LowOilPressureRpmLimit = 100.0;
-    // the value 580 is only for test the correct value is 100.0
-    private static final double sr20LowOilPressureRpmLimit = 580.0;
+    private static final double sr20LowOilPressureRpmLimit = 580.0; // the value 580 is only for test the correct value is 100.0
 
     public SR20LowOilPressureEvent(String startTime, String endTime, int startLine, int endLine) {
         super(startTime, endTime, startLine, endLine, 10);
@@ -31,6 +27,6 @@ public class SR20LowOilPressureEvent extends Event {
     }
 
     public String toString() {
-        return "LOW OIL PRESSURE EVENT " + super.toString();
+        return "SR20 LOW OIL PRESSURE EVENT " + super.toString();
     }
 }

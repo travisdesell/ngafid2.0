@@ -24,7 +24,7 @@ public class SR20HighAltitudeEvent extends Event {
     }
 
     public String toString() {
-        return "SR20 HIGH_CHT EVENT " + super.toString();
+        return "SR20 HIGH ALTITUDE EVENT " + super.toString();
     }
 }
 

@@ -25,6 +25,6 @@ public class C182IndicatedAirspeedEvent extends Event {
     }
 
     public String toString() {
-        return "INDICATED AIR SPEED EVENT " + super.toString();
+        return "C182 INDICATED AIR SPEED EVENT " + super.toString();
     }
 }

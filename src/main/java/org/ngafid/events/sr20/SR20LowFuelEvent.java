@@ -5,6 +5,8 @@ import java.util.ArrayList;
 import org.ngafid.events.Event;
 
 //condition: Low Fuel: N.A.
+// The following code is ready to add the values. I can comment it because in the exceedence list mentioned as N.A.
+
 public class SR20LowFuelEvent extends Event {
 
     private static final int sr20LowFuelLeftColumn = 23;
