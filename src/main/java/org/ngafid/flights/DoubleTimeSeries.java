@@ -1,14 +1,21 @@
 package org.ngafid.flights;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
+
+import java.nio.ByteBuffer;
 
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+
+import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private String name;
@@ -20,6 +27,7 @@ public class DoubleTimeSeries {
     private double max = -Double.MAX_VALUE;
 
     public DoubleTimeSeries(String name) {
+        this.name = name;
         timeSeries = new ArrayList<Double>();
 
         min = Double.NaN;
@@ -50,7 +58,7 @@ public class DoubleTimeSeries {
 
             timeSeries.add(currentDouble);
 
-            if (currentDouble == Double.NaN) continue;
+            if (Double.isNaN(currentDouble)) continue;
             avg += currentDouble;
             validCount++;
 
@@ -69,13 +77,45 @@ public class DoubleTimeSeries {
         }
 
         avg /= validCount;
+    }
 
-        //System.out.println("double column '" + name + "' statistics, " + validCount + " values, min: " + min + ", avg: " + avg + ", max: " + max);
+    public DoubleTimeSeries(ResultSet resultSet) throws SQLException {
+        int id = resultSet.getInt(1);
+        int flightId = resultSet.getInt(2);
+        name = resultSet.getString(3);
+        int length = resultSet.getInt(4);
+        validCount = resultSet.getInt(5);
+        min = resultSet.getDouble(6);
+        avg = resultSet.getDouble(7);
+        max = resultSet.getDouble(8);
+
+        Blob values = resultSet.getBlob(9);
+        byte[] bytes = values.getBytes(1, (int)values.length());
+        values.free();
+
+        System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + length + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+
+        timeSeries = new ArrayList<Double>();
+        try {
+            DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
+            while (inputStream.available() > 0) {
+                double d = inputStream.readDouble();
+                timeSeries.add(d);
+                //System.out.print(" " + d);
+            }
+            //System.out.println();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    public String toString() {
+        return "[DoubleTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max + "]";
     }
 
 
     public void add(double d) {
-        if (d == Double.NaN) {
+        if (Double.isNaN(d)) {
             timeSeries.add(d);
             return;
         }
@@ -115,8 +155,10 @@ public class DoubleTimeSeries {
     }
 
     public void updateDatabase(Connection connection, int flightId) {
+        //System.out.println("Updating database for " + this);
+
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, length, valid_length, min, avg, max, values) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, length, valid_length, min, avg, max, `values`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setString(2, name);
@@ -124,24 +166,39 @@ public class DoubleTimeSeries {
             preparedStatement.setInt(3, timeSeries.size());
             preparedStatement.setInt(4, validCount);
 
-            preparedStatement.setDouble(5, min);
-            preparedStatement.setDouble(6, avg);
-            preparedStatement.setDouble(7, max);
-
-            Blob seriesBlob = connection.createBlob();
-            final ObjectOutputStream oos = new ObjectOutputStream(seriesBlob.setBinaryStream(1));
-            for (int i = 0; i < timeSeries.size(); i++) {
-                oos.writeDouble(timeSeries.get(i));
+            if (Double.isNaN(min)) {
+                preparedStatement.setNull(5, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(5, min);
             }
-            oos.close();
 
-            //preparedStatement.setBlob(8, seriesBlob);
+            if (Double.isNaN(avg)) {
+                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(6, avg);
+            }
+
+            if (Double.isNaN(max)) {
+                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(7, max);
+            }
+
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
+            for (int i = 0; i < timeSeries.size(); i++) {
+                byteBuffer.putDouble(timeSeries.get(i));
+            }
+            byte[] byteArray = byteBuffer.array();
 
             System.err.println(preparedStatement);
+
+            Blob seriesBlob = new SerialBlob(byteArray);
+
+            preparedStatement.setBlob(8, seriesBlob);
+            preparedStatement.executeUpdate();
+
         } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(1);
-        } catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
