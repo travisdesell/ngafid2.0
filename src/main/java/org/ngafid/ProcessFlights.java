@@ -16,15 +16,6 @@ import java.util.zip.ZipFile;
 
 import org.ngafid.flights.MalformedFlightFileException;
 
-import org.ngafid.airframes.Airframe;
-import org.ngafid.airframes.C172;
-import org.ngafid.airframes.C182;
-import org.ngafid.airframes.PA28;
-import org.ngafid.airframes.PA44;
-import org.ngafid.airframes.SR20;
-
-import org.ngafid.events.Event;
-
 import org.ngafid.flights.Flight;
 
 public class ProcessFlights {
@@ -91,7 +82,7 @@ public class ProcessFlights {
             Flight flight = new Flight(filename);
             flight.calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
             flight.calculateAirportProximity("Latitude", "Longitude");
-            flight.calculateEvents();
+            flight.calculateStartEndTime("Lcl Date", "Lcl Time");
 
             flight.printValues(new String[]{
                 "Latitude",
@@ -135,18 +126,12 @@ public class ProcessFlights {
                     Flight flight = new Flight(entry.getName(), stream);
 
                     if (connection != null) {
-                        if (flight.getNumberRows() > 100) {
-                            flight.updateDatabase(connection, 1, 1, 1);
-                        }
+                        flight.updateDatabase(connection, 1, 1, 1);
                     }
                 } catch (IOException e) {
                     System.err.println("ERROR: processing ZipEntry '" + name + "' from zip file: '" + zipFile.getName() + "'");
                     e.printStackTrace();
                     System.exit(1);
-                } catch (MalformedFlightFileException e) {
-                    System.err.println("Could not parse file '" + name + "' from zip file: '" + zipFile.getName() + "'");
-                    e.printStackTrace();
-                    //System.exit(1);
                 }
             }
         }
@@ -188,79 +173,5 @@ public class ProcessFlights {
             System.err.println("processing zip file!");
             processZipFile(new ZipFile(filename));
         }
-
-        System.exit(1);
-        ArrayList<Event> events;
-
-        Airframe airframe = null;
-
-        if (filename.contains("C172")) {
-            System.out.println("Cessna 172 filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new C172(filename);
-
-        } else if (filename.contains("C182")) {
-            System.out.println("C182 filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new C182(filename);
-
-        } else if (filename.contains("PA28")) {
-            System.out.println("PA28 filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new PA28(filename);
-
-        } else if (filename.contains("PA44")) {
-            System.out.println("PA44 filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new PA44(filename);
-        } else if (filename.contains("SR20")) {
-            System.out.println("SR20 filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new SR20(filename);
-
-        } else {
-            System.out.println("Generic filetype detected!");
-            System.out.println();
-            System.out.println();
-
-            airframe = new Airframe(arguments[0]);
-        }
-
-        airframe.calculateAGL(/*altitude MSL column*/ 8, /*latitude column*/ 4, /*longitude column*/ 5);
-        airframe.calculateAirportProximity(/*latitude column*/ 4, /*longitude column*/ 5);
-
-        airframe.printInformation();
-        airframe.printValues(new String[]{
-            "Latitude",
-            "Longitude",
-            "Pitch",
-            "Roll",
-            "AltAGL",
-            "NearestAirport",
-            "AirportDistance",
-            "NearestRunway",
-            "RunwayDistance"
-        });
-
-        events = airframe.getEvents();
-
-        System.out.println();
-        System.out.println();
-        System.out.println("ALL EVENTS:");
-        for (int i = 0; i < events.size(); i++) {
-            System.out.println( events.get(i).toString() );
-        }
-
     }
-
 }

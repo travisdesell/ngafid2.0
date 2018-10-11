@@ -43,6 +43,7 @@ function load_main() {
 }
 
 $(document).ready(function() {
+    console.log("document ready!");
 
     load_navbar();
     load_main();

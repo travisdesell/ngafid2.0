@@ -77,13 +77,48 @@ class MainContent extends React.Component {
                 </div>
                 <FlightsCard name={"Flights"} hidden={activeName != "Flights"} />
                 <ProcessingQueueCard name={"Processing Queue"} hidden={activeName != "Processing Queue"} />
-                <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} />
+                <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} uploads={this.props.uploads} />
             </div>
         );
     }
 }
 
-var mainContent = ReactDOM.render(
-    <MainContent activeName="Uploads"/>,
-    document.querySelector('#main')
-);
+
+$(document).ready(function() {
+    console.log("document ready!");
+
+    var submission_data = {
+        request : "GET_UPLOADS",
+        id_token : "TEST_ID_TOKEN",
+        //id_token : id_token,
+        user_id : 1
+        //user_id : user_id
+    };   
+
+    $.ajax({
+        type: 'POST',
+        url: './request.php',
+        data : submission_data,
+        dataType : 'json',
+        success : function(response) {
+            console.log("received response: ");
+            console.log(response);
+
+            for (var i = 0; i < response.uploads.length; i++) {
+                if (response.uploads[i].status == "UPLOADING") {
+                    response.uploads[i].status = "UPLOAD INCOMPLETE";
+                }
+            }
+
+            var mainContent = ReactDOM.render(
+                <MainContent activeName="Uploads" uploads={response.uploads}/>,
+                document.querySelector('#main')
+            );
+        },   
+        error : function(jqXHR, textStatus, errorThrown) {
+            display_error_modal("Error Loading Uploads", errorThrown);
+        },   
+        async: true 
+    });  
+
+});
