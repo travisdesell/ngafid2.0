@@ -197,6 +197,7 @@ public class DoubleTimeSeries {
 
             preparedStatement.setBlob(8, seriesBlob);
             preparedStatement.executeUpdate();
+            preparedStatement.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
