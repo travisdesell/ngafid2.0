@@ -4,9 +4,14 @@ import java.io.BufferedReader;
 import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
 
 
 import java.util.ArrayList;
@@ -14,7 +19,8 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.flights.MalformedFlightFileException;
+import org.ngafid.flights.FlightAlreadyExistsException;
+import org.ngafid.flights.FatalFlightFileException;
 
 import org.ngafid.flights.Flight;
 
@@ -77,101 +83,150 @@ public class ProcessFlights {
         }
     }
 
-    public static void processFlightFile(String filename) {
+    public static void main(String[] arguments) {
         try {
-            Flight flight = new Flight(filename);
-            flight.calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
-            flight.calculateAirportProximity("Latitude", "Longitude");
-            flight.calculateStartEndTime("Lcl Date", "Lcl Time");
+            PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
+            uploadsPreparedStatement.setString(1, "UPLOADED");
+            ResultSet resultSet = uploadsPreparedStatement.executeQuery();
 
-            flight.printValues(new String[]{
-                "Latitude",
-                    "Longitude",
-                    "AltAGL",
-                    "NearestAirport",
-                    "AirportDistance",
-                    "NearestRunway",
-                    "RunwayDistance"
-            });
-        } catch (MalformedFlightFileException e) {
-            System.err.println("Could not parse flight file '" + filename + "'");
-            System.err.println(e);
+            while (resultSet.next()) {
+                ArrayList<UploadException> flightErrors = new ArrayList<UploadException>();
+
+                int uploadId = resultSet.getInt(1);
+                int uploaderId = resultSet.getInt(2);
+                int fleetId = resultSet.getInt(3);
+                String filename = resultSet.getString(4);
+
+                filename = "/ngafid/archives/" + fleetId + "/" + uploaderId + "/" + filename;
+                System.err.println("processing: '" + filename + "'");
+
+                String extension = filename.substring(filename.length() - 4);
+                System.err.println("extension: '" + extension + "'");
+
+                String status = "IMPORTED";
+
+                Exception uploadException = null;
+
+                int validFlights = 0;
+                int warningFlights = 0;
+                int errorFlights = 0;
+                if (extension.equals(".zip")) {
+                    try {
+                        System.err.println("processing zip file: '" + filename + "'");
+                        ZipFile zipFile = new ZipFile(filename);
+
+                        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+                        while (entries.hasMoreElements()) {
+                            ZipEntry entry = entries.nextElement();
+                            String name = entry.getName();
+
+                            if (entry.isDirectory()) {
+                                //System.err.println("SKIPPING: " + entry.getName());
+                                continue;
+                            }
+
+                            if (name.contains("__MACOSX")) {
+                                //System.err.println("SKIPPING: " + entry.getName());
+                                continue;
+                            }
+
+                            System.err.println("PROCESSING: " + name);
+
+                            if (entry.getName().contains(".csv")) {
+                                try {
+                                    InputStream stream = zipFile.getInputStream(entry);
+                                    Flight flight = new Flight(entry.getName(), stream, connection);
+
+                                    if (connection != null) {
+                                        flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                    }
+
+                                    if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                                    validFlights++;
+                                } catch (IOException e) {
+                                    System.err.println(e.getMessage());
+                                    flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                    errorFlights++;
+                                } catch (FatalFlightFileException e) {
+                                    System.err.println(e.getMessage());
+                                    flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                    errorFlights++;
+                                } catch (FlightAlreadyExistsException e) {
+                                    System.err.println(e.getMessage());
+                                    flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                    errorFlights++;
+                                }
+                            }
+                        }
+                    } catch (IOException e) {
+                        status = "ERROR";
+                        uploadException = e;
+                    }
+                } else {
+                    //insert an upload error for this upload
+                    status = "ERROR";
+                }
+
+                if (status == "ERROR") {
+                    PreparedStatement errorStatement = connection.prepareStatement("INSERT INTO upload_errors SET upload_id = ?, message = ?, stack_trace = ?");
+                    errorStatement.setInt(1, uploadId);
+                    errorStatement.setString(2, "Uploaded file was not a zip file.");
+
+                    if (uploadException != null) {
+                        StringWriter sw = new StringWriter();
+                        PrintWriter pw = new PrintWriter(sw);
+                        uploadException.printStackTrace(pw);
+                        String sStackTrace = sw.toString(); // stack trace as a string
+
+                        errorStatement.setString(3, sStackTrace);
+                    } else {
+                        errorStatement.setString(3, "");
+                    }
+
+                    errorStatement.executeUpdate();
+                    errorStatement.close();
+                }
+
+                //update upload in database, add upload exceptions if there are any
+                PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?");
+                updateStatement.setString(1, status);
+                updateStatement.setInt(2, validFlights);
+                updateStatement.setInt(3, warningFlights);
+                updateStatement.setInt(4, errorFlights);
+                updateStatement.setInt(5, uploadId);
+                updateStatement.executeUpdate();
+                updateStatement.close();
+
+                for (UploadException exception : flightErrors) {
+                    PreparedStatement exceptionStatement = connection.prepareStatement("INSERT INTO flight_errors SET upload_id = ?, filename = ?, message = ?, stack_trace = ?");
+
+                    exceptionStatement.setInt(1, uploadId);
+                    exceptionStatement.setString(2, exception.getFilename());
+                    exceptionStatement.setString(3, exception.getMessage());
+
+                    StringWriter sw = new StringWriter();
+                    PrintWriter pw = new PrintWriter(sw);
+                    exception.printStackTrace(pw);
+                    String sStackTrace = sw.toString(); // stack trace as a string
+
+                    exceptionStatement.setString(4, sStackTrace);
+                    exceptionStatement.executeUpdate();
+
+                    exceptionStatement.close();
+                }
+
+            }
+            resultSet.close();
+            uploadsPreparedStatement.close();
+            connection.close();
+
+        } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
-    }
 
-    public static void processZipFile(ZipFile zipFile) {
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
-
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            String name = entry.getName();
-
-            if (entry.isDirectory()) {
-                //System.err.println("SKIPPING: " + entry.getName());
-                continue;
-            }
-
-            if (name.contains("__MACOSX")) {
-                //System.err.println("SKIPPING: " + entry.getName());
-                continue;
-            }
-
-            System.err.println("PROCESSING: " + name);
-
-            if (entry.getName().contains(".csv")) {
-                try {
-                    InputStream stream = zipFile.getInputStream(entry);
-                    Flight flight = new Flight(entry.getName(), stream);
-
-                    if (connection != null) {
-                        flight.updateDatabase(connection, 1, 1, 1);
-                    }
-                } catch (IOException e) {
-                    System.err.println("ERROR: processing ZipEntry '" + name + "' from zip file: '" + zipFile.getName() + "'");
-                    e.printStackTrace();
-                    System.exit(1);
-                }
-            }
-        }
-    }
-
-    public static void main(String[] arguments) throws Exception {
-        // We need to provide file path as the parameter:
-        // double backquote is to avoid compiler interpret words
-        // like \test as \t (ie. as a escape sequence)
-
-        System.out.println("Command Line Arguments:");
-        for (int i = 0; i < arguments.length; i++) {
-            System.out.println("arguments[" + i + "]: '" + arguments[i] + "'");
-        }
-
-        if (arguments.length != 1) {
-            System.err.println("Incorrect arguments, usage:");
-            System.err.println("java org.ngafid.ProcessFlights <flight csv/zip>");
-            System.exit(1);
-        }
-
-
-        //The first argument should be the directory we're going to parse
-        //For each subdirectory:
-        //  get the airframe type (C172, C182, PA28, etc.)
-        //  for each N-Number in that directory:
-        //      for each flight in that directory:
-        //          create the appropriate airframe object (C172 for C172s)
-        //          get events
-        //          insert the events and flight information into the database
-
-        String filename = arguments[0];
-        String extension = filename.substring(filename.length() - 4);
-        System.err.println("extension: '" + extension + "'");
-        if (extension.equals(".csv")) {
-            System.err.println("processing flight file!");
-            processFlightFile(filename);
-        } else if (extension.equals(".zip")) {
-            System.err.println("processing zip file!");
-            processZipFile(new ZipFile(filename));
-        }
+        System.err.println("finished!");
     }
 }

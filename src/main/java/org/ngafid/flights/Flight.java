@@ -43,12 +43,13 @@ public class Flight {
 
     private String filename;
     private String airframeType;
+    private String tailNumber;
     private String md5Hash;
     private String startDateTime;
     private String endDateTime;
 
     private String status;
-    private ArrayList<Exception> exceptions = new ArrayList<Exception>();
+    private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
@@ -60,6 +61,10 @@ public class Flight {
 
     public int getNumberRows() {
         return numberRows;
+    }
+
+    public String getStatus() {
+        return status;
     }
 
     private void setMD5Hash(InputStream inputStream) {
@@ -76,7 +81,7 @@ public class Flight {
             System.exit(1);
         }
 
-        System.err.println("MD5 HASH: '" + md5Hash + "'");
+        //System.err.println("MD5 HASH: '" + md5Hash + "'");
     }
 
     public void calculateStartEndTime(String dateColumnName, String timeColumnName) throws MalformedFlightFileException {
@@ -109,7 +114,7 @@ public class Flight {
         endDateTime = endDate + " " + endTime;
     }
 
-    private void initialize(InputStream inputStream) throws MalformedFlightFileException, IOException {
+    private void initialize(InputStream inputStream) throws FatalFlightFileException, IOException {
         numberRows = 0;
         ArrayList<ArrayList<String>> csvValues;
 
@@ -120,7 +125,7 @@ public class Flight {
 
         //file information -- this is the first line
         fileInformation = bufferedReader.readLine();
-        if (fileInformation.charAt(0) != '#') throw new MalformedFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
+        if (fileInformation.charAt(0) != '#') throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
 
         String[] infoParts = fileInformation.split(",");
         airframeType = null;
@@ -140,16 +145,16 @@ public class Flight {
                 }
             }
         } catch (Exception e) {
-            throw new MalformedFlightFileException("Flight information line was not properly formed with key value pairs.", e);
+            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
         }
 
-        if (airframeType == null)  throw new MalformedFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
+        if (airframeType == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
         System.err.println("detected airframe type: '" + airframeType);
 
 
         //the next line is the column data types
         String dataTypesLine = bufferedReader.readLine();
-        if (dataTypesLine.charAt(0) != '#') throw new MalformedFlightFileException("Second line of the flight file should begin with a '#' and contain column data types.");
+        if (dataTypesLine.charAt(0) != '#') throw new FatalFlightFileException("Second line of the flight file should begin with a '#' and contain column data types.");
         dataTypesLine = dataTypesLine.substring(1);
 
         dataTypes.addAll( Arrays.asList( dataTypesLine.split("\\,", -1) ) );
@@ -161,8 +166,7 @@ public class Flight {
         headers.replaceAll(String::trim);
 
         if (dataTypes.size() != headers.size()) {
-            System.err.println("ERROR: number of columns in the header line (" + headers.size() + ") != number of columns in the dataTypes line (" + dataTypes.size() + ")");
-            System.exit(1);
+            throw new FatalFlightFileException("Number of columns in the header line (" + headers.size() + ") != number of columns in the dataTypes line (" + dataTypes.size() + ")");
         }
 
         //initialize a sub-ArrayList for each column
@@ -190,8 +194,7 @@ public class Flight {
                     System.err.println("ERROR: Two line errors in a row means the flight file is corrupt.");
                     lastLineWarning = true;
                 } else {
-                    System.err.println("ERROR: A line in the middle of the flight file was missing values, which means the flight file is corrupt.");
-                    System.exit(1);
+                    throw new FatalFlightFileException("A line in the middle of the flight file was missing values, which means the flight file is corrupt.");
                 }
             } else {
                 if (values.length != headers.size()) {
@@ -267,24 +270,79 @@ public class Flight {
         }
     }
 
-    private void process(InputStream inputStream) throws IOException {
-        try {
-            initialize(inputStream);
+    private void process(InputStream inputStream) throws IOException, FatalFlightFileException {
+        initialize(inputStream);
 
-            //TODO: these may be different for different airframes/flight
-            //data recorders. depending on the airframe/flight data recorder 
-            //we should specify these.
-            calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
-            calculateAirportProximity("Latitude", "Longitude");
+        //TODO: these may be different for different airframes/flight
+        //data recorders. depending on the airframe/flight data recorder 
+        //we should specify these.
+
+        try {
             calculateStartEndTime("Lcl Date", "Lcl Time");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            calculateAirportProximity("Latitude", "Longitude");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
     }
 
-    public Flight(String zipEntryName, InputStream inputStream) {
+    private void checkExceptions() {
+        if (exceptions.size() > 0) {
+            status = "WARNING";
+            System.err.println("Flight produced " + exceptions.size() + " exceptions.");
+
+            /*
+            for (MalformedFlightFileException e : exceptions) {
+                e.printStackTrace();
+            }
+            */
+        } else {
+            status = "SUCCESS";
+        }
+    }
+
+    private void checkIfExists(Connection connection) throws FlightAlreadyExistsException {
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.upload_id = uploads.id AND flights.md5_hash = ?");
+            preparedStatement.setString(1, md5Hash);
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                String uploadFilename = resultSet.getString(2);
+                String flightsFilename = resultSet.getString(3);
+
+                preparedStatement.close();
+                resultSet.close();
+
+                throw new FlightAlreadyExistsException("Flight already exists in database, uploaded in zip file '" + uploadFilename + "' as '" + flightsFilename + "'");
+            }
+
+            preparedStatement.close();
+            resultSet.close();
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+    public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = zipEntryName;
-        
+
+        String[] parts = zipEntryName.split("/");
+        this.tailNumber = parts[0];
+        //System.out.println("tail number is: " + tailNumber);
+
         try {
             inputStream = getReusableInputStream(inputStream);
 
@@ -292,27 +350,27 @@ public class Flight {
             inputStream.mark(length);
             setMD5Hash(inputStream);
 
+            //check to see if a flight with this MD5 hash already exists in the database
+            checkIfExists(connection);
+
             inputStream.reset();
             process(inputStream);
 
+        } catch (FatalFlightFileException e) {
+            status = "WARNING";
+            throw e;
         } catch (IOException e) {
-            exceptions.add(e);
+            status = "WARNING";
+            throw e;
         }
 
-        if (exceptions.size() > 0) {
-            status = "ERROR";
-            System.err.println("Flight produced exceptions:");
-
-            for (Exception e : exceptions) {
-                e.printStackTrace();
-            }
-        } else {
-            status = "SUCCESS";
-        }
+        checkExceptions();
     }
 
-    public Flight(String filename) {
+    public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = filename;
+        String[] parts = filename.split("/");
+        this.tailNumber = parts[0];
 
         try {
             File file = new File(this.filename);
@@ -324,25 +382,23 @@ public class Flight {
             inputStream.mark(length);
             setMD5Hash(inputStream);
 
+            //check to see if a flight with this MD5 hash already exists in the database
+            checkIfExists(connection);
+
             inputStream.reset();
             process(inputStream);
-        } catch (FileNotFoundException e) {
-            System.err.println("ERROR: could not find flight file '" + filename + "'");
-            exceptions.add(e);
+            //        } catch (FileNotFoundException e) {
+            //            System.err.println("ERROR: could not find flight file '" + filename + "'");
+            //            exceptions.add(e);
+        } catch (FatalFlightFileException e) {
+            status = "WARNING";
+            throw e;
         } catch (IOException e) {
-            exceptions.add(e);
+            status = "WARNING";
+            throw e;
         }
 
-        if (exceptions.size() > 0) {
-            status = "ERROR";
-            System.err.println("Flight produced exceptions:");
-
-            for (Exception e : exceptions) {
-                e.printStackTrace();
-            }
-        } else {
-            status = "SUCCESS";
-        }
+        checkExceptions();
     }
 
     public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -350,14 +406,36 @@ public class Flight {
         headers.add(altitudeAGLColumnName);
         dataTypes.add("ft agl");
         
-
         DoubleTimeSeries altitudeMSLTS = doubleTimeSeries.get(altitudeMSLColumnName);
         DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
-        
-        if (altitudeMSLTS == null) throw new MalformedFlightFileException("Cannot calculate AGL, flight file did not have a '" + altitudeMSLColumnName + "' column.");
-        if (latitudeTS == null) throw new MalformedFlightFileException("Cannot calculate AGL, flight file did not have a '" + latitudeColumnName + "' column.");
-        if (longitudeTS == null) throw new MalformedFlightFileException("Cannot calculate AGL, flight file did not have a '" + longitudeColumnName + "' column.");
+
+        if (altitudeMSLTS == null || latitudeTS == null || longitudeTS == null) {
+            String message = "Cannot calcualte AGL, flight file had empty or missing ";
+
+            int count = 0;
+            if (altitudeMSLTS == null) {
+                message += "'" + altitudeMSLColumnName + "'";
+                count++;
+            }
+
+            if (latitudeTS == null) {
+                if (count > 0) message += ", ";
+                message += "'" + latitudeColumnName + "'";
+                count++;
+            }
+
+            if (longitudeTS == null) {
+                if (count > 0) message += " and ";
+                message += "'" + longitudeColumnName + "'";
+                count++;
+            }
+
+            message += " column";
+            if (count >= 2) message += "s";
+            message += ".";
+            throw new MalformedFlightFileException(message);
+        }
 
         DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName);
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
@@ -383,8 +461,33 @@ public class Flight {
         }
     }
 
-    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) {
+    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
         //calculates if the aircraft is within maxAirportDistance from an airport
+
+        DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
+        DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
+
+        if (latitudeTS == null || longitudeTS == null) {
+            String message = "Cannot calcualte airport and runway distances, flight file had empty or missing ";
+
+            int count = 0;
+            if (latitudeTS == null) {
+                message += "'" + latitudeColumnName + "'";
+                count++;
+            }
+
+            if (longitudeTS == null) {
+                if (count > 0) message += " and ";
+                message += "'" + longitudeColumnName + "'";
+                count++;
+            }
+
+            message += " column";
+            if (count >= 2) message += "s";
+            message += ".";
+            throw new MalformedFlightFileException(message);
+        }
+
         headers.add("NearestAirport");
         dataTypes.add("IATA Code");
 
@@ -407,8 +510,6 @@ public class Flight {
         DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries("RunwayDistance");
         doubleTimeSeries.put("RunwayDistance", runwayDistanceTS);
 
-        DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
-        DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
 
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
@@ -489,19 +590,20 @@ public class Flight {
         System.out.println();
     }
 
-    public void updateDatabase(Connection connection, int fleetId, int uploaderId, int zipId) {
+    public void updateDatabase(Connection connection, int uploadId, int uploaderId, int fleetId) {
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, start_time, end_time, filename, md5_hash, number_rows, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, tail_number, start_time, end_time, filename, md5_hash, number_rows, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
-            preparedStatement.setInt(3, zipId);
+            preparedStatement.setInt(3, uploadId);
             preparedStatement.setString(4, airframeType);
-            preparedStatement.setString(5, startDateTime);
-            preparedStatement.setString(6, endDateTime);
-            preparedStatement.setString(7, filename);
-            preparedStatement.setString(8, md5Hash);
-            preparedStatement.setInt(9, numberRows);
-            preparedStatement.setString(10, status);
+            preparedStatement.setString(5, tailNumber);
+            preparedStatement.setString(6, startDateTime);
+            preparedStatement.setString(7, endDateTime);
+            preparedStatement.setString(8, filename);
+            preparedStatement.setString(9, md5Hash);
+            preparedStatement.setInt(10, numberRows);
+            preparedStatement.setString(11, status);
             preparedStatement.executeUpdate();
 
             System.out.println(preparedStatement);
@@ -519,7 +621,7 @@ public class Flight {
                 }
 
                 for (Exception exception : exceptions) {
-                    PreparedStatement exceptionPreparedStatement = connection.prepareStatement("INSERT INTO flight_exceptions (flight_id, message, stack_trace) VALUES (?, ?, ?)");
+                    PreparedStatement exceptionPreparedStatement = connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message, stack_trace) VALUES (?, ?, ?)");
                     exceptionPreparedStatement.setInt(1, flightId);
                     exceptionPreparedStatement.setString(2, exception.getMessage());
 
@@ -537,11 +639,12 @@ public class Flight {
                 System.exit(1);
             }
 
+            resultSet.close();
+            preparedStatement.close();
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
-
     }
 
 }

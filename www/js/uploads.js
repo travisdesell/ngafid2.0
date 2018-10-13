@@ -71,7 +71,12 @@ class Upload extends React.Component {
             statusText = "Error";
             progressBarClasses += " bg-danger";
             statusClasses += " border-danger text-danger";
+        } else if (status == "IMPORTED") {
+            statusText = "Imported";
+            progressBarClasses += " bg-success";
+            statusClasses += " border-success text-success";
         }
+
 
 
         return (

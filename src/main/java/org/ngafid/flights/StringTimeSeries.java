@@ -109,6 +109,7 @@ public class StringTimeSeries {
 
             preparedStatement.setBlob(5, seriesBlob);
             preparedStatement.executeUpdate();
+            preparedStatement.close();
 
         } catch (SQLException e) {
             e.printStackTrace();
