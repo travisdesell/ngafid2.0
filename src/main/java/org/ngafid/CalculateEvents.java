@@ -20,6 +20,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 
 import org.ngafid.events2.PitchEvent;
+import org.ngafid.events2.RollEvent;
+import org.ngafid.events2.LateralAccelerationEvent;
 
 import org.ngafid.flights.Flight;
 
@@ -88,5 +90,7 @@ public class CalculateEvents {
         // like \test as \t (ie. as a escape sequence)
 
         PitchEvent.calculateEvents(connection);
+        RollEvent.calculateEvents(connection);
+        LateralAccelerationEvent.calculateEvents(connection);
     }
 }
