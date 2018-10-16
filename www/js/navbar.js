@@ -55,26 +55,8 @@ class Navbar extends React.Component {
         return main_content.state.mapVisible;
     }
 
-    showMap() {
-        if ( !$("#map-toggle-button").hasClass("active") ) {
-            $("#map-toggle-button").addClass("active");
-            $("#map-toggle-button").attr("aria-pressed", true);
-        }
-
-        main_content.showMap();
-    }
-
     toggleMap() {
         main_content.toggleMap();
-    }
-
-    showPlot() {
-        if ( !$("#plot-toggle-button").hasClass("active") ) {
-            $("#plot-toggle-button").addClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", true);
-        }
-
-        main_content.showPlot();
     }
 
     togglePlot() {
