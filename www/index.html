@@ -15,10 +15,19 @@
     <!-- OpenLayers -->
     <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
 
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
 </head>
 <body>
     <div id="navbar"></div>
-    <div id="map" class="map" style="width:100%; height:50%;"></div>
+
+    <div class='row' style="width:100%; height:50%;">
+        <div id="map" class="map" style="width:50%;">
+        </div> <div id="div1" style="width:50%;"></div>
+    </div>
+
+
     <div id="main"></div>
 
     <!-- We will put our React component inside this div. -->

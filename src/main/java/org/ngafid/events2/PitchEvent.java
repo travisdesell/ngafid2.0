@@ -17,7 +17,7 @@ public class PitchEvent {
             double maxValue = 30.0;
 
             //grab the flight IDs that can have a pitch event
-            String flightsQuery = "SELECT flights.id FROM flights WHERE EXISTS (SELECT double_series.id FROM double_series WHERE flights.id = double_series.flight_id AND (double_series.name = ? AND (double_series.min <= ? OR double_series.max >= ?)))";
+            String flightsQuery = "SELECT flights.id, flights.airframe_type FROM flights WHERE EXISTS (SELECT double_series.id FROM double_series WHERE flights.id = double_series.flight_id AND (double_series.name = ? AND (double_series.min <= ? OR double_series.max >= ?)))";
             PreparedStatement flightsPS = connection.prepareStatement(flightsQuery);
 
             flightsPS.setString(1, columnName);
@@ -29,6 +29,21 @@ public class PitchEvent {
             while (flightsRS.next()) {
                 //get the ID from each flight that had a pitch event
                 int flightId = flightsRS.getInt(1);
+                String airframeType = flightsRS.getString(2);
+
+                if (airframeType.equals("PA-44-180")) {
+                    //do exceedence for PA-44
+
+                } else if (airframeType.equals("PA-28-181")) {
+                    //do exceedence for PA-28
+
+                } else if (airframeType.equals("Cessna 172S")) {
+                    //do exceedence for Cessna 172
+
+                } else {
+                    //do generic exceedence
+
+                }
 
                 //grab the pitch double_series for that flight
                 String seriesQuery = "SELECT id, flight_id, name, length, valid_length, min, avg, max, `values` FROM double_series WHERE flight_id = ? AND name = ?";

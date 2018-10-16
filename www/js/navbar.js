@@ -68,6 +68,19 @@ class Navbar extends React.Component {
         main_content.toggleMap();
     }
 
+    showPlot() {
+        if ( !$("#plot-toggle-button").hasClass("active") ) {
+            $("#plot-toggle-button").addClass("active");
+            $("#plot-toggle-button").attr("aria-pressed", true);
+        }
+
+        main_content.showPlot();
+    }
+
+    togglePlot() {
+        main_content.togglePlot();
+    }
+
     show(newCard) {
         main_content.changeCard(newCard);
 
@@ -106,7 +119,7 @@ class Navbar extends React.Component {
                         <i className="fa fa-globe p-1"></i>
                     </button>
 
-                    <button className={buttonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleChart()}>
+                    <button id="plot-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the plot." aria-pressed="true" style={buttonStyle} onClick={() => this.togglePlot()}>
                         <i className="fa fa-area-chart p-1"></i>
                     </button>
 
