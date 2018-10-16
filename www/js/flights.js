@@ -36,9 +36,7 @@ class Flight extends React.Component {
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
-        if (!navbar.isMapVisible()) {
-            navbar.showMap();
-        }
+        main_content.showMap();
 
         if (!this.state.mapLoaded) {
             this.state.mapLoaded = true;
