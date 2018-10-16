@@ -20,6 +20,13 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 
 import org.ngafid.events2.PitchEvent;
+import org.ngafid.events2.RollEvent;
+import org.ngafid.events2.LateralAccelerationEvent;
+import org.ngafid.events2.LongitudinalAccelerationEvent;
+import org.ngafid.events2.VerticalAccelerationEvent;
+import org.ngafid.events2.VsiOnFinalEvent;
+import org.ngafid.events2.c172Cessna.C172HighAltitudeEvent;
+import org.ngafid.events2.c182Cessna.C182HighAltitudeEvent;
 
 import org.ngafid.flights.Flight;
 
@@ -88,5 +95,12 @@ public class CalculateEvents {
         // like \test as \t (ie. as a escape sequence)
 
         PitchEvent.calculateEvents(connection);
+        RollEvent.calculateEvents(connection);
+        LateralAccelerationEvent.calculateEvents(connection);
+        LongitudinalAccelerationEvent.calculateEvents(connection);
+        VerticalAccelerationEvent.calculateEvents(connection);
+        VsiOnFinalEvent.calculateEvents(connection);
+        C172HighAltitudeEvent.calculateEvents(connection);
+        C182HighAltitudeEvent.calculateEvents(connection);
     }
 }
