@@ -1,22 +1,6 @@
 'use strict';
 
 
-
-class FlightsCard extends React.Component {
-    render() {
-        let hidden = this.props.hidden;
-
-        return (
-            <div className="card-body" hidden={hidden}>
-                <h5 className="card-title">Flights Go Here!</h5>
-                <p className="card-text">With supporting text below as a natural lead-in to additional content.</p>
-                <a href="#" className="btn btn-primary">Go somewhere</a>
-            </div>
-        );
-    }
-}
-
-
 class TabHeader extends React.Component {
     render() {
         const classNames = (this.props.activeName == this.props.name) ? "nav-link active" : "nav-link";
@@ -31,13 +15,44 @@ class TabHeader extends React.Component {
     }
 }
 
+var main_content = null;
+
 class MainContent extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            activeName : props.activeName
+            activeName : props.activeName,
+            mapVisible : true
         };
+
+        main_content = this;
+    }
+
+    showMap() {
+        this.state = {
+            activeName : this.state.activeName,
+            mapVisible : true
+        };
+        this.setState(this.state);
+        $("#map").show();
+    }
+
+    hideMap() {
+        this.state = {
+            activeName : this.state.activeName,
+            mapVisible : false
+        };
+        this.setState(this.state);
+        $("#map").hide();
+    }
+
+    toggleMap() {
+        if (this.state.mapVisible) {
+            this.hideMap();
+        } else {
+            this.showMap();
+        }
     }
 
     changeCard(newName) {
@@ -51,16 +66,22 @@ class MainContent extends React.Component {
     render() {
         let activeName = this.state.activeName;
 
+        let style = null;
+        if (this.state.mapVisible) {
+            style = { 
+                overflow : "scroll",
+                height : "calc(50% - 56px)"
+            };
+        } else {
+            style = { 
+                overflow : "scroll",
+                height : "calc(100% - 56px)"
+            };
+        }
+
         return (
-            <div id="MainCards">
-                <div className="card-header">
-                    <ul className="nav nav-tabs card-header-tabs">
-                        <TabHeader name={"Flights"} activeName={activeName} onClick={() => this.changeCard("Flights")} />
-                        <TabHeader name={"Imports"} activeName={activeName} onClick={() => this.changeCard("Imports")} />
-                        <TabHeader name={"Uploads"} activeName={activeName} onClick={() => this.changeCard("Uploads")} />
-                    </ul>
-                </div>
-                <FlightsCard name={"Flights"} hidden={activeName != "Flights"} />
+            <div id="MainCards" style={style}>
+                <FlightsCard name={"Flights"} hidden={activeName != "Flights"} flights={this.props.flights} />
                 <ImportsCard name={"Imports"} hidden={activeName != "Imports"} imports={this.props.imports} />
                 <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} uploads={this.props.uploads} />
             </div>
@@ -70,8 +91,6 @@ class MainContent extends React.Component {
 
 
 $(document).ready(function() {
-    console.log("document ready!");
-
     var submission_data = {
         request : "GET_MAIN_CONTENT",
         id_token : "TEST_ID_TOKEN",
@@ -96,7 +115,7 @@ $(document).ready(function() {
             }
 
             var mainContent = ReactDOM.render(
-                <MainContent activeName="Uploads" uploads={response.uploads} imports={response.imports} />,
+                <MainContent activeName="Flights" uploads={response.uploads} imports={response.imports} flights={response.flights}/>,
                 document.querySelector('#main')
             );
         },   
@@ -105,5 +124,28 @@ $(document).ready(function() {
         },   
         async: true 
     });  
+
+	/*
+    $(window).scroll(function() {
+
+		var end = $("#MainCards").offset().top + $("#MainCards").height();
+		var viewEnd = $(window).scrollTop() + $(window).height(); 
+		var distance = end - viewEnd; 
+
+        console.log("scrolling, top: " + $(window).scrollTop() + ", document height: " + $(document).height() + ", window height: " + $(window).height());
+		console.log("end: " + end + ", viewEnd: " + viewEnd);
+
+		if (distance < 300) {
+            $("#load-more").html("Load More");
+            console.log("loading more!");
+		}
+
+        if ($(window).scrollTop() == $(document).height() - $(window).height()) {
+            // ajax call get data from server and append to the div
+            $("#load-more").html("Load More");
+            console.log("loading more!");
+        }
+    });
+	*/
 
 });

@@ -8,15 +8,11 @@ class Upload extends React.Component {
     }
 
     componentDidMount() {
-        console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
+        //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
     }
 
     render() {
         let uploadInfo = this.props.uploadInfo;
-
-        console.log("rendering upload for filename: '" + uploadInfo.filename + "'");
-        console.log(this.props);
-
 
         let progressSize = uploadInfo.progressSize;
         let totalSize = uploadInfo.totalSize;
@@ -44,7 +40,7 @@ class Upload extends React.Component {
         };
 
         const fixedFlexStyle3 = {
-            flex : "0 0 10em"
+            flex : "0 0 18em"
         };
 
 
@@ -68,16 +64,31 @@ class Upload extends React.Component {
             progressBarClasses += " bg-warning";
             statusClasses += " border-warning text-warning";
         } else if (status == "ERROR") {
-            statusText = "Error";
+            statusText = "Import Failed";
             progressBarClasses += " bg-danger";
             statusClasses += " border-danger text-danger";
         } else if (status == "IMPORTED") {
-            statusText = "Imported";
-            progressBarClasses += " bg-success";
-            statusClasses += " border-success text-success";
+            if (uploadInfo.n_error_flights == 0 && uploadInfo.n_warning_flights == 0) {
+                statusText = "Imported";
+                progressBarClasses += " bg-success";
+                statusClasses += " border-success text-success";
+
+            } else if (uploadInfo.n_error_flights != 0 && uploadInfo.n_error_flights != 0) {
+                statusText = "Imported With Errors and Warnings";
+                progressBarClasses += " bg-danger";
+                statusClasses += " border-danger text-danger ";
+
+            } else if (uploadInfo.n_error_flights != 0) {
+                statusText = "Imported With Errors";
+                progressBarClasses += " bg-danger";
+                statusClasses += " border-danger text-danger ";
+
+            } else if (uploadInfo.n_warning_flights != 0) {
+                statusText = "Imported With Warnings";
+                progressBarClasses += " bg-warning";
+                statusClasses += " border-warning text-warning ";
+            }
         }
-
-
 
         return (
             <div className="m-1">
@@ -102,9 +113,6 @@ function get_upload_identifier(filename, size) {
 class UploadsCard extends React.Component {
     constructor(props) {
         super(props);
-
-        console.log("props:");
-        console.log(props);
 
         let uploads = props.uploads;
         if (uploads == undefined) uploads = [];

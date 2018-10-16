@@ -19,13 +19,20 @@ class NavLink extends React.Component {
     }
 }
 
+
+var navbar = null;
 class Navbar extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            loggedIn : this.props.loggedIn
+            loggedIn : this.props.loggedIn,
+            flightsActive : true,
+            importsActive : false,
+            uploadsActive : false
         };
+
+        navbar = this;
     }
 
     logOut() {
@@ -44,13 +51,72 @@ class Navbar extends React.Component {
         });
     }
 
+    isMapVisible() {
+        return main_content.state.mapVisible;
+    }
+
+    showMap() {
+        if ( !$("#map-toggle-button").hasClass("active") ) {
+            $("#map-toggle-button").addClass("active");
+            $("#map-toggle-button").attr("aria-pressed", true);
+        }
+
+        main_content.showMap();
+    }
+
+    toggleMap() {
+        main_content.toggleMap();
+    }
+
+    show(newCard) {
+        main_content.changeCard(newCard);
+
+        let flightsActive = false;
+        let importsActive = false;
+        let uploadsActive = false;
+
+        if (newCard === "Flights") flightsActive = true;
+        else if (newCard === "Imports") importsActive = true;
+        else if (newCard === "Uploads") uploadsActive = true;
+
+        this.state = {
+            loggedIn : this.props.loggedIn,
+            flightsActive : flightsActive,
+            importsActive : importsActive,
+            uploadsActive : uploadsActive 
+        }
+
+        this.setState(this.state);
+     }
+
     renderLoggedIn() {
+
+        let flightsActive = this.state.flightsActive;
+        let importsActive = this.state.importsActive;
+        let uploadsActive = this.state.uploadsActive;
+
+        let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        const buttonStyle = { };
+
         return (
             <div className="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul className="navbar-nav mr-auto">
-                    <NavLink name={"Home"} active={true} />
-                    <NavLink name={"Trends"} />
-                    <NavLink name={"Import"} />
+
+                    <button id="map-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the map." aria-pressed="true" style={buttonStyle} onClick={() => this.toggleMap()}>
+                        <i className="fa fa-globe p-1"></i>
+                    </button>
+
+                    <button className={buttonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleChart()}>
+                        <i className="fa fa-area-chart p-1"></i>
+                    </button>
+
+
+                </ul>
+
+                <ul className="navbar-nav">
+                    <NavLink name={"Flights"} onClick={() => this.show("Flights")} active={flightsActive}/>
+                    <NavLink name={"Imports"} onClick={() => this.show("Imports")} active={importsActive}/>
+                    <NavLink name={"Uploads"} onClick={() => this.show("Uploads")} active={uploadsActive}/>
 
                     <li className="nav-item dropdown">
                         <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -61,9 +127,7 @@ class Navbar extends React.Component {
                             <a className="dropdown-item" href="javascript:void(0)">Self Defined Glide Path</a>
                         </div>
                     </li>
-                </ul>
 
-                <ul className="navbar-nav">
                     <NavLink name={"Logout"} onClick={() => this.logOut()}/>
                 </ul>
             </div>
@@ -106,7 +170,7 @@ class Navbar extends React.Component {
 }
 
 var navbar = ReactDOM.render(
-    <Navbar loggedIn={false} />,
+    <Navbar loggedIn={true} />,
     document.querySelector('#navbar')
 );
 

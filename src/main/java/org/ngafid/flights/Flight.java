@@ -48,6 +48,13 @@ public class Flight {
     private String startDateTime;
     private String endDateTime;
 
+    //these will be set to true if the flight has
+    //latitude/longitude coordinates and can therefore
+    //calculate AGL, airport and runway proximity
+    //hasAGL also requires an altitudeMSL column
+    private boolean hasCoords = false;
+    private boolean hasAGL = false;
+
     private String status;
     private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
@@ -58,6 +65,8 @@ public class Flight {
 
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
+
+    private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
     public int getNumberRows() {
         return numberRows;
@@ -294,6 +303,8 @@ public class Flight {
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
+
+        calculateItinerary();
     }
 
     private void checkExceptions() {
@@ -411,7 +422,7 @@ public class Flight {
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
 
         if (altitudeMSLTS == null || latitudeTS == null || longitudeTS == null) {
-            String message = "Cannot calcualte AGL, flight file had empty or missing ";
+            String message = "Cannot calculate AGL, flight file had empty or missing ";
 
             int count = 0;
             if (altitudeMSLTS == null) {
@@ -434,8 +445,14 @@ public class Flight {
             message += " column";
             if (count >= 2) message += "s";
             message += ".";
+
+            //should be initialized to false, but lets make sure
+            hasCoords = false;
+            hasAGL = false;
             throw new MalformedFlightFileException(message);
         }
+        hasCoords = true;
+        hasAGL = true;
 
         DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName);
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
@@ -468,7 +485,7 @@ public class Flight {
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
 
         if (latitudeTS == null || longitudeTS == null) {
-            String message = "Cannot calcualte airport and runway distances, flight file had empty or missing ";
+            String message = "Cannot calculate airport and runway distances, flight file had empty or missing ";
 
             int count = 0;
             if (latitudeTS == null) {
@@ -485,8 +502,12 @@ public class Flight {
             message += " column";
             if (count >= 2) message += "s";
             message += ".";
+
+            //should be initialized to false, but lets make sure
+            hasCoords = false;
             throw new MalformedFlightFileException(message);
         }
+        hasCoords = true;
 
         headers.add("NearestAirport");
         dataTypes.add("IATA Code");
@@ -544,6 +565,65 @@ public class Flight {
         }
     }
 
+    public void calculateItinerary() {
+        //cannot calculate the itinerary without airport/runway calculate, which requires
+        //lat and longs
+        if (!hasCoords) return;
+
+        StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
+        DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
+        DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
+
+        StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
+        DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+
+        itinerary.clear();
+
+        Itinerary currentItinerary = null;
+        for (int i = 1; i < nearestAirportTS.size(); i++) {
+            String airport = nearestAirportTS.get(i);
+            String runway = nearestRunwayTS.get(i);
+
+            if (airport != null && !airport.equals("")) {
+                //We've gotten close to an airport, so create a stop if there
+                //isn't one.  If there is one, update the runway being visited.
+                //If the airport is a new airport (this shouldn't happen really),
+                //then create a new stop.
+                if (currentItinerary == null) {
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                } else if (airport.equals(currentItinerary.getAirport())) {
+                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                } else {
+                    currentItinerary.selectBestRunway();
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                }
+            } else {
+                //aiport is null, so if there was an airport being visited
+                //then we can determine it's runway and add it to the itinerary
+                if (currentItinerary != null) {
+                    currentItinerary.selectBestRunway();
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                }
+
+                //set the currentItinerary to null until we approach another
+                //airport
+                currentItinerary = null;
+            }
+        }
+
+        //dont forget to add the last stop in the itinerary if it wasn't set to null
+        if (currentItinerary != null) {
+            currentItinerary.selectBestRunway();
+            if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+        }
+
+        System.err.println("Itinerary:");
+        for (int i = 0; i < itinerary.size(); i++) {
+            System.err.println(itinerary.get(i));
+        }
+    }
+
     public void printValues(String[] requestedHeaders) {
         System.out.println("Values:");
 
@@ -592,7 +672,7 @@ public class Flight {
 
     public void updateDatabase(Connection connection, int uploadId, int uploaderId, int fleetId) {
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, tail_number, start_time, end_time, filename, md5_hash, number_rows, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, tail_number, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
             preparedStatement.setInt(3, uploadId);
@@ -604,6 +684,8 @@ public class Flight {
             preparedStatement.setString(9, md5Hash);
             preparedStatement.setInt(10, numberRows);
             preparedStatement.setString(11, status);
+            preparedStatement.setBoolean(12, hasCoords);
+            preparedStatement.setBoolean(13, hasAGL);
             preparedStatement.executeUpdate();
 
             System.out.println(preparedStatement);
@@ -633,6 +715,10 @@ public class Flight {
                     exceptionPreparedStatement.setString(3, sStackTrace);
                     exceptionPreparedStatement.executeUpdate();
 
+                }
+
+                for (int i = 0; i < itinerary.size(); i++) {
+                    itinerary.get(i).updateDatabase(connection, flightId, i);
                 }
             } else {
                 System.err.println("ERROR: insertion of flight to the database did not result in an id.  This should never happen.");
