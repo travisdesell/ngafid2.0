@@ -23,8 +23,8 @@ class MainContent extends React.Component {
 
         this.state = {
             activeName : props.activeName,
-            mapVisible : true,
-            plotVisible : true
+            mapVisible : false,
+            plotVisible : false 
         };
 
         main_content = this;
@@ -202,6 +202,7 @@ $(document).ready(function() {
         //user_id : user_id
     };   
 
+    /*
     var trace1 = { 
             x: [1, 2, 3, 4], 
             y: [10, 15, 13, 17], 
@@ -214,18 +215,24 @@ $(document).ready(function() {
     };
     var data = [trace1, trace2];
 
-    var layout1 = { 
-            yaxis: {rangemode: 'tozero',
-                        showline: true,
-                        zeroline: true}
-    };
-
     var layout2 = { 
             yaxis: {rangemode: 'tozero',
                         zeroline: true}
     };
 
     Plotly.newPlot('plot', data, layout1);
+    */
+
+    var layout1 = { 
+        yaxis: {
+            rangemode: 'tozero',
+            showline: true,
+            zeroline: true
+        }
+    };
+    layout1 = {};
+
+    Plotly.newPlot('plot', [], layout1);
 
 
     $.ajax({

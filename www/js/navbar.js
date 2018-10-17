@@ -97,11 +97,11 @@ class Navbar extends React.Component {
             <div className="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul className="navbar-nav mr-auto">
 
-                    <button id="map-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the map." aria-pressed="true" style={buttonStyle} onClick={() => this.toggleMap()}>
+                    <button id="map-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
                         <i className="fa fa-globe p-1"></i>
                     </button>
 
-                    <button id="plot-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the plot." aria-pressed="true" style={buttonStyle} onClick={() => this.togglePlot()}>
+                    <button id="plot-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
                         <i className="fa fa-area-chart p-1"></i>
                     </button>
 

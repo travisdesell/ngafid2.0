@@ -67,4 +67,35 @@ function get_coordinates($user_id, $flight_id) {
     return $response;
 }
 
+function get_double_series($user_id, $flight_id, $series_name) {
+    //TODO: check if user has access to this flight
+
+    $query = "SELECT * FROM double_series WHERE flight_id = $flight_id AND name = '$series_name'";
+    error_log($query);
+
+    $values = array();
+
+    $result = query_ngafid_db($query);
+    if (($row = $result->fetch_assoc()) != NULL) {
+        $values = $row['values'];
+        $values = unpack("E*", $values);
+    }
+
+    $values_fixed = array();
+    $length = count($values);
+    for ($i = 1; $i <= $length; $i++) {
+        if (is_nan($values[$i])) continue;
+
+        $values_fixed[] = $values[$i];
+    }
+
+
+    error_log(json_encode($values_fixed));
+
+    $response['values'] = $values_fixed;
+
+    return $response;
+}
+
+
 ?>
