@@ -12,17 +12,17 @@ public class C172HighCHTEvent {
 
     public static void calculateEvents(Connection connection) {
         try {
-            String columnName = "Pitch";
-            double minValue = -30.0;
-            double maxValue = 30.0;
+            String columnName = "E1 CHT1";
+            //double minValue = -30.0;
+            double maxValue = 500.0;
 
             //grab the flight IDs that can have a pitch event
-            String flightsQuery = "SELECT flights.id FROM flights WHERE EXISTS (SELECT double_series.id FROM double_series WHERE flights.id = double_series.flight_id AND (double_series.name = ? AND (double_series.min <= ? OR double_series.max >= ?)))";
+            String flightsQuery = "SELECT flights.id FROM flights WHERE EXISTS (SELECT double_series.id FROM double_series WHERE flights.id = double_series.flight_id AND (double_series.name = ? AND (double_series.max >= ?)))";
             PreparedStatement flightsPS = connection.prepareStatement(flightsQuery);
 
             flightsPS.setString(1, columnName);
-            flightsPS.setDouble(2, minValue);
-            flightsPS.setDouble(3, maxValue);
+            //flightsPS.setDouble(2, minValue);
+            flightsPS.setDouble(2, maxValue);
             System.out.println(flightsPS);
 
             ResultSet flightsRS = flightsPS.executeQuery();
@@ -48,7 +48,7 @@ public class C172HighCHTEvent {
                         double current = timeSeries.get(i);
                         if (Double.isNaN(current)) continue;
 
-                        if (current < minValue || current > maxValue) {
+                        if (current > maxValue) {
                             System.err.println(" C172 High CHT exceedence at entry: " + i);
                         }
                     }
