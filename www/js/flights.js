@@ -29,16 +29,110 @@ class Flight extends React.Component {
         this.state = {
             pathVisible : false,
             mapLoaded : false,
+            traceIndex : [],
+            traceVisibility : [],
             layer : null
         }
+    }
+
+    plotClicked() {
+        main_content.showPlot();
+
+        let seriesName = "AltMSL";
+        //check to see if we've already loaded this time series
+        if (!(seriesName in this.state.traceIndex)) {
+            var thisFlight = this;
+
+            var submission_data = {
+                request : "GET_DOUBLE_SERIES",
+                id_token : "TEST_ID_TOKEN",
+                //id_token : id_token,
+                //user_id : user_id
+                user_id : 1,
+                flight_id : this.props.flightInfo.id,
+                series_name : seriesName
+            };   
+
+            $.ajax({
+                type: 'POST',
+                url: './request.php',
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    var values = response.values;
+
+                    var counts = Array.from(new Array(values.length), (val,index)=>index+1 );
+                    var trace = {
+                        x : counts,
+                        y : values,
+                        mode : "lines",
+                        name : thisFlight.props.flightInfo.id + " - " + seriesName
+                    }
+
+                    //set the trace number for this series
+                    thisFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
+                    thisFlight.state.traceVisibility[seriesName] = true;
+                    thisFlight.setState(thisFlight.state);
+
+                    Plotly.addTraces('plot', [trace]);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    thisFlight.state.mapLoaded = false;
+                    thisFlight.setState(thisFlight.state);
+
+                    display_error_modal("Error Loading Flight Coordinates", errorThrown);
+                },   
+                async: true 
+            });  
+        } else {
+            //toggle visibility for this series
+            let visibility = !this.state.traceVisibility[seriesName];
+            this.state.traceVisibility[seriesName] = visibility;
+            this.setState(this.state);
+
+            console.log("toggled visibility to: " + visibility);
+
+            Plotly.restyle('plot', { visible: visibility }, [ this.state.traceIndex[seriesName] ])
+        }
+
+            /*
+        var trace3 = {
+            x: [1, 2, 3, 4, 5],
+            y: [11, 8, 1, 7, 13],
+            type: 'scatter',
+            yaxis: 'y2'
+        };
+        var data_update = [trace3];
+        var layout_update = {
+            title : "new title!"
+        }
+
+        console.log($("#plot"));
+        console.log($("#plot")[0].layout);
+        var layout = $("#plot")[0].layout;
+        layout.yaxis2 = {
+            title: 'yaxis2 title',
+            titlefont: {color: '#ff7f0e'},
+            tickfont: {color: '#ff7f0e'},
+            anchor: 'free',
+            overlaying: 'y',
+            side: 'left',
+            position: 0.15
+        };
+
+        Plotly.update('plot', $("#plot").data, layout);
+
+        Plotly.addTraces('plot', data_update);
+        */
     }
 
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
-        if (!navbar.isMapVisible()) {
-            navbar.showMap();
-        }
+        main_content.showMap();
 
         if (!this.state.mapLoaded) {
             this.state.mapLoaded = true;
@@ -196,7 +290,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
-                            <button className={buttonClasses} style={styleButton} onClick={() => this.chartClicked()}>
+                            <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 

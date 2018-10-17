@@ -55,26 +55,8 @@ class Navbar extends React.Component {
         return main_content.state.mapVisible;
     }
 
-    showMap() {
-        if ( !$("#map-toggle-button").hasClass("active") ) {
-            $("#map-toggle-button").addClass("active");
-            $("#map-toggle-button").attr("aria-pressed", true);
-        }
-
-        main_content.showMap();
-    }
-
     toggleMap() {
         main_content.toggleMap();
-    }
-
-    showPlot() {
-        if ( !$("#plot-toggle-button").hasClass("active") ) {
-            $("#plot-toggle-button").addClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", true);
-        }
-
-        main_content.showPlot();
     }
 
     togglePlot() {
@@ -115,11 +97,11 @@ class Navbar extends React.Component {
             <div className="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul className="navbar-nav mr-auto">
 
-                    <button id="map-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the map." aria-pressed="true" style={buttonStyle} onClick={() => this.toggleMap()}>
+                    <button id="map-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
                         <i className="fa fa-globe p-1"></i>
                     </button>
 
-                    <button id="plot-toggle-button" className={buttonClasses + " active"} data-toggle="button" title="Toggle the plot." aria-pressed="true" style={buttonStyle} onClick={() => this.togglePlot()}>
+                    <button id="plot-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
                         <i className="fa fa-area-chart p-1"></i>
                     </button>
 
