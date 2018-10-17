@@ -33,15 +33,27 @@ public class PitchEvent {
 
                 if (airframeType.equals("PA-44-180")) {
                     //do exceedence for PA-44
+                    System.out.println("PA44 filetype selected");
+                    System.out.println();
+                    System.out.println();
 
                 } else if (airframeType.equals("PA-28-181")) {
                     //do exceedence for PA-28
+                    System.out.println("PA28 filetype selected");
+                    System.out.println();
+                    System.out.println();
 
                 } else if (airframeType.equals("Cessna 172S")) {
                     //do exceedence for Cessna 172
+                     System.out.println("Cessna 172s filetype selected");
+                     System.out.println();
+                     System.out.println();
 
                 } else {
                     //do generic exceedence
+                     System.out.println("Generic filetype selected");
+                     System.out.println();
+                     System.out.println();
 
                 }
 
