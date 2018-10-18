@@ -57,4 +57,8 @@ public class Airport {
         return nearestRunway;
     }
 
+    public boolean hasRunways() {
+        return runways.size() > 0;
+    }
+
 }

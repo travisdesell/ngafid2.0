@@ -14,6 +14,7 @@ public class Airports {
 
     private static HashMap<String, ArrayList<Airport>> geoHashToAirport;
     private static HashMap<String, Airport> siteNumberToAirport;
+    private static HashMap<String, Airport> iataToAirport;
 
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
@@ -42,6 +43,7 @@ public class Airports {
 
         geoHashToAirport = new HashMap<String, ArrayList<Airport>>();
         siteNumberToAirport = new HashMap<String, Airport>();
+        iataToAirport = new HashMap<String, Airport>();
 
         int maxHashSize = 0;
         int numberAirports = 0;
@@ -78,6 +80,7 @@ public class Airports {
 
                 }
                 siteNumberToAirport.put(airport.siteNumber, airport);
+                iataToAirport.put(airport.iataCode, airport);
 
                 if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
                 //System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
@@ -190,4 +193,9 @@ public class Airports {
 
         return nearestAirport;
     }
+
+    public static boolean hasRunwayInfo(String iataCode) {
+        return iataToAirport.get(iataCode).hasRunways();
+    }
+
 }
