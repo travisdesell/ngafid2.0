@@ -54,17 +54,35 @@ function get_coordinates($user_id, $flight_id) {
 
     $coordinates = array();
     $length = count($latitudes);
+    $nan_offset = -1;
     for ($i = 1; $i <= $length; $i++) {
-        if (is_nan($latitudes[$i]) || is_nan($longitudes[$i])) continue;
-
-        $coordinates[] = [$longitudes[$i], $latitudes[$i]];
+        if (is_nan($latitudes[$i]) || is_nan($longitudes[$i])) {
+            //$coordinates[] = ['None', 'None'];
+            continue;
+        } else {
+            if ($nan_offset < 0) $nan_offset = $i - 1;
+            $coordinates[] = [$longitudes[$i], $latitudes[$i]];
+        }
     }
 
     //error_log(json_encode($coordinates));
 
     $response['coordinates'] = $coordinates;
+    $response['nan_offset'] = $nan_offset;
 
     return $response;
+}
+
+function get_double_series_names($user_id, $flight_id) {
+    $query = "SELECT name FROM double_series WHERE flight_id = $flight_id";
+    $result = query_ngafid_db($query);
+
+    $names = array();
+    while (($row = $result->fetch_assoc()) != NULL) {
+        $names[] = $row['name'];
+    }
+
+    return $names;
 }
 
 function get_double_series($user_id, $flight_id, $series_name) {
@@ -81,18 +99,19 @@ function get_double_series($user_id, $flight_id, $series_name) {
         $values = unpack("E*", $values);
     }
 
-    $values_fixed = array();
+    $y = array();
     $length = count($values);
     for ($i = 1; $i <= $length; $i++) {
-        if (is_nan($values[$i])) continue;
-
-        $values_fixed[] = $values[$i];
+        $x[] = $i;
+        if (is_nan($values[$i])) {
+            $y[] = 'None';
+        } else {
+            $y[] = $values[$i];
+        }
     }
 
-
-    error_log(json_encode($values_fixed));
-
-    $response['values'] = $values_fixed;
+    $response['values']['y'] = $y;
+    $response['values']['x'] = $x;
 
     return $response;
 }
