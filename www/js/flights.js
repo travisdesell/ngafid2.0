@@ -3,7 +3,29 @@ class Itinerary extends React.Component {
         super(props);
     }
 
+    itineraryClicked(index) {
+        main_content.showMap();
+
+        var stop = this.props.itinerary[index];
+        let modified_index = parseInt(stop.min_altitude_index) - this.props.nan_offset;
+        //console.log("index: " + stop.min_altitude_index + ", nan_offset: " + this.props.nan_offset + ", modifeid_index: " + modified_index);
+
+        let latlon = this.props.coordinates[modified_index];
+        //console.log(latlon);
+
+        const coords = ol.proj.fromLonLat(latlon);
+        map.getView().animate({center: coords, zoom: 13});
+    }
+
     render() {
+        let cellClasses = "d-flex flex-row p-1";
+        let cellStyle = { "overflowX" : "auto" };
+        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const styleButton = {
+            flex : "0 0 10em"
+        };
+
+        /*
         let cellClasses = "p-1 card mr-1 flex-fill"
         let itinerary = this.props.itinerary;
 
@@ -12,36 +34,48 @@ class Itinerary extends React.Component {
             result += itinerary[i].airport + " (" + itinerary[i].runway + ")";
             if (i != (itinerary.length - 1)) result += " => ";
         }
+        */
 
         return (
-            <div className={cellClasses}>
-                {result}
+            <div className={cellClasses} style={cellStyle}>
+                {
+                    this.props.itinerary.map((stop, index) => {
+                        let identifier = stop.airport;
+                        if (stop.runway != null) identifier += " (" + stop.runway + ")";
+
+                        return (
+                            <button className={buttonClasses} key={index} style={styleButton} onClick={() => this.itineraryClicked(index)}>
+                                { identifier }
+                            </button>
+                        );
+                    })
+                }
             </div>
         );
 
     }
 }
 
-class Flight extends React.Component {
+class TraceButtons extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            pathVisible : false,
-            mapLoaded : false,
-            traceIndex : [],
-            traceVisibility : [],
-            layer : null
-        }
+            parentFlight : this.props.parentFlight
+        };
     }
 
-    plotClicked() {
+    traceClicked(seriesName) {
         main_content.showPlot();
 
-        let seriesName = "AltMSL";
+        let parentFlight = this.state.parentFlight;
+
         //check to see if we've already loaded this time series
-        if (!(seriesName in this.state.traceIndex)) {
-            var thisFlight = this;
+        if (!(seriesName in parentFlight.state.traceIndex)) {
+            var thisTrace = this;
+
+            console.log(seriesName);
+            console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
 
             var submission_data = {
                 request : "GET_DOUBLE_SERIES",
@@ -49,7 +83,7 @@ class Flight extends React.Component {
                 //id_token : id_token,
                 //user_id : user_id
                 user_id : 1,
-                flight_id : this.props.flightInfo.id,
+                flight_id : this.props.flightId,
                 series_name : seriesName
             };   
 
@@ -64,41 +98,139 @@ class Flight extends React.Component {
 
                     var values = response.values;
 
-                    var counts = Array.from(new Array(values.length), (val,index)=>index+1 );
                     var trace = {
-                        x : counts,
-                        y : values,
+                        x : values.x,
+                        y : values.y,
                         mode : "lines",
-                        name : thisFlight.props.flightInfo.id + " - " + seriesName
+                        //marker : { size: 1},
+                        name : thisTrace.props.flightId + " - " + seriesName
                     }
 
                     //set the trace number for this series
-                    thisFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
-                    thisFlight.state.traceVisibility[seriesName] = true;
-                    thisFlight.setState(thisFlight.state);
+                    parentFlight.state.traceIndex[seriesName] = $("#plot")[0].data.length;
+                    parentFlight.state.traceVisibility[seriesName] = true;
+                    parentFlight.setState(parentFlight.state);
 
                     Plotly.addTraces('plot', [trace]);
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    thisFlight.state.mapLoaded = false;
-                    thisFlight.setState(thisFlight.state);
-
                     display_error_modal("Error Loading Flight Coordinates", errorThrown);
                 },   
                 async: true 
             });  
         } else {
             //toggle visibility for this series
-            let visibility = !this.state.traceVisibility[seriesName];
-            this.state.traceVisibility[seriesName] = visibility;
-            this.setState(this.state);
+            let visibility = !parentFlight.state.traceVisibility[seriesName];
+            parentFlight.state.traceVisibility[seriesName] = visibility;
+            parentFlight.setState(parentFlight.state);
 
             console.log("toggled visibility to: " + visibility);
 
-            Plotly.restyle('plot', { visible: visibility }, [ this.state.traceIndex[seriesName] ])
+            Plotly.restyle('plot', { visible: visibility }, [ parentFlight.state.traceIndex[seriesName] ])
+        }
+    }
+
+    render() {
+        let cellClasses = "d-flex flex-row p-1";
+        let cellStyle = { "overflowX" : "auto" };
+        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const styleButton = {
+            flex : "0 0 10em"
+        };
+
+        let parentFlight = this.state.parentFlight;
+
+
+        return (
+            <div className={cellClasses} style={cellStyle}>
+                {
+                    parentFlight.state.traceNames.map((traceName, index) => {
+                        let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                        let active = "";
+                        if (ariaPressed) active = " active";
+
+                        return (
+                            <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                {traceName}
+                            </button>
+                        );
+                    })
+                }
+            </div>
+        );
+    }
+}
+
+class Flight extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            pathVisible : false,
+            mapLoaded : false,
+            traceNames : null,
+            traceIndex : [],
+            traceVisibility : [],
+            traceNamesVisible : false,
+            itineraryVisible : false,
+            layer : null
+        }
+    }
+
+    plotClicked() {
+        if (this.state.traceNames == null) {
+            var thisFlight = this;
+
+            var submission_data = {
+                request : "GET_DOUBLE_SERIES_NAMES",
+                id_token : "TEST_ID_TOKEN",
+                //id_token : id_token,
+                //user_id : user_id
+                user_id : 1,
+                flight_id : this.props.flightInfo.id
+            };   
+
+            $.ajax({
+                type: 'POST',
+                url: './request.php',
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    var names = response.names;
+
+                    //set the trace number for this series
+                    thisFlight.state.traceNames = response.names;
+                    thisFlight.state.traceNamesVisible = true;
+                    thisFlight.setState(thisFlight.state);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    this.state.traceNames = null;
+                    display_error_modal("Error Getting Potentail Plot Parameters", errorThrown);
+                },   
+                async: true 
+            });  
+        } else {
+            let visible = !this.state.traceNamesVisible;
+
+            for (let i = 0; i < this.state.traceNames.length; i++) {
+                let seriesName = this.state.traceNames[i];
+                //check and see if this series was loaded in the past
+                if (seriesName in this.state.traceIndex) {
+
+                    //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
+                    //otherwise it will hide them
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [ this.state.traceIndex[seriesName] ])
+                }
+            }
+
+            this.state.traceNamesVisible = !this.state.traceNamesVisible;
+            this.setState(this.state);
         }
 
-            /*
+        /*
         var trace3 = {
             x: [1, 2, 3, 4, 5],
             y: [11, 8, 1, 7, 13],
@@ -132,9 +264,9 @@ class Flight extends React.Component {
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
-        main_content.showMap();
 
         if (!this.state.mapLoaded) {
+            main_content.showMap();
             this.state.mapLoaded = true;
 
             var thisFlight = this;
@@ -185,6 +317,9 @@ class Flight extends React.Component {
                     });
                     thisFlight.state.layer.setVisible(true);
                     thisFlight.state.pathVisible = true;
+                    thisFlight.state.itineraryVisible = true;
+                    thisFlight.state.nan_offset = response.nan_offset;
+                    thisFlight.state.coordinates = response.coordinates;
 
                     map.addLayer(thisFlight.state.layer);
 
@@ -205,7 +340,13 @@ class Flight extends React.Component {
         } else {
             //toggle visibility if already loaded
             this.state.pathVisible = !this.state.pathVisible;
+            this.state.itineraryVisible = !this.state.itineraryVisible;
             this.state.layer.setVisible(this.state.pathVisible);
+
+            if (this.state.pathVisibile) {
+                main_content.showMap();
+            }
+
             this.setState(this.state);
 
             if (this.state.pathVisible) {
@@ -248,6 +389,20 @@ class Flight extends React.Component {
             }
         }
 
+        let itineraryRow = "";
+        if (this.state.itineraryVisible) {
+            itineraryRow = (
+                <Itinerary itinerary={flightInfo.itinerary} coordinates={this.state.coordinates} nan_offset={this.state.nan_offset}/>
+            );
+        }
+
+        let tracesRow = "";
+        if (this.state.traceNamesVisible) {
+            tracesRow = 
+                (
+                    <TraceButtons parentFlight={this} flightId={flightInfo.id}/>
+                );
+        }
 
         return (
             <div className="card mb-1">
@@ -304,9 +459,9 @@ class Flight extends React.Component {
                         </div>
                     </div>
 
-                    <div className="d-flex flex-row p-1">
-                        <Itinerary itinerary={flightInfo.itinerary}/>
-                    </div>
+                    {itineraryRow}
+
+                    {tracesRow}
                 </div>
             </div>
         );

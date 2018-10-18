@@ -103,6 +103,15 @@ if ($request_type == "NEW_UPLOAD") {
 
     echo json_encode($response);
 
+} else if ($request_type == "GET_DOUBLE_SERIES_NAMES") {
+    require_once($cwd[__FILE__] . "/flights.php");
+    $flight_id = $ngafid_db->real_escape_string($_POST['flight_id']);
+
+    $response['names'] = get_double_series_names($user_id, $flight_id);
+
+    echo json_encode($response);
+
+
 } else {
     error_log("ERROR! unknown request type: '$request_type'");
     $response['err_title'] = "Unknown Request Type";

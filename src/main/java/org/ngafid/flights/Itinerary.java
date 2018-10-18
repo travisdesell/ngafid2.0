@@ -85,11 +85,13 @@ public class Itinerary {
     }
 
     public void updateDatabase(Connection connection, int flightId, int order) throws SQLException {
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, airport, runway) VALUES (?, ?, ?, ?, ?, ?)");
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, order);
         preparedStatement.setInt(3, minAltitudeIndex);
         preparedStatement.setDouble(4, minAltitude);
+        preparedStatement.setDouble(4, minAirportDistance);
+        preparedStatement.setDouble(4, minRunwayDistance);
         preparedStatement.setString(5, airport);
         preparedStatement.setString(6, runway);
 
