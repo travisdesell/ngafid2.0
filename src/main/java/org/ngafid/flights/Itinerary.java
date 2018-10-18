@@ -6,6 +6,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import org.ngafid.airports.Airports;
+
 public class Itinerary {
     private String airport;
     private String runway;
@@ -78,10 +80,23 @@ public class Itinerary {
     }
 
     public boolean wasApproach() {
-        if (minRunwayDistance != Double.MAX_VALUE) return true;
-        if (minAltitude <= 400) return true;
-
-        return false;
+        if (minRunwayDistance != Double.MAX_VALUE) {
+            return true;
+        } else if (Airports.hasRunwayInfo(airport)) {
+            //if it didn't get within 100 ft of a runway then
+            //it wasn't an approach
+            return false;
+        } else {
+            //this airport didn't have runway information so it
+            //is most likely a very small airport, we can use
+            //a metric of being within 1000 ft and below 200 ft
+            //
+            if (minAirportDistance <= 1000 && minAltitude <= 200) {
+                return true;
+            } else {
+                return false;
+            }
+        }
     }
 
     public void updateDatabase(Connection connection, int flightId, int order) throws SQLException {
@@ -90,10 +105,10 @@ public class Itinerary {
         preparedStatement.setInt(2, order);
         preparedStatement.setInt(3, minAltitudeIndex);
         preparedStatement.setDouble(4, minAltitude);
-        preparedStatement.setDouble(4, minAirportDistance);
-        preparedStatement.setDouble(4, minRunwayDistance);
-        preparedStatement.setString(5, airport);
-        preparedStatement.setString(6, runway);
+        preparedStatement.setDouble(5, minAirportDistance);
+        preparedStatement.setDouble(6, minRunwayDistance);
+        preparedStatement.setString(7, airport);
+        preparedStatement.setString(8, runway);
 
         System.err.println(preparedStatement);
 
