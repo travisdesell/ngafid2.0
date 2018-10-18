@@ -3,7 +3,8 @@
 function get_flights($user_id, $fleet_id) {
     //TODO: check if user has access to this fleet
 
-    $query = "SELECT * FROM flights WHERE fleet_id = $fleet_id LIMIT 30";
+    //$query = "SELECT * FROM flights WHERE fleet_id = $fleet_id LIMIT 100";
+    $query = "SELECT * FROM flights WHERE fleet_id = $fleet_id";
     $result = query_ngafid_db($query);
     $flights = array();
     while (($row = $result->fetch_assoc()) != NULL) {
