@@ -75,7 +75,7 @@ function get_coordinates($user_id, $flight_id) {
 }
 
 function get_double_series_names($user_id, $flight_id) {
-    $query = "SELECT name FROM double_series WHERE flight_id = $flight_id";
+    $query = "SELECT name FROM double_series WHERE flight_id = $flight_id ORDER BY name";
     $result = query_ngafid_db($query);
 
     $names = array();
