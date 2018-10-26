@@ -76,6 +76,14 @@ public class Flight {
         return status;
     }
 
+    public DoubleTimeSeries getDoubleTimeSeries(String name) {
+        return doubleTimeSeries.get(name);
+    }
+
+    public StringTimeSeries getStringTimeSeries(String name) {
+        return stringTimeSeries.get(name);
+    }
+
     private void setMD5Hash(InputStream inputStream) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -362,7 +370,7 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            checkIfExists(connection);
+            if (connection != null) checkIfExists(connection);
 
             inputStream.reset();
             process(inputStream);
@@ -394,7 +402,7 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            checkIfExists(connection);
+            if (connection != null) checkIfExists(connection);
 
             inputStream.reset();
             process(inputStream);
