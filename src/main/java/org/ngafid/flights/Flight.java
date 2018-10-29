@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileInputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
@@ -462,7 +463,7 @@ public class Flight {
         hasCoords = true;
         hasAGL = true;
 
-        DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName);
+        DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName, "ft agl");
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
@@ -529,14 +530,14 @@ public class Flight {
         headers.add("RunwayDistance");
         dataTypes.add("ft");
 
-        StringTimeSeries nearestAirportTS = new StringTimeSeries("NearestAirport");
+        StringTimeSeries nearestAirportTS = new StringTimeSeries("NearestAirport", "txt");
         stringTimeSeries.put("NearestAirport", nearestAirportTS);
-        DoubleTimeSeries airportDistanceTS = new DoubleTimeSeries("AirportDistance");
+        DoubleTimeSeries airportDistanceTS = new DoubleTimeSeries("AirportDistance", "ft");
         doubleTimeSeries.put("AirportDistance", airportDistanceTS);
 
-        StringTimeSeries nearestRunwayTS = new StringTimeSeries("NearestRunway");
+        StringTimeSeries nearestRunwayTS = new StringTimeSeries("NearestRunway", "txt");
         stringTimeSeries.put("NearestRunway", nearestRunwayTS);
-        DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries("RunwayDistance");
+        DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries("RunwayDistance", "ft");
         doubleTimeSeries.put("RunwayDistance", runwayDistanceTS);
 
 
@@ -745,16 +746,32 @@ public class Flight {
         ArrayList<DoubleTimeSeries> series = new ArrayList<DoubleTimeSeries>();
 
         for (int i = 0; i < columnNames.length; i++) {
-            series.pushBack(getDoubleTimeSeries(columnNames[i]));
+            series.add(getDoubleTimeSeries(columnNames[i]));
         }
 
-        PrintWriter printWriter = new PrintWriter(new FileWriter(fileWriter));
-        printWriter.print("Some String");
-        printWriter.printf("Product name is %s and its price is %d $", "iPhone", 1000);
+        PrintWriter printWriter = new PrintWriter(new FileWriter(filename));
+
+        for (int i = 0; i < columnNames.length; i++) {
+            if (i > 0) printWriter.print(",");
+            printWriter.print(columnNames[i]);
+        }
+        printWriter.println();
+
+        for (int i = 0; i < columnNames.length; i++) {
+            if (i > 0) printWriter.print(",");
+            printWriter.print(series.get(i).getDataType());
+        }
+        printWriter.println();
+
+        for (int i = 0; i < numberRows; i++) {
+            for (int j = 0; j < series.size(); j++) {
+                if (j > 0) printWriter.print(",");
+                printWriter.print(series.get(j).get(i));
+            }
+            printWriter.println();
+        }
+
         printWriter.close();
-
-
-
     }
 
 }

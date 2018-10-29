@@ -15,6 +15,7 @@ import java.sql.SQLException;
 
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -78,17 +79,17 @@ public class ExtractFlights {
         Collections.shuffle(flights);
 
         for (int i = 0; i < 10; i++) {
-            String filename = "~/Data/ngafid/flight_" + i + ".csv";
+            String outputFilename = "/Users/travisdesell/Data/ngafid/flight_" + i + ".csv";
             String[] columnNames = new String[]{
                 "AltAGL", "E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4",
                 "E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", 
                 "E1 OilP", "E1 OilT", "E1 RPM", "FQtyL", "FQtyR",
                 "GndSpd", "IAS", "LatAc", "NormAc", "OAT",
                 "Pitch", "Roll", "TAS", "volt1", "volt2",
-                "VSpd", "VSpdG", "WndDr", "WndSpd"
+                "VSpd", "VSpdG"
             };
 
-            flights.writeToFile(filename, columnNames);
+            flights.get(i).writeToFile(outputFilename, columnNames);
         }
 
         System.out.println("total flights in array list: " + flights.size());
