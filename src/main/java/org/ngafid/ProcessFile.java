@@ -87,6 +87,22 @@ public class ProcessFile {
             // }
             System.out.println("I am here");
 
+            if( startTime != null ){
+                Event event = new Event(startTime, timeSeries.get( timeSeries.size()-1 ) , startLineNo, lineNumber, 0) {
+                };
+                eventList.add( event );
+            }
+
+
+            for( int i = 0; i < eventList.size(); i++ ){
+                Event event = eventList.get(i);
+                System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
+            }
+            // for (Event event : eventList) {
+            //     System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
+            // }
+            System.out.println("I am here");
+
         } catch (Exception e) {
             e.printStackTrace();
         }
