@@ -78,8 +78,6 @@ public class PitchEvent {
                         if (current < minValue || current > maxValue) {
                             System.err.println("pitch exceedence at entry: " + i);
 
-
-                            //TODO: calculate events over time REDO
                         }
                     }
                 }

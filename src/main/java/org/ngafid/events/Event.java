@@ -39,4 +39,29 @@ public abstract class Event {
             return false;
         }
     }
+        public void setStartTime( String startTime ){
+        this.startTime = startTime;
+    }
+
+    public void setEndTime( String endTime ){
+        this.endTime = endTime;
+    }
+
+    public void setStartLine( int startLine ){
+        this.startLine = startLine;
+    }
+
+    public void setEndLine( int endLine ){
+        this.endLine = endLine;
+    }
+    public int getStartLine(){
+        return startLine;
+    }
+    public String getStartTime(){
+        return startTime;
+    }
+    public String getEntTime(){
+        return endTime;
+    }
 }
+
