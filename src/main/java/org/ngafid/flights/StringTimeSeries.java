@@ -17,7 +17,7 @@ public class StringTimeSeries {
     private int validCount;
 
 
-    public StringTimeSeries(String name) {
+    public StringTimeSeries(String name, String dataType) {
         this.name = name;
         this.dataType = dataType;
         this.timeSeries = new ArrayList<String>();

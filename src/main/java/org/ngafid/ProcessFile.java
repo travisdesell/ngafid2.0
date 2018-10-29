@@ -35,6 +35,7 @@ public class ProcessFile {
     static double maxValue = 2.0;
     public static void main(String[] arguments) {
         String filename = "/Users/fa3019/Code/ngafid2.0/example_data/C172/log_110812_095915_KCKN.csv";
+        //String filename = "./example_data/C172/log_110812_095915_KCKN.csv";
 
         try {
             Flight flight = new Flight(filename, null);
@@ -47,37 +48,35 @@ public class ProcessFile {
             List<Event> eventList = new ArrayList<>();
             int lineNumber = 0;
 
+            int bufferTime = 5;
+
             for (int i = 0; i < pitchSeries.size(); i++) {
                 lineNumber = i + 4;
                 double current = pitchSeries.get(i);
                 //String time = timeSeries.get(i);
                 //System.out.println("Line: " + lineNumber + " Pitch Event: " +pitchSeries.get(i));
                 System.out.println( "Line: " + lineNumber + ", Pitch: " + current);
+
                 if (current < minValue || current > maxValue) {
-                    if( startTime == null ){
+                    if (startTime == null) {
                         startTime = timeSeries.get(i);
-                        //startTime = time;
                         startLineNo = lineNumber;
                     }
-                }
-                else{
-                    if( startTime != null ){
-                        Event event = new Event(startTime, timeSeries.get(i-1), startLineNo, lineNumber-1, 0) {
-                        };
+
+                } else {
+                    if (startTime != null) {
+                        Event event = new Event(startTime, timeSeries.get(i-1), startLineNo, lineNumber-1, 0){};
                         eventList.add( event );
                         startTime = null;
                         startLineNo = -1;
                     }
-
                 }
             }
 
-            if( startTime != null ){
-                Event event = new Event(startTime, timeSeries.get( timeSeries.size()-1 ) , startLineNo, lineNumber, 0) {
-                };
+            if (startTime != null) {
+                Event event = new Event(startTime, timeSeries.get( timeSeries.size()-1 ) , startLineNo, lineNumber, 0){};
                 eventList.add( event );
             }
-
 
             for( int i = 0; i < eventList.size(); i++ ){
                 Event event = eventList.get(i);

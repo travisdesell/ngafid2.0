@@ -149,6 +149,10 @@ public class DoubleTimeSeries {
         return timeSeries.get(i);
     }
 
+    public String getDataType() {
+        return dataType;
+    }
+
     public int size() {
         return timeSeries.size();
     }
