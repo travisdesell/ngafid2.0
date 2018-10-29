@@ -19,6 +19,7 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private String name;
+    private String dataType;
     private ArrayList<Double> timeSeries;
 
     private double min = Double.MAX_VALUE;
@@ -26,8 +27,9 @@ public class DoubleTimeSeries {
     private double avg;
     private double max = -Double.MAX_VALUE;
 
-    public DoubleTimeSeries(String name) {
+    public DoubleTimeSeries(String name, String dataType) {
         this.name = name;
+        this.dataType = dataType;
         timeSeries = new ArrayList<Double>();
 
         min = Double.NaN;
@@ -37,8 +39,9 @@ public class DoubleTimeSeries {
         validCount = 0;
     }
 
-    public DoubleTimeSeries(String name, ArrayList<String> stringTimeSeries) {
+    public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
         this.name = name;
+        this.dataType = dataType;
 
         timeSeries = new ArrayList<Double>();
 
@@ -158,30 +161,31 @@ public class DoubleTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, length, valid_length, min, avg, max, `values`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, `values`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setString(2, name);
+            preparedStatement.setString(3, dataType);
 
-            preparedStatement.setInt(3, timeSeries.size());
-            preparedStatement.setInt(4, validCount);
+            preparedStatement.setInt(4, timeSeries.size());
+            preparedStatement.setInt(5, validCount);
 
             if (Double.isNaN(min)) {
-                preparedStatement.setNull(5, java.sql.Types.DOUBLE);
+                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
             } else {
-                preparedStatement.setDouble(5, min);
+                preparedStatement.setDouble(6, min);
             }
 
             if (Double.isNaN(avg)) {
-                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
+                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
             } else {
-                preparedStatement.setDouble(6, avg);
+                preparedStatement.setDouble(7, avg);
             }
 
             if (Double.isNaN(max)) {
-                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
+                preparedStatement.setNull(8, java.sql.Types.DOUBLE);
             } else {
-                preparedStatement.setDouble(7, max);
+                preparedStatement.setDouble(8, max);
             }
 
 
@@ -195,7 +199,7 @@ public class DoubleTimeSeries {
 
             Blob seriesBlob = new SerialBlob(byteArray);
 
-            preparedStatement.setBlob(8, seriesBlob);
+            preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();
             preparedStatement.close();
 

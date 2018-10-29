@@ -12,19 +12,22 @@ import java.util.ArrayList;
 
 public class StringTimeSeries {
     private String name;
+    private String dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
 
 
     public StringTimeSeries(String name) {
         this.name = name;
+        this.dataType = dataType;
         this.timeSeries = new ArrayList<String>();
 
         validCount = 0;
     }
 
-    public StringTimeSeries(String name, ArrayList<String> timeSeries) {
+    public StringTimeSeries(String name, String dataType, ArrayList<String> timeSeries) {
         this.name = name;
+        this.dataType = dataType;
         this.timeSeries = timeSeries;
 
         validCount = 0;
@@ -86,12 +89,13 @@ public class StringTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, length, valid_length, `values`) VALUES (?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, data_type, length, valid_length, `values`) VALUES (?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, timeSeries.size());
-            preparedStatement.setInt(4, validCount);
+            preparedStatement.setString(3, dataType);
+            preparedStatement.setInt(4, timeSeries.size());
+            preparedStatement.setInt(5, validCount);
 
             Blob seriesBlob = connection.createBlob();
             final ObjectOutputStream oos = new ObjectOutputStream(seriesBlob.setBinaryStream(1));
@@ -107,7 +111,7 @@ public class StringTimeSeries {
 
             System.err.println(preparedStatement);
 
-            preparedStatement.setBlob(5, seriesBlob);
+            preparedStatement.setBlob(6, seriesBlob);
             preparedStatement.executeUpdate();
             preparedStatement.close();
 

@@ -257,7 +257,7 @@ public class Flight {
 
             if (isDoubleList) {
                 //System.out.println(headers.get(i) + " is a DOUBLE column, ArrayList size: " + current.size());
-                DoubleTimeSeries dts = new DoubleTimeSeries(headers.get(i), current);
+                DoubleTimeSeries dts = new DoubleTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (dts.validCount() > 0) {
                     doubleTimeSeries.put(headers.get(i), dts);
                 } else {
@@ -266,7 +266,7 @@ public class Flight {
 
             } else {
                 //System.out.println(headers.get(i) + " is a STRING column, ArrayList size: " + current.size());
-                StringTimeSeries sts = new StringTimeSeries(headers.get(i), current);
+                StringTimeSeries sts = new StringTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (sts.validCount() > 0) {
                     stringTimeSeries.put(headers.get(i), sts);
                 } else {
@@ -739,6 +739,22 @@ public class Flight {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public void writeToFile(String filename, String[] columnNames) throws IOException {
+        ArrayList<DoubleTimeSeries> series = new ArrayList<DoubleTimeSeries>();
+
+        for (int i = 0; i < columnNames.length; i++) {
+            series.pushBack(getDoubleTimeSeries(columnNames[i]));
+        }
+
+        PrintWriter printWriter = new PrintWriter(new FileWriter(fileWriter));
+        printWriter.print("Some String");
+        printWriter.printf("Product name is %s and its price is %d $", "iPhone", 1000);
+        printWriter.close();
+
+
+
     }
 
 }
