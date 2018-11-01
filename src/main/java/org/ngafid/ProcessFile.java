@@ -78,30 +78,30 @@ public class ProcessFile {
                 eventList.add( event );
             }
 
+            //Update end time and line
+            int listSize = eventList.size();
+            for( int i = 0; i < listSize; i++ ){
+                if(i > 0 && ( eventList.get(i).getStartLine() - eventList.get(i-1).getEndLine() ) < bufferTime ){
+                    System.out.print( "Going to update event [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] -> " );
+                    eventList.get(i-1).updateEnd(eventList.get(i).getEntTime() , eventList.get(i).getEndLine());
+
+                    System.out.println( " [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] " );
+                    eventList.remove(i);
+                    listSize--;
+                    i--;
+                }
+            }
             for( int i = 0; i < eventList.size(); i++ ){
                 Event event = eventList.get(i);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
             }
-            // for (Event event : eventList) {
-            //     System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
-            // }
-            System.out.println("I am here");
+           System.out.println("I am here");
 
             if( startTime != null ){
                 Event event = new Event(startTime, timeSeries.get( timeSeries.size()-1 ) , startLineNo, lineNumber, 0) {
                 };
                 eventList.add( event );
             }
-
-
-            for( int i = 0; i < eventList.size(); i++ ){
-                Event event = eventList.get(i);
-                System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
-            }
-            // for (Event event : eventList) {
-            //     System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
-            // }
-            System.out.println("I am here");
 
         } catch (Exception e) {
             e.printStackTrace();
