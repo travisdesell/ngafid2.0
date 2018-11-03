@@ -34,8 +34,8 @@ public class ProcessFile {
     static double minValue = -2.0;
     static double maxValue = 2.0;
     public static void main(String[] arguments) {
-        String filename = "/Users/fa3019/Code/ngafid2.0/example_data/C172/log_110812_095915_KCKN.csv";
-        //String filename = "./example_data/C172/log_110812_095915_KCKN.csv";
+        //String filename = "/Users/fa3019/Code/ngafid2.0/example_data/C172/log_110812_095915_KCKN.csv";
+        String filename = "./example_data/C172/log_110812_095915_KCKN.csv";
 
         try {
             Flight flight = new Flight(filename, null);
@@ -49,6 +49,8 @@ public class ProcessFile {
             int lineNumber = 0;
 
             int bufferTime = 5;
+
+            long startMillis = System.currentTimeMillis();
 
             for (int i = 0; i < pitchSeries.size(); i++) {
                 lineNumber = i + 4;
@@ -95,13 +97,11 @@ public class ProcessFile {
                 Event event = eventList.get(i);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
             }
-           System.out.println("I am here");
+            System.out.println("I am here");
 
-            if( startTime != null ){
-                Event event = new Event(startTime, timeSeries.get( timeSeries.size()-1 ) , startLineNo, lineNumber, 0) {
-                };
-                eventList.add( event );
-            }
+            long endMillis = System.currentTimeMillis();
+
+            System.out.println("It took " + (endMillis - startMillis) + " ms to run the code");
 
         } catch (Exception e) {
             e.printStackTrace();

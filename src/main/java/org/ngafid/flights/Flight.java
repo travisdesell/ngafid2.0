@@ -751,12 +751,14 @@ public class Flight {
 
         PrintWriter printWriter = new PrintWriter(new FileWriter(filename));
 
+        printWriter.print("#");
         for (int i = 0; i < columnNames.length; i++) {
             if (i > 0) printWriter.print(",");
             printWriter.print(columnNames[i]);
         }
         printWriter.println();
 
+        printWriter.print("#");
         for (int i = 0; i < columnNames.length; i++) {
             if (i > 0) printWriter.print(",");
             printWriter.print(series.get(i).getDataType());
