@@ -20,26 +20,28 @@ public class Airports {
     public static final String RUNWAYS_FILE;
 
     static {
-        //AIRPORTS_FILE = "/Users/travisdesell/Data/ngafid/airports/airports_parsed.csv";
-        if (System.getenv("AIRPORTS_FILE") == null) {
-            System.err.println("ERROR: 'AIRPORTS_FILE' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export AIRPORTS_FILE=<path_to_airports_file>");
-            System.exit(1);
-        }
-        System.out.println("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
+       //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
+        // if (System.getenv("AIRPORTS_FILE") == null) {
+        //     System.err.println("ERROR: 'AIRPORTS_FILE' environment variable not specified at runtime.");
+        //     System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+        //     System.err.println("export AIRPORTS_FILE=<path_to_airports_file>");
+        //     System.exit(1);
+        // }
+        // System.out.println("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
 
-        AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
+        //AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
+        AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
 
-        //RUNWAYS_FILE = "/Users/travisdesell/Data/ngafid/runways/runways_parsed.csv";
-        if (System.getenv("RUNWAYS_FILE") == null) {
-            System.err.println("ERROR: 'RUNWAYS_FILE' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export RUNWAYS_FILE=<path_to_runways_file>");
-            System.exit(1);
-        }
+        //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
+        // if (System.getenv("RUNWAYS_FILE") == null) {
+        //     System.err.println("ERROR: 'RUNWAYS_FILE' environment variable not specified at runtime.");
+        //     System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+        //     System.err.println("export RUNWAYS_FILE=<path_to_runways_file>");
+        //     System.exit(1);
+        // }
 
-        RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
+        // RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
+        RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
 
         geoHashToAirport = new HashMap<String, ArrayList<Airport>>();
         siteNumberToAirport = new HashMap<String, Airport>();
