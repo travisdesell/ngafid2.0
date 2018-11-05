@@ -34,8 +34,8 @@ public class ProcessFile {
     static double minValue = -2.0;
     static double maxValue = 2.0;
     public static void main(String[] arguments) {
-        //String filename = "/Users/fa3019/Code/ngafid2.0/example_data/C172/log_110812_095915_KCKN.csv";
-        String filename = "./example_data/C172/log_110812_095915_KCKN.csv";
+        String filename = "/Users/fa3019/Code/NGAFID/ngafid2.0/example_data/C172/log_110812_095915_KCKN.csv";
+        // String filename = "./example_data/C172/log_110812_095915_KCKN.csv";
 
         try {
             Flight flight = new Flight(filename, null);
@@ -57,7 +57,7 @@ public class ProcessFile {
                 double current = pitchSeries.get(i);
                 //String time = timeSeries.get(i);
                 //System.out.println("Line: " + lineNumber + " Pitch Event: " +pitchSeries.get(i));
-                System.out.println( "Line: " + lineNumber + ", Pitch: " + current);
+                //System.out.println( "Line: " + lineNumber + ", Pitch: " + current);
 
                 if (current < minValue || current > maxValue) {
                     if (startTime == null) {
@@ -80,22 +80,24 @@ public class ProcessFile {
                 eventList.add( event );
             }
 
-            //Update end time and line
-            int listSize = eventList.size();
-            for( int i = 0; i < listSize; i++ ){
-                if(i > 0 && ( eventList.get(i).getStartLine() - eventList.get(i-1).getEndLine() ) < bufferTime ){
-                    System.out.print( "Going to update event [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] -> " );
-                    eventList.get(i-1).updateEnd(eventList.get(i).getEntTime() , eventList.get(i).getEndLine());
 
-                    System.out.println( " [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] " );
-                    eventList.remove(i);
-                    listSize--;
-                    i--;
-                }
-            }
-            for( int i = 0; i < eventList.size(); i++ ){
-                Event event = eventList.get(i);
+            for( int j = 0; j < eventList.size(); j++ ){
+                Event event = eventList.get(j);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
+                int listSize = eventList.size();
+
+                for( int i = 0; i < listSize; i++ ){
+                    if(i > 0 && ( eventList.get(i).getStartLine() - eventList.get(i-1).getEndLine() ) < bufferTime ){
+                        System.out.print( "Event start line and end line Updated from [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] to " );
+                        eventList.get(i-1).updateEnd(eventList.get(i).getEntTime() , eventList.get(i).getEndLine());
+
+                        System.out.println( " [" +  eventList.get(i-1).getStartLine() + "," + eventList.get(i-1).getStartTime() + " , " + eventList.get(i-1).getEndLine() + "," + eventList.get(i-1).getEntTime() + "] " );
+                        eventList.remove(i);
+                        listSize--;
+                        i--;
+                    }
+                }
+
             }
             System.out.println("I am here");
 

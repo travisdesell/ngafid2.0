@@ -20,17 +20,18 @@ public class TerrainCache {
     public static final String TERRAIN_DIRECTORY;
 
     static {
-        //TERRAIN_DIRECTORY = "/Users/travisdesell/Data/ngafid/terrain";
-        if (System.getenv("TERRAIN_DIRECTORY") == null) {
-            System.err.println("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
-            System.exit(1);
-        }
+        //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
+        // if (System.getenv("TERRAIN_DIRECTORY") == null) {
+        //     System.err.println("ERROR: 'TERRAIN_DIRECTORY' environment variable not specified at runtime.");
+        //     System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+        //     System.err.println("export TERRAIN_DIRECTORY=<path_to_terrain_data>");
+        //     System.exit(1);
+        // }
 
-        TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
+        // TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
+        TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
     }
-
+    
 
     //each directory contains a 4 by 6 grid of files, 4 latitudes worth and 4 longitudes worth
     //the equator starts at A and goes north alphabetically, and at SA and goes south alphabetically (SA, SB, SC)...
