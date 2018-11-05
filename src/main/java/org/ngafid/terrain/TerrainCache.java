@@ -28,8 +28,8 @@ public class TerrainCache {
         //     System.exit(1);
         // }
 
-        // TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
-        TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
+        TERRAIN_DIRECTORY = System.getenv("TERRAIN_DIRECTORY");
+        //TERRAIN_DIRECTORY = "/Users/fa3019/Data/terrain/";
     }
     
 
