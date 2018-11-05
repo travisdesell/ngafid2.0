@@ -29,8 +29,8 @@ public class Airports {
         // }
         // System.out.println("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
 
-        //AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
-        AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
+        AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
+        //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
 
         //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
         // if (System.getenv("RUNWAYS_FILE") == null) {
@@ -40,8 +40,8 @@ public class Airports {
         //     System.exit(1);
         // }
 
-        // RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
-        RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
+        RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
+        //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
 
         geoHashToAirport = new HashMap<String, ArrayList<Airport>>();
         siteNumberToAirport = new HashMap<String, Airport>();
