@@ -1,0 +1,22 @@
+*********************,***************,**************
+Pitch,Single_File,Multiple_File
+Execution number,Execution time,Execution number
+1,663ms,2687ms
+2,684ms,2737ms
+3,590ms,2613ms
+4,673ms,2683ms
+5,675ms,2665ms
+Execution time min:,590ms,2613ms
+Execution time max:,675ms,2737ms
+Execution time average:,657ms,2677ms
+*********************,***************,**************
+Roll,Single_File,Multiple_File
+Execution number,Execution time,Execution number
+1,622ms,2521ms
+2,614ms,2627ms
+3,629ms,2761ms
+4,696ms,2663ms
+5,694ms,2640ms
+Execution time min:,614ms,2521ms
+Execution time max:,696ms,2761ms
+Execution time average: ,651ms,2642ms
