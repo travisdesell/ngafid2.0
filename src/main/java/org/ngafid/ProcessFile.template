@@ -30,7 +30,7 @@ import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.events.Event;
 import org.ngafid.events2.PitchEvent;
 
-public class ProcessFilePitch {
+public class CLASS_NAME {
     // Pitch: pitch_attitude < -30 OR pitch_attitude > 30
     static double minValue = -4.0;
     static double maxValue = 4.0;
@@ -39,7 +39,8 @@ public class ProcessFilePitch {
         try {
             Flight flight = new Flight(filename, null);
 
-            DoubleTimeSeries pitchSeries = flight.getDoubleTimeSeries("Pitch");
+            DOUBLE_TIME_SERIES_CODE
+
             StringTimeSeries timeSeries = flight.getStringTimeSeries("Lcl Time");
 
             int startLineNo = -1;
@@ -57,7 +58,8 @@ public class ProcessFilePitch {
                 lineNumber = i + 4;
                 current = pitchSeries.get(i);
                 //String time = timeSeries.get(i);
-                if (current < minValue || current > maxValue) {
+
+                if ( CONDITIONS_CODE ) {
                     if (startTime == null) {
                         startTime = timeSeries.get(i);
                         startLineNo = lineNumber;
