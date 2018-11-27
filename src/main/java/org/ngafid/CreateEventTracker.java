@@ -36,12 +36,12 @@ public class CreateEventTracker {
         }
         bufferedReader.close();
 
-        String createSeriesCode = "YOU NEED TO WRITE THIS CODE TO GET THE DOUBLE TIME SERIES SPECIFIED";
-        String conditionsCode = "YOU NEED TO WRITE THIS FOR THE EVENTS CONDITIONS";
+        String createSeriesCode = "DoubleTimeSeries pitchSeries = flight.getDoubleTimeSeries";
+        String conditionsCode = "current < minValue || current > maxValue";
 
-
-        replaceAll(template, Pattern.compile("DOUBLE_TIME_SERIES_CODE"), createSeriesCode);
-        replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditionsCode);
+        replaceAll(template, Pattern.compile("DOUBLE_TIME_SERIES_CODE"), createSeriesCode + "(" + eventName + ");");
+        //replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditionsCode);
+        replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditions);
         replaceAll(template, Pattern.compile("CLASS_NAME"), "Track" + eventName + "Events");
 
         System.out.println(template);
@@ -54,12 +54,15 @@ public class CreateEventTracker {
     public static void main(String[] arguments) throws Exception {
         String eventName = "Pitch";
         String[] requiredColumns = new String[]{"Pitch"};
-        String conditions = "Pitch < -10.0 OR Pitch > 10.0";
+        String lower = " -10.0";
+        String orCondition = " || ";
+        String andCondition = " && ";
+        String higher = "10.0";
+        String conditions = "Pitch <" + lower + orCondition + "Pitch > " + higher;
         String outputFilename = "./src/main/java/org/ngafid/TrackPitchEvents.java";
 
         generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
-
-        /*
+        /* 
 
         eventName = "Low Fuel";
         requiredColumns = new String[]{"FQtyL", "FQtyR"};
