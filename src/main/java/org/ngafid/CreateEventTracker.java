@@ -22,7 +22,7 @@ public class CreateEventTracker {
     }
 
 
-    public static void generateTrackerCode(String eventName, String[] requiredColumns, String conditions, String outputFilename) throws Exception {
+    public static void generateTrackerCode(String eventName, String[] requiredColumns, String[] conditions, String[] rules, String outputFilename) throws Exception {
         //write the java class out to a file
         File templateFile = new File("./src/main/java/org/ngafid/ProcessFile.template");
         BufferedReader bufferedReader = new BufferedReader(new FileReader(templateFile));
@@ -41,11 +41,31 @@ public class CreateEventTracker {
         String minValues = "-10.0";
         String maxValues = "10.0";
 
+        if (conditions.length - 1 != rules.length) {
+            System.err.println("Error: tried to create tracker code for '" + eventName + "' but the number of conditions (" + conditions.length + " - 1) was != the number of rules (" + rules.length + ")");
+
+            System.err.println("conditions:");
+            for (int i = 0; i < conditions.length; i++) {
+                System.err.println("\t" + conditions[i]);
+            }
+
+            System.err.println("rules:");
+            for (int i = 0; i < rules.length; i++) {
+                System.err.println("\t" + rules[i]);
+            }
+            System.exit(1);
+        }
+
+        String conditionsCode = conditions[0];
+        for (int i = 1; i < conditions.length; i++) {
+            conditionsCode += " " + rules[i-1] + " " + conditions[i];
+        }
+
         replaceAll(template, Pattern.compile("MIN_VALUE"), minValues);
         replaceAll(template, Pattern.compile("MAX_VALUE"), maxValues);
         replaceAll(template, Pattern.compile("DOUBLE_TIME_SERIES_CODE"), createSeriesCode + "(" +"\""+ eventName + "\""+");");
         //replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditionsCode);
-        replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditions);
+        replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditionsCode);
         replaceAll(template, Pattern.compile("CLASS_NAME"), "Track" + eventName + "Events");
 
         System.out.println(template);
@@ -60,7 +80,7 @@ public class CreateEventTracker {
         String[] requiredColumns = new String[]{"Pitch"};
         //String minValues = "-10.0";
         //String maxValues = "10.0";
-        String rule = "||"; // choose eaither (or: "||") or (and:&&) 
+        //String rule = "||"; // choose eaither (or: "||") or (and:&&) 
 
         //String or;
         //String rule;
@@ -73,10 +93,12 @@ public class CreateEventTracker {
         //    rule="&&";
 
         //String conditions = "currentExceedance <" + minValue +" "+ rule + " currentExceedance > " + maxValue;
-        String conditions = "currentExceedance <  minValue " + rule + " currentExceedance >  + maxValue";
+        String[] conditions = new String[]{"currentExceedance <  minValue", "currentExceedance >  + maxValue"};
+        String[] rules = new String[]{"||"};
+
         String outputFilename = "./src/main/java/org/ngafid/TrackPitchEvents.java";
 
-        generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
+        generateTrackerCode(eventName, requiredColumns, conditions, rules, outputFilename);
         /* 
 
            eventName = "Low Fuel";
