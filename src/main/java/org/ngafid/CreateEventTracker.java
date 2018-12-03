@@ -37,9 +37,13 @@ public class CreateEventTracker {
         bufferedReader.close();
 
         String createSeriesCode = "DoubleTimeSeries pitchSeries = flight.getDoubleTimeSeries";
-        String conditionsCode = "current < minValue || current > maxValue";
+        //String conditionsCode = "current < minValue || current > maxValue";
+        String minValues = "-10.0";
+        String maxValues = "10.0";
 
-        replaceAll(template, Pattern.compile("DOUBLE_TIME_SERIES_CODE"), createSeriesCode + "(" + eventName + ");");
+        replaceAll(template, Pattern.compile("MIN_VALUE"), minValues);
+        replaceAll(template, Pattern.compile("MAX_VALUE"), maxValues);
+        replaceAll(template, Pattern.compile("DOUBLE_TIME_SERIES_CODE"), createSeriesCode + "(" +"\""+ eventName + "\""+");");
         //replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditionsCode);
         replaceAll(template, Pattern.compile("CONDITIONS_CODE"), conditions);
         replaceAll(template, Pattern.compile("CLASS_NAME"), "Track" + eventName + "Events");
@@ -54,30 +58,41 @@ public class CreateEventTracker {
     public static void main(String[] arguments) throws Exception {
         String eventName = "Pitch";
         String[] requiredColumns = new String[]{"Pitch"};
-        String lower = " -10.0";
-        String orCondition = " || ";
-        String andCondition = " && ";
-        String higher = "10.0";
-        String conditions = "Pitch <" + lower + orCondition + "Pitch > " + higher;
+        //String minValues = "-10.0";
+        //String maxValues = "10.0";
+        String rule = "||"; // choose eaither (or: "||") or (and:&&) 
+
+        //String or;
+        //String rule;
+        //String logic;
+        //String or="||";
+        //String and = " && ";
+        //if (logic == or)
+        //    rule="||";
+        //else
+        //    rule="&&";
+
+        //String conditions = "currentExceedance <" + minValue +" "+ rule + " currentExceedance > " + maxValue;
+        String conditions = "currentExceedance <  minValue " + rule + " currentExceedance >  + maxValue";
         String outputFilename = "./src/main/java/org/ngafid/TrackPitchEvents.java";
 
         generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
         /* 
 
-        eventName = "Low Fuel";
-        requiredColumns = new String[]{"FQtyL", "FQtyR"};
-        conditions = "FQtyL + FQtyR < 8";
-        outputFilename = "TrackLowFuelEvents.java";
+           eventName = "Low Fuel";
+           requiredColumns = new String[]{"FQtyL", "FQtyR"};
+           conditions = "FQtyL + FQtyR < 8";
+           outputFilename = "TrackLowFuelEvents.java";
 
-        generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
+           generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
 
 
-        eventName = "Low Airspeed on Climbout";
-        requiredColumns = new String[]{"IAS", "VSpd", "AltAGL"};
-        conditions = "IAS > 52 AND VSpd > 0 AND AltAGL >= 100 AND AltAGL <= 500";
-        outputFilename = "TrackLowFuelEvents.java";
+           eventName = "Low Airspeed on Climbout";
+           requiredColumns = new String[]{"IAS", "VSpd", "AltAGL"};
+           conditions = "IAS > 52 AND VSpd > 0 AND AltAGL >= 100 AND AltAGL <= 500";
+           outputFilename = "TrackLowFuelEvents.java";
 
-        generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
-        */
+           generateTrackerCode(eventName, requiredColumns, conditions, outputFilename);
+           */
     }
 }
