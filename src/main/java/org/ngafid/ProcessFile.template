@@ -32,8 +32,10 @@ import org.ngafid.events2.PitchEvent;
 
 public class CLASS_NAME {
     // Pitch: pitch_attitude < -30 OR pitch_attitude > 30
-    static double minValue = -4.0;
-    static double maxValue = 4.0;
+
+    static double minValue = MIN_VALUE;
+    static double maxValue = MAX_VALUE;
+
 
     public static void testFile(String filename) {
         try {
@@ -53,10 +55,10 @@ public class CLASS_NAME {
             int lineNumber = 0;
             int bufferTime = 5;
             // I set here to avoid memory issues
-            double current;
+            double currentExceedance;
             for (int i = 0; i < pitchSeries.size(); i++) {
                 lineNumber = i + 4;
-                current = pitchSeries.get(i);
+                currentExceedance = pitchSeries.get(i);
                 //String time = timeSeries.get(i);
 
                 if ( CONDITIONS_CODE ) {
@@ -66,7 +68,7 @@ public class CLASS_NAME {
                     }
                     // I am setting endLine and endTime in here because i want to check to see if the buffer condition is met or not
                     endLine = lineNumber;
-                    System.out.println("pitch in line: " + lineNumber + " Value: " + "[" + current + "]");
+                    System.out.println("pitch in line: " + lineNumber + " Value: " + "[" + currentExceedance + "]");
                     endTime = timeSeries.get(i);
                     count =0;
                 } else {
@@ -78,7 +80,7 @@ public class CLASS_NAME {
                         count = 0;
                     //Print
                     if (startTime != null) 
-                        System.out.println("count: " + count + " with value: " + "[" + current + "]" + " in line: " + lineNumber );
+                        System.out.println("count: " + count + " with value: " + "[" + currentExceedance + "]" + " in line: " + lineNumber );
                     //Print
                     if (count == bufferTime){
                         System.err.println("Exceed the bufer range and New event created!!");
