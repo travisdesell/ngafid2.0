@@ -1,0 +1,76 @@
+package org.ngafid.routes;
+
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+import com.google.gson.Gson;
+
+import spark.Route;
+import spark.Request;
+import spark.Response;
+
+import org.ngafid.Database;
+import org.ngafid.flights.DoubleTimeSeries;
+
+public class PostCoordinates implements Route {
+    private static final Logger LOG = Logger.getLogger(PostCoordinates.class.getName());
+    private Gson gson;
+
+    public PostCoordinates(Gson gson) {
+        this.gson = gson;
+
+        LOG.info("post coordinates route initialized.");
+    }
+
+    private class Coordinates {
+        int nanOffset = -1;
+        ArrayList<double[]> coordinates = new ArrayList<double[]>();
+
+        public Coordinates(int flightId, String name) throws SQLException {
+            Connection connection = Database.getConnection();
+            DoubleTimeSeries latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
+            DoubleTimeSeries longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
+
+            for (int i = 0; i < latitudes.size(); i++) {
+                double longitude = longitudes.get(i);
+                double latitude = latitudes.get(i);
+
+                if (Double.isNaN(longitude) || Double.isNaN(latitude)) {
+                } else {
+                    if (nanOffset < 0) nanOffset = i;
+                    coordinates.add(new double[]{longitude, latitude});
+                }
+            }
+       }
+    }
+
+    @Override
+    public Object handle(Request request, Response response) {
+        LOG.info("handling coordinates route!");
+        int flightId = Integer.parseInt(request.queryParams("flightId"));
+        String name = request.queryParams("seriesName");
+
+        try {
+            Coordinates coordinates = new Coordinates(flightId, name);
+
+            //System.out.println(gson.toJson(uploadDetails));
+            String output = gson.toJson(coordinates);
+            //need to convert NaNs to null so they can be parsed by JSON
+            output = output.replaceAll("NaN","null");
+
+            //LOG.info(output);
+
+            return output;
+        } catch (SQLException e) {
+            return gson.toJson(new ErrorResponse(e));
+        }
+    }
+}
+
+
+

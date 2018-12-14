@@ -42,6 +42,11 @@ public class Flight {
     private final static double MAX_AIRPORT_DISTANCE_FT = 10000;
     private final static double MAX_RUNWAY_DISTANCE_FT = 100;
 
+    private int id = -1;
+    private int fleetId = -1;
+    private int uploaderId = -1;
+    private int uploadId = -1;
+
     private String filename;
     private String airframeType;
     private String tailNumber;
@@ -68,6 +73,40 @@ public class Flight {
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
+
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_number, airframe_type, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl FROM flights WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        return flights;
+    }
+
+    public Flight(Connection connection, ResultSet resultSet) throws SQLException {
+        id = resultSet.getInt(1);
+        fleetId = resultSet.getInt(2);
+        uploaderId = resultSet.getInt(3);
+        uploadId = resultSet.getInt(4);
+        tailNumber = resultSet.getString(5);
+        airframeType = resultSet.getString(6);
+        startDateTime = resultSet.getString(7);
+        endDateTime = resultSet.getString(8);
+        filename = resultSet.getString(9);
+        md5Hash = resultSet.getString(10);
+        numberRows = resultSet.getInt(11);
+        status = resultSet.getString(12);
+        hasCoords = resultSet.getBoolean(13);
+        hasAGL = resultSet.getBoolean(14);
+
+        itinerary = Itinerary.getItinerary(connection, id);
+    }
 
     public int getNumberRows() {
         return numberRows;
@@ -680,6 +719,10 @@ public class Flight {
     }
 
     public void updateDatabase(Connection connection, int uploadId, int uploaderId, int fleetId) {
+        this.fleetId = fleetId;
+        this.uploaderId = uploaderId;
+        this.uploadId = uploadId;
+
         try {
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, tail_number, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
@@ -702,6 +745,7 @@ public class Flight {
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
             if (resultSet.next()) {
                 int flightId = resultSet.getInt(1);
+                this.id = flightId;
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
                     series.updateDatabase(connection, flightId);

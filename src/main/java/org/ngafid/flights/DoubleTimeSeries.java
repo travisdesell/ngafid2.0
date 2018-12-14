@@ -18,10 +18,13 @@ import java.util.ArrayList;
 import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
+    private int id = -1;
+    private int flightId = -1;
     private String name;
     private String dataType;
     private ArrayList<Double> timeSeries;
 
+    private int length = -1;
     private double min = Double.MAX_VALUE;
     private int validCount;
     private double avg;
@@ -82,17 +85,32 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
-    public DoubleTimeSeries(ResultSet resultSet) throws SQLException {
-        int id = resultSet.getInt(1);
-        int flightId = resultSet.getInt(2);
-        name = resultSet.getString(3);
-        int length = resultSet.getInt(4);
-        validCount = resultSet.getInt(5);
-        min = resultSet.getDouble(6);
-        avg = resultSet.getDouble(7);
-        max = resultSet.getDouble(8);
+    public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
+        query.setInt(1, flightId);
+        query.setString(2, name);
 
-        Blob values = resultSet.getBlob(9);
+        ResultSet resultSet = query.executeQuery();
+        if (resultSet.next()) {
+            return new DoubleTimeSeries(resultSet);
+        } else {
+            //TODO: should probably throw an exception 
+            return null;
+        }
+    }
+
+    public DoubleTimeSeries(ResultSet resultSet) throws SQLException {
+        id = resultSet.getInt(1);
+        flightId = resultSet.getInt(2);
+        name = resultSet.getString(3);
+        dataType = resultSet.getString(4);
+        length = resultSet.getInt(5);
+        validCount = resultSet.getInt(6);
+        min = resultSet.getDouble(7);
+        avg = resultSet.getDouble(8);
+        max = resultSet.getDouble(9);
+
+        Blob values = resultSet.getBlob(10);
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
 
@@ -165,7 +183,7 @@ public class DoubleTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, `values`) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setString(2, name);

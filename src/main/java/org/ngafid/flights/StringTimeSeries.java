@@ -89,7 +89,7 @@ public class StringTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, data_type, length, valid_length, `values`) VALUES (?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, data_type, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setString(2, name);

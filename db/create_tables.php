@@ -4,7 +4,7 @@ $cwd[__FILE__] = __FILE__;
 if (is_link($cwd[__FILE__])) $cwd[__FILE__] = readlink($cwd[__FILE__]);
 $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
-require_once($cwd[__FILE__] . "/../www/my_query.php");
+require_once($cwd[__FILE__] . "/../www_php/my_query.php");
 
 $drop_tables = false;
 
@@ -19,9 +19,6 @@ query_ngafid_db("DROP TABLE flight_errors");
 query_ngafid_db("DROP TABLE upload_errors");
 
 if ($drop_tables) {
-    query_ngafid_db("DROP TABLE users");
-    query_ngafid_db("DROP TABLE uploads");
-    query_ngafid_db("DROP TABLE flights");
 }
 
 
@@ -51,7 +48,6 @@ $query = "CREATE TABLE `uploads` (
     `md5_hash` VARCHAR(32) NOT NULL,
     `size_bytes` BIGINT NOT NULL,
     `bytes_uploaded` BIGINT DEFAULT 0,
-    `tiling_progress` double default 0,
     `status` varchar(16),
     `start_time` datetime,
     `end_time` datetime,
@@ -116,7 +112,7 @@ $query = "CREATE TABLE `double_series` (
     `min` double,
     `avg` double,
     `max` double,
-    `values` MEDIUMBLOB,
+    data MEDIUMBLOB,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -130,7 +126,7 @@ $query = "CREATE TABLE `string_series` (
     `data_type` VARCHAR(64) NOT NULL,
     `length` INT(11) NOT NULL,
     `valid_length` INT(11) NOT NULL,
-    `values` MEDIUMBLOB,
+    data MEDIUMBLOB,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
