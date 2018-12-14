@@ -1,14 +1,17 @@
 package org.ngafid.flights;
 
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.ngafid.airports.Airports;
 
 public class Itinerary {
+    private int order = -1;
     private String airport;
     private String runway;
     private HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
@@ -24,6 +27,31 @@ public class Itinerary {
 
     public String getRunway() {
         return runway;
+    }
+
+    public static ArrayList<Itinerary> getItinerary(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, min_airport_distance, min_runway_distance FROM itinerary WHERE flight_id = ? ORDER BY `order`";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
+        while (resultSet.next()) {
+            itinerary.add(new Itinerary(resultSet));
+        }
+
+        return itinerary;
+    }
+
+    public Itinerary(ResultSet resultSet) throws SQLException {
+        order = resultSet.getInt(1);
+        minAltitudeIndex = resultSet.getInt(2);
+        minAltitude = resultSet.getDouble(3);
+        airport = resultSet.getString(4);
+        runway = resultSet.getString(5);
+        minAirportDistance = resultSet.getDouble(6);
+        minRunwayDistance = resultSet.getDouble(7);
     }
 
     public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance) {
@@ -100,6 +128,8 @@ public class Itinerary {
     }
 
     public void updateDatabase(Connection connection, int flightId, int order) throws SQLException {
+        this.order = order;
+
         PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, order);
