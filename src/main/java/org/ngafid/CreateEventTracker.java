@@ -24,7 +24,7 @@ public class CreateEventTracker {
 
     public static void generateTrackerCode(String eventName, String[] requiredColumns, String[] conditions, String[] rules, String outputFilename) throws Exception {
         //write the java class out to a file
-        File templateFile = new File("./src/main/java/org/ngafid/ProcessFile.template");
+        File templateFile = new File("./src/main/java/org/ngafid/generated/ProcessFile.template");
         BufferedReader bufferedReader = new BufferedReader(new FileReader(templateFile));
         StringBuilder template = new StringBuilder();
 
@@ -96,7 +96,7 @@ public class CreateEventTracker {
         String[] conditions = new String[]{"currentExceedance <  minValue", "currentExceedance >  + maxValue"};
         String[] rules = new String[]{"||"};
 
-        String outputFilename = "./src/main/java/org/ngafid/TrackPitchEvents.java";
+        String outputFilename = "./src/main/java/org/ngafid/generated/TrackPitchEvents.java";
 
         generateTrackerCode(eventName, requiredColumns, conditions, rules, outputFilename);
         /* 
