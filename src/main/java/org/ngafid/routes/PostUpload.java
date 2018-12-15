@@ -34,6 +34,7 @@ import javax.servlet.http.Part;
 import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Session;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
@@ -67,6 +68,9 @@ public class PostUpload implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
+        final Session session = request.session();
+        LOG.info("userSession: " + session.attribute("user"));
+        LOG.info("session id: " + session.id());
 
         Connection connection = Database.getConnection();
 

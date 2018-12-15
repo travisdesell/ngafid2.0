@@ -10,8 +10,10 @@ import com.google.gson.Gson;
 import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Session;
 
 import org.ngafid.Database;
+import org.ngafid.WebServer;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
 
@@ -22,8 +24,7 @@ public class PostMainContent implements Route {
     public PostMainContent(Gson gson) {
         this.gson = gson;
 
-        System.out.println("post main content route initalized");
-        LOG.info("post main content route initialized.");
+        LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
     private class MainContent {
@@ -40,7 +41,13 @@ public class PostMainContent implements Route {
 
     @Override
     public Object handle(Request request, Response response) {
-        LOG.info("handling main content route!");
+        LOG.info("handling " + this.getClass().getName() + " route");
+
+        final Session session = request.session();
+        String userSession = session.attribute("user");
+        LOG.info("user session (after generate): " + userSession);
+        LOG.info("session id: " + session.id());
+
 
         try {
             MainContent mainContent = new MainContent(1);

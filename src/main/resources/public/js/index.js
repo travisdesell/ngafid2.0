@@ -5,7 +5,7 @@ function load_navbar() {
     $.get(base_url + '/templates/navbar.html', function(file_contents) {
 
         var view = {
-            logged_in : true
+            logged_in : false
         };
 
         var output = Mustache.render(file_contents, view);

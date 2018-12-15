@@ -3,11 +3,13 @@ package org.ngafid;
 import org.ngafid.routes.*;
 
 import spark.Spark;
+import spark.Session;
 
 import java.io.InputStream;
 import java.util.Objects;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+import java.util.Random;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -40,9 +42,22 @@ public final class WebServer {
             System.exit(1);
         }
         NGAFID_ARCHIVE_DIR = System.getenv("NGAFID_ARCHIVE_DIR");
-
-
     }
+
+    public static String getSaltString() {
+        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+        StringBuilder salt = new StringBuilder();
+
+        Random rnd = new Random();
+        while (salt.length() < 18) { // length of the random string.
+            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
+            salt.append(SALTCHARS.charAt(index));
+        }
+        String saltStr = salt.toString();
+
+        return saltStr;
+    }
+
 
     /** 
      * Entry point for the NGAFID web server.
@@ -74,15 +89,42 @@ public final class WebServer {
         // Configuration to serve static files
         Spark.staticFileLocation("/public");
 
-        Spark.post("/main_content", new PostMainContent(gson));
-        Spark.post("/upload_details", new PostUploadDetails(gson));
+        Spark.before("/protected/*", (request, response) -> {
+            LOG.info("protected URI: " + request.uri());
 
-        Spark.post("/new_upload", "multipart/form-data", new PostNewUpload(gson));
-        Spark.post("/upload", "multipart/form-data", new PostUpload(gson));
+            PasswordAuthentication auth = new PasswordAuthentication();
+            String token = auth.hash("precariously perched porcupines");
 
-        Spark.post("/coordinates", new PostCoordinates(gson));
-        Spark.post("/double_series", new PostDoubleSeries(gson));
-        Spark.post("/double_series_names", new PostDoubleSeriesNames(gson));
+            boolean auth1 = auth.authenticate("precariously ", token);
+            boolean auth2 = auth.authenticate("joe", token);
+            boolean auth3 = auth.authenticate("precariously perched porcupines", token);
+
+            LOG.info("token: " + token);
+            LOG.info("auth1: " + auth1 + ", auth2: " + auth2 + ", auth3: " + auth3);
+
+
+            final Session session = request.session();
+            String userSession = session.attribute("user");
+            LOG.info("user session (before generate): " + userSession);
+
+            session.attribute("user", WebServer.getSaltString());
+
+            userSession = session.attribute("user");
+            LOG.info("user session (after generate): " + userSession);
+            LOG.info("session id: " + session.id());
+
+            //if (request.session(true).attribute("user") == null) halt(401, "Go Away!");
+        });
+
+        Spark.post("/protected/main_content", new PostMainContent(gson));
+        Spark.post("/protected/upload_details", new PostUploadDetails(gson));
+
+        Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
+        Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
+
+        Spark.post("/protected/coordinates", new PostCoordinates(gson));
+        Spark.post("/protected/double_series", new PostDoubleSeries(gson));
+        Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
 
         LOG.info("NGAFID WebServer initialization complete.");
     }
