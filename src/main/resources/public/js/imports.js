@@ -184,7 +184,7 @@ class Import extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './upload_details',
+                url: './protected/upload_details',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {

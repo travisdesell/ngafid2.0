@@ -7,33 +7,18 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-
 query_ngafid_db("DROP TABLE users");
-query_ngafid_db("DROP TABLE uploads");
-query_ngafid_db("DROP TABLE flights");
-query_ngafid_db("DROP TABLE itinerary");
-query_ngafid_db("DROP TABLE double_series");
-query_ngafid_db("DROP TABLE string_series");
-query_ngafid_db("DROP TABLE flight_warnings");
-query_ngafid_db("DROP TABLE flight_errors");
-query_ngafid_db("DROP TABLE upload_errors");
 
 if ($drop_tables) {
+    query_ngafid_db("DROP TABLE uploads");
+    query_ngafid_db("DROP TABLE flights");
+    query_ngafid_db("DROP TABLE itinerary");
+    query_ngafid_db("DROP TABLE double_series");
+    query_ngafid_db("DROP TABLE string_series");
+    query_ngafid_db("DROP TABLE flight_warnings");
+    query_ngafid_db("DROP TABLE flight_errors");
+    query_ngafid_db("DROP TABLE upload_errors");
 }
-
-
-$query = "CREATE TABLE `users` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(256) NOT NULL,
-    `name` VARCHAR(128) NOT NULL,
-    `given_name` VARCHAR(64) NOT NULL,
-    `family_name` VARCHAR(64) NOT NULL,
-
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`email`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
 
 
 $query = "CREATE TABLE `uploads` (
@@ -162,6 +147,25 @@ $query = "CREATE TABLE `upload_errors` (
     `upload_id` INT(11) NOT NULL,
     `message` VARCHAR(512) NOT NULL,
     `stack_trace` VARCHAR(2048) NOT NULL,
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `users` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11),
+    `email` INT(11) NOT NULL,
+    `token` VARCHAR(64) NOT NULL,
+    `first_name` VARCHAR(64),
+    `last_name` VARCHAR(64),
+    `address` VARCHAR(256) NOT NULL,
+    `city` VARCHAR(64),
+    `country` VARCHAR(64),
+    `state` VARCHAR(64),
+    `zip_code` VARCHAR(16),
+    `phone` VARCHAR(16),
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

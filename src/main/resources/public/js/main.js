@@ -236,7 +236,7 @@ $(document).ready(function() {
 
     $.ajax({
         type: 'POST',
-        url: './main_content',
+        url: './protected/main_content',
         data : submission_data,
         dataType : 'json',
         success : function(response) {

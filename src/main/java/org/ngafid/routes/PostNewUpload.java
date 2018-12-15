@@ -17,8 +17,10 @@ import javax.servlet.http.Part;
 import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Session;
 
 import org.ngafid.Database;
+import org.ngafid.WebServer;
 import org.ngafid.flights.Upload;
 
 public class PostNewUpload implements Route {
@@ -34,6 +36,11 @@ public class PostNewUpload implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
+
+        final Session session = request.session();
+        String userSession = session.attribute("user");
+        LOG.info("user session (after generate): " + userSession);
+        LOG.info("session id: " + session.id());
 
         Connection connection = Database.getConnection();
 

@@ -89,7 +89,7 @@ class TraceButtons extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './double_series',
+                url: './protected/double_series',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -190,7 +190,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './double_series_names',
+                url: './protected/double_series_names',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -280,7 +280,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './coordinates',
+                url: './protected/coordinates',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
