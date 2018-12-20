@@ -466,26 +466,36 @@ class Flight extends React.Component {
     }
 }
 
-
 class FlightsCard extends React.Component {
     constructor(props) {
         super(props);
 
-        let flights = props.flights;
-        if (flights == undefined) flights = [];
-
         this.state = {
-            flights : flights
-        };
+            hidden : this.props.hidden
+        }
+
+        mainCards['flights'] = this;
+        console.log("constructed FlightsCard, set mainCards");
+    }
+
+    setContent(flights) {
+        this.state.flights = flights;
+        this.setState(this.state);
     }
 
     render() {
+        console.log("rendering flights!");
         let hidden = this.props.hidden;
+
+        let flights = [];
+        if (typeof this.state.flights != 'undefined') {
+            flights = this.state.flights;
+        }
 
         return (
             <div className="card-body" hidden={hidden}>
                 {
-                    this.state.flights.map((flightInfo, index) => {
+                    flights.map((flightInfo, index) => {
                         return (
                             <Flight flightInfo={flightInfo} key={flightInfo.id} />
                         );

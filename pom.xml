@@ -38,6 +38,14 @@
             <version>${slf4j.version}</version>
         </dependency>
 
+        <!-- for sending email -->
+        <!--
+        <dependency>
+            <groupId>javax.mail</groupId>
+            <artifactId>mail</artifactId>
+            <version>1.5.0-b01</version>
+        </dependency>
+        -->
 
         <dependency>
             <groupId>junit</groupId>
@@ -59,5 +67,25 @@
             <version>2.3.0</version>
         </dependency>
     </dependencies>
+
+    <build>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-compiler-plugin</artifactId>
+                    <version>3.1</version>
+                    <configuration>
+                        <compilerArgs>
+                            <arg>-Xlint:all</arg>
+                            <arg>-Xmaxwarns</arg>
+                            <arg>50000</arg>
+                        </compilerArgs>
+                    </configuration>
+                </plugin>
+            </plugins>
+        </pluginManagement>
+    </build>
+
 
 </project>

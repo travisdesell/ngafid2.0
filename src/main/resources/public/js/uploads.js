@@ -114,12 +114,17 @@ class UploadsCard extends React.Component {
     constructor(props) {
         super(props);
 
-        let uploads = props.uploads;
-        if (uploads == undefined) uploads = [];
-
         this.state = {
-            uploads : uploads
-        };
+            hidden : this.props.hidden
+        }
+
+        mainCards['uploads'] = this;
+        console.log("constructed UploadsCard, set mainCards");
+    }
+
+    setContent(uploads) {
+        this.state.uploads = uploads;
+        this.setState(this.state);
     }
 
     getUploadsCard() {
@@ -211,7 +216,7 @@ class UploadsCard extends React.Component {
             console.log("got md5Hash: '" + md5Hash + "'");
             var xhr = new XMLHttpRequest();
 
-            xhr.open('POST', './new_upload');
+            xhr.open('POST', './protected/new_upload');
             xhr.onload = function() {
                 console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
@@ -349,7 +354,7 @@ class UploadsCard extends React.Component {
         //console.log(bytes);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', './upload');
+        xhr.open('POST', './protected/upload');
         //xhr.setRequestHeader('Content-Type', 'application/octet-stream');
         xhr.onload = function() {
             console.log("Upload response: " + xhr.responseText);
@@ -425,15 +430,21 @@ class UploadsCard extends React.Component {
     }
 
     render() {
+        console.log("rendering uploads!");
         const hidden = this.props.hidden;
         const hiddenStyle = {
             display : "none"
         };
 
+        let uploads = [];
+        if (typeof this.state.uploads != 'undefined') {
+            uploads = this.state.uploads;
+        }
+
         return (
             <div className="card-body" hidden={hidden}>
                 {
-                    this.state.uploads.map((uploadInfo, index) => {
+                    uploads.map((uploadInfo, index) => {
                         return (
                             <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
                         );
