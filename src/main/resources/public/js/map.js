@@ -1,5 +1,45 @@
 console.log("doing first load after setting state!");
 
+var styles = [
+    'Aerial',
+    'AerialWithLabels',
+    'Road',
+    'RoadOnDemand'
+];
+
+var layers = [];
+var i;
+var ii = styles.length; //do the mapquest satellite differently
+
+for (i = 0; i < ii; ++i) {
+    layers.push(new ol.layer.Tile({
+        visible: false,
+        preload: Infinity,
+        source: new ol.source.BingMaps({
+            key: 'At3fIeQ6GJzbuGZpfWYkVjMDuzTuhYeFjHTzkraUafn06HMY3Eq1hDvZUlqq5Ysf',
+            imagerySet: styles[i]
+                // use maxZoom 19 to see stretched tiles instead of the BingMaps
+                // "no photos at this zoom level" tiles
+                // maxZoom: 19
+        })
+    }));
+}
+
+var center = ol.proj.fromLonLat([-97.0329, 47.9253]);
+
+layers[2].setVisible(true);
+
+var map = new ol.Map({
+    target: 'map',
+    layers: layers,
+    loadTilesWhileInteracting: true,
+    view: new ol.View({
+        center: center,
+        zoom: 12
+    })
+});
+
+/*
 var layer = new ol.layer.Tile({
     source: new ol.source.OSM()
 });
@@ -16,6 +56,7 @@ var map = new ol.Map({
         zoom: 12
     })
 });
+*/
 
 var Colors = {};
 Colors.names = {
