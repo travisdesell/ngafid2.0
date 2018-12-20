@@ -16,6 +16,7 @@ class TabHeader extends React.Component {
 }
 
 var mainContent = null;
+var mainCards = {}
 
 class MainContent extends React.Component {
     constructor(props) {
@@ -160,12 +161,107 @@ class MainContent extends React.Component {
     changeCard(newName) {
         console.log("changing active card to: '" + newName + "'");
 
-        this.setState({
-            activeName : newName
-        });
+        let ucNewName = newName.toLowerCase();
+
+        //don't request data from server if we're in on of the non-logged navbar cards
+        //use reflection to get the correct props field (flights, imports or uploads)
+        //the indexOf method will return -1 if the array doesn't contain newName
+        let loggedOutCards = ["Home", "Create Account", "Awaiting Access", "Welcome"];
+
+        if (newName == "Create Account" && typeof mainCards['create_account'].state.fleets == 'undefined') {
+            var submission_data = {};   
+
+            $('#loading').show();
+
+            $.ajax({
+                type: 'POST',
+                url: './get_fleet_names',
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    $('#loading').hide();
+                    //TODO: processResponse instead
+
+
+                    if (response.err_msg) {
+                        display_error_modal(response.err_title, response.err_msg);
+                        return;
+                    }
+
+                    console.log("setting mainCards['create_account'] content");
+                    mainCards['create_account'].setFleets( response );
+
+                    mainContent.state.activeName = newName;
+                    mainContent.setState(mainContent.state);
+
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    display_error_modal("Error Loading Uploads", errorThrown);
+                },   
+                async: true 
+            });  
+
+
+        } else if (loggedOutCards.indexOf(newName) < 0 && typeof mainCards[ucNewName].state[ucNewName] == 'undefined') {
+            //TODO: show loading spinner until flights loaded
+
+            var submission_data = {};   
+
+            $('#loading').show();
+
+            $.ajax({
+                type: 'POST',
+                url: './protected/get_' + ucNewName,
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    $('#loading').hide();
+
+                    if (response.err_msg) {
+                        display_error_modal(response.err_title, response.err_msg);
+                        return;
+                    }
+
+                    if (ucNewName == 'uploads') {
+                        for (var i = 0; i < response.length; i++) {
+                            if (response[i].status == "UPLOADING") response[i].status = "UPLOAD INCOMPLETE";
+                        }
+                    }
+
+                    mainContent.state.activeName = newName;
+                    mainContent.setState(mainContent.state);
+
+                    console.log("setting mainCards['" + ucNewName + "'] content");
+                    mainCards[ucNewName].setContent( response );
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    display_error_modal("Error Loading Uploads", errorThrown);
+                },   
+                async: true 
+            });  
+
+        } else {
+            //if this is a logged out card, hide the map and plot
+            if (loggedOutCards.indexOf(newName) > -1) {
+                this.hideMap();
+                this.hidePlot();
+            }
+
+            this.setState({
+                activeName : newName
+            });
+        }
     }
 
     render() {
+        console.log("rendering main!");
+
         let activeName = this.state.activeName;
 
         let style = null;
@@ -182,11 +278,27 @@ class MainContent extends React.Component {
             };
         }
 
+        /*
+        console.log('rendering with activeName: ' + activeName);
+        console.log(this.state.flights);
+        console.log(this.state.imports);
+        console.log(this.state.uploads);
+
+        console.log("home hidden: " + (activeName != "Home"));
+        console.log("flights hidden: " + (activeName != "Flights"));
+        console.log("imports hidden: " + (activeName != "Imports"));
+        console.log("uploads hidden: " + (activeName != "Uplaods"));
+        */
+
         return (
             <div id="MainCards" style={style}>
-                <FlightsCard name={"Flights"} hidden={activeName != "Flights"} flights={this.props.flights} />
-                <ImportsCard name={"Imports"} hidden={activeName != "Imports"} imports={this.props.imports} />
-                <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} uploads={this.props.uploads} />
+                <HomeCard name={"Home"} hidden={activeName != "Home"} />
+                <CreateAccountCard name={"Create Account"} hidden={activeName != "Create Account"} />
+                <AwaitingAccessCard name={"Awaiting Access"} hidden={activeName != "Awaiting Access"} />
+                <WelcomeCard name={"Welcome"} hidden={activeName != "Welcome"} />
+                <FlightsCard name={"Flights"} hidden={activeName != "Flights"} />
+                <ImportsCard name={"Imports"} hidden={activeName != "Imports"} />
+                <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} />
             </div>
         );
     }
@@ -194,27 +306,6 @@ class MainContent extends React.Component {
 
 
 $(document).ready(function() {
-    /*
-    var trace1 = { 
-            x: [1, 2, 3, 4], 
-            y: [10, 15, 13, 17], 
-            type: 'scatter'
-    };
-    var trace2 = { 
-            x: [1, 2, 3, 4], 
-            y: [16, 5, 11, 9], 
-            type: 'scatter'
-    };
-    var data = [trace1, trace2];
-
-    var layout2 = { 
-            yaxis: {rangemode: 'tozero',
-                        zeroline: true}
-    };
-
-    Plotly.newPlot('plot', data, layout1);
-    */
-
     var layout1 = { 
         yaxis: {
             rangemode: 'tozero',
@@ -226,44 +317,10 @@ $(document).ready(function() {
 
     Plotly.newPlot('plot', [], layout1);
 
-    var submission_data = {
-        request : "GET_MAIN_CONTENT",
-        id_token : "TEST_ID_TOKEN",
-        //id_token : id_token,
-        user_id : 1
-        //user_id : user_id
-    };   
-
-    $.ajax({
-        type: 'POST',
-        url: './protected/main_content',
-        data : submission_data,
-        dataType : 'json',
-        success : function(response) {
-            console.log("received response: ");
-            console.log(response);
-
-            if (response.err_msg) {
-                display_error_modal(response.err_title, response.err_msg);
-                return;
-            }
-
-            for (var i = 0; i < response.uploads.length; i++) {
-                if (response.uploads[i].status == "UPLOADING") {
-                    response.uploads[i].status = "UPLOAD INCOMPLETE";
-                }
-            }
-
-            var mainContent = ReactDOM.render(
-                <MainContent activeName="Flights" uploads={response.uploads} imports={response.imports} flights={response.flights}/>,
-                document.querySelector('#main')
-            );
-        },   
-        error : function(jqXHR, textStatus, errorThrown) {
-            display_error_modal("Error Loading Uploads", errorThrown);
-        },   
-        async: true 
-    });  
+    ReactDOM.render(
+        <MainContent activeName="Home"/>,
+        document.querySelector('#main')
+    );
 
 	/*
     $(window).scroll(function() {

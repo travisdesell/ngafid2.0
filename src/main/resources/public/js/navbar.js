@@ -1,12 +1,12 @@
 'use strict';
 
-var loggedIn = false;
-
 class NavLink extends React.Component {
     render() {
         const name = this.props.name;
         const active = this.props.active;
         const onClick = this.props.onClick;
+
+        console.log("rendering navlink '" + name + "', active: " + active);
 
         const classNames = active ? "nav-item active" : "nav-item";
         const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
@@ -27,28 +27,65 @@ class Navbar extends React.Component {
 
         this.state = {
             loggedIn : this.props.loggedIn,
-            flightsActive : true,
-            importsActive : false,
-            uploadsActive : false
+            activeName : "Home"
         };
 
         navbar = this;
     }
 
+    createAccount() {
+        console.log("Creating account!");
+
+        this.state = {
+            loggedIn : false,
+            activeName : "Create Account"
+        };
+        this.setState(this.state);
+
+        console.log("changing card to: " + this.state.activeName);
+
+        mainContent.changeCard(this.state.activeName);
+
+    }
+
+    waiting() {
+        console.log("setting navbar state to waiting!");
+
+        this.state.loggedIn = false;
+        this.state.waiting = true;
+        this.state.activeName =  "Awaiting Access";
+
+        this.setState(this.state);
+
+        mainContent.changeCard(this.state.activeName);
+    }
+
+
     logOut() {
         console.log("logging out!");
 
-        this.setState({
-            loggedIn : false
-        });
+        this.state.loggedIn = false;
+        this.state.waiting = false;
+        this.state.activeName =  "Home";
+
+        this.setState(this.state);
+
+        mainContent.changeCard(this.state.activeName);
+    }
+
+    attemptLogIn() {
+        console.log("showing login modal!");
+        $("#login-modal").modal('show');
     }
 
     logIn() {
-        console.log("logging in!");
+        this.state.loggedIn = true;
+        this.state.waiting = false;
+        this.state.activeName =  "Welcome";
 
-        this.setState({
-            loggedIn : true
-        });
+        this.setState(this.state);
+
+        mainContent.changeCard(this.state.activeName);
     }
 
     isMapVisible() {
@@ -64,31 +101,34 @@ class Navbar extends React.Component {
     }
 
     show(newCard) {
+        console.log("changing card to: " + newCard);
         mainContent.changeCard(newCard);
 
+        let homeActive = false;
         let flightsActive = false;
         let importsActive = false;
         let uploadsActive = false;
 
-        if (newCard === "Flights") flightsActive = true;
-        else if (newCard === "Imports") importsActive = true;
-        else if (newCard === "Uploads") uploadsActive = true;
+        if (newCard == "Home" || newCard == "Create Account") {
+            homeActive = true;
+            mainContent.hidePlot();
+            mainContent.hideMap();
+        }
+
+        console.log("changing log in to: " + newCard);
 
         this.state = {
-            loggedIn : this.props.loggedIn,
-            flightsActive : flightsActive,
-            importsActive : importsActive,
-            uploadsActive : uploadsActive 
+            loggedIn : this.state.loggedIn,
+            activeName : newCard
         }
 
         this.setState(this.state);
      }
 
     renderLoggedIn() {
+        let activeName = this.state.activeName;
 
-        let flightsActive = this.state.flightsActive;
-        let importsActive = this.state.importsActive;
-        let uploadsActive = this.state.uploadsActive;
+        console.log("rendering logged in navbar, activeName: " + activeName);
 
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         const buttonStyle = { };
@@ -109,17 +149,17 @@ class Navbar extends React.Component {
                 </ul>
 
                 <ul className="navbar-nav">
-                    <NavLink name={"Flights"} onClick={() => this.show("Flights")} active={flightsActive}/>
-                    <NavLink name={"Imports"} onClick={() => this.show("Imports")} active={importsActive}/>
-                    <NavLink name={"Uploads"} onClick={() => this.show("Uploads")} active={uploadsActive}/>
+                    <NavLink name={"Flights"} onClick={() => this.show("Flights")} active={activeName == "Flights"}/>
+                    <NavLink name={"Imports"} onClick={() => this.show("Imports")} active={activeName == "Imports"}/>
+                    <NavLink name={"Uploads"} onClick={() => this.show("Uploads")} active={activeName == "Uploads"}/>
 
                     <li className="nav-item dropdown">
                         <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Approach Analysis
+                            Account
                         </a>
                         <div className="dropdown-menu" aria-labelledby="navbarDropdownMenuLink">
-                            <a className="dropdown-item" href="javascript:void(0)">Stabilized Approach</a>
-                            <a className="dropdown-item" href="javascript:void(0)">Self Defined Glide Path</a>
+                            <a className="dropdown-item" href="javascript:void(0)">Profile</a>
+                            <a className="dropdown-item" href="javascript:void(0)">Log Out</a>
                         </div>
                     </li>
 
@@ -129,14 +169,32 @@ class Navbar extends React.Component {
         );
     }
 
-    renderLoggedOut() {
+    renderWaiting() {
+        let activeName = this.state.activeName;
+
         return (
             <div className="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul className="navbar-nav mr-auto">
                 </ul>
 
                 <ul className="navbar-nav">
-                    <NavLink name={"Login"} onClick={() => this.logIn()} />
+                    <NavLink name={"Logout"} onClick={() => this.logOut()}/>
+                </ul>
+            </div>
+        );
+    }
+
+    renderLoggedOut() {
+        let activeName = this.state.activeName;
+
+        return (
+            <div className="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul className="navbar-nav mr-auto">
+                </ul>
+
+                <ul className="navbar-nav">
+                    <NavLink name={"Login"} onClick={() => this.attemptLogIn()} />
+                    <NavLink name={"Create Account"} onClick={() => this.createAccount()} active={activeName == "Create Account"}/>
                 </ul>
             </div>
         );
@@ -146,15 +204,18 @@ class Navbar extends React.Component {
         const isLoggedIn = this.state.loggedIn;
         let navbar_content;
 
-        if (isLoggedIn) {
+        if (this.state.waiting) {
+            navbar_content = this.renderWaiting();
+
+        } else if (isLoggedIn) {
             navbar_content = this.renderLoggedIn();
         } else {
             navbar_content = this.renderLoggedOut();
         }
 
         return (
-            <nav className="navbar navbar-expand-lg navbar-light bg-light">
-                <a className="navbar-brand" href="javascript:void(0)">NGAFID</a>
+            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light bg-light">
+                <a className="navbar-brand" href="javascript:void(0)" onClick={() => this.show("Home")}>NGAFID</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
@@ -165,7 +226,7 @@ class Navbar extends React.Component {
 }
 
 var navbar = ReactDOM.render(
-    <Navbar loggedIn={true} />,
+    <Navbar loggedIn={false} />,
     document.querySelector('#navbar')
 );
 

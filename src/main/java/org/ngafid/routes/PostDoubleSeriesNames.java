@@ -49,12 +49,12 @@ public class PostDoubleSeriesNames implements Route {
         int flightId = Integer.parseInt(request.queryParams("flightId"));
 
         try {
-            DoubleSeriesNames uploadDetails = new DoubleSeriesNames(flightId);
+            DoubleSeriesNames doubleSeriesNames = new DoubleSeriesNames(flightId);
 
-            //System.out.println(gson.toJson(uploadDetails));
-            //LOG.info(gson.toJson(uploadDetails));
+            //System.out.println(gson.toJson(doubleSeriesNames));
+            //LOG.info(gson.toJson(doubleSeriesNames));
 
-            return gson.toJson(uploadDetails);
+            return gson.toJson(doubleSeriesNames);
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }

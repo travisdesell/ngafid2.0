@@ -14,6 +14,7 @@ import spark.Session;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
 
@@ -44,13 +45,10 @@ public class PostMainContent implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         final Session session = request.session();
-        String userSession = session.attribute("user");
-        LOG.info("user session (after generate): " + userSession);
-        LOG.info("session id: " + session.id());
-
+        User user = session.attribute("user");
 
         try {
-            MainContent mainContent = new MainContent(1);
+            MainContent mainContent = new MainContent(user.getFleetId());
 
             //LOG.info(gson.toJson(mainContent));
 

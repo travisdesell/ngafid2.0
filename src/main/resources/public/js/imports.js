@@ -351,12 +351,17 @@ class ImportsCard extends React.Component {
     constructor(props) {
         super(props);
 
-        let imports = props.imports;
-        if (imports == undefined) imports = [];
-
         this.state = {
-            imports : imports
+            hidden : this.props.hidden
         };
+
+        mainCards['imports'] = this;
+        console.log("Constructed ImportsCard, set mainCards");
+    }
+
+    setContent(imports) {
+        this.state.imports = imports;
+        this.setState(this.state);
     }
 
     render() {
@@ -365,10 +370,15 @@ class ImportsCard extends React.Component {
             display : "none"
         };
 
+        let imports = [];
+        if (typeof this.state.imports != 'undefined') {
+            imports = this.state.imports;
+        }
+
         return (
             <div className="card-body" hidden={hidden}>
                 {
-                    this.state.imports.map((importInfo, index) => {
+                    imports.map((importInfo, index) => {
                         return (
                             <Import importInfo={importInfo} key={importInfo.identifier} />
                         );

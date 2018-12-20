@@ -38,6 +38,7 @@ import spark.Session;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
 
 public class PostUpload implements Route {
@@ -69,12 +70,11 @@ public class PostUpload implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
         final Session session = request.session();
-        LOG.info("userSession: " + session.attribute("user"));
-        LOG.info("session id: " + session.id());
+        User user = session.attribute("user");
 
         Connection connection = Database.getConnection();
 
-        int uploaderId = 1;
+        int uploaderId = user.getId();
 
         /*
            String location = "image";          // the directory location where files will be stored

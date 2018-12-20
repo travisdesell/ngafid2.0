@@ -7,7 +7,9 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-query_ngafid_db("DROP TABLE users");
+query_ngafid_db("DROP TABLE user");
+query_ngafid_db("DROP TABLE fleet");
+query_ngafid_db("DROP TABLE fleet_access");
 
 if ($drop_tables) {
     query_ngafid_db("DROP TABLE uploads");
@@ -153,25 +155,42 @@ $query = "CREATE TABLE `upload_errors` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `users` (
+$query = "CREATE TABLE `user` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `fleet_id` INT(11),
-    `email` INT(11) NOT NULL,
-    `token` VARCHAR(64) NOT NULL,
+    `email` VARCHAR(128) NOT NULL,
+    `password_token` VARCHAR(64) NOT NULL,
     `first_name` VARCHAR(64),
     `last_name` VARCHAR(64),
     `address` VARCHAR(256) NOT NULL,
     `city` VARCHAR(64),
-    `country` VARCHAR(64),
+    `country` VARCHAR(128),
     `state` VARCHAR(64),
     `zip_code` VARCHAR(16),
-    `phone` VARCHAR(16),
+    `phone_number` VARCHAR(24),
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `fleet` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_name` VARCHAR(256),
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `fleet_access` (
+    `user_id` INT(11),
+    `fleet_id` INT(11),
+    `type` VARCHAR(32),
+
+    PRIMARY KEY(`user_id`, `fleet_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 
 

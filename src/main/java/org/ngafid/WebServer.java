@@ -1,6 +1,8 @@
 package org.ngafid;
 
 import org.ngafid.routes.*;
+import org.ngafid.accounts.User;
+import org.ngafid.accounts.PasswordAuthentication;
 
 import spark.Spark;
 import spark.Session;
@@ -44,21 +46,6 @@ public final class WebServer {
         NGAFID_ARCHIVE_DIR = System.getenv("NGAFID_ARCHIVE_DIR");
     }
 
-    public static String getSaltString() {
-        String SALTCHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
-        StringBuilder salt = new StringBuilder();
-
-        Random rnd = new Random();
-        while (salt.length() < 18) { // length of the random string.
-            int index = (int) (rnd.nextFloat() * SALTCHARS.length());
-            salt.append(SALTCHARS.charAt(index));
-        }
-        String saltStr = salt.toString();
-
-        return saltStr;
-    }
-
-
     /** 
      * Entry point for the NGAFID web server.
      *
@@ -92,33 +79,28 @@ public final class WebServer {
         Spark.before("/protected/*", (request, response) -> {
             LOG.info("protected URI: " + request.uri());
 
-            PasswordAuthentication auth = new PasswordAuthentication();
-            String token = auth.hash("precariously perched porcupines");
-
-            boolean auth1 = auth.authenticate("precariously ", token);
-            boolean auth2 = auth.authenticate("joe", token);
-            boolean auth3 = auth.authenticate("precariously perched porcupines", token);
-
-            LOG.info("token: " + token);
-            LOG.info("auth1: " + auth1 + ", auth2: " + auth2 + ", auth3: " + auth3);
-
-
-            final Session session = request.session();
-            String userSession = session.attribute("user");
-            LOG.info("user session (before generate): " + userSession);
-
-            session.attribute("user", WebServer.getSaltString());
-
-            userSession = session.attribute("user");
-            LOG.info("user session (after generate): " + userSession);
-            LOG.info("session id: " + session.id());
-
-            //if (request.session(true).attribute("user") == null) halt(401, "Go Away!");
+            //if the user session variable has not been set, then don't allow
+            //access to the protected pages (the user is not logged in).
+            User user = (User)request.session().attribute("user");
+            if (user == null) {
+                Spark.halt(401, "Access not allowed, you are not logged in."); 
+            } 
         });
 
-        Spark.post("/protected/main_content", new PostMainContent(gson));
-        Spark.post("/protected/upload_details", new PostUploadDetails(gson));
+        Spark.post("/login", new PostLogin(gson));
 
+        //routes for initial webpage content
+        Spark.post("/get_fleet_names", new PostFleetNames(gson));
+
+        //Spark.post("/protected/main_content", new PostMainContent(gson));
+        Spark.post("/protected/upload_details", new PostUploadDetails(gson));
+        Spark.post("/protected/get_uploads", new PostUploads(gson));
+        Spark.post("/protected/get_imports", new PostImports(gson));
+        Spark.post("/protected/get_flights", new PostFlights(gson));
+
+        Spark.post("/protected/create_account", new PostCreateAccount(gson));
+
+        //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
         Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
 
