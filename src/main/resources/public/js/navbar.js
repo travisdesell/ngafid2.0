@@ -195,13 +195,27 @@ class Navbar extends React.Component {
         this.setState(this.state);
     }
 
+    mapSelectChanged() {
+        console.log("map select changed!");
+
+        var select = document.getElementById('mapLayerSelect');
+        var style = select.value;
+        for (var i = 0, ii = layers.length; i < ii; ++i) {
+
+            console.log("setting layer " + i + " to:" + (styles[i] === style));
+            layers[i].setVisible(styles[i] === style);
+        }
+    }
+
+
 
     renderLoggedIn() {
         let activeName = this.state.activeName;
 
         console.log("rendering logged in navbar, activeName: " + activeName);
 
-        let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
         const buttonStyle = { };
 
         let user = this.state.user;
@@ -222,16 +236,24 @@ class Navbar extends React.Component {
         return (
             <div className="collapse navbar-collapse" id="navbarNavDropdown">
                 <ul className="navbar-nav mr-auto">
-
-                    <button id="map-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
-                        <i className="fa fa-globe p-1"></i>
-                    </button>
-
-                    <button id="plot-toggle-button" className={buttonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
+                    <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
                         <i className="fa fa-area-chart p-1"></i>
                     </button>
 
+                    <div className="input-group m-0">
+                        <div className="input-group-prepend">
+                            <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
+                                <i className="fa fa-globe p-1"></i>
+                            </button>
+                        </div>
+                        <select className="custom-select" defaultValue="Road" id="mapLayerSelect" onChange={() => this.mapSelectChanged()}>
+                            <option value="Aerial">Aerial</option>
+                            <option value="AerialWithLabels">Aerial with labels</option>
+                            <option value="Road">Road (static)</option>
+                            <option value="RoadOnDemand">Road (dynamic)</option>
+                        </select>
 
+                    </div>
                 </ul>
 
                 <ul className="navbar-nav">
