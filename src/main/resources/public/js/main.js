@@ -166,12 +166,13 @@ class MainContent extends React.Component {
         //don't request data from server if we're in on of the non-logged navbar cards
         //use reflection to get the correct props field (flights, imports or uploads)
         //the indexOf method will return -1 if the array doesn't contain newName
-        let loggedOutCards = ["Home", "Create Account", "Awaiting Access", "Welcome"];
+        let loggedOutCards = ["Welcome", "Create Account", "Awaiting Access", "Dashboard", "Profile", "Manage Fleet"];
 
         if (newName == "Create Account" && typeof mainCards['create_account'].state.fleets == 'undefined') {
             var submission_data = {};   
 
             $('#loading').show();
+            console.log("showing loading spinner!");
 
             $.ajax({
                 type: 'POST',
@@ -206,11 +207,10 @@ class MainContent extends React.Component {
 
 
         } else if (loggedOutCards.indexOf(newName) < 0 && typeof mainCards[ucNewName].state[ucNewName] == 'undefined') {
-            //TODO: show loading spinner until flights loaded
-
             var submission_data = {};   
 
             $('#loading').show();
+            console.log("showing loading spinner!");
 
             $.ajax({
                 type: 'POST',
@@ -284,7 +284,7 @@ class MainContent extends React.Component {
         console.log(this.state.imports);
         console.log(this.state.uploads);
 
-        console.log("home hidden: " + (activeName != "Home"));
+        console.log("home hidden: " + (activeName != "Welcome"));
         console.log("flights hidden: " + (activeName != "Flights"));
         console.log("imports hidden: " + (activeName != "Imports"));
         console.log("uploads hidden: " + (activeName != "Uplaods"));
@@ -292,10 +292,12 @@ class MainContent extends React.Component {
 
         return (
             <div id="MainCards" style={style}>
-                <HomeCard name={"Home"} hidden={activeName != "Home"} />
+                <WelcomeCard name={"Welcome"} hidden={activeName != "Welcome"} />
+                <DashboardCard name={"Dashboard"} hidden={activeName != "Dashboard"} />
+                <ProfileCard name={"Profile"} hidden={activeName != "Profile"} />
+                <ManageFleetCard name={"Manage Fleet"} hidden={activeName != "Manage Fleet"} />
                 <CreateAccountCard name={"Create Account"} hidden={activeName != "Create Account"} />
                 <AwaitingAccessCard name={"Awaiting Access"} hidden={activeName != "Awaiting Access"} />
-                <WelcomeCard name={"Welcome"} hidden={activeName != "Welcome"} />
                 <FlightsCard name={"Flights"} hidden={activeName != "Flights"} />
                 <ImportsCard name={"Imports"} hidden={activeName != "Imports"} />
                 <UploadsCard name={"Uploads"} hidden={activeName != "Uploads"} />
@@ -318,7 +320,7 @@ $(document).ready(function() {
     Plotly.newPlot('plot', [], layout1);
 
     ReactDOM.render(
-        <MainContent activeName="Home"/>,
+        <MainContent activeName="Welcome"/>,
         document.querySelector('#main')
     );
 

@@ -5,10 +5,10 @@
  * does not have access
  */
 function processResponse(response) {
-    $("#loading").hide();
-
     console.log("processing response:");
     console.log(response);
+
+    $("#loading").hide();
 
     if (response.errorTitle) {
         console.log("displaying error modal!");
@@ -24,6 +24,8 @@ function processResponse(response) {
         navbar.logOut();
         return false;
     }
+
+    $("#loginPassword").val("");
 
     return true;
 }
@@ -78,10 +80,13 @@ class LoginModal extends React.Component {
             success : function(response) {
                 if (!processResponse(response)) return;
 
+                mainCards['manage_fleet'].setUser(response.user);
+                mainCards['profile'].setUser(response.user);
+
                 //login was successful, we can hide the modal
                 $("#login-modal").modal('hide');
 
-                if (response.waiting) {
+                if (response.waiting || response.denied) {
                     //update the navbar to the logged in items
                     //and display the welcome page
                     navbar.waiting()
@@ -89,8 +94,8 @@ class LoginModal extends React.Component {
                 } else {
                     //update the navbar to the logged in items
                     //and display the welcome page
-                    navbar.logIn()
-                    mainContent.changeCard("Welcome");
+                    navbar.logIn(response.user)
+                    mainContent.changeCard("Dashboard");
                 }
 
             },

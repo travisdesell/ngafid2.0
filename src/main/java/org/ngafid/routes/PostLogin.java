@@ -32,14 +32,16 @@ public class PostLogin implements Route {
     private class LoginResponse {
         private boolean loggedOut;
         private boolean waiting;
+        private boolean denied;
         private boolean loggedIn;
         private String message;
         private User user;
 
-        public LoginResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
+        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
+            this.denied = denied;
             this.message = message;
             this.user = user;
         }
@@ -53,7 +55,8 @@ public class PostLogin implements Route {
         String password = request.queryParams("password");
 
         LOG.info("email: '" + email + "'");
-        LOG.info("password: '" + password + "'");
+        //don't print the password to the log!
+        //LOG.info("password: '" + password + "'");
 
         try {
             Connection connection = Database.getConnection();
@@ -61,7 +64,7 @@ public class PostLogin implements Route {
             
             if (user == null) {
                 LOG.info("Could not get user, get returned null.");
-                return gson.toJson(new LoginResponse(true, false, false, "Invalid email or password.", null));
+                return gson.toJson(new LoginResponse(true, false, false, false, "Invalid email or password.", null));
             } else {
                 LOG.info("User authentication successful.");
 
@@ -69,10 +72,12 @@ public class PostLogin implements Route {
                 //it will be considered logged in.
                 request.session().attribute("user", user);
 
-                if (user.getFleetAccessType() == FleetAccess.WAITING) {
-                    return gson.toJson(new LoginResponse(false, true, false, "Success!", user));
+                if (user.getFleetAccessType().equals(FleetAccess.DENIED)) {
+                    return gson.toJson(new LoginResponse(false, false, true, false, "Waiting!", user));
+                } else if (user.getFleetAccessType().equals(FleetAccess.WAITING)) {
+                    return gson.toJson(new LoginResponse(false, true, false, false, "Waiting!", user));
                 } else {
-                    return gson.toJson(new LoginResponse(false, false, true, "Success!", user));
+                    return gson.toJson(new LoginResponse(false, false, false, true, "Success!", user));
                 }
             }
 
@@ -81,7 +86,7 @@ public class PostLogin implements Route {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         } catch (AccountException e) {
-            return gson.toJson(new LoginResponse(true, false, false, "Incorrect email or password.", null));
+            return gson.toJson(new LoginResponse(true, false, false, false, "Incorrect email or password.", null));
         }
     }
 }

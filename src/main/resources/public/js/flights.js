@@ -372,7 +372,7 @@ class Flight extends React.Component {
         let globeTooltip = "";
 
         //console.log(flightInfo);
-        if (flightInfo.hasCoords === "0") {
+        if (!flightInfo.hasCoords) {
             //console.log("flight " + flightInfo.id + " doesn't have coords!");
             globeClasses += " disabled";
             globeTooltip = "Cannot display flight on the map because the flight data did not have latitude/longitude.";
