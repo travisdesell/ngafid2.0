@@ -14,10 +14,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
 
 import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
+    private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
+
     private int id = -1;
     private int flightId = -1;
     private String name;
@@ -89,6 +92,7 @@ public class DoubleTimeSeries {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
         query.setString(2, name);
+        LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {

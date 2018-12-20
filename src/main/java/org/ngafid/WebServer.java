@@ -87,7 +87,11 @@ public final class WebServer {
             } 
         });
 
+        //the following need to be accessible for non-logged in users, and
+        //logout doesn't need to be protected
         Spark.post("/login", new PostLogin(gson));
+        Spark.post("/logout", new PostLogout(gson));
+        Spark.post("/create_account", new PostCreateAccount(gson));
 
         //routes for initial webpage content
         Spark.post("/get_fleet_names", new PostFleetNames(gson));
@@ -97,8 +101,8 @@ public final class WebServer {
         Spark.post("/protected/get_uploads", new PostUploads(gson));
         Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
+        Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 
-        Spark.post("/protected/create_account", new PostCreateAccount(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));

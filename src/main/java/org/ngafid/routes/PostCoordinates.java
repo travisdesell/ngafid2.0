@@ -13,8 +13,11 @@ import com.google.gson.Gson;
 import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.DoubleTimeSeries;
 
 public class PostCoordinates implements Route {
@@ -52,10 +55,21 @@ public class PostCoordinates implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling coordinates route!");
+
+        final Session session = request.session();
+        User user = session.attribute("user");
+
         int flightId = Integer.parseInt(request.queryParams("flightId"));
         String name = request.queryParams("seriesName");
 
         try {
+
+            //check to see if the user has access to this data
+            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                Spark.halt(401, "User did not have access to this flight.");
+            }
+
             Coordinates coordinates = new Coordinates(flightId, name);
 
             //System.out.println(gson.toJson(uploadDetails));
@@ -67,6 +81,7 @@ public class PostCoordinates implements Route {
 
             return output;
         } catch (SQLException e) {
+            e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
     }

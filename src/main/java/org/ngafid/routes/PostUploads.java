@@ -11,6 +11,7 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
@@ -35,6 +36,13 @@ public class PostUploads implements Route {
         User user = session.attribute("user");
 
         int fleetId = user.getFleetId();
+
+        //check to see if the user has upload access for this fleet.
+        if (!user.hasUploadAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
+            Spark.halt(401, "User did not have access to upload flights for this fleet.");
+            return null;
+        }
 
         try {
             ArrayList<Upload> uploads = Upload.getUploads(Database.getConnection(), fleetId);

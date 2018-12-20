@@ -11,9 +11,11 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
 
 public class PostImports implements Route {
@@ -31,11 +33,17 @@ public class PostImports implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         final Session session = request.session();
-        String userSession = session.attribute("user");
-        LOG.info("user session (after generate): " + userSession);
-        LOG.info("session id: " + session.id());
+        User user = session.attribute("user");
 
-        int fleetId = 1;
+        int fleetId = user.getFleetId();
+
+        //check to see if the user has upload access for this fleet.
+        if (!user.hasUploadAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
+            Spark.halt(401, "User did not have access to view imports for this fleet.");
+            return null;
+        }
+
 
         try {
             ArrayList<Upload> imports = Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"});

@@ -16,6 +16,9 @@ class AwaitingAccessCard extends React.Component {
                     </h5>
 
                     <div className="card-body" style={fgStyle}>
+                        <div className="text-center">
+                            <img src='../images/holding_pattern.jpg' style={{marginBottom: '8px'}}/>
+                        </div>
                         <p className="card-text">
                             Welcome to the NGAFID! Your account has created however the your fleet manager(s) have not yet granted you access to the fleet data. Please contact your fleet manager(s) so they can log in and provide access.
                         </p>

@@ -79,7 +79,7 @@ class CreateAccountCard extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: './protected/create_account',
+            url: './create_account',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
