@@ -38,6 +38,21 @@ public class StringTimeSeries {
         }
     }
 
+/*
+    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
+        query.setInt(1, flightId);
+        query.setString(2, name);
+
+        ResultSet resultSet = query.executeQuery();
+        if (resultSet.next()) {
+            return new StringTimeSeries(resultSet);
+        } else {
+            return null;
+        }
+    }
+*/
+
     public String toString() {
         return "[StringTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + "]";
     }
