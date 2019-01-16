@@ -339,6 +339,10 @@ public class User {
         //give use manager access of this fleet
         user.fleetAccess = FleetAccess.create(connection, user.getId(), user.fleet.getId(), FleetAccess.MANAGER);
 
+        if (user.fleetAccess.isManager()) {
+            user.fleet.populateUsers(connection, user.getId());
+        }   
+
         return user;
     }
 

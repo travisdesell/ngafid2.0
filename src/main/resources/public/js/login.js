@@ -49,6 +49,12 @@ class LoginModal extends React.Component {
         loginModal = this;
     }
 
+    show() {
+        this.validateEmail();
+        this.validatePassword();
+        $("#login-modal").modal('show');
+    }
+
     submitLogin() {
         let valid = true;
         for (let property in this.state.valid) {
