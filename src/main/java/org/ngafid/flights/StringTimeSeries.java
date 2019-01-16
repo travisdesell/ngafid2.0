@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import java.io.ByteArrayInputStream;
+import java.io.DataInputStream;
 import java.io.ObjectOutputStream;
 import java.io.IOException;
 
@@ -7,6 +9,8 @@ import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+
+import java.sql.ResultSet;
 
 import java.util.ArrayList;
 
@@ -38,7 +42,8 @@ public class StringTimeSeries {
         }
     }
 
-/*
+
+    // Added to get StringTimeSeries
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
@@ -46,12 +51,41 @@ public class StringTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            return new StringTimeSeries(resultSet);
+            StringTimeSeries sts = new StringTimeSeries(resultSet);
+            System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
+            return sts;
         } else {
             return null;
         }
     }
-*/
+
+    // Added to get results for StringTimeSeries
+    public StringTimeSeries(ResultSet resultSet) throws SQLException {
+
+        name = resultSet.getString(3);
+        dataType = resultSet.getString(4);
+        validCount = resultSet.getInt(6);
+
+        Blob values = resultSet.getBlob(7);
+        byte[] bytes = values.getBytes(1, (int)values.length());
+        System.out.println("name: " + name);
+        values.free();
+
+        timeSeries = new ArrayList<String>();
+        try {
+            DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
+            while (inputStream.available() > 0) {
+                Double d = inputStream.readDouble();
+                timeSeries.add(String.valueOf(d));
+                //System.out.print(" " + d);
+            }
+            //System.out.println();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return;
+    }
+    /////////
 
     public String toString() {
         return "[StringTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + "]";

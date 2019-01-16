@@ -89,6 +89,23 @@ public class Flight {
         return flights;
     }
 
+
+    // Added to use in pitch_db
+    public static Flight getFlight(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_number, airframe_type, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl FROM flights WHERE id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return new Flight(connection, resultSet);
+        } else {
+            return null;
+        } 
+    }
+    ////
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -107,6 +124,16 @@ public class Flight {
 
         itinerary = Itinerary.getItinerary(connection, id);
     }
+
+    // added to use in pitch_db
+    public int getId() {
+        return id;
+    }
+    // added to use in pitch_db
+    public String getFilename() {
+        return filename;
+    }
+    ////
 
     public int getNumberRows() {
         return numberRows;
@@ -361,10 +388,10 @@ public class Flight {
             System.err.println("Flight produced " + exceptions.size() + " exceptions.");
 
             /*
-            for (MalformedFlightFileException e : exceptions) {
-                e.printStackTrace();
-            }
-            */
+               for (MalformedFlightFileException e : exceptions) {
+               e.printStackTrace();
+               }
+               */
         } else {
             status = "SUCCESS";
         }
@@ -449,22 +476,22 @@ public class Flight {
             //        } catch (FileNotFoundException e) {
             //            System.err.println("ERROR: could not find flight file '" + filename + "'");
             //            exceptions.add(e);
-        } catch (FatalFlightFileException e) {
-            status = "WARNING";
-            throw e;
-        } catch (IOException e) {
-            status = "WARNING";
-            throw e;
-        }
+    } catch (FatalFlightFileException e) {
+        status = "WARNING";
+        throw e;
+    } catch (IOException e) {
+        status = "WARNING";
+        throw e;
+    }
 
-        checkExceptions();
+    checkExceptions();
     }
 
     public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
         //calculates altitudeAGL (above ground level) from altitudeMSL (mean sea levl)
         headers.add(altitudeAGLColumnName);
         dataTypes.add("ft agl");
-        
+
         DoubleTimeSeries altitudeMSLTS = doubleTimeSeries.get(altitudeMSLColumnName);
         DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
