@@ -104,6 +104,44 @@ public class CalculatePitch {
             //    pitchEvents.get(i).updateDatabase(connection);
             //}
 
+            /*
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, data, ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            preparedStatement.setInt(1, flightId);
+            preparedStatement.setString(2, name);
+            preparedStatement.setString(3, dataType);
+            preparedStatement.setInt(4, timeSeries.size());
+            preparedStatement.setInt(5, validCount);
+
+            if (Double.isNaN(min)) {
+                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(6, min);
+            }
+
+            if (Double.isNaN(avg)) {
+                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(7, avg);
+            }
+
+            if (Double.isNaN(max)) {
+                preparedStatement.setNull(8, java.sql.Types.DOUBLE);
+            } else {
+                preparedStatement.setDouble(8, max);
+            }
+
+            ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
+            for (int i = 0; i < timeSeries.size(); i++) {
+                byteBuffer.putDouble(timeSeries.get(i));
+            }
+            byte[] byteArray = byteBuffer.array();
+            System.err.println(preparedStatement);
+            Blob seriesBlob = new SerialBlob(byteArray);
+            preparedStatement.setBlob(9, seriesBlob);
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+            */
+
 
         } catch(SQLException e) {
             System.err.println(e);
