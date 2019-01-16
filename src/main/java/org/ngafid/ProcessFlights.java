@@ -102,11 +102,13 @@ public class ProcessFlights {
                                     flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                     errorFlights++;
                                 }
+
                             } else {
                                 flightErrors.add(new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                                 errorFlights++;
                             }
                         } 
+
                     } catch (IOException e) {
                         System.err.println("IOException: " + e );
                         e.printStackTrace();
@@ -114,6 +116,7 @@ public class ProcessFlights {
                         uploadException = e;
                         System.exit(1);
                     }
+
                 } else {
                     //insert an upload error for this upload
                     status = "ERROR";

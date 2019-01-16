@@ -1,8 +1,10 @@
 package org.ngafid.flights;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
 import java.io.ObjectOutputStream;
+import java.io.ObjectInputStream;
 import java.io.IOException;
 
 import java.sql.Blob;
@@ -13,8 +15,14 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
+import java.util.logging.Logger;
+
+import javax.sql.rowset.serial.SerialBlob;
+
 
 public class StringTimeSeries {
+    private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
+
     private String name;
     private String dataType;
     private ArrayList<String> timeSeries;
@@ -48,6 +56,7 @@ public class StringTimeSeries {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
         query.setString(2, name);
+        LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
@@ -63,23 +72,41 @@ public class StringTimeSeries {
     public StringTimeSeries(ResultSet resultSet) throws SQLException {
 
         name = resultSet.getString(3);
+        System.out.println("name: " + name);
         dataType = resultSet.getString(4);
+        System.out.println("data type: " + dataType);
+        int length = resultSet.getInt(5);
+        System.out.println("length: " + length);
         validCount = resultSet.getInt(6);
+        System.out.println("valid count: " + validCount);
 
         Blob values = resultSet.getBlob(7);
         byte[] bytes = values.getBytes(1, (int)values.length());
-        System.out.println("name: " + name);
+        System.out.println("values.length: " + (int)values.length());
         values.free();
 
-        timeSeries = new ArrayList<String>();
+        //timeSeries = new ArrayList<String>();
         try {
-            DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
+            ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(bytes));
+            timeSeries = (ArrayList<String>)inputStream.readObject();
+            /*
             while (inputStream.available() > 0) {
-                Double d = inputStream.readDouble();
-                timeSeries.add(String.valueOf(d));
-                //System.out.print(" " + d);
+                int stringLength = inputStream.readInt();
+                System.out.println("stringLength: " + stringLength);
+
+                bytes = new byte[stringLength];
+                inputStream.read(bytes, 0, stringLength);
+                String str = bytes.toString();
+
+                timeSeries.add(str);
+                System.out.println(str);
             }
-            //System.out.println();
+            */
+            System.out.println(timeSeries.toString());
+            for (int i = 0; i < timeSeries.size(); i++) {
+                System.out.println(timeSeries.get(i));
+            }
+            inputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -146,8 +173,11 @@ public class StringTimeSeries {
             preparedStatement.setInt(4, timeSeries.size());
             preparedStatement.setInt(5, validCount);
 
-            Blob seriesBlob = connection.createBlob();
-            final ObjectOutputStream oos = new ObjectOutputStream(seriesBlob.setBinaryStream(1));
+            ByteArrayOutputStream bout = new ByteArrayOutputStream();
+
+            final ObjectOutputStream oos = new ObjectOutputStream(bout);
+            oos.writeObject(timeSeries);
+            /*
             for (int i = 0; i < timeSeries.size(); i++) {
                 if (timeSeries.get(i) == null || timeSeries.get(i).length() == 0) {
                     oos.writeInt(0);
@@ -156,9 +186,12 @@ public class StringTimeSeries {
                     oos.writeChars(timeSeries.get(i));
                 }
             }
+            */
             oos.close();
 
             System.err.println(preparedStatement);
+
+            Blob seriesBlob = new SerialBlob(bout.toByteArray());
 
             preparedStatement.setBlob(6, seriesBlob);
             preparedStatement.executeUpdate();

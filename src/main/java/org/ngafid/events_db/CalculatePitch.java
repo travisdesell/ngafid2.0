@@ -20,7 +20,7 @@ public class CalculatePitch {
     static double minValue = -4.0;
     static double maxValue = 4.0;
     public static void main(String[] arguments) {
-        int flightId = 13;
+        int flightId = 819;
         String seriesName = "Pitch";
         String timeSeriesName = "Lcl Time";
 
@@ -33,7 +33,7 @@ public class CalculatePitch {
             System.out.println("flight filename: " + flight.getFilename());
 
             DoubleTimeSeries pitchSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
-            //StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
+            StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
             //ArrayList<Event> pitchEvents = ...;
@@ -57,14 +57,14 @@ public class CalculatePitch {
                 if (current < minValue || current > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
-                        //startTime = timeSeries.get(i);
+                        startTime = timeSeries.get(i);
                         //System.out.println("time: " + timeSeries.get(i));
                         startLineNo = lineNumber;
                         //System.out.println("line number: "+startLineNo);
                     }
                     endLine = lineNumber;
                     System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
-                    //endTime = timeSeries.get(i);
+                    endTime = timeSeries.get(i);
                     count =0;
 
                 } else {
@@ -77,27 +77,27 @@ public class CalculatePitch {
                     if (count == bufferTime){
                         System.err.println("Exceed the bufer range and New event created!!");
                     }
+
                     if (startTime !=null && count == bufferTime){
-                        //Event event = new Event (startTime, endTime, startLineNo, endLine, 0){};
-                        //PitchEventList.add(event);
-                        //startTime = null;
-                        //startLineNo = -1;
-                        //endLine = -1;
-                        //endTime = null; 
+                        Event event = new Event (startTime, endTime, startLineNo, endLine, 0){};
+                        PitchEventList.add(event);
+                        startTime = null;
+                        startLineNo = -1;
+                        endLine = -1;
+                        endTime = null; 
                     }
                 }
             }
-            /*
-               if (startTime != null) {
-               Event event = new Event(startTime, endTime , startLineNo, endLine, 0){};
-               PitchEventList.add( event );
-               }
-               System.out.println("");           
-               for( int i = 0; i < PitchEventList.size(); i++ ){
-               Event event = PitchEventList.get(i);
-               System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
-               }
-               */
+
+            if (startTime != null) {
+                Event event = new Event(startTime, endTime , startLineNo, endLine, 0){};
+                PitchEventList.add( event );
+            }
+            System.out.println("");           
+            for( int i = 0; i < PitchEventList.size(); i++ ){
+                Event event = PitchEventList.get(i);
+                System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
+            }
 
             //Step 2: export the pitch events to the database
             //for (int i = 0; i < pitchEvents.size(); i++) {
