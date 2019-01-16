@@ -90,9 +90,9 @@ class CreateAccountCard extends React.Component {
                 if (!processResponse(response)) return;
 
                 if (checkedRadio == "newFleet") {
-                    display_error_modal("Account Created", "Your account was successfully created!");
-                    navbar.logIn();
+                    navbar.logIn(response.user);
                     mainContent.changeCard("Welcome");
+                    //display_error_modal("Account Created", "Your account was successfully created!");
 
                 } else if (checkedRadio == "existingFleet") {
                     navbar.waiting();

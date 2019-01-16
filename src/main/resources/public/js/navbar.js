@@ -115,7 +115,7 @@ class Navbar extends React.Component {
 
     attemptLogIn() {
         console.log("showing login modal!");
-        $("#login-modal").modal('show');
+        loginModal.show();
     }
 
     logIn(user) {

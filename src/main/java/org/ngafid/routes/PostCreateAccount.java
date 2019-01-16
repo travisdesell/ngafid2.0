@@ -30,9 +30,11 @@ public class PostCreateAccount implements Route {
 
     private class CreatedAccount {
         private String accountType;
+        private User user;
 
-        public CreatedAccount(String accountType) {
+        public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
+            this.user = user;
         }
     }
 
@@ -77,14 +79,14 @@ public class PostCreateAccount implements Route {
                 User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);
 
-                return gson.toJson(new CreatedAccount(accountType));
+                return gson.toJson(new CreatedAccount(accountType, user));
 
             } else if (accountType.equals("existingFleet")) {
                 String fleetName = request.queryParams("fleetName");
                 User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);
 
-                return gson.toJson(new CreatedAccount(accountType));
+                return gson.toJson(new CreatedAccount(accountType, user));
 
             } else {
                 return gson.toJson(new ErrorResponse("Invalid Account Type", "A request was made to create an account with an unknown account type '" + accountType + "'."));

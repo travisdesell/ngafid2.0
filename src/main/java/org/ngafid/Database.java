@@ -17,9 +17,20 @@ import java.sql.SQLException;
 public class Database {
     private static Connection connection;
 
-    public static Connection getConnection() { return connection; }
+    public static Connection getConnection() { 
+        try {
+            if (connection.isClosed()) {
+                setConnection();
+            } 
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
-    static {
+        return connection;
+    }
+
+    private static void setConnection() {
         if (System.getenv("NGAFID_DB_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -67,11 +78,28 @@ public class Database {
         try {
             // This will load the MySQL driver, each DB has its own driver
             Class.forName("com.mysql.jdbc.Driver");
+
+            java.util.Properties connProperties = new java.util.Properties();
+            connProperties.put("user", dbUser);
+            connProperties.put("password", dbPassword);
+
+            // set additional connection properties:
+            // if connection stales, then make automatically
+            // reconnect; make it alive again;
+            // if connection stales, then try for reconnection;
+            connProperties.put("autoReconnect", "true");
+            connProperties.put("maxReconnects", "5");
+            connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties);
+
             // Setup the connection with the DB
-            connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword);
+            //connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword);
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    static {
+        setConnection();
     }
 }

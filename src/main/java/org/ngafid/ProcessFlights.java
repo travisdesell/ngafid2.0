@@ -41,7 +41,7 @@ public class ProcessFlights {
                 int fleetId = resultSet.getInt(3);
                 String filename = resultSet.getString(4);
 
-                filename = WebServer.NGAFID_ARCHIVE_DIR + fleetId + "/" + uploaderId + "/" + filename;
+                filename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + filename;
                 System.err.println("processing: '" + filename + "'");
 
                 String extension = filename.substring(filename.length() - 4);
@@ -108,8 +108,11 @@ public class ProcessFlights {
                             }
                         } 
                     } catch (IOException e) {
+                        System.err.println("IOException: " + e );
+                        e.printStackTrace();
                         status = "ERROR";
                         uploadException = e;
+                        System.exit(1);
                     }
                 } else {
                     //insert an upload error for this upload

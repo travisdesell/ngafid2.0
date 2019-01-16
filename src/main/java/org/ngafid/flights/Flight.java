@@ -182,6 +182,7 @@ public class Flight {
 
         //file information -- this is the first line
         fileInformation = bufferedReader.readLine();
+        if (fileInformation == null || fileInformation.length() == 0) throw new FatalFlightFileException("The flight file was empty.");
         if (fileInformation.charAt(0) != '#') throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
 
         String[] infoParts = fileInformation.split(",");
