@@ -65,7 +65,7 @@ public class User {
      * Checks to see if the user has access to a particular flight. To have access, the user must not be waiting on fleet access, and the user must have access to the fleet of the flight.
      * @param flightId the id of the flight.
      *
-     * @returns true if the user has access to the flight.
+     * @return true if the user has access to the flight.
      */
     public boolean hasFlightAccess(Connection connection, int flightId) throws SQLException {
         if (fleetAccess.isWaiting() || fleetAccess.isDenied()) return false;

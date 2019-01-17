@@ -43,11 +43,11 @@ public class CalculatePitch {
 
             int startLineNo = -1;
             String startTime = null;
-            int endLine= -1;
+            int endLine = -1;
             String endTime = null;
             int count =0;
 
-            ArrayList<Event> PitchEventList = new ArrayList<>();
+            ArrayList<Event> pitchEventList = new ArrayList<>();
             int lineNumber = 0;
             int bufferTime = 5;
 
@@ -83,7 +83,7 @@ public class CalculatePitch {
 
                     if (startTime !=null && count == bufferTime){
                         Event event = new Event (startTime, endTime, startLineNo, endLine, 0){};
-                        PitchEventList.add(event);
+                        pitchEventList.add(event);
                         startTime = null;
                         startLineNo = -1;
                         endLine = -1;
@@ -94,11 +94,11 @@ public class CalculatePitch {
 
             if (startTime != null) {
                 Event event = new Event(startTime, endTime , startLineNo, endLine, 0){};
-                PitchEventList.add( event );
+                pitchEventList.add( event );
             }
             System.out.println("");           
-            for( int i = 0; i < PitchEventList.size(); i++ ){
-                Event event = PitchEventList.get(i);
+            for( int i = 0; i < pitchEventList.size(); i++ ){
+                Event event = pitchEventList.get(i);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
             }
 
@@ -118,30 +118,9 @@ public class CalculatePitch {
                return endLine;
                }
                */
-            for (int i = 0; i < PitchEventList.size(); i++) {
-                PitchEventList.get(i).updateDatabase(connection);
-
-                PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time ) VALUES (?, ?, ?, ?, ?, ?)");
-                preparedStatement.setInt(1, flightId);
-                preparedStatement.setString(2, event_type);
-                //preparedStatement.setString(3, dataType);
-                preparedStatement.setInt(3, startLineNo);
-                preparedStatement.setInt(4, endLine);
-                preparedStatement.setString(5, startTime);
-                preparedStatement.setString(6, endTime);
-                //preparedStatement.setInt(5, timeSeries.size());
-                //preparedStatement.setInt(5, validCount);
-
-                //ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
-               //for (int j = 0; j < timeSeries.size(); j++) {
-                //    byteBuffer.putDouble(timeSeries.get(i));
-                //}
-                //byte[] byteArray = byteBuffer.array();
-                System.err.println(preparedStatement);
-                //Blob seriesBlob = new SerialBlob(byteArray);
-                //preparedStatement.setBlob(9, seriesBlob);
-                preparedStatement.executeUpdate();
-                preparedStatement.close();
+            for (int i = 0; i < pitchEventList.size(); i++) {
+                Event event = pitchEventList.get(i);
+                event.updateDatabase(connection);
             }
 
         } catch(SQLException e) {

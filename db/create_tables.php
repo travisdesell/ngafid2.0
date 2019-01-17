@@ -7,11 +7,16 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-query_ngafid_db("DROP TABLE user");
-query_ngafid_db("DROP TABLE fleet");
-query_ngafid_db("DROP TABLE fleet_access");
+
+
+query_ngafid_db("DROP TABLE events");
+query_ngafid_db("DROP TABLE event_type");
 
 if ($drop_tables) {
+    query_ngafid_db("DROP TABLE user");
+    query_ngafid_db("DROP TABLE fleet");
+    query_ngafid_db("DROP TABLE fleet_access");
+
     query_ngafid_db("DROP TABLE uploads");
     query_ngafid_db("DROP TABLE flights");
     query_ngafid_db("DROP TABLE itinerary");
@@ -196,7 +201,7 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `events` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
-    `event_type` VARCHAR(128), 
+    `event_type` INT(11) NOT NULL, 
     `start_line` INT(11),
     `end_line` INT(11),
     `start_time` datetime,
@@ -210,7 +215,6 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `event_type` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `type` INT(11),
     `name` VARCHAR(64) NOT NULL,
     
     PRIMARY KEY(`id`)
