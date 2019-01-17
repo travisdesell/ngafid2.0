@@ -149,7 +149,7 @@ public class CalculatePitch {
             e.printStackTrace();
             System.exit(1);
         }
-        //System.err.println("finished!");
+        System.err.println("finished!");
         //long endMillis = System.currentTimeMillis();
         //System.out.println("It took " + (endMillis - startMillis) + " ms to run the code");
         System.exit(1);
