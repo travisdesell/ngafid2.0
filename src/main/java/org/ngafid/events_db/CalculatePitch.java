@@ -120,7 +120,9 @@ public class CalculatePitch {
                */
             for (int i = 0; i < pitchEventList.size(); i++) {
                 Event event = pitchEventList.get(i);
-                event.updateDatabase(connection);
+
+                //make sure you know the flightID and the eventType number
+                event.updateDatabase(connection, flightId, eventType);
             }
 
         } catch(SQLException e) {
