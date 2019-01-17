@@ -1,5 +1,11 @@
 package org.ngafid.events;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+
 import java.util.ArrayList;
 
 public abstract class Event {
@@ -54,14 +60,41 @@ public abstract class Event {
     public void setEndLine( int endLine ){
         this.endLine = endLine;
     }
+
     public int getStartLine(){
         return startLine;
     }
+
     public String getStartTime(){
         return startTime;
     }
+
     public String getEntTime(){
         return endTime;
+    }
+    
+    /*
+     *  TODO: javadocs for everything!
+     */
+    public void updateDatabase(Connection connection, int flightId, int eventType) {
+        //TODO: add bufferTime to database
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
+            preparedStatement.setInt(1, flightId);
+            preparedStatement.setString(2, eventType);
+            preparedStatement.setInt(3, startLine);
+            preparedStatement.setInt(4, endLine);
+            preparedStatement.setString(5, startTime);
+            preparedStatement.setString(6, endTime);
+
+            System.err.println(preparedStatement);
+
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 }
 
