@@ -193,7 +193,29 @@ $query = "CREATE TABLE `fleet_access` (
 query_ngafid_db($query);
 
 
+$query = "CREATE TABLE `events` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `flight_id` INT(11) NOT NULL,
+    `event_type` VARCHAR(128), 
+    `start_line` INT(11),
+    `end_line` INT(11),
+    `start_time` datetime,
+    `end_time` datetime,
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 
+$query = "CREATE TABLE `event_type` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `type` INT(11),
+    `name` VARCHAR(64) NOT NULL,
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 ?>
