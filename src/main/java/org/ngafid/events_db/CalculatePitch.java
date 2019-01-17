@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.List;
 import org.ngafid.events.Event;
 
+import java.nio.ByteBuffer;
+
 import org.ngafid.Database;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
@@ -20,7 +22,8 @@ public class CalculatePitch {
     static double minValue = -4.0;
     static double maxValue = 4.0;
     public static void main(String[] arguments) {
-        int flightId = 819;
+        int flightId = 287;
+        String event_type = "Pitch";
         String seriesName = "Pitch";
         String timeSeriesName = "Lcl Time";
 
@@ -100,48 +103,46 @@ public class CalculatePitch {
             }
 
             //Step 2: export the pitch events to the database
-            //for (int i = 0; i < pitchEvents.size(); i++) {
-            //    pitchEvents.get(i).updateDatabase(connection);
-            //}
-
             /*
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, data, ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            preparedStatement.setInt(1, flightId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setString(3, dataType);
-            preparedStatement.setInt(4, timeSeries.size());
-            preparedStatement.setInt(5, validCount);
+               public int startTime() {
+               return startTime();
+               }
+               public int endTime() {
+               return endTime();
+               }
 
-            if (Double.isNaN(min)) {
-                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(6, min);
+               public int startLineNo() {
+               return startLineNo;
+               }
+               public int endLine() {
+               return endLine;
+               }
+               */
+            for (int i = 0; i < PitchEventList.size(); i++) {
+                PitchEventList.get(i).updateDatabase(connection);
+
+                PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time ) VALUES (?, ?, ?, ?, ?, ?)");
+                preparedStatement.setInt(1, flightId);
+                preparedStatement.setString(2, event_type);
+                //preparedStatement.setString(3, dataType);
+                preparedStatement.setInt(3, startLineNo);
+                preparedStatement.setInt(4, endLine);
+                preparedStatement.setString(5, startTime);
+                preparedStatement.setString(6, endTime);
+                //preparedStatement.setInt(5, timeSeries.size());
+                //preparedStatement.setInt(5, validCount);
+
+                //ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
+               //for (int j = 0; j < timeSeries.size(); j++) {
+                //    byteBuffer.putDouble(timeSeries.get(i));
+                //}
+                //byte[] byteArray = byteBuffer.array();
+                System.err.println(preparedStatement);
+                //Blob seriesBlob = new SerialBlob(byteArray);
+                //preparedStatement.setBlob(9, seriesBlob);
+                preparedStatement.executeUpdate();
+                preparedStatement.close();
             }
-
-            if (Double.isNaN(avg)) {
-                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(7, avg);
-            }
-
-            if (Double.isNaN(max)) {
-                preparedStatement.setNull(8, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(8, max);
-            }
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
-            for (int i = 0; i < timeSeries.size(); i++) {
-                byteBuffer.putDouble(timeSeries.get(i));
-            }
-            byte[] byteArray = byteBuffer.array();
-            System.err.println(preparedStatement);
-            Blob seriesBlob = new SerialBlob(byteArray);
-            preparedStatement.setBlob(9, seriesBlob);
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-            */
-
 
         } catch(SQLException e) {
             System.err.println(e);

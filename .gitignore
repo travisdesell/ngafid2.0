@@ -1,6 +1,7 @@
 .DS_Store
 .idea
 *.class
+connect_db.sh
 dbinfo
 dbinfo.php
 db/dbinfo.php
