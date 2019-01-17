@@ -212,7 +212,7 @@ $query = "CREATE TABLE `event_type` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `type` INT(11),
     `name` VARCHAR(64) NOT NULL,
-
+    
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
