@@ -95,7 +95,7 @@ public abstract class Event {
         return startTime;
     }
 
-    public String getEntTime(){
+    public String getEndTime(){
         return endTime;
     }
 
