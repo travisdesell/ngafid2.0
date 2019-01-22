@@ -129,7 +129,11 @@ public class Flight {
     public int getId() {
         return id;
     }
-    // added to use in pitch_db
+
+    ////// public String getDate() {
+    //////     return startDateTime;
+    ////// }
+    ////// added to use in pitch_db
     public String getFilename() {
         return filename;
     }

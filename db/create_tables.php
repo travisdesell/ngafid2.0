@@ -202,6 +202,7 @@ $query = "CREATE TABLE `events` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
     `event_type` INT(11) NOT NULL, 
+    `buffer_time` INT(11),
     `start_line` INT(11),
     `end_line` INT(11),
     `start_time` datetime,
