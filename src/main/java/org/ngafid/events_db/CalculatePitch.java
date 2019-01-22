@@ -144,10 +144,12 @@ public class CalculatePitch {
     public static void main(String[] arguments) {
         ArrayList<Integer> flightIds = new ArrayList<Integer>();
 
+        /*
         flightIds.add(672);
         flightIds.add(677);
         flightIds.add(679);
         flightIds.add(713);
+        */
 
         /*
          * TODO:
@@ -157,6 +159,10 @@ public class CalculatePitch {
          * pitch_low_threshold = -10
          * pitch_high_threshold = 10
          *
+         * easy first version:
+         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) 
+         *
+         * harder second version:
          * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = 'Pitch' AND double_series.flight_id = flights.id AND (min < pitch_low_threshold OR max > pitch_high_threshold))
          *
          */
