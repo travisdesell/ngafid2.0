@@ -21,8 +21,8 @@ import org.ngafid.flights.StringTimeSeries;
 public class CalculatePitch {
     static double minValue = -4.0;
     static double maxValue = 4.0;
-    public static void main(String[] arguments) {
-        int flightId = 287;
+
+    public static void processFlight(int flightId) {
         int eventType = 1;
         String seriesName = "Pitch";
         String timeSeriesName = "Lcl Time";
@@ -38,13 +38,17 @@ public class CalculatePitch {
             System.out.println("flight filename: " + flight.getFilename());
 
             DoubleTimeSeries pitchSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
+
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
 
-            // for (int k = 0; k < timeSeries.size(); k++) {
-            //     System.out.println(timeSeries.get(k));
-            // }
-            // System.out.println(timeSeries.dateSeries);
+            /*
+            for (int k = 0; k < timeSeries.size(); k++) {
+                String dateTime = timeSeries.get(k) + " " + dateSeries.get(k);
+
+                System.out.println(dateTime);
+            }
+            */
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
             //ArrayList<Event> pitchEvents = ...;
@@ -68,7 +72,7 @@ public class CalculatePitch {
                 if (current < minValue || current > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
-                        startTime = timeSeries.get(i);
+                        startTime = timeSeries.get(i) + " " + dateSeries.get(i);
                         //System.out.println("time: " + timeSeries.get(i));
                         startLineNo = lineNumber;
                         //System.out.println("line number: "+startLineNo);
@@ -76,7 +80,7 @@ public class CalculatePitch {
                     }
                     endLine = lineNumber;
                     //System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
-                    endTime = timeSeries.get(i);
+                    endTime = timeSeries.get(i) + " " + dateSeries.get(i);
                     count =0;
 
                 } else {
@@ -102,13 +106,14 @@ public class CalculatePitch {
             }
 
             if (startTime != null) {
-                Event event = new Event(startTime, endTime , startLineNo, endLine, 0){};
+                Event event = new Event(startTime, endTime, startLineNo, endLine, 0){};
                 pitchEventList.add( event );
             }
-            System.out.println("");           
+            System.out.println("");
+
             for( int i = 0; i < pitchEventList.size(); i++ ){
                 Event event = pitchEventList.get(i);
-                System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
+                System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEndTime() + "]" );
             }
             //Step 2: export the pitch events to the database
 
@@ -121,6 +126,10 @@ public class CalculatePitch {
                 System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
 
+            /*
+             * TODO: insert into flights_processed table this flight ID and event id
+             */
+
         } catch(SQLException e) {
             System.err.println(e);
             e.printStackTrace();
@@ -132,4 +141,28 @@ public class CalculatePitch {
         System.exit(1);
     }
 
+    public static void main(String[] arguments) {
+        ArrayList<Integer> flightIds = new ArrayList<Integer>();
+
+        flightIds.add(672);
+        flightIds.add(677);
+        flightIds.add(679);
+        flightIds.add(713);
+
+        /*
+         * TODO:
+         * instead of hardcoded flights, get flights from database:
+         *
+         * pitch_id = 1
+         * pitch_low_threshold = -10
+         * pitch_high_threshold = 10
+         *
+         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = 'Pitch' AND double_series.flight_id = flights.id AND (min < pitch_low_threshold OR max > pitch_high_threshold))
+         *
+         */
+
+        for (int i = 0; i < flightIds.size(); i++) {
+            processFlight(flightIds.get(i));
+        }
+    }
 }

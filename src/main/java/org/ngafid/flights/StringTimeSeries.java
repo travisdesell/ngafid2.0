@@ -102,10 +102,13 @@ public class StringTimeSeries {
                 System.out.println(str);
             }
             */
+
+            /*
             System.out.println(timeSeries.toString());
             for (int i = 0; i < timeSeries.size(); i++) {
                 System.out.println("Date Series: "+timeSeries.get(i));
             }
+            */
             inputStream.close();
         } catch (Exception e) {
             e.printStackTrace();
