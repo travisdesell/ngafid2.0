@@ -23,9 +23,10 @@ public class CalculatePitch {
     static double maxValue = 4.0;
     public static void main(String[] arguments) {
         int flightId = 287;
-        String event_type = "Pitch";
+        int eventType = 1;
         String seriesName = "Pitch";
         String timeSeriesName = "Lcl Time";
+        String dateSeriesName = "Lcl Date";
 
         Connection connection = Database.getConnection();
         //long startMillis = System.currentTimeMillis();
@@ -33,10 +34,17 @@ public class CalculatePitch {
         try {
             Flight flight = Flight.getFlight(connection, flightId);
             System.out.println("flight id: " + flight.getId());
+            ///System.out.println("date: " + flight.getDate());
             System.out.println("flight filename: " + flight.getFilename());
 
             DoubleTimeSeries pitchSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
+            StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
+
+            // for (int k = 0; k < timeSeries.size(); k++) {
+            //     System.out.println(timeSeries.get(k));
+            // }
+            // System.out.println(timeSeries.dateSeries);
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
             //ArrayList<Event> pitchEvents = ...;
@@ -56,7 +64,7 @@ public class CalculatePitch {
                 //generate the pitch events here
                 lineNumber = i;
                 current = pitchSeries.get(i);
-                System.out.println("pitch[" + i + "]: " + current);
+                //System.out.println("pitch[" + i + "]: " + current);
                 if (current < minValue || current > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
@@ -64,9 +72,10 @@ public class CalculatePitch {
                         //System.out.println("time: " + timeSeries.get(i));
                         startLineNo = lineNumber;
                         //System.out.println("line number: "+startLineNo);
+
                     }
                     endLine = lineNumber;
-                    System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
+                    //System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
                     endTime = timeSeries.get(i);
                     count =0;
 
@@ -101,28 +110,15 @@ public class CalculatePitch {
                 Event event = pitchEventList.get(i);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEntTime() + "]" );
             }
-
             //Step 2: export the pitch events to the database
-            /*
-               public int startTime() {
-               return startTime();
-               }
-               public int endTime() {
-               return endTime();
-               }
 
-               public int startLineNo() {
-               return startLineNo;
-               }
-               public int endLine() {
-               return endLine;
-               }
-               */
             for (int i = 0; i < pitchEventList.size(); i++) {
                 Event event = pitchEventList.get(i);
-
+                
                 //make sure you know the flightID and the eventType number
-                //event.updateDatabase(connection, flightId, eventType);
+                event.updateDatabase(connection, flightId, eventType, bufferTime);
+                System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
+                System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
 
         } catch(SQLException e) {
