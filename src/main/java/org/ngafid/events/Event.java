@@ -125,24 +125,24 @@ public abstract class Event {
         }
     }
     /*
-       public void updateDatabaseFlightProcessed(Connection connection, int flightId, int eventType, String startTime, String endTime) {
-//TODO: add bufferTime to database
-try {
-PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
-preparedStatement.setInt(1, flightId);
-preparedStatement.setInt(2, eventType);
-    //preparedStatement.setInt(3, bufferTime);
-    preparedStatement.setInt(3, startLine);
-    preparedStatement.setInt(4, endLine);
-    preparedStatement.setString(5, myStartDateTime);
-    preparedStatement.setString(6, myEndDateTime);
+    public void updateDatabaseFlightProcessed(Connection connection, int flightId, int eventType, String startTime, String endTime) {
+    //TODO: add bufferTime to database
+    try {
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
+        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(2, eventType);
+        //preparedStatement.setInt(3, bufferTime);
+        preparedStatement.setInt(3, startLine);
+        preparedStatement.setInt(4, endLine);
+        preparedStatement.setString(5, myStartDateTime);
+        preparedStatement.setString(6, myEndDateTime);
 
-    System.err.println(preparedStatement);
+        System.err.println(preparedStatement);
 
-    preparedStatement.executeUpdate();
-    preparedStatement.close();
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
     } catch (SQLException e) {
-    e.printStackTrace();
+        e.printStackTrace();
     System.exit(1);
     }
     }*/
