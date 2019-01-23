@@ -11,6 +11,7 @@ $drop_tables = false;
 
 query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE event_type");
+query_ngafid_db("DROP TABLE flights_processed");
 
 if ($drop_tables) {
     query_ngafid_db("DROP TABLE user");
@@ -229,7 +230,6 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `flight_processed` (
     `flight_id` INT(11) NOT NULL,
     `event_type_id` INT(11),
-    `pitch_id` INT(11),
 
     PRIMARY KEY(`flight_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

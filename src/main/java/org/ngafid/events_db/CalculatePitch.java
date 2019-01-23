@@ -70,7 +70,7 @@ public class CalculatePitch {
                 if (current < minValue || current > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
-                        startTime = timeSeries.get(i) + " " + dateSeries.get(i);
+                        startTime = dateSeries.get(i) + " " + timeSeries.get(i);
                         //System.out.println("time: " + timeSeries.get(i));
                         System.out.println("date==========time: " + startTime);
                         startLineNo = lineNumber;
@@ -78,7 +78,7 @@ public class CalculatePitch {
                     }
                     endLine = lineNumber;
                     //System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
-                    endTime = timeSeries.get(i) + " " + dateSeries.get(i);
+                    endTime = dateSeries.get(i) + " " + timeSeries.get(i);
                     count =0;
 
                 } else {
@@ -120,11 +120,18 @@ public class CalculatePitch {
 
                 //make sure you know the flightID and the eventType number
                 //event.updateDatabase(connection, flightId, eventType, bufferTime);
-                event.updateDatabase(connection, flightId, eventType, startTime, endTime);
+                event.updateDatabase(connection, flightId, eventType);
                 // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
                 //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
 
+            /*
+             * TODO:
+             * update flight_processed table
+             * INSERT INTO flight_processed SET flight_id = ? AND event_type_id = ?
+             */
+
+                
             /*
                for (int i = 0; i < pitchEventList.size(); i++) {
                Event flightProcessedEvent = pitchEventList.get(i);
@@ -177,9 +184,15 @@ public class CalculatePitch {
         try {
             System.err.println("before!");
 
-            Statement stmt = connection.createStatement();
-            String query = "SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = pitch_id AND flight_processed.flight_id = flights.id)";
-            ResultSet rs = stmt.executeQuery(query);
+            int pitchId = 1;
+
+            int eventTypeId = pitchId;
+
+            PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
+            stmt.setInt(1, eventTypeId);
+
+            ResultSet rs = stmt.executeQuery();
+
             while (rs.next()) {
                 int id = rs.getInt("id");
                 System.out.println("=======Going to process flight" + id );
@@ -192,10 +205,13 @@ public class CalculatePitch {
             e.printStackTrace();
             System.exit(1);
         } 
+
+        /*
         for (int i = 0; i < flightIds.size(); i++) {
             System.err.println(i);
             processFlight(flightIds.get(i));
         }
+        */
         //connection.close();
         System.err.println("finished!");
     }
