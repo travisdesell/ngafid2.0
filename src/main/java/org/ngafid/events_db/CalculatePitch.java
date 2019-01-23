@@ -161,6 +161,46 @@ public class CalculatePitch {
         }
     }
 
+
+    protected class Operation {
+        int dataColumn;
+        String operation;
+        double targetValue;
+
+        public Operation(int dataColumn, String operation, double targetValue) {
+            this.dataColumn = dataColumn;
+            this.operation = operation;
+            this.targetValue = targetValue;
+        }
+
+        public boolean test(double dataValue) {
+            if (operation.equals(">")) {
+                return dataValue > targetValue;
+            } else if (operation.equals("<")) {
+                return dataValue < targetValue;
+            } else if (operation.equals(">=")) {
+                return dataValue >= targetValue;
+            } else if (operation.equals("<=")) {
+                return dataValue <= targetValue;
+            } else {
+                System.err.println("unknown operation: '" + operation + "'");
+            }
+        }
+    }
+    
+
+    boolean causesEvent(int row, ArrayList<DoubleTimeSeries> dataColumns, ArrayList<Operation> operators) {
+        for (int i = 0; i < operators.size(); i++) {
+            Operator operator = operators.get(i);
+
+            boolean test = operators.test(dataColumns.get(operator.dataColumn).get(row));
+
+            if (test == true) return true;
+        }
+
+        return false;
+    }
+
     public static void main(String[] arguments) {
 
         Connection connection = Database.getConnection();
