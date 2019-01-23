@@ -42,7 +42,6 @@ public class CalculatePitch {
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
 
-
             // for (int k = 0; k < timeSeries.size(); k++) {
             //     String dateTime = timeSeries.get(k) + " " + dateSeries.get(k);
 
@@ -76,7 +75,6 @@ public class CalculatePitch {
                         System.out.println("date==========time: " + startTime);
                         startLineNo = lineNumber;
                         //System.out.println("line number: "+startLineNo);
-
                     }
                     endLine = lineNumber;
                     //System.out.println("pitch in line: " + "[" + lineNumber + "]" + " with Value: " + "[" + current + "]" + " ended at line: " + "[" + endLine + "]");
