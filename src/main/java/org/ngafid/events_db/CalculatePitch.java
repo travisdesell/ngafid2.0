@@ -23,7 +23,7 @@ public class CalculatePitch {
     static double maxValue = 4.0;
 
     public static void processFlight(int flightId) {
-        int eventType = 1;
+        int eventTypeId = 1;
         String seriesName = "Pitch";
         String timeSeriesName = "Lcl Time";
         String dateSeriesName = "Lcl Date";
@@ -119,8 +119,8 @@ public class CalculatePitch {
                 Event event = pitchEventList.get(i);
 
                 //make sure you know the flightID and the eventType number
-                //event.updateDatabase(connection, flightId, eventType, bufferTime);
-                event.updateDatabase(connection, flightId, eventType);
+                //event.updateDatabase(connection, flightId, eventTypeId, bufferTime);
+                event.updateDatabase(connection, flightId, eventTypeId);
                 // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
                 //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
@@ -130,6 +130,13 @@ public class CalculatePitch {
              * update flight_processed table
              * INSERT INTO flight_processed SET flight_id = ? AND event_type_id = ?
              */
+
+            PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
+            stmt.setInt(1, flightId);
+            stmt.setInt(2, eventTypeId);
+
+            System.out.println(stmt.toString());
+            stmt.executeUpdate();
 
                 
             /*

@@ -229,9 +229,9 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `flight_processed` (
     `flight_id` INT(11) NOT NULL,
-    `event_type_id` INT(11),
+    `event_type_id` INT(11) NUT NULL,
 
-    PRIMARY KEY(`flight_id`)
+    PRIMARY KEY(`flight_id`, `event_type_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
