@@ -24,9 +24,7 @@ public abstract class Event {
     private String startTime;
     private String endTime;
 
-    private String startDate;
-    private String endDate;
-    
+
     // Added to get the "calculateStartEndTime"
     public String myStartDateTime;
     public String myEndDateTime;
@@ -36,9 +34,6 @@ public abstract class Event {
 
     private int bufferTime;
     // Added to get the "calculateStartEndTime"
-    private ArrayList<TimeAndDateRecordException> exceptions = new ArrayList<TimeAndDateRecordException>();
-    private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
-
 
     public Event(String startTime, String endTime, int startLine, int endLine, int bufferTime) {
         this.startTime = startTime;
@@ -68,7 +63,7 @@ public abstract class Event {
             return false;
         }
     }
-        public void setStartTime( String startTime ){
+    public void setStartTime( String startTime ){
         this.startTime = startTime;
     }
 
@@ -103,62 +98,22 @@ public abstract class Event {
         return bufferTime;
     }
 
-    // Added this to calculate date and time series and combine them together for updating in database
-    public void calculateStartEndTime(String dateColumnName, String timeColumnName) throws TimeAndDateRecordException {
-        StringTimeSeries dates = stringTimeSeries.get(dateColumnName);
-        StringTimeSeries times = stringTimeSeries.get(timeColumnName);
-
-        String startDate = dates.getFirstValid();
-        String startTime = times.getFirstValid();
-
-        if (startDate == null) {
-            throw new TimeAndDateRecordException("Date column '" + dateColumnName + "' was empty! Cannot set start/end times.");
-        }
-
-        if (startTime == null) {
-            throw new TimeAndDateRecordException("Time column '" + timeColumnName + "' was empty! Cannot set start/end times.");
-        }
-        myStartDateTime = startDate + " " + startTime;
-        // System.out.println( "startDateTime : [line:" + getstartDateTime() + " to " + getendDateTime() + "]" );
-
-        String endDate = dates.getLastValid();
-        String endTime = times.getLastValid();
-
-        if (endDate == null) {
-            throw new TimeAndDateRecordException("Date column '" + dateColumnName + "' was empty! Cannot set end/end times.");
-        }
-
-        if (endTime == null) {
-            throw new TimeAndDateRecordException("Time column '" + timeColumnName + "' was empty! Cannot set end/end times.");
-        }
-
-        myEndDateTime = endDate + " " + endTime;
-    }
-    
-    public String getMyStartDate(){
-        return myStartDateTime;
-    }
-    public String getMyEndDate(){
-        return myEndDateTime;
-    }
-
-    
     /*
      *  TODO: javadocs for everything!
      */
 
 
-    public void updateDatabase(Connection connection, int flightId, int eventType, int bufferTime) {
+    public void updateDatabase(Connection connection, int flightId, int eventType, String startTime, String endTime) {
         //TODO: add bufferTime to database
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, buffer_time, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
             preparedStatement.setInt(1, flightId);
             preparedStatement.setInt(2, eventType);
-            preparedStatement.setInt(3, bufferTime);
-            preparedStatement.setInt(4, startLine);
-            preparedStatement.setInt(5, endLine);
-            preparedStatement.setString(6, myStartDateTime);
-            preparedStatement.setString(7, myEndDateTime);
+            //preparedStatement.setInt(3, bufferTime);
+            preparedStatement.setInt(3, startLine);
+            preparedStatement.setInt(4, endLine);
+            preparedStatement.setString(5, myStartDateTime);
+            preparedStatement.setString(6, myEndDateTime);
 
             System.err.println(preparedStatement);
 
@@ -169,5 +124,27 @@ public abstract class Event {
             System.exit(1);
         }
     }
+    /*
+       public void updateDatabaseFlightProcessed(Connection connection, int flightId, int eventType, String startTime, String endTime) {
+//TODO: add bufferTime to database
+try {
+PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
+preparedStatement.setInt(1, flightId);
+preparedStatement.setInt(2, eventType);
+    //preparedStatement.setInt(3, bufferTime);
+    preparedStatement.setInt(3, startLine);
+    preparedStatement.setInt(4, endLine);
+    preparedStatement.setString(5, myStartDateTime);
+    preparedStatement.setString(6, myEndDateTime);
+
+    System.err.println(preparedStatement);
+
+    preparedStatement.executeUpdate();
+    preparedStatement.close();
+    } catch (SQLException e) {
+    e.printStackTrace();
+    System.exit(1);
+    }
+    }*/
 }
 

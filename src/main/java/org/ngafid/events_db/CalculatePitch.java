@@ -4,7 +4,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.List;
 import org.ngafid.events.Event;
@@ -42,13 +42,12 @@ public class CalculatePitch {
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
 
-            /*
-            for (int k = 0; k < timeSeries.size(); k++) {
-                String dateTime = timeSeries.get(k) + " " + dateSeries.get(k);
 
-                System.out.println(dateTime);
-            }
-            */
+            // for (int k = 0; k < timeSeries.size(); k++) {
+            //     String dateTime = timeSeries.get(k) + " " + dateSeries.get(k);
+
+            //     System.out.println(dateTime);
+            // }
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
             //ArrayList<Event> pitchEvents = ...;
@@ -74,6 +73,7 @@ public class CalculatePitch {
                     if (startTime == null) {
                         startTime = timeSeries.get(i) + " " + dateSeries.get(i);
                         //System.out.println("time: " + timeSeries.get(i));
+                        System.out.println("date==========time: " + startTime);
                         startLineNo = lineNumber;
                         //System.out.println("line number: "+startLineNo);
 
@@ -119,13 +119,25 @@ public class CalculatePitch {
 
             for (int i = 0; i < pitchEventList.size(); i++) {
                 Event event = pitchEventList.get(i);
-                
+
                 //make sure you know the flightID and the eventType number
-                event.updateDatabase(connection, flightId, eventType, bufferTime);
-                System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
-                System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
+                //event.updateDatabase(connection, flightId, eventType, bufferTime);
+                event.updateDatabase(connection, flightId, eventType, startTime, endTime);
+                // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
+                //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
 
+            /*
+               for (int i = 0; i < pitchEventList.size(); i++) {
+               Event flightProcessedEvent = pitchEventList.get(i);
+
+            //make sure you know the flightID and the eventType number
+            //event.updateDatabase(connection, flightId, eventType, bufferTime);
+            event.updateDatabaseFlightProcessed(connection, flightId, eventType, startTime, endTime);
+            // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
+            //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
+               }
+               */
             /*
              * TODO: insert into flights_processed table this flight ID and event id
              */
@@ -135,21 +147,18 @@ public class CalculatePitch {
             e.printStackTrace();
             System.exit(1);
         }
-        System.err.println("finished!");
-        //long endMillis = System.currentTimeMillis();
-        //System.out.println("It took " + (endMillis - startMillis) + " ms to run the code");
-        System.exit(1);
     }
 
     public static void main(String[] arguments) {
-        ArrayList<Integer> flightIds = new ArrayList<Integer>();
 
+        Connection connection = Database.getConnection();
+        ArrayList<Integer> flightIds = new ArrayList<Integer>();
         /*
-        flightIds.add(672);
-        flightIds.add(677);
-        flightIds.add(679);
-        flightIds.add(713);
-        */
+           flightIds.add(672);
+           flightIds.add(677);
+           flightIds.add(679);
+           flightIds.add(713);
+           */
 
         /*
          * TODO:
@@ -167,8 +176,29 @@ public class CalculatePitch {
          *
          */
 
+        try {
+            System.err.println("before!");
+
+            Statement stmt = connection.createStatement();
+            String query = "SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = pitch_id AND flight_processed.flight_id = flights.id)";
+            ResultSet rs = stmt.executeQuery(query);
+            while (rs.next()) {
+                int id = rs.getInt("id");
+                System.out.println("=======Going to process flight" + id );
+
+                processFlight(id);
+                System.out.println("-------------------------\n");
+            }
+            System.err.println("after!");
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        } 
         for (int i = 0; i < flightIds.size(); i++) {
+            System.err.println(i);
             processFlight(flightIds.get(i));
         }
+        //connection.close();
+        System.err.println("finished!");
     }
 }

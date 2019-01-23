@@ -202,7 +202,7 @@ $query = "CREATE TABLE `events` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
     `event_type` INT(11) NOT NULL, 
-    `buffer_time` INT(11),
+
     `start_line` INT(11),
     `end_line` INT(11),
     `start_time` datetime,
@@ -217,10 +217,24 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `event_type` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) NOT NULL,
-    
+    `buffer_time` INT(11),
+    `column_name` VARCHAR(64),
+    `condition` VARCHAR(256),
+
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+$query = "CREATE TABLE `flight_processed` (
+    `flight_id` INT(11) NOT NULL,
+    `event_type_id` INT(11),
+    `pitch_id` INT(11),
+
+    PRIMARY KEY(`flight_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 
 ?>
