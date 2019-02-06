@@ -22,15 +22,16 @@ import org.ngafid.flights.DoubleTimeSeries;
 
 import org.ngafid.flights.StringTimeSeries;
 
-import org.ngafid.events_db.RunEventData;
 
-public class CalculatePitch {
-
-    static int eventTypeId = 1;
-
+public class CalculateRoll {
+    static double minValue = -4.0;
+    static double maxValue = 4.0;
 
     public static void processFlight(int flightId) {
-
+        int eventTypeId = 2;
+        String seriesName = "Roll";
+        String timeSeriesName = "Lcl Time";
+        String dateSeriesName = "Lcl Date";
 
         Connection connection = Database.getConnection();
         //long startMillis = System.currentTimeMillis();
@@ -41,16 +42,13 @@ public class CalculatePitch {
             ///System.out.println("date: " + flight.getDate());
             System.out.println("flight filename: " + flight.getFilename());
 
-            //SeriesName seriesName = Pitch.seriesName;
-            DoubleTimeSeries pitchSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, RunEventData.seriesName);
-            DoubleTimeSeries rollSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, RunEventData.seriesName);
-            //DoubleTimeSeries pitchSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, RunEventData.seriesName);
+            DoubleTimeSeries rollSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
 
-            StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, RunEventData.timeSeriesName);
-            StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, RunEventData.dateSeriesName);
+            StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
+            StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
 
 
-            if (pitchSeries == null) {
+            if (rollSeries == null) {
                 //INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''
                 //message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data."
 
@@ -66,18 +64,13 @@ public class CalculatePitch {
                 // String sStackTrace = sw.toString(); // stack trace as a string
 
                 // exceptionPreparedStatement.setString(3, sStackTrace);
-
+    
                 // System.out.println(stmt.toString());
                 // stmt.executeUpdate();
 
                 return;
             } 
-
-            if (rollSeries == null) {
-
-                return;
-            } 
-
+            
             if (timeSeries == null || dateSeries == null) {
                 //INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''
                 //message = "Couldn't calculate Pitch exceedence because flight didn't have time or date data."
@@ -102,17 +95,17 @@ public class CalculatePitch {
             String endTime = null;
             int count =0;
 
-            ArrayList<Event> pitchEventList = new ArrayList<>();
+            ArrayList<Event> rollEventList = new ArrayList<>();
             int lineNumber = 0;
             int bufferTime = 5;
 
             double current;
-            for (int i = 0; i < pitchSeries.size(); i++) {
+            for (int i = 0; i < rollSeries.size(); i++) {
                 //generate the pitch events here
                 lineNumber = i;
-                current = pitchSeries.get(i);
+                current = rollSeries.get(i);
                 //System.out.println("pitch[" + i + "]: " + current);
-                if (current < RunEventData.minValue || current > RunEventData.maxValue){
+                if (current < minValue || current > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
                         startTime = dateSeries.get(i) + " " + timeSeries.get(i);
@@ -139,7 +132,7 @@ public class CalculatePitch {
 
                     if (startTime !=null && count == bufferTime){
                         Event event = new Event (startTime, endTime, startLineNo, endLine, 0){};
-                        pitchEventList.add(event);
+                        rollEventList.add(event);
                         startTime = null;
                         startLineNo = -1;
                         endLine = -1;
@@ -150,20 +143,24 @@ public class CalculatePitch {
 
             if (startTime != null) {
                 Event event = new Event(startTime, endTime, startLineNo, endLine, 0){};
-                pitchEventList.add( event );
+                rollEventList.add( event );
             }
             System.out.println("");
 
-            for( int i = 0; i < pitchEventList.size(); i++ ){
-                Event event = pitchEventList.get(i);
+            for( int i = 0; i < rollEventList.size(); i++ ){
+                Event event = rollEventList.get(i);
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEndTime() + "]" );
             }
             //Step 2: export the pitch events to the database
 
-            for (int i = 0; i < pitchEventList.size(); i++) {
-                Event event = pitchEventList.get(i);
+            for (int i = 0; i < rollEventList.size(); i++) {
+                Event event = rollEventList.get(i);
 
+                //make sure you know the flightID and the eventType number
+                //event.updateDatabase(connection, flightId, eventTypeId, bufferTime);
                 event.updateDatabase(connection, flightId, eventTypeId);
+                // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
+                //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
             }
 
             /*
@@ -179,8 +176,19 @@ public class CalculatePitch {
             System.out.println(stmt.toString());
             stmt.executeUpdate();
 
+                
+            /*
+               for (int i = 0; i < pitchEventList.size(); i++) {
+               Event flightProcessedEvent = pitchEventList.get(i);
 
-             /*
+            //make sure you know the flightID and the eventType number
+            //event.updateDatabase(connection, flightId, eventType, bufferTime);
+            event.updateDatabaseFlightProcessed(connection, flightId, eventType, startTime, endTime);
+            // System.out.println( "startDateTime : [line:" + event.getMyStartDate() + " to " + event.getMyEndDate() + "]" );
+            //System.out.println( "bufferTime added to database: [" + bufferTime+ "]" );
+               }
+               */
+            /*
              * TODO: insert into flights_processed table this flight ID and event id
              */
 
@@ -191,46 +199,46 @@ public class CalculatePitch {
         }
     }
 
-    /*
-       protected class Operation {
-       int dataColumn;
-       String operation;
-       double targetValue;
+/*
+    protected class Operation {
+        int dataColumn;
+        String operation;
+        double targetValue;
 
-       public Operation(int dataColumn, String operation, double targetValue) {
-       this.dataColumn = dataColumn;
-       this.operation = operation;
-       this.targetValue = targetValue;
-       }
+        public Operation(int dataColumn, String operation, double targetValue) {
+            this.dataColumn = dataColumn;
+            this.operation = operation;
+            this.targetValue = targetValue;
+        }
 
-       public boolean test(double dataValue) {
-       if (operation.equals(">")) {
-       return dataValue > targetValue;
-       } else if (operation.equals("<")) {
-       return dataValue < targetValue;
-       } else if (operation.equals(">=")) {
-       return dataValue >= targetValue;
-       } else if (operation.equals("<=")) {
-       return dataValue <= targetValue;
-       } else {
-       System.err.println("unknown operation: '" + operation + "'");
-       }
-       }
-       }
+        public boolean test(double dataValue) {
+            if (operation.equals(">")) {
+                return dataValue > targetValue;
+            } else if (operation.equals("<")) {
+                return dataValue < targetValue;
+            } else if (operation.equals(">=")) {
+                return dataValue >= targetValue;
+            } else if (operation.equals("<=")) {
+                return dataValue <= targetValue;
+            } else {
+                System.err.println("unknown operation: '" + operation + "'");
+            }
+        }
+    }
+    
 
+    boolean causesEvent(int row, ArrayList<DoubleTimeSeries> dataColumns, ArrayList<Operation> operators) {
+        for (int i = 0; i < operators.size(); i++) {
+            Operator operator = operators.get(i);
 
-       boolean causesEvent(int row, ArrayList<DoubleTimeSeries> dataColumns, ArrayList<Operation> operators) {
-       for (int i = 0; i < operators.size(); i++) {
-       Operator operator = operators.get(i);
+            boolean test = operators.test(dataColumns.get(operator.dataColumn).get(row));
 
-       boolean test = operators.test(dataColumns.get(operator.dataColumn).get(row));
+            if (test == true) return true;
+        }
 
-       if (test == true) return true;
-       }
-
-       return false;
-       }
-       */
+        return false;
+    }
+*/
     public static void main(String[] arguments) {
 
         Connection connection = Database.getConnection();
@@ -261,8 +269,9 @@ public class CalculatePitch {
         try {
             System.err.println("before!");
 
-            //int pitchId = 1;
-            //int eventTypeId = pitchId;
+            int rollId = 2;
+
+            int eventTypeId = rollId;
 
             PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
             stmt.setInt(1, eventTypeId);
@@ -283,11 +292,11 @@ public class CalculatePitch {
         } 
 
         /*
-           for (int i = 0; i < flightIds.size(); i++) {
-           System.err.println(i);
-           processFlight(flightIds.get(i));
-           }
-           */
+        for (int i = 0; i < flightIds.size(); i++) {
+            System.err.println(i);
+            processFlight(flightIds.get(i));
+        }
+        */
         //connection.close();
         System.err.println("finished!");
         System.exit(1);
