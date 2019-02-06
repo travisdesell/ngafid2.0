@@ -110,8 +110,18 @@ public abstract class Event {
             preparedStatement.setInt(2, eventType);
             preparedStatement.setInt(3, startLine);
             preparedStatement.setInt(4, endLine);
-            preparedStatement.setString(5, startTime);
-            preparedStatement.setString(6, endTime);
+
+            if (startTime.equals(" ")) {
+                preparedStatement.setString(5, null);
+            } else {
+                preparedStatement.setString(5, startTime);
+            }
+
+            if (startTime.equals(" ")) {
+                preparedStatement.setString(6, null);
+            } else {
+                preparedStatement.setString(6, endTime);
+            }
 
             System.err.println(preparedStatement);
 
