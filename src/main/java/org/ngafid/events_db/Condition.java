@@ -10,8 +10,8 @@ class Condition {
     public static void main(String[] args) {
 
     	char operator;
-      Double current1, current2;
-      String rull, result;
+      Double current1, current2, result;
+      //String rull, result;
 
     	Scanner scanner = new Scanner(System.in);
       System.out.print("Enter operator (either || or &&): ");
@@ -19,7 +19,7 @@ class Condition {
     	operator = scanner.next().charAt(0);
     	System.out.print("Enter current1, rull and current2 respectively: ");
       current1 = scanner.nextDouble();
-      rull = scanner.nextString();
+      //rull = scanner.nextString();
     	current2 = scanner.nextDouble();
 
     	switch (operator) {
