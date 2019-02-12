@@ -12,11 +12,13 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+import java.util.Scanner;
+
+
 public class CLASS_NAME {
 
     public enum EVENT_TYPE { Pitch, Roll, LatAc, NormAc }
 
-    //    int eventTypeId = 1;
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
 
@@ -26,7 +28,7 @@ public class CLASS_NAME {
     int bufferTime = -1;
     EVENT_TYPE eventType = null;
 
-    public CalculateEceedanceNew( double minValue, double maxValue, int bufferTime, EVENT_TYPE eventType ){
+    public CLASS_NAME ( double minValue, double maxValue, int bufferTime, EVENT_TYPE eventType ){
         this.minValue = minValue;
         this.maxValue = maxValue;
         this.bufferTime = bufferTime;
@@ -69,18 +71,6 @@ public class CLASS_NAME {
                 // String message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data";
                 // //INSERT INTO flights_processed SET flight_id = ?, event_type_id = ?
                 // PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''");
-                // stmt.setInt(1, flightId);
-                // stmt.setString(2, message);
-
-                // StringWriter sw = new StringWriter();
-                // PrintWriter pw = new PrintWriter(sw);
-                // exception.printStackTrace(pw);
-                // String sStackTrace = sw.toString(); // stack trace as a string
-
-                // exceptionPreparedStatement.setString(3, sStackTrace);
-
-                // System.out.println(stmt.toString());
-                // stmt.executeUpdate();
 
                 return;
             } 
@@ -116,8 +106,9 @@ public class CLASS_NAME {
                 //generate the pitch events here
                 lineNumber = i;
                 current = eventSeries.get(i);
+
                 //System.out.println("pitch[" + i + "]: " + current);
-                if ( CONDITIONS_CODE){
+                if (CONDITIONS_CODE){
                     //System.out.println("I am here");
                     if (startTime == null) {
                         startTime = dateSeries.get(i) + " " + timeSeries.get(i);
@@ -171,23 +162,12 @@ public class CLASS_NAME {
                 event.updateDatabase(connection, flightId, getEventTypeId( eventType ));
             }
 
-            /*
-             * TODO:
-             * update flight_processed table
-             * INSERT INTO flight_processed SET flight_id = ? AND event_type_id = ?
-             */
-
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
             stmt.setInt(1, flightId);
             stmt.setInt(2, getEventTypeId(eventType));
 
             System.out.println(stmt.toString());
             stmt.executeUpdate();
-
-
-            /*
-             * TODO: insert into flights_processed table this flight ID and event id
-             */
 
         } catch(SQLException e) {
             System.err.println(e);
@@ -196,72 +176,10 @@ public class CLASS_NAME {
         }
     }
 
-    /*
-       protected class Operation {
-       int dataColumn;
-       String operation;
-       double targetValue;
-
-       public Operation(int dataColumn, String operation, double targetValue) {
-       this.dataColumn = dataColumn;
-       this.operation = operation;
-       this.targetValue = targetValue;
-       }
-
-       public boolean test(double dataValue) {
-       if (operation.equals(">")) {
-       return dataValue > targetValue;
-       } else if (operation.equals("<")) {
-       return dataValue < targetValue;
-       } else if (operation.equals(">=")) {
-       return dataValue >= targetValue;
-       } else if (operation.equals("<=")) {
-       return dataValue <= targetValue;
-       } else {
-       System.err.println("unknown operation: '" + operation + "'");
-       }
-       }
-       }
-
-
-       boolean causesEvent(int row, ArrayList<DoubleTimeSeries> dataColumns, ArrayList<Operation> operators) {
-       for (int i = 0; i < operators.size(); i++) {
-       Operator operator = operators.get(i);
-
-       boolean test = operators.test(dataColumns.get(operator.dataColumn).get(row));
-
-       if (test == true) return true;
-       }
-
-       return false;
-       }
-       */
     public static void main(String[] arguments) {
 
         Connection connection = Database.getConnection();
         //ArrayList<Integer> flightIds = new ArrayList<Integer>();
-        /*
-           flightIds.add(672);
-           flightIds.add(677);
-           flightIds.add(679);
-           flightIds.add(713);
-           */
-
-        /*
-         * TODO:
-         * instead of hardcoded flights, get flights from database:
-         *
-         * pitch_id = 1
-         * pitch_low_threshold = -10
-         * pitch_high_threshold = 10
-         *
-         * easy first version:
-         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) 
-         *
-         * harder second version:
-         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = 'Pitch' AND double_series.flight_id = flights.id AND (min < pitch_low_threshold OR max > pitch_high_threshold))
-         *
-         */
 
         try {
             System.err.println("before!");
@@ -269,14 +187,15 @@ public class CLASS_NAME {
             //int pitchId = 1;
             //int eventTypeId = pitchId;
 
-            EVENT_TYPE event_type = EVENT_TYPE.Pitch;
+            EVENT_TYPE event_type = EVENT_TYPE.EVENT_NAME;
 
             PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
             stmt.setInt(1, getEventTypeId( event_type ));
 
             ResultSet rs = stmt.executeQuery();
 
-            CalculateEceedanceNew pitchCalculator = new CalculateEceedanceNew( MIN_VALUE, MAX_VALUE, 5,  event_type);
+
+            CLASS_NAME pitchCalculator = new CLASS_NAME( MIN_VALUE, MAX_VALUE, BUFFER_VALUE,  event_type);
 
             while (rs.next()) {
                 int id = rs.getInt("id");
