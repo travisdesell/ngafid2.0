@@ -219,10 +219,12 @@ $query = "CREATE TABLE `event_type` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) NOT NULL,
     `buffer_time` INT(11),
-    `column_name` VARCHAR(64),
+    `column_names` VARCHAR(64),
     `condition_text` VARCHAR(256),
 
-    PRIMARY KEY(`id`)
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`),
+    UNIQUE KEY(`condition_text`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
