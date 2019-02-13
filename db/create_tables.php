@@ -220,7 +220,7 @@ $query = "CREATE TABLE `event_type` (
     `name` VARCHAR(64) NOT NULL,
     `buffer_time` INT(11),
     `column_name` VARCHAR(64),
-    `condition` VARCHAR(256),
+    `condition_text` VARCHAR(256),
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
