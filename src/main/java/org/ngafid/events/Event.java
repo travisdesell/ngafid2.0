@@ -19,8 +19,7 @@ import java.sql.Statement;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.ngafid.events_db.EvalExCondition;
-
+import com.udojava.evalex.Expression;
 
 
 public abstract class Event {
@@ -137,8 +136,7 @@ public abstract class Event {
     }
 
 
-/*
-    public void updateEventTable(Connection connection, String eventType, int bufferTime, String EvalExCondition.getCondition()){
+    public void updateEventTable(Connection connection, String eventType, int bufferTime, Expression expression){
         try {
             String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
 
@@ -147,7 +145,7 @@ public abstract class Event {
             preparedStmt.setString (1, eventType);
             preparedStmt.setInt (2, bufferTime);
             preparedStmt.setString (3, eventType);
-            preparedStmt.setString (4, EvalExCondition.getCondition());
+            preparedStmt.setString (4, expression.toString());
 
             // execute the preparedstatement
             preparedStmt.execute();
@@ -158,7 +156,6 @@ public abstract class Event {
         }
 
     }
-    */
 
 }
 
