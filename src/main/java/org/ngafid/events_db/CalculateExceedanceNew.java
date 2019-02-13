@@ -168,7 +168,7 @@ public class CalculateExceedanceNew {
 
             // for (int j = 0; j < eventList.size(); j++) {
             //     Event event = eventList.get(j);
-            //     event.updateEventTable(connection, eventType, bufferTime, eventType, EvalExCondition.condition);
+            //     event.updateEventTable(connection, eventType, bufferTime, eventType, EvalExCondition.getCondition());
             // }
 
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
@@ -187,29 +187,6 @@ public class CalculateExceedanceNew {
     public static void main(String[] arguments) {
 
         Connection connection = Database.getConnection();
-        //ArrayList<Integer> flightIds = new ArrayList<Integer>();
-        /*
-           flightIds.add(672);
-           flightIds.add(677);
-           flightIds.add(679);
-           flightIds.add(713);
-           */
-
-        /*
-         * TODO:
-         * instead of hardcoded flights, get flights from database:
-         *
-         * pitch_id = 1
-         * pitch_low_threshold = -10
-         * pitch_high_threshold = 10
-         *
-         * easy first version:
-         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) 
-         *
-         * harder second version:
-         * SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flights_processed WHERE event_type_id = pitch_id AND flights_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = 'Pitch' AND double_series.flight_id = flights.id AND (min < pitch_low_threshold OR max > pitch_high_threshold))
-         *
-         */
 
         try {
             System.err.println("before!");
@@ -234,12 +211,7 @@ public class CalculateExceedanceNew {
             e.printStackTrace();
             System.exit(1);
         } 
-        /*
-           for (int i = 0; i < flightIds.size(); i++) {
-           System.err.println(i);
-           processFlight(flightIds.get(i));
-           }
-           */
+
         //connection.close();
         System.err.println("finished!");
         System.exit(1);

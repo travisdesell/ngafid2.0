@@ -8,11 +8,15 @@ import java.math.BigDecimal;
 public class EvalExCondition {
     static Expression expression;
     public static String condition = "pitch <= -30.0 || pitch >= 30.0";
+
+    public String getCondition() {
+        return condition;
+    }
+
     public static void test(double pitch) {
         BigDecimal result = expression.with("pitch", Double.toString(pitch)).eval();
         System.out.println("result for pitch = " + pitch + ": " + result);
     }
-
     public static void main(String[] arguments) {
         expression = new Expression(condition);
 
