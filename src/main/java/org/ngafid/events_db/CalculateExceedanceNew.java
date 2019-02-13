@@ -203,6 +203,15 @@ public class CalculateExceedanceNew {
             System.err.println("before!");
             //System.out.println(EvalExCondition.condition);
 
+            System.out.println("All Event Types:");
+            ArrayList<EventType> allEvents = EventType.getAll(connection);
+            for (int i = 0; i < allEvents.size(); i++) {
+                //process  events for this event type
+                System.out.println("\t" + allEvents.get(i));
+            }
+            System.out.println("Finished.");
+
+
             Scanner user_input = new Scanner( System.in );
             String thresholdName;
             System.out.print("Please Enter your threshold name inirial Capitial word (ex. Pitch): ");
@@ -231,8 +240,13 @@ public class CalculateExceedanceNew {
             // Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
             Expression expression = new Expression(conditionsCode);          
           
-            EventType eventTypeObj = new EventType();
-            eventTypeObj.updateEventTable(connection,pitchCalculator.eventType.toString(),pitchCalculator.bufferTime,expression);
+            String name = "Pitch";
+            int bufferTime = 5;
+            String columnNames = "Pitch";
+            String conditionText = "Pitch <= -5.0 || Pitch >= 5.0";
+
+            EventType eventTypeObj = new EventType(name, bufferTime, columnNames, conditionText);
+            eventTypeObj.updateDatabase(connection);
 
             while (rs.next()) {
                 int id = rs.getInt("id");
