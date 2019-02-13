@@ -19,6 +19,9 @@ import java.sql.Statement;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.ngafid.events_db.EvalExCondition;
+
+
 
 public abstract class Event {
     private String startTime;
@@ -132,27 +135,29 @@ public abstract class Event {
             System.exit(1);
         }
     }
+
+
     /*
-    public void updateDatabaseFlightProcessed(Connection connection, int flightId, int eventType, String startTime, String endTime) {
-    //TODO: add bufferTime to database
-    try {
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
-        preparedStatement.setInt(1, flightId);
-        preparedStatement.setInt(2, eventType);
-        //preparedStatement.setInt(3, bufferTime);
-        preparedStatement.setInt(3, startLine);
-        preparedStatement.setInt(4, endLine);
-        preparedStatement.setString(5, myStartDateTime);
-        preparedStatement.setString(6, myEndDateTime);
+       public void updateEventTable(Connection connection, String eventType, int bufferTime, String EvalExCondition.condition){
+       try {
+       String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
 
-        System.err.println(preparedStatement);
+    // create the mysql insert preparedstatement
+    PreparedStatement preparedStmt = connection.prepareStatement(query);
+    preparedStmt.setString (1, eventType);
+    preparedStmt.setInt (2, bufferTime);
+    preparedStmt.setString (3, eventType);
+    preparedStmt.setString (4, EvalExCondition.condition);
 
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+    // execute the preparedstatement
+    preparedStmt.execute();
+
     } catch (SQLException e) {
-        e.printStackTrace();
+    e.printStackTrace();
     System.exit(1);
     }
-    }*/
+
+       }
+       */
 }
 
