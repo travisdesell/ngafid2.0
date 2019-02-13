@@ -135,7 +135,7 @@ public abstract class Event {
         }
     }
 
-
+/*
     public void updateEventTable(Connection connection, String eventType, int bufferTime, Expression expression){
         try {
             String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
@@ -156,6 +156,6 @@ public abstract class Event {
         }
 
     }
-
+*/
 }
 

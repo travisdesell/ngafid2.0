@@ -79,17 +79,17 @@ public class ConditionGenerator {
         System.out.println("Buffer value Entered as: " + " [" + eventName + "] " +"\n");
 
         String thresholdName;
-        System.out.print("Please Enter your threshold name: ");
+        System.out.print("Please Enter your threshold name (ex. current): ");
         thresholdName = user_input.next( );
 
         String operator;
-        System.out.print("Please Enter your operator: ");
+        System.out.print("Please Enter your operator (eaither || or &&): ");
         operator = user_input.next();
 
         String conditionsCode;
         // System.out.print("Please Enter your condition: ");
         conditionsCode = thresholdName + " < " + " minValue " + operator + " " +thresholdName + " > " + "maxValue";
-        System.out.println("Buffer value Entered as: " + " [" + conditionsCode + "] " +"\n");
+        System.out.println("condition Entered as: " + " [" + conditionsCode + "] " +"\n");
 
         replaceAll(template, Pattern.compile("MIN_VALUE"), minValues);
         replaceAll(template, Pattern.compile("MAX_VALUE"), maxValues);
