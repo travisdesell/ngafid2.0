@@ -13,7 +13,10 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import org.ngafid.events_db.EvalExCondition;
 
+import com.udojava.evalex.Expression;
+
 public class CalculateExceedanceNew {
+
 
     public enum EVENT_TYPE { Pitch, Roll, LatAc, NormAc }
 
@@ -166,10 +169,24 @@ public class CalculateExceedanceNew {
                 event.updateDatabase(connection, flightId, getEventTypeId( eventType ));
             }
 
-            // for (int j = 0; j < eventList.size(); j++) {
-            //     Event event = eventList.get(j);
-            //     event.updateEventTable(connection, eventType, bufferTime, eventType, EvalExCondition.getCondition());
-            // }
+            //this should be in its own file because we only need to insert the event types to 
+            //the database one time
+            Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
+            EventType eventTypeObj = new EventType(eventType, bufferTime, expression);
+            eventTypeObj.updateDatabase(connection);
+
+            Expression expression = new Expression("roll <= -22.0 && roll >= 15.0");
+            EventType eventTypeObj = new EventType(eventType, bufferTime, expression);
+            eventTypeObj.updateDatabase(connection);
+
+            /*
+            event.updateEventTable(connection, eventType, bufferTime, eventType, expression);
+
+            for (int j = 0; j < eventList.size(); j++) {
+                Event event = eventList.get(j);
+                event.updateEventTable(connection, eventType, bufferTime, eventType, expression);
+            }
+            */
 
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
             stmt.setInt(1, flightId);
