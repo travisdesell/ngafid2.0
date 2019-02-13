@@ -35,26 +35,61 @@ public class ConditionGenerator {
             line = bufferedReader.readLine();
         }
         bufferedReader.close();
+        /*
+           String minValues;
+           minValues = JOptionPane.showInputDialog("Min Value", "Please Enter Min Value");
+           System.out.println("Min value Entered as: " + " [" + minValues + "] " +"\n");
+
+           String maxValues;
+           maxValues = JOptionPane.showInputDialog("Max Value", "Please Enter Max Value");
+           System.out.println("Max value Entered as: " + " [" + maxValues + "] " +"\n");
+
+           String bufferTime;
+           bufferTime = JOptionPane.showInputDialog("Buffer Value", "Please Enter Buffer Value");
+           System.out.println("Buffer value Entered as: " + " [" + bufferTime + "] " +"\n");
+
+           String eventName;
+           eventName = JOptionPane.showInputDialog("Event Name", "Please Enter Event Name");
+           System.out.println("Event Name Entered as: " + " [" + eventName + "] " +"\n");
+
+           String conditionsCode;
+           conditionsCode = JOptionPane.showInputDialog("Event Condition: Please use as an example show", "current < minValue || current > maxValue");
+           System.out.println("Condition Entered as: " + " [" + conditionsCode + "] " +"\n");
+           */
+        Scanner user_input = new Scanner( System.in );
 
         String minValues;
-        minValues = JOptionPane.showInputDialog("Min Value", "Please Enter Min Value");
+        System.out.print("Please Enter Min Value: ");
+        minValues = user_input.next( );
         System.out.println("Min value Entered as: " + " [" + minValues + "] " +"\n");
 
         String maxValues;
-        maxValues = JOptionPane.showInputDialog("Max Value", "Please Enter Max Value");
-        System.out.println("Max value Entered as: " + " [" + maxValues + "] " +"\n");
+        System.out.print("Please Enter Max Value: ");
+        maxValues = user_input.next( );
+        System.out.println("Min value Entered as: " + " [" + maxValues + "] " +"\n");
 
         String bufferTime;
-        bufferTime = JOptionPane.showInputDialog("Buffer Value", "Please Enter Buffer Value");
+        System.out.print("Please Enter Buffer Value: ");
+        bufferTime = user_input.next( );
         System.out.println("Buffer value Entered as: " + " [" + bufferTime + "] " +"\n");
 
         String eventName;
-        eventName = JOptionPane.showInputDialog("Event Name", "Please Enter Event Name");
-        System.out.println("Event Name Entered as: " + " [" + eventName + "] " +"\n");
+        System.out.print("Please Enter Event Name: ");
+        eventName = user_input.next( );
+        System.out.println("Buffer value Entered as: " + " [" + eventName + "] " +"\n");
+
+        String thresholdName;
+        System.out.print("Please Enter your threshold name: ");
+        thresholdName = user_input.next( );
+
+        String operator;
+        System.out.print("Please Enter your operator: ");
+        operator = user_input.next();
 
         String conditionsCode;
-        conditionsCode = JOptionPane.showInputDialog("Event Condition: Please use as an example show", "current < minValue || current > maxValue");
-        System.out.println("Condition Entered as: " + " [" + conditionsCode + "] " +"\n");
+        // System.out.print("Please Enter your condition: ");
+        conditionsCode = thresholdName + " < " + " minValue " + operator + " " +thresholdName + " > " + "maxValue";
+        System.out.println("Buffer value Entered as: " + " [" + conditionsCode + "] " +"\n");
 
         // if (conditions.length - 1 != rules.length) {
         //     System.err.println("Error: tried to create tracker code for '" + eventName + "' but the number of conditions (" + conditions.length + " - 1) was != the number of rules (" + rules.length + ")");
@@ -91,8 +126,8 @@ public class ConditionGenerator {
     }
 
     public static void main(String[] arguments) throws Exception {
-       
-        
+
+
         //String[] conditions = new String[]{"current < minValue", "current > + maxValue"};
         String outputFilename = "./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java";
 

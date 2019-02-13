@@ -1,20 +1,20 @@
 package org.ngafid.events_db;
 
 import com.udojava.evalex.Expression;
-
+import org.ngafid.events_db.CalculateExceedanceNew;
 
 import java.math.BigDecimal;
 
 public class EvalExCondition {
     static Expression expression;
-
+    public static String condition = "pitch <= -30.0 || pitch >= 30.0";
     public static void test(double pitch) {
         BigDecimal result = expression.with("pitch", Double.toString(pitch)).eval();
         System.out.println("result for pitch = " + pitch + ": " + result);
     }
 
     public static void main(String[] arguments) {
-        expression = new Expression("pitch <= -30.0 || pitch >= 30.0");
+        expression = new Expression(condition);
 
         test(-35.0);
         test(-25.0);

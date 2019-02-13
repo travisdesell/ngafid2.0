@@ -5,15 +5,13 @@ import org.ngafid.events.Event;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
-
 import java.util.Scanner;
-
+import org.ngafid.events_db.EvalExCondition;
 
 public class CalculateExceedanceNew {
 
@@ -25,8 +23,6 @@ public class CalculateExceedanceNew {
 
     double minValue = -1;
     double maxValue = -1;
-
-
     int bufferTime = -1;
     EVENT_TYPE eventType = null;
 
@@ -50,6 +46,10 @@ public class CalculateExceedanceNew {
         }
         return -1;
     }
+    static String getEventTypeName( String eventType){
+        return eventType;
+
+    }
 
     public void processFlight(int flightId) {
         Connection connection = Database.getConnection();
@@ -69,20 +69,16 @@ public class CalculateExceedanceNew {
             if (eventSeries == null) {
                 //INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''
                 //message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data."
-
                 // String message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data";
                 // //INSERT INTO flights_processed SET flight_id = ?, event_type_id = ?
                 // PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''");
                 // stmt.setInt(1, flightId);
                 // stmt.setString(2, message);
-
                 // StringWriter sw = new StringWriter();
                 // PrintWriter pw = new PrintWriter(sw);
                 // exception.printStackTrace(pw);
                 // String sStackTrace = sw.toString(); // stack trace as a string
-
                 // exceptionPreparedStatement.setString(3, sStackTrace);
-
                 // System.out.println(stmt.toString());
                 // stmt.executeUpdate();
 
@@ -92,7 +88,6 @@ public class CalculateExceedanceNew {
             if (timeSeries == null || dateSeries == null) {
                 //INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''
                 //message = "Couldn't calculate Pitch exceedence because flight didn't have time or date data."
-
                 //INSERT INTO flights_processed SET flight_id = ?, event_type_id = ?
 
                 return;
@@ -100,13 +95,10 @@ public class CalculateExceedanceNew {
 
             // for (int k = 0; k < timeSeries.size(); k++) {
             //     String dateTime = timeSeries.get(k) + " " + dateSeries.get(k);
-
             //     System.out.println(dateTime);
             // }
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
-            //ArrayList<Event> pitchEvents = ...;
-
             int startLineNo = -1;
             String startTime = null;
             int endLine = -1;
@@ -123,7 +115,6 @@ public class CalculateExceedanceNew {
 
                 //System.out.println("pitch[" + i + "]: " + current);
                 if (current < minValue || current > maxValue){
-                // if (current < min || current > max){
                     //System.out.println("I am here");
                     if (startTime == null) {
                         startTime = dateSeries.get(i) + " " + timeSeries.get(i);
@@ -170,19 +161,21 @@ public class CalculateExceedanceNew {
                 System.out.println( "Event : [line:" + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEndTime() + "]" );
             }
             //Step 2: export the pitch events to the database
-
             for (int i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
-
                 event.updateDatabase(connection, flightId, getEventTypeId( eventType ));
             }
+
+            // for (int j = 0; j < eventList.size(); j++) {
+            //     Event event = eventList.get(j);
+            //     event.updateEventTable(connection, eventType, bufferTime, eventType, EvalExCondition.condition);
+            // }
 
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
             stmt.setInt(1, flightId);
             stmt.setInt(2, getEventTypeId(eventType));
-
             System.out.println(stmt.toString());
-            stmt.executeUpdate();
+            stmt.executeUpdate();       
 
         } catch(SQLException e) {
             System.err.println(e);
@@ -218,24 +211,16 @@ public class CalculateExceedanceNew {
          *
          */
 
-
         try {
             System.err.println("before!");
-
-            //int pitchId = 1;
-            //int eventTypeId = pitchId;
+            System.out.println(EvalExCondition.condition);
 
             EVENT_TYPE event_type = EVENT_TYPE.Pitch;
-
             PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
             stmt.setInt(1, getEventTypeId( event_type ));
-
             ResultSet rs = stmt.executeQuery();
 
-
             CalculateExceedanceNew pitchCalculator = new CalculateExceedanceNew( -4, 4, 5,  event_type);
-
-            // CalculateExceedanceNew pitchCalculator = new CalculateExceedanceNew( min, max, 5,  event_type);
 
             while (rs.next()) {
                 int id = rs.getInt("id");
@@ -249,7 +234,6 @@ public class CalculateExceedanceNew {
             e.printStackTrace();
             System.exit(1);
         } 
-
         /*
            for (int i = 0; i < flightIds.size(); i++) {
            System.err.println(i);
