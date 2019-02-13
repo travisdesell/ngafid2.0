@@ -137,27 +137,28 @@ public abstract class Event {
     }
 
 
-    /*
-       public void updateEventTable(Connection connection, String eventType, int bufferTime, String EvalExCondition.condition){
-       try {
-       String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
+/*
+    public void updateEventTable(Connection connection, String eventType, int bufferTime, String EvalExCondition.getCondition()){
+        try {
+            String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
 
-    // create the mysql insert preparedstatement
-    PreparedStatement preparedStmt = connection.prepareStatement(query);
-    preparedStmt.setString (1, eventType);
-    preparedStmt.setInt (2, bufferTime);
-    preparedStmt.setString (3, eventType);
-    preparedStmt.setString (4, EvalExCondition.condition);
+            // create the mysql insert preparedstatement
+            PreparedStatement preparedStmt = connection.prepareStatement(query);
+            preparedStmt.setString (1, eventType);
+            preparedStmt.setInt (2, bufferTime);
+            preparedStmt.setString (3, eventType);
+            preparedStmt.setString (4, EvalExCondition.getCondition());
 
-    // execute the preparedstatement
-    preparedStmt.execute();
+            // execute the preparedstatement
+            preparedStmt.execute();
 
-    } catch (SQLException e) {
-    e.printStackTrace();
-    System.exit(1);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
     }
+    */
 
-       }
-       */
 }
 

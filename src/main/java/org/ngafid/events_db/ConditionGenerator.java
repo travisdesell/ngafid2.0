@@ -91,26 +91,6 @@ public class ConditionGenerator {
         conditionsCode = thresholdName + " < " + " minValue " + operator + " " +thresholdName + " > " + "maxValue";
         System.out.println("Buffer value Entered as: " + " [" + conditionsCode + "] " +"\n");
 
-        // if (conditions.length - 1 != rules.length) {
-        //     System.err.println("Error: tried to create tracker code for '" + eventName + "' but the number of conditions (" + conditions.length + " - 1) was != the number of rules (" + rules.length + ")");
-
-        //     System.err.println("conditions:");
-        //     for (int i = 0; i < conditions.length; i++) {
-        //         System.err.println("\t" + conditions[i]);
-        //     }
-
-        //     System.err.println("rules:");
-        //     for (int i = 0; i < rules.length; i++) {
-        //         System.err.println("\t" + rules[i]);
-        //     }
-        //     System.exit(1);
-        // }
-
-        // String conditionsCode = conditions[0];
-        // for (int i = 1; i < conditions.length; i++) {
-        //     conditionsCode += " " + rules[i-1] + " " + conditions[i];
-        // }
-
         replaceAll(template, Pattern.compile("MIN_VALUE"), minValues);
         replaceAll(template, Pattern.compile("MAX_VALUE"), maxValues);
         replaceAll(template, Pattern.compile("BUFFER_VALUE"), bufferTime);
@@ -126,7 +106,6 @@ public class ConditionGenerator {
     }
 
     public static void main(String[] arguments) throws Exception {
-
 
         //String[] conditions = new String[]{"current < minValue", "current > + maxValue"};
         String outputFilename = "./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java";
