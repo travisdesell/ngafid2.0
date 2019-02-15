@@ -26,7 +26,6 @@ public abstract class Event {
     private String startTime;
     private String endTime;
 
-
     // Added to get the "calculateStartEndTime"
     public String myStartDateTime;
     public String myEndDateTime;
@@ -134,28 +133,5 @@ public abstract class Event {
             System.exit(1);
         }
     }
-
-/*
-    public void updateEventTable(Connection connection, String eventType, int bufferTime, Expression expression){
-        try {
-            String query = "INSERT INTO event_type (name, buffer_time, column_name, condition) VALUES (?, ?, ?, ?)";
-
-            // create the mysql insert preparedstatement
-            PreparedStatement preparedStmt = connection.prepareStatement(query);
-            preparedStmt.setString (1, eventType);
-            preparedStmt.setInt (2, bufferTime);
-            preparedStmt.setString (3, eventType);
-            preparedStmt.setString (4, expression.toString());
-
-            // execute the preparedstatement
-            preparedStmt.execute();
-
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-    }
-*/
 }
 

@@ -74,12 +74,12 @@ public class ConditionGenerator {
         System.out.println("Buffer value Entered as: " + " [" + bufferTime + "] " +"\n");
 
         String eventName;
-        System.out.print("Please Enter Event Name: ");
+        System.out.print("Please Enter Event Name (ex: Pitch, Roll, LatAc or NormAc): ");
         eventName = user_input.next( );
         System.out.println("Buffer value Entered as: " + " [" + eventName + "] " +"\n");
 
         String thresholdName;
-        System.out.print("Please Enter your threshold name (ex. current): ");
+        System.out.print("Please Enter your threshold name (default: eventSeries): ");
         thresholdName = user_input.next( );
 
         String operator;
@@ -88,7 +88,8 @@ public class ConditionGenerator {
 
         String conditionsCode;
         // System.out.print("Please Enter your condition: ");
-        conditionsCode = thresholdName + " < " + " minValue " + operator + " " +thresholdName + " > " + "maxValue";
+        // conditionsCode = thresholdName + " < " + " minValue " + operator + " " +thresholdName + " > " + "maxValue";
+        conditionsCode = thresholdName+".get(i)"+ " < " + " minValue " + operator + " " +thresholdName+".get(i)" + " > " + "maxValue";
         System.out.println("condition Entered as: " + " [" + conditionsCode + "] " +"\n");
 
         replaceAll(template, Pattern.compile("MIN_VALUE"), minValues);
@@ -108,7 +109,15 @@ public class ConditionGenerator {
     public static void main(String[] arguments) throws Exception {
 
         //String[] conditions = new String[]{"current < minValue", "current > + maxValue"};
-        String outputFilename = "./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java";
+        //String outputFilename = "./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java";
+
+        Scanner user_input = new Scanner( System.in );
+        String outputFilename;
+        System.out.print("Please Enter your operator (./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java): ");
+        outputFilename = user_input.next();
+
+        //outputFilename= "./src/main/java/org/ngafid/events_db/CalculatePitchEvents.java";
+
 
         generateTrackerCode(outputFilename);
         //System.exit(1);

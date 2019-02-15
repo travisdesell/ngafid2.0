@@ -1,6 +1,4 @@
-
 package org.ngafid.events_db;
-
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -12,14 +10,12 @@ import java.util.HashMap;
 import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.logging.Logger;
-
-
 import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events_db.CalculateExceedanceNew;
+import org.ngafid.events_db.EvalExCondition;
 
-
-public class EventType {
+public class EventTypeExPression {
     private static final Logger LOG = Logger.getLogger(EventType.class.getName());
 
     private int id;
@@ -28,26 +24,26 @@ public class EventType {
     private String conditionText;
     private String columnNames;
 
-    public EventType(String name, int bufferTime, String columnNames, String conditionText) {
-        this.id = -1;
-        this.name = name;
-        this.bufferTime = bufferTime;
-        this.columnNames = columnNames;
-        this.conditionText = conditionText;
-    }
+    // public EventType(String name, int bufferTime, String columnNames, String conditionText) {
+    //     this.id = -1;
+    //     this.name = name;
+    //     this.bufferTime = bufferTime;
+    //     this.columnNames = columnNames;
+    //     this.conditionText = conditionText;
+    // }
 
     /**
      * Creates a EventType object from a result set
      *
      * @param A ResultSet object from a database query
      */
-    public EventType(ResultSet resultSet) throws SQLException {
-        this.id = resultSet.getInt(1);
-        this.name = resultSet.getString(2);
-        this.bufferTime = resultSet.getInt(3);
-        this.columnNames = resultSet.getString(4);
-        this.conditionText = resultSet.getString(5);
-    }
+    // public EventType(ResultSet resultSet) throws SQLException {
+    //     this.id = resultSet.getInt(1);
+    //     this.name = resultSet.getString(2);
+    //     this.bufferTime = resultSet.getInt(3);
+    //     this.columnNames = resultSet.getString(4);
+    //     this.conditionText = resultSet.getString(5);
+    // }
 
     /**
      * Gets all event types in the database.
@@ -136,32 +132,7 @@ public class EventType {
 
     public static void main(String[] arguments) {
 
-        Scanner user_input = new Scanner( System.in );
-
-        //String name = "Roll"; //get from user
-        String name;
-        System.out.print("Please Enter eventsSeries name initial with Capitial word (ex. Pitch, Roll, LatAc or NormAc): ");
-        name = user_input.next( );
-
-        //int bufferTime = 5; //get from user
-        String bufferTimeVal;
-        System.out.print("Please Enter buffer Time value (ex. 5, 10 or any value): ");
-        bufferTimeVal = user_input.next( );
-        int bufferTime = Integer.parseInt(bufferTimeVal);
-
-        //String columnNames = "Roll"; //get from user        
-        String columnNames;
-        System.out.print("Please Enter Enter eventsSeries column name (ex. Pitch, Roll, LatAc or NormAc): ");
-        columnNames = user_input.next( );
-
-        //String conditionText = CalculateExceedanceNew.conditionText;
-        String conditionText;
-        conditionText = "Roll < -15.0 || Roll > 15.0"; //get from user
-        //System.out.print("Please Enter your full condition: ");
-        //conditionText = user_input.next();
-        System.out.println("condition recorded as : " + " [" + conditionText + "] " +"\n");
-
-        EventType eventType = new EventType(name, bufferTime, columnNames, conditionText);
+        EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.columnNames, EvalExCondition.condition);
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);
