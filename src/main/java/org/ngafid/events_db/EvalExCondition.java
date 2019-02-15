@@ -2,12 +2,17 @@ package org.ngafid.events_db;
 
 import com.udojava.evalex.Expression;
 import org.ngafid.events_db.CalculateExceedanceNew;
+import org.ngafid.events_db.EventTypeExPression;
 
 import java.math.BigDecimal;
 
 public class EvalExCondition {
+
     static Expression expression;
-    public static String condition = "pitch <= -30.0 || pitch >= 30.0";
+    public static String name = "Pitch";
+    public static int bufferTime = 5; 
+    public static String columnNames = "Roll"; //get from user        
+    public static String condition = "pitch < -30.0 || pitch > 30.0";
 
     public String getCondition() {
         return condition;

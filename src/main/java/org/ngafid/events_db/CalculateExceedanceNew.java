@@ -12,17 +12,19 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Scanner;
 import org.ngafid.events_db.EvalExCondition;
+import org.ngafid.events_db.EventType;
+
 
 import com.udojava.evalex.Expression;
 
 public class CalculateExceedanceNew {
-
 
     public enum EVENT_TYPE { Pitch, Roll, LatAc, NormAc }
 
     //    int eventTypeId = 1;
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
+    //public static String conditionText;
 
     double minValue = -1;
     double maxValue = -1;
@@ -48,10 +50,6 @@ public class CalculateExceedanceNew {
                 return 4;
         }
         return -1;
-    }
-    static String getEventTypeName( String eventType){
-        return eventType;
-
     }
 
     public void processFlight(int flightId) {
@@ -174,13 +172,13 @@ public class CalculateExceedanceNew {
             // eventTypeObj.updateDatabase(connection);           
 
             /*
-            event.updateEventTable(connection, eventType, bufferTime, eventType, expression);
+               event.updateEventTable(connection, eventType, bufferTime, eventType, expression);
 
-            for (int j = 0; j < eventList.size(); j++) {
-                Event event = eventList.get(j);
-                event.updateEventTable(connection, eventType, bufferTime, expression);
-            }
-            */
+               for (int j = 0; j < eventList.size(); j++) {
+               Event event = eventList.get(j);
+               event.updateEventTable(connection, eventType, bufferTime, expression);
+               }
+               */
 
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
             stmt.setInt(1, flightId);
@@ -212,17 +210,7 @@ public class CalculateExceedanceNew {
             System.out.println("Finished.");
 
 
-            Scanner user_input = new Scanner( System.in );
-            String thresholdName;
-            System.out.print("Please Enter your threshold name inirial Capitial word (ex. Pitch): ");
-            thresholdName = user_input.next( );
-    
-            String operator;
-            System.out.print("Please Enter your operator (eaither || or &&): ");
-            operator = user_input.next();
-    
-
-            EVENT_TYPE event_type = EVENT_TYPE.Pitch;
+            EVENT_TYPE event_type = EVENT_TYPE.Roll;
             //EVENT_TYPE event_type = EVENT_TYPE.thresholdName;
 
             PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
@@ -230,22 +218,26 @@ public class CalculateExceedanceNew {
             ResultSet rs = stmt.executeQuery();
             CalculateExceedanceNew pitchCalculator = new CalculateExceedanceNew( -4, 4, 5,  event_type);
 
-            String conditionsCode;
-            // System.out.print("Please Enter your condition: ");
-            //conditionsCode = thresholdName + " < " + pitchCalculator.minValue + operator + " " +thresholdName + " > " + pitchCalculator.minValue;
-            conditionsCode = pitchCalculator.eventType.toString() + " < " + pitchCalculator.minValue  + " " + operator + " " +pitchCalculator.eventType.toString() + " > " + pitchCalculator.maxValue;
+            //String conditionsCode;
+            //// System.out.print("Please Enter your condition: ");
+            //conditionsCode = pitchCalculator.eventType.toString() + " < " + pitchCalculator.minValue  + " " + operator + " " +pitchCalculator.eventType.toString() + " > " + pitchCalculator.maxValue;
+            //System.out.println("condition Entered as: " + " [" + conditionsCode + "] " +"\n");
 
-            System.out.println("condition Entered as: " + " [" + conditionsCode + "] " +"\n");
+            //// Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
+            //Expression expression = new Expression(conditionsCode);          
 
-            // Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
-            Expression expression = new Expression(conditionsCode);          
-          
-            String name = "Pitch";
-            int bufferTime = 5;
-            String columnNames = "Pitch";
-            String conditionText = "Pitch <= -5.0 || Pitch >= 5.0";
+            //String name = "Pitch";
+            String name = pitchCalculator.eventType.toString();
+            //int bufferTime = 5;
+            int bufferTime = pitchCalculator.bufferTime;
+            //String columnNames = "Pitch";
+            String columnNames = pitchCalculator.eventType.toString();
+            //conditionText = "Pitch <= -5.0 || Pitch >= 5.0";
+            String conditionText = columnNames + " < " + pitchCalculator.minValue  + " || " + columnNames + " > " + pitchCalculator.maxValue;
 
             EventType eventTypeObj = new EventType(name, bufferTime, columnNames, conditionText);
+            // EventType eventTypeObj = new EventType(pitchCalculator.eventType.toString(), pitchCalculator.bufferTime, pitchCalculator.eventType.toString(), EventType.conditionText);
+
             eventTypeObj.updateDatabase(connection);
 
             while (rs.next()) {
