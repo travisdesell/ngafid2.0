@@ -141,24 +141,24 @@ public class EventType {
         //String name = "Roll"; //get from user
         String name;
         System.out.print("Please Enter eventsSeries name initial with Capitial word (ex. Pitch, Roll, LatAc or NormAc): ");
-        name = user_input.next( );
+        name = user_input.nextLine();
 
         //int bufferTime = 5; //get from user
         String bufferTimeVal;
         System.out.print("Please Enter buffer Time value (ex. 5, 10 or any value): ");
-        bufferTimeVal = user_input.next( );
+        bufferTimeVal = user_input.nextLine();
         int bufferTime = Integer.parseInt(bufferTimeVal);
 
         //String columnNames = "Roll"; //get from user        
         String columnNames;
         System.out.print("Please Enter Enter eventsSeries column name (ex. Pitch, Roll, LatAc or NormAc): ");
-        columnNames = user_input.next( );
+        columnNames = user_input.nextLine();
 
         //String conditionText = CalculateExceedanceNew.conditionText;
         String conditionText;
-        conditionText = "Roll < -15.0 || Roll > 15.0"; //get from user
-        //System.out.print("Please Enter your full condition: ");
-        //conditionText = user_input.next();
+        //conditionText = "Roll < -15.0 || Roll > 15.0"; //get from user
+        System.out.print("Please Enter your full condition: ");
+        conditionText = user_input.nextLine();
         System.out.println("condition recorded as : " + " [" + conditionText + "] " +"\n");
 
         EventType eventType = new EventType(name, bufferTime, columnNames, conditionText);

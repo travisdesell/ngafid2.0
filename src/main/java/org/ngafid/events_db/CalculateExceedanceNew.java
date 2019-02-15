@@ -18,24 +18,17 @@ import org.ngafid.events_db.EventType;
 import com.udojava.evalex.Expression;
 
 public class CalculateExceedanceNew {
-
-    public enum EVENT_TYPE { Pitch, Roll, LatAc, NormAc }
-
-    //    int eventTypeId = 1;
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
-    //public static String conditionText;
 
-    double minValue = -1;
-    double maxValue = -1;
+    private EventType eventType;
+    private Expression expression;
     int bufferTime = -1;
-    EVENT_TYPE eventType = null;
 
-    public CalculateExceedanceNew( double minValue, double maxValue, int bufferTime, EVENT_TYPE eventType ){
-        this.minValue = minValue;
-        this.maxValue = maxValue;
-        this.bufferTime = bufferTime;
+    public CalculateExceedanceNew(EventType eventType) {
         this.eventType = eventType;
+        this.expression = new Expression(eventType.getConditionText());
+        this.bufferTime = eventType.getBufferTime();
     }
 
     static int getEventTypeId( EVENT_TYPE eventType ){
@@ -62,7 +55,7 @@ public class CalculateExceedanceNew {
             ///System.out.println("date: " + flight.getDate());
             System.out.println("flight filename: " + flight.getFilename());
 
-            DoubleTimeSeries eventSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, eventType.name());
+            DoubleTimeSeries eventSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, eventType.getName());
 
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
@@ -115,6 +108,8 @@ public class CalculateExceedanceNew {
                 //current = eventSeries.get(i);
 
                 //System.out.println("pitch[" + i + "]: " + current);
+
+                //TODO: use the expression from the eventType instead of hard coded conditions
                 if (eventSeries.get(i) < minValue || eventSeries.get(i) > maxValue){
                     //System.out.println("I am here");
                     if (startTime == null) {
@@ -205,49 +200,28 @@ public class CalculateExceedanceNew {
             ArrayList<EventType> allEvents = EventType.getAll(connection);
             for (int i = 0; i < allEvents.size(); i++) {
                 //process  events for this event type
-                System.out.println("\t" + allEvents.get(i));
+                EventType currentEventType = allEvents.get(i);
+
+                System.out.println("\t" + currentEventType.toString());
+
+                CalculateExceedenceNew currentCalculator = new CalculateExceedenceNew(allEvents.get(i));
+
+                PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
+                stmt.setInt(1, currentEventType.getId());
+                ResultSet rs = stmt.executeQuery();
+
+                while (rs.next()) {
+                    int id = rs.getInt("id");
+                    System.out.println("=======Going to process flight with number: " + id );
+
+                    currentCalculator.processFlight(id);
+                    System.out.println("-------------------------\n");
+                }
+
+                //you need to do stuff in this for loop to process events for this event type from the database
             }
             System.out.println("Finished.");
 
-
-            EVENT_TYPE event_type = EVENT_TYPE.Roll;
-            //EVENT_TYPE event_type = EVENT_TYPE.thresholdName;
-
-            PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
-            stmt.setInt(1, getEventTypeId( event_type ));
-            ResultSet rs = stmt.executeQuery();
-            CalculateExceedanceNew pitchCalculator = new CalculateExceedanceNew( -4, 4, 5,  event_type);
-
-            //String conditionsCode;
-            //// System.out.print("Please Enter your condition: ");
-            //conditionsCode = pitchCalculator.eventType.toString() + " < " + pitchCalculator.minValue  + " " + operator + " " +pitchCalculator.eventType.toString() + " > " + pitchCalculator.maxValue;
-            //System.out.println("condition Entered as: " + " [" + conditionsCode + "] " +"\n");
-
-            //// Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
-            //Expression expression = new Expression(conditionsCode);          
-
-            //String name = "Pitch";
-            String name = pitchCalculator.eventType.toString();
-            //int bufferTime = 5;
-            int bufferTime = pitchCalculator.bufferTime;
-            //String columnNames = "Pitch";
-            String columnNames = pitchCalculator.eventType.toString();
-            //conditionText = "Pitch <= -5.0 || Pitch >= 5.0";
-            String conditionText = columnNames + " < " + pitchCalculator.minValue  + " || " + columnNames + " > " + pitchCalculator.maxValue;
-
-            EventType eventTypeObj = new EventType(name, bufferTime, columnNames, conditionText);
-            // EventType eventTypeObj = new EventType(pitchCalculator.eventType.toString(), pitchCalculator.bufferTime, pitchCalculator.eventType.toString(), EventType.conditionText);
-
-            eventTypeObj.updateDatabase(connection);
-
-            while (rs.next()) {
-                int id = rs.getInt("id");
-                System.out.println("=======Going to process flight with number: " + id );
-
-                pitchCalculator.processFlight(id);
-                System.out.println("-------------------------\n");
-            }
-            System.err.println("after!");
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
