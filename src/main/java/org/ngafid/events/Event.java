@@ -79,6 +79,7 @@ public abstract class Event {
     public void setEndLine( int endLine ){
         this.endLine = endLine;
     }
+
     public void setBufferTime( int bufferTime ){
         this.bufferTime = bufferTime;
     }

@@ -1,12 +1,10 @@
 
 package org.ngafid.events_db;
 
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.io.FileNotFoundException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Scanner;
@@ -17,6 +15,10 @@ import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events_db.CalculateExceedanceNew;
+
+
+import com.udojava.evalex.Expression;
+import java.math.BigDecimal;
 
 
 public class EventType {
@@ -34,6 +36,21 @@ public class EventType {
         this.bufferTime = bufferTime;
         this.columnNames = columnNames;
         this.conditionText = conditionText;
+    }
+
+    public String getConditionText(){
+        return conditionText;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public int getId() {
+        return id;
+    }
+
+    public String getColumnName() {
+        return columnNames;
     }
 
     /**
@@ -91,14 +108,6 @@ public class EventType {
         return bufferTime;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public int getId() {
-        return id;
-    }
-
     //this should be in its own file because we only need to insert the event types to
     //the database one time
     // Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
@@ -148,7 +157,7 @@ public class EventType {
 
         //String name = "Roll"; //get from user
         String name;
-        System.out.print("Please Enter eventsSeries name initial with Capitial word (ex. Pitch, Roll, LatAc or NormAc): ");
+        System.out.print("Please Enter eventsSeries name initial with Capital word (ex. Pitch, Roll, LatAc or NormAc): ");
         name = user_input.nextLine();
 
         //int bufferTime = 5; //get from user
@@ -173,6 +182,7 @@ public class EventType {
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);
+
     }
 }
 
