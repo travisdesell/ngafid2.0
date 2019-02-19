@@ -36,21 +36,9 @@ public class EventType {
         this.bufferTime = bufferTime;
         this.columnNames = columnNames;
         this.conditionText = conditionText;
-    }
 
-    public String getConditionText(){
-        return conditionText;
-    }
-
-    public String getName() {
-        return name;
-    }
-    public int getId() {
-        return id;
-    }
-
-    public String getColumnName() {
-        return columnNames;
+        //split up column names into an array
+        //look this up: https://stackoverflow.com/questions/7021074/string-delimiter-in-string-split-method
     }
 
     /**
@@ -64,6 +52,39 @@ public class EventType {
         this.bufferTime = resultSet.getInt(3);
         this.columnNames = resultSet.getString(4);
         this.conditionText = resultSet.getString(5);
+
+        //split up column names into an array
+    }
+
+
+    public String getConditionText(){
+        return conditionText;
+    }
+
+    public String getName() {
+        return name;
+    }
+    public int getId() {
+        return id;
+    }
+
+    //TODO: this is going to go away
+    public String getColumnName() {
+        return columnNames;
+    }
+
+    //returns how many column names there are in this event
+    public int getNumberColumnNames() {
+        return 0;
+    }
+
+    //this will get the ith column name
+    public String getColumnName(int index) {
+    }
+
+    //TODO: replace with this because we can have multiple column names
+    public String[] getColumnNames() {
+        //return the column names split up into an array
     }
 
     /**
