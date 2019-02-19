@@ -208,6 +208,7 @@ public class CalculateExceedanceNew {
 
                 CalculateExceedanceNew currentCalculator = new CalculateExceedanceNew(allEvents.get(i));
 
+                //TODO: update to check and see if the flight could possibly have the exceedence
                 PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
                 stmt.setInt(1, currentEventType.getId());
                 ResultSet rs = stmt.executeQuery();
@@ -215,6 +216,9 @@ public class CalculateExceedanceNew {
                 while (rs.next()) {
                     int id = rs.getInt("id");
                     System.out.println("=======Going to process flight with number: " + id );
+
+                    //select min/max from double_series where name = eventType.getColumnName()
+                    //don't process flights whose min and max doesn't violate the exceedence
 
                     currentCalculator.processFlight(id);
                     System.out.println("-------------------------\n");
