@@ -14,14 +14,16 @@ public class EvalExCondition {
     public static String columnNames = "Roll"; //get from user        
     public static String condition = "pitch < -30.0 || pitch > 30.0";
 
-    public String getCondition() {
-        return condition;
-    }
+//    public String getCondition() {
+//        return condition;
+//    }
 
     public static void test(double pitch) {
         BigDecimal result = expression.with("pitch", Double.toString(pitch)).eval();
         System.out.println("result for pitch = " + pitch + ": " + result);
     }
+
+
     public static void main(String[] arguments) {
         expression = new Expression(condition);
 
@@ -51,4 +53,5 @@ public class EvalExCondition {
 
         System.out.println("pitch: " + pitch + ", roll: " + roll + ", result: " + expression.with("pitch", Double.toString(pitch)).with("roll", Double.toString(roll)).eval());
     }
+
 }
