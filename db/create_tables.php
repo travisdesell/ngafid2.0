@@ -11,7 +11,7 @@ $drop_tables = false;
 
 query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE event_type");
-query_ngafid_db("DROP TABLE flights_processed");
+query_ngafid_db("DROP TABLE flight_processed");
 
 if ($drop_tables) {
     query_ngafid_db("DROP TABLE user");
