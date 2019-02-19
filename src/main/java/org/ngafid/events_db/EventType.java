@@ -91,6 +91,14 @@ public class EventType {
         return bufferTime;
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
     //this should be in its own file because we only need to insert the event types to
     //the database one time
     // Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");

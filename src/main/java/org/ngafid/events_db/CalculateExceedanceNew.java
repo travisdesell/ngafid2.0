@@ -26,23 +26,9 @@ public class CalculateExceedanceNew {
     int bufferTime = -1;
 
     public CalculateExceedanceNew(EventType eventType) {
-        this.eventType = eventType;
-        this.expression = new Expression(eventType.getConditionText());
-        this.bufferTime = eventType.getBufferTime();
-    }
-
-    static int getEventTypeId( EVENT_TYPE eventType ){
-        switch (eventType){
-            case Pitch:
-                return 1;
-            case Roll:
-                return 2;
-            case LatAc:
-                return 3;
-            case NormAc:
-                return 4;
-        }
-        return -1;
+        //this.eventType = eventType;
+        //this.expression = new Expression(eventType.getConditionText());
+        //this.bufferTime = eventType.getBufferTime();
     }
 
     public void processFlight(int flightId) {
@@ -110,7 +96,8 @@ public class CalculateExceedanceNew {
                 //System.out.println("pitch[" + i + "]: " + current);
 
                 //TODO: use the expression from the eventType instead of hard coded conditions
-                if (eventSeries.get(i) < minValue || eventSeries.get(i) > maxValue){
+                //if (eventSeries.get(i) < minValue || eventSeries.get(i) > maxValue){
+                if (true) {
                     //System.out.println("I am here");
                     if (startTime == null) {
                         startTime = dateSeries.get(i) + " " + timeSeries.get(i);
@@ -159,7 +146,7 @@ public class CalculateExceedanceNew {
             //Step 2: export the pitch events to the database
             for (int i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
-                event.updateDatabase(connection, flightId, getEventTypeId( eventType ));
+                //event.updateDatabase(connection, flightId, getEventTypeId( eventType ));
             }
 
             // Expression expression = new Expression("pitch <= -30.0 && pitch >= -30.0");
@@ -177,7 +164,7 @@ public class CalculateExceedanceNew {
 
             PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET flight_id = ?, event_type_id = ?");
             stmt.setInt(1, flightId);
-            stmt.setInt(2, getEventTypeId(eventType));
+            //stmt.setInt(2, getEventTypeId(eventType));
             System.out.println(stmt.toString());
             stmt.executeUpdate();       
 
@@ -204,7 +191,7 @@ public class CalculateExceedanceNew {
 
                 System.out.println("\t" + currentEventType.toString());
 
-                CalculateExceedenceNew currentCalculator = new CalculateExceedenceNew(allEvents.get(i));
+                //CalculateExceedenceNew currentCalculator = new CalculateExceedenceNew(allEvents.get(i));
 
                 PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
                 stmt.setInt(1, currentEventType.getId());
@@ -214,7 +201,7 @@ public class CalculateExceedanceNew {
                     int id = rs.getInt("id");
                     System.out.println("=======Going to process flight with number: " + id );
 
-                    currentCalculator.processFlight(id);
+                    //currentCalculator.processFlight(id);
                     System.out.println("-------------------------\n");
                 }
 

@@ -1,5 +1,10 @@
 package org.ngafid;
 
+
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
+
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
@@ -7,7 +12,14 @@ import org.ngafid.accounts.PasswordAuthentication;
 import spark.Spark;
 import spark.Session;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Objects;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -27,12 +39,13 @@ public final class WebServer {
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
+    public static final String MUSTACHE_TEMPLATE_DIR;
 
     static {
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_UPLOAD_DIR=<path/to/db_info_file>");
+            System.err.println("export NGAFID_UPLOAD_DIR=<path/to/upload_dir>");
             System.exit(1);
         }
         NGAFID_UPLOAD_DIR = System.getenv("NGAFID_UPLOAD_DIR");
@@ -40,11 +53,28 @@ public final class WebServer {
         if (System.getenv("NGAFID_ARCHIVE_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_ARCHIVE_DIR' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_ARCHIVE_DIR=<path/to/db_info_file>");
+            System.err.println("export NGAFID_ARCHIVE_DIR=<path/to/archive_dir>");
             System.exit(1);
         }
         NGAFID_ARCHIVE_DIR = System.getenv("NGAFID_ARCHIVE_DIR");
+
+        if (System.getenv("MUSTACHE_TEMPLATE_DIR") == null) {
+            System.err.println("ERROR: 'MUSTACHE_TEMPLATE_DIR' environment variable not specified at runtime.");
+            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export MUSTACHE_TEMPLATE_DIR=<path/to/template_dir>");
+            System.exit(1);
+        }
+        MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
     }
+
+    //to test mustache
+    static class Item {
+        String name;
+        String price;
+
+        public Item(String name, String price) { this.name = name; this.price = price;}
+    }
+
 
     /** 
      * Entry point for the NGAFID web server.
@@ -85,6 +115,42 @@ public final class WebServer {
             if (user == null) {
                 Spark.halt(401, "Access not allowed, you are not logged in."); 
             } 
+        });
+
+        Spark.get("", (request, response) -> {
+            LOG.severe("''  route!");
+            return "Hello!" + MUSTACHE_TEMPLATE_DIR;
+        });
+
+        Spark.get("/", (request, response) -> {
+            LOG.severe("'/'  route!");
+            String resultString = "";
+            String templateFile = MUSTACHE_TEMPLATE_DIR + "home.html";
+            LOG.severe("template file: '" + templateFile + "'");
+
+            try  {
+                MustacheFactory mf = new DefaultMustacheFactory();
+                Mustache mustache = mf.compile(templateFile);
+
+                HashMap<String, Object> scopes = new HashMap<String, Object>();
+
+                List<Item> items = Arrays.asList(
+                    new Item("Travis", "3.00"),
+                    new Item("Shannon", "300.00"),
+                    new Item("Momo", "30.00")
+                    );
+
+                scopes.put("items", items);
+
+                StringWriter stringOut = new StringWriter();
+                mustache.execute(new PrintWriter(stringOut), scopes).flush();
+                resultString = stringOut.toString();
+
+            } catch (IOException e) {
+                LOG.severe(e.toString());
+            }
+
+            return resultString;
         });
 
         //the following need to be accessible for non-logged in users, and
