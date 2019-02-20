@@ -80,11 +80,13 @@ public class EventType {
 
     //this will get the ith column name
     public String getColumnName(int index) {
+        return "";
     }
 
     //TODO: replace with this because we can have multiple column names
     public String[] getColumnNames() {
         //return the column names split up into an array
+        return new String[]{};
     }
 
     /**
