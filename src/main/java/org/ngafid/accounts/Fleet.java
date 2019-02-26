@@ -35,6 +35,19 @@ public class Fleet {
     }
 
     /**
+     * @return the number of users waiting for access to this fleet.
+     */
+    public int getWaitingUserCount() {
+        int waitingUserCount = 0;
+        for (User user : users) {
+            if (user.getFleetAccessType().equals(FleetAccess.WAITING)) {
+                waitingUserCount++;
+            }
+        }
+        return waitingUserCount;
+    }
+
+    /**
      * Populates the list of users with access to this fleet
      * 
      * @param connection is a connection to the mysql database.

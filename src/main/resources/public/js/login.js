@@ -1,35 +1,3 @@
-/*
- * returns false if response wasn't success
- * will display error modal on error,
- * redirect to awaiting access page if user
- * does not have access
- */
-function processResponse(response) {
-    console.log("processing response:");
-    console.log(response);
-
-    $("#loading").hide();
-
-    if (response.errorTitle) {
-        console.log("displaying error modal!");
-        display_error_modal(response.errorTitle, response.errorMessage);
-        return false;
-    }
-
-    if (response.loggedOut) {
-        console.log("user was logged out");
-        loginModal.state.valid.errorMessage = true;
-        loginModal.state.errorMessage = response.message;
-        loginModal.setState(loginModal.state);
-        navbar.logOut();
-        return false;
-    }
-
-    $("#loginPassword").val("");
-
-    return true;
-}
-
 var loginModal = null;
 
 class LoginModal extends React.Component {
@@ -72,7 +40,6 @@ class LoginModal extends React.Component {
         $("#login-modal").modal('show');
         $("#loading").show();
 
-
         var submissionData = { 
             email : $("#loginEmail").val(),
             password : $("#loginPassword").val()
@@ -84,30 +51,39 @@ class LoginModal extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                if (!processResponse(response)) return;
+                $("#loginPassword").val("");
+                $("#loading").hide();
 
-                mainCards['manage_fleet'].setUser(response.user);
-                mainCards['profile'].setUser(response.user);
+                if (response.loggedOut) {
+                    console.log("user was logged out");
+                    loginModal.state.valid.errorMessage = true;
+                    loginModal.state.errorMessage = response.message;
+                    loginModal.setState(loginModal.state);
+                    navbar.logOut();
+                    return false;
+                }
 
-                //login was successful, we can hide the modal
+                //login was successful or had a server error, we can hide the modal
                 $("#login-modal").modal('hide');
 
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
                 if (response.waiting || response.denied) {
-                    //update the navbar to the logged in items
-                    //and display the welcome page
-                    navbar.waiting()
-                    mainContent.changeCard("Awaiting Access");
+                    //redirect to the waiting page
+                    window.location.replace("/protected/waiting");
                 } else {
-                    //update the navbar to the logged in items
-                    //and display the welcome page
-                    navbar.logIn(response.user)
-                    mainContent.changeCard("Dashboard");
+                    //redirect to the dashboard page
+                    window.location.replace("/protected/dashboard");
                 }
 
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
-                display_error_modal("Error Submitting Account Information", errorThrown);
+                errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
         });

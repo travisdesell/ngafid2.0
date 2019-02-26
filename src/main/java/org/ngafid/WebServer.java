@@ -25,6 +25,7 @@ import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.Random;
 
+
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
@@ -67,15 +68,6 @@ public final class WebServer {
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
     }
 
-    //to test mustache
-    static class Item {
-        String name;
-        String price;
-
-        public Item(String name, String price) { this.name = name; this.price = price;}
-    }
-
-
     /** 
      * Entry point for the NGAFID web server.
      *
@@ -113,61 +105,44 @@ public final class WebServer {
             //access to the protected pages (the user is not logged in).
             User user = (User)request.session().attribute("user");
             if (user == null) {
-                Spark.halt(401, "Access not allowed, you are not logged in."); 
+                response.redirect("/access_denied");
             } 
         });
 
-        Spark.get("", (request, response) -> {
-            LOG.severe("''  route!");
-            return "Hello!" + MUSTACHE_TEMPLATE_DIR;
-        });
-
-        Spark.get("/", (request, response) -> {
-            LOG.severe("'/'  route!");
-            String resultString = "";
-            String templateFile = MUSTACHE_TEMPLATE_DIR + "home.html";
-            LOG.severe("template file: '" + templateFile + "'");
-
-            try  {
-                MustacheFactory mf = new DefaultMustacheFactory();
-                Mustache mustache = mf.compile(templateFile);
-
-                HashMap<String, Object> scopes = new HashMap<String, Object>();
-
-                List<Item> items = Arrays.asList(
-                    new Item("Travis", "3.00"),
-                    new Item("Shannon", "300.00"),
-                    new Item("Momo", "30.00")
-                    );
-
-                scopes.put("items", items);
-
-                StringWriter stringOut = new StringWriter();
-                mustache.execute(new PrintWriter(stringOut), scopes).flush();
-                resultString = stringOut.toString();
-
-            } catch (IOException e) {
-                LOG.severe(e.toString());
+        Spark.before("/", (request, response) -> {
+            User user = (User)request.session().attribute("user");
+            if (user != null) {
+                LOG.info("user already logged in, redirecting to dashboard!");
+                response.redirect("/protected/dashboard");
             }
-
-            return resultString;
         });
+
+        Spark.get("/", new GetHome(gson));
+        Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
+        Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
+
+
 
         //the following need to be accessible for non-logged in users, and
         //logout doesn't need to be protected
         Spark.post("/login", new PostLogin(gson));
         Spark.post("/logout", new PostLogout(gson));
+
+        //for account creation
+        Spark.get("/create_account", new GetCreateAccount(gson));
         Spark.post("/create_account", new PostCreateAccount(gson));
 
-        //routes for initial webpage content
-        Spark.post("/get_fleet_names", new PostFleetNames(gson));
 
-        //Spark.post("/protected/main_content", new PostMainContent(gson));
+        Spark.get("/protected/dashboard", new GetDashboard(gson));
+        Spark.get("/protected/waiting", new GetWaiting(gson));
+
+        Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
+        Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
+
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
         Spark.post("/protected/get_uploads", new PostUploads(gson));
         Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
-        Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 
 
         //routes for uploading files
@@ -177,6 +152,9 @@ public final class WebServer {
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
+
+        Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
+        Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         LOG.info("NGAFID WebServer initialization complete.");
     }
