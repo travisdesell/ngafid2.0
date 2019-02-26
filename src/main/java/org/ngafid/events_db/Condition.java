@@ -29,7 +29,7 @@ class Condition {
         System.out.print("Please Enter The Logical Input That You want To Use Regarding Flight Exceedance [OR (Threshold < minValue || Threshold > maxValue), AND , BOTH , NONE or CUSTOME]: ");
 
         String operator = scanner.nextLine();
-        System.out.println("---------------------\n");
+        System.out.println("---------------------\n"); 
         
         //double bufferTime = scanner.nextDouble();
         String eventName = scanner.nextLine();
