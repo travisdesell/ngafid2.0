@@ -11,7 +11,7 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
-
+//import org.graalvm.compiler.nodes.memory.MemoryCheckpoint.Single;
 import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events_db.CalculateExceedanceNew;
@@ -27,13 +27,17 @@ public class EventType {
     private int id;
     private String name;
     private int bufferTime;
+    private int minValue;
+    private int maxValue;
     private String conditionText;
     private String columnNames;
 
-    public EventType(String name, int bufferTime, String columnNames, String conditionText) {
+    public EventType(String name, int bufferTime, int minValue, int maxValue, String columnNames, String conditionText) {
         this.id = -1;
         this.name = name;
         this.bufferTime = bufferTime;
+        this.minValue = minValue;
+        this.maxValue = maxValue;
         this.columnNames = columnNames;
         this.conditionText = conditionText;
 
@@ -68,7 +72,7 @@ public class EventType {
         return id;
     }
 
-    //TODO: this is going to go away
+    //* */
     public String getColumnName() {
         return columnNames;
     }
@@ -79,13 +83,17 @@ public class EventType {
     }
 
     //this will get the ith column name
-    public String getColumnName(int index) {
-        return "";
-    }
+    // public String getColumnNames(int index) {
+    //     return "";
+    // }
 
-    //TODO: replace with this because we can have multiple column names
+    //replace with this because we can have multiple column names
     public String[] getColumnNames() {
         //return the column names split up into an array
+        String str = columnNames;
+        String[] columnNames = str.split(",");
+        for (String a : columnNames)
+        System.out.println(a);
         return new String[]{};
     }
 
@@ -110,7 +118,6 @@ public class EventType {
         while (resultSet.next()) {
             allEvents.add(new EventType(resultSet));
         }
-
         return allEvents;
     }
 
@@ -147,14 +154,16 @@ public class EventType {
             // EventType eventTypeObj = new EventType(eventType, bufferTime, expression);
             // eventTypeObj.updateEventTable(connection);
 
-            String query = "INSERT INTO event_type (name, buffer_time, column_names, condition_text) VALUES (?, ?, ?, ?)";
+            String query = "INSERT INTO event_type (name, buffer_time, min_value, max_value, column_names, condition_text) VALUES (?, ?, ?, ?, ?, ?)";
 
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = connection.prepareStatement(query);
             preparedStmt.setString (1, name);
             preparedStmt.setInt (2, bufferTime);
-            preparedStmt.setString (3, columnNames);
-            preparedStmt.setString (4, conditionText);
+            preparedStmt.setInt (3, minValue);
+            preparedStmt.setInt (4, maxValue);
+            preparedStmt.setString (5, columnNames);
+            preparedStmt.setString (6, conditionText);
 
             LOG.info(preparedStmt.toString());
 
@@ -176,6 +185,12 @@ public class EventType {
 
     public static void main(String[] arguments) {
 
+        // String str = "Pitch, Roll";
+        // String[] arrOfStr = str.split(",");
+         
+        // for (String a : arrOfStr)
+        // System.out.println(a);
+
         Scanner user_input = new Scanner( System.in );
 
         //String name = "Roll"; //get from user
@@ -189,23 +204,56 @@ public class EventType {
         bufferTimeVal = user_input.nextLine();
         int bufferTime = Integer.parseInt(bufferTimeVal);
 
-        //String columnNames = "Roll"; //get from user        
-        String columnNames;
+        String minimumValue;
+        System.out.print("Please Enter min value value (ex. -5, -10 or any value): ");
+        minimumValue = user_input.nextLine();
+        int minValue = Integer.parseInt(minimumValue);
+
+        String maximumValue;
+        System.out.print("Please Enter max value (ex. 5, 10 or any value): ");
+        maximumValue = user_input.nextLine();
+        int maxValue = Integer.parseInt(maximumValue);
+
+        // String columnQueri;
+        // System.out.print("Please specify how many column you ar eusing [single or multiple]: ");
+        // columnQueri = user_input.nextLine();
+
+        // String columnNames;
+        // switch (columnQueri) {
+        //     case "single":
+        //         System.out.print("Please Enter the column name (ex. Pitch): ");
+        //         columnNames = user_input.nextLine();
+        //         System.out.println("column value entered as: " + " [" + columnNames + "] " +"\n");
+        //         break;
+
+        //     case "multiple":
+        //         System.out.print("Please Enter the column names followed by commas (ex. Pitch, Roll, LatAc): ");
+        //         columnNames = user_input.nextLine();
+        //         System.out.println("column value entered as: " + " [" + columnNames + "] " +"\n");
+        //         break;
+
+        //     default:
+        //         System.out.println("Invalid operator!");
+        //         break;
+        // }
+
+        String columnNames = "Roll"; //get from user        
         System.out.print("Please Enter Enter eventsSeries column name (ex. Pitch, Roll, LatAc or NormAc): ");
         columnNames = user_input.nextLine();
 
-        //String conditionText = CalculateExceedanceNew.conditionText;
         String conditionText;
         //conditionText = "Roll < -15.0 || Roll > 15.0"; //get from user
         System.out.print("Please Enter your full condition: ");
         conditionText = user_input.nextLine();
         System.out.println("condition recorded as : " + " [" + conditionText + "] " +"\n");
 
-        EventType eventType = new EventType(name, bufferTime, columnNames, conditionText);
+
+        EventType eventType = new EventType(name, bufferTime, minValue, maxValue, columnNames, conditionText);
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);
 
     }
+    //scanner.close();
 }
 

@@ -219,6 +219,8 @@ $query = "CREATE TABLE `event_type` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `name` VARCHAR(64) NOT NULL,
     `buffer_time` INT(11),
+    `min_value` INT(11),
+    `max_value` INT(11),
     `column_names` VARCHAR(64),
     `condition_text` VARCHAR(256),
 

@@ -26,9 +26,11 @@ public class CalculateExceedanceNew {
     private static Expression expression;
 
     int bufferTime = -1;
-    double minValue = -4;
-    double maxValue = 4;
-
+    int startLineNo = -1;
+    String startTime = null;
+    int endLine = -1;
+    String endTime = null;
+    int count =0;
 
     public CalculateExceedanceNew(EventType eventType) {
         this.eventType = eventType;
@@ -86,26 +88,24 @@ public class CalculateExceedanceNew {
             // }
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
-            int startLineNo = -1;
-            String startTime = null;
-            int endLine = -1;
-            String endTime = null;
-            int count =0;
-
             ArrayList<Event> eventList = new ArrayList<>();
             int lineNumber = 0;
-            double current;
             for (int i = 0; i < eventSeries.size(); i++) {
                 //generate the pitch events here
                 lineNumber = i;
                 //current = eventSeries.get(i);
                 //System.out.println("pitch[" + i + "]: " + current);
 
-                //TODO: use the expression from the eventType instead of hard coded conditions
-
                 double currentValue = eventSeries.get(i);
-                System.out.println("iteration: " + i + ", columnName: " + eventType.getColumnName() + ", currentValue: "+ currentValue + ", expression: " + expression);
+                System.out.println("iteration: " + i + ", columnName: " + eventType.getColumnNames() + ", currentValue: "+ currentValue + ", expression: " + expression);
+
+                System.out.println("all columns: " + eventType.getColumnNames());
+
                 BigDecimal result = null;
+                // if (!Double.isNaN(currentValue)) {
+                //     result = expression.with(eventType.getColumnNames(), Double.toString(currentValue)).eval();
+                // }
+
                 if (!Double.isNaN(currentValue)) {
                     result = expression.with(eventType.getColumnName(), Double.toString(currentValue)).eval();
                 }
@@ -210,6 +210,8 @@ public class CalculateExceedanceNew {
 
                 //TODO: update to check and see if the flight could possibly have the exceedence
                 PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
+                // PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = ? AND double_series.flight_id = flights.id AND (min < (SELECT min_value FROM event_type WHERE id = 3) AND max > (SELECT max_value FROM event_type WHERE id = ?)))");
+
                 stmt.setInt(1, currentEventType.getId());
                 ResultSet rs = stmt.executeQuery();
 
