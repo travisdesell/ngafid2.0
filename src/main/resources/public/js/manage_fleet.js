@@ -62,20 +62,26 @@ class FleetUserRow extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: './protected/update_user_access',
+            url: '/protected/update_user_access',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                if (!processResponse(response)) return;
-
                 $('#loading').hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
 
                 let previousAccess = fleetUser.fleetAccess.originalAccess;
                 let newAccess = fleetUser.fleetAccess.accessType;
 
                 if (newAccess == "WAITING" && previousAccess != "WAITING") {
+                    console.log("incrementing waiting!");
                     navbar.incrementWaiting();
                 } else if (newAccess != "WAITING" && previousAccess == "WAITING") {
+                    console.log("decrementing waiting!");
                     navbar.decrementWaiting();
                 }
 
@@ -85,7 +91,8 @@ class FleetUserRow extends React.Component {
                 fleetUserRow.setState(fleetUser);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                display_error_modal("Error Loading Uploads", errorThrown);
+                $("#loading").hide();
+                errorModal.show("Error Loading Uploads", errorThrown);
             },   
             async: true 
         });  
@@ -96,7 +103,7 @@ class FleetUserRow extends React.Component {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
 
-        //console.log("rendering " + fleetUser.email + " with access " + accessType);
+        console.log("rendering " + fleetUser.email + " with access " + accessType);
 
         let buttonClasses = "btn btn-outline-secondary";
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
@@ -128,10 +135,11 @@ class ManageFleetCard extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {};
+        this.state = {
+            user : this.props.user
+        };
 
-        mainCards['manage_fleet'] = this;
-        console.log("constructed ManageFleetCard, set mainCards");
+        console.log("constructed ManageFleetCard");
     }
 
     setUser(user) {
@@ -190,3 +198,8 @@ class ManageFleetCard extends React.Component {
         );
     }
 }
+
+var manageFleetCard = ReactDOM.render(
+    <ManageFleetCard user={user} />,
+    document.querySelector('#manage-fleet-card')
+);

@@ -24,9 +24,6 @@ class CreateAccountCard extends React.Component {
             },
             checkedRadio : null
         }
-
-        mainCards['create_account'] = this;
-        console.log("constructed CreateAccountCard, set mainCards");
     }
 
     setFleets(fleets) {
@@ -87,18 +84,21 @@ class CreateAccountCard extends React.Component {
                 console.log(response);
 
                 $("#loading").hide();
-                if (!processResponse(response)) return;
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
 
                 if (checkedRadio == "newFleet") {
-                    navbar.logIn(response.user);
-                    mainContent.changeCard("Welcome");
-                    //display_error_modal("Account Created", "Your account was successfully created!");
+                    window.location.replace("/protected/dashboard");
 
                 } else if (checkedRadio == "existingFleet") {
-                    navbar.waiting();
-                    mainContent.changeCard("Awaiting Access");
+                    window.location.replace("/protected/waiting");
 
                 } else if (checkedRadio == "gaard") {
+                    //TODO: currently disabled
 
                 } else {
                     return;
@@ -106,11 +106,10 @@ class CreateAccountCard extends React.Component {
 
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                display_error_modal("Error Submitting Account Information", errorThrown);
+                errorModal.show("Error Submitting Account Information", errorThrown);
             },
             async: true
         });
-
 
         console.log("submitting account!");
     }
@@ -871,3 +870,12 @@ class CreateAccountCard extends React.Component {
         );
     }
 }
+
+var createAccountCard = ReactDOM.render(
+    <CreateAccountCard />,
+    document.querySelector('#create-account-card')
+
+);
+
+createAccountCard.setFleets(fleetNames);
+
