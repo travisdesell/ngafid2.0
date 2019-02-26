@@ -1,0 +1,62 @@
+<html>
+<head>
+    <title>The National General Aviation Flight Information Database (NGAFID)</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+
+    <link rel='stylesheet' href='/css/main.css'>
+    <link rel='stylesheet' href='/css/font-awesome.min.css'>
+
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.3/umd/popper.min.js" integrity="sha384-ZMP7rVo3mIykV+2+9J3UJ46jBk0WLaUAdn689aCwoqbBJiSnjAK/l8WvCWPIPm49" crossorigin="anonymous"></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js" integrity="sha384-ChfqqxuZUCnJSK3+MXmPNIyE6ZbWh2IMqE241rYiqJxyMiZ6OW/JmZQ5stwEULTy" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/css/ol.css" type="text/css">
+
+    <!-- OpenLayers -->
+    <script src="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/build/ol.js"></script>
+
+    <!-- Plotly -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+</head>
+<body>
+    <div id='navbar'></div>
+
+    <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
+        <div class='modal-dialog modal-lg' role='document'>
+            <div id='error-modal-content'>
+            </div>
+        </div>
+    </div>
+
+    <div class="card-body">
+        <div class="card mb-1" style="opacity:0.8">
+            <h5 class="card-header" style="opacity:1.0">
+                Account Awaiting Fleet Access
+            </h5>
+
+            <div class="card-body" style="opacity:1.0">
+                <div class="text-center">
+                    <img src='../images/holding_pattern.jpg' style={{marginBottom: '8px'}}/>
+                </div>
+                <p class="card-text">
+                Welcome to the NGAFID! Your account has created however the your fleet manager(s) have not yet granted you access to the fleet data. Please contact your fleet manager(s) so they can log in and provide access.
+                </p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Load React. -->
+    <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
+    <script src="https://unpkg.com/react@16/umd/react.development.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@16/umd/react-dom.development.js" crossorigin></script>
+    <script src="https://unpkg.com/babel-standalone@6/babel.min.js"></script>
+
+    <!-- Load our React components. -->
+    <script type="text/babel" src="../js/waiting_navbar.js"></script>
+    <script type="text/babel" src="../js/error_modal.js"></script>
+
+</body>
+</html>
