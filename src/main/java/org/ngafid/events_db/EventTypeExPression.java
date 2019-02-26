@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.events.Event;
+//import org.ngafid.events_db.EventType;
 import org.ngafid.events_db.CalculateExceedanceNew;
 import org.ngafid.events_db.EvalExCondition;
 
@@ -132,7 +133,7 @@ public class EventTypeExPression {
 
     public static void main(String[] arguments) {
 
-        EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.columnNames, EvalExCondition.condition);
+        EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.minValue, EvalExCondition.maxValue,EvalExCondition.columnNames, EvalExCondition.condition);
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);
