@@ -11,6 +11,8 @@ public class EvalExCondition {
     static Expression expression;
     public static String name = "Pitch";
     public static int bufferTime = 5; 
+    public static int minValue = -9; 
+    public static int maxValue = 95; 
     public static String columnNames = "Roll"; //get from user        
     public static String condition = "pitch < -30.0 || pitch > 30.0";
 
