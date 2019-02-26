@@ -92,8 +92,12 @@ public class EventType {
         //return the column names split up into an array
         String str = columnNames;
         String[] columnNames = str.split(",");
-        for (String a : columnNames)
-        System.out.println(a);
+
+        for (int i = 0; i < columnNames.length; i++) {
+            columnNames[i] = columnNames[i].trim(); //remove the whitespace from each end of the string
+            System.out.println(columnNames[i]);
+        }
+
         return new String[]{};
     }
 

@@ -37,9 +37,18 @@ public class EvalExCondition {
 
         expression = new Expression("pitch <= -30.0 && roll >= 20.0");
 
-        System.out.println("evaluating: '" + expression +"'");
+        System.out.println("evaluating: '" + expression + "'");
         double pitch = -35.0;
         double roll = 25.0;
+
+        Expression partial = expression.with("pitch", Double.toString(pitch));
+        System.out.println("after first with: '" + partial + "'");
+        Expression partialNext = partial.with("roll", Double.toString(roll));
+        System.out.println("after 2nd with: '" + partialNext + "'");
+
+        System.out.println("partialNext.eval(): " + partialNext.eval());
+
+
 
         System.out.println("pitch: " + pitch + ", roll: " + roll + ", result: " + expression.with("pitch", Double.toString(pitch)).with("roll", Double.toString(roll)).eval());
 
