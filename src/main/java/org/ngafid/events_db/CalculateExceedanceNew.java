@@ -106,6 +106,13 @@ public class CalculateExceedanceNew {
                 //     result = expression.with(eventType.getColumnNames(), Double.toString(currentValue)).eval();
                 // }
 
+                // value = columnEventSeries[0].get(i)
+                // Expression partialExpression = expression.with(columnNames[0], value);
+                //for j = 1 .. number columns
+                //      value = columnEventSeries[j].get(i)
+                //      Expression partialExpression = paritalExpression.with(columnNames[j], value);
+                // result = partialExpression.eval();
+
                 if (!Double.isNaN(currentValue)) {
                     result = expression.with(eventType.getColumnName(), Double.toString(currentValue)).eval();
                 }
