@@ -15,8 +15,6 @@ import java.util.logging.Logger;
 import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.events_db.CalculateExceedanceNew;
-
-
 import com.udojava.evalex.Expression;
 import java.math.BigDecimal;
 
@@ -32,17 +30,15 @@ public class EventType {
     private String conditionText;
     private String columnNames;
 
-    public EventType(String name, int bufferTime, int minValue, int maxValue, String columnNames, String conditionText) {
+    //public EventType(String name, int bufferTime, int minValue, int maxValue, String columnNames, String conditionText) {
+    public EventType(String name, int bufferTime, String columnNames, String conditionText) {    
         this.id = -1;
         this.name = name;
         this.bufferTime = bufferTime;
-        this.minValue = minValue;
-        this.maxValue = maxValue;
+        // this.minValue = minValue;
+        // this.maxValue = maxValue;
         this.columnNames = columnNames;
         this.conditionText = conditionText;
-
-        //split up column names into an array
-        //look this up: https://stackoverflow.com/questions/7021074/string-delimiter-in-string-split-method
     }
 
     /**
@@ -57,9 +53,7 @@ public class EventType {
         this.columnNames = resultSet.getString(4);
         this.conditionText = resultSet.getString(5);
 
-        //split up column names into an array
     }
-
 
     public String getConditionText(){
         return conditionText;
@@ -82,10 +76,10 @@ public class EventType {
         return 0;
     }
 
-    //this will get the ith column name
-    // public String getColumnNames(int index) {
-    //     return "";
-    // }
+    // this will get the ith column name
+    public String getColumnNames(int index) {
+        return "";
+    }
 
     //replace with this because we can have multiple column names
     public String[] getColumnNames() {
@@ -95,14 +89,15 @@ public class EventType {
 
         for (int i = 0; i < columnNames.length; i++) {
             columnNames[i] = columnNames[i].trim(); //remove the whitespace from each end of the string
-            System.out.println(columnNames[i]);
+            System.out.println( "Split Column Name(s) : " + columnNames[i]);
         }
 
-        return new String[]{};
+        //return new String[]{};
+        return columnNames;
     }
 
     /**
-     * Gets all event types in the database.
+     * Gets all  types in the database.
      *
      * @param connection The database connection.
      *
@@ -158,16 +153,17 @@ public class EventType {
             // EventType eventTypeObj = new EventType(eventType, bufferTime, expression);
             // eventTypeObj.updateEventTable(connection);
 
-            String query = "INSERT INTO event_type (name, buffer_time, min_value, max_value, column_names, condition_text) VALUES (?, ?, ?, ?, ?, ?)";
+            //String query = "INSERT INTO event_type (name, buffer_time, min_value, max_value, column_names, condition_text) VALUES (?, ?, ?, ?, ?, ?)";
+            String query = "INSERT INTO event_type (name, buffer_time, column_names, condition_text) VALUES (?, ?, ?, ?)";
 
             // create the mysql insert preparedstatement
             PreparedStatement preparedStmt = connection.prepareStatement(query);
             preparedStmt.setString (1, name);
             preparedStmt.setInt (2, bufferTime);
-            preparedStmt.setInt (3, minValue);
-            preparedStmt.setInt (4, maxValue);
-            preparedStmt.setString (5, columnNames);
-            preparedStmt.setString (6, conditionText);
+            //preparedStmt.setInt (3, minValue);
+            //preparedStmt.setInt (4, maxValue);
+            preparedStmt.setString (3, columnNames);
+            preparedStmt.setString (4, conditionText);
 
             LOG.info(preparedStmt.toString());
 
@@ -199,7 +195,7 @@ public class EventType {
 
         //String name = "Roll"; //get from user
         String name;
-        System.out.print("Please Enter eventsSeries name initial with Capital word (ex. Pitch, Roll, LatAc or NormAc): ");
+        System.out.print("Please Enter eventsSeries name(s) initial with Capital word (ex. Pitch, Roll, LatAc or NormAc): ");
         name = user_input.nextLine();
 
         //int bufferTime = 5; //get from user
@@ -208,15 +204,15 @@ public class EventType {
         bufferTimeVal = user_input.nextLine();
         int bufferTime = Integer.parseInt(bufferTimeVal);
 
-        String minimumValue;
-        System.out.print("Please Enter min value value (ex. -5, -10 or any value): ");
-        minimumValue = user_input.nextLine();
-        int minValue = Integer.parseInt(minimumValue);
+        // String minimumValue;
+        // System.out.print("Please Enter min value value (ex. -5, -10 or any value): ");
+        // minimumValue = user_input.nextLine();
+        // int minValue = Integer.parseInt(minimumValue);
 
-        String maximumValue;
-        System.out.print("Please Enter max value (ex. 5, 10 or any value): ");
-        maximumValue = user_input.nextLine();
-        int maxValue = Integer.parseInt(maximumValue);
+        // String maximumValue;
+        // System.out.print("Please Enter max value (ex. 5, 10 or any value): ");
+        // maximumValue = user_input.nextLine();
+        // int maxValue = Integer.parseInt(maximumValue);
 
         // String columnQueri;
         // System.out.print("Please specify how many column you ar eusing [single or multiple]: ");
@@ -242,7 +238,7 @@ public class EventType {
         // }
 
         String columnNames = "Roll"; //get from user        
-        System.out.print("Please Enter Enter eventsSeries column name (ex. Pitch, Roll, LatAc or NormAc): ");
+        System.out.print("Please Enter Enter eventsSeries column name(s) (ex. Pitch, Roll, LatAc or NormAc): ");
         columnNames = user_input.nextLine();
 
         String conditionText;
@@ -251,8 +247,8 @@ public class EventType {
         conditionText = user_input.nextLine();
         System.out.println("condition recorded as : " + " [" + conditionText + "] " +"\n");
 
-
-        EventType eventType = new EventType(name, bufferTime, minValue, maxValue, columnNames, conditionText);
+        //EventType eventType = new EventType(name, bufferTime, minValue, maxValue, columnNames, conditionText);
+        EventType eventType = new EventType(name, bufferTime, columnNames, conditionText);
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);
