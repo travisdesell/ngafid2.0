@@ -13,7 +13,6 @@ class NavLink extends React.Component {
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
-
         //console.log("rendering navlink '" + name + "', active: " + active);
 
         const classNames = active ? "nav-item active" : "nav-item";
@@ -49,7 +48,7 @@ class DropdownLink extends React.Component {
 
 
 
-class UserNavbar extends React.Component {
+class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
 
@@ -116,7 +115,8 @@ class UserNavbar extends React.Component {
     }
 
     render() {
-        let waitingUsersString = " (" + this.state.waitingUserCount + ")";
+        let waitingUsersString = "";
+        if (this.state.waitingUserCount > 0) waitingUsersString = " (" + this.state.waitingUserCount + ")";
         let manageHidden = !this.state.fleetManager;
 
         /*
@@ -143,8 +143,10 @@ class UserNavbar extends React.Component {
                                 {"Account" + waitingUsersString}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
-                                <DropdownLink name={"Profle"} hidden={false} onClick={() => href="/protected/profile"}/>
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
+                                <div className="dropdown-divider" hidden={manageHidden}></div>
+                                <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
+                                <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"></div>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
@@ -158,6 +160,6 @@ class UserNavbar extends React.Component {
 }
 
 var navbar = ReactDOM.render(
-    <UserNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} />,
+    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} />,
     document.querySelector('#navbar')
 );

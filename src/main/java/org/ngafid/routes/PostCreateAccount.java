@@ -48,6 +48,7 @@ public class PostCreateAccount implements Route {
         String lastName = request.queryParams("lastName");
         String country = request.queryParams("country");
         String state = request.queryParams("state");
+        String city = request.queryParams("city");
         String address = request.queryParams("address");
         String phoneNumber = request.queryParams("phoneNumber");
         String zipCode = request.queryParams("zipCode");
@@ -59,6 +60,7 @@ public class PostCreateAccount implements Route {
         LOG.info("lastName: '" + lastName + "'");
         LOG.info("country: '" + country + "'");
         LOG.info("state: '" + state + "'");
+        LOG.info("city: '" + city + "'");
         LOG.info("address: '" + address + "'");
         LOG.info("phoneNumber: '" + phoneNumber + "'");
         LOG.info("zipCode: '" + zipCode + "'");
@@ -76,14 +78,14 @@ public class PostCreateAccount implements Route {
 
             } else if (accountType.equals("newFleet")) {
                 String fleetName = request.queryParams("fleetName");
-                User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
+                User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);
 
                 return gson.toJson(new CreatedAccount(accountType, user));
 
             } else if (accountType.equals("existingFleet")) {
                 String fleetName = request.queryParams("fleetName");
-                User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
+                User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);
 
                 return gson.toJson(new CreatedAccount(accountType, user));

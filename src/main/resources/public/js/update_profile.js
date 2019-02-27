@@ -1,19 +1,10 @@
-class CreateAccountCard extends React.Component {
+class ProfileCard extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
+            user : { email : "" },
             valid : {
-                emailEmpty : true,
-                email : false,
-                confirmEmailEmpty : true,
-                confirmEmail : false,
-                emailMatch : true,
-                passwordEmpty : true,
-                password : false,
-                confirmPasswordEmpty : true,
-                confirmPassword : false,
-                passwordMatch : true,
                 firstName : true,
                 lastName : true,
                 country : true,
@@ -22,14 +13,36 @@ class CreateAccountCard extends React.Component {
                 address : true,
                 phone : true,
                 zip : true
-            },
-            checkedRadio : null
+            }
         }
+
+        this.emailInput = React.createRef();
+        this.firstNameInput = React.createRef();
+        this.lastNameInput = React.createRef();
+        this.countrySelect = React.createRef();
+        this.stateSelect = React.createRef();
+        this.cityInput= React.createRef();
+        this.addressInput = React.createRef();
+        this.phoneNumberInput = React.createRef();
+        this.zipCodeInput = React.createRef();
     }
 
-    setFleets(fleets) {
-        this.state.fleets = fleets;
-        this.setState(this.state);
+    setUser(user) {
+        this.state.user = user;
+
+        this.emailInput.current.value = user.email;
+
+        this.firstNameInput.current.value = user.firstName;
+        this.lastNameInput.current.value = user.lastName;
+        this.countrySelect.current.value = user.country;
+        this.stateSelect.current.value = user.state;
+        this.cityInput.current.value = user.city;
+        this.addressInput.current.value = user.address;
+        this.phoneNumberInput.current.value = user.phoneNumber;
+        this.zipCodeInput.current.value = user.zipCode;
+
+        console.log("setting state!");
+        this.setState(user);
     }
 
     submitAccount(event) {
@@ -46,39 +59,25 @@ class CreateAccountCard extends React.Component {
         }
 
         if (!valid) return;
-        if (this.state.checkedRadio == null) return;
 
         var submissionData = { 
-            email : $("#createEmail").val(),
-            password : $("#createPassword").val(),
-            firstName : $("#createFirstName").val(),
-            lastName : $("#createLastName").val(),
-            country : $("#countrySelect").val(),
-            state : $("#stateSelect").val(),
-            city : $("#createCity").val(),
-            address : $("#createAddress").val(),
-            phoneNumber : $("#createPhoneNumber").val(),
-            zipCode : $("#createZipCode").val(),
-            accountType : this.state.checkedRadio
+            email : this.emailInput.current.value,
+            firstName : this.firstNameInput.current.value,
+            lastName : this.lastNameInput.current.value,
+            country : this.countrySelect.current.value,
+            state : this.stateSelect.current.value,
+            city : this.cityInput.current.value,
+            address : this.addressInput.current.value,
+            phoneNumber : this.phoneNumberInput.current.value,
+            zipCode : this.zipCodeInput.current.value
         };
 
 
-        if (this.state.checkedRadio == "newFleet") {
-            submissionData.fleetName = $("#newFleetName").val().trim();
-        } else if (this.state.checkedRadio == "existingFleet") {
-            submissionData.fleetName = $("#fleetSelect").val().trim();
-        } else if (this.state.checkedRadio == "gaard") {
-        } else {
-            //invalid radio type
-            return;
-        }
-
-        let checkedRadio = this.state.checkedRadio;
         $("#loading").show();
 
         $.ajax({
             type: 'POST',
-            url: '/create_account',
+            url: '/protected/update_profile',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
@@ -93,19 +92,7 @@ class CreateAccountCard extends React.Component {
                     return false;
                 }
 
-                if (checkedRadio == "newFleet") {
-                    window.location.replace("/protected/dashboard");
-
-                } else if (checkedRadio == "existingFleet") {
-                    window.location.replace("/protected/waiting");
-
-                } else if (checkedRadio == "gaard") {
-                    //TODO: currently disabled
-
-                } else {
-                    return;
-                }
-
+                profileCard.setUser(response.user);
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Submitting Account Information", errorThrown);
@@ -116,110 +103,45 @@ class CreateAccountCard extends React.Component {
         console.log("submitting account!");
     }
 
-    validateAccountType() {
-        console.log("validating account type");
-        
-        let checkedRadio = $("input[name=accountTypeRadios]:checked").val();
-        this.state.checkedRadio = checkedRadio;
-        this.setState(this.state);
-        console.log("checked: " + this.state.checkedRadio);
-
-        if (checkedRadio == "existingFleet") {
-            this.validateFleetSelect();
-        } else if (checkedRadio == "newFleet") {
-            this.validateFleetName();
-        }
-    }
-
-    validateFleetName() {
-        console.log("validating fleet name");
-        let re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.\,a-zA-Z0-9 ]*/;
-        let fleetName = $("#newFleetName").val().trim();
-        console.log("re.test(fleetName): '" + re.test(fleetName)) + "'";
-        console.log("fleeName.length: " + fleetName.length);
-
-        this.state.valid.fleetName = re.test(fleetName) && fleetName.length < 128 && fleetName.length > 0;
-        this.setState(this.state);
-    }
-
-    validateFleetSelect() {
-        console.log("validating fleet select");
-        let fleetSelect = $("#fleetSelect").val();
-        console.log("selected: " + fleetSelect);
-
-        this.state.valid.fleetSelect = fleetSelect != "NONE";
-        this.setState(this.state);
-    }
-
-    validateEmails() {
-        let re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-
-        let email = $("#createEmail").val();
-        this.state.valid.email = re.test(String(email).toLowerCase());
-
-        let confirmEmail = $("#confirmEmail").val();
-        this.state.valid.confirmEmail = re.test(String(confirmEmail).toLowerCase());
-
-        this.state.valid.emailMatch = email == confirmEmail;
-        this.state.valid.emailEmpty = email.length == 0;
-        this.state.valid.confirmEmailEmpty = confirmEmail.length == 0;
-
-        this.setState(this.state);
-    }
-
-    validatePasswords() {
-        let re = /[\@\#\$\%\^\&\*\(\)\_\+\!\/\\\.,a-zA-Z0-9 ]*/;
-        let password = $("#createPassword").val();
-        this.state.valid.password = re.test(password) && password.length > 10;
-
-        let confirmPassword = $("#confirmPassword").val();
-        this.state.valid.confirmPassword = re.test(confirmPassword) && confirmPassword.length > 10;
-
-        this.state.valid.passwordMatch = password == confirmPassword;
-        this.state.valid.passwordEmpty = password.length == 0;
-        this.state.valid.confirmPasswordEmpty = confirmPassword.length == 0;
-
-        this.setState(this.state);
-    }
-
     validateFirstName() {
-        let firstName = $("#createFirstName").val();
+        let firstName = this.firstNameInput.current.value;
         this.state.valid.firstName = firstName.length < 64;
         this.setState(this.state);
     }
 
     validateLastName() {
-        let lastName = $("#createFirstName").val();
+        let lastName = this.lastNameInput.current.value;
         this.state.valid.lastName = lastName.length < 64;
         this.setState(this.state);
     }
 
     validateCountry() {
-        let country = $("#countrySelect").val();
+        let country = this.countrySelect.current.value;
         this.state.valid.country = country.length < 128;
         this.setState(this.state);
     }
 
     validateState() {
-        let state = $("#stateSelect").val();
+        let state = this.stateSelect.current.value;
         this.state.valid.state = state.length < 64;
         this.setState(this.state);
     }
 
     validateCity() {
-        let city = $("#createCity").val();
+        let city = this.cityInput.current.value;
         this.state.valid.city = city.length < 64;
-        this.setState(this.state);
+        this.setState(this.city);
     }
 
+
     validateAddress() {
-        let address = $("#createAddress").val();
+        let address = this.addressInput.current.value;
         this.state.valid.address = address.length < 256;
         this.setState(this.state);
     }
 
     validatePhone() {
-        let phone = $("#createPhoneNumber").val();
+        let phone = this.phoneNumberInput.current.value;
         console.log("phone: '" + phone + "'");
 
         if (phone == "") {
@@ -233,7 +155,7 @@ class CreateAccountCard extends React.Component {
     }
 
     validateZip() {
-        let zip = $("#createZipCode").val();
+        let zip = this.zipCodeInput.current.value;
         console.log("zip: '" + zip + "'");
 
         if (zip == "") {
@@ -275,122 +197,105 @@ class CreateAccountCard extends React.Component {
             color: 'red'
         };
 
-        let validationMessage = "";
-        let validationHidden = true;
+        let profileValidationMessage = "";
+        let profileValidationHidden = true;
 
+        let updateProfileDisabled = true;
+        let firstNameVal = "";
+        if (this.firstNameInput.current != null) firstNameVal = this.firstNameInput.current.value;
+        let lastNameVal = "";
+        if (this.lastNameInput.current != null) lastNameVal = this.lastNameInput.current.value;
 
-        if (this.state.valid.emailEmpty) {
-            validationMessage = "Please enter your email.";
-            validationHidden = false;
+        let countrySelectVal = "";
+        if (this.countrySelect.current != null) countrySelectVal = this.countrySelect.current.value;
 
-        } else if (!this.state.valid.email) {
-            validationMessage = "Email was not valid.";
-            validationHidden = false;
+        let stateSelectVal = "";
+        if (this.stateSelect.current != null) stateSelectVal = this.stateSelect.current.value;
 
-        } else if (this.state.valid.confirmEmailEmpty) {
-            validationMessage = "Please re-enter your email to confirm.";
-            validationHidden = false;
+        let cityInputVal = "";
+        if (this.cityInput.current != null) cityInputVal = this.cityInput.current.value;
 
-        } else if (!this.state.valid.confirmEmail) {
-            validationMessage = "Confirmation email was not valid.";
-            validationHidden = false;
+        let addressVal = "";
+        if (this.addressInput.current != null) addressVal = this.addressInput.current.value;
 
-        } else if (!this.state.valid.emailMatch) {
-            validationMessage = "Emails do not match.";
-            validationHidden = false;
+        let zipCodeVal = "";
+        if (this.zipCodeInput.current != null) zipCodeVal = this.zipCodeInput.current.value;
 
-        } else if (this.state.valid.passwordEmpty) {
-            validationMessage = "Please enter a password.";
-            validationHidden = false;
+        let phoneNumberVal = "";
+        if (this.phoneNumberInput.current != null) phoneNumberVal = this.phoneNumberInput.current.value;
 
-        } else if (!this.state.valid.password) {
-            validationMessage = "Password was not valid. Must be minimum 10 characters long and consist of letters, numbers, spaces and any of the following special characters: @#$%^&*()_+!/\\";
-            validationHidden = false;
+        //check and see if any fields have been modified
+        if (firstNameVal != this.state.user.firstName) {
+            console.log("first names different! '" + firstNameVal + "' vs '" + this.state.user.firstName + "'");
+            updateProfileDisabled = false;
+        } else if (lastNameVal != this.state.user.lastName) {
+            console.log("last names different! '" + lastNameVal + "' vs '" + this.state.user.lastName + "'");
+            updateProfileDisabled = false;
+        } else if (countrySelectVal != this.state.user.country) {
+            console.log("countries different!");
+            updateProfileDisabled = false;
+        } else if (stateSelectVal != this.state.user.state) {
+            console.log("states different!");
+            updateProfileDisabled = false;
+        } else if (cityInputVal != this.state.user.city) {
+            console.log("city different!");
+            updateProfileDisabled = false;
+        } else if (addressVal != this.state.user.address) {
+            console.log("address different!");
+            updateProfileDisabled = false;
+        } else if (zipCodeVal != this.state.user.zipCode) {
+            console.log("zip code different!");
+            updateProfileDisabled = false;
+        } else if (phoneNumberVal != this.state.user.phoneNumber) {
+            console.log("phone number different!");
+            updateProfileDisabled = false;
+        }
 
-        } else if (this.state.valid.confirmPasswordEmpty) {
-            validationMessage = "Please re-enter your password to confirm.";
-            validationHidden = false;
-
-        } else if (!this.state.valid.confirmPassword) {
-            validationMessage = "Confirmation password was not valid. Must be minimum 10 characters long and consist of letters, numbers, spaces and any of the following special characters: @#$%^&*()_+!/\\.,";
-            validationHidden = false;
-
-        } else if (!this.state.valid.passwordMatch) {
-            validationMessage = "Passwords do not match.";
-            validationHidden = false;
-
-        } else if (!this.state.valid.firstName) {
-            validationMessage = "First name cannot be more than 64 characters.";
-            validationHidden = false;
+        //check to see if all entries are valid
+        if (!this.state.valid.firstName) {
+            profileValidationMessage = "First name cannot be more than 64 characters.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.lastName) {
-            validationMessage = "Last name cannot be more than 64 characters.";
-            validationHidden = false;
+            profileValidationMessage = "Last name cannot be more than 64 characters.";
+            profileVvalidationHidden = false;
 
         } else if (!this.state.valid.country) {
-            validationMessage = "Country cannot be more than 128 characters.";
-            validationHidden = false;
+            profileValidationMessage = "Country cannot be more than 128 characters.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.state) {
-            validationMessage = "State cannot be more than 64 characters.";
-            validationHidden = false;
+            profileValidationMessage = "State cannot be more than 64 characters.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.city) {
-            validationMessage = "City cannot be more than 64 characters.";
-            validationHidden = false;
+            profileValidationMessage = "City cannot be more than 64 characters.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.address) {
-            validationMessage = "Address cannot be more than 256 characters.";
-            validationHidden = false;
+            profileValidationMessage = "Address cannot be more than 256 characters.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.phone) {
-            validationMessage = "Phone number was not a valid phone number. Must include area code, with optional country code.";
-            validationHidden = false;
+            profileValidationMessage = "Phone number was not a valid phone number. Must include area code, with optional country code.";
+            profileValidationHidden = false;
 
         } else if (!this.state.valid.zip) {
-            validationMessage = "Zip code was not valid, please use either a #####, #####-#### or ##### #### format.";
-            validationHidden = false;
-
-        } else if (this.state.checkedRadio == null) {
-            validationMessage = "Please select an account type.";
-            validationHidden = false;
-
+            profileValidationMessage = "Zip code was not valid, please use either a #####, #####-#### or ##### #### format.";
+            profileValidationHidden = false;
         }
 
-        let fleetNameHidden = true;
-        let fleetSelectHidden = true;
+        console.log("updateProfileDisabled: " + updateProfileDisabled + " || " + (!profileValidationHidden));
 
-        if (this.state.checkedRadio == "existingFleet") {
-            fleetSelectHidden = false;
+        updateProfileDisabled = updateProfileDisabled || !profileValidationHidden;
 
-            if (!this.state.valid.fleetSelect) {
-                validationMessage = "Please select a fleet from the dropdown.";
-                validationHidden = false;
-            }
-
-        } else if (this.state.checkedRadio == "newFleet") {
-            fleetNameHidden = false;
-
-            if (!this.state.valid.fleetName) {
-                validationMessage = "Please enter a valid fleet name. It must be less than 256 characters long and consist of letters, numbers, spaces and any of the following special characters: @#$%^&*()_+!/\\.,";
-                validationHidden = false;
-            }
-        }
-
-        let submitDisabled = !validationHidden;
-        let fleets = [];
-        
-        if (typeof this.state.fleets != 'undefined') {
-            fleets = this.state.fleets;
-        }
-
-        console.log("rendering with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
+        console.log("rendering with profile validation message: '" + profileValidationMessage + "' and profile validation visible: " + profileValidationHidden);
 
         return (
             <div className="card-body" hidden={hidden}>
                 <div className="card mb-1" style={bgStyle}>
                     <h5 className="card-header" style={fgStyle}>
-                        Create an NGAFID Account
+                        Update Profile
                     </h5>
 
                     <div className="card-body" style={fgStyle}>
@@ -403,24 +308,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createEmail" style={labelStyle}>Email address</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="email" className="form-control" id="createEmail" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => this.validateEmails()}/>
-                                    </div>
-                                    <div className="p-2 flex-fill">
-                                        <input type="email" className="form-control" id="confirmEmail" aria-describedby="emailHelp" placeholder="Confirm email (required)" required={true} onChange={() => this.validateEmails()}/>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="form-group" style={formGroupStyle}>
-                                <div className="d-flex">
-                                    <div className="p-2" style={formHeaderStyle}>
-                                        <label htmlFor="createPassword" style={labelStyle}>Password</label>
-                                    </div>
-                                    <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="createPassword" placeholder="Password (required)" required={true} onChange={() => this.validatePasswords()}/>
-                                    </div>
-                                    <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={() => this.validatePasswords()}/>
+                                        <input type="email" ref={this.emailInput} className="form-control" id="createEmail" aria-describedby="emailHelp" readOnly value={this.state.user.email} />
                                     </div>
                                 </div>
                             </div>
@@ -431,7 +319,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createFirstName" style={labelStyle}>First Name</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createFirstName" aria-describedby="firstNameHelp" placeholder="Enter first name" onChange={() => this.validateFirstName()}/>
+                                        <input type="text" ref={this.firstNameInput} className="form-control" id="createFirstName" aria-describedby="firstNameHelp" placeholder="Enter first name" onChange={() => this.validateFirstName()} />
                                     </div>
                                 </div>
                             </div>
@@ -442,7 +330,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createLastName" style={labelStyle}>Last Name</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createLastName" aria-describedby="lastNameHelp" placeholder="Enter last name" onChange={() => this.validateLastName()}/>
+                                        <input type="text" ref={this.lastNameInput} className="form-control" id="createLastName" aria-describedby="lastNameHelp" placeholder="Enter last name" onChange={() => this.validateLastName()} />
                                     </div>
                                 </div>
                             </div>
@@ -454,7 +342,7 @@ class CreateAccountCard extends React.Component {
                                     </div>
                                     <div className="p-2 flex-fill">
 
-                                        <select id="countrySelect" className="form-control" onChange={() => this.validateCountry()}>
+                                        <select id="countrySelect" ref={this.countrySelect} className="form-control" onChange={() => this.validateCountry()}>
                                             <option value="NONE"></option>
 
                                             <option value="AFG">Afghanistan</option>
@@ -719,7 +607,7 @@ class CreateAccountCard extends React.Component {
                                     </div>
                                     <div className="p-2 flex-fill">
 
-                                        <select id="stateSelect" className="form-control" onChange={() => this.validateState()}>
+                                        <select id="stateSelect" ref={this.stateSelect} className="form-control" onChange={() => this.validateState()}>
                                             <option value="NONE"></option>
 
                                             <option value="AL">Alabama</option>
@@ -793,11 +681,10 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createCity" style={labelStyle}>City</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createCity" aria-describedby="cityHelp" placeholder="Enter city" onChange={() => this.validateCity()}/>
+                                        <input type="text" ref={this.cityInput} className="form-control" id="createCity" aria-describedby="cityHelp" placeholder="Enter city" onChange={() => this.validateCity()} />
                                     </div>
                                 </div>
                             </div>
-
 
                             <div className="form-group" style={formGroupStyle}>
                                 <div className="d-flex">
@@ -805,7 +692,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createAddress" style={labelStyle}>Address</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createAddress" aria-describedby="addressHelp" placeholder="Enter address" onChange={() => this.validateAddress()}/>
+                                        <input type="text" ref={this.addressInput} className="form-control" id="createAddress" aria-describedby="addressHelp" placeholder="Enter address" onChange={() => this.validateAddress()} />
                                     </div>
                                 </div>
                             </div>
@@ -816,7 +703,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createPhoneNumber" style={labelStyle}>Phone Number</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createPhoneNumber" aria-describedby="phoneNumberHelp" placeholder="Enter phone number" onChange={() => this.validatePhone()}/>
+                                        <input type="text" ref={this.phoneNumberInput} className="form-control" id="createPhoneNumber" aria-describedby="phoneNumberHelp" placeholder="Enter phone number" onChange={() => this.validatePhone()} />
                                     </div>
                                 </div>
                             </div>
@@ -828,65 +715,19 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createZipCode" style={labelStyle}>Zip Code</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="text" className="form-control" id="createZipCode" aria-describedby="zipCodeHelp" placeholder="Enter zip code" onChange={() => this.validateZip()}/>
+                                        <input type="text" ref={this.zipCodeInput} className="form-control" id="createZipCode" aria-describedby="zipCodeHelp" placeholder="Enter zip code" onChange={() => this.validateZip()} />
                                     </div>
                                 </div>
                             </div>
-
-                            <div className="form-group" style={formGroupStyle}>
-                                <div className="d-flex">
-                                    <div className="p-2" style={formHeaderStyle}>
-                                        <label htmlFor="createZipCode" style={labelStyle}>Account Type</label>
-                                    </div>
-
-                                    <div className="p-2 flex-fill">
-
-                                        <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTyepGAARD" value="gaard" onChange={() => this.validateAccountType()} disabled/>
-                                            <label className="form-check-label" htmlFor="exampleRadios1">
-                                                I am a GAARD User.
-                                            </label>
-                                        </div>
-                                        <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} />
-                                            <label className="form-check-label" htmlFor="exampleRadios2">
-                                                I am operating my own fleet.
-                                            </label>
-                                        </div>
-                                        <div className="form-check disabled">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeExistingFleet" value="existingFleet" onChange={() => this.validateAccountType()} />
-                                            <label className="form-check-label" htmlFor="exampleRadios3">
-                                                I am requesting access to an existing fleet.
-                                            </label>
-                                        </div>
-                                    </div>
-
-                                    <div className="p-2 flex-fill">
-
-                                        <input type="text" className="form-control" id="newFleetName" aria-describedby="newFleetNameHelp" placeholder="Enter the name of your fleet (required)" hidden={fleetNameHidden} onChange={() => this.validateFleetName()}/>
-                                        <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} onChange={() => this.validateFleetSelect()}>
-                                            {
-                                                fleets.map((fleetInfo, index) => {
-                                                    return (
-                                                        <option key={index} value={fleetInfo}>{fleetInfo}</option>
-                                                    );
-                                                })
-                                            }
-                                        </select>
-
-                                    </div>
-                                </div>
-                            </div>
-
 
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                 </div>
                                 <div className="p-2 flex-fill">
-                                    <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
+                                    <span style={validationMessageStyle} hidden={profileValidationHidden}>{profileValidationMessage}</span>
                                 </div>
                                 <div className="p-2">
-                                    <button type="submit" className="btn btn-primary float-right" disabled={submitDisabled}>Submit</button>
+                                    <button type="submit" className="btn btn-primary float-right" disabled={updateProfileDisabled}>Update Profile</button>
                                 </div>
                             </div>
 
@@ -894,16 +735,16 @@ class CreateAccountCard extends React.Component {
 
                     </div>
                 </div>
+
             </div>
         );
     }
 }
 
-var createAccountCard = ReactDOM.render(
-    <CreateAccountCard />,
-    document.querySelector('#create-account-card')
-
+var profileCard = ReactDOM.render(
+    <ProfileCard />,
+    document.querySelector('#profile-card')
 );
 
-createAccountCard.setFleets(fleetNames);
+profileCard.setUser(user);
 
