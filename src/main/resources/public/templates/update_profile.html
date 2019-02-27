@@ -21,8 +21,8 @@
 
     <script>
         {{{navbar_js}}}
+        {{{user_js}}}
     </script>
-
 
 </head>
 <body>
@@ -35,32 +35,7 @@
         </div>
     </div>
 
-    {{#messages}}
-    <div class="card-body" style="padding-bottom:0px;">
-        <div class="card bg-{{type}}" style="opacity:0.8">
-            <div class="card-body" style="opacity:1.0;">
-                <p class="card-text">
-                {{message}}
-                </p>
-            </div>
-        </div>
-    </div>
-    {{/messages}}
-
-    <div class="card-body">
-        <div class="card mb-1" style="opacity: 0.8;">
-            <h5 class="card-header" style="opacity: 1.0;">
-                Dashboard
-            </h5>
-
-            <div class="card-body" style="opacity: 1.0;">
-                <p class="card-text">
-                Fleet, flight and exceedence statistics go here.
-                </p>
-            </div>
-
-        </div>
-    </div>
+    <div id="profile-card"></div>
 
     <!-- Load React. -->
     <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -71,6 +46,8 @@
     <!-- Load our React components. -->
     <script type="text/babel" src="../js/signed_in_navbar.js"></script>
     <script type="text/babel" src="../js/error_modal.js"></script>
+    <script type="text/babel" src="../js/update_profile.js"></script>
+
 
 </body>
 </html>

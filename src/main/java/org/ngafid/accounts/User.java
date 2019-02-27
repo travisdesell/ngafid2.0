@@ -22,6 +22,7 @@ public class User {
     private String lastName;
     private String country;
     private String state;
+    private String city;
     private String address;
     private String phoneNumber;
     private String zipCode;
@@ -134,7 +135,7 @@ public class User {
      * @return A user object for the user with that id, null if the user did not exist.
      */
     public static User get(Connection connection, int userId, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, address, phone_number, zip_code FROM user WHERE id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE id = ?");
         query.setInt(1, userId);
 
         LOG.info(query.toString());
@@ -149,9 +150,10 @@ public class User {
         user.lastName = resultSet.getString(4);
         user.country = resultSet.getString(5);
         user.state = resultSet.getString(6);
-        user.address = resultSet.getString(7);
-        user.phoneNumber = resultSet.getString(8);
-        user.zipCode = resultSet.getString(8);
+        user.city = resultSet.getString(7);
+        user.address = resultSet.getString(8);
+        user.phoneNumber = resultSet.getString(9);
+        user.zipCode = resultSet.getString(10);
 
         //get the access level of the user for this fleet
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
@@ -161,7 +163,25 @@ public class User {
         return user;
     }
 
+    /**
+     * Checks to see if this password validates against the user's password token
+     *
+     * @param connection A connection to the mysql database.
+     * @param password the password to be tested
+     *
+     * @return true if the password hashes correctly to the user's password token.
+     */
+    public boolean validate(Connection connection, String password) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT password_token FROM user WHERE id = ?");
+        query.setInt(1, id);
 
+        ResultSet resultSet = query.executeQuery();
+
+        if (!resultSet.next()) return false;
+        String passwordToken = resultSet.getString(1);
+
+        return new PasswordAuthentication().authenticate(password.toCharArray(), passwordToken);
+    }
 
     /**
      * Get a user from the database based on the user email and password. The password will be hashed to see
@@ -177,7 +197,7 @@ public class User {
      * @return A user object if the password for that email address was correct. null if the user did not exist.
      */
     public static User get(Connection connection, String email, String password) throws SQLException, AccountException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, address, phone_number, zip_code FROM user WHERE email = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE email = ?");
         query.setString(1, email);
 
         LOG.info(query.toString());
@@ -193,9 +213,10 @@ public class User {
         user.lastName = resultSet.getString(4);
         user.country = resultSet.getString(5);
         user.state = resultSet.getString(6);
-        user.address = resultSet.getString(7);
-        user.phoneNumber = resultSet.getString(8);
-        user.zipCode = resultSet.getString(8);
+        user.city = resultSet.getString(7);
+        user.address = resultSet.getString(8);
+        user.phoneNumber = resultSet.getString(9);
+        user.zipCode = resultSet.getString(10);
 
         if (!new PasswordAuthentication().authenticate(password.toCharArray(), passwordToken)) {
             LOG.info("User password was incorrect.");
@@ -245,6 +266,69 @@ public class User {
         return resultSet.next(); // returns true if there was something in the result set (i.e., there was a user)
     }
 
+
+    /**
+     * Updates the profile information for a user in the database.
+     *
+     * @param connection A connection to the mysql database.
+     * @param firstName The user's first name (optional, may be null).
+     * @param lastName The user's last name (optional, may be null).
+     * @param country The user's country (optional, may be null).
+     * @param state The user's state (optional, may be null).
+     * @param ciy The user's ciy (optional, may be null).
+     * @param address The user's address (optional, may be null).
+     * @param phoneNumber The user's phone number (optional, may be null).
+     * @param zipCode The user's zip code (optional, may be null).
+     *
+     * @exception SQLException if there was a problem with the SQL query or the user already exists in the database.
+     */
+    public void updateProfile(Connection connection, String firstName, String lastName, String country, String state, String city, String address, String phoneNumber, String zipCode) throws SQLException {
+
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.country = country;
+        this.state = state;
+        this.city = city;
+        this.address = address;
+        this.phoneNumber = phoneNumber;
+        this.zipCode = zipCode;
+
+        PreparedStatement query = connection.prepareStatement("UPDATE user SET first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ? WHERE id = ?");
+        query.setString(1, this.firstName);
+        query.setString(2, this.lastName);
+        query.setString(3, this.country);
+        query.setString(4, this.state);
+        query.setString(5, this.city);
+        query.setString(6, this.address);
+        query.setString(7, this.phoneNumber);
+        query.setString(8, this.zipCode);
+        query.setInt(9, this.id);
+
+        LOG.info(query.toString());
+        query.executeUpdate();
+    }
+
+
+    /**
+     * Updates the password for a user in the database.
+     *
+     * @param connection A connection to the mysql database.
+     * @param password The user's first name (optional, may be null).
+     *
+     * @exception SQLException if there was a problem with the SQL query or the user already exists in the database.
+     */
+    public void updatePassword(Connection connection, String newPassword) throws SQLException {
+        String passwordToken = new PasswordAuthentication().hash(newPassword.toCharArray());
+
+        PreparedStatement query = connection.prepareStatement("UPDATE user SET password_token = ? WHERE id = ?");
+        query.setString(1, passwordToken);
+        query.setInt(2, this.id);
+
+        LOG.info(query.toString());
+        query.executeUpdate();
+    }
+
+
     /**
      * Creates a new user in the database, given the specified parameters. Used by the other static create methods. Note that the {@link #exists(Connection, String)} method should be called prior to calling this method to check and see if the user already exists.
      *
@@ -255,6 +339,7 @@ public class User {
      * @param lastName The user's last name (optional, may be null).
      * @param country The user's country (optional, may be null).
      * @param state The user's state (optional, may be null).
+     * @param city The user's city (optional, may be null).
      * @param address The user's address (optional, may be null).
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode The user's zip code (optional, may be null).
@@ -264,7 +349,7 @@ public class User {
      *
      * @return A user object if it was sucessfully created and added to the database.
      */
-    private static User create(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String address, String phoneNumber, String zipCode) throws SQLException, AccountException {
+    private static User create(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String city, String address, String phoneNumber, String zipCode) throws SQLException, AccountException {
         //exists should be checked before calling this method
         User user = new User();
 
@@ -274,20 +359,22 @@ public class User {
         user.lastName = lastName;
         user.country = country;
         user.state = state;
+        user.city = city;
         user.address = address;
         user.phoneNumber = phoneNumber;
         user.zipCode = zipCode;
 
-        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, address = ?, phone_number = ?, zip_code = ?");
+        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?");
         query.setString(1, user.email);
         query.setString(2, passwordToken);
         query.setString(3, user.firstName);
         query.setString(4, user.lastName);
         query.setString(5, user.country);
         query.setString(6, user.state);
-        query.setString(7, user.address);
-        query.setString(8, user.phoneNumber);
-        query.setString(9, user.zipCode);
+        query.setString(7, user.city);
+        query.setString(8, user.address);
+        query.setString(9, user.phoneNumber);
+        query.setString(10, user.zipCode);
 
         LOG.info(query.toString());
         query.executeUpdate();
@@ -313,6 +400,7 @@ public class User {
      * @param lastName The user's last name (optional, may be null).
      * @param country The user's country (optional, may be null).
      * @param state The user's state (optional, may be null).
+     * @param city The user's city (optional, may be null).
      * @param address The user's address (optional, may be null).
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode The user's zip code (optional, may be null).
@@ -323,7 +411,7 @@ public class User {
      *
      * @return A user object if it was sucessfully created and added to the database.
      */
-    public static User createNewFleetUser(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String address, String phoneNumber, String zipCode, String fleetName) throws SQLException, AccountException {
+    public static User createNewFleetUser(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String city, String address, String phoneNumber, String zipCode, String fleetName) throws SQLException, AccountException {
         //TODO: double check all the passed in strings with regexes to make sure they're valid
         //validateUserInformation(email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
 
@@ -338,7 +426,7 @@ public class User {
         }
 
         //create the user in the database
-        User user = create(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode);
+        User user = create(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode);
 
         //create the new fleet
         user.fleet = Fleet.create(connection, fleetName);
@@ -363,6 +451,7 @@ public class User {
      * @param lastName The user's last name (optional, may be null).
      * @param country The user's country (optional, may be null).
      * @param state The user's state (optional, may be null).
+     * @param city The user's city (optional, may be null).
      * @param address The user's address (optional, may be null).
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode The user's zip code (optional, may be null).
@@ -373,7 +462,7 @@ public class User {
      *
      * @return A user object if it was sucessfully created and added to the database.
      */
-    public static User createExistingFleetUser(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String address, String phoneNumber, String zipCode, String fleetName) throws SQLException, AccountException {
+    public static User createExistingFleetUser(Connection connection, String email, String password, String firstName, String lastName, String country, String state, String city, String address, String phoneNumber, String zipCode, String fleetName) throws SQLException, AccountException {
         //TODO: double check all the passed in strings with regexes to make sure they're valid
         //validateUserInformation(email, password, firstName, lastName, country, state, address, phoneNumber, zipCode, fleetName);
 
@@ -388,7 +477,7 @@ public class User {
         }
 
         //create the user in the database
-        User user = create(connection, email, password, firstName, lastName, country, state, address, phoneNumber, zipCode);
+        User user = create(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode);
 
         //set user access to the fleet as awaiting confirmation
         user.fleet = Fleet.get(connection, fleetName);

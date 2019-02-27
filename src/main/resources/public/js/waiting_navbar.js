@@ -5,6 +5,7 @@ class NavLink extends React.Component {
         const name = this.props.name;
         const hidden = this.props.hidden;
         const active = this.props.active;
+
         let onClick = this.props.onClick;
         let href = this.props.href;
 
@@ -30,10 +31,11 @@ class DropdownLink extends React.Component {
     render() {
         const name = this.props.name;
         const hidden = this.props.hidden;
-        const onClick = this.props.onClick;
 
+        let onClick = this.props.onClick;
         let href = this.props.href;
         if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof onClick == 'undefined') onClick = function(){};
 
         console.log("rendering dropdownlink '" + name + "'");
 
@@ -92,7 +94,8 @@ class UserNavbar extends React.Component {
                         <li className="nav-item dropdown">
                             <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
-                                <DropdownLink name={"Profle"} hidden={false} onClick={() => href="/protected/profile"}/>
+                                <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
+                                <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"></div>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>

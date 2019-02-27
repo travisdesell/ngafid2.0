@@ -139,6 +139,12 @@ public final class WebServer {
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
         Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 
+        Spark.get("/protected/update_profile", new GetUpdateProfile(gson));
+        Spark.post("/protected/update_profile", new PostUpdateProfile(gson));
+
+        Spark.get("/protected/update_password", new GetUpdatePassword(gson));
+        Spark.post("/protected/update_password", new PostUpdatePassword(gson));
+
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
         Spark.post("/protected/get_uploads", new PostUploads(gson));
         Spark.post("/protected/get_imports", new PostImports(gson));
