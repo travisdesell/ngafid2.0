@@ -133,7 +133,8 @@ public class EventTypeExPression {
 
     public static void main(String[] arguments) {
 
-        EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.minValue, EvalExCondition.maxValue,EvalExCondition.columnNames, EvalExCondition.condition);
+        //EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.minValue, EvalExCondition.maxValue,EvalExCondition.columnNames, EvalExCondition.condition);
+        EventType eventType = new EventType(EvalExCondition.name, EvalExCondition.bufferTime, EvalExCondition.columnNames, EvalExCondition.condition);
 
         Connection connection = Database.getConnection();
         eventType.updateDatabase(connection);

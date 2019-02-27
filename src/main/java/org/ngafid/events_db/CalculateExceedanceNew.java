@@ -57,17 +57,21 @@ public class CalculateExceedanceNew {
             Expression expression = new Expression(eventType.getConditionText());
 
             Flight flight = Flight.getFlight(connection, flightId);
-            System.out.println("flight id: " + flight.getId());
+            System.out.println("flight id is: [ " + flight.getId() + " ]");
             ///System.out.println("date: " + flight.getDate());
-            System.out.println("flight filename: " + flight.getFilename());
+            System.out.println("flight filename is: [ " + flight.getFilename() + " ]");
+            System.out.println("Number of Column Name(s): [ " + eventType.getColumnNames().length + " ]");
 
-            DoubleTimeSeries eventSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, eventType.getName());
-            System.out.println("What is Event Name: " + eventType.getName());
+            DoubleTimeSeries[] eventSeriesArr = new DoubleTimeSeries[ eventType.getColumnNames().length ];
+            for( int i = 0; i < eventSeriesArr.length; i++ )
+                eventSeriesArr[i] = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, eventType.getColumnNames()[i] );
+
+            System.out.println("Event(s) Name are: [ " + eventType.getName() + " ]");
 
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, timeSeriesName);
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, dateSeriesName);
 
-            if (eventSeries == null) {
+            if (eventSeriesArr == null || eventSeriesArr.length == 0 || eventSeriesArr[0] == null) {
                 //INSERT INTO flight_warnings SET flight_id = ?, message = ?, stack_trace = ''
                 //message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data."
                 // String message = "Couldn't calculate Pitch exceedence because flight didn't have pitch data";
@@ -88,34 +92,44 @@ public class CalculateExceedanceNew {
             // }
 
             //Step 1: Calculate all the pitch events and put them in this pitchEvents ArrayList
+
             ArrayList<Event> eventList = new ArrayList<>();
             int lineNumber = 0;
-            for (int i = 0; i < eventSeries.size(); i++) {
+
+            for (int i = 0; i < eventSeriesArr[0].size(); i++) {
                 //generate the pitch events here
                 lineNumber = i;
                 //current = eventSeries.get(i);
                 //System.out.println("pitch[" + i + "]: " + current);
-
+/*
                 double currentValue = eventSeries.get(i);
                 System.out.println("iteration: " + i + ", columnName: " + eventType.getColumnNames() + ", currentValue: "+ currentValue + ", expression: " + expression);
-
                 System.out.println("all columns: " + eventType.getColumnNames());
-
                 BigDecimal result = null;
-                // if (!Double.isNaN(currentValue)) {
-                //     result = expression.with(eventType.getColumnNames(), Double.toString(currentValue)).eval();
-                // }
+*/
+                double currentValue = eventSeriesArr[0].get(i);
+                BigDecimal result = null;
+
+               if (!Double.isNaN(currentValue)) {
+
+                   Expression partialExpression = expression.with(eventType.getColumnNames()[0], new BigDecimal(currentValue));
+                   for( int j = 1; j < eventType.getColumnNames().length; j++ ){
+                       currentValue = eventSeriesArr[j].get(i);
+                       partialExpression = partialExpression.with(eventType.getColumnNames()[j], new BigDecimal(currentValue));
+                   }
+                   result = partialExpression.eval();
+                }
 
                 // value = columnEventSeries[0].get(i)
                 // Expression partialExpression = expression.with(columnNames[0], value);
-                //for j = 1 .. number columns
+                // for j = 1 .. number columns
                 //      value = columnEventSeries[j].get(i)
                 //      Expression partialExpression = paritalExpression.with(columnNames[j], value);
                 // result = partialExpression.eval();
 
-                if (!Double.isNaN(currentValue)) {
+                /*if (!Double.isNaN(currentValue)) {
                     result = expression.with(eventType.getColumnName(), Double.toString(currentValue)).eval();
-                }
+                }*/
 
                 System.out.println("result: " +  result);
 
@@ -125,7 +139,7 @@ public class CalculateExceedanceNew {
                     else
                         count =0;
                     if (startTime != null)
-                        System.out.println("count: " + count + " with value: " + "[" + eventSeries.get(i) + "]" + " in line: " + lineNumber );
+                        System.out.println("count: " + count + " with value: " + "[" + eventSeriesArr[0].get(i) + "]" + " in line: " + lineNumber );
                     if (count == bufferTime){
                         System.err.println("Exceed the buffer range and New event created!!");
                     }
@@ -217,20 +231,20 @@ public class CalculateExceedanceNew {
 
                 //TODO: update to check and see if the flight could possibly have the exceedence
                 PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id)");
-                // PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = ? AND double_series.flight_id = flights.id AND (min < (SELECT min_value FROM event_type WHERE id = 3) AND max > (SELECT max_value FROM event_type WHERE id = ?)))");
+                // PreparedStatement stmt = connection.prepareStatement("SELECT id FROM flights WHERE NOT EXISTS(SELECT flight_id FROM flight_processed WHERE event_type_id = ? AND flight_processed.flight_id = flights.id) AND NOT EXISTS (SELECT id FROM double_series WHERE name = ? AND double_series.flight_id = flights.id AND (min < (SELECT min_value FROM event_type WHERE id = ?) AND max > (SELECT max_value FROM event_type WHERE id = ?)))");
 
                 stmt.setInt(1, currentEventType.getId());
                 ResultSet rs = stmt.executeQuery();
 
                 while (rs.next()) {
                     int id = rs.getInt("id");
-                    System.out.println("=======Going to process flight with number: " + id );
+                    System.out.println("=======Going to process flight with number: [ " + id + " ] =======" );
 
                     //select min/max from double_series where name = eventType.getColumnName()
                     //don't process flights whose min and max doesn't violate the exceedence
 
                     currentCalculator.processFlight(id);
-                    System.out.println("-------------------------\n");
+                    System.out.println("-----------------------------------------------------------------\n");
                 }
 
                 /*
@@ -248,7 +262,7 @@ public class CalculateExceedanceNew {
                    */
 
             }
-            System.out.println("Finished.");
+            //System.out.println("Finished.");
 
         } catch (SQLException e) {
             e.printStackTrace();
