@@ -136,7 +136,7 @@ public class Upload {
     public void complete(Connection connection) throws SQLException {
         status = "UPLOADED";
 
-        PreparedStatement query = connection.prepareStatement("UPDATE uploads SET status = ? WHERE id = ?");
+        PreparedStatement query = connection.prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?");
         query.setString(1, status);
         query.setInt(2, id);
         query.executeUpdate();

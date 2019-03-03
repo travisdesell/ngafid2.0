@@ -119,14 +119,21 @@ class SignedInNavbar extends React.Component {
         if (this.state.waitingUserCount > 0) waitingUsersString = " (" + this.state.waitingUserCount + ")";
         let manageHidden = !this.state.fleetManager;
 
+        let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+
+        let navbarBgColor = "rgba(188,203,218,0.8)";
+        let selectBgColor = "rgba(203,210,218,0.8)";
+        //const buttonStyle = { backgroundColor : selectBgColor };
+        const buttonStyle = { };
+
         /*
         <NavLink name={"Flights"} href="/protected/flights"/>
         <NavLink name={"Imports"} href="/protected/imports"/>
-        <NavLink name={"Uploads"} href="/protected/create_account"/>
         */
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"#B9CCDC"}}>
+            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
                 <a className="navbar-brand" href="../">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
@@ -134,9 +141,34 @@ class SignedInNavbar extends React.Component {
 
                 <div className="collapse navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
+
+                        <ul className="navbar-nav mr-auto">
+                            <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
+                                <i className="fa fa-area-chart p-1"></i>
+                            </button>
+
+                            <div className="input-group m-0">
+                                <div className="input-group-prepend">
+                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
+                                        <i className="fa fa-globe p-1"></i>
+                                    </button>
+                                </div>
+                                <select className="custom-select" defaultValue="Road" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} onChange={() => this.mapSelectChanged()}>
+                                    <option value="Aerial">Aerial</option>
+                                    <option value="AerialWithLabels">Aerial with labels</option>
+                                    <option value="Road">Road (static)</option>
+                                    <option value="RoadOnDemand">Road (dynamic)</option>
+                                </select>
+
+                            </div>
+                        </ul>
+
                     </ul>
 
                     <ul className="navbar-nav">
+                        <NavLink name={"Dashboard"} href="/protected/dashboard"/>
+                        <NavLink name={"Imports"} href="/protected/imports"/>
+                        <NavLink name={"Uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
                             <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

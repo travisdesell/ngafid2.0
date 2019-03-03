@@ -33,8 +33,10 @@ class HomeNavbar extends React.Component {
     }
 
     render() {
+        let navbarBgColor = "rgba(188,203,218,0.8)"
+
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor: "#B9CCDC"}}>
+            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor: navbarBgColor}}>
                 <a className="navbar-brand" href="./">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>

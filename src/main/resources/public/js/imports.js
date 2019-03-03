@@ -184,7 +184,7 @@ class Import extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './protected/upload_details',
+                url: '/protected/upload_details',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -352,16 +352,8 @@ class ImportsCard extends React.Component {
         super(props);
 
         this.state = {
-            hidden : this.props.hidden
+            imports : this.props.imports
         };
-
-        mainCards['imports'] = this;
-        console.log("Constructed ImportsCard, set mainCards");
-    }
-
-    setContent(imports) {
-        this.state.imports = imports;
-        this.setState(this.state);
     }
 
     render() {
@@ -377,16 +369,22 @@ class ImportsCard extends React.Component {
 
         return (
             <div className="card-body" hidden={hidden}>
-                {
-                    imports.map((importInfo, index) => {
-                        return (
-                            <Import importInfo={importInfo} key={importInfo.identifier} />
-                        );
-                    })
-                }
+                <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                    {
+                        imports.map((importInfo, index) => {
+                            return (
+                                <Import importInfo={importInfo} key={importInfo.identifier} />
+                            );
+                        })
+                    }
+                </div>
             </div>
         );
     }
 }
 
 
+var importsCard = ReactDOM.render(
+    <ImportsCard imports={imports} />,
+    document.querySelector('#imports-card')
+);
