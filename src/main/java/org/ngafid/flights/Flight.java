@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -235,7 +236,7 @@ public class Flight {
         }
 
         if (airframeType == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
-        System.err.println("detected airframe type: '" + airframeType);
+        System.err.println("detected airframe type: '" + airframeType + "'");
 
 
         //the next line is the column data types
@@ -248,6 +249,7 @@ public class Flight {
 
         //the next line is the column headers
         String headersLine = bufferedReader.readLine();
+        System.out.println("Headers line is: " + headersLine);
         headers.addAll( Arrays.asList( headersLine.split("\\,", -1) ) );
         headers.replaceAll(String::trim);
 
@@ -266,6 +268,11 @@ public class Flight {
 
         String line;
         while ((line = bufferedReader.readLine()) != null) {
+            if (line.contains("Lcl Time")) {
+                System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
+                continue;
+            }
+
             //if the line is empty, skip it
             if (line.trim().length() == 0) continue;
             //this line is a comment, skip it
@@ -304,6 +311,8 @@ public class Flight {
             System.err.println("WARNING: last line of the file was cut short and ignored.");
         }
 
+        System.out.println("parsed " + lineNumber + " lines.");
+
         for (int i = 0; i < csvValues.size(); i++) {
             //check to see if each column is a column of doubles or a column of strings
 
@@ -326,6 +335,7 @@ public class Flight {
 
             if (isDoubleList) {
                 //System.out.println(headers.get(i) + " is a DOUBLE column, ArrayList size: " + current.size());
+                //System.out.println(current);
                 DoubleTimeSeries dts = new DoubleTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (dts.validCount() > 0) {
                     doubleTimeSeries.put(headers.get(i), dts);
@@ -335,6 +345,7 @@ public class Flight {
 
             } else {
                 //System.out.println(headers.get(i) + " is a STRING column, ArrayList size: " + current.size());
+                //System.out.println(current);
                 StringTimeSeries sts = new StringTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (sts.validCount() > 0) {
                     stringTimeSeries.put(headers.get(i), sts);
@@ -381,7 +392,9 @@ public class Flight {
             exceptions.add(e);
         }
 
-        calculateItinerary();
+        if (hasCoords && hasAGL) {
+            calculateItinerary();
+        }
     }
 
     private void checkExceptions() {
@@ -427,9 +440,12 @@ public class Flight {
     public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = zipEntryName;
 
+        if (!filename.contains("/")) {
+            throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
+        }
+
         String[] parts = zipEntryName.split("/");
         this.tailNumber = parts[0];
-        //System.out.println("tail number is: " + tailNumber);
 
         try {
             inputStream = getReusableInputStream(inputStream);
@@ -478,15 +494,15 @@ public class Flight {
             //        } catch (FileNotFoundException e) {
             //            System.err.println("ERROR: could not find flight file '" + filename + "'");
             //            exceptions.add(e);
-    } catch (FatalFlightFileException e) {
-        status = "WARNING";
-        throw e;
-    } catch (IOException e) {
-        status = "WARNING";
-        throw e;
-    }
+        } catch (FatalFlightFileException e) {
+            status = "WARNING";
+            throw e;
+        } catch (IOException e) {
+            status = "WARNING";
+            throw e;
+        }
 
-    checkExceptions();
+        checkExceptions();
     }
 
     public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -532,7 +548,6 @@ public class Flight {
         hasAGL = true;
 
         DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName, "ft agl");
-        doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -547,12 +562,23 @@ public class Flight {
                 continue;
             }
 
-            int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
+            try {
+                int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
 
-            altitudeAGLTS.add(altitudeAGL);
+                altitudeAGLTS.add(altitudeAGL);
+
+                //the terrain cache will not be able to find the file if the lat/long is outside of the USA
+            } catch (NoSuchFileException e) {
+                System.err.println("ERROR: could not read terrain file: " + e);
+
+                hasAGL = false;
+                throw new MalformedFlightFileException("Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+            }
 
             //System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
         }
+
+        doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
     }
 
     public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -767,9 +793,9 @@ public class Flight {
             preparedStatement.setString(11, status);
             preparedStatement.setBoolean(12, hasCoords);
             preparedStatement.setBoolean(13, hasAGL);
-            preparedStatement.executeUpdate();
 
             System.out.println(preparedStatement);
+            preparedStatement.executeUpdate();
 
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
             if (resultSet.next()) {
@@ -796,7 +822,6 @@ public class Flight {
 
                     exceptionPreparedStatement.setString(3, sStackTrace);
                     exceptionPreparedStatement.executeUpdate();
-
                 }
 
                 for (int i = 0; i < itinerary.size(); i++) {

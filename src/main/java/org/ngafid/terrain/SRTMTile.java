@@ -6,6 +6,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.NoSuchFileException;
 
 public class SRTMTile {
     public static final int srtmTileSize = 1201;
@@ -21,7 +22,7 @@ public class SRTMTile {
 
     private int[][] altitudesFt;
 
-    public SRTMTile(int latitudeS, int longitudeW) {
+    public SRTMTile(int latitudeS, int longitudeW) throws NoSuchFileException {
         this.latitudeS = latitudeS;
         this.longitudeW = longitudeW;
 
@@ -37,6 +38,8 @@ public class SRTMTile {
         bytes = null;
         try {
             bytes = Files.readAllBytes(path);
+        } catch (NoSuchFileException e) {
+            throw e;
         } catch (IOException e) {
             System.err.println("Error reading all bytes from file: '" + path + "'");
             e.printStackTrace();

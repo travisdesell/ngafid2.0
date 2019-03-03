@@ -166,6 +166,7 @@ public class Airframe {
 
         return events;
     }
+    /*
 
     public void calculateAGL(int mslColumn, int latitudeColumn, int longitudeColumn) {
         //calculates altitudeAGL (above ground level) from altitudeMSL (mean sea levl)
@@ -231,5 +232,6 @@ public class Airframe {
 
         }
     }
+    */
 
 }

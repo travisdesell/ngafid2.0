@@ -115,16 +115,10 @@ class UploadsCard extends React.Component {
         super(props);
 
         this.state = {
-            hidden : this.props.hidden
+            uploads : this.props.uploads
         }
 
-        mainCards['uploads'] = this;
         console.log("constructed UploadsCard, set mainCards");
-    }
-
-    setContent(uploads) {
-        this.state.uploads = uploads;
-        this.setState(this.state);
     }
 
     getUploadsCard() {
@@ -177,7 +171,7 @@ class UploadsCard extends React.Component {
         };
 
         fileReader.onerror = function () {
-            display_error_modal("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
+            errorModal.show("File Upload Error", "Could not upload file because of an error generating it's MD5 hash. Please reload the page and try again.");
         };
 
         function loadNext() {
@@ -216,7 +210,7 @@ class UploadsCard extends React.Component {
             console.log("got md5Hash: '" + md5Hash + "'");
             var xhr = new XMLHttpRequest();
 
-            xhr.open('POST', './protected/new_upload');
+            xhr.open('POST', '/protected/new_upload');
             xhr.onload = function() {
                 console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
@@ -225,7 +219,7 @@ class UploadsCard extends React.Component {
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
-                    display_error_modal(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                    errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
                     uploadsCard.removeUpload(file);
 
                 } else {
@@ -354,14 +348,14 @@ class UploadsCard extends React.Component {
         //console.log(bytes);
 
         var xhr = new XMLHttpRequest();
-        xhr.open('POST', './protected/upload');
+        xhr.open('POST', '/protected/upload');
         //xhr.setRequestHeader('Content-Type', 'application/octet-stream');
         xhr.onload = function() {
             console.log("Upload response: " + xhr.responseText);
 
             var response = JSON.parse(xhr.responseText);
             if (response.errorTitle !== undefined) {
-                display_error_modal(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
 
             } else {
                 var uploadInfo = response;
@@ -421,7 +415,7 @@ class UploadsCard extends React.Component {
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    display_error_modal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+                    errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
                 } else {
                     uploadsCard.addUpload(file);
                 }    
@@ -431,7 +425,6 @@ class UploadsCard extends React.Component {
 
     render() {
         console.log("rendering uploads!");
-        const hidden = this.props.hidden;
         const hiddenStyle = {
             display : "none"
         };
@@ -442,26 +435,32 @@ class UploadsCard extends React.Component {
         }
 
         return (
-            <div className="card-body" hidden={hidden}>
-                {
-                    uploads.map((uploadInfo, index) => {
-                        return (
-                            <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                        );
-                    })
-                }
-                <div className="d-flex justify-content-center mt-2">
-                    <div className="p-0">
-                        <input id ="upload-file-input" type="file" style={hiddenStyle} />
-                        <button id="upload-flights-button" className="btn btn-primary" onClick={() => this.triggerInput()}>
-                            <i className="fa fa-upload"></i> Upload Flights
-                        </button>
+            <div className="card-body">
+                <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                    {
+                        uploads.map((uploadInfo, index) => {
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                            );
+                        })
+                    }
+                    <div className="d-flex justify-content-center mt-2">
+                        <div className="p-0">
+                            <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                            <button id="upload-flights-button" className="btn btn-primary" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-upload"></i> Upload Flights
+                            </button>
+                        </div>
                     </div>
-                </div>
 
+                </div>
             </div>
         );
     }
 }
 
 
+var uploadsCard = ReactDOM.render(
+    <UploadsCard uploads={uploads} />,
+    document.querySelector('#uploads-card')
+);
