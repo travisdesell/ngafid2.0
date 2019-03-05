@@ -466,16 +466,16 @@ class Flight extends React.Component {
     }
 }
 
+
 class FlightsCard extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            hidden : this.props.hidden
+            mapVisible : false,
+            plotVisible : false 
         }
-
-        mainCards['flights'] = this;
-        console.log("constructed FlightsCard, set mainCards");
+        flightsCard = this;
     }
 
     setContent(flights) {
@@ -483,9 +483,120 @@ class FlightsCard extends React.Component {
         this.setState(this.state);
     }
 
+    showMap() {
+        if (this.state.mapVisible) return;
+
+        if ( !$("#map-toggle-button").hasClass("active") ) { 
+            $("#map-toggle-button").addClass("active");
+            $("#map-toggle-button").attr("aria-pressed", true);
+        }
+
+        this.state.mapVisible = true;
+        this.setState(this.state);
+
+        $("#plot-map-div").css("height", "50%");
+        $("#map").show();
+
+        if (this.state.plotVisible) {
+            $("#map").css("width", "50%");
+            map.updateSize();
+            $("#plot").css("width", "50%");
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#map").css("width", "100%");
+            map.updateSize();
+        }
+
+    }
+
+    hideMap() {
+        if (!this.state.mapVisible) return;
+
+        if ( $("#map-toggle-button").hasClass("active") ) { 
+            $("#map-toggle-button").removeClass("active");
+            $("#map-toggle-button").attr("aria-pressed", false);
+        }   
+
+        this.state.mapVisible = false;
+        this.setState(this.state);
+
+        $("#map").hide();
+
+        if (this.state.plotVisible) {
+            $("#plot").css("width", "100%");
+            var update = { width : "100%" };
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#plot-map-div").css("height", "0%");
+        }
+    }
+
+    toggleMap() {
+        if (this.state.mapVisible) {
+            this.hideMap();
+        } else {
+            this.showMap();
+        }
+    }
+
+    showPlot() {
+        if (this.state.plotVisible) return;
+
+        if ( !$("#plot-toggle-button").hasClass("active") ) { 
+            $("#plot-toggle-button").addClass("active");
+            $("#plot-toggle-button").attr("aria-pressed", true);
+        }
+
+        this.state.plotVisible = true;
+        this.setState(this.state);
+
+        $("#plot").show();
+        $("#plot-map-div").css("height", "50%");
+
+        if (this.state.mapVisible) {
+            $("#map").css("width", "50%");
+            map.updateSize();
+            $("#plot").css("width", "50%");
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#plot").css("width", "100%");
+            Plotly.Plots.resize("plot");
+        }
+    }
+
+    hidePlot() {
+        if (!this.state.plotVisible) return;
+
+        if ( $("#plot-toggle-button").hasClass("active") ) { 
+            $("#plot-toggle-button").removeClass("active");
+            $("#plot-toggle-button").attr("aria-pressed", false);
+        }   
+
+        this.state.plotVisible = false;
+        this.setState(this.state);
+
+        $("#plot").hide();
+
+        if (this.state.mapVisible) {
+            $("#map").css("width", "100%");
+            map.updateSize();
+        } else {
+            $("#plot-map-div").css("height", "0%");
+        }
+    }
+
+    togglePlot() {
+        if (this.state.plotVisible) {
+            this.hidePlot();
+        } else {
+            this.showPlot();
+        }
+    }
+
+
+
     render() {
         console.log("rendering flights!");
-        let hidden = this.props.hidden;
 
         let flights = [];
         if (typeof this.state.flights != 'undefined') {
@@ -493,7 +604,7 @@ class FlightsCard extends React.Component {
         }
 
         return (
-            <div className="card-body" hidden={hidden}>
+            <div className="card-body">
                 {
                     flights.map((flightInfo, index) => {
                         return (
@@ -507,3 +618,117 @@ class FlightsCard extends React.Component {
         );
     }
 }
+
+
+var flightsCard = ReactDOM.render(
+    <FlightsCard flights={flights} />,
+    document.querySelector('#flights-card')
+);
+
+
+
+$(document).ready(function() {
+    var layout1 = { 
+        yaxis: {
+            rangemode: 'tozero',
+            showline: true,
+            zeroline: true
+        }
+    };
+    layout1 = {};
+
+    Plotly.newPlot('plot', [], layout1);
+
+    var rules_basic = {
+        condition: 'AND',
+        rules: [{
+            id: 'price',
+            operator: 'less',
+            value: 10.25
+        }, {
+            condition: 'OR',
+            rules: [{
+                id: 'category',
+                operator: 'equal',
+                value: 2
+            }, {
+                id: 'category',
+                operator: 'equal',
+                value: 1
+            }]
+        }]
+    };
+
+    $('#builder-basic').html("stuff!");
+
+    $('#builder-basic').queryBuilder({
+        plugins: ['bt-tooltip-errors'],
+
+        filters: [{
+            id: 'name',
+            label: 'Name',
+            type: 'string'
+        }, {
+            id: 'category',
+            label: 'Category',
+            type: 'integer',
+            input: 'select',
+            values: {
+                1: 'Books',
+                2: 'Movies',
+                3: 'Music',
+                4: 'Tools',
+                5: 'Goodies',
+                6: 'Clothes'
+            },
+            operators: ['equal', 'not_equal', 'in', 'not_in', 'is_null', 'is_not_null']
+        }, {
+            id: 'in_stock',
+            label: 'In stock',
+            type: 'integer',
+            input: 'radio',
+            values: {
+                1: 'Yes',
+                0: 'No'
+            },
+            operators: ['equal']
+        }, {
+            id: 'price',
+            label: 'Price',
+            type: 'double',
+            validation: {
+                min: 0,
+                step: 0.01
+            }
+        }, {
+            id: 'id',
+            label: 'Identifier',
+            type: 'string',
+            placeholder: '____-____-____',
+            operators: ['equal', 'not_equal'],
+            validation: {
+                format: /^.{4}-.{4}-.{4}$/
+            }
+        }],
+
+        rules: rules_basic
+    });
+
+    $('#btn-reset').on('click', function() {
+        $('#builder-basic').queryBuilder('reset');
+    });
+
+    $('#btn-set').on('click', function() {
+        $('#builder-basic').queryBuilder('setRules', rules_basic);
+    });
+
+    $('#btn-get').on('click', function() {
+        var result = $('#builder-basic').queryBuilder('getRules');
+
+        if (!$.isEmptyObject(result)) {
+            alert(JSON.stringify(result, null, 2));
+        }
+    });
+
+});
+

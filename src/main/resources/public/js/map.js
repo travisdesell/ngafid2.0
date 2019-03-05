@@ -25,6 +25,14 @@ for (i = 0; i < ii; ++i) {
     }));
 }
 
+/*
+styles.push("SectionalChart");
+layers.push(new ol.layer.Image({
+    url: 'http://wms.chartbundle.com/wms',
+    params: {'LAYERS' : 'sec'}
+}));
+*/
+
 var center = ol.proj.fromLonLat([-97.0329, 47.9253]);
 
 layers[2].setVisible(true);

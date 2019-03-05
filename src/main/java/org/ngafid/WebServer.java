@@ -105,6 +105,7 @@ public final class WebServer {
             //access to the protected pages (the user is not logged in).
             User user = (User)request.session().attribute("user");
             if (user == null) {
+                LOG.info("redirecting to access_denied");
                 response.redirect("/access_denied");
             } 
         });
@@ -152,6 +153,7 @@ public final class WebServer {
 
         //Spark.post("/protected/get_uploads", new PostUploads(gson));
         //Spark.post("/protected/get_imports", new PostImports(gson));
+        Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
 
 
