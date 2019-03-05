@@ -29,8 +29,11 @@ public class EventType {
     private int maxValue;
     private String conditionText;
     private String columnNames;
-
-    //public EventType(String name, int bufferTime, int minValue, int maxValue, String columnNames, String conditionText) {
+    /**
+     * Creates a EventType contructor 
+     *
+     * @param A ResultSet object from a database query
+     */
     public EventType(String name, int bufferTime, String columnNames, String conditionText) {    
         this.id = -1;
         this.name = name;
@@ -54,7 +57,11 @@ public class EventType {
         this.conditionText = resultSet.getString(5);
 
     }
-
+    /**
+     * Get condition text from eventype 
+     *
+     * @param A conditionText from a eventType
+     */
     public String getConditionText(){
         return conditionText;
     }
@@ -187,7 +194,7 @@ public class EventType {
 
         // String str = "Pitch, Roll";
         // String[] arrOfStr = str.split(",");
-         
+
         // for (String a : arrOfStr)
         // System.out.println(a);
 
@@ -195,14 +202,17 @@ public class EventType {
 
         //String name = "Roll"; //get from user
         String name;
-        System.out.print("Please Enter eventsSeries name(s) initial with Capital word (ex. Pitch, Roll, LatAc or NormAc): ");
+        System.out.println("----------------------------------------------------------------------------------------\n");
+        System.out.print("----------------->>>PLEASE ENTER EVENT SERIES NAME(S) (ex. Pitch, Roll, LatAc or NormAc): ");
         name = user_input.nextLine();
+        System.out.println("Buffer Time recorded as : " + " [" + name + "] " +"\n");
 
         //int bufferTime = 5; //get from user
         String bufferTimeVal;
-        System.out.print("Please Enter buffer Time value (ex. 5, 10 or any value): ");
+        System.out.print("----------------->>>PLEASE ENTER BUFFER TIME VALUE (ex. 5, 10 or any value): ");
         bufferTimeVal = user_input.nextLine();
         int bufferTime = Integer.parseInt(bufferTimeVal);
+        System.out.println("Buffer Time recorded as : " + " [" + bufferTime + "] " +"\n");
 
         // String minimumValue;
         // System.out.print("Please Enter min value value (ex. -5, -10 or any value): ");
@@ -214,38 +224,17 @@ public class EventType {
         // maximumValue = user_input.nextLine();
         // int maxValue = Integer.parseInt(maximumValue);
 
-        // String columnQueri;
-        // System.out.print("Please specify how many column you ar eusing [single or multiple]: ");
-        // columnQueri = user_input.nextLine();
-
-        // String columnNames;
-        // switch (columnQueri) {
-        //     case "single":
-        //         System.out.print("Please Enter the column name (ex. Pitch): ");
-        //         columnNames = user_input.nextLine();
-        //         System.out.println("column value entered as: " + " [" + columnNames + "] " +"\n");
-        //         break;
-
-        //     case "multiple":
-        //         System.out.print("Please Enter the column names followed by commas (ex. Pitch, Roll, LatAc): ");
-        //         columnNames = user_input.nextLine();
-        //         System.out.println("column value entered as: " + " [" + columnNames + "] " +"\n");
-        //         break;
-
-        //     default:
-        //         System.out.println("Invalid operator!");
-        //         break;
-        // }
-
         String columnNames = "Roll"; //get from user        
-        System.out.print("Please Enter Enter eventsSeries column name(s) (ex. Pitch, Roll, LatAc or NormAc): ");
+        System.out.print("----------------->>>PLEASE ENTER EVENT SERIES COLUMN NAME(S) (ex. Pitch, Roll, LatAc or NormAc): ");
         columnNames = user_input.nextLine();
+        System.out.println("Column Name(s) recorded as : " + " [" + columnNames + "] " +"\n");
 
         String conditionText;
         //conditionText = "Roll < -15.0 || Roll > 15.0"; //get from user
-        System.out.print("Please Enter your full condition: ");
+        System.out.print("----------------->>>PLEASE ENTER YOUR FULL CONDITION: ");
         conditionText = user_input.nextLine();
         System.out.println("condition recorded as : " + " [" + conditionText + "] " +"\n");
+        System.out.println("----------------------------------------------------------------------------------------\n");
 
         //EventType eventType = new EventType(name, bufferTime, minValue, maxValue, columnNames, conditionText);
         EventType eventType = new EventType(name, bufferTime, columnNames, conditionText);
