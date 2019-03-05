@@ -61,6 +61,25 @@ class SignedInNavbar extends React.Component {
     }
 
 
+    toggleMap() {
+        flightsCard.toggleMap();
+    }
+
+    togglePlot() {
+        flightsCard.togglePlot();
+    }
+
+    mapSelectChanged() {
+        console.log("map select changed!");
+
+        var select = document.getElementById('mapLayerSelect');
+        var style = select.value;
+        for (var i = 0, ii = layers.length; i < ii; ++i) {
+
+            console.log("setting layer " + i + " to:" + (styles[i] === style));
+            layers[i].setVisible(styles[i] === style);
+        }
+    }
 
     setWaiting(waitingUserCount) {
         console.log("setting waiting to: " + waitingUserCount + "!");
@@ -119,6 +138,7 @@ class SignedInNavbar extends React.Component {
         if (this.state.waitingUserCount > 0) waitingUsersString = " (" + this.state.waitingUserCount + ")";
         let manageHidden = !this.state.fleetManager;
 
+        let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
@@ -126,11 +146,6 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
-
-        /*
-        <NavLink name={"Flights"} href="/protected/flights"/>
-        <NavLink name={"Imports"} href="/protected/imports"/>
-        */
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
@@ -142,7 +157,11 @@ class SignedInNavbar extends React.Component {
                 <div className="collapse navbar-collapse" id="navbarNavDropdown">
                     <ul className="navbar-nav mr-auto">
 
-                        <ul className="navbar-nav mr-auto">
+                        <ul className="navbar-nav mr-auto" hidden={this.props.plotMapHidden}>
+                            <button id="filter-toggle-button" className={filterButtonClasses} data-toggle="button" title="Toggle the filter." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleFilter()}>
+                                <i className="fa fa-area-chart p-1"></i>
+                            </button>
+
                             <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
@@ -167,6 +186,7 @@ class SignedInNavbar extends React.Component {
 
                     <ul className="navbar-nav">
                         <NavLink name={"Dashboard"} href="/protected/dashboard"/>
+                        <NavLink name={"Flights"} href="/protected/flights"/>
                         <NavLink name={"Imports"} href="/protected/imports"/>
                         <NavLink name={"Uploads"} href="/protected/uploads"/>
 
@@ -192,6 +212,6 @@ class SignedInNavbar extends React.Component {
 }
 
 var navbar = ReactDOM.render(
-    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} />,
+    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
