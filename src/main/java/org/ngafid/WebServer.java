@@ -96,7 +96,14 @@ public final class WebServer {
         //String base = "/" + System.getenv("NGAFID_NAME") + "/";
 
         // Configuration to serve static files
-        Spark.staticFileLocation("/public");
+        //Spark.staticFiles.location("/public");
+        if (System.getenv("SPARK_STATIC_FILES") == null) {
+            System.err.println("ERROR: 'SPARK_STATIC_FILES' environment variable not specified at runtime.");
+            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export SPARK_STATIC_FILES=<path/to/template_dir>");
+            System.exit(1);
+        }
+        Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
 
         Spark.before("/protected/*", (request, response) -> {
             LOG.info("protected URI: " + request.uri());
