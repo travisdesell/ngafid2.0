@@ -5,3 +5,4 @@ connect_db.sh
 dbinfo
 dbinfo.php
 db/dbinfo.php
+node_modules
