@@ -173,6 +173,7 @@ $query = "CREATE TABLE `user` (
     `state` VARCHAR(64),
     `zip_code` VARCHAR(16),
     `phone_number` VARCHAR(24),
+    `reset_phrase` VARCHAR(64),
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

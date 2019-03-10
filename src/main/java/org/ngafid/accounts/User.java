@@ -163,6 +163,28 @@ public class User {
         return user;
     }
 
+
+    /**
+     * Checks to see if the passphrase provided matches the password reset passphrase for this user
+     *
+     * @param connection A connection to the mysql database.
+     * @param the user's email address
+     * @param a generated passphrase for the password reset
+     *
+     * @return true if the password hashes correctly to the user's password token.
+     */
+    public static boolean validatePassphrase(Connection connection, String emailAddress, String passphrase) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT id FROM user WHERE email = ? AND reset_phrase = ?");
+        query.setString(1, emailAddress);
+        query.setString(2, passphrase);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (!resultSet.next()) return false;
+        else return true;
+    }
+
+
     /**
      * Checks to see if this password validates against the user's password token
      *
@@ -308,7 +330,28 @@ public class User {
         query.executeUpdate();
     }
 
+ 
+    /**
+     * Updates the password for a user in the database.
+     *
+     * @param connection A connection to the mysql database.
+     * @param emailAddress The user's email address.
+     * @param password The user's first name (optional, may be null).
+     *
+     * @exception SQLException if there was a problem with the SQL query or the user already exists in the database.
+     */
+    public static void updatePassword(Connection connection, String emailAddress, String newPassword) throws SQLException {
+        String passwordToken = new PasswordAuthentication().hash(newPassword.toCharArray());
 
+        PreparedStatement query = connection.prepareStatement("UPDATE user SET password_token = ?, reset_phrase = NULL WHERE email = ?");
+        query.setString(1, passwordToken);
+        query.setString(2, emailAddress);
+
+        LOG.info(query.toString());
+        query.executeUpdate();
+    }
+
+ 
     /**
      * Updates the password for a user in the database.
      *

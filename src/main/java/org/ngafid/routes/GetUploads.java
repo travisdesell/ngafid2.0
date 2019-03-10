@@ -61,6 +61,18 @@ public class GetUploads implements Route {
         messages.add(new Message(messageType, messageText));
     }
 
+    public void replaceAll(StringBuilder builder, String from, String to)
+    {
+        int index = builder.indexOf(from);
+        while (index != -1)
+        {
+            builder.replace(index, index + from.length(), to);
+            index += to.length(); // Move to the end of the replacement
+            index = builder.indexOf(from, index);
+        }
+    }
+
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -86,7 +98,13 @@ public class GetUploads implements Route {
             int fleetId = user.getFleetId();
 
             try {
-                scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId))  + "');");
+                StringBuilder uploadsJson = new StringBuilder(gson.toJson(Upload.getUploads(Database.getConnection(), fleetId)));
+
+                //replace uploading with upload incomplete so that the javascript knows we can restart this
+                //upload
+                replaceAll(uploadsJson, "UPLOADING", "UPLOAD INCOMPLETE");
+
+                scopes.put("uploads_js", "var uploads = JSON.parse('" + uploadsJson + "');");
             } catch (SQLException e) {
                 return gson.toJson(new ErrorResponse(e));
             }
