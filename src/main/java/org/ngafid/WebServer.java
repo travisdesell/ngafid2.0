@@ -140,6 +140,10 @@ public final class WebServer {
         Spark.get("/create_account", new GetCreateAccount(gson));
         Spark.post("/create_account", new PostCreateAccount(gson));
 
+        //to reset a password
+        Spark.get("/reset_password", new GetResetPassword(gson));
+        Spark.post("/reset_password", new PostResetPassword(gson));
+
 
         Spark.get("/protected/dashboard", new GetDashboard(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));

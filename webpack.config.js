@@ -1,29 +1,49 @@
 const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
+var path = require('path');
 
 module.exports = {
+    optimization: {
+        removeAvailableModules: false,
+        removeEmptyChunks: false,
+        splitChunks: false,
+    },
+
     entry: {
         home_navbar: __dirname + "/src/main/javascript/home_navbar.js",
         create_account: __dirname + "/src/main/javascript/create_account.js",
         signed_in_navbar: __dirname + "/src/main/javascript/signed_in_navbar.js",
         manage_fleet: __dirname + "/src/main/javascript/manage_fleet.js",
         update_password: __dirname + "/src/main/javascript/update_password.js",
-        update_profile: __dirname + "/src/main/javascript/update_profile.js"
-        uploads: __dirname + "/src/main/javascript/uploads.js"
+        reset_password: __dirname + "/src/main/javascript/reset_password.js",
+        update_profile: __dirname + "/src/main/javascript/update_profile.js",
+        uploads: __dirname + "/src/main/javascript/uploads.js",
+        imports: __dirname + "/src/main/javascript/imports.js",
+        flights: __dirname + "/src/main/javascript/flights.js",
     },
+
     output: {
         path: __dirname + "/src/main/resources/public/js/",
         filename: "[name]-bundle.js"
     },
+
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
-                use: {
-                    loader: "babel-loader"
-                }
+                use: [
+                    'cache-loader', 
+                    {
+                        loader: 'babel-loader',
+                        options: {
+                            cacheDirectory: true,
+                        }
+                    }
+                ],
+                include: path.resolve('src')
             },
+
             {
                 test: /\.html$/,
                 use: [
@@ -31,6 +51,11 @@ module.exports = {
                         loader: "html-loader"
                     }
                 ]
+            },
+            {
+                test: /\.mjs$/,
+                include: /node_modules/,
+                type: "javascript/auto",
             }
         ]
     },
