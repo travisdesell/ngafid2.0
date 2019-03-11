@@ -47,7 +47,37 @@ var rules = [
     },
 
     {
-        name : "Date",
+        name : "Start Date and Time",
+        conditions : [
+            {
+                type : "select",
+                name : "condition", 
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "datetime-local",
+                name : "datetime-local"
+            }
+        ]
+    },
+
+    {
+        name : "End Date and Time",
+        conditions : [
+            {
+                type : "select",
+                name : "condition", 
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "datetime-local",
+                name : "datetime-local"
+            }
+        ]
+    },
+
+    {
+        name : "Start Date",
         conditions : [
             {
                 type : "select",
@@ -62,7 +92,23 @@ var rules = [
     },
 
     {
-        name : "Time",
+        name : "End Date",
+        conditions : [
+            {
+                type : "select",
+                name : "condition", 
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "date",
+                name : "date"
+            }
+        ]
+    },
+
+
+    {
+        name : "Start Time",
         conditions : [
             {
                 type : "select",
@@ -75,6 +121,22 @@ var rules = [
             }
         ]
     },
+
+    {
+        name : "End Time",
+        conditions : [
+            {
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "time",
+                name : "time"
+            }
+        ]
+    },
+
 
     {
         name : "Parameter",
@@ -150,7 +212,7 @@ class Filter extends React.Component {
 
         let emptyGroup = {
             type : "GROUP",
-            condition : " AND",
+            condition : "AND",
             depth: filter.depth + 1,
             filters : []
         };
@@ -188,9 +250,50 @@ class Filter extends React.Component {
         this.setState(this.state);
     }
 
+    getQueryText(filter) {
+        let queryText = "";
+
+        if (filter.type == "RULE") {
+            let inputs = filter.inputs;
+
+            console.log("rule:");
+            let rule = rules[inputs[0] - 1];
+            console.log(rule);
+
+            queryText += "'" + rule.name + "'";
+
+            for (let i = 1; i < inputs.length; i++) {
+                queryText += " ";
+
+                let condition = rule.conditions[i-1];
+                console.log(condition);
+                console.log("inputs[" + i + "]: " + inputs[i]);
+
+                if (condition.type == "select") {
+                    queryText += "'" + condition.options[inputs[i]] + "'";
+                } else {
+                    queryText += "'" + inputs[i] + "'";
+                }
+            }
+
+        } else if (filter.type == "GROUP") {
+            let filters = filter.filters;
+            for (let i = 0; i < filters.length; i++) {
+                if (i > 0) queryText += " " + filter.condition + " ";
+
+                queryText += this.getQueryText(filters[i]);
+            }
+        } else {
+            queryText += "UNKNOWN FILTER '" + filter.type + "'";
+        }
+
+        return "(" + queryText + ")";
+    }
+
     submitFilter() {
         console.log("Submitting filters:");
         console.log( this.state.filters );
+        console.log( this.getQueryText(this.state.filters) );
     }
 
     getRemoveButton(parentFilters, removeIndex) {
@@ -224,10 +327,10 @@ class Filter extends React.Component {
                 <div className="p-2">
                     <div className="btn-group btn-group-toggle" data-toggle="buttons">
                         <label className="btn btn-outline-primary btn-sm active" onClick={() => this.andClicked(filter)}>
-                            <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andDefaultChecked} /> AND 
+                            <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andDefaultChecked} />AND
                         </label>
                         <label className="btn btn-outline-primary btn-sm" onClick={() => this.orClicked(filter)}>
-                            <input type="radio" name="options" id="option3" autoComplete="off" defaultChecked={orDefaultChecked} /> OR
+                            <input type="radio" name="options" id="option3" autoComplete="off" defaultChecked={orDefaultChecked} />OR
                         </label>
                     </div>
 
@@ -245,6 +348,12 @@ class Filter extends React.Component {
     ruleChange(currentFilter, inputIndex, event) {
         console.log("changing rule input " + inputIndex + " to: " + event.target.value);
 
+        if (inputIndex == 0) {
+            //reset the inputs for this filter because the rule type changed
+            console.log("resetting the current filter's inputs");
+            currentFilter.inputs = [ 0 ];
+        }
+
         currentFilter.inputs[inputIndex] = event.target.value;
         /*
         console.log("all filters:");
@@ -261,7 +370,7 @@ class Filter extends React.Component {
 
     renderRuleSelect(currentFilter) {
         return (
-            <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.ruleChange(currentFilter, 0, event)} style={{flexBasis:"120px", flexShrink:0, marginRight:5}}>
+            <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.ruleChange(currentFilter, 0, event)} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[0]}>
                 <option value="0">Select Rule</option>
                 { 
                     rules.map((ruleInfo, index) => {
@@ -293,20 +402,22 @@ class Filter extends React.Component {
                     {
                         rules[selectedRule - 1].conditions.map((conditionInfo, index) => {
                             if (conditionInfo.type == "select") {
+                                if (typeof currentFilter.inputs[index + 1] == 'undefined') currentFilter.inputs[index + 1] = 0;
+
                                 return (
-                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"120px", flexShrink:0, marginRight:5}}>
+                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"120px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}>
                                         { 
                                             conditionInfo.options.map((optionInfo, index) => {
                                                 //console.log("adding option: " + optionInfo + ", with value: " + index + ", key: " + (conditionInfo.name + "-" + index));
-                                                return ( <option value={index} key={conditionInfo.name + "-" + index}>{optionInfo}</option> );
+                                                return ( <option value={index} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
                                             })
                                         }
                                     </select>
                                 );
 
-                            } else if (conditionInfo.type == "time" || conditionInfo.type == "date" || conditionInfo.type == "text") {
+                            } else if (conditionInfo.type == "time" || conditionInfo.type == "date" || conditionInfo.type == "text" || conditionInfo.type == "datetime-local") {
                                 return (
-                                    <input type={conditionInfo.type} key={"input-" + index} className="form-control" aria-describedby="valueHelp" placeholder="Enter value" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"150px", flexShrink:0}}/>
+                                    <input type={conditionInfo.type} key={"input-" + index} className="form-control" aria-describedby="valueHelp" placeholder="Enter value" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"150px", flexShrink:0}} value={currentFilter.inputs[index + 1]}/>
                                 );
                             }
                         })
@@ -331,11 +442,61 @@ class Filter extends React.Component {
             if (inputs[0] == 0) {
                 return "Please select a rule.";
             } else {
+                let rule = rules[inputs[0] - 1];
+                console.log("checking rule valid, inputs then rule:");
+                console.log(inputs);
+                console.log(rule);
+                for (let i = 0; i < rule.conditions.length; i++) {
+                    if (rule.conditions[i].type == "text") {
+                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                            return "Please enter a value.";
+                        }
+
+                    } else if (rule.conditions[i].type == "time") {
+                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                            return "Please enter a time.";
+                        }
+
+                    } else if (rule.conditions[i].type == "date") {
+                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                            return "Please enter a date.";
+                        }
+
+                    } else if (rule.conditions[i].type == "datetime-local") {
+                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                            return "Please enter a date and time.";
+                        }
+                    }
+                }
                 return "";
             }
         } else {
             return "Unknown filter type: '" + filter.type + "'";
         }
+    }
+
+    recursiveValid(filters) {
+        if (this.filterValid(filters) != "") return false;
+
+        console.log("recursiveValid on:");
+        console.log(filters);
+
+        let subFilters = filters.filters;
+        for (let i = 0; i < subFilters.length; i++) {
+            if (subFilters[i].type == "GROUP") {
+                let subValid = this.recursiveValid(subFilters[i]);
+                console.log("GROUP was valid? " + subValid);
+                if (!subValid) return false;
+            } else if (subFilters[i].type == "RULE") {
+                let subValid = (this.filterValid(subFilters[i]) == "");
+                console.log("RULE was valid? " + subValid);
+                if (!subValid) return false;
+            } else {
+                console.log("type wasn't defined!");
+                return false;
+            }
+        }
+        return true;
     }
 
     renderFilters(filters) {
@@ -439,7 +600,7 @@ class Filter extends React.Component {
             errorHidden = false;
             errorMessage = "Group has no rules.";
         }
-        let submitDisabled = !errorHidden;
+        let submitDisabled = !this.recursiveValid(this.state.filters);
 
         return (
             <div className="card-body p-2" hidden={this.props.hidden}>
