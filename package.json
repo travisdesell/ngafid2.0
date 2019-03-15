@@ -2,7 +2,6 @@
     "name": "ngafid2.0",
     "version": "1.0.0",
     "description": "",
-
     "scripts": {
         "test": "echo \"Error: no test specified\" && exit 1",
         "dev": "webpack --mode development",
@@ -11,7 +10,6 @@
         "watch": "webpack --mode development --watch --progress",
         "watch-prod": "webpack --mode production --watch --progress"
     },
-
     "keywords": [],
     "author": "",
     "license": "ISC",

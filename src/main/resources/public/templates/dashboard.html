@@ -16,6 +16,10 @@
 <body>
     <div id='navbar'></div>
 
+    <div id="loading" style="display:none">
+        <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
+    </div>
+
     <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
         <div class='modal-dialog modal-lg' role='document'>
             <div id='error-modal-content'>
@@ -35,23 +39,11 @@
     </div>
     {{/messages}}
 
-    <div class="card-body">
-        <div class="card mb-1" style="opacity: 0.8;">
-            <h5 class="card-header" style="opacity: 1.0;">
-                Dashboard
-            </h5>
-
-            <div class="card-body" style="opacity: 1.0;">
-                <p class="card-text">
-                Fleet, flight and exceedence statistics go here.
-                </p>
-            </div>
-
-        </div>
+    <div id="dashboard-card">
     </div>
 
     <!-- Load our javascript. -->
-    <script src="/js/signed_in_navbar-bundle.js"></script>
+    <script src="/js/dashboard-bundle.js"></script>
 
 </body>
 </html>

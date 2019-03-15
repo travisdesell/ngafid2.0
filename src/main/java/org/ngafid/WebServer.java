@@ -167,6 +167,8 @@ public final class WebServer {
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
 
+        Spark.get("/protected/create_event", new GetCreateEvent(gson));
+        Spark.post("/protected/create_event", new PostCreateEvent(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));

@@ -8,9 +8,17 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
+import org.ngafid.airports.Runway;
+
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
 
 public class Itinerary {
+    private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
+
     private int order = -1;
     private String airport;
     private String runway;
@@ -43,6 +51,46 @@ public class Itinerary {
 
         return itinerary;
     }
+
+    public static ArrayList<String> getAllAirports(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> airports = new ArrayList<>();
+
+        String queryString = "select distinct(airport) from itinerary where exists (select id from flights where flights.id = itinerary.flight_id AND flights.fleet_id = ?) ORDER BY airport";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //airport existed in the database, return the id
+            String airport = resultSet.getString(1);
+            airports.add(airport);
+        }
+
+        return airports;
+    }
+
+    public static ArrayList<String> getAllAirportRunways(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> airports = getAllAirports(connection, fleetId);
+
+        ArrayList<String> runways = new ArrayList<String>();
+
+        for (int i = 0; i < airports.size(); i++) {
+            String iataCode = airports.get(i);
+
+            Airport airport = Airports.getAirport(iataCode);
+
+            for (int j = 0; j < airport.getNumberRunways(); j++) {
+                Runway runway = airport.getRunway(j);
+
+                runways.add(iataCode + " - " + runway.getName());
+            }
+        }
+
+        return runways;
+    }
+
 
     public Itinerary(ResultSet resultSet) throws SQLException {
         order = resultSet.getInt(1);

@@ -199,7 +199,7 @@ class Import extends React.Component {
                     console.log(response);
 
                     if (response.errorTitle !== undefined) {
-                        display_error_modal(response.errorTitle, response.errorMessage);
+                        errorModal.show(response.errorTitle, response.errorMessage);
                     } else {
                         thisImport.state.loaded = true;
                         thisImport.state.expanded = !thisImport.state.expanded;
@@ -213,7 +213,7 @@ class Import extends React.Component {
 
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    display_error_modal("Error Loading Uploads", errorThrown);
+                    errorModal.show("Error Loading Uploads", errorThrown);
                 },   
                 async: true 
             });  

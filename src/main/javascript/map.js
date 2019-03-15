@@ -6,6 +6,9 @@ import {Map, View} from 'ol';
 import BingMaps from 'ol/source/BingMaps.js';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import TileLayer from 'ol/layer/Tile';
+import XYZ from 'ol/source/XYZ.js';
+
+
 import OSM from 'ol/source/OSM';
 
 import { errorModal } from "./error_modal.js";
@@ -38,13 +41,50 @@ for (i = 0; i < ii; ++i) {
     }));
 }
 
-/*
-styles.push("SectionalChart");
-layers.push(new ol.layer.Image({
-    url: 'http://wms.chartbundle.com/wms',
-    params: {'LAYERS' : 'sec'}
-}));
-*/
+//modified from chartbundle: http://wms.chartbundle.com/charts/tms.html
+//http://wms.chartbundle.com/charts/tms.js.txt
+
+styles.push('SectionalCharts');
+var tms_sec = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "https://wms.chartbundle.com/tms/1.0.0/sec/{z}/{x}/{-y}.png"})
+});
+
+layers.push(tms_sec);
+
+
+styles.push('IFREnrouteLowCharts');
+var tms_enrl = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "https://wms.chartbundle.com/tms/1.0.0/enrl/{z}/{x}/{-y}.png"})
+});
+
+layers.push(tms_enrl);
+
+
+styles.push('IFREnrouteHighCharts');
+var tms_enrh = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "https://wms.chartbundle.com/tms/1.0.0/enrh/{z}/{x}/{-y}.png"})
+});
+
+layers.push(tms_enrh);
+
+styles.push('TerminalAreaCharts');
+var tms_tac = new TileLayer({
+    visible: false,
+    preload: Infinity,
+    source : new XYZ({
+        url : "https://wms.chartbundle.com/tms/1.0.0/tac/{z}/{x}/{-y}.png"})
+});
+
+layers.push(tms_tac);
 
 var center = fromLonLat([-97.0329, 47.9253]);
 
@@ -56,7 +96,7 @@ var map = new Map({
     loadTilesWhileInteracting: true,
     view: new View({
         center: center,
-        zoom: 12
+        zoom: 9
     })
 });
 
@@ -134,5 +174,15 @@ Colors.random = function() {
             result = prop;
     return result;
 };
+
+Colors.randomValue = function() {
+    var result;
+    var count = 0;
+    for (var prop in this.names)
+        if (Math.random() < 1/++count)
+            result = this.names[prop];
+    return result;
+};
+
 
 export { map, styles, layers, Colors };

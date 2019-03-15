@@ -26,3 +26,8 @@ html, body {
     margin-top: 10%;
     z-index: 100;
 }
+
+.time-without-am-pm::-webkit-datetime-edit-ampm-field {
+    display: none;
+}
+

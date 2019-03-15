@@ -6,7 +6,6 @@
 
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    <link rel='stylesheet' href='/css/query-builder.default.min.css'>
 
     <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/css/ol.css" type="text/css">
 
@@ -20,9 +19,8 @@
 <body>
     <div id='navbar'></div>
 
-    <div id="plot-map-div" class='row m-0' style="width:100%; height:0%;">
-        <div id="map" class="map" style="width:50%; display:none;">
-        </div> <div id="plot" style="width:50%; display:none;"></div>
+    <div id="loading" style="display:none">
+        <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
     </div>
 
     <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
@@ -32,13 +30,14 @@
         </div>
     </div>
 
+    <div id="plot-map-div" class='row m-0' style="width:100%; height:0%;">
+        <div id="map" class="map" style="width:50%; display:none;">
+        </div> <div id="plot" style="width:50%; display:none;"></div>
+    </div>
+
     <div id="flights-card"></div>
 
-    <!-- Load our javascript.
-    <script type="text/babel" src="/js/jQuery.extendext.min.js"></script>
-    <script type="text/babel" src="/js/doT.min.js"></script>
-    <script type="text/babel" src="/js/query-builder.min.js"></script>
-    -->
+    <!-- Load our javascript. -->
 
     <script src="/js/flights-bundle.js"></script>
 

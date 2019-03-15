@@ -23,6 +23,8 @@ import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.FatalFlightFileException;
 
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.UploadError;
 
 public class ProcessFlights {
     private static Connection connection = Database.getConnection();
@@ -123,23 +125,7 @@ public class ProcessFlights {
                 }
 
                 if (status == "ERROR") {
-                    PreparedStatement errorStatement = connection.prepareStatement("INSERT INTO upload_errors SET upload_id = ?, message = ?, stack_trace = ?");
-                    errorStatement.setInt(1, uploadId);
-                    errorStatement.setString(2, "Uploaded file was not a zip file.");
-
-                    if (uploadException != null) {
-                        StringWriter sw = new StringWriter();
-                        PrintWriter pw = new PrintWriter(sw);
-                        uploadException.printStackTrace(pw);
-                        String sStackTrace = sw.toString(); // stack trace as a string
-
-                        errorStatement.setString(3, sStackTrace);
-                    } else {
-                        errorStatement.setString(3, "");
-                    }
-
-                    errorStatement.executeUpdate();
-                    errorStatement.close();
+                    UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
                 }
 
                 //update upload in database, add upload exceptions if there are any
@@ -153,21 +139,7 @@ public class ProcessFlights {
                 updateStatement.close();
 
                 for (UploadException exception : flightErrors) {
-                    PreparedStatement exceptionStatement = connection.prepareStatement("INSERT INTO flight_errors SET upload_id = ?, filename = ?, message = ?, stack_trace = ?");
-
-                    exceptionStatement.setInt(1, uploadId);
-                    exceptionStatement.setString(2, exception.getFilename());
-                    exceptionStatement.setString(3, exception.getMessage());
-
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    exception.printStackTrace(pw);
-                    String sStackTrace = sw.toString(); // stack trace as a string
-
-                    exceptionStatement.setString(4, sStackTrace);
-                    exceptionStatement.executeUpdate();
-
-                    exceptionStatement.close();
+                    FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
                 }
 
             }

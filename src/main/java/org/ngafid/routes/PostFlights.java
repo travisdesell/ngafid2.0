@@ -18,6 +18,8 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 
+import org.ngafid.filters.Filter;
+
 public class PostFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostFlights.class.getName());
     private Gson gson;
@@ -32,9 +34,22 @@ public class PostFlights implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
+        LOG.info("test: " + request.queryParams("test"));
+
+        LOG.info("filter JSON:");
+
+        String filterJSON = request.queryParams("filterQuery");
+
+        LOG.info(filterJSON);
+
+        Filter filter = gson.fromJson(filterJSON, Filter.class);
+        LOG.info("received request for flights with filter: " + filter);
+
+
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
+
 
         //check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
@@ -43,9 +58,8 @@ public class PostFlights implements Route {
             return null;
         }
 
-
         try {
-            ArrayList<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId);
+            ArrayList<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, filter, 50);
 
             //LOG.info(gson.toJson(flights));
 

@@ -88,6 +88,25 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
+    public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> name = new ArrayList<>();
+
+        String queryString = "select distinct(name) from double_series ORDER BY name";
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //airport existed in the database, return the id
+            String airport = resultSet.getString(1);
+            name.add(airport);
+        }
+
+        return name;
+    }
+
+
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);

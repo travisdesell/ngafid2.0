@@ -32,6 +32,14 @@ public class Airport {
         return "[AIRPORT " + iataCode + ", " + type + ", " + latitude + ", " + longitude + ", " + geoHash + "]";
     }
 
+    public int getNumberRunways() {
+        return runways.size();
+    }
+
+    public Runway getRunway(int i) {
+        return runways.get(i);
+    }
+
     public void addRunway(Runway runway) {
         runways.add(runway);
     }

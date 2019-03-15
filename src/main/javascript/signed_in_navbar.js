@@ -185,6 +185,10 @@ class SignedInNavbar extends React.Component {
                                     <option value="AerialWithLabels">Aerial with labels</option>
                                     <option value="Road">Road (static)</option>
                                     <option value="RoadOnDemand">Road (dynamic)</option>
+                                    <option value="SectionalCharts">Sectional Charts</option>
+                                    <option value="TerminalAreaCharts">Terminal Area Charts</option>
+                                    <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
+                                    <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
                                 </select>
 
                             </div>
