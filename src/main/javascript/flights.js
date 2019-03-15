@@ -6,12 +6,26 @@ import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
 
+import {fromLonLat, toLonLat} from 'ol/proj.js';
+import {Group, Vector as VectorLayer} from 'ol/layer.js';
+import {Vector as VectorSource} from 'ol/source.js';
+import {Icon, Stroke, Style} from 'ol/style.js';
+import Feature from 'ol/Feature.js';
+import LineString from 'ol/geom/LineString.js';
+import { Filter } from './filter.js';
+
+
+var moment = require('moment');
+
+
 import Plotly from 'plotly.js';
 
+/*
 var airframes = [ "PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"  ];
 var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", "N743ND" , "N728ND" , "N768ND" , "N713ND" , "N732ND", "N718ND" , "N739ND" ];
 var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
+*/
 
 var rules = [
     {
@@ -47,6 +61,29 @@ var rules = [
     },
 
     {
+        name : "Duration",
+        conditions : [
+            { 
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type : "number",
+                name : "hours"
+            },
+            {
+                type : "number",
+                name : "minutes"
+            },
+            {
+                type : "number",
+                name : "seconds"
+            }
+        ]
+    },
+
+    {
         name : "Start Date and Time",
         conditions : [
             {
@@ -56,7 +93,7 @@ var rules = [
             },
             {
                 type  : "datetime-local",
-                name : "datetime-local"
+                name : "date and time"
             }
         ]
     },
@@ -71,7 +108,7 @@ var rules = [
             },
             {
                 type  : "datetime-local",
-                name : "datetime-local"
+                name : "date and time"
             }
         ]
     },
@@ -157,481 +194,57 @@ var rules = [
                 options : [ "<=", "<", "=", ">", ">=" ]
             },
             {
-                type  : "text",
-                name : "text"
+                type  : "number",
+                name : "number"
             }
         ]
     },
 
     {
-        name : "Itinerary",
+        name : "Airport",
         conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "visited", "did not visit" ]
-            },
             { 
                 type : "select",
                 name : "airports",
                 options : visitedAirports
+            },
+            { 
+                type : "select",
+                name : "condition",
+                options : [ "visited", "not visited" ]
+            }
+        ]
+    },
+
+    {
+        name : "Runway",
+        conditions : [
+            { 
+                type : "select",
+                name : "runways",
+                options : visitedRunways
+            },
+            { 
+                type : "select",
+                name : "condition",
+                options : [ "visited", "not visited" ]
             }
         ]
     }
 ];
 
-class Filter extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            filters : {
-                type : "GROUP",
-                condition : "AND",
-                depth : 0,
-                filters : []
-            }
-        }
-    }
-
-    addRule(filter) {
-        console.log("adding rule to filter:");
-        let emptyRule = {
-            type : "RULE",
-            depth: filter.depth + 1,
-            inputs : [0]
-        };
-        filter.filters.push(emptyRule);
-
-        this.setState(this.state);
-    }
-
-    addGroup(filter) {
-        console.log("adding group to filter:");
-        console.log(filter);
-
-        let emptyGroup = {
-            type : "GROUP",
-            condition : "AND",
-            depth: filter.depth + 1,
-            filters : []
-        };
-        filter.filters.push(emptyGroup);
-        console.log("after adding");
-        console.log(filter);
-
-        this.setState(this.state);
-    }
-
-    removeFilter(filters, index) {
-        console.log("removing filter " + index + " on filters:");
-        console.log(filters);
-        filters.splice(index, 1);
-        this.setState(this.state);
-    }
-
-    orClicked(filter) {
-        console.log("changing group condition to: OR for filter:");
-        console.log(filter);
-        filter.condition = "OR";
-        console.log(filter);
-        console.log("state filter:");
-        console.log(this.state.filters);
-        this.setState(this.state);
-    }
-
-    andClicked(filter) {
-        console.log("changing group condition to: AND for filter:");
-        console.log(filter);
-        filter.condition = "AND";
-        console.log(filter);
-        console.log("state filter:");
-        console.log(this.state.filters);
-        this.setState(this.state);
-    }
-
-    getQueryText(filter) {
-        let queryText = "";
-
-        if (filter.type == "RULE") {
-            let inputs = filter.inputs;
-
-            console.log("rule:");
-            let rule = rules[inputs[0] - 1];
-            console.log(rule);
-
-            queryText += "'" + rule.name + "'";
-
-            for (let i = 1; i < inputs.length; i++) {
-                queryText += " ";
-
-                let condition = rule.conditions[i-1];
-                console.log(condition);
-                console.log("inputs[" + i + "]: " + inputs[i]);
-
-                if (condition.type == "select") {
-                    queryText += "'" + condition.options[inputs[i]] + "'";
-                } else {
-                    queryText += "'" + inputs[i] + "'";
-                }
-            }
-
-        } else if (filter.type == "GROUP") {
-            let filters = filter.filters;
-            for (let i = 0; i < filters.length; i++) {
-                if (i > 0) queryText += " " + filter.condition + " ";
-
-                queryText += this.getQueryText(filters[i]);
-            }
-        } else {
-            queryText += "UNKNOWN FILTER '" + filter.type + "'";
-        }
-
-        return "(" + queryText + ")";
-    }
-
-    submitFilter() {
-        console.log("Submitting filters:");
-        console.log( this.state.filters );
-        console.log( this.getQueryText(this.state.filters) );
-    }
-
-    getRemoveButton(parentFilters, removeIndex) {
-        let removeClasses = "btn btn-danger btn-sm";
-        return ( <button type="button" className={removeClasses}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.removeFilter(parentFilters, removeIndex)}></i> </button> );
-    }
-
-    getFilterHeader(filter, includeRemove, parentFilters, removeIndex) {
-        let ruleClasses = "btn btn-primary btn-sm mr-1";
-        let groupClasses = "btn btn-primary btn-sm";
-        let removeButton = "";
-
-        if (includeRemove) {
-            groupClasses += " mr-1";
-            removeButton = this.getRemoveButton(parentFilters, removeIndex);
-        }
-
-
-        let andDefaultChecked = false;
-        let orDefaultChecked = false;
-
-        if (filter.groupCondition == "AND") {
-            andDefaultChecked = true;
-        } else {
-            orDefaultChecked = true; 
-        }
-
-        return (
-            <div className="d-flex justify-content-between">
-
-                <div className="p-2">
-                    <div className="btn-group btn-group-toggle" data-toggle="buttons">
-                        <label className="btn btn-outline-primary btn-sm active" onClick={() => this.andClicked(filter)}>
-                            <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andDefaultChecked} />AND
-                        </label>
-                        <label className="btn btn-outline-primary btn-sm" onClick={() => this.orClicked(filter)}>
-                            <input type="radio" name="options" id="option3" autoComplete="off" defaultChecked={orDefaultChecked} />OR
-                        </label>
-                    </div>
-
-                </div>
-
-                <div className="p-2">
-                    <button type="button" className={ruleClasses} onClick={() => this.addRule(filter)}>Add Rule</button>
-                    <button type="button" className={groupClasses} onClick={() => this.addGroup(filter)}>Add Group</button>
-                    { removeButton }
-                </div>
-            </div>
-        );
-    }
-
-    ruleChange(currentFilter, inputIndex, event) {
-        console.log("changing rule input " + inputIndex + " to: " + event.target.value);
-
-        if (inputIndex == 0) {
-            //reset the inputs for this filter because the rule type changed
-            console.log("resetting the current filter's inputs");
-            currentFilter.inputs = [ 0 ];
-        }
-
-        currentFilter.inputs[inputIndex] = event.target.value;
-        /*
-        console.log("all filters:");
-        console.log(this.state.filters);
-
-        console.log("new rule, inputs first:");
-        console.log(currentFilter.inputs);
-        console.log(rules[currentFilter.inputs[0] - 1]);
-        */
-
-        this.setState(this.state);
-    }
-
-
-    renderRuleSelect(currentFilter) {
-        return (
-            <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.ruleChange(currentFilter, 0, event)} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[0]}>
-                <option value="0">Select Rule</option>
-                { 
-                    rules.map((ruleInfo, index) => {
-                        //console.log("adding rule: " + ruleInfo.name + ", with value: " + index);
-                        return ( <option value={index + 1} key={"rule-" + index}>{ruleInfo.name}</option> );
-                    })
-                }
-            </select>
-        );
-    }
-
-    renderRule(currentFilter) {
-        let inputs = currentFilter.inputs;
-        let selectedRule = inputs[0];
-
-        if (selectedRule == 0) {
-            return (
-                <div style={{display: "flex", flexDirection: "row"}}>
-                    { this.renderRuleSelect(currentFilter) }
-                </div>
-            );
-
-        } else {
-
-            return (
-                <div style={{display: "flex", flexDirection: "row"}}>
-                    { this.renderRuleSelect(currentFilter) }
-
-                    {
-                        rules[selectedRule - 1].conditions.map((conditionInfo, index) => {
-                            if (conditionInfo.type == "select") {
-                                if (typeof currentFilter.inputs[index + 1] == 'undefined') currentFilter.inputs[index + 1] = 0;
-
-                                return (
-                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"120px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}>
-                                        { 
-                                            conditionInfo.options.map((optionInfo, index) => {
-                                                //console.log("adding option: " + optionInfo + ", with value: " + index + ", key: " + (conditionInfo.name + "-" + index));
-                                                return ( <option value={index} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
-                                            })
-                                        }
-                                    </select>
-                                );
-
-                            } else if (conditionInfo.type == "time" || conditionInfo.type == "date" || conditionInfo.type == "text" || conditionInfo.type == "datetime-local") {
-                                return (
-                                    <input type={conditionInfo.type} key={"input-" + index} className="form-control" aria-describedby="valueHelp" placeholder="Enter value" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"150px", flexShrink:0}} value={currentFilter.inputs[index + 1]}/>
-                                );
-                            }
-                        })
-                    }
-                </div>
-            );
-        }
-    }
-
-    filterValid(filter) {
-        if (filter.type == "GROUP") {
-            if (filter.filters.length == 0) {
-                return "Group has no rules.";
-            } else {
-                return "";
-            }
-        } else if (filter.type == "RULE") {
-            console.log("checking if rule valid udpated 3, made some other changes! and some more!!: ");
-            console.log(filter);
-            let inputs = filter.inputs;
-
-            if (inputs[0] == 0) {
-                return "Please select a rule.";
-            } else {
-                let rule = rules[inputs[0] - 1];
-                console.log("checking rule valid, inputs then rule:");
-                console.log(inputs);
-                console.log(rule);
-                for (let i = 0; i < rule.conditions.length; i++) {
-                    if (rule.conditions[i].type == "text") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a value.";
-                        }
-
-                    } else if (rule.conditions[i].type == "time") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a time.";
-                        }
-
-                    } else if (rule.conditions[i].type == "date") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a date.";
-                        }
-
-                    } else if (rule.conditions[i].type == "datetime-local") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a date and time.";
-                        }
-                    }
-                }
-                return "";
-            }
-        } else {
-            return "Unknown filter type: '" + filter.type + "'";
-        }
-    }
-
-    recursiveValid(filters) {
-        if (this.filterValid(filters) != "") return false;
-
-        console.log("recursiveValid on:");
-        console.log(filters);
-
-        let subFilters = filters.filters;
-        for (let i = 0; i < subFilters.length; i++) {
-            if (subFilters[i].type == "GROUP") {
-                let subValid = this.recursiveValid(subFilters[i]);
-                console.log("GROUP was valid? " + subValid);
-                if (!subValid) return false;
-            } else if (subFilters[i].type == "RULE") {
-                let subValid = (this.filterValid(subFilters[i]) == "");
-                console.log("RULE was valid? " + subValid);
-                if (!subValid) return false;
-            } else {
-                console.log("type wasn't defined!");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    renderFilters(filters) {
-        let filterContent = "";
-
-        if (filters.length == 0) return "";
-
-        let errorMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        return (
-            <div>
-                {
-                    filters.map((currentFilter, index) => {
-                        let cardClasses = "card mb-1 m-1";
-                        let errorMessage = this.filterValid(currentFilter);
-                        console.log("filter error mesage: " + errorMessage);
-                        let errorContent = "";
-
-                        if (errorMessage == "") {
-                            cardClasses += " border-secondary";
-                        } else {
-                            cardClasses += " border-danger";
-                            errorContent = (
-                                <div className="d-flex justify-content-end">
-                                    <div className="p-2 flex-fill">
-                                        <span style={errorMessageStyle}>{errorMessage}</span>
-                                    </div>
-                                </div>
-                            );
-                        }
-
-                        if (currentFilter.type === "GROUP") {
-
-                            return (
-                                <div className="card-body p-2" key={index}>
-                                    <div className={cardClasses} style={{background : "rgba(248,259,250,0.8)"}}>
-                                        { this.getFilterHeader(currentFilter, true, filters, index) }
-
-                                        { this.renderFilters(currentFilter.filters) }
-
-                                        { errorContent }
-                                    </div>
-                                </div>
-                            );
-
-                        } else if (currentFilter.type === "RULE") {
-
-                            return (
-                                <div className="card-body p-2" key={index}>
-                                    <div className={cardClasses} style={{background : "rgba(248,259,250,0.8)"}}>
-                                        <div className="d-flex justify-content-between">
-                                            <div className="p-2">
-                                                { this.renderRule(currentFilter) } 
-                                            </div>
-
-                                            <div className="p-2">
-                                                { this.getRemoveButton(filters, index) }
-                                            </div>
-
-                                        </div>
-
-                                        { errorContent }
-                                    </div>
-                                </div>
-                            );
-
-                        } else {
-                            console.log("unknown filter type: '" + currentFilter.type + "'");
-                            return (
-                                <div key={index}> EMPTY FILTER </div>
-                            );
-                        }
-                    })
-                }
-            </div>
-        );
-    }
-
-    render() {
-        let depth = 0;
-
-        let groupClasses = "btn btn-primary btn-sm";
-
-        let errorMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        let errorHidden = true;
-        let errorMessage = "";
-        if (this.state.filters.filters.length == 0) {
-            errorHidden = false;
-            errorMessage = "Group has no rules.";
-        }
-        let submitDisabled = !this.recursiveValid(this.state.filters);
-
-        return (
-            <div className="card-body p-2" hidden={this.props.hidden}>
-                <div className="card mb-1 m-1 border-secondary" style={{background : "rgba(248,259,250,0.8)"}}>
-                    { this.getFilterHeader(this.state.filters, false, null, 0) }
-
-                    { this.renderFilters(this.state.filters.filters) }
-
-                    <div className="d-flex justify-content-end">
-                        <div className="p-2 flex-fill">
-                            <span style={errorMessageStyle} hidden={errorHidden}>{errorMessage}</span>
-                        </div>
-
-                        <div className="p-2">
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.submitFilter()}>Apply Filter</button>
-                        </div>
-                    </div>
-
-                </div>
-            </div>
-        );
-    }
-}
 
 class Itinerary extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            color : this.props.color
+        }
     }
 
     itineraryClicked(index) {
-        mainContent.showMap();
+        flightsCard.showMap();
 
         var stop = this.props.itinerary[index];
         let modifiedIndex = parseInt(stop.minAltitudeIndex) - this.props.nanOffset;
@@ -640,8 +253,14 @@ class Itinerary extends React.Component {
         let latlon = this.props.coordinates[modifiedIndex];
         //console.log(latlon);
 
-        const coords = ol.proj.fromLonLat(latlon);
+        const coords = fromLonLat(latlon);
         map.getView().animate({center: coords, zoom: 13});
+    }
+
+    changeColor(event) {
+        this.setState({
+            color : event.target.value
+        });
     }
 
     render() {
@@ -665,6 +284,10 @@ class Itinerary extends React.Component {
 
         return (
             <div className={cellClasses} style={cellStyle}>
+                <div style={{flex: "0 0"}}>
+                    <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                </div>
+
                 {
                     this.props.itinerary.map((stop, index) => {
                         let identifier = stop.airport;
@@ -693,7 +316,7 @@ class TraceButtons extends React.Component {
     }
 
     traceClicked(seriesName) {
-        mainContent.showPlot();
+        flightsCard.showPlot();
 
         let parentFlight = this.state.parentFlight;
 
@@ -716,7 +339,7 @@ class TraceButtons extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './protected/double_series',
+                url: '/protected/double_series',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -739,7 +362,7 @@ class TraceButtons extends React.Component {
                     Plotly.addTraces('plot', [trace]);
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    display_error_modal("Error Loading Flight Coordinates", errorThrown);
+                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
                 },   
                 async: true 
             });  
@@ -790,6 +413,10 @@ class Flight extends React.Component {
     constructor(props) {
         super(props);
 
+        let color = Colors.randomValue();
+        console.log("flight color: " );
+        console.log(color);
+
         this.state = {
             pathVisible : false,
             mapLoaded : false,
@@ -798,8 +425,40 @@ class Flight extends React.Component {
             traceVisibility : [],
             traceNamesVisible : false,
             itineraryVisible : false,
-            layer : null
+            layer : null,
+            color : color
         }
+    }
+
+    componentWillUnmount() {
+        console.log("unmounting:");
+        console.log(this.props.flightInfo);
+
+        if (this.props.flightInfo.has_coords === "0") return;
+
+        console.log("hiding flight path");
+        this.state.pathVisible = false;
+        this.state.itineraryVisible = false;
+        if (this.state.layer) {
+            this.state.layer.setVisible(false);
+        }
+
+        console.log("hiding plots");
+        if (this.state.traceNames) {
+            let visible = false;
+
+            for (let i = 0; i < this.state.traceNames.length; i++) {
+                let seriesName = this.state.traceNames[i];
+                //check and see if this series was loaded in the past
+                if (seriesName in this.state.traceIndex) {
+
+                    //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
+                    //otherwise it will hide them
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [ this.state.traceIndex[seriesName] ])
+                }
+            }
+        }
+        this.state.traceNamesVisible = false;
     }
 
     plotClicked() {
@@ -817,7 +476,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './protected/double_series_names',
+                url: '/protected/double_series_names',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -833,7 +492,7 @@ class Flight extends React.Component {
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
                     this.state.traceNames = null;
-                    display_error_modal("Error Getting Potentail Plot Parameters", errorThrown);
+                    errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
                 },   
                 async: true 
             });  
@@ -886,12 +545,31 @@ class Flight extends React.Component {
         */
     }
 
+    flightColorChange(target, event) {
+        console.log("trace color changed!");
+        console.log(event);
+        console.log(event.target);
+        console.log(event.target.value);
+
+        let color = event.target.value;
+        target.state.color = color;
+
+        console.log(target);
+        console.log(target.state);
+
+        target.state.layer.setStyle(new Style({
+            stroke: new Stroke({
+                color: color,
+                width: 1.5
+            })
+        }));
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
-
         if (!this.state.mapLoaded) {
-            mainContent.showMap();
+            flightsCard.showMap();
             this.state.mapLoaded = true;
 
             var thisFlight = this;
@@ -907,7 +585,7 @@ class Flight extends React.Component {
 
             $.ajax({
                 type: 'POST',
-                url: './protected/coordinates',
+                url: '/protected/coordinates',
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
@@ -918,24 +596,24 @@ class Flight extends React.Component {
 
                     var points = [];
                     for (var i = 0; i < coordinates.length; i++) {
-                        var point = ol.proj.fromLonLat(coordinates[i]);
+                        var point = fromLonLat(coordinates[i]);
                         points.push(point);
                     }
 
-                    var color = Colors.random();
+                    var color = thisFlight.state.color;
                     console.log(color);
 
-                    thisFlight.state.layer = new ol.layer.Vector({
-                        style: new ol.style.Style({
-                            stroke: new ol.style.Stroke({
+                    thisFlight.state.layer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
                                 color: color,
                                 width: 1.5
                             }),
                         }),
 
-                        source : new ol.source.Vector({
-                            features: [new ol.Feature({
-                                geometry: new ol.geom.LineString(points),
+                        source : new VectorSource({
+                            features: [new Feature({
+                                geometry: new LineString(points),
                                 name: 'Line'
                             })]
                         }),
@@ -958,7 +636,7 @@ class Flight extends React.Component {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
-                    display_error_modal("Error Loading Flight Coordinates", errorThrown);
+                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
                 },   
                 async: true 
             });  
@@ -969,7 +647,7 @@ class Flight extends React.Component {
             this.state.layer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
-                mainContent.showMap();
+                flightsCard.showMap();
             }
 
             this.setState(this.state);
@@ -988,7 +666,7 @@ class Flight extends React.Component {
         const styleButton = { };
 
         let firstCellClasses = "p-1 card mr-1"
-        let cellClasses = "p-1 card flex-fill mr-1"
+        let cellClasses = "p-1 card mr-1"
 
         let flightInfo = this.props.flightInfo;
 
@@ -1017,7 +695,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary itinerary={flightInfo.itinerary} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset}/>
+                <Itinerary itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
@@ -1033,36 +711,40 @@ class Flight extends React.Component {
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
                     <div className="d-flex flex-row p-1">
-                        <div className={firstCellClasses}>
-                            <i className="fa fa-plane p-1">{flightInfo.id}</i>
+                        <div className={firstCellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
+                            <i className="fa fa-plane p-1"> {flightInfo.id}</i>
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
                             {flightInfo.tailNumber}
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexBasis:"120px", flexShrink:0, flexGrow:0}}>
+
                             {flightInfo.airframeType}
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
+
                             {flightInfo.startDateTime}
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
+
                             {flightInfo.endDateTime}
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexBasis:"80px", flexShrink:0, flexGrow:0}}>
+
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
-                        <div className={cellClasses}>
+                        <div className={cellClasses} style={{flexGrow:1}}>
                             {visitedAirports.join(", ")}
                         </div>
 
                         <div className="p-0">
-                            <button className={buttonClasses} style={styleButton} onClick={() => this.editClicked()}>
+                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.editClicked()}>
                                 <i className="fa fa-pencil p-1"></i>
                             </button>
 
@@ -1074,11 +756,11 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
+                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.replayClicked()}>
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={lastButtonClasses} style={styleButton} onClick={() => this.downloadClicked()}>
+                            <button disabled className={lastButtonClasses + " disabled"} style={styleButton} onClick={() => this.downloadClicked()}>
                                 <i className="fa fa-download p-1"></i>
                             </button>
                         </div>
@@ -1101,11 +783,13 @@ class FlightsCard extends React.Component {
         this.state = {
             mapVisible : false,
             plotVisible : false,
-            filterVisible : true
+            filterVisible : true,
         }
+
+        this.filterRef = React.createRef();
     }
 
-    setContent(flights) {
+    setFlights(flights) {
         this.state.flights = flights;
         this.setState(this.state);
     }
@@ -1265,6 +949,46 @@ class FlightsCard extends React.Component {
         }
     }
 
+    submitFilter() {
+        //console.log( this.state.filters );
+
+        let query = this.filterRef.current.getQuery();
+
+        console.log("Submitting filters:");
+        console.log( query );
+
+        $("#loading").show();
+
+        var submissionData = {
+            filterQuery : JSON.stringify(query)
+        };   
+        console.log(submissionData);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_flights',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                flightsCard.setFlights(response);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
 
     render() {
         console.log("rendering flights!");
@@ -1274,9 +998,24 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
         }
 
+        let style = null;
+        if (this.state.mapVisible || this.state.plotVisible) {
+            console.log("rendering half");
+            style = { 
+                overflow : "scroll",
+                height : "calc(50% - 56px)"
+            };  
+        } else {
+            style = { 
+                overflow : "scroll",
+                height : "calc(100% - 56px)"
+            };  
+        }   
+        style.padding = "5";
+
         return (
-            <div className="card-body">
-                <Filter hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP"/>
+            <div className="card-body" style={style}>
+                <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
 
                 {
                     flights.map((flightInfo, index) => {
@@ -1292,12 +1031,13 @@ class FlightsCard extends React.Component {
     }
 }
 
+let flightsCard = null;
 //check to see if flights has been defined already. unfortunately
 //the navbar includes flights.js (bad design) for the navbar buttons
 //to toggle flights, etc. So this is a bit of a hack.
 if (typeof flights !== 'undefined') {
-    var flightsCard = ReactDOM.render(
-        <FlightsCard flights={flights} />,
+    flightsCard = ReactDOM.render(
+        <FlightsCard />,
         document.querySelector('#flights-card')
     );
     navbar.setFlightsCard(flightsCard);
@@ -1315,26 +1055,6 @@ if (typeof flights !== 'undefined') {
         layout1 = {};
 
         Plotly.newPlot('plot', [], layout1);
-
-        var rules_basic = {
-            condition: 'AND',
-            rules: [{
-                id: 'price',
-                operator: 'less',
-                value: 10.25
-            }, {
-                condition: 'OR',
-                rules: [{
-                    id: 'category',
-                    operator: 'equal',
-                    value: 2
-                }, {
-                    id: 'category',
-                    operator: 'equal',
-                    value: 1
-                }]
-            }]
-        };
     });
 }
 

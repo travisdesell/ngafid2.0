@@ -138,6 +138,10 @@ public class Airports {
         System.out.println("max airport ArrayList: " + maxHashSize);
     }
 
+    public static Airport getAirport(String iataCode) {
+        return iataToAirport.get(iataCode);
+    }
+
     public final static double calculateDistanceInKilometer(double lat1, double lon1, double lat2, double lon2) {
         double latDistance = Math.toRadians(lat1 - lat2);
         double lngDistance = Math.toRadians(lon1 - lon2);
