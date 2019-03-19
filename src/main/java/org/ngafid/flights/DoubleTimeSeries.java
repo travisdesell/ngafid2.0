@@ -16,6 +16,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import org.ngafid.filters.Pair;
+
 import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
@@ -86,6 +88,28 @@ public class DoubleTimeSeries {
         }
 
         avg /= validCount;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public static Pair<Double,Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
+        String queryString = "SELECT min, max FROM double_series WHERE flight_id = ? AND name = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+        query.setString(2, name);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            double min = resultSet.getDouble(1);
+            double max = resultSet.getDouble(2);
+            return new Pair<Double,Double>(min, max);
+        }
+
+        return null;
     }
 
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {

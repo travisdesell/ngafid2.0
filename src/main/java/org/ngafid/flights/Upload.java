@@ -8,8 +8,17 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
+import org.ngafid.WebServer;
+
+import java.io.File;
+
+import java.util.logging.Logger;
+
+
 
 public class Upload {
+    private static final Logger LOG = Logger.getLogger(Upload.class.getName());
+
     private int id;
     private int fleetId;
     private int uploaderId;
@@ -28,6 +37,53 @@ public class Upload {
     private int warningFlights;
     private int errorFlights;
 
+
+    private static void deleteDirectory(File folder) {
+        File[] files = folder.listFiles();
+        if (files != null) { //some JVMs return null for empty dirs
+            for (File f: files) {
+                if(f.isDirectory()) {
+                    deleteDirectory(f);
+                } else {
+                    f.delete();
+                }
+            }
+        }
+        folder.delete();
+    }
+
+    public void remove(Connection connection) throws SQLException {
+        String query = "DELETE FROM upload_errors WHERE upload_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+
+        query = "DELETE FROM flight_errors WHERE upload_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+
+        query = "DELETE FROM uploads WHERE id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+
+
+        String archiveFilename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + filename;
+
+        LOG.info("deleting archive file: '" + archiveFilename + "'");
+        File archiveFile = new File(archiveFilename);
+        archiveFile.delete();
+
+        String uploadDirectory = WebServer.NGAFID_UPLOAD_DIR + "/" + fleetId + "/" + uploaderId + "/" + identifier;
+
+        LOG.info("deleting directory: '" + uploadDirectory + "'");
+
+        Upload.deleteDirectory(new File(uploadDirectory));
+    }
 
     public static Upload getUpload(Connection connection, int uploaderId, String md5Hash) throws SQLException {
         PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE uploader_id = ? AND md5_hash = ?");

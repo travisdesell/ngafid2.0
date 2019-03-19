@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 
@@ -20,6 +21,54 @@ class Upload extends React.Component {
         //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
     }
 
+
+    removeUpload() {
+        $("#loading").show();
+
+        var submissionData = {
+            uploadId : this.props.uploadInfo.id,
+            md5Hash : this.props.uploadInfo.md5Hash
+        };   
+
+        let thisUpload = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_upload',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                uploadsCard.removeUpload(thisUpload.props.uploadInfo);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                $("#loading").hide();
+                errorModal.show("Error removing upload", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    confirmRemoveUpload() {
+        console.log("attempting to remove upload!");
+        console.log(this.props);
+
+        confirmModal.show("Confirm Delete: '" + this.props.uploadInfo.filename + "'",
+            "Are you sure you wish to delete this upload?\n\nThis operation will remove it from the server along with all flights and other information from the database. A backup of this upload is not stored on the server and if you wish to retrieve it you will have to re-upload it.",
+            () => {this.removeUpload()}
+        );
+    }
+
     render() {
         let uploadInfo = this.props.uploadInfo;
 
@@ -31,27 +80,6 @@ class Upload extends React.Component {
 
         const width = ((progressSize / totalSize) * 100).toFixed(2);
         const sizeText = (progressSize/1000).toFixed(2).toLocaleString() + "/" + (totalSize/1000).toFixed(2).toLocaleString()  + " kB (" + width + "%)";
-        const progressSizeStyle = {
-            width : width + "%",
-            height : "24px",
-            textAlign : "left",
-            whiteSpace : "nowrap"
-        };
-
-        const fixedFlexStyle1 = {
-            flex : "0 0 15em"
-        };
-
-        const fixedFlexStyle2 = {
-            //flex : "0 0 75em",
-            height : "34px",
-            padding : "4 0 4 0"
-        };
-
-        const fixedFlexStyle3 = {
-            flex : "0 0 18em"
-        };
-
 
         let statusText = "";
 
@@ -99,14 +127,25 @@ class Upload extends React.Component {
             }
         }
 
+        const progressSizeStyle = {
+            width : width + "%",
+            height : "34px",
+            textAlign : "left",
+            whiteSpace : "nowrap"
+        };
+
+
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.filename}</div>
-                    <div className="p-1 flex-fill card progress" style={fixedFlexStyle2}>
-                        <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">{sizeText}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.filename}</div>
+                    <div className="flex-fill card progress" style={{height:"34px", padding: "0 0 0 0"}}>
+                        <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
-                    <div className={statusClasses} style={fixedFlexStyle3}>{statusText}</div>
+                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
+
+                    <button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </button>
+
                 </div>
             </div>
         );
@@ -436,6 +475,7 @@ class UploadsCard extends React.Component {
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
                     {
                         uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
                             return (
                                 <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
                             );

@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -29,6 +30,8 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
+import org.ngafid.events.EventStatistics;
+
 public class GetDashboard implements Route {
     private static final Logger LOG = Logger.getLogger(GetDashboard.class.getName());
     private Gson gson;
@@ -43,7 +46,7 @@ public class GetDashboard implements Route {
         }
     }
 
-    private List<Message> messages = null;
+    private List<Message> messages = new ArrayList<Message>();
 
     public GetDashboard(Gson gson) {
         this.gson = gson;
@@ -72,6 +75,14 @@ public class GetDashboard implements Route {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
+            Connection connection = Database.getConnection();
+
+            final Session session = request.session();
+            User user = session.attribute("user");
+            int fleetId = user.getFleetId();
+
+            ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, user.getFleetId());
+
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
             if (messages != null) {
@@ -80,9 +91,17 @@ public class GetDashboard implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
+            scopes.put("events_js",
+                    "var eventStats = JSON.parse('" + gson.toJson(EventStatistics.getAll(connection, fleetId)) + "');\n"
+                    );
+
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
+
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            return gson.toJson(new ErrorResponse(e));
 
         } catch (IOException e) {
             LOG.severe(e.toString());

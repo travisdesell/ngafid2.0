@@ -104,6 +104,7 @@ $query = "CREATE TABLE `flights` (
     `has_coords` TINYINT(1) NOT NULL,
     `has_agl` TINYINT(1) NOT NULL,
     `events_calculated` INT(1) NOT NULL DEFAULT 0,
+    `insert_completed` INT(1) NOT NULL DEFAULT 0,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`md5_hash`),
@@ -272,8 +273,12 @@ $query = "CREATE TABLE `events` (
     `start_time` datetime,
     `end_time` datetime,
 
+    `severity` DOUBLE NOT NULL,
+
     PRIMARY KEY(`id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
+    INDEX(`start_time`),
+    INDEX(`end_time`),
     FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
@@ -297,11 +302,23 @@ $query = "CREATE TABLE `event_definitions` (
 query_ngafid_db($query);
 
 $query = "CREATE TABLE `flight_processed` (
+    `fleet_id` INT(11) NOT NULL,
     `flight_id` INT(11) NOT NULL,
     `event_definition_id` INT(11) NOT NULL,
-    `count` INT(11) NOT NULL,
+    `count` INT(11),
+    `sum_duration` DOUBLE,
+    `min_duration` DOUBLE,
+    `max_duration` DOUBLE,
+    `sum_severity` DOUBLE,
+    `min_severity` DOUBLE,
+    `max_severity` DOUBLE,
+    `had_error` TINYINT(1),
 
     PRIMARY KEY(`flight_id`, `event_definition_id`),
+    INDEX(`fleet_id`),
+    INDEX(`count`),
+    INDEX(`had_error`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
     FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

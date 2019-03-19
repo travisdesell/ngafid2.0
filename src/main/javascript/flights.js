@@ -230,7 +230,68 @@ var rules = [
                 options : [ "visited", "not visited" ]
             }
         ]
-    }
+    },
+
+    {
+        name : "Event Count",
+        conditions : [
+            {
+                type : "select",
+                name : "eventNames",
+                options : eventNames
+            },
+            {
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "number",
+                name : "number"
+            }
+        ]
+    },
+
+    {
+        name : "Event Severity",
+        conditions : [
+            {
+                type : "select",
+                name : "eventNames",
+                options : eventNames
+            },
+            {
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "number",
+                name : "number"
+            }
+        ]
+    },
+
+    {
+        name : "Event Duration",
+        conditions : [
+            {
+                type : "select",
+                name : "eventNames",
+                options : eventNames
+            },
+            {
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", "=", ">", ">=" ]
+            },
+            {
+                type  : "number",
+                name : "number"
+            }
+        ]
+    },
+
 ];
 
 
@@ -565,6 +626,25 @@ class Flight extends React.Component {
         }));
     }
 
+    downloadClicked() {
+        window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+
+        /*
+        let filePath = 'https://ngafid.org/protected/get_kml?flight_id=' + this.props.flightInfo.id;
+        let downloadName = "flight_" + this.props.flightInfo.id + ".kml";
+
+        console.log("creating download ref: '" + filePath + "'");
+        console.log("creating download name: '" + downloadName + "'");
+
+        let a = document.createElement('kml-download');
+        a.href = filePath;
+        a.download = downloadName;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        */
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -760,7 +840,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button disabled className={lastButtonClasses + " disabled"} style={styleButton} onClick={() => this.downloadClicked()}>
+                            <button className={lastButtonClasses + globeClasses} style={styleButton} onClick={() => this.downloadClicked()}>
                                 <i className="fa fa-download p-1"></i>
                             </button>
                         </div>

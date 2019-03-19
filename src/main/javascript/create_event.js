@@ -43,7 +43,8 @@ class CreateEventCard extends React.Component {
             stopBuffer : ""
         }
 
-        this.filterRef = React.createRef();
+        this.exceedenceFilter = React.createRef();
+        this.severityFilter = React.createRef();
     }
 
     validateEventName(event) {
@@ -81,7 +82,7 @@ class CreateEventCard extends React.Component {
     submitFilter() {
         //console.log( this.state.filters );
 
-        let query = this.filterRef.current.getQuery();
+        let query = this.exceedenceFilter.current.getQuery();
 
         console.log("Submitting filters:");
         console.log( query );
@@ -174,11 +175,11 @@ class CreateEventCard extends React.Component {
         } else if (parseInt(this.state.startBuffer) < 1) {
             validationMessage = "Stop buffer time must be greater than 1 second.";
 
-            //first time rendering this component filterRef will not be defined
-        } else if (typeof this.filterRef != 'undefined') {
-            console.log("checking filterRef isValid");
+            //first time rendering this component exceedenceFilter will not be defined
+        } else if (typeof this.exceedenceFilter != 'undefined') {
+            console.log("checking exceedenceFilter isValid");
 
-            if ( !this.filterRef.current.isValid()) {
+            if ( !this.exceedenceFilter.current.isValid()) {
                 validationMessage = "Correct the incomplete filter.";
             }
         }
@@ -251,8 +252,29 @@ class CreateEventCard extends React.Component {
                         </div>
                     </div>
 
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label style={labelStyle}>Exceedence Definition</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+                                <Filter ref={this.exceedenceFilter} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
+                            </div>
+                        </div>
+                    </div>
 
-                    <Filter ref={this.filterRef} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label style={labelStyle}>Exceedence Severity</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+                                <Filter ref={this.severityFilter} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
+                            </div>
+                        </div>
+                    </div>
+
+
 
                     <div className="d-flex">
                         <div className="p-2" style={formHeaderStyle}>

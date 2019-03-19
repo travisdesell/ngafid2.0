@@ -158,6 +158,7 @@ public final class WebServer {
         Spark.post("/protected/update_password", new PostUpdatePassword(gson));
 
         Spark.get("/protected/uploads", new GetUploads(gson));
+        Spark.post("/protected/remove_upload", new PostRemoveUpload(gson));
 
         Spark.get("/protected/imports", new GetImports(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
@@ -166,6 +167,7 @@ public final class WebServer {
         //Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
+        Spark.get("/protected/get_kml", new GetKML(gson));
 
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
