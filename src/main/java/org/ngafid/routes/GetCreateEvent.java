@@ -31,42 +31,25 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.Tails;
 
-import org.ngafid.events.EventDefinition;
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-public class GetFlights implements Route {
-    private static final Logger LOG = Logger.getLogger(GetFlights.class.getName());
+public class GetCreateEvent implements Route {
+    private static final Logger LOG = Logger.getLogger(GetCreateEvent.class.getName());
     private Gson gson;
 
-    private static class Message {
-        String type;
-        String message;
-
-        Message(String type, String message) {
-            this.type = type;
-            this.message = message;
-        }
-    }
-
-    private List<Message> messages = null;
-
-    public GetFlights(Gson gson) {
+    public GetCreateEvent(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetFlights(Gson gson, String messageType, String messageText) {
+    public GetCreateEvent(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
-
-        messages = new ArrayList<Message>();
-        messages.add(new Message(messageType, messageText));
     }
 
     @Override
@@ -74,7 +57,7 @@ public class GetFlights implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flights.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "create_event.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
@@ -82,10 +65,6 @@ public class GetFlights implements Route {
             Mustache mustache = mf.compile(templateFile);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
-
-            if (messages != null) {
-                scopes.put("messages", messages);
-            }
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
@@ -95,23 +74,10 @@ public class GetFlights implements Route {
 
             Connection connection = Database.getConnection();
 
-            scopes.put("flights_js",
+            scopes.put("create_event_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection, fleetId)) + "');\n" +
-                    "var tailNumbers = JSON.parse('" + gson.toJson(Tails.getAll(connection, fleetId)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var visitedAirports = JSON.parse('" + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + "');\n" +
-                    "var visitedRunways = JSON.parse('" + gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)) + "');\n" +
-                    "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getAllNames(connection, fleetId)) + "');\n" +
-                    "var flights = [];"
+                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
                     );
-            /*
-            try {
-                //scopes.put("flights_js", "var flights = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"})) + "');");
-
-            } catch (SQLException e) {
-                return gson.toJson(new ErrorResponse(e));
-            }
-            */
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

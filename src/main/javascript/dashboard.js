@@ -5,10 +5,11 @@ import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 
+/*
 var eventStats = [
     {
         airframeId : 0,
-        airframe : "Generic", /*generic events*/
+        airframe : "Generic", 
         events : [
             {
                 id : 0,
@@ -22,6 +23,7 @@ var eventStats = [
                         flightsWithEvent : 823,
                         totalEvents : 132,
                         avgDuration : 10.32,
+
                         aggTotalFlights : 1039,
                         aggFlightsWithEvent : 823,
                         aggTotalEvents : 132,
@@ -159,6 +161,7 @@ var eventStats = [
     }
 
 ];
+*/
 
 
 class DashboardCard extends React.Component {
@@ -179,7 +182,7 @@ class DashboardCard extends React.Component {
                             <div key={airframeIndex} style={{marginTop:marginTop, padding:"0 5 0 5"}}>
                                 <div className="card mb-1 m-1" style={{background : "rgba(100,100,100,0.2)", padding:"10 10 10 10"}}>
                                     <h5 style={{marginBottom:0}}> 
-                                        {airframeStats.airframe + " Events"}
+                                        {airframeStats.airframeName + " Events"}
                                     </h5>
                                 </div>
 
@@ -194,11 +197,11 @@ class DashboardCard extends React.Component {
                                                     <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
                                                         <h5 className="card-header">
                                                             <div className="d-flex">
-                                                                <div style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-                                                                    {eventInfo.name}
+                                                                <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
+                                                                    {eventInfo.eventName}
                                                                 </div>
-                                                                <div className="progress flex-fill" style={{margin:"4 0 4 0"}}>
-                                                                    <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
+                                                                <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
+                                                                    <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
                                                                 </div>
                                                             </div>
                                                         </h5>
@@ -209,39 +212,55 @@ class DashboardCard extends React.Component {
                                                                 <thead>
                                                                     <tr>
                                                                         <th></th>
-                                                                        <th style={{textAlign:"center", paddingRight:25}} colSpan="3">Your Fleet</th>
-                                                                        <th style={{textAlign:"center"}} colSpan="3">Other Fleets</th> 
+                                                                        <th style={{textAlign:"center", paddingRight:25, borderBottom: "1px solid grey", borderRight: "1px solid grey"}} colSpan="4">Your Fleet</th>
+                                                                        <th style={{textAlign:"center", borderBottom: "1px solid grey"}} colSpan="4">Other Fleets</th> 
                                                                     </tr>
 
                                                                     <tr>
                                                                         <th></th>
-                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Flights With Event</th> 
-                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Total Events</th> 
-                                                                        <th style={{textAlign:"right", paddingRight:25, borderBottom: "1px solid grey", borderRight: "1px solid grey"}}>Avg. Duration</th> 
-                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Flights With Event</th> 
-                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Total Events</th> 
-                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Avg. Duration</th> 
+                                                                        <th style={{textAlign:"right"}}>Flights </th> 
+                                                                        <th style={{textAlign:"right"}}>Total</th> 
+                                                                        <th style={{textAlign:"right"}}>Severity</th> 
+                                                                        <th style={{textAlign:"right", paddingRight:25, borderRight: "1px solid grey"}}>Duration (s)</th> 
+                                                                        <th style={{textAlign:"right"}}>Flights </th> 
+                                                                        <th style={{textAlign:"right"}}>Total </th> 
+                                                                        <th style={{textAlign:"right"}}>Severity</th> 
+                                                                        <th style={{textAlign:"right"}}>Duration (s)</th> 
+                                                                    </tr>
+
+                                                                    <tr>
+                                                                        <th></th>
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>With Event</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Events</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>(Min/Avg/Max)</th> 
+                                                                        <th style={{textAlign:"right", paddingRight:25, borderBottom: "1px solid grey", borderRight: "1px solid grey"}}>(Min/Avg/Max)</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>With Event</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>Events</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>(Min/Avg/Max)</th> 
+                                                                        <th style={{textAlign:"right", borderBottom: "1px solid grey"}}>(Min/avg/Max)</th> 
                                                                     </tr>
                                                                 </thead>
 
                                                                 <tbody>
                                                                     {
                                                                         eventInfo.monthStats.map((stats, monthIndex) => {
-                                                                            let eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.totalFlights)).toFixed(2);
-                                                                            let flightsWithEventStr = stats.flightsWithEvent + " / " + stats.totalFlights + " (" + eventPercentage + "%)";
+                                                                            let eventPercentage = (100.0 * parseFloat(stats.flightsWithEvent) / parseFloat(stats.flightsWithoutError)).toFixed(2);
+                                                                            let flightsWithEventStr = stats.flightsWithEvent + " / " + stats.flightsWithoutError + " (" + eventPercentage + "%)";
 
-                                                                            let aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggTotalFlights)).toFixed(2);
-                                                                            let aggFlightsWithEventStr = stats.aggFlightsWithEvent + " / " + stats.aggTotalFlights + " (" + aggEventPercentage + "%)";
+                                                                            let aggEventPercentage = (100.0 * parseFloat(stats.aggFlightsWithEvent) / parseFloat(stats.aggFlightsWithoutError)).toFixed(2);
+                                                                            let aggFlightsWithEventStr = stats.aggFlightsWithEvent + " / " + stats.aggFlightsWithoutError + " (" + aggEventPercentage + "%)";
 
                                                                             return (
                                                                                 <tr key={monthIndex}>
-                                                                                    <td>{stats.name}</td>
+                                                                                    <td>{stats.rowName}</td>
                                                                                     <td style={{textAlign:"right"}}>{flightsWithEventStr}</td>
                                                                                     <td style={{textAlign:"right"}}>{stats.totalEvents}</td>
-                                                                                    <td style={{textAlign:"right", paddingRight:25, borderRight: "1px solid grey"}}>{stats.avgDuration}</td>
+                                                                                    <td style={{textAlign:"right"}}>{stats.minSeverity.toFixed(2) + " / " + stats.avgSeverity.toFixed(2) + " / " + stats.maxSeverity.toFixed(2)}</td>
+                                                                                    <td style={{textAlign:"right", paddingRight:25, borderRight: "1px solid grey"}}>{stats.minDuration.toFixed(2) + " / " + stats.avgDuration.toFixed(2) + " / " + stats.maxDuration.toFixed(2)}</td>
                                                                                     <td style={{textAlign:"right"}}>{aggFlightsWithEventStr}</td>
                                                                                     <td style={{textAlign:"right"}}>{stats.aggTotalEvents}</td>
-                                                                                    <td style={{textAlign:"right"}}>{stats.aggAvgDuration}</td>
+                                                                                    <td style={{textAlign:"right"}}>{stats.aggMinSeverity.toFixed(2) + " / " + stats.aggAvgSeverity.toFixed(2) + " / " + stats.aggMaxSeverity.toFixed(2)}</td>
+                                                                                    <td style={{textAlign:"right"}}>{stats.aggMinDuration.toFixed(2) + " / " + stats.aggAvgDuration.toFixed(2) + " / " + stats.aggMaxDuration.toFixed(2)}</td>
                                                                                 </tr>
                                                                             );
                                                                         })
