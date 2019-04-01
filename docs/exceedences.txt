@@ -1,10 +1,15 @@
 
 *************** sp_GenericExceedances ***************
 Excessive Roll: roll_attitude < -60 OR roll_attitude > 60
-Excessive Pitch: pitch_attitude < -30 OR pitch_attitude > 30
-Excessive Lateral Acceleration: lateral_acceleration < -1.7 OR lateral_acceleration > 4.4
-Excessive Vertical Acceleration: vertical_acceleration < -1.76 OR vertical_acceleration > 4.4
-Excessive Longitudinal Acceleration: longitudinal_acceleration < -1.76 OR longitudinal_acceleration > 4.4
+%Excessive Pitch: pitch_attitude < -30 OR pitch_attitude > 30
+Excessive Low Pitch: pitch_attitude < -30 
+Excessive High Pitch: OR pitch_attitude > 30
+
+Excessive Positive Lateral Acceleration: lateral_acceleration > 2.8
+Excessive Negative Lateral Acceleration: lateral_acceleration < -2.52
+Excessive Positive Vertical Acceleration: vertical_acceleration > 2.8
+Excessive Negative Vertical Acceleration: vertical_acceleration < -2.52
+%Excessive Longitudinal Acceleration: longitudinal_acceleration < -1.76 OR longitudinal_acceleration > 4.4
 Excessive VSI on Final: vertical_airspeed < -1000 AND radio_altitude_derived < 1000
 
 
