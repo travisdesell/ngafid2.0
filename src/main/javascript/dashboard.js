@@ -1,4 +1,5 @@
 import 'bootstrap';
+
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
@@ -168,12 +169,27 @@ class DashboardCard extends React.Component {
     constructor(props) {
         super(props);
 
+        this.state = {
+            eventStats : eventStats
+        };
     }
+
+    toggleEventInfo(eventInfo) {
+        console.log("eventInfo.infoHidden is: " + eventInfo.infoHidden);
+        eventInfo.infoHidden = !eventInfo.infoHidden;
+        console.log("eventInfo.infoHidden changed to: " + eventInfo.infoHidden);
+
+        this.setState(this.state);
+    }
+
+
     render() {
+        console.log(eventStats);
+
         return (
             <div>
                 {
-                    eventStats.map((airframeStats, airframeIndex) => {
+                    this.state.eventStats.map((airframeStats, airframeIndex) => {
                         let marginTop = 4;
                         if (airframeIndex > 0) {
                             marginTop = 14;
@@ -191,6 +207,7 @@ class DashboardCard extends React.Component {
                                     {
                                         airframeStats.events.map((eventInfo, eventIndex) => {
                                             let processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
+                                            if (typeof eventInfo.infoHidden == 'undefined') eventInfo.infoHidden = true;
 
                                             return (
                                                 <div className="col-sm-12" key={eventIndex} style={{padding:"0 0 0 0"}}>
@@ -200,6 +217,9 @@ class DashboardCard extends React.Component {
                                                                 <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
                                                                     {eventInfo.eventName}
                                                                 </div>
+                                                                <button type="button" className="btn btn-outline-secondary" style={{padding:"3 8 3 8", marginRight:"5"}} onClick={() => {this.toggleEventInfo(eventInfo)}}>
+                                                                    <i className='fa fa-info'></i>
+                                                                </button>
                                                                 <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
                                                                     <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
                                                                 </div>
@@ -207,6 +227,9 @@ class DashboardCard extends React.Component {
                                                         </h5>
 
                                                         <div className="card-body" >
+                                                            <p hidden={eventInfo.infoHidden}>
+                                                                {eventInfo.humanReadable}
+                                                            </p>
 
                                                             <table style={{width:"100%"}}>
                                                                 <thead>

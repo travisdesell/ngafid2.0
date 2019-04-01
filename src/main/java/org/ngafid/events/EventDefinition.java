@@ -15,6 +15,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.Airframes;
 
 
 public class EventDefinition {
@@ -70,6 +71,14 @@ public class EventDefinition {
     public int getId() {
         return id;
     }
+
+    /**
+     * @return the fleet id (from the database) of the event definition
+     */
+    public int getFleetId() {
+        return fleetId;
+    }
+
 
 
     /**
@@ -140,22 +149,60 @@ public class EventDefinition {
             LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
         } else {
-            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = (SELECT id FROM airframes WHERE airframes.airframe = ? AND airframes.fleet_id = ?), condition_json = ?, column_names = ?";
+            int airframeId = Airframes.getId(connection, airframe);
+            String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?";
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setString(2, name);
             preparedStatement.setInt(3, startBuffer);
             preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setString(5, airframe);
-            preparedStatement.setInt(6, fleetId);
-            preparedStatement.setString(7, filterJson);
-            preparedStatement.setString(8, gson.toJson(columnNames));
+            preparedStatement.setInt(5, airframeId);
+            preparedStatement.setString(6, filterJson);
+            preparedStatement.setString(7, gson.toJson(columnNames));
 
             LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
         }
     }
+
+    /**
+     * Gets all  event definitions from the database with a query.
+     *
+     * @param connection is the connection to the database.
+     * @param extraQuery is a string of extra SQL conditions
+     * @param extraParameters are the parameters to that query
+     *
+     * @return the event definitions from the database.
+     */
+    public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery, Object[] extraParameters) throws SQLException {
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names FROM event_definitions WHERE " + extraQuery;
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        for (int i = 0; i < extraParameters.length; i++) {
+            if (extraParameters[i] instanceof String) {
+                preparedStatement.setString(i + 1, (String)extraParameters[i]);
+            } else if (extraParameters[i] instanceof Integer) {
+                preparedStatement.setInt(i + 1, (Integer)extraParameters[i]);
+            } else if (extraParameters[i] instanceof Double) {
+                preparedStatement.setDouble(i + 1, (Double)extraParameters[i]);
+            } else {
+                LOG.severe("unknown parameter to event definition query: " + extraParameters[i]);
+                System.exit(1);
+            }
+        }
+
+        LOG.info(preparedStatement.toString());
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
+        while (resultSet.next()) {
+            allEvents.add(new EventDefinition(resultSet));
+        }
+
+        return allEvents;
+    }
+
 
     /**
      * Gets all of the event definitions from the database.
@@ -188,7 +235,8 @@ public class EventDefinition {
      * @return an array list of all event names in the database for this fleet
      */
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
-        String query = "SELECT name FROM event_definitions WHERE fleet_id = 0 OR fleet_id = ?";
+        //add all the generic event names
+        String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, fleetId);
@@ -201,9 +249,36 @@ public class EventDefinition {
             allNames.add(resultSet.getString(1));
         }
 
+        //add all the event names with the airframe they are for
+        query = "SELECT name, airframe FROM event_definitions, airframes WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND airframes.id = event_definitions.airframe_id";
+
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, fleetId);
+
+        LOG.info(preparedStatement.toString());
+        resultSet = preparedStatement.executeQuery();
+
+        while (resultSet.next()) {
+            allNames.add(resultSet.getString(1) + " - " + resultSet.getString(2));
+        }
+
         return allNames;
     }
 
+    /**
+     * Presents a human-readable description of this event definition.
+     *
+     * @return a string of a human readable description of this event definition.
+     */
+    public String toHumanReadable() {
+        String text = "";
+        if (startBuffer == 1) {
+            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+        } else {
+            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+        }
+        return text;
+    }
 
     /**
      * Returns a string representation of this event definition

@@ -134,11 +134,14 @@ class Upload extends React.Component {
             whiteSpace : "nowrap"
         };
 
+        console.log("uploadInfo:");
+        console.log(uploadInfo);
 
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
                     <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.filename}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.startTime}</div>
                     <div className="flex-fill card progress" style={{height:"34px", padding: "0 0 0 0"}}>
                         <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
@@ -450,8 +453,13 @@ class UploadsCard extends React.Component {
                 var file = this.files[0];
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
+                const isZip = file['type'].includes("zip");
+                console.log("isZip: " + isZip);
+
                 if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
                     errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+                } else if (!isZip) {
+                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsCard.addUpload(file);
                 }    
