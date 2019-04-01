@@ -263,19 +263,6 @@ class CreateEventCard extends React.Component {
                         </div>
                     </div>
 
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label style={labelStyle}>Exceedence Severity</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <Filter ref={this.severityFilter} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
-                            </div>
-                        </div>
-                    </div>
-
-
-
                     <div className="d-flex">
                         <div className="p-2" style={formHeaderStyle}>
                         </div>

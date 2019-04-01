@@ -104,6 +104,15 @@ public class Event {
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
+            System.err.println("ERROR commiting event do database.");
+            System.err.println("flightId: " + flightId);
+            System.err.println("eventDefinitionId: " + eventDefinitionId);
+            System.err.println("startLine: " + startLine);
+            System.err.println("endLine: " + endLine);
+            System.err.println("startTime: " + startTime);
+            System.err.println("endTime: " + endTime);
+            System.err.println("severity: " + severity);
+
             e.printStackTrace();
             System.exit(1);
         }

@@ -8,10 +8,9 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
 
-
-query_ngafid_db("DROP TABLE event_definitions");
-query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE flight_processed");
+query_ngafid_db("DROP TABLE events");
+query_ngafid_db("DROP TABLE event_statistics");
 
 if ($drop_tables) {
     query_ngafid_db("DROP TABLE user");
@@ -19,17 +18,25 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE fleet_access");
 
     query_ngafid_db("DROP TABLE uploads");
-    query_ngafid_db("DROP TABLE flights");
+
+    query_ngafid_db("DROP TABLE events");
+    query_ngafid_db("DROP TABLE flight_processed");
+    query_ngafid_db("DROP TABLE event_statistics");
+    query_ngafid_db("DROP TABLE event_definitions");
+
     query_ngafid_db("DROP TABLE itinerary");
     query_ngafid_db("DROP TABLE double_series");
     query_ngafid_db("DROP TABLE string_series");
     query_ngafid_db("DROP TABLE flight_warnings");
     query_ngafid_db("DROP TABLE flight_errors");
     query_ngafid_db("DROP TABLE upload_errors");
+    query_ngafid_db("DROP TABLE flight_messages");
 
+    query_ngafid_db("DROP TABLE flights");
     query_ngafid_db("DROP TABLE tails");
     query_ngafid_db("DROP TABLE airframes");
-    query_ngafid_db("DROP TABLE flight_messages");
+    query_ngafid_db("DROP TABLE fleet_airframes");
+
 }
 
 
@@ -64,16 +71,24 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `airframes` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `fleet_id` INT(11) NOT NULL,
     `airframe` VARCHAR(64),
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY(`fleet_id`, `airframe`),
-    INDEX(`fleet_id`),
-    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+    UNIQUE KEY(`airframe`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+$query = "CREATE TABLE `fleet_airframes` (
+    `fleet_id` INT(11) NOT NULL,
+    `airframe_id` INT(11) NOT NULL,
+
+    PRIMARY KEY(`fleet_id`, `airframe_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+
 
 $query = "CREATE TABLE `tails` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -263,6 +278,22 @@ $query = "CREATE TABLE `fleet_access` (
 query_ngafid_db($query);
 
 
+$query = "CREATE TABLE `event_definitions` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11) NOT NULL,
+    `airframe_id` INT(11) NOT NULL,
+    `name` VARCHAR(64) NOT NULL,
+    `start_buffer` INT(11),
+    `stop_buffer` INT(11),
+    `column_names` VARCHAR(128),
+    `condition_json` VARCHAR(512),
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`, `airframe_id`, `fleet_id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 $query = "CREATE TABLE `events` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
@@ -284,22 +315,6 @@ $query = "CREATE TABLE `events` (
 
 query_ngafid_db($query);
 
-
-$query = "CREATE TABLE `event_definitions` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `fleet_id` INT(11) NOT NULL,
-    `airframe_id` INT(11) NOT NULL,
-    `name` VARCHAR(64) NOT NULL,
-    `start_buffer` INT(11),
-    `stop_buffer` INT(11),
-    `column_names` VARCHAR(128),
-    `condition_json` VARCHAR(512),
-
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
 
 $query = "CREATE TABLE `flight_processed` (
     `fleet_id` INT(11) NOT NULL,
@@ -324,6 +339,29 @@ $query = "CREATE TABLE `flight_processed` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+$query = "CREATE TABLE `event_statistics` (
+    `fleet_id` INT(11) NOT NULL,
+    `event_definition_id` INT(11) NOT NULL,
+    `month_first_day` DATE NOT NULL,
+    `flights_with_event` INT(11) DEFAULT 0,
+    `total_flights` INT(11) DEFAULT 0,
+    `total_events` INT(11) DEFAULT 0,
+    `min_duration` DOUBLE,
+    `sum_duration` DOUBLE,
+    `max_duration` DOUBLE,
+    `min_severity` DOUBLE,
+    `sum_severity` DOUBLE,
+    `max_severity` DOUBLE,
+
+    PRIMARY KEY(`fleet_id`, `event_definition_id`, `month_first_day`),
+    INDEX(`month_first_day`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
+    FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 
 
 ?>

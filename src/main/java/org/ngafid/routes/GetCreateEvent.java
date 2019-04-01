@@ -75,7 +75,7 @@ public class GetCreateEvent implements Route {
             Connection connection = Database.getConnection();
 
             scopes.put("create_event_js",
-                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection, fleetId)) + "');\n" +
+                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
                     "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
                     );
 

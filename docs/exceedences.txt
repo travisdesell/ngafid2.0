@@ -1,58 +1,77 @@
 
 *************** sp_GenericExceedances ***************
-Excessive Roll: roll_attitude < -60 OR roll_attitude > 60
-Excessive Pitch: pitch_attitude < -30 OR pitch_attitude > 30
-Excessive Lateral Acceleration: lateral_acceleration < -1.7 OR lateral_acceleration > 4.4
-Excessive Vertical Acceleration: vertical_acceleration < -1.76 OR vertical_acceleration > 4.4
-Excessive Longitudinal Acceleration: longitudinal_acceleration < -1.76 OR longitudinal_acceleration > 4.4
-Excessive VSI on Final: vertical_airspeed < -1000 AND radio_altitude_derived < 1000
+Roll: roll_attitude < -60 OR roll_attitude > 60
+Low Pitch: pitch_attitude < -30 
+High Pitch: pitch_attitude > 30
+Low Lateral Acceleration: lateral_acceleration < -2.52
+High Lateral Acceleration: lateral_acceleration > 2.8
+Low Vertical Acceleration: vertical_acceleration < -2.52
+High Vertical Acceleration: vertical_acceleration > 2.8
+Low Longitudinal Acceleration: longitudinal_acceleration < -1.76 -- N/A parameter not recorded
+High Longitudinal Acceleration: longitudinal_acceleration > 4.4 -- N/A parameter not recorded
+VSI on Final: vertical_airspeed < -1000 AND AltAGL < 1000
 
 
 *************** sp_C172Exceedances ***************
-Excessive Speed: indicated_airspeed > 163
-High CHT: eng_1_cht_(1-4) > 500
-High Altitude: msl_altitude > 12800
-Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8
+Airspeed: IAS > 163
+Altitude: msl_altitude > 12800
+CHT: eng_1_cht_(1-4) > 500
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main (total fuel) < 8 AND Pitch < 5
 Low Oil Pressure: eng_1_oil_press < 20 AND eng_1_rpm > 100
-Low Airspeed on Approach: indicated_airspeed < 57 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-Low Airspeed on Climbout: indicated_airspeed < 52 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-
+Low Airspeed on Approach: indicated_airspeed < 57 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
+Low Airspeed on Climbout: indicated_airspeed < 52 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] > 0
+Engine Shutdown: RPM < 100 AND AltAGL > 500 AND AltAGL < 3000
+CHT Variance: max(eng_1_cht(1-4) - min(eng_1_cht(1-4)) > 100
+EGT Variance: max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400
 
 *************** sp_C182Exceedances ***************
-Excessive Speed: indicated_airspeed > 175
-High CHT: eng_1_cht_(1-6) > 500
-High Altitude: msl_altitude > 15000
-Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8
+Airspeed: indicated_airspeed > 175
+Altitude: msl_altitude > 15000
+CHT: eng_1_cht_(1-6) > 500
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main (total fuel) < 16 AND Pitch < 5
 Low Oil Pressure: eng_1_oil_press < 20 AND eng_1_rpm > 100
-Low Airspeed on Approach: indicated_airspeed < 57 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-Low Airspeed on Climbout: indicated_airspeed < 55 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Approach: indicated_airspeed < 57 AND (radio_altitude_derived BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
+Low Airspeed on Climbout: indicated_airspeed < 55 AND (radio_altitude_derived BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] > 0
+Engine Shutdown: RPM < 100 AND AltAGL > 500 AND AltAGL < 3000
+CHT Variance: max(eng_1_cht(1-4) - min(eng_1_cht(1-4)) > 100
+EGT Variance: max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400
 
 
 *************** sp_PA28Exceedances ***************
-Excessive Speed: indicated_airspeed > 154
-High CHT: N.A.
-High Altitude: msl_altitude > 12800
-Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.25
+Airspeed: indicated_airspeed > 154
+Altitude: msl_altitude > 12800
+CHT: N.A.
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.25 AND Pitch < 5
 Low Oil Pressure: eng_1_oil_press < 25 AND eng_1_rpm > 100
-Low Airspeed on Approach: indicated_airspeed < 56 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-Low Airspeed on Climbout: indicated_airspeed < 59 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Approach: indicated_airspeed < 56 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
+Low Airspeed on Climbout: indicated_airspeed < 59 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] > 0
+Engine Shutdown: RPM < 100 AND AltAGL > 500 AND AltAGL < 3000
+CHT Variance: max(eng_1_cht(1-4) - min(eng_1_cht(1-4)) > 100
+EGT Variance: max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400
 
 
 *************** sp_PA44Exceedances ***************
-Excessive Speed: indicated_airspeed > 202
-High CHT: eng_1_cht_(1-2) > 500
-High Altitude: msl_altitude > 12800
-Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.78
+Airspeed: indicated_airspeed > 202
+Altitude: msl_altitude > 12800
+CHT: eng_1_cht_(1-2) > 500
+Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main (total fuel) < 17.56 AND Pitch < 5
 Low Oil Pressure: (eng_1_oil_press < 25 AND eng_1_rpm > 100) OR (eng_2_oil_press < 25 AND eng_2_rpm > 100)
-Low Airspeed on Approach: indicated_airspeed < 66 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-Low Airspeed on Climbout: indicated_airspeed < 70 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Approach: indicated_airspeed < 66 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
+Low Airspeed on Climbout: indicated_airspeed < 70 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] > 0
+Engine Shutdown: (E1 RPM < 100 OR E2 RPM < 100) AND AltAGL > 500 AND AltAGL < 3000 
+CHT Variance : N/A (only 1 cht per engine)
+EGT Variance: (max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400) OR (max(eng_2_egt(1-4) - min(eng_2_egt(1-4)) > 400)
 
 
 *************** sp_SR20Exceedances ***************
-Excessive Speed: indicated_airspeed > 200
-High CHT: eng_1_cht_(1-6) > 460
-High Altitude: msl_altitude > 12800
+Airspeed: indicated_airspeed > 200
+Altitude: msl_altitude > 12800
+CHT: eng_1_cht_(1-6) > 460
 Low Fuel: N.A.
 Low Oil Pressure: eng_1_oil_press < 10 AND eng_1_rpm > 100
-Low Airspeed on Approach: indicated_airspeed < 67 AND vertical_airspeed < 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
-Low Airspeed on Climbout: indicated_airspeed < 60 AND vertical_airspeed > 0 AND (radio_altitude_derived BETWEEN 100 AND 500)
+Low Airspeed on Approach: indicated_airspeed < 67 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
+Low Airspeed on Climbout: indicated_airspeed < 60 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] > 0
+Engine Shutdown: RPM < 100 AND AltAGL > 500 AND AltAGL < 3000
+CHT Variance: max(eng_1_cht(1-6) - min(eng_1_cht(1-6)) > 100
+EGT Variance: max(eng_1_egt(1-6) - min(eng_1_egt(1-6)) > 400
+

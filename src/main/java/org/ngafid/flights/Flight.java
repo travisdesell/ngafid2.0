@@ -94,6 +94,9 @@ public class Flight {
             flights.add(new Flight(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
+
         return flights;
     }
 
@@ -103,42 +106,49 @@ public class Flight {
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM flight_warnings WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM flight_processed WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM itinerary WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM double_series WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM string_series WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM flights WHERE id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
 
 
@@ -161,6 +171,8 @@ public class Flight {
             flights.add(new Flight(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
         return flights;
     }
 
@@ -199,6 +211,9 @@ public class Flight {
             flights.add(new Flight(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
+
         return flights;
     }
 
@@ -236,6 +251,9 @@ public class Flight {
             flights.add(new Flight(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
+
         return flights;
     }
 
@@ -247,6 +265,9 @@ public class Flight {
         query.setInt(1, flightId);
 
         ResultSet resultSet = query.executeQuery();
+
+        resultSet.close();
+        query.close();
 
         if (resultSet.next()) {
             return new Flight(connection, resultSet);
@@ -266,7 +287,7 @@ public class Flight {
         int airframeId = resultSet.getInt(6); 
 
         tailNumber = Tails.getTail(connection, fleetId, tailId);
-        airframeType = Airframes.getAirframe(connection, fleetId, airframeId);
+        airframeType = Airframes.getAirframe(connection, airframeId);
 
         startDateTime = resultSet.getString(7);
         endDateTime = resultSet.getString(8);
@@ -304,6 +325,14 @@ public class Flight {
 
     public boolean insertCompleted() {
         return insertCompleted;
+    }
+
+    public String getStartDateTime() {
+        return startDateTime;
+    }
+
+    public String getEndDateTime() {
+        return endDateTime;
     }
 
     public DoubleTimeSeries getDoubleTimeSeries(String name) {
@@ -553,6 +582,50 @@ public class Flight {
             exceptions.add(e);
         }
 
+        try {
+            calculateTotalFuel(new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            calculateLaggedAltMSL("AltMSL", 10, "AltMSL Lag Diff");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            if (airframeType.equals("Cessna 172S") || airframeType.equals("PA-28-181")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else if (airframeType.equals("PA-44-180")) {
+                String egt1Names[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egt1Names, "E1 EGT Variance", "deg F");
+
+                String egt2Names[] = {"E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"};
+                calculateVariance(egt2Names, "E2 EGT Variance", "deg F");
+
+
+            } else if (airframeType.equals("Cirrus SR20")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else {
+                LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeType + "'");
+                System.exit(1);
+            }
+
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
         if (hasCoords && hasAGL) {
             calculateItinerary();
         }
@@ -664,6 +737,94 @@ public class Flight {
         }
 
         checkExceptions();
+    }
+
+    public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
+        headers.add(laggedColumnName);
+        dataTypes.add("ft msl");
+
+        DoubleTimeSeries altMSL = doubleTimeSeries.get(altMSLColumnName);
+        if (altMSL == null) {
+            throw new MalformedFlightFileException("Cannot calculate '" + laggedColumnName + "' as parameter '" + altMSLColumnName + "' was missing.");
+        }
+
+        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(laggedColumnName, "ft msl");
+
+        for (int i = 0; i < altMSL.size(); i++) {
+            if (i < lag) laggedAltMSL.add(0.0);
+            else {
+                laggedAltMSL.add(altMSL.get(i - lag));
+            }
+        }
+
+        doubleTimeSeries.put(laggedColumnName, laggedAltMSL);
+    }
+
+
+    public void calculateVariance(String[] columnNames, String varianceColumnName, String varianceDataType) throws MalformedFlightFileException {
+        headers.add(varianceColumnName);
+        dataTypes.add(varianceDataType);
+
+        DoubleTimeSeries columns[] = new DoubleTimeSeries[columnNames.length];
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = doubleTimeSeries.get(columnNames[i]);
+
+            if (columns[i] == null) {
+                throw new MalformedFlightFileException("Cannot calculate '" + varianceColumnName + "' as parameter '" + columnNames[i] + "' was missing.");
+            }
+        }
+
+        DoubleTimeSeries variance = new DoubleTimeSeries(varianceColumnName, varianceDataType);
+
+        for (int i = 0; i < columns[0].size(); i++) {
+            double max = -Double.MAX_VALUE;
+            double min = Double.MAX_VALUE;
+
+            for (int j = 0; j < columns.length; j++) {
+                double current = columns[j].get(i);
+                if (!Double.isNaN(current) && current > max) max = columns[j].get(i);
+                if (!Double.isNaN(current) && current < min) min = columns[j].get(i);
+            }
+
+            double v = 0;
+            if (max != -Double.MAX_VALUE && min != Double.MAX_VALUE) {
+                v = max - min;
+            }
+
+            variance.add(v);
+        }
+
+        doubleTimeSeries.put(varianceColumnName, variance);
+    }
+
+
+    public void calculateTotalFuel(String[] fuelColumnNames, String totalFuelColumnName) throws MalformedFlightFileException {
+        headers.add(totalFuelColumnName);
+        dataTypes.add("gals");
+
+
+        DoubleTimeSeries fuelQuantities[] = new DoubleTimeSeries[fuelColumnNames.length];
+        for (int i = 0; i < fuelQuantities.length; i++) {
+            fuelQuantities[i] = doubleTimeSeries.get(fuelColumnNames[i]);
+
+            if (fuelQuantities[i] == null) {
+                throw new MalformedFlightFileException("Cannot calculate 'Total Fuel' as fuel parameter '" + fuelColumnNames[i] + "' was missing.");
+            }
+        }
+
+        DoubleTimeSeries totalFuel = new DoubleTimeSeries(totalFuelColumnName, "gals");
+
+        for (int i = 0; i < fuelQuantities[0].size(); i++) {
+            double totalFuelValue = 0.0;
+            for (int j = 0; j < fuelQuantities.length; j++) {
+                totalFuelValue += fuelQuantities[j].get(i);
+            }
+            totalFuel.add(totalFuelValue);
+
+        }
+
+        doubleTimeSeries.put(totalFuelColumnName, totalFuel);
+
     }
 
     public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -942,7 +1103,9 @@ public class Flight {
         try {
             //first check and see if the airframe and tail number already exist in the database for this 
             //flight
-            int airframeId = Airframes.getId(connection, fleetId, airframeType);
+            int airframeId = Airframes.getId(connection, airframeType);
+            Airframes.setAirframeFleet(connection, airframeId, fleetId);
+
             int tailId = Tails.getId(connection, fleetId, tailNumber);
 
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, tail_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
