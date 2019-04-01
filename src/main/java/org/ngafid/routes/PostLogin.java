@@ -61,7 +61,7 @@ public class PostLogin implements Route {
         try {
             Connection connection = Database.getConnection();
             User user = User.get(connection, email, password);
-            
+
             if (user == null) {
                 LOG.info("Could not get user, get returned null.");
                 return gson.toJson(new LoginResponse(true, false, false, false, "Invalid email or password.", null));

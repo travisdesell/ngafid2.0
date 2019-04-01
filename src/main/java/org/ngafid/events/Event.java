@@ -3,27 +3,13 @@ package org.ngafid.events;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.SQLException;
 
-import java.io.FileNotFoundException;
 
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import org.ngafid.flights.StringTimeSeries;
-
-import java.security.MessageDigest;
-
-import java.sql.Statement;
-
-import javax.xml.bind.DatatypeConverter;
-
-
-public abstract class Event {
+public class Event {
     private String startTime;
     private String endTime;
-
 
     // Added to get the "calculateStartEndTime"
     public String myStartDateTime;
@@ -32,15 +18,14 @@ public abstract class Event {
     private int startLine;
     private int endLine;
 
-    private int bufferTime;
-    // Added to get the "calculateStartEndTime"
+    public double severity;
 
-    public Event(String startTime, String endTime, int startLine, int endLine, int bufferTime) {
+    public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
-        this.bufferTime = bufferTime;
+        this.severity = severity;
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
@@ -53,61 +38,50 @@ public abstract class Event {
     }
 
     public String toString() {
-        return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + "]";
+        return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", severity: " + severity + "]";
     }
 
-    public boolean isFinished(int currentLine, ArrayList<String> lineValues) {
-        if ((currentLine - endLine) >= bufferTime) {
-            return true;
-        } else {
-            return false;
-        }
-    }
-    public void setStartTime( String startTime ){
+    public void setStartTime(String startTime) {
         this.startTime = startTime;
     }
 
-    public void setEndTime( String endTime ){
+    public void setEndTime(String endTime) {
         this.endTime = endTime;
     }
 
-    public void setStartLine( int startLine ){
+    public void setStartLine(int startLine) {
         this.startLine = startLine;
     }
 
-    public void setEndLine( int endLine ){
+    public void setEndLine(int endLine) {
         this.endLine = endLine;
     }
-    public void setBufferTime( int bufferTime ){
-        this.bufferTime = bufferTime;
-    }
 
-    public int getStartLine(){
+    public int getStartLine() {
         return startLine;
     }
 
-    public String getStartTime(){
+    public String getStartTime() {
         return startTime;
     }
 
-    public String getEndTime(){
+    public String getEndTime() {
         return endTime;
     }
 
-    public int getBufferTime(){
-        return bufferTime;
+    public double getSeverity() {
+        return severity;
     }
 
-    /*
-     *  TODO: javadocs for everything!
-     */
+    public int getDuration() {
+        return (endLine - startLine) + 1;
+    }
 
-
-    public void updateDatabase(Connection connection, int flightId, int eventType) {
+    public void updateDatabase(Connection connection, int flightId, int eventDefinitionId) {
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity) VALUES (?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setInt(1, flightId);
-            preparedStatement.setInt(2, eventType);
+            preparedStatement.setInt(2, eventDefinitionId);
             preparedStatement.setInt(3, startLine);
             preparedStatement.setInt(4, endLine);
 
@@ -123,36 +97,25 @@ public abstract class Event {
                 preparedStatement.setString(6, endTime);
             }
 
+            preparedStatement.setDouble(7, severity);
+
             System.err.println(preparedStatement);
 
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } catch (SQLException e) {
+            System.err.println("ERROR commiting event do database.");
+            System.err.println("flightId: " + flightId);
+            System.err.println("eventDefinitionId: " + eventDefinitionId);
+            System.err.println("startLine: " + startLine);
+            System.err.println("endLine: " + endLine);
+            System.err.println("startTime: " + startTime);
+            System.err.println("endTime: " + endTime);
+            System.err.println("severity: " + severity);
+
             e.printStackTrace();
             System.exit(1);
         }
     }
-    /*
-    public void updateDatabaseFlightProcessed(Connection connection, int flightId, int eventType, String startTime, String endTime) {
-    //TODO: add bufferTime to database
-    try {
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_type, start_line, end_line, start_time, end_time) VALUES (?, ?, ?, ?, ?, ?)");
-        preparedStatement.setInt(1, flightId);
-        preparedStatement.setInt(2, eventType);
-        //preparedStatement.setInt(3, bufferTime);
-        preparedStatement.setInt(3, startLine);
-        preparedStatement.setInt(4, endLine);
-        preparedStatement.setString(5, myStartDateTime);
-        preparedStatement.setString(6, myEndDateTime);
-
-        System.err.println(preparedStatement);
-
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-    } catch (SQLException e) {
-        e.printStackTrace();
-    System.exit(1);
-    }
-    }*/
 }
 

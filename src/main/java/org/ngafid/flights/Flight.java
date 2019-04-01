@@ -15,6 +15,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import java.nio.charset.StandardCharsets;
+import java.nio.file.NoSuchFileException;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -28,6 +29,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -37,8 +39,11 @@ import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
+import org.ngafid.filters.Filter;
 
 public class Flight {
+    private static final Logger LOG = Logger.getLogger(Flight.class.getName());
+
     private final static double MAX_AIRPORT_DISTANCE_FT = 10000;
     private final static double MAX_RUNWAY_DISTANCE_FT = 100;
 
@@ -60,6 +65,7 @@ public class Flight {
     //hasAGL also requires an altitudeMSL column
     private boolean hasCoords = false;
     private boolean hasAGL = false;
+    private boolean insertCompleted = false;
 
     private String status;
     private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
@@ -74,8 +80,87 @@ public class Flight {
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
+
+    public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, uploadId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return flights;
+    }
+
+    public void remove(Connection connection) throws SQLException {
+        String query = "DELETE FROM events WHERE flight_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM flight_warnings WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM flight_processed WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM itinerary WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM double_series WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM string_series WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM flights WHERE id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
+
+
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_number, airframe_type, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl FROM flights WHERE fleet_id = ?";
+        return getFlights(connection, fleetId, 0);
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
+        if (limit > 0) queryString += " LIMIT 100";
+
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
 
@@ -86,17 +171,103 @@ public class Flight {
             flights.add(new Flight(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
+        return flights;
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
+        return getFlights(connection, fleetId, filter, 0);
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int limit) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+
+        if (limit > 0) queryString += " LIMIT 100";
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        for (int i = 0; i < parameters.size(); i++) {
+            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+
+            if (parameters.get(i) instanceof String) {
+                query.setString(i + 2, (String)parameters.get(i));
+            } else if (parameters.get(i) instanceof Double) {
+                query.setDouble(i + 2, (Double)parameters.get(i));
+            } else if (parameters.get(i) instanceof Integer) {
+                query.setInt(i + 2, (Integer)parameters.get(i));
+            }
+        }
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return flights;
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, String extraCondition) throws SQLException {
+        return getFlights(connection, extraCondition, 0);
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
+
+        if (limit > 0) queryString += " LIMIT 100";
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        for (int i = 0; i < parameters.size(); i++) {
+            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+
+            if (parameters.get(i) instanceof String) {
+                query.setString(i + 1, (String)parameters.get(i));
+            } else if (parameters.get(i) instanceof Double) {
+                query.setDouble(i + 1, (Double)parameters.get(i));
+            } else if (parameters.get(i) instanceof Integer) {
+                query.setInt(i + 1, (Integer)parameters.get(i));
+            }
+        }
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
         return flights;
     }
 
 
     // Added to use in pitch_db
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_number, airframe_type, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl FROM flights WHERE id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
 
         ResultSet resultSet = query.executeQuery();
+
+        resultSet.close();
+        query.close();
 
         if (resultSet.next()) {
             return new Flight(connection, resultSet);
@@ -111,8 +282,13 @@ public class Flight {
         fleetId = resultSet.getInt(2);
         uploaderId = resultSet.getInt(3);
         uploadId = resultSet.getInt(4);
-        tailNumber = resultSet.getString(5);
-        airframeType = resultSet.getString(6);
+
+        int tailId = resultSet.getInt(5);
+        int airframeId = resultSet.getInt(6); 
+
+        tailNumber = Tails.getTail(connection, fleetId, tailId);
+        airframeType = Airframes.getAirframe(connection, airframeId);
+
         startDateTime = resultSet.getString(7);
         endDateTime = resultSet.getString(8);
         filename = resultSet.getString(9);
@@ -121,20 +297,23 @@ public class Flight {
         status = resultSet.getString(12);
         hasCoords = resultSet.getBoolean(13);
         hasAGL = resultSet.getBoolean(14);
+        insertCompleted = resultSet.getBoolean(15);
 
         itinerary = Itinerary.getItinerary(connection, id);
     }
 
-    // added to use in pitch_db
     public int getId() {
         return id;
     }
 
-    ////// added to use in pitch_db
+    public int getFleetId() {
+        return fleetId;
+    }
+
+
     public String getFilename() {
         return filename;
     }
-    ////
 
     public int getNumberRows() {
         return numberRows;
@@ -142,6 +321,18 @@ public class Flight {
 
     public String getStatus() {
         return status;
+    }
+
+    public boolean insertCompleted() {
+        return insertCompleted;
+    }
+
+    public String getStartDateTime() {
+        return startDateTime;
+    }
+
+    public String getEndDateTime() {
+        return endDateTime;
     }
 
     public DoubleTimeSeries getDoubleTimeSeries(String name) {
@@ -235,7 +426,7 @@ public class Flight {
         }
 
         if (airframeType == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
-        System.err.println("detected airframe type: '" + airframeType);
+        System.err.println("detected airframe type: '" + airframeType + "'");
 
 
         //the next line is the column data types
@@ -248,6 +439,7 @@ public class Flight {
 
         //the next line is the column headers
         String headersLine = bufferedReader.readLine();
+        System.out.println("Headers line is: " + headersLine);
         headers.addAll( Arrays.asList( headersLine.split("\\,", -1) ) );
         headers.replaceAll(String::trim);
 
@@ -266,6 +458,11 @@ public class Flight {
 
         String line;
         while ((line = bufferedReader.readLine()) != null) {
+            if (line.contains("Lcl Time")) {
+                System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
+                continue;
+            }
+
             //if the line is empty, skip it
             if (line.trim().length() == 0) continue;
             //this line is a comment, skip it
@@ -304,6 +501,8 @@ public class Flight {
             System.err.println("WARNING: last line of the file was cut short and ignored.");
         }
 
+        System.out.println("parsed " + lineNumber + " lines.");
+
         for (int i = 0; i < csvValues.size(); i++) {
             //check to see if each column is a column of doubles or a column of strings
 
@@ -326,6 +525,7 @@ public class Flight {
 
             if (isDoubleList) {
                 //System.out.println(headers.get(i) + " is a DOUBLE column, ArrayList size: " + current.size());
+                //System.out.println(current);
                 DoubleTimeSeries dts = new DoubleTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (dts.validCount() > 0) {
                     doubleTimeSeries.put(headers.get(i), dts);
@@ -335,6 +535,7 @@ public class Flight {
 
             } else {
                 //System.out.println(headers.get(i) + " is a STRING column, ArrayList size: " + current.size());
+                //System.out.println(current);
                 StringTimeSeries sts = new StringTimeSeries(headers.get(i), dataTypes.get(i), current);
                 if (sts.validCount() > 0) {
                     stringTimeSeries.put(headers.get(i), sts);
@@ -381,7 +582,53 @@ public class Flight {
             exceptions.add(e);
         }
 
-        calculateItinerary();
+        try {
+            calculateTotalFuel(new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            calculateLaggedAltMSL("AltMSL", 10, "AltMSL Lag Diff");
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        try {
+            if (airframeType.equals("Cessna 172S") || airframeType.equals("PA-28-181")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else if (airframeType.equals("PA-44-180")) {
+                String egt1Names[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egt1Names, "E1 EGT Variance", "deg F");
+
+                String egt2Names[] = {"E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"};
+                calculateVariance(egt2Names, "E2 EGT Variance", "deg F");
+
+
+            } else if (airframeType.equals("Cirrus SR20")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else {
+                LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeType + "'");
+                System.exit(1);
+            }
+
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
+        }
+
+        if (hasCoords && hasAGL) {
+            calculateItinerary();
+        }
     }
 
     private void checkExceptions() {
@@ -427,9 +674,12 @@ public class Flight {
     public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = zipEntryName;
 
+        if (!filename.contains("/")) {
+            throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
+        }
+
         String[] parts = zipEntryName.split("/");
         this.tailNumber = parts[0];
-        //System.out.println("tail number is: " + tailNumber);
 
         try {
             inputStream = getReusableInputStream(inputStream);
@@ -478,15 +728,103 @@ public class Flight {
             //        } catch (FileNotFoundException e) {
             //            System.err.println("ERROR: could not find flight file '" + filename + "'");
             //            exceptions.add(e);
-    } catch (FatalFlightFileException e) {
-        status = "WARNING";
-        throw e;
-    } catch (IOException e) {
-        status = "WARNING";
-        throw e;
+        } catch (FatalFlightFileException e) {
+            status = "WARNING";
+            throw e;
+        } catch (IOException e) {
+            status = "WARNING";
+            throw e;
+        }
+
+        checkExceptions();
     }
 
-    checkExceptions();
+    public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
+        headers.add(laggedColumnName);
+        dataTypes.add("ft msl");
+
+        DoubleTimeSeries altMSL = doubleTimeSeries.get(altMSLColumnName);
+        if (altMSL == null) {
+            throw new MalformedFlightFileException("Cannot calculate '" + laggedColumnName + "' as parameter '" + altMSLColumnName + "' was missing.");
+        }
+
+        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(laggedColumnName, "ft msl");
+
+        for (int i = 0; i < altMSL.size(); i++) {
+            if (i < lag) laggedAltMSL.add(0.0);
+            else {
+                laggedAltMSL.add(altMSL.get(i - lag));
+            }
+        }
+
+        doubleTimeSeries.put(laggedColumnName, laggedAltMSL);
+    }
+
+
+    public void calculateVariance(String[] columnNames, String varianceColumnName, String varianceDataType) throws MalformedFlightFileException {
+        headers.add(varianceColumnName);
+        dataTypes.add(varianceDataType);
+
+        DoubleTimeSeries columns[] = new DoubleTimeSeries[columnNames.length];
+        for (int i = 0; i < columns.length; i++) {
+            columns[i] = doubleTimeSeries.get(columnNames[i]);
+
+            if (columns[i] == null) {
+                throw new MalformedFlightFileException("Cannot calculate '" + varianceColumnName + "' as parameter '" + columnNames[i] + "' was missing.");
+            }
+        }
+
+        DoubleTimeSeries variance = new DoubleTimeSeries(varianceColumnName, varianceDataType);
+
+        for (int i = 0; i < columns[0].size(); i++) {
+            double max = -Double.MAX_VALUE;
+            double min = Double.MAX_VALUE;
+
+            for (int j = 0; j < columns.length; j++) {
+                double current = columns[j].get(i);
+                if (!Double.isNaN(current) && current > max) max = columns[j].get(i);
+                if (!Double.isNaN(current) && current < min) min = columns[j].get(i);
+            }
+
+            double v = 0;
+            if (max != -Double.MAX_VALUE && min != Double.MAX_VALUE) {
+                v = max - min;
+            }
+
+            variance.add(v);
+        }
+
+        doubleTimeSeries.put(varianceColumnName, variance);
+    }
+
+
+    public void calculateTotalFuel(String[] fuelColumnNames, String totalFuelColumnName) throws MalformedFlightFileException {
+        headers.add(totalFuelColumnName);
+        dataTypes.add("gals");
+
+
+        DoubleTimeSeries fuelQuantities[] = new DoubleTimeSeries[fuelColumnNames.length];
+        for (int i = 0; i < fuelQuantities.length; i++) {
+            fuelQuantities[i] = doubleTimeSeries.get(fuelColumnNames[i]);
+
+            if (fuelQuantities[i] == null) {
+                throw new MalformedFlightFileException("Cannot calculate 'Total Fuel' as fuel parameter '" + fuelColumnNames[i] + "' was missing.");
+            }
+        }
+
+        DoubleTimeSeries totalFuel = new DoubleTimeSeries(totalFuelColumnName, "gals");
+
+        for (int i = 0; i < fuelQuantities[0].size(); i++) {
+            double totalFuelValue = 0.0;
+            for (int j = 0; j < fuelQuantities.length; j++) {
+                totalFuelValue += fuelQuantities[j].get(i);
+            }
+            totalFuel.add(totalFuelValue);
+
+        }
+
+        doubleTimeSeries.put(totalFuelColumnName, totalFuel);
+
     }
 
     public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -532,7 +870,6 @@ public class Flight {
         hasAGL = true;
 
         DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName, "ft agl");
-        doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -547,12 +884,23 @@ public class Flight {
                 continue;
             }
 
-            int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
+            try {
+                int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
 
-            altitudeAGLTS.add(altitudeAGL);
+                altitudeAGLTS.add(altitudeAGL);
+
+                //the terrain cache will not be able to find the file if the lat/long is outside of the USA
+            } catch (NoSuchFileException e) {
+                System.err.println("ERROR: could not read terrain file: " + e);
+
+                hasAGL = false;
+                throw new MalformedFlightFileException("Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+            }
 
             //System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
         }
+
+        doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
     }
 
     public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
@@ -753,12 +1101,19 @@ public class Flight {
         this.uploadId = uploadId;
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_type, tail_number, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            //first check and see if the airframe and tail number already exist in the database for this 
+            //flight
+            int airframeId = Airframes.getId(connection, airframeType);
+            Airframes.setAirframeFleet(connection, airframeId, fleetId);
+
+            int tailId = Tails.getId(connection, fleetId, tailNumber);
+
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, tail_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
             preparedStatement.setInt(3, uploadId);
-            preparedStatement.setString(4, airframeType);
-            preparedStatement.setString(5, tailNumber);
+            preparedStatement.setInt(4, airframeId);
+            preparedStatement.setInt(5, tailId);
             preparedStatement.setString(6, startDateTime);
             preparedStatement.setString(7, endDateTime);
             preparedStatement.setString(8, filename);
@@ -767,9 +1122,10 @@ public class Flight {
             preparedStatement.setString(11, status);
             preparedStatement.setBoolean(12, hasCoords);
             preparedStatement.setBoolean(13, hasAGL);
-            preparedStatement.executeUpdate();
+            preparedStatement.setBoolean(14, false); //insert not yet completed
 
             System.out.println(preparedStatement);
+            preparedStatement.executeUpdate();
 
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
             if (resultSet.next()) {
@@ -785,23 +1141,17 @@ public class Flight {
                 }
 
                 for (Exception exception : exceptions) {
-                    PreparedStatement exceptionPreparedStatement = connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message, stack_trace) VALUES (?, ?, ?)");
-                    exceptionPreparedStatement.setInt(1, flightId);
-                    exceptionPreparedStatement.setString(2, exception.getMessage());
-
-                    StringWriter sw = new StringWriter();
-                    PrintWriter pw = new PrintWriter(sw);
-                    exception.printStackTrace(pw);
-                    String sStackTrace = sw.toString(); // stack trace as a string
-
-                    exceptionPreparedStatement.setString(3, sStackTrace);
-                    exceptionPreparedStatement.executeUpdate();
-
+                    FlightWarning.insertWarning(connection, flightId, exception.getMessage());
                 }
 
                 for (int i = 0; i < itinerary.size(); i++) {
                     itinerary.get(i).updateDatabase(connection, flightId, i);
                 }
+
+                PreparedStatement ps = connection.prepareStatement("UPDATE flights SET insert_completed = 1 WHERE id = ?");
+                ps.setInt(1, this.id);
+                ps.executeUpdate();
+
             } else {
                 System.err.println("ERROR: insertion of flight to the database did not result in an id.  This should never happen.");
                 System.exit(1);
