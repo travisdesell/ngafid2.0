@@ -1,4 +1,3 @@
-
 *************** sp_GenericExceedances ***************
 Roll: roll_attitude < -60 OR roll_attitude > 60
 Low Pitch: pitch_attitude < -30 
@@ -41,7 +40,7 @@ EGT Variance: max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400
 *************** sp_PA28Exceedances ***************
 Airspeed: indicated_airspeed > 154
 Altitude: msl_altitude > 12800
-CHT: N.A.
+CHT: eng_1_cht(1-4) > 500
 Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main < 8.25 AND Pitch < 5
 Low Oil Pressure: eng_1_oil_press < 25 AND eng_1_rpm > 100
 Low Airspeed on Approach: indicated_airspeed < 56 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
@@ -54,7 +53,7 @@ EGT Variance: max(eng_1_egt(1-4) - min(eng_1_egt(1-4)) > 400
 *************** sp_PA44Exceedances ***************
 Airspeed: indicated_airspeed > 202
 Altitude: msl_altitude > 12800
-CHT: eng_1_cht_(1-2) > 500
+CHT: eng_1_cht_1 > 500 OR eng_2_cht_1 > 500
 Low Fuel: fuel_quantity_left_main + fuel_quantity_right_main (total fuel) < 17.56 AND Pitch < 5
 Low Oil Pressure: (eng_1_oil_press < 25 AND eng_1_rpm > 100) OR (eng_2_oil_press < 25 AND eng_2_rpm > 100)
 Low Airspeed on Approach: indicated_airspeed < 66 AND (AltAGL BETWEEN 100 AND 500) AND AltAGL[t] - AltAGL[t-10] < 0
@@ -75,4 +74,3 @@ Low Airspeed on Climbout: indicated_airspeed < 60 AND (AltAGL BETWEEN 100 AND 50
 Engine Shutdown: RPM < 100 AND AltAGL > 500 AND AltAGL < 3000
 CHT Variance: max(eng_1_cht(1-6) - min(eng_1_cht(1-6)) > 100
 EGT Variance: max(eng_1_egt(1-6) - min(eng_1_egt(1-6)) > 400
-
