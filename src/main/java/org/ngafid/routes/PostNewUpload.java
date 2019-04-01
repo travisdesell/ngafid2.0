@@ -100,8 +100,8 @@ public class PostNewUpload implements Route {
         //  4. file does exist but with different hash -- error message
 
         try {
-            PreparedStatement query = connection.prepareStatement("SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status FROM uploads WHERE filename = ? AND uploader_id = ?");
-            query.setString(1, filename);
+            PreparedStatement query = connection.prepareStatement("SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?");
+            query.setString(1, md5Hash);
             query.setInt(2, uploaderId);
 
             ResultSet resultSet = query.executeQuery();
@@ -128,24 +128,20 @@ public class PostNewUpload implements Route {
                 return gson.toJson(Upload.getUpload(connection, uploaderId, md5Hash));
 
             } else {
+                //a file with this md5 hash exists
                 String dbMd5Hash = resultSet.getString(1);
                 int dbNumberChunks = resultSet.getInt(2);
                 int dbUploadedChunks = resultSet.getInt(3);
                 String dbChunkStatuts = resultSet.getString(4);
                 String dbStatus = resultSet.getString(5);
+                String dbFilename = resultSet.getString(6);
 
-                if (!dbMd5Hash.equals(md5Hash)) {
-                    //  4. file does exist but with different hash -- error message
-                    LOG.severe("ERROR! file exists with different md5 hash");
-
-                    return gson.toJson(new ErrorResponse("File Upload Failure", "A file with the same name has already been uploaded with a different md5_hash (the file names are the same but the contents are different).  Either rename the new file you would like to upload, or delete the already existing file and retry the upload of the new file."));
-
-                } else if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
+                if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
                     //  3. file does exist and has finished uploading -- report finished
                     //do the same thing, client will handle completion
                     LOG.severe("ERROR! Final file has already been uploaded.");
 
-                    return gson.toJson(new ErrorResponse("File Already Exists", "This file has already been uploaded to the server and does not need to be uploaded again."));
+                    return gson.toJson(new ErrorResponse("File Already Exists", "This file has already been uploaded to the server as '" + dbFilename + "' and does not need to be uploaded again."));
 
                 } else {
                     //  2. file does exist and has not finished uploading -- restart upload

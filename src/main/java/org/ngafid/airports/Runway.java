@@ -32,6 +32,10 @@ public class Runway {
         this.hasCoordinates = true;
     }
 
+    public String getName() {
+        return name;
+    }
+
     /**
      *  Modified from:
      *  https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment

@@ -110,7 +110,6 @@ public class FleetAccess {
      *
      * @param connection The database connection.
      * @param userId The id of the user.
-     * @param fleetId The id of the fleet.
      *
      * @exception SQLException If there was a query/database problem.
      *

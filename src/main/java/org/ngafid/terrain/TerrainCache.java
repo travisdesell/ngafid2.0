@@ -11,6 +11,7 @@ import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.NoSuchFileException;
 
 
 public class TerrainCache {
@@ -73,7 +74,7 @@ public class TerrainCache {
         return file;
     }
 
-    public static int getAltitudeFt(double msl, double latitude, double longitude) {
+    public static int getAltitudeFt(double msl, double latitude, double longitude) throws NoSuchFileException {
         //cout << "getting tile for latitude: " << latitude << " and longitude: " << longitude << endl;
         int latIndex = -((int)Math.ceil(latitude) - 91);
         int lonIndex = (int)Math.floor(longitude) + 180;
@@ -104,7 +105,7 @@ public class TerrainCache {
 
     }
 
-    public static void main(String[] arguments) {
+    public static void main(String[] arguments) throws NoSuchFileException {
         //albany airport - should be 267 ft
         double test = getAltitudeFt(0, 42.74871, -73.80550);
         System.out.println("albany airport altitude: " + test + ", should be 267 ft");
