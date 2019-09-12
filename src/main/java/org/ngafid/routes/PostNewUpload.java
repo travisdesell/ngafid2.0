@@ -150,6 +150,8 @@ public class PostNewUpload implements Route {
                 }
             }
         } catch (SQLException e) {
+            LOG.severe(gson.toJson(e));
+            e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
     }

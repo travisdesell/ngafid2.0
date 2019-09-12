@@ -44,6 +44,8 @@ public class PostCreateEvent implements Route {
         int stopBuffer = Integer.parseInt(request.queryParams("stopBuffer"));
         String airframe = request.queryParams("airframe");
         String filterJSON = request.queryParams("filterQuery");
+        String severityColumnNamesJSON = request.queryParams("severityColumnNames");
+        String severityType = request.queryParams("severityType");
 
         LOG.info("eventName: " + eventName);
         LOG.info("startBuffer: " + startBuffer);
@@ -55,7 +57,7 @@ public class PostCreateEvent implements Route {
         try {
             Connection connection = Database.getConnection();
 
-            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON);
+            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
 
             return "{}";
         } catch (SQLException e) {

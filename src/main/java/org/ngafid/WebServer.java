@@ -114,6 +114,9 @@ public final class WebServer {
             if (user == null) {
                 LOG.info("redirecting to access_denied");
                 response.redirect("/access_denied");
+            } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
+                LOG.info("user waiting status, redirecting to waiting page!");
+                response.redirect("/protected/waiting");
             } 
         });
 
@@ -179,6 +182,8 @@ public final class WebServer {
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
+
+        Spark.post("/protected/events", new PostEvents(gson));
 
         Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));

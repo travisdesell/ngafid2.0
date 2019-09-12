@@ -35,6 +35,8 @@ public class ErrorMessage {
                 //message existed in the database, return the id
                 int messageId = resultSet.getInt(1);
                 idMap.put(message, messageId);
+                resultSet.close();
+                query.close();
                 return messageId;
 
             } else {
@@ -45,12 +47,15 @@ public class ErrorMessage {
 
                 LOG.info(query.toString());
                 query.executeUpdate();
+                resultSet.close();
 
                 resultSet = query.getGeneratedKeys();
                 resultSet.next();
 
                 int messageId = resultSet.getInt(1);
                 idMap.put(message, messageId);
+                resultSet.close();
+                query.close();
 
                 return messageId;
             }
@@ -76,10 +81,14 @@ public class ErrorMessage {
                 //message existed in the database, return the id
                 message = resultSet.getString(1);
                 messageMap.put(messageId, message);
+                resultSet.close();
+                query.close();
                 return message;
 
             } else {
                 //message id did not exist in the database, this should not happen -- return null
+                resultSet.close();
+                query.close();
                 return null;
             }
         }

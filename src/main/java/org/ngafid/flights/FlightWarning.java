@@ -27,6 +27,7 @@ public class FlightWarning {
         LOG.info(exceptionPreparedStatement.toString());
 
         exceptionPreparedStatement.executeUpdate();
+        exceptionPreparedStatement.close();
     }
 
     public static ArrayList<FlightWarning> getFlightWarnings(Connection connection, int uploadId) throws SQLException {
@@ -41,6 +42,8 @@ public class FlightWarning {
             warnings.add(new FlightWarning(connection, resultSet));
         }
 
+        resultSet.close();
+        query.close();
         return warnings;
     }
 

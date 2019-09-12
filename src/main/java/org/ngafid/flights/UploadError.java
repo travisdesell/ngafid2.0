@@ -25,6 +25,7 @@ public class UploadError {
         LOG.info(exceptionPreparedStatement.toString());
 
         exceptionPreparedStatement.executeUpdate();
+        exceptionPreparedStatement.close();
     }
 
 
@@ -38,6 +39,9 @@ public class UploadError {
         while (resultSet.next()) {
             uploads.add(new UploadError(connection, resultSet));
         }
+
+        resultSet.close();
+        uploadQuery.close();
 
         return uploads;
     }

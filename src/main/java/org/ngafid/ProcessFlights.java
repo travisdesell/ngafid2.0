@@ -113,6 +113,13 @@ public class ProcessFlights {
                                 }
                             } 
 
+                        } catch (java.nio.file.NoSuchFileException e) {
+                            System.err.println("IOException: " + e );
+                            e.printStackTrace();
+
+                            UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload and re-upload.");
+                            status = "ERROR";
+
                         } catch (IOException e) {
                             System.err.println("IOException: " + e );
                             e.printStackTrace();

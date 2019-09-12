@@ -122,7 +122,7 @@ $query = "CREATE TABLE `flights` (
     `insert_completed` INT(1) NOT NULL DEFAULT 0,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY(`md5_hash`),
+    UNIQUE KEY(`fleet_id`, `md5_hash`),
     INDEX(`fleet_id`),
     INDEX(`uploader_id`),
     INDEX(`tail_id`),
@@ -287,6 +287,8 @@ $query = "CREATE TABLE `event_definitions` (
     `stop_buffer` INT(11),
     `column_names` VARCHAR(128),
     `condition_json` VARCHAR(512),
+    `severity_column_names` VARCHAR(128),
+    `severity_type` VARCHAR(3),
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`, `airframe_id`, `fleet_id`)

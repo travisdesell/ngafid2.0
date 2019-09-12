@@ -32,6 +32,7 @@ public class Airframes {
 
             //LOG.info(query.toString());
             query.executeUpdate();
+            query.close();
 
             fleetAirframes.add(key);
         }
@@ -56,6 +57,9 @@ public class Airframes {
                 //airframe existed in the database, return the id
                 int airframeId = resultSet.getInt(1);
                 idMap.put(airframe, airframeId);
+
+                resultSet.close();
+                query.close();
                 return airframeId;
 
             } else {
@@ -66,12 +70,16 @@ public class Airframes {
 
                 //LOG.info(query.toString());
                 query.executeUpdate();
+                resultSet.close();
 
                 resultSet = query.getGeneratedKeys();
                 resultSet.next();
 
                 int airframeId = resultSet.getInt(1);
                 idMap.put(airframe, airframeId);
+
+                resultSet.close();
+                query.close();
 
                 return airframeId;
             }
@@ -97,6 +105,9 @@ public class Airframes {
                 //airframe existed in the database, return the id
                 airframe = resultSet.getString(1);
                 airframeMap.put(airframeId, airframe);
+
+                resultSet.close();
+                query.close();
                 return airframe;
 
             } else {
@@ -122,6 +133,8 @@ public class Airframes {
             String airframe = resultSet.getString(1);
             airframes.add(airframe);
         }
+        resultSet.close();
+        query.close();
 
         return airframes;
     }
@@ -140,6 +153,8 @@ public class Airframes {
             String airframe = resultSet.getString(1);
             airframes.add(airframe);
         }
+        resultSet.close();
+        query.close();
 
         return airframes;
     }
