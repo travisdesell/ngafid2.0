@@ -106,6 +106,9 @@ public class DoubleTimeSeries {
         if (resultSet.next()) {
             double min = resultSet.getDouble(1);
             double max = resultSet.getDouble(2);
+
+            resultSet.close();
+            query.close();
             return new Pair<Double,Double>(min, max);
         }
 
@@ -126,6 +129,8 @@ public class DoubleTimeSeries {
             String airport = resultSet.getString(1);
             name.add(airport);
         }
+        resultSet.close();
+        query.close();
 
         return name;
     }
@@ -139,9 +144,14 @@ public class DoubleTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            return new DoubleTimeSeries(resultSet);
+            DoubleTimeSeries result = new DoubleTimeSeries(resultSet);
+            resultSet.close();
+            query.close();
+            return result;
         } else {
             //TODO: should probably throw an exception 
+            resultSet.close();
+            query.close();
             return null;
         }
     }

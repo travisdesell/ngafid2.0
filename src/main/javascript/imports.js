@@ -315,12 +315,19 @@ class Import extends React.Component {
                 colorClasses += " border-warning text-warning ";
             }
 
+        } else if (status == "UPLOADED") {
+            statusText = "Not Yet Imported";
+            progressBarClasses += " bg-info";
+            colorClasses += " border-info text-info";
+
         } else if (status == "UPLOADING") {
             statusText = "Uploading";
+
         } else if (status == "UPLOAD INCOMPLETE") {
             statusText = "Upload Incomplete";
             progressBarClasses += " bg-warning";
             colorClasses += " border-warning text-warning";
+
         } else if (status == "ERROR") {
             statusText = "Import Failed";
             progressBarClasses += " bg-danger";

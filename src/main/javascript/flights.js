@@ -9,9 +9,12 @@ import { map, styles, layers, Colors } from "./map.js";
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
-import {Icon, Stroke, Style} from 'ol/style.js';
+import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
+import Draw from 'ol/interaction/Draw.js';
+
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
+import Point from 'ol/geom/Point.js';
 import { Filter } from './filter.js';
 
 
@@ -20,12 +23,21 @@ var moment = require('moment');
 
 import Plotly from 'plotly.js';
 
+var plotlyLayout = { 
+    shapes : []
+};
+
 /*
 var airframes = [ "PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"  ];
 var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", "N743ND" , "N728ND" , "N768ND" , "N713ND" , "N732ND", "N718ND" , "N739ND" ];
 var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
+
+//save the event definitions after the first event load so we can reuse them and not
+//have to keep sending them from the server
+var eventDefinitionsLoaded = false;
+var eventDefinitions = null;
 
 var rules = [
     {
@@ -344,23 +356,26 @@ class Itinerary extends React.Component {
         */
 
         return (
-            <div className={cellClasses} style={cellStyle}>
-                <div style={{flex: "0 0"}}>
-                    <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+            <div>
+                <b className={"p-1"} style={{marginBottom:"0"}}>Itinerary:</b>
+                <div className={cellClasses} style={cellStyle}>
+                    <div style={{flex: "0 0"}}>
+                        <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                    </div>
+
+                    {
+                        this.props.itinerary.map((stop, index) => {
+                            let identifier = stop.airport;
+                            if (stop.runway != null) identifier += " (" + stop.runway + ")";
+
+                            return (
+                                <button className={buttonClasses} key={index} style={styleButton} onClick={() => this.itineraryClicked(index)}>
+                                    { identifier }
+                                </button>
+                            );
+                        })
+                    }
                 </div>
-
-                {
-                    this.props.itinerary.map((stop, index) => {
-                        let identifier = stop.airport;
-                        if (stop.runway != null) identifier += " (" + stop.runway + ")";
-
-                        return (
-                            <button className={buttonClasses} key={index} style={styleButton} onClick={() => this.itineraryClicked(index)}>
-                                { identifier }
-                            </button>
-                        );
-                    })
-                }
             </div>
         );
 
@@ -449,26 +464,157 @@ class TraceButtons extends React.Component {
 
         let parentFlight = this.state.parentFlight;
 
-
         return (
-            <div className={cellClasses} style={cellStyle}>
-                {
-                    parentFlight.state.traceNames.map((traceName, index) => {
-                        let ariaPressed = parentFlight.state.traceVisibility[traceName];
-                        let active = "";
-                        if (ariaPressed) active = " active";
+            <div>
+                <b className={"p-1"} style={{marginBottom:"0"}}>Flight Parameters:</b>
+                <div className={cellClasses} style={cellStyle}>
+                    {
+                        parentFlight.state.commonTraceNames.map((traceName, index) => {
+                            let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                            let active = "";
+                            if (ariaPressed) active = " active";
 
-                        return (
-                            <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
-                                {traceName}
-                            </button>
-                        );
-                    })
-                }
+                            return (
+                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                    {traceName}
+                                </button>
+                            );
+                        })
+                    }
+                </div>
+                <div className={cellClasses} style={cellStyle}>
+                    {
+                        parentFlight.state.uncommonTraceNames.map((traceName, index) => {
+                            let ariaPressed = parentFlight.state.traceVisibility[traceName];
+                            let active = "";
+                            if (ariaPressed) active = " active";
+
+                            return (
+                                <button className={buttonClasses + active} key={traceName} style={styleButton} data-toggle="button" aria-pressed={ariaPressed} onClick={() => this.traceClicked(traceName)}>
+                                    {traceName}
+                                </button>
+                            );
+                        })
+                    }
+                </div>
             </div>
         );
     }
 }
+
+class Events extends React.Component {
+    constructor(props) {
+        super(props);
+
+        console.log("constructing Events, props.events:");
+        console.log(props.events);
+
+        let definitionsPresent = [];
+
+        for (let i = 0; i < props.events.length; i++) {
+            if (!definitionsPresent.includes(props.events[i].eventDefinition)) {
+                definitionsPresent.push(props.events[i].eventDefinition);
+            }
+            props.events[i].color = Colors.randomValue();
+        }
+
+        this.state = {
+            events : props.events,
+            definitions : definitionsPresent
+        };
+    }
+
+    updateEventDisplay(index, toggle) {
+        let event = this.state.events[index];
+        console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
+        let shapes = plotlyLayout.shapes;
+
+        let update = {
+            id: event.id,
+            type: 'rect',
+            // x-reference is assigned to the x-values
+            xref: 'x',
+            // y-reference is assigned to the plot paper [0,1]
+            yref: 'paper',
+            x0: event.startLine - 1,
+            y0: 0,
+            x1: event.endLine + 1,
+            y1: 1,
+            fillcolor: event.color,
+            'opacity': 0.5,
+            line: {
+                'width': 0,
+            }
+        };
+
+        let found = false;
+        for (let i = 0; i < shapes.length; i++) {
+            if (shapes[i].id == event.id) {
+                if (toggle) {
+                    shapes = shapes.splice(i, 1);
+                } else {
+                    shapes[i] = update;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found && toggle) {
+            shapes.push(update);
+        }
+
+        Plotly.relayout('plot', plotlyLayout);
+    }
+
+    changeColor(e, index) {
+        this.state.events[index].color = e.target.value;
+        this.setState({
+            events : this.state.events
+        });
+
+        this.updateEventDisplay(index, false);
+    }
+
+    eventClicked(index) {
+        this.updateEventDisplay(index, true);
+    }
+
+    render() {
+        let cellClasses = "d-flex flex-row p-1";
+        let cellStyle = { "overflowX" : "auto" };
+        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const styleButton = {
+            flex : "0 0 10em"
+        };
+
+        return (
+            <div>
+                <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
+
+                {
+                    this.state.events.map((event, index) => {
+                        return (
+                            <div className={cellClasses} style={cellStyle} key={index}>
+                                <div style={{flex: "0 0"}}>
+                                    <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                                </div>
+
+                                <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
+                                </button>
+                            </div>
+
+                        );
+                    })
+                }
+
+            </div>
+        );
+
+    }
+}
+
 
 class Flight extends React.Component {
     constructor(props) {
@@ -481,10 +627,13 @@ class Flight extends React.Component {
         this.state = {
             pathVisible : false,
             mapLoaded : false,
-            traceNames : null,
+            eventsLoaded : false,
+            commonTraceNames : null,
+            uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
             traceNamesVisible : false,
+            eventsVisible : false,
             itineraryVisible : false,
             layer : null,
             color : color
@@ -505,12 +654,23 @@ class Flight extends React.Component {
         }
 
         console.log("hiding plots");
-        if (this.state.traceNames) {
+        if (this.state.commonTraceNames) {
             let visible = false;
 
-            for (let i = 0; i < this.state.traceNames.length; i++) {
-                let seriesName = this.state.traceNames[i];
-                //check and see if this series was loaded in the past
+            for (let i = 0; i < this.state.commonTraceNames.length; i++) {
+                let seriesName = this.state.commonTraceNames[i];
+
+                if (seriesName in this.state.traceIndex) {
+
+                    //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
+                    //otherwise it will hide them
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [ this.state.traceIndex[seriesName] ])
+                }
+            }
+
+            for (let i = 0; i < this.state.uncommonTraceNames.length; i++) {
+                let seriesName = this.state.uncommonTraceNames[i];
+
                 if (seriesName in this.state.traceIndex) {
 
                     //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
@@ -523,7 +683,7 @@ class Flight extends React.Component {
     }
 
     plotClicked() {
-        if (this.state.traceNames == null) {
+        if (this.state.commonTraceNames == null) {
             var thisFlight = this;
 
             var submissionData = {
@@ -546,13 +706,44 @@ class Flight extends React.Component {
 
                     var names = response.names;
 
+                    /*
+                     * Do these common trace parameters first:
+                     * Altitiude AGL
+                     * Altitude MSL
+                     * E1 MAP
+                     * E2 MAP
+                     * E1 RPM
+                     * E2 RPM
+                     * IAS
+                     * Normal Acceleration
+                     * Pitch
+                     * Roll
+                     * Vertical Speed
+                     */
+                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd"];
+                    var commonTraceNames = [];
+                    var uncommonTraceNames = [];
+
+                    for (let i = 0; i < response.names.length; i++) {
+                        let name = response.names[i];
+
+                        //console.log(name);
+                        if (preferredNames.includes(name)) {
+                            commonTraceNames.push(name);
+                        } else {
+                            uncommonTraceNames.push(name);
+                        }
+                    }
+
                     //set the trace number for this series
-                    thisFlight.state.traceNames = response.names;
+                    thisFlight.state.commonTraceNames = commonTraceNames;
+                    thisFlight.state.uncommonTraceNames = uncommonTraceNames;
                     thisFlight.state.traceNamesVisible = true;
                     thisFlight.setState(thisFlight.state);
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    this.state.traceNames = null;
+                    this.state.commonTraceNames = null;
+                    this.state.uncommonTraceNames = null;
                     errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
                 },   
                 async: true 
@@ -560,8 +751,9 @@ class Flight extends React.Component {
         } else {
             let visible = !this.state.traceNamesVisible;
 
-            for (let i = 0; i < this.state.traceNames.length; i++) {
-                let seriesName = this.state.traceNames[i];
+            for (let i = 0; i < this.state.commonTraceNames.length; i++) {
+                let seriesName = this.state.commonTraceNames[i];
+
                 //check and see if this series was loaded in the past
                 if (seriesName in this.state.traceIndex) {
 
@@ -571,39 +763,22 @@ class Flight extends React.Component {
                 }
             }
 
+            for (let i = 0; i < this.state.uncommonTraceNames.length; i++) {
+                let seriesName = this.state.uncommonTraceNames[i];
+
+                //check and see if this series was loaded in the past
+                if (seriesName in this.state.traceIndex) {
+
+                    //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
+                    //otherwise it will hide them
+                    Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [ this.state.traceIndex[seriesName] ])
+                }
+            }
+
+
             this.state.traceNamesVisible = !this.state.traceNamesVisible;
             this.setState(this.state);
         }
-
-        /*
-        var trace3 = {
-            x: [1, 2, 3, 4, 5],
-            y: [11, 8, 1, 7, 13],
-            type: 'scatter',
-            yaxis: 'y2'
-        };
-        var data_update = [trace3];
-        var layout_update = {
-            title : "new title!"
-        }
-
-        console.log($("#plot"));
-        console.log($("#plot")[0].layout);
-        var layout = $("#plot")[0].layout;
-        layout.yaxis2 = {
-            title: 'yaxis2 title',
-            titlefont: {color: '#ff7f0e'},
-            tickfont: {color: '#ff7f0e'},
-            anchor: 'free',
-            overlaying: 'y',
-            side: 'left',
-            position: 0.15
-        };
-
-        Plotly.update('plot', $("#plot").data, layout);
-
-        Plotly.addTraces('plot', data_update);
-        */
     }
 
     flightColorChange(target, event) {
@@ -628,21 +803,69 @@ class Flight extends React.Component {
 
     downloadClicked() {
         window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+    }
 
-        /*
-        let filePath = 'https://ngafid.org/protected/get_kml?flight_id=' + this.props.flightInfo.id;
-        let downloadName = "flight_" + this.props.flightInfo.id + ".kml";
+    exclamationClicked() {
+        console.log ("exclamation clicked!");
 
-        console.log("creating download ref: '" + filePath + "'");
-        console.log("creating download name: '" + downloadName + "'");
+        if (!this.state.eventsLoaded) {
+            console.log("loading events!");
 
-        let a = document.createElement('kml-download');
-        a.href = filePath;
-        a.download = downloadName;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-        */
+            this.state.eventsLoaded = true;
+            this.state.eventsVisible = true;
+
+            var thisFlight = this;
+
+            var submissionData = {
+                flightId : this.props.flightInfo.id,
+                eventDefinitionsLoaded : eventDefinitionsLoaded
+            };   
+
+            $.ajax({
+                type: 'POST',
+                url: '/protected/events',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    if (!eventDefinitionsLoaded) {
+                        eventDefinitions = response.definitions;
+                        eventDefinitionsLoaded = true;
+                    }
+
+                    let events = response.events;
+                    for (let i = 0; i < events.length; i++) {
+                        for (let j = 0; j < eventDefinitions.length; j++) {
+
+                            if (events[i].eventDefinitionId == eventDefinitions[j].id) {
+                                events[i].eventDefinition = eventDefinitions[j];
+                                console.log("set events[" + i + "].eventDefinition to:");
+                                console.log(events[i].eventDefinition);
+                            }
+                        }
+                    }
+                    thisFlight.state.events = events;
+
+                    thisFlight.setState(thisFlight.state);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    thisFlight.state.mapLoaded = false;
+                    thisFlight.setState(thisFlight.state);
+
+                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                },   
+                async: true 
+            });  
+
+        } else {
+            console.log("events already loaded!");
+
+            //toggle visibility if already loaded
+            this.state.eventsVisible = !this.state.eventsVisible;
+            this.setState(this.state);
+        }
     }
 
     globeClicked() {
@@ -683,26 +906,46 @@ class Flight extends React.Component {
                     var color = thisFlight.state.color;
                     console.log(color);
 
+                    thisFlight.state.trackingPoint = new Feature({
+                                    geometry : new Point(points[0]),
+                                    name: 'TrackingPoint'
+                                });
+
                     thisFlight.state.layer = new VectorLayer({
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
                                 width: 1.5
                             }),
+                            image: new Circle({
+                                radius: 5,
+                                //fill: new Fill({color: [0, 0, 0, 255]}),
+                                stroke: new Stroke({
+                                    color: [0, 0, 0, 0],
+                                    width: 2
+                                })
+                            })
                         }),
 
                         source : new VectorSource({
-                            features: [new Feature({
-                                geometry: new LineString(points),
-                                name: 'Line'
-                            })]
-                        }),
+                            features: [
+                                new Feature({
+                                    geometry: new LineString(points),
+                                    name: 'Line'
+                                }),
+                                thisFlight.state.trackingPoint
+                            ]
+                        })
                     });
+
+                    thisFlight.state.layer.flightState = thisFlight;
+
                     thisFlight.state.layer.setVisible(true);
                     thisFlight.state.pathVisible = true;
                     thisFlight.state.itineraryVisible = true;
                     thisFlight.state.nanOffset = response.nanOffset;
                     thisFlight.state.coordinates = response.coordinates;
+                    thisFlight.state.points = points;
 
                     map.addLayer(thisFlight.state.layer);
 
@@ -779,6 +1022,14 @@ class Flight extends React.Component {
             );
         }
 
+        let eventsRow = "";
+        if (this.state.eventsVisible) {
+            eventsRow = (
+                <Events events={this.state.events} parent={this} />
+            );
+        }
+
+
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
             tracesRow = 
@@ -824,8 +1075,8 @@ class Flight extends React.Component {
                         </div>
 
                         <div className="p-0">
-                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.editClicked()}>
-                                <i className="fa fa-pencil p-1"></i>
+                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
+                                <i className="fa fa-exclamation p-1"></i>
                             </button>
 
                             <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
@@ -847,6 +1098,8 @@ class Flight extends React.Component {
                     </div>
 
                     {itineraryRow}
+
+                    {eventsRow}
 
                     {tracesRow}
                 </div>
@@ -1125,16 +1378,75 @@ if (typeof flights !== 'undefined') {
     console.log("rendered flightsCard!");
 
     $(document).ready(function() {
-        var layout1 = { 
-            yaxis: {
-                rangemode: 'tozero',
-                showline: true,
-                zeroline: true
-            }
-        };
-        layout1 = {};
 
-        Plotly.newPlot('plot', [], layout1);
+        Plotly.newPlot('plot', [], plotlyLayout);
+
+        var myPlot = document.getElementById("plot");
+        console.log("myPlot:");
+        console.log(myPlot);
+
+        myPlot.on('plotly_hover', function(data){
+            var xaxis = data.points[0].xaxis,
+                yaxis = data.points[0].yaxis;
+
+            /*
+            var infotext = data.points.map(function(d){
+                return ('width: '+xaxis.l2p(d.x)+', height: '+yaxis.l2p(d.y));
+            });
+            */
+
+            //console.log("in hover!");
+            //console.log(data);
+            let x = data.points[0].x;
+
+            //console.log("x: " + x);
+
+            map.getLayers().forEach(function(layer) {
+                if (layer instanceof VectorLayer) {
+                    //console.log("VECTOR layer:");
+
+                    var hiddenStyle = new Style({
+                        stroke: new Stroke({
+                            color: layer.flightState.state.color,
+                            width: 1.5
+                        }),
+                        image: new Circle({
+                            radius: 5,
+                            stroke: new Stroke({
+                                color: [0,0,0,0],
+                                width: 2
+                            })
+                        })
+                    });
+
+                    var visibleStyle = new Style({
+                        stroke: new Stroke({
+                            color: layer.flightState.state.color,
+                            width: 1.5
+                        }),
+                        image: new Circle({
+                            radius: 5,
+                            stroke: new Stroke({
+                                color: layer.flightState.state.color,
+                                width: 2
+                            })
+                        })
+                    });
+
+                    if (layer.getVisible()) {
+                        if (x < layer.flightState.state.points.length) {
+                            console.log("need to draw point at: " + layer.flightState.state.points[x]);
+                            layer.flightState.state.trackingPoint.setStyle(visibleStyle);
+                            layer.flightState.state.trackingPoint.getGeometry().setCoordinates(layer.flightState.state.points[x]);
+                        } else {
+                            console.log("not drawing point x: " + x + " >= points.length: " + layer.flightState.state.points.length);
+                            layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                        }
+                    }
+                }
+            });
+        });
+
     });
 }
 

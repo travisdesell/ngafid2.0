@@ -62,8 +62,12 @@ public class StringTimeSeries {
         if (resultSet.next()) {
             StringTimeSeries sts = new StringTimeSeries(resultSet);
             System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
+            resultSet.close();
+            query.close();
             return sts;
         } else {
+            resultSet.close();
+            query.close();
             return null;
         }
     }

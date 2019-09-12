@@ -14,7 +14,7 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.TreeSet;
 
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
@@ -42,209 +42,7 @@ public class CalculateExceedences {
         this.stopBuffer = eventDefinition.getStopBuffer();
     }
 
-    double maxArray(double[] array) {
-        double max = -Double.MAX_VALUE;
-
-        for (int i = 0; i < array.length; i++) {
-            if (Double.isNaN(array[i])) continue;
-            max = Math.max(array[i], max);
-        }
-        return max;
-    }
-
-    double minArray(double[] array) {
-        double min = Double.MAX_VALUE;
-
-        for (int i = 0; i < array.length; i++) {
-            if (Double.isNaN(array[i])) continue;
-            min = Math.min(array[i], min);
-        }
-        return min;
-    }
-
-
-    private double getSeverity(int eventId, DoubleTimeSeries[] doubleSeries, int i) {
-        double value;
-
-        switch (eventId) {
-            case 1: /*low pitch*/
-            case 2: /*high pitch*/
-            case 3: /*low lateral acceleration*/
-            case 4: /*high lateral acceleration*/
-            case 5: /*low vertical acceleration*/
-            case 6: /*high vertical acceleration*/
-                return doubleSeries[0].get(i);
-
-            case 7: /*roll*/
-                return Math.abs(doubleSeries[0].get(i));
-
-            case 8: /*VSI on final*/
-                return doubleSeries[0].get(i);
-
-            case 9: /*airspeed C172*/
-            case 11: /*airspeed PA-28*/
-            case 12: /*airspeed PA-44*/
-            case 13: /*airspeed SR20*/
-                return doubleSeries[0].get(i);
-
-            case 14: /*altitude C172*/
-            case 15: /*altitude SR20*/
-            case 16: /*altitude PA-28*/
-            case 17: /*altitude PA-44*/
-                return doubleSeries[0].get(i);
-
-            case 21: /*CHT C172*/
-                //CHTs 1-4
-                return maxArray(new double[]{doubleSeries[0].get(i), doubleSeries[1].get(i), doubleSeries[2].get(i), doubleSeries[3].get(i)});
-            case 22: /*CHT SR20*/
-                //CHTs 1-6
-                return maxArray(new double[]{doubleSeries[0].get(i), doubleSeries[1].get(i), doubleSeries[2].get(i), doubleSeries[3].get(i), doubleSeries[4].get(i), doubleSeries[5].get(i)});
-            case 23: /*CHT PA-28*/
-                //CHTs 1-2
-                return Math.max(doubleSeries[0].get(i), doubleSeries[1].get(i));
-
-            case 24: /*low oil pressure C172*/
-            case 25: /*low oil pressure SR20*/
-            case 26: /*low oil pressure PA-28*/
-                return doubleSeries[0].get(i);
-            case 27: /*low oil pressure PA-44*/
-                return Math.min(doubleSeries[0].get(i), doubleSeries[2].get(i));
-
-            case 28: /*low fuel C172*/
-            case 29: /*low fuel PA-28*/
-            case 30: /*low fuel PA-44*/
-                return doubleSeries[1].get(i); //total fuel series
-
-            case 31: /*low airspeed on approach C172*/
-            case 32: /*low airspeed on approach PA28*/
-            case 33: /*low airspeed on approach PA44*/
-            case 34: /*low airspeed on approach SR20*/
-                return doubleSeries[1].get(i); //IAS series
-
-            case 35: /*low airspeed on climbout C172*/
-            case 36: /*low airspeed on climbout PA28*/
-            case 37: /*low airspeed on climbout PA44*/
-            case 38: /*low airspeed on climbout SR20*/
-                return doubleSeries[1].get(i); //IAS series
-
-            case 39: /*CHT variance C172*/
-            case 40: /*CHT variance PA28*/
-            case 41: /*CHT variance SR20*/
-                return doubleSeries[0].get(i);
-
-            case 42: /*EGT variance C172*/
-            case 43: /*EGT variance PA28*/
-            case 44: /*EGT variance SR20*/
-                return doubleSeries[0].get(i);
-
-            case 45: /*EGT variance PA44*/
-                return maxArray(new double[]{doubleSeries[0].get(i), doubleSeries[1].get(i)}); //max variance between engines
-
-            case 46: /*Engine Shutdown C172*/
-            case 47: /*Engine Shutdown PA28*/
-            case 48: /*Engine Shutdown SR20*/
-                return doubleSeries[0].get(i);
-
-            case 49: /*Engine Shutdown PA44*/
-                return minArray(new double[]{doubleSeries[0].get(i), doubleSeries[1].get(i)}); //min RPM between engines
-
-
-            default:
-                System.err.println("Could not get severity for unknown event id: " + eventId);
-                System.exit(1);
-        }
-
-        return 0;
-    }
-
-    private double updateSeverity(double currentSeverity, int eventId, DoubleTimeSeries[] doubleSeries, int i) {
-        switch (eventId) {
-            case 1: /*low pitch*/
-            case 3: /*low lateral acceleration*/
-            case 5: /*low vertical acceleration*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 2: /*high pitch*/
-            case 4: /*high lateral acceleration*/
-            case 6: /*high vertical acceleration*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 7: /*roll*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 8: /*VSI on final*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 9: /*airspeed C172*/
-            case 11: /*airspeed PA-28*/
-            case 12: /*airspeed PA-44*/
-            case 13: /*airspeed SR20*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 14: /*altitude C172*/
-            case 15: /*altitude SR20*/
-            case 16: /*altitude PA-28*/
-            case 17: /*altitude PA-44*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 21: /*CHT C172*/
-            case 22: /*CHT SR20*/
-            case 23: /*CHT PA-28*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 24: /*low oil pressure C172*/
-            case 25: /*low oil pressure SR20*/
-            case 26: /*low oil pressure PA-28*/
-            case 27: /*low oil pressure PA-44*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 28: /*low fuel C172*/
-            case 29: /*low fuel PA-28*/
-            case 30: /*low fuel PA-44*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 31: /*low airspeed on approach C172*/
-            case 32: /*low airspeed on approach PA28*/
-            case 33: /*low airspeed on approach PA44*/
-            case 34: /*low airspeed on approach SR20*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 35: /*low airspeed on climbout C172*/
-            case 36: /*low airspeed on climbout PA28*/
-            case 37: /*low airspeed on climbout PA44*/
-            case 38: /*low airspeed on climbout SR20*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 39: /*CHT variance C172*/
-            case 40: /*CHT variance PA28*/
-            case 41: /*CHT variance SR20*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 42: /*EGT variance C172*/
-            case 43: /*EGT variance PA28*/
-            case 44: /*EGT variance SR20*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 45: /*EGT variance PA44*/
-                return Math.max(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 46: /*Engine Shutdown C172*/
-            case 47: /*Engine Shutdown PA28*/
-            case 48: /*Engine Shutdown SR20*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            case 49: /*Engine Shutdown PA44*/
-                return Math.min(currentSeverity, getSeverity(eventId, doubleSeries, i));
-
-            default:
-                System.err.println("Could not update severity for unknown event id: " + eventId);
-                System.exit(1);
-        }
-
-        return 0;
-    }
-
-    public void processFlight(Connection connection, Flight flight, int eventId) {
+    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition) {
         System.out.println("Processing flight: " + flight.getId() + ", " + flight.getFilename());
 
         int fleetId = flight.getFleetId();
@@ -268,10 +66,11 @@ public class CalculateExceedences {
                 stmt.setInt(3, eventDefinition.getId());
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
+                stmt.close();
                 return;
             }
 
-            HashSet<String> columnNames = eventDefinition.getColumnNames();
+            TreeSet<String> columnNames = eventDefinition.getColumnNames();
             System.out.println("Number of Column Name(s): [ " + columnNames.size() + " ]");
 
             //first test and see if min/max values can violate exceedence, otherwise we can skip
@@ -287,6 +86,7 @@ public class CalculateExceedences {
                     stmt.setInt(3, eventDefinition.getId());
                     System.out.println(stmt.toString());
                     stmt.executeUpdate();
+                    stmt.close();
                     return;
                 }
 
@@ -306,8 +106,9 @@ public class CalculateExceedences {
                 stmt.setInt(3, eventDefinition.getId());
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
+                stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventId, flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
                 return;
             }
 
@@ -322,6 +123,7 @@ public class CalculateExceedences {
                 stmt.setInt(3, eventDefinition.getId());
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
+                stmt.close();
                 return;
             }
 
@@ -344,7 +146,9 @@ public class CalculateExceedences {
             int stopCount = 0;
             double severity = 0;
 
-            for (i = 0; i < doubleSeries[0].size(); i++) {
+            //skip the first 30 seconds as that is usually the FDR being initialized
+            for (i = 30; i < doubleSeries[0].size(); i++) {
+            //for (i = 0; i < doubleSeries[0].size(); i++) {
                 lineNumber = i;
                 double currentValue = doubleSeries[0].get(i);
 
@@ -396,13 +200,13 @@ public class CalculateExceedences {
                     if (startTime == null) {
                         startTime = dateSeries.get(i) + " " + timeSeries.get(i);
                         startLine = lineNumber;
-                        severity = getSeverity(eventId, doubleSeries, i);
+                        severity = eventDefinition.getSeverity(doubleSeries, i);
 
                         System.out.println("start date time: " + startTime + ", start line number: " + startLine);
                     }
                     endLine = lineNumber;
                     endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-                    severity = updateSeverity(severity, eventId, doubleSeries, i);
+                    severity = eventDefinition.updateSeverity(severity, doubleSeries, i);
 
                     //increment the startCount, reset the endCount
                     startCount++;
@@ -431,7 +235,14 @@ public class CalculateExceedences {
             for (i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
                 event.updateDatabase(connection, flightId, eventDefinition.getId());
-                EventStatistics.updateEventStatistics(connection, fleetId, eventId, event.getStartTime(), event.getSeverity(), event.getDuration());
+                if (event.getStartTime() != null) {
+                    EventStatistics.updateEventStatistics(connection, fleetId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
+                } else if (event.getEndTime() != null) {
+                    EventStatistics.updateEventStatistics(connection, fleetId, eventDefinition.getId(), event.getEndTime(), event.getSeverity(), event.getDuration());
+                } else {
+                    System.out.println("WARNING: could not update event statistics for event: " + event);
+                    System.out.println("WARNING: event start and end time were both null.");
+                }
 
                 double currentSeverity = eventList.get(i).getSeverity();
                 double currentDuration = eventList.get(i).getDuration();
@@ -458,8 +269,9 @@ public class CalculateExceedences {
                 stmt.setDouble(10, maxSeverity);
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
+                stmt.close();
 
-                EventStatistics.updateFlightsWithEvent(connection, fleetId, eventId, flight.getStartDateTime());
+                EventStatistics.updateFlightsWithEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
 
             } else {
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0");
@@ -468,8 +280,9 @@ public class CalculateExceedences {
                 stmt.setInt(3, eventDefinition.getId());
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
+                stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventId, flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
             }
 
         } catch(SQLException e) {
@@ -508,7 +321,7 @@ public class CalculateExceedences {
                             continue;
                         }
 
-                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition.getId());
+                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition);
                     }
                 }
 

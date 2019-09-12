@@ -457,7 +457,14 @@ public class Flight {
         boolean lastLineWarning = false;
 
         String line;
+        String lastWarning = "";
         while ((line = bufferedReader.readLine()) != null) {
+            /*
+            if (airframeType.equals("Garmin Flight Display")) {
+                System.err.println(line);
+            }
+            */
+
             if (line.contains("Lcl Time")) {
                 System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
                 continue;
@@ -473,15 +480,23 @@ public class Flight {
 
             if (lastLineWarning) {
                 if (values.length != headers.size()) {
-                    System.err.println("ERROR: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file (" + headers.size() + ").");
+                    String newWarning = "ERROR: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file (" + headers.size() + ").";
+                    System.err.println(newWarning);
                     System.err.println("ERROR: Two line errors in a row means the flight file is corrupt.");
                     lastLineWarning = true;
+
+                    String errorMessage = "Multiple lines the flight file had extra or missing values, which means the flight file is corrupt:\n";
+                    errorMessage += lastWarning + "\n";
+                    errorMessage += newWarning;
+
+                    throw new FatalFlightFileException(errorMessage);
                 } else {
-                    throw new FatalFlightFileException("A line in the middle of the flight file was missing values, which means the flight file is corrupt.");
+                    throw new FatalFlightFileException("A line in the middle of the flight file was missing values, which means the flight file is corrupt:\n" + lastWarning);
                 }
             } else {
                 if (values.length != headers.size()) {
-                    System.err.println("WARNING: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file. Not an error if it was the last line in the file.");
+                    lastWarning = "WARNING: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file. Not an error if it was the last line in the file.";
+                    System.err.println(lastWarning);
                     lastLineWarning = true;
                     continue;
                 }
@@ -616,6 +631,10 @@ public class Flight {
 
                 String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else if (airframeType.equals("Garmin Flight Display")) {
+                LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
+                exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
 
             } else {
                 LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeType + "'");
@@ -753,7 +772,7 @@ public class Flight {
         for (int i = 0; i < altMSL.size(); i++) {
             if (i < lag) laggedAltMSL.add(0.0);
             else {
-                laggedAltMSL.add(altMSL.get(i - lag));
+                laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - lag));
             }
         }
 

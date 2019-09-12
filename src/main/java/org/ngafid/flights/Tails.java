@@ -43,6 +43,10 @@ public class Tails {
                     //tail existed in the database, return the id
                     int tailId = resultSet.getInt(1);
                     idMap.put(tail, tailId);
+
+                    resultSet.close();
+                    query.close();
+
                     return tailId;
 
                 } else {
@@ -60,6 +64,9 @@ public class Tails {
 
                     int tailId = resultSet.getInt(1);
                     idMap.put(tail, tailId);
+
+                    resultSet.close();
+                    query.close();
 
                     return tailId;
                 }
@@ -86,10 +93,14 @@ public class Tails {
                     //tail existed in the database, return the id
                     tail = resultSet.getString(1);
                     tailMap.put(tailId, tail);
+                    resultSet.close();
+                    query.close();
                     return tail;
 
                 } else {
                     //tail id did not exist in the database, this should not happen -- return null
+                    resultSet.close();
+                    query.close();
                     return null;
                 }
             }
@@ -129,6 +140,8 @@ public class Tails {
             String tail = resultSet.getString(1);
             tails.add(tail);
         }
+        resultSet.close();
+        query.close();
 
         return tails;
     }

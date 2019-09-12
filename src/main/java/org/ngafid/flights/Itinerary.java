@@ -49,6 +49,9 @@ public class Itinerary {
             itinerary.add(new Itinerary(resultSet));
         }
 
+        resultSet.close();
+        query.close();
+
         return itinerary;
     }
 
@@ -67,6 +70,9 @@ public class Itinerary {
             String airport = resultSet.getString(1);
             airports.add(airport);
         }
+
+        resultSet.close();
+        query.close();
 
         return airports;
     }

@@ -47,6 +47,7 @@ public class EventStatistics {
 
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
 
     public static void updateFlightsWithEvent(Connection connection, int fleetId, int eventId, String startDateTime) throws SQLException {
@@ -61,6 +62,7 @@ public class EventStatistics {
 
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
 
     public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int eventId, String startDateTime) throws SQLException {
@@ -75,6 +77,7 @@ public class EventStatistics {
 
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
     }
 
 
@@ -152,6 +155,7 @@ public class EventStatistics {
                 eventRow.maxSeverity = 0;
             }
 
+            resultSet.close();
             preparedStatement.close();
 
             query = "SELECT SUM(flights_with_event), SUM(total_flights), SUM(total_events), MIN(min_duration), SUM(sum_duration), MAX(max_duration), MIN(min_severity), SUM(sum_severity), MAX(max_severity) FROM event_statistics WHERE fleet_id != ? AND event_definition_id = ?";
@@ -223,6 +227,7 @@ public class EventStatistics {
             if (Double.isNaN(eventRow.aggAvgEvents)) eventRow.aggAvgEvents = 0;
             if (Double.isNaN(eventRow.aggAvgSeverity)) eventRow.aggAvgSeverity = 0;
 
+            resultSet.close();
             preparedStatement.close();
 
             return eventRow;
@@ -268,6 +273,7 @@ public class EventStatistics {
 
             totalFlights = resultSet.getInt(1);
 
+            resultSet.close();
             preparedStatement.close();
 
             //get number flights processed 
@@ -289,6 +295,7 @@ public class EventStatistics {
 
             processedFlights = resultSet.getInt(1);
 
+            resultSet.close();
             preparedStatement.close();
 
             int currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
@@ -350,6 +357,7 @@ public class EventStatistics {
             eventStatistics.add(new EventStatistics(connection, airframeId, airframeName, fleetId));
         }
 
+        resultSet.close();
         preparedStatement.close();
 
         return eventStatistics;

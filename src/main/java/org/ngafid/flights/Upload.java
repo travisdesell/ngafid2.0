@@ -58,18 +58,22 @@ public class Upload {
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
+
 
         query = "DELETE FROM flight_errors WHERE upload_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM uploads WHERE id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
+        preparedStatement.close();
 
 
         String archiveFilename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + filename;
@@ -92,9 +96,14 @@ public class Upload {
         ResultSet resultSet = uploadQuery.executeQuery();
 
         if (resultSet.next()) {
-            return new Upload(resultSet);
+            Upload upload = new Upload(resultSet);
+            resultSet.close();
+            uploadQuery.close();
+            return upload;
         } else {
             //TODO: maybe need to throw an exception
+            resultSet.close();
+            uploadQuery.close();
             return null;
         }
     }
@@ -110,6 +119,9 @@ public class Upload {
         while (resultSet.next()) {
             uploads.add(new Upload(resultSet));
         }
+
+        //resultSet.close();
+        uploadQuery.close();
 
         return uploads;
     }
@@ -140,6 +152,9 @@ public class Upload {
         while (resultSet.next()) {
             uploads.add(new Upload(resultSet));
         }
+
+        resultSet.close();
+        uploadQuery.close();
 
         return uploads;
     }
@@ -196,6 +211,7 @@ public class Upload {
         query.setString(1, status);
         query.setInt(2, id);
         query.executeUpdate();
+        query.close();
     }
 
     public void chunkUploaded(Connection connection, int chunkNumber, long chunkSize) throws SQLException {
@@ -213,5 +229,6 @@ public class Upload {
         query.setString(3, chunkStatus);
         query.setInt(4, id);
         query.executeUpdate();
+        query.close();
     }
 }

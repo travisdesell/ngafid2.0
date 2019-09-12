@@ -1,7 +1,7 @@
 package org.ngafid.filters;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.TreeSet;
 import java.util.logging.Logger;
 
 
@@ -43,7 +43,7 @@ public class Filter {
      * @param columnNames holds all the column names found
      * 
      */
-    public void getColumnNamesHelper(Filter filter, HashSet<String> columnNames) {
+    public void getColumnNamesHelper(Filter filter, TreeSet<String> columnNames) {
         LOG.info("getting column filter for " + filter.type);
 
         if (filter.type.equals("RULE")) {
@@ -66,8 +66,8 @@ public class Filter {
      * @return a hash set of strings for each column name, without duplicates
      * 
      */
-    public HashSet<String> getColumnNames() {
-        HashSet<String> columnNames = new HashSet<String>();
+    public TreeSet<String> getColumnNames() {
+        TreeSet<String> columnNames = new TreeSet<String>();
         getColumnNamesHelper(this, columnNames);
         return columnNames;
     }

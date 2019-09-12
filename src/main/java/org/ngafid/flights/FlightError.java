@@ -28,6 +28,7 @@ public class FlightError {
         LOG.info(exceptionPreparedStatement.toString());
 
         exceptionPreparedStatement.executeUpdate();
+        exceptionPreparedStatement.close();
     }
 
 
@@ -41,6 +42,8 @@ public class FlightError {
         while (resultSet.next()) {
             errors.add(new FlightError(connection, resultSet));
         }
+        resultSet.close();
+        query.close();
 
         return errors;
     }
