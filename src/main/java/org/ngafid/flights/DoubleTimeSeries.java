@@ -1,12 +1,12 @@
 package org.ngafid.flights;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import java.io.*;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,7 +14,14 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import org.ngafid.filters.Pair;
 
@@ -149,7 +156,7 @@ public class DoubleTimeSeries {
             query.close();
             return result;
         } else {
-            //TODO: should probably throw an exception 
+            //TODO: should probably throw an exception
             resultSet.close();
             query.close();
             return null;
@@ -173,15 +180,15 @@ public class DoubleTimeSeries {
 
         System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + length + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
 
-        timeSeries = new ArrayList<Double>();
         try {
-            DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
-            while (inputStream.available() > 0) {
-                double d = inputStream.readDouble();
-                timeSeries.add(d);
-                //System.out.print(" " + d);
-            }
-            //System.out.println();
+            Inflater inflater = new Inflater();
+            inflater.setInput(bytes, 0, bytes.length);
+            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(length * Double.BYTES);
+            int _inflatedSize = inflater.inflate(timeSeriesBytes);
+            double[] timeSeriesArray = timeSeriesBytes.asDoubleBuffer().array();
+            timeSeries = Arrays.stream(timeSeriesArray)
+                    .boxed()
+                    .collect(Collectors.toCollection(ArrayList::new));
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -267,16 +274,45 @@ public class DoubleTimeSeries {
                 preparedStatement.setDouble(8, max);
             }
 
+            // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
+            // is a list of objects rather than a list of primitives - it consumes much more memory.
+            // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
+            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(timeSeries.size() * Double.BYTES);
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
             for (int i = 0; i < timeSeries.size(); i++) {
-                byteBuffer.putDouble(timeSeries.get(i));
+                timeSeriesBytes.putDouble(timeSeries.get(i));
             }
-            byte[] byteArray = byteBuffer.array();
+
+            byte[] byteArray = timeSeriesBytes.array();
 
             System.err.println(preparedStatement);
 
-            Blob seriesBlob = new SerialBlob(byteArray);
+
+            // Hopefully this is enough memory. It should be enough.
+            int bufferSize = timeSeriesBytes.capacity() + 256;
+            ByteBuffer compressedTimeSeries;
+
+            // This is probably super overkill but it won't hurt?
+            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
+            // allocate more memory.
+            // I don't think it should happen unless the time series unless the compressed data is larger than the
+            // raw data, which should never happen.
+
+            for (;;) {
+                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
+                try {
+                    Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
+                    deflater.setInput(timeSeriesBytes);
+                    deflater.finish();
+                    int _compressedDataLength = deflater.deflate(compressedTimeSeries);
+                    deflater.end();
+                    break;
+                } catch (BufferOverflowException _boe) {
+                    bufferSize *= 2;
+                }
+            }
+
+            Blob seriesBlob = new SerialBlob(compressedTimeSeries.array());
 
             preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();
