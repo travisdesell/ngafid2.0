@@ -61,15 +61,14 @@ public class DoubleTimeSeries {
         avg = 0.0;
         validCount = 0;
 
-        for (int i = 0; i < stringTimeSeries.size(); i++) {
-            String currentValue = stringTimeSeries.get(i);
+        for (String currentValue : stringTimeSeries) {
             if (currentValue.length() == 0) {
                 //System.err.println("WARNING: double column '" + name + "' value[" + i + "] is empty.");
                 timeSeries.add(Double.NaN);
                 emptyValues++;
                 continue;
             }
-            double currentDouble = Double.parseDouble(stringTimeSeries.get(i));
+            double currentDouble = Double.parseDouble(currentValue);
 
             timeSeries.add(currentDouble);
 
