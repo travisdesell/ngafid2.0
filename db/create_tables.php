@@ -237,7 +237,7 @@ $query = "CREATE TABLE `upload_errors` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `user` (
+$query = "CREATE TABLE `users` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(128) NOT NULL,
     `password_token` VARCHAR(64) NOT NULL,
