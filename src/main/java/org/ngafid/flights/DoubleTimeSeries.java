@@ -180,8 +180,9 @@ public class DoubleTimeSeries {
             Inflater inflater = new Inflater();
             inflater.setInput(bytes, 0, bytes.length);
             ByteBuffer timeSeriesBytes = ByteBuffer.allocate(length * Double.BYTES);
-            int _inflatedSize = inflater.inflate(timeSeriesBytes);
-            double[] timeSeriesArray = timeSeriesBytes.asDoubleBuffer().array();
+            int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
+            double[] timeSeriesArray = new double[length];
+            timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
             timeSeries = Arrays.stream(timeSeriesArray)
                     .boxed()
                     .collect(Collectors.toCollection(ArrayList::new));
@@ -274,15 +275,9 @@ public class DoubleTimeSeries {
             // is a list of objects rather than a list of primitives - it consumes much more memory.
             // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
             ByteBuffer timeSeriesBytes = ByteBuffer.allocate(timeSeries.size() * Double.BYTES);
-
-            for (int i = 0; i < timeSeries.size(); i++) {
-                timeSeriesBytes.putDouble(timeSeries.get(i));
+            for (Double d : timeSeries) {
+                timeSeriesBytes.putDouble(d);
             }
-
-            byte[] byteArray = timeSeriesBytes.array();
-
-            System.err.println(preparedStatement);
-
 
             // Hopefully this is enough memory. It should be enough.
             int bufferSize = timeSeriesBytes.capacity() + 256;
@@ -293,14 +288,15 @@ public class DoubleTimeSeries {
             // allocate more memory.
             // I don't think it should happen unless the time series unless the compressed data is larger than the
             // raw data, which should never happen.
+            int compressedDataLength;
 
             for (;;) {
                 compressedTimeSeries = ByteBuffer.allocate(bufferSize);
                 try {
-                    Deflater deflater = new Deflater(Deflater.BEST_COMPRESSION);
-                    deflater.setInput(timeSeriesBytes);
+                    Deflater deflater = new Deflater();
+                    deflater.setInput(timeSeriesBytes.array());
                     deflater.finish();
-                    int _compressedDataLength = deflater.deflate(compressedTimeSeries);
+                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
                     deflater.end();
                     break;
                 } catch (BufferOverflowException _boe) {
@@ -308,7 +304,11 @@ public class DoubleTimeSeries {
                 }
             }
 
-            Blob seriesBlob = new SerialBlob(compressedTimeSeries.array());
+            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
+            // we don't know what the compressed data size until after it is done being compressed
+            byte[] blobBytes = new byte[compressedDataLength];
+            compressedTimeSeries.get(blobBytes);
+            Blob seriesBlob = new SerialBlob(blobBytes);
 
             preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();
