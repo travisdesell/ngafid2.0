@@ -237,7 +237,7 @@ $query = "CREATE TABLE `upload_errors` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `users` (
+$query = "CREATE TABLE `user` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `email` VARCHAR(128) NOT NULL,
     `password_token` VARCHAR(64) NOT NULL,
@@ -271,7 +271,7 @@ $query = "CREATE TABLE `fleet_access` (
     `type` VARCHAR(32),
 
     PRIMARY KEY(`user_id`, `fleet_id`),
-    FOREIGN KEY(`user_id`) REFERENCES users(`id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
