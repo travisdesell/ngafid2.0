@@ -26,6 +26,7 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
+    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
     private int id = -1;
     private int flightId = -1;
@@ -293,7 +294,7 @@ public class DoubleTimeSeries {
             for (;;) {
                 compressedTimeSeries = ByteBuffer.allocate(bufferSize);
                 try {
-                    Deflater deflater = new Deflater();
+                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
                     deflater.setInput(timeSeriesBytes.array());
                     deflater.finish();
                     compressedDataLength = deflater.deflate(compressedTimeSeries.array());

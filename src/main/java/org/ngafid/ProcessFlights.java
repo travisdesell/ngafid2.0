@@ -14,6 +14,9 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 
+import java.time.Duration;
+import java.time.Instant;
+import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -31,6 +34,8 @@ public class ProcessFlights {
 
     public static void main(String[] arguments) {
         while (true) {
+
+            Instant start = Instant.now();
 
             try {
                 PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
@@ -160,7 +165,10 @@ public class ProcessFlights {
                 System.exit(1);
             }
 
-            System.err.println("finished!");
+            Instant end = Instant.now();
+            double elapsed_millis = (double) Duration.between(start, end).toMillis();
+            double elapsed_seconds = elapsed_millis / 1000;
+            System.err.println("finished in " + elapsed_seconds);
 
             try {
                 Thread.sleep(3000);
