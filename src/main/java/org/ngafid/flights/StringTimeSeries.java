@@ -28,6 +28,7 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class StringTimeSeries {
     private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
+    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
     private String name;
     private String dataType;
@@ -128,7 +129,6 @@ public class StringTimeSeries {
         }
         return;
     }
-    /////////
 
     public String toString() {
         return "[StringTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + "]";
@@ -203,17 +203,12 @@ public class StringTimeSeries {
             int bufferSize = serializedBytes.length + 256;
             ByteBuffer compressedStringSeries;
 
-            // This is probably super overkill but it won't hurt?
-            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
-            // allocate more memory.
-            // I don't think it should happen unless the time series unless the compressed data is larger than the
-            // raw data, which should never happen.
             int compressedDataLength;
-
+            // The reasoning behind this loop can be found in DoubleTimeSeries.updateDatabase
             for (;;) {
                 compressedStringSeries = ByteBuffer.allocate(bufferSize);
                 try {
-                    Deflater deflater = new Deflater();
+                    Deflater deflater = new Deflater(StringTimeSeries.COMPRESSION_LEVEL);
                     deflater.setInput(serializedBytes);
                     deflater.finish();
                     compressedDataLength = deflater.deflate(compressedStringSeries.array());

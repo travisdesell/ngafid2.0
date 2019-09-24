@@ -12,6 +12,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.TreeSet;
@@ -297,8 +299,9 @@ public class CalculateExceedences {
             Connection connection = Database.getConnection();
 
             while (true) {
+                Instant start = Instant.now();
                 ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection);
-
+                System.out.println("n events = " + allEvents.size());
                 for (int i = 0; i < allEvents.size(); i++) {
                     //process events for this event type
                     EventDefinition currentDefinition = allEvents.get(i);
@@ -325,12 +328,18 @@ public class CalculateExceedences {
                     }
                 }
 
+                Instant end = Instant.now();
+                long elapsed_millis = Duration.between(start, end).toMillis();
+                double elapsed_seconds = ((double) elapsed_millis) / 1000;
+                System.out.println("finished in " + elapsed_seconds);
+
                 try {
                     Thread.sleep(3000);
                 } catch (Exception e) {
                     System.err.println(e);
                     e.printStackTrace();
                 }
+
             }
 
             //connection.close();
