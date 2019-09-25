@@ -111,7 +111,7 @@ public class PostUpload implements Route {
 
         Upload upload = null;
         try {
-            upload = Upload.getUpload(connection, uploaderId, md5Hash);
+            upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
 
             if (upload == null) {
                 LOG.severe("ERROR! Upload was not in the database!");

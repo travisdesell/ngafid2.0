@@ -125,7 +125,7 @@ public class PostNewUpload implements Route {
 
                 query.executeUpdate();
 
-                return gson.toJson(Upload.getUpload(connection, uploaderId, md5Hash));
+                return gson.toJson(Upload.getUploadByUser(connection, uploaderId, md5Hash));
 
             } else {
                 //a file with this md5 hash exists
@@ -146,7 +146,7 @@ public class PostNewUpload implements Route {
                 } else {
                     //  2. file does exist and has not finished uploading -- restart upload
 
-                    return gson.toJson(Upload.getUpload(connection, uploaderId, md5Hash));
+                    return gson.toJson(Upload.getUploadByUser(connection, uploaderId, md5Hash));
                 }
             }
         } catch (SQLException e) {

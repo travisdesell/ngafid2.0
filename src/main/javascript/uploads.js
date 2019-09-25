@@ -32,6 +32,9 @@ class Upload extends React.Component {
 
         let thisUpload = this;
 
+        console.log("removing upload:");
+        console.log(submissionData);
+
         $.ajax({
             type: 'POST',
             url: '/protected/remove_upload',

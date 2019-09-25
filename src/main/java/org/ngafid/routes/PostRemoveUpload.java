@@ -41,6 +41,7 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.Tails;
 import org.ngafid.flights.Upload;
 
 public class PostRemoveUpload implements Route {
@@ -66,8 +67,7 @@ public class PostRemoveUpload implements Route {
             int uploadId = Integer.parseInt(request.queryParams("uploadId"));
             String md5Hash = request.queryParams("md5Hash");
 
-            Upload upload = Upload.getUpload(connection, uploaderId, md5Hash);
-
+            Upload upload = Upload.getUploadById(connection, uploadId, md5Hash);
 
             //check to see if the user has upload access for this fleet.
             if (!user.hasUploadAccess(upload.getFleetId())) {
@@ -93,6 +93,8 @@ public class PostRemoveUpload implements Route {
             }
 
             upload.remove(connection);
+
+            Tails.removeUnused(connection);
 
             return "{}";
         } catch (Exception e) {
