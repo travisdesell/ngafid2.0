@@ -146,4 +146,11 @@ public class Tails {
         return tails;
     }
 
+
+    public static void removeUnused(Connection connection) throws SQLException {
+        String queryString = "DELETE FROM tails WHERE NOT EXISTS (SELECT id FROM flights WHERE flights.tail_id = tails.id AND flights.fleet_id = tails.fleet_id);";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.executeUpdate();
+        query.close();
+    }
 }

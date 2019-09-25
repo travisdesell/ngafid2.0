@@ -89,7 +89,7 @@ public class Upload {
         Upload.deleteDirectory(new File(uploadDirectory));
     }
 
-    public static Upload getUpload(Connection connection, int uploaderId, String md5Hash) throws SQLException {
+    public static Upload getUploadByUser(Connection connection, int uploaderId, String md5Hash) throws SQLException {
         PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE uploader_id = ? AND md5_hash = ?");
         uploadQuery.setInt(1, uploaderId);
         uploadQuery.setString(2, md5Hash);
@@ -107,6 +107,26 @@ public class Upload {
             return null;
         }
     }
+
+    public static Upload getUploadById(Connection connection, int uploadId, String md5Hash) throws SQLException {
+        PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE id = ? AND md5_hash = ?");
+        uploadQuery.setInt(1, uploadId);
+        uploadQuery.setString(2, md5Hash);
+        ResultSet resultSet = uploadQuery.executeQuery();
+
+        if (resultSet.next()) {
+            Upload upload = new Upload(resultSet);
+            resultSet.close();
+            uploadQuery.close();
+            return upload;
+        } else {
+            //TODO: maybe need to throw an exception
+            resultSet.close();
+            uploadQuery.close();
+            return null;
+        }
+    }
+
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId) throws SQLException {
         //PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
