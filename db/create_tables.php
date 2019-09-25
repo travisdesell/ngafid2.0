@@ -271,7 +271,7 @@ $query = "CREATE TABLE `fleet_access` (
     `type` VARCHAR(32),
 
     PRIMARY KEY(`user_id`, `fleet_id`),
-    FOREIGN KEY(`user_id`) REFERENCES users(`id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
