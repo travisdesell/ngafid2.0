@@ -104,19 +104,18 @@ public class StringTimeSeries {
                     // Decompress
                     Inflater inflater = new Inflater();
                     inflater.setInput(bytes, 0, bytes.length);
-                    ByteBuffer timeSeriesBytes = ByteBuffer.allocate(length * memoryPerString);
+                    byte[] timeSeriesBytes = new byte[length * memoryPerString];
 
                     // This is the line that might throw BufferOverflowException
-                    int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
+                    int inflatedSize = inflater.inflate(timeSeriesBytes);
 
+                    System.out.println("Inflated file size = " + inflatedSize);
 
                     // Deserialize
-                    // It is okay to use timeSeriesBytes.array() because ObjectInputStream will just ignore any extra
-                    // bytes at the end
-                    ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(timeSeriesBytes.array()));
+                    ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(timeSeriesBytes));
                     Object o = inputStream.readObject();
                     assert o instanceof ArrayList;
-                    timeSeries = (ArrayList<String>) inputStream.readObject();
+                    timeSeries = (ArrayList<String>) o;
                     inputStream.close();
 
                     break;

@@ -339,7 +339,7 @@ public class CalculateExceedences {
                     System.err.println(e);
                     e.printStackTrace();
                 }
-
+                return;
             }
 
             //connection.close();

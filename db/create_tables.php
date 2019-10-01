@@ -6,7 +6,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/my_query.php");
 
-$drop_tables = false;
+$drop_tables = !true;
 
 query_ngafid_db("DROP TABLE flight_processed");
 query_ngafid_db("DROP TABLE events");
@@ -36,7 +36,7 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE tails");
     query_ngafid_db("DROP TABLE airframes");
     query_ngafid_db("DROP TABLE fleet_airframes");
-
+    return;
 }
 
 
