@@ -1,10 +1,11 @@
 # Steps for running the NGAFID2.0 website
-## Clone the repository
+
+## 1. Clone the repository
 ```
-user@machine: ~/ $ git clone git@github.com:travisdesell/ngafid2.0
+~/ $ git clone git@github.com:travisdesell/ngafid2.0
 ```
 
-## Set up the database
+## 2. Set up the database
 Install mysql on your system. For ubuntu:
 ```
 user@machine: ~/ $ sudo apt install mysql
@@ -68,19 +69,13 @@ user@machine: ~/ngafid2.0 $ php db/create_tables.php
 (lots of output here)
 ```
 
-## Running the webserver
-First we need maven to fetch all of the dependencies:
-```
-user@machine: ~/ngafid2.0 $ mvn install
-```
-
-Then we need to set up some environment variables.
+## 3. Configure the environment
+We need to set up some environmental variables.
 
 Create `init_env.sh`, and add the following:
-```
+```bash
 export NGAFID_REPO=<absolute path to ngafid2.0 repo>
 export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path here>
-
 export NGAFID_PORT=8181 # You can use whatever port you need or want to use
 export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
 export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
@@ -97,35 +92,42 @@ export SPARK_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
 
 and run
 ```
-user@machine ~/ngafid2.0 $ source init_env.sh
+~/ngafid2.0 $ source init_env.sh
 ```
 every time you want to run the website from a new shell.
 
 If you want these variables to be initialized automatically when you launch a new shell,
 add the following line to your `~/.bashrc` file:
-```
+```bash
 source ~/ngafid2.0/init_env.sh
+```
+
+## 4. Running the webserver
+
+First we need maven to fetch all of the java dependencies:
+```
+~/ngafid2.0 $ mvn install
 ```
 
 Next we need to initialize node. You'll need npm installed for this. For ubuntu:
 ```
-user@machine ~/ $ sudo apt install npm
+~/ $ sudo apt install npm
 ```
 
 Then run:
 ```
-user@machine ~/ngafid2.0 $ npm install
+~/ngafid2.0 $ npm install
 ```
 
 This will download the javascript dependencies. Then, in order to compile the javascript
 and automatically recompile whenever you change one of the files:
 ```
-user@machine ~/ngafid2.0 $ npm run watch
+~/ngafid2.0 $ npm run watch
 ```
 
 You should then be able to compile and run the webserver by running `run_webserver.sh`
 ```
-user@machine: ~/ngafid2.0 $ sh run_webserver.sh
+~/ngafid2.0 $ sh run_webserver.sh
 ```
 
 Importing flights and calculating exceedences can be done by running the `run_process_flights.sh`
