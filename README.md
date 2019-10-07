@@ -8,12 +8,12 @@
 ## 2. Set up the database
 Install mysql on your system. For ubuntu:
 ```
-user@machine: ~/ $ sudo apt install mysql
+~/ $ sudo apt install mysql
 ```
 
 Next we'll create the database in mysql:
 ```
-user@machine: ~/ $ sudo mysql
+~/ $ sudo mysql
 ...
 Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
 
@@ -32,14 +32,14 @@ Bye
 To create the tables of the database, you'll need php and the php mysql library installed.
 For ubuntu:
 ```
-user@machine: ~/ $ sudo apt install php7.2 php7.2-mysql
+~/ $ sudo apt install php7.2 php7.2-mysql
 ```
 If you use an older version of PHP it will probably work too.
 
 
 Then, in the ngafid2.0 repo create the following two files:
 ```
-user@machine: ~/ngafid2.0 $ touch db/db_info db/db_info.php
+~/ngafid2.0 $ touch db/db_info db/db_info.php
 ```
 
 The contents of those files should be:
@@ -64,8 +64,8 @@ $ngafid_db_password = '<your password>';
 
 Now that we've created these two files, we can create the tables of the database by running the
 PHP script `db/create_tables.php`:
-```
-user@machine: ~/ngafid2.0 $ php db/create_tables.php
+```bash
+~/ngafid2.0 $ php db/create_tables.php
 (lots of output here)
 ```
 
