@@ -1,5 +1,137 @@
-# ngafid2.0
+# Steps for running the NGAFID2.0 website
+## Clone the repository
+```
+user@machine: ~/ $ git clone git@github.com:travisdesell/ngafid2.0
+```
 
+## Set up the database
+Install mysql on your system. For ubuntu:
+```
+user@machine: ~/ $ sudo apt install mysql
+```
+
+Next we'll create the database in mysql:
+```
+user@machine: ~/ $ sudo mysql
+...
+Type 'help;' or '\h' for help. Type '\c' to clear the current input statement.
+
+mysql> CREATE DATABASE ngafid;
+Query OK, 1 row affected (0.00 sec)
+mysql> CREATE USER 'ngafid_user'@'localhost' IDENTIFIED BY 'password';
+Query OK, 1 row affected (0.00 sec)
+mysql> GRANT ALL PRIVILEGES ON ngafid.* TO 'ngafid_user'@'localhost';
+Query OK, 1 row affected (0.00 sec)
+mysql> FLUSH PRIVILEGES;
+Query OK, 1 row affected (0.00 sec)
+mysql> exit
+Bye
+```
+
+To create the tables of the database, you'll need php and the php mysql library installed.
+For ubuntu:
+```
+user@machine: ~/ $ sudo apt install php7.2 php7.2-mysql
+```
+If you use an older version of PHP it will probably work too.
+
+
+Then, in the ngafid2.0 repo create the following two files:
+```
+user@machine: ~/ngafid2.0 $ touch db/db_info db/db_info.php
+```
+
+The contents of those files should be:
+
+`db/db_info`
+```
+<database_name - probably ngafid or ngafid_test>
+<database_host - probably localhost>
+<database_user - probably ngafid_user>
+<database_password - better not be 'password' on production>
+```
+
+`db/db_info.php`
+```
+<?php
+$ngafid_db_user = '<database_user>';
+$ngafid_db_name = '<database_name>';
+$ngafid_db_host = '<probably localhost>';
+$ngafid_db_password = '<your password>';
+?>
+```
+
+Now that we've created these two files, we can create the tables of the database by running the
+PHP script `db/create_tables.php`:
+```
+user@machine: ~/ngafid2.0 $ php db/create_tables.php
+(lots of output here)
+```
+
+## Running the webserver
+First we need maven to fetch all of the dependencies:
+```
+user@machine: ~/ngafid2.0 $ mvn install
+```
+
+Then we need to set up some environment variables.
+
+Create `init_env.sh`, and add the following:
+```
+export NGAFID_REPO=<absolute path to ngafid2.0 repo>
+export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path here>
+
+export NGAFID_PORT=8181 # You can use whatever port you need or want to use
+export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
+export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
+export NGAFID_DB_INFO=$NGAFID_REPO/db/db_info.php
+# If you don't have the data to add to the terrain directory, ask for it.
+export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/
+# If you don't have the data for the airports directory, ask for it.
+export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv
+# If you don't have the data for the runways directory, ask for it.
+export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
+export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
+export SPARK_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
+```
+
+and run
+```
+user@machine ~/ngafid2.0 $ source init_env.sh
+```
+every time you want to run the website from a new shell.
+
+If you want these variables to be initialized automatically when you launch a new shell,
+add the following line to your `~/.bashrc` file:
+```
+source ~/ngafid2.0/init_env.sh
+```
+
+Next we need to initialize node. You'll need npm installed for this. For ubuntu:
+```
+user@machine ~/ $ sudo apt install npm
+```
+
+Then run:
+```
+user@machine ~/ngafid2.0 $ npm install
+```
+
+This will download the javascript dependencies. Then, in order to compile the javascript
+and automatically recompile whenever you change one of the files:
+```
+user@machine ~/ngafid2.0 $ npm run watch
+```
+
+You should then be able to compile and run the webserver by running `run_webserver.sh`
+```
+user@machine: ~/ngafid2.0 $ sh run_webserver.sh
+```
+
+Importing flights and calculating exceedences can be done by running the `run_process_flights.sh`
+and `run_exceedences.sh` files.
+
+# ngafid2.0
 
 airport database:
 http://osav-usdot.opendata.arcgis.com/datasets/a36a509eab4e43b4864fb594a35b90d6_0?filterByExtent=false&geometry=-97.201%2C47.944%2C-97.147%2C47.952
