@@ -8,7 +8,7 @@
 ## 2. Set up the database
 Install mysql on your system. For ubuntu:
 ```
-~/ $ sudo apt install mysql
+~/ $ sudo apt install mysql-server
 ```
 
 Next we'll create the database in mysql:
