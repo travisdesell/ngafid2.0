@@ -14,11 +14,20 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 
 import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.FatalFlightFileException;
@@ -26,72 +35,62 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 
 public class ExtractFlights {
+    private static Connection connection = Database.getConnection();
+
 
     public static void main(String[] arguments) throws Exception {
-        String filename = "/Users/travisdesell/Data/ngafid/und_single_week/C172/one_week_c172.zip";
+        Options options = new Options();
 
-        System.err.println("processing zip file: '" + filename + "'");
-        ZipFile zipFile = new ZipFile(filename);
+        Option flightIds = new Option("f", "flight_ids", true, "list of flight ids to extract");
+        flightIds.setRequired(true);
+        flightIds.setArgs(Option.UNLIMITED_VALUES);
+        options.addOption(flightIds);
 
-        Enumeration<? extends ZipEntry> entries = zipFile.entries();
+        Option outfilePrefix = new Option("o", "output_file_prefix", true, "prefix for output file names");
+        outfilePrefix.setRequired(true);
+        options.addOption(outfilePrefix);
+
+
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, arguments);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("ExtractFlights", options);
+
+            System.exit(1);
+        }
+
+        String outputBase = cmd.getOptionValue('o');
+        System.out.println("output prefix: '" + outputBase + "'");
+        System.out.println(Arrays.toString(cmd.getOptionValues('f')));
 
         ArrayList<Flight> flights = new ArrayList<Flight>();
 
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-            String name = entry.getName();
+        for (String flightIdStr : cmd.getOptionValues('f')) {
+            int flightId = Integer.parseInt(flightIdStr);
 
-            if (entry.isDirectory()) {
-                //System.err.println("SKIPPING: " + entry.getName());
+            Flight flight = Flight.getFlight(connection, flightId);
+
+            if (flight == null) {
+                System.err.println("WARNING: flight id: '" + flightId + "' did not exist in the database.");
                 continue;
             }
 
-            if (name.contains("__MACOSX")) {
-                //System.err.println("SKIPPING: " + entry.getName());
-                continue;
-            }
-
-            System.err.println("PROCESSING: " + name);
-
-            if (entry.getName().contains(".csv")) {
-                try {
-                    InputStream stream = zipFile.getInputStream(entry);
-                    Flight flight = new Flight(entry.getName(), stream, null);
-
-                    if (flight.getNumberRows() > 3600) {
-                        flights.add(flight);
-                    }
-
-                } catch (IOException e) {
-                    System.err.println(e.getMessage());
-                } catch (FatalFlightFileException e) {
-                    System.err.println(e.getMessage());
-                } catch (FlightAlreadyExistsException e) {
-                    System.err.println(e.getMessage());
-                }
-            }
-        } 
-
-        System.out.println("Flights processed:");
-        for (int i = 0; i < flights.size(); i++) {
-            System.out.println(flights.get(i));
+            flights.add(flight);
         }
-        Collections.shuffle(flights);
 
-        for (int i = 0; i < 10; i++) {
-            String outputFilename = "/Users/travisdesell/Data/ngafid/flight_" + i + ".csv";
-            String[] columnNames = new String[]{
-                "AltAGL", "E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4",
-                "E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", 
-                "E1 OilP", "E1 OilT", "E1 RPM", "FQtyL", "FQtyR",
-                "GndSpd", "IAS", "LatAc", "NormAc", "OAT",
-                "Pitch", "Roll", "TAS", "volt1", "volt2",
-                "VSpd", "VSpdG"
-            };
+        for (int i = 0; i < flights.size(); i++) {
+            String outputFilename = outputBase + flights.get(i).getId() + ".csv";
 
-            flights.get(i).writeToFile(outputFilename, columnNames);
+            flights.get(i).writeToFile(connection, outputFilename);
         }
 
         System.out.println("total flights in array list: " + flights.size());
+
+        connection.close();
     }
 }
