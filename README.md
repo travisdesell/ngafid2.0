@@ -64,7 +64,7 @@ $ngafid_db_password = '<your password>';
 
 Now that we've created these two files, we can create the tables of the database by running the
 PHP script `db/create_tables.php`:
-```bash
+```
 ~/ngafid2.0 $ php db/create_tables.php
 (lots of output here)
 ```
