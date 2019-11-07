@@ -347,14 +347,23 @@ public class EventStatistics {
         preparedStatement.setInt(1, fleetId);
 
         ArrayList<EventStatistics> eventStatistics = new ArrayList<>();
+
+        long startTime = System.currentTimeMillis();
         eventStatistics.add(new EventStatistics(connection, 0, "Generic", fleetId));
+        long endTime = System.currentTimeMillis();
+        LOG.info("Took " + (endTime - startTime) + " ms to calculate event statistics for airframeId: " + 0);
 
         ResultSet resultSet = preparedStatement.executeQuery();
 
+        //get the event statistics for each airframe
         while (resultSet.next()) {
+            startTime = System.currentTimeMillis();
             int airframeId = resultSet.getInt(1);
             String airframeName = resultSet.getString(2);
             eventStatistics.add(new EventStatistics(connection, airframeId, airframeName, fleetId));
+            endTime = System.currentTimeMillis();
+
+            LOG.info("Took " + (endTime - startTime) + " ms to calculate event statistics for airframeId: " + airframeId);
         }
 
         resultSet.close();
