@@ -131,7 +131,7 @@ public final class WebServer {
         Spark.get("/", new GetHome(gson));
         Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
         Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
-
+        Spark.get("/sandbox", new GetSandbox(gson));
 
 
         //the following need to be accessible for non-logged in users, and
