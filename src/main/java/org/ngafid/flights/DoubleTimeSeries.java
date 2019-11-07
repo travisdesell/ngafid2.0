@@ -90,8 +90,36 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
+    /**
+     * Gets the name of the DoubleTimeSeries.
+     * @return the column name of the DoubleTimeSeries
+     */
     public String getName() {
         return name;
+    }
+
+    /**
+     * Gets the minimum value of the DoubleTimeSeries.
+     * @return the minimum value of the DoubleTimeSeries
+     */
+    public double getMin() {
+        return min;
+    }
+
+    /**
+     * Gets the maximum value of the DoubleTimeSeries.
+     * @return the maximum value of the DoubleTimeSeries
+     */
+    public double getMax() {
+        return max;
+    }
+
+    /**
+     * Gets the average value of the DoubleTimeSeries.
+     * @return the average value of the DoubleTimeSeries
+     */
+    public double getAvg() {
+        return avg;
     }
 
     public static Pair<Double,Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
@@ -136,6 +164,38 @@ public class DoubleTimeSeries {
     }
 
 
+    /**
+     * Gets an ArrayList of all DoubleTimeSeries for a flight.
+     *
+     * @param connection is the connection to the database.
+     * @param flightId is the id of the flight.
+     * @return An ArrayList of all the DoubleTimeSeries for his flight.
+     */
+    public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? ORDER BY name");
+        query.setInt(1, flightId);
+        LOG.info(query.toString());
+
+        ArrayList<DoubleTimeSeries> allSeries = new ArrayList<DoubleTimeSeries>();
+        ResultSet resultSet = query.executeQuery();
+        while (resultSet.next()) {
+            DoubleTimeSeries result = new DoubleTimeSeries(resultSet);
+            allSeries.add(result);
+        }
+        resultSet.close();
+        query.close();
+
+        return allSeries;
+    }
+
+    /**
+     * Gets an ArrayList of all DoubleTimeSeries for a flight with a given column name.
+     *
+     * @param connection is the connection to the database.
+     * @param flightId is the id of the flight.
+     * @param name is the column name of the double time series
+     * @return a DoubleTimeSeries for his flight and column name, null if it does not exist.
+     */
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);

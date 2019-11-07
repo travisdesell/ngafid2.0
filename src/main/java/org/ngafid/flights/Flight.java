@@ -266,12 +266,17 @@ public class Flight {
 
         ResultSet resultSet = query.executeQuery();
 
-        resultSet.close();
-        query.close();
-
         if (resultSet.next()) {
-            return new Flight(connection, resultSet);
+            Flight flight = new Flight(connection, resultSet);
+
+            resultSet.close();
+            query.close();
+
+            return flight;
         } else {
+            resultSet.close();
+            query.close();
+
             return null;
         } 
     }
@@ -364,6 +369,14 @@ public class Flight {
         StringTimeSeries dates = stringTimeSeries.get(dateColumnName);
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
 
+        if (dates == null) {
+            throw new MalformedFlightFileException("Date column '" + dateColumnName + "' did not exist! Cannot set start/end times.");
+        }
+
+        if (times == null) {
+            throw new MalformedFlightFileException("Time column '" + timeColumnName + "' did not exist! Cannot set start/end times.");
+        }
+
         String startDate = dates.getFirstValid();
         String startTime = times.getFirstValid();
 
@@ -374,6 +387,7 @@ public class Flight {
         if (startTime == null) {
             throw new MalformedFlightFileException("Time column '" + timeColumnName + "' was empty! Cannot set start/end times.");
         }
+
         startDateTime = startDate + " " + startTime;
 
         String endDate = dates.getLastValid();
@@ -1184,33 +1198,55 @@ public class Flight {
         }
     }
 
-    public void writeToFile(String filename, String[] columnNames) throws IOException {
-        ArrayList<DoubleTimeSeries> series = new ArrayList<DoubleTimeSeries>();
-
-        for (int i = 0; i < columnNames.length; i++) {
-            series.add(getDoubleTimeSeries(columnNames[i]));
-        }
+    /**
+     * Writes the DoubleTimeSeries of this flight to th specified filename
+     *
+     * @param connection is a connection to the database.
+     * @param filename is the output filename.
+     */
+    public void writeToFile(Connection connection, String filename) throws IOException, SQLException {
+        ArrayList<DoubleTimeSeries> series = DoubleTimeSeries.getAllDoubleTimeSeries(connection, id);
 
         PrintWriter printWriter = new PrintWriter(new FileWriter(filename));
 
+        boolean afterFirst = false;
         printWriter.print("#");
-        for (int i = 0; i < columnNames.length; i++) {
-            if (i > 0) printWriter.print(",");
-            printWriter.print(columnNames[i]);
+        for (int i = 0; i < series.size(); i++) {
+            String name = series.get(i).getName();
+            if (name.equals("AirportDistance") || name.equals("RunwayDistance") ||  series.get(i).getMin() == series.get(i).getMax()) {
+                System.out.println("Skipping column: '" + name + "'");
+                continue;
+            }
+            System.out.println("'" + name + "' min - max: " + (series.get(i).getMin() - series.get(i).getMax()));
+
+            if (afterFirst) printWriter.print(",");
+            printWriter.print(series.get(i).getName());
+            afterFirst = true;
         }
         printWriter.println();
+        printWriter.flush();
 
+        afterFirst = false;
         printWriter.print("#");
-        for (int i = 0; i < columnNames.length; i++) {
-            if (i > 0) printWriter.print(",");
+        for (int i = 0; i < series.size(); i++) {
+            String name = series.get(i).getName();
+            if (name.equals("AirportDistance") || name.equals("RunwayDistance") ||  series.get(i).getMin() == series.get(i).getMax()) continue;
+            if (afterFirst) printWriter.print(",");
             printWriter.print(series.get(i).getDataType());
+            afterFirst = true;
         }
         printWriter.println();
+        printWriter.flush();
 
-        for (int i = 0; i < numberRows; i++) {
+        //Skip the first 2 minutes to get rid of initial weird values
+        for (int i = 119; i < numberRows; i++) {
+            afterFirst = false;
             for (int j = 0; j < series.size(); j++) {
-                if (j > 0) printWriter.print(",");
+                String name = series.get(j).getName();
+                if (name.equals("AirportDistance") || name.equals("RunwayDistance") ||  series.get(j).getMin() == series.get(j).getMax()) continue;
+                if (afterFirst) printWriter.print(",");
                 printWriter.print(series.get(j).get(i));
+                afterFirst = true;
             }
             printWriter.println();
         }
