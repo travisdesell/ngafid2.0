@@ -81,7 +81,7 @@ public class GetDashboard implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, user.getFleetId());
+            ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, fleetId);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -91,9 +91,12 @@ public class GetDashboard implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
+            long startTime = System.currentTimeMillis();
             scopes.put("events_js",
-                    "var eventStats = JSON.parse('" + gson.toJson(EventStatistics.getAll(connection, fleetId)) + "');\n"
+                    "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
                     );
+            long endTime = System.currentTimeMillis();
+            LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
