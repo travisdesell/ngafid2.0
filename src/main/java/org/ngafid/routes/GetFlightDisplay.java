@@ -17,11 +17,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.logging.Logger;
 
-public class GetSandbox implements Route {
-    private static final Logger LOG = Logger.getLogger(GetHome.class.getName());
+public class GetFlightDisplay implements Route {
+    private static final Logger LOG = Logger.getLogger(GetFlightDisplay.class.getName());
     private Gson gson;
 
-    public GetSandbox(Gson gson) {
+    public GetFlightDisplay(Gson gson) {
         this.gson = gson;
 
         LOG.info("get " + this.getClass().getName() + " initalized");
@@ -32,7 +32,7 @@ public class GetSandbox implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "sandbox.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flight_display.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try {
