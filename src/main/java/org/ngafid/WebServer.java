@@ -172,6 +172,8 @@ public final class WebServer {
         Spark.post("/protected/get_flights", new PostFlights(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
 
+        Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
+
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
 
