@@ -13,12 +13,6 @@ query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE event_statistics");
 
 if ($drop_tables) {
-    query_ngafid_db("DROP TABLE user");
-    query_ngafid_db("DROP TABLE fleet");
-    query_ngafid_db("DROP TABLE fleet_access");
-
-    query_ngafid_db("DROP TABLE uploads");
-
     query_ngafid_db("DROP TABLE events");
     query_ngafid_db("DROP TABLE flight_processed");
     query_ngafid_db("DROP TABLE event_statistics");
@@ -37,7 +31,41 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE airframes");
     query_ngafid_db("DROP TABLE fleet_airframes");
 
+    query_ngafid_db("DROP TABLE uploads");
+
+    query_ngafid_db("DROP TABLE fleet_access");
+    query_ngafid_db("DROP TABLE fleet");
+    query_ngafid_db("DROP TABLE user");
 }
+
+
+$query = "CREATE TABLE `fleet` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_name` VARCHAR(256),
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `user` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `email` VARCHAR(128) NOT NULL,
+    `password_token` VARCHAR(64) NOT NULL,
+    `first_name` VARCHAR(64),
+    `last_name` VARCHAR(64),
+    `address` VARCHAR(256) NOT NULL,
+    `city` VARCHAR(64),
+    `country` VARCHAR(128),
+    `state` VARCHAR(64),
+    `zip_code` VARCHAR(16),
+    `phone_number` VARCHAR(24),
+    `reset_phrase` VARCHAR(64),
+
+    PRIMARY KEY(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 
 $query = "CREATE TABLE `uploads` (
@@ -233,34 +261,6 @@ $query = "CREATE TABLE `upload_errors` (
     PRIMARY KEY(`id`),
     FOREIGN KEY(`upload_id`) REFERENCES uploads(`id`),
     FOREIGN KEY(`message_id`) REFERENCES flight_messages(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-$query = "CREATE TABLE `user` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `email` VARCHAR(128) NOT NULL,
-    `password_token` VARCHAR(64) NOT NULL,
-    `first_name` VARCHAR(64),
-    `last_name` VARCHAR(64),
-    `address` VARCHAR(256) NOT NULL,
-    `city` VARCHAR(64),
-    `country` VARCHAR(128),
-    `state` VARCHAR(64),
-    `zip_code` VARCHAR(16),
-    `phone_number` VARCHAR(24),
-    `reset_phrase` VARCHAR(64),
-
-    PRIMARY KEY(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-$query = "CREATE TABLE `fleet` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `fleet_name` VARCHAR(256),
-
-    PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
