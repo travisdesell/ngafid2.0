@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.ArrayList;
 
@@ -82,16 +83,11 @@ public class Itinerary {
 
         ArrayList<String> runways = new ArrayList<String>();
 
-        for (int i = 0; i < airports.size(); i++) {
-            String iataCode = airports.get(i);
-
+        for (String iataCode : airports) {
             Airport airport = Airports.getAirport(iataCode);
-
-            for (int j = 0; j < airport.getNumberRunways(); j++) {
-                Runway runway = airport.getRunway(j);
-
+            Collection<Runway> rws = airport.getRunways();
+            for (Runway runway : rws)
                 runways.add(iataCode + " - " + runway.getName());
-            }
         }
 
         return runways;

@@ -1,6 +1,7 @@
 package org.ngafid.airports;
 
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 
 import org.ngafid.common.MutableDouble;
 
@@ -14,7 +15,7 @@ public class Airport {
 
     public final String geoHash;
 
-    private ArrayList<Runway> runways;
+    private HashMap<String, Runway> runways;
 
     public Airport(String iataCode, String siteNumber, String type, double latitude, double longitude) {
         this.iataCode = iataCode;
@@ -25,7 +26,7 @@ public class Airport {
 
         this.geoHash = GeoHash.getGeoHash(latitude, longitude);
 
-        runways = new ArrayList<Runway>();
+        runways = new HashMap<>();
     }
 
     public String toString() {
@@ -36,20 +37,23 @@ public class Airport {
         return runways.size();
     }
 
-    public Runway getRunway(int i) {
-        return runways.get(i);
+    public Collection<Runway> getRunways() {
+        return runways.values();
+    }
+
+    public Runway getRunway(String name) {
+        return runways.get(name);
     }
 
     public void addRunway(Runway runway) {
-        runways.add(runway);
+        runways.put(runway.name, runway);
     }
 
     public Runway getNearestRunwayWithin(double latitude, double longitude, double maxDistanceFt, MutableDouble runwayDistance) {
         Runway nearestRunway = null;
 
         double minDistance = maxDistanceFt;
-        for (int i = 0; i < runways.size(); i++) {
-            Runway runway = runways.get(i);
+        for (Runway runway : runways.values()) {
             if (!runway.hasCoordinates) continue;
 
             double distanceFt = runway.getDistanceFt(latitude, longitude);
