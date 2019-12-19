@@ -27,7 +27,9 @@ public class DoubleTimeSeries {
     private int flightId = -1;
     private String name;
     private String dataType;
-    private ArrayList<Double> timeSeries;
+    // private ArrayList<Double> timeSeries;
+    private double[] data;
+    private int size = 0;
 
     private int length = -1;
     private double min = Double.MAX_VALUE;
@@ -38,7 +40,7 @@ public class DoubleTimeSeries {
     public DoubleTimeSeries(String name, String dataType) {
         this.name = name;
         this.dataType = dataType;
-        timeSeries = new ArrayList<Double>();
+        this.data = new double[16];
 
         min = Double.NaN;
         avg = Double.NaN;
@@ -51,7 +53,8 @@ public class DoubleTimeSeries {
         this.name = name;
         this.dataType = dataType;
 
-        timeSeries = new ArrayList<Double>();
+        // timeSeries = new ArrayList<Double>();
+        this.data = new double[stringTimeSeries.size()];
 
         int emptyValues = 0;
         avg = 0.0;
@@ -61,13 +64,13 @@ public class DoubleTimeSeries {
             String currentValue = stringTimeSeries.get(i);
             if (currentValue.length() == 0) {
                 //System.err.println("WARNING: double column '" + name + "' value[" + i + "] is empty.");
-                timeSeries.add(Double.NaN);
+                this.add(Double.NaN);
                 emptyValues++;
                 continue;
             }
             double currentDouble = Double.parseDouble(stringTimeSeries.get(i));
 
-            timeSeries.add(currentDouble);
+            this.add(currentDouble);
 
             if (Double.isNaN(currentDouble)) continue;
             avg += currentDouble;
@@ -228,17 +231,18 @@ public class DoubleTimeSeries {
         max = resultSet.getDouble(9);
 
         Blob values = resultSet.getBlob(10);
-        byte[] bytes = values.getBytes(1, (int)values.length());
+        byte[] bytes = values.getBytes(1, (int) values.length());
         values.free();
 
         System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + length + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
 
-        timeSeries = new ArrayList<Double>();
+        this.data = new double[ bytes.length / Double.BYTES ];
+        // timeSeries = new ArrayList<Double>();
         try {
             DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
             while (inputStream.available() > 0) {
                 double d = inputStream.readDouble();
-                timeSeries.add(d);
+                this.add(d);
                 //System.out.print(" " + d);
             }
             //System.out.println();
@@ -248,40 +252,43 @@ public class DoubleTimeSeries {
     }
 
     public String toString() {
-        return "[DoubleTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max + "]";
+        return "[DoubleTimeSeries '" + name + "' size: " + this.size + ", validCount: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max + "]";
     }
 
 
     public void add(double d) {
-        if (Double.isNaN(d)) {
-            timeSeries.add(d);
-            return;
+        // Need to resize
+        if (this.size == data.length) {
+            // Create a new buffer then copy the data to the new buffer.
+            double[] oldData = this.data;
+            this.data = new double[data.length * 2];
+            System.arraycopy(oldData, 0, this.data, 0, oldData.length);
         }
 
-        if (validCount == 0) {
-            min = Double.MAX_VALUE;
-            max = -Double.MAX_VALUE;
-            avg = 0;
+        data[this.size++] = d;
+        this.length = this.size;
 
-            timeSeries.add(d);
+        if (Double.isNaN(d))
+            return;
+
+        if (validCount == 0) {
             avg = d;
             max = d;
             min = d;
             validCount = 1;
         } else {
-            timeSeries.add(d);
-
             if (d > max) max = d;
             if (d < min) min = d;
 
-            avg = avg * ((double)validCount / (double)(validCount + 1)) + (d / (double)(validCount + 1));
+            avg =   avg * ((double) validCount / (double) (validCount + 1))
+                    + (d / (double) (validCount + 1));
 
             validCount++;
         }
     }
 
     public double get(int i) {
-        return timeSeries.get(i);
+        return data[i];
     }
 
     public String getDataType() {
@@ -289,11 +296,19 @@ public class DoubleTimeSeries {
     }
 
     public int size() {
-        return timeSeries.size();
+        return this.size;
     }
 
     public int validCount() {
         return validCount;
+    }
+
+    public double[] toArray() {
+        double[] data = new double[this.size];
+        System.arraycopy(this.data, 0, data, 0, this.size);
+        // This line can be used if arraycopy doesn't work for some reason
+        // for (int i = 0; i < this.size(); i ++) data[i] = this.get(i);
+        return data;
     }
 
     public void updateDatabase(Connection connection, int flightId) {
@@ -306,7 +321,8 @@ public class DoubleTimeSeries {
             preparedStatement.setString(2, name);
             preparedStatement.setString(3, dataType);
 
-            preparedStatement.setInt(4, timeSeries.size());
+            //preparedStatement.setInt(4, timeSeries.size());
+            preparedStatement.setInt(4, this.size);
             preparedStatement.setInt(5, validCount);
 
             if (Double.isNaN(min)) {
@@ -327,10 +343,9 @@ public class DoubleTimeSeries {
                 preparedStatement.setDouble(8, max);
             }
 
-
-            ByteBuffer byteBuffer = ByteBuffer.allocate(timeSeries.size() * 8);
-            for (int i = 0; i < timeSeries.size(); i++) {
-                byteBuffer.putDouble(timeSeries.get(i));
+            ByteBuffer byteBuffer = ByteBuffer.allocate(this.size * 8);
+            for (int i = 0; i < this.size; i++) {
+                byteBuffer.putDouble(data[i]);
             }
             byte[] byteArray = byteBuffer.array();
 
