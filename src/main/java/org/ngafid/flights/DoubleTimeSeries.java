@@ -303,12 +303,21 @@ public class DoubleTimeSeries {
         return validCount;
     }
 
-    public double[] toArray() {
-        double[] data = new double[this.size];
-        System.arraycopy(this.data, 0, data, 0, this.size);
+    public double[] innerArray() {
+        // double[] data = new double[this.size];
+        // System.arraycopy(this.data, 0, data, 0, this.size);
         // This line can be used if arraycopy doesn't work for some reason
         // for (int i = 0; i < this.size(); i ++) data[i] = this.get(i);
         return data;
+    }
+
+    // including index from, up until (excluding)
+    // if from == to, we assume from was supposed to be from + 1
+    public double[] sliceCopy(int from, int to) {
+        if (from == to) to += 1;
+        double[] slice = new double[to - from];
+        System.arraycopy(this.data, from, slice, 0, slice.length);
+        return slice;
     }
 
     public void updateDatabase(Connection connection, int flightId) {

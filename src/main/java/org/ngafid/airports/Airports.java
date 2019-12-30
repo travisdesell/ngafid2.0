@@ -19,6 +19,8 @@ public class Airports {
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
 
+    public static final double FT_PER_KM = 3280.84;
+
     static {
        //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
         if (System.getenv("AIRPORTS_FILE") == null) {
@@ -142,6 +144,43 @@ public class Airports {
         return iataToAirport.get(iataCode);
     }
 
+    /**
+     *  Modified from:
+     *  https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+     **/
+    public final static double shortestDistanceBetweenLineAndPointFt(double plat, double plon,
+                                                                     double lat1, double lon1,
+                                                                     double lat2, double lon2) {
+        double A = plon - lon1;
+        double B = plat - lat1;
+        double C = lon2 - lon1;
+        double D = lat2 - lat1;
+
+        double dot = A * C + B * D;
+        double len_sq = C * C + D * D;
+        double param = -1;
+
+        if (len_sq != 0) {
+            param = dot / len_sq;
+        }
+
+        double xx, yy;
+        if (param < 0) {
+            xx = lon1;
+            yy = lat1;
+        } else if (param > 1) {
+            xx = lon2;
+            yy = lat2;
+        } else {
+            xx = lon1 + param * C;
+            yy = lat1 + param * D;
+        }
+
+        double dx = plon - xx;
+        double dy = plat - yy;
+        return Airports.calculateDistanceInFeet(plat, plon, plat + dy, plon + dx);
+    }
+
     public final static double calculateDistanceInKilometer(double lat1, double lon1, double lat2, double lon2) {
         double latDistance = Math.toRadians(lat1 - lat2);
         double lngDistance = Math.toRadians(lon1 - lon2);
@@ -160,7 +199,7 @@ public class Airports {
     }
 
     public final static double calculateDistanceInFeet(double lat1, double lon1, double lat2, double lon2) {
-        return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * 3280.84;
+        return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Airports.FT_PER_KM;
     }
 
 

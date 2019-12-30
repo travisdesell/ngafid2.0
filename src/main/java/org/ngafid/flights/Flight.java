@@ -320,6 +320,10 @@ public class Flight {
         return filename;
     }
 
+    public String getAirframeType() {
+        return this.airframeType;
+    }
+
     public int getNumberRows() {
         return numberRows;
     }
