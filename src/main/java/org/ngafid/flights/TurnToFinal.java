@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import com.google.gson.Gson;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -8,12 +9,17 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.Collections.*;
+import java.util.function.Function;
 import java.util.logging.Logger;
 
 public class TurnToFinal {
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
     private static final double FEET_PER_MILE = 5280;
+
+    // The optimal descent is 300 feet vertically down for every mile traveled horizontally
+    private static final double OPTIMAL_DESCENT_PER_MILE = 300;
+
     // 0.1 miles of tolerance is allowed
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
@@ -22,7 +28,7 @@ public class TurnToFinal {
                     "PA-28-181", 66.0);
 
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll;
+    private final double[] latitude, longitude, altitude, roll, velocity;
     private double runwayAltitude;
     private final Runway runway;
     private final String airframe;
@@ -31,7 +37,7 @@ public class TurnToFinal {
 
     private ArrayList<Integer> locExceedences;
     private ArrayList<Integer> centerLineExceedences;
-    private double selfDefinedGlideAngle;
+    private double selfDefinedGlideAngle = Float.NaN;
     private ArrayList<Integer> optimalDescentSlopeWarnings;
     private ArrayList<Integer> optimalDescentSlopeExceedences;
     private ArrayList<Integer> optimalDescentSpeedExceedences;
@@ -47,7 +53,8 @@ public class TurnToFinal {
      * @param lat
      * @param lon
      */
-    public TurnToFinal(String airframe, Runway runway, double runwayAltitude, double[] altitude, double[] roll, double[] lat, double[] lon) {
+    public TurnToFinal(String airframe, Runway runway, double runwayAltitude, double[] altitude, double[] roll,
+                       double[] lat, double[] lon, double[] velocity) {
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
         this.latitude = lat;
@@ -55,6 +62,7 @@ public class TurnToFinal {
         this.altitude = altitude;
         this.roll = roll;
         this.airframe = airframe;
+        this.velocity = velocity;
 
         assert this.latitude.length == this.longitude.length;
         assert this.latitude.length == this.altitude.length;
@@ -176,6 +184,52 @@ public class TurnToFinal {
         // close to the optimal. We will use a percentage threshold: if your speed is X% different, then you we'll
         // consider it an exceedence. This X value will be a double between 0 and 1, but the appropriate value is yet
         // to be decided
+
+        // TODO: Figure out if the assumptions made in this method are acceptable:
+        //      1. The aircraft is may not be traveling stright towards the runway when it hits the
+        //          400 ft mark. This means the "optimal slope" may not be correct.
+
+        int start_idx = 0;
+        int end_index = this.altitude.length - 1;
+
+        // How far the aircraft is from the touchdown point horizontally, in feet
+        double distance = Airports.calculateDistanceInFeet(
+                latitude[start_idx], longitude[start_idx], latitude[end_index], longitude[end_index]);
+        double altitude = this.altitude[start_idx];
+
+        // How the aircraft should descend optimally
+        // 300 ft / 1 mile = x feet / distance miles
+        // (300 ft / 1 mile) * distance miles = x feet
+        double optimal_slope = OPTIMAL_DESCENT_PER_MILE;
+
+        for (int i = 1; i < this.altitude.length; i++) {
+            // This is probably not a cheap calculation
+            double next_distance = Airports.calculateDistanceInFeet(
+                    latitude[i], longitude[i], latitude[end_index], longitude[end_index]);
+
+            // This is the distance traveled directly towards the touchdown point.
+            // We may want to change this to the absolute amount of distance traveled
+            double dist_horizontally_traveled_ft = distance - next_distance;
+            double dist_horizontally_traveled_miles = dist_horizontally_traveled_ft / FEET_PER_MILE;
+            double proper_descent_amount = optimal_slope * dist_horizontally_traveled_miles;
+            double actual_altitude = this.altitude[i];
+
+            // The difference between actual altitude and the expected altitude
+            double delta = Math.abs(actual_altitude - (altitude - proper_descent_amount));
+
+            if (delta > 10) {
+                this.optimalDescentSlopeExceedences.add(i);
+            } else if (delta > 5) {
+                this.optimalDescentSlopeWarnings.add(i);
+            }
+
+            double velocity =
+
+            // Carry our calculated optimal altitude.
+            altitude = altitude - proper_descent_amount;
+            distance = next_distance;
+        }
+
     }
 
     public double[] getPosition(int timestep) {
@@ -192,6 +246,7 @@ public class TurnToFinal {
         // TODO: Verify that these are the correct names
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries("Altitude");
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries("Roll");
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries("GndSpd");
 
         assert latTimeSeries != null;
         assert lonTimeSeries != null;
@@ -200,6 +255,7 @@ public class TurnToFinal {
         double[] lon = lonTimeSeries.innerArray();
         double[] altitude = altTimeSeries.innerArray();
         double[] roll = rollTimeSeries.innerArray();
+        double[] velocity = velocityTimeSeries.innerArray();
         assert lat.length == lon.length;
 
         ArrayList<Itinerary> itineraries = Itinerary.getItinerary(connection, flightId);
@@ -232,10 +288,23 @@ public class TurnToFinal {
                                 altTimeSeries.sliceCopy(from, to),
                                 rollTimeSeries.sliceCopy(from, to),
                                 latTimeSeries.sliceCopy(from, to),
-                                lonTimeSeries.sliceCopy(from, to));
+                                lonTimeSeries.sliceCopy(from, to),
+                                velocityTimeSeries.sliceCopy(from, to));
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
-        return null;
+
+        return ttfs;
+    }
+
+    public String jsonify() {
+        Gson gson = new Gson();
+        return gson.toJson(Map.of(
+                "locExceedences", gson.toJson(this.locExceedences),
+                "centerLineExceedences", gson.toJson(this.centerLineExceedences),
+                "selfDefinedGlideAngle", gson.toJson(this.selfDefinedGlideAngle),
+                "optimalDescentSlopeWarnings", gson.toJson(this.optimalDescentSlopeWarnings),
+                "optimalDescentSlopeExceedences", gson.toJson(this.optimalDescentSlopeExceedences)
+        ));
     }
 }
