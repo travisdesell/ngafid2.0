@@ -636,7 +636,8 @@ class Flight extends React.Component {
             eventsVisible : false,
             itineraryVisible : false,
             layer : null,
-            color : color
+            color : color,
+            ttfData : null
         }
     }
 
@@ -757,7 +758,7 @@ class Flight extends React.Component {
                 //check and see if this series was loaded in the past
                 if (seriesName in this.state.traceIndex) {
 
-                    //this will make make a trace visible if it was formerly set to visible and the plot button this flight is clicked on
+                    //this will make make a trace visible if it was formly set to visible and the plot button this flight is clicked on
                     //otherwise it will hide them
                     Plotly.restyle('plot', { visible: (visible && this.state.traceVisibility[seriesName]) }, [ this.state.traceIndex[seriesName] ])
                 }
@@ -868,7 +869,32 @@ class Flight extends React.Component {
         }
     }
 
-
+    loadExceedences() {
+        if (this.ttfData == null) {
+            var submissionData = {
+                request: "GET_TTF",
+                id_token: id_token,
+                user_id: user_id,
+                flightId: this.props.flightInfo.id
+            };
+            $.ajax({
+                type: "POST",
+                url: "/protected/ttf",
+                data: submissionData,
+                dataType: 'json',
+                success: function(response) {
+                    this.ttfData = response;
+                    // var lat = response.lat;
+                    // var lon = response.lon;
+                    // var locExceedences = response.locExceedences;
+                    // var centerLineExceedences = response.centerLineExceedences;
+                    // var selfDefinedGlideAngle = response.selfDefinedGlideAngle;
+                    // var optimalDescentWarnings = response.optimalDescentWarnings;
+                    // var optimalDescentExceedences = response.optimalDescentExceedences;
+                }
+            });
+        }
+    }
 
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
@@ -1083,10 +1109,6 @@ class Flight extends React.Component {
 
                             <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
                                 <i className="fa fa-globe p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses + " disabled"} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.turnToFinalClicked()}>
-                                <i className="fa fa-asterisk"></i>
                             </button>
 
                             <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
