@@ -197,6 +197,8 @@ public class TurnToFinal {
                 latitude[start_idx], longitude[start_idx], latitude[end_index], longitude[end_index]);
         double altitude = this.altitude[start_idx];
 
+        this.selfDefinedGlideAngle = Math.atan(altitude / distance);
+
         // How the aircraft should descend optimally
         // 300 ft / 1 mile = x feet / distance miles
         // (300 ft / 1 mile) * distance miles = x feet
@@ -303,8 +305,10 @@ public class TurnToFinal {
                 "locExceedences", gson.toJson(this.locExceedences),
                 "centerLineExceedences", gson.toJson(this.centerLineExceedences),
                 "selfDefinedGlideAngle", gson.toJson(this.selfDefinedGlideAngle),
-                "optimalDescentSlopeWarnings", gson.toJson(this.optimalDescentSlopeWarnings),
-                "optimalDescentSlopeExceedences", gson.toJson(this.optimalDescentSlopeExceedences)
-        ));
+                "optimalDescentWarnings", gson.toJson(this.optimalDescentSlopeWarnings),
+                "optimalDescentExceedences", gson.toJson(this.optimalDescentSlopeExceedences),
+                "lat", gson.toJson(this.latitude),
+                "lon", gson.toJson(this.longitude))
+        );
     }
 }
