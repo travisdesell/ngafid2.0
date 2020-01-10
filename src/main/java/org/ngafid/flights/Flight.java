@@ -347,6 +347,7 @@ public class Flight {
     }
 
     public DoubleTimeSeries getDoubleTimeSeries(String name) {
+        System.out.println(this.doubleTimeSeries.keySet());
         return doubleTimeSeries.get(name);
     }
 
