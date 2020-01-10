@@ -873,8 +873,8 @@ class Flight extends React.Component {
         if (this.ttfData == null) {
             var submissionData = {
                 request: "GET_TTF",
-                id_token: id_token,
-                user_id: user_id,
+                id_token: "TEST_ID_TOKEN",
+                user_id: -1,
                 flightId: this.props.flightInfo.id
             };
             $.ajax({
