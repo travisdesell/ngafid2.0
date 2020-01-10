@@ -244,12 +244,12 @@ public class TurnToFinal {
         // For now just use the flight object to get lat and long series
         // In the future we could just get the lat and long series in isolation to speed things up
         Flight flight = Flight.getFlight(connection, flightId);
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries("Latitude");
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries("Longitude");
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_LATITUDE);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_LONGITUDE);
         // TODO: Verify that these are the correct names
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries("Altitude");
-        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries("Roll");
-        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries("GndSpd");
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
+        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_ROLL);
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_GND_SPEED);
 
         assert latTimeSeries != null;
         assert lonTimeSeries != null;
@@ -278,10 +278,13 @@ public class TurnToFinal {
             double runwayAltitude = altitude[to];
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
+            theyhavelabelsinjavawow:
             for (;;) {
                 if (from < 0) {
+                    // We never found a point in time where there is a turn to final
+                    // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
                     from = 0;
-                    break;
+                    break theyhavelabelsinjavawow;
                 }
                 if (altitude[from] - runwayAltitude > 400)
                     break;
