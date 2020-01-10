@@ -33,6 +33,7 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.ngafid.Database;
 import org.ngafid.common.MutableDouble;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
@@ -346,9 +347,22 @@ public class Flight {
         return endDateTime;
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) {
-        System.out.println(this.doubleTimeSeries.keySet());
-        return doubleTimeSeries.get(name);
+    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
+        // TODO: Figure out why the doubleTimeSeries field is never properly filled
+        // Previous impl was
+        // return this.doubleTimeSeries.get(name)
+        // But it didn't work because doubleTimeSeries had no entries in it.
+
+        // Cache it just in case? Probably won't be that helpful since Flight objects don't stick around for very long
+        // anyways.
+        if (this.doubleTimeSeries.containsKey(name)) {
+            return this.doubleTimeSeries.get(name);
+        } else {
+            DoubleTimeSeries dts = DoubleTimeSeries.getDoubleTimeSeries(Database.getConnection(), this.id, name);
+            this.doubleTimeSeries.put(name, dts);
+            return dts;
+        }
+
     }
 
     public StringTimeSeries getStringTimeSeries(String name) {
