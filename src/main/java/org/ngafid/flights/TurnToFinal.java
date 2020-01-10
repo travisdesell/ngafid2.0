@@ -1,6 +1,7 @@
 package org.ngafid.flights;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -299,9 +300,9 @@ public class TurnToFinal {
         return ttfs;
     }
 
-    public String jsonify() {
+    public JsonElement jsonify() {
         Gson gson = new Gson();
-        return gson.toJson(Map.of(
+        return gson.toJsonTree(Map.of(
                 "locExceedences", gson.toJson(this.locExceedences),
                 "centerLineExceedences", gson.toJson(this.centerLineExceedences),
                 "selfDefinedGlideAngle", gson.toJson(this.selfDefinedGlideAngle),

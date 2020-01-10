@@ -896,6 +896,14 @@ class Flight extends React.Component {
         }
     }
 
+    exceedencesClicked() {
+        // Load the data. this function won't reload data if we already have it.
+        this.loadExceedences();
+
+        // Just print it for now...
+        console.log(this.ttfData);
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -1105,6 +1113,10 @@ class Flight extends React.Component {
                         <div className="p-0">
                             <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
                                 <i className="fa fa-exclamation p-1"></i>
+                            </button>
+
+                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exceedencesClicked()}>
+                                <i className="fa fa-warning p-1"></i>
                             </button>
 
                             <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
