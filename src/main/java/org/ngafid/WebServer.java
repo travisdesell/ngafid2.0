@@ -173,7 +173,7 @@ public final class WebServer {
         Spark.get("/protected/get_kml", new GetKML(gson));
 
         // For turn to final
-        Spark.post("/protected/ttf", new PostFlights(gson));
+        Spark.post("/protected/ttf", new PostTurnToFinal(gson));
 
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
