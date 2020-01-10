@@ -4,12 +4,12 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
+import com.google.gson.JsonElement;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
 import org.ngafid.flights.TurnToFinal;
-import spark.Request;
-import spark.Response;
-import spark.Route;
+import spark.*;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -21,12 +21,12 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-public class GetTurnToFinal implements Route {
+public class PostTurnToFinal implements Route {
     private static final Logger LOG = Logger.getLogger(PostCreateAccount.class.getName());
 
     private final Gson gson;
 
-    public GetTurnToFinal(Gson gson) {
+    public PostTurnToFinal(Gson gson) {
         this.gson = gson;
     }
 
@@ -45,30 +45,26 @@ public class GetTurnToFinal implements Route {
 
         String resultString = "";
 
+        final Session session = request.session();
+        User user = session.attribute("user");
+
+        if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to this flight, id = " + flightIdS);
+            Spark.halt(401, "User did not have access to flight with id = " + flightIdS);
+            return null;
+        }
+
         try {
-            List<String> ttf = TurnToFinal.getTurnToFinal(Database.getConnection(), flightId)
+            List<JsonElement> ttfs = TurnToFinal.getTurnToFinal(Database.getConnection(), flightId)
                     .stream()
                     .map(TurnToFinal::jsonify)
                     .collect(Collectors.toList());
-
-            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "turn_to_final.html";
-            LOG.severe("template file: '" + templateFile + "'");
-
-            MustacheFactory mf = new DefaultMustacheFactory();
-            Mustache mustache = mf.compile(templateFile);
-
-            HashMap<String, Object> scope = new HashMap<>();
-            scope.put("navbar_js", Navbar.getJavascript(request));
-            scope.put("ttfs_js",  "var ttfs = " + gson.toJson(ttf) + ";");
-
-            StringWriter stringOut = new StringWriter();
-            mustache.execute(new PrintWriter(stringOut), scope).flush();
-            resultString = stringOut.toString();
-        } catch (SQLException | IOException e) {
+            // This should be a list of js objects. each object represents 1 turn to final, containing the
+            // indices associated with exceedences
+            return gson.toJson(ttfs);
+        } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
         }
-
-        return resultString;
     }
 }
