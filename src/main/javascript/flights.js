@@ -884,6 +884,7 @@ class Flight extends React.Component {
                 dataType: 'json',
                 success: function(response) {
                     this.ttfData = response;
+                    console.log(response);
                     // var lat = response.lat;
                     // var lon = response.lon;
                     // var locExceedences = response.locExceedences;
