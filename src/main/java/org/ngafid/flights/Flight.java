@@ -183,7 +183,9 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int limit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND ("
+                + filter.toQueryString(fleetId, parameters)
+                + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
 
