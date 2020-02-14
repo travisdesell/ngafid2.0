@@ -13,6 +13,8 @@ import java.util.Collections.*;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
+import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
+
 public class TurnToFinal {
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -244,12 +246,12 @@ public class TurnToFinal {
         // For now just use the flight object to get lat and long series
         // In the future we could just get the lat and long series in isolation to speed things up
         Flight flight = Flight.getFlight(connection, flightId);
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_LATITUDE);
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_LONGITUDE);
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         // TODO: Verify that these are the correct names
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
-        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_ROLL);
-        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(Parameters.PARAM_GND_SPEED);
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
+        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
 
         assert latTimeSeries != null;
         assert lonTimeSeries != null;
@@ -306,13 +308,13 @@ public class TurnToFinal {
     public JsonElement jsonify() {
         Gson gson = new Gson();
         return gson.toJsonTree(Map.of(
-                "locExceedences", gson.toJson(this.locExceedences),
-                "centerLineExceedences", gson.toJson(this.centerLineExceedences),
-                "selfDefinedGlideAngle", gson.toJson(this.selfDefinedGlideAngle),
-                "optimalDescentWarnings", gson.toJson(this.optimalDescentSlopeWarnings),
-                "optimalDescentExceedences", gson.toJson(this.optimalDescentSlopeExceedences),
-                "lat", gson.toJson(this.latitude),
-                "lon", gson.toJson(this.longitude))
-        );
+                PARAM_JSON_LOC_EXC, gson.toJson(this.locExceedences),
+                PARAM_JSON_CLINE_EXC, gson.toJson(this.centerLineExceedences),
+                PARAM_JSON_SELFDEF_GPANG, gson.toJson(this.selfDefinedGlideAngle),
+                PARAM_JSON_OPT_DES_WARN, gson.toJson(this.optimalDescentSlopeWarnings),
+                PARAM_JSON_OPT_DES_EXC, gson.toJson(this.optimalDescentSlopeExceedences),
+                PARAM_JSON_LATITUDE, gson.toJson(this.latitude),
+                PARAM_JSON_LONGITUDE, gson.toJson(this.longitude))
+          );
     }
 }
