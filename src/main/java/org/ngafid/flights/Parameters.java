@@ -1,11 +1,15 @@
 package org.ngafid.flights;
-
-// A static class to help keep better track of what flight parameters actually do.
-// In the future, this may be a good place to store meta information about parameters, e.g.:
-//  - Parameters that share the same name
-//  - Parameters that are not always available
-//  - Relationships between parameters
-public class Parameters {
+/**
+ *
+ * A static class to help keep better track of what flight parameters actually do.
+ * In the future, this may be a good place to store meta information about parameters, e.g.:
+ * - Parameters that share the same name
+ * - Parameters that are not always available
+ * - Relationships between parameters
+ * @author <a href = mailto:josh@mail.rit.edu>Josh Karns</a>
+ * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
+ */
+public interface Parameters {//this can be an interface since its static
 
     /* Latitude of the aircraft */
     public final static String PARAM_LATITUDE = "Latitude";
@@ -33,4 +37,16 @@ public class Parameters {
     // public final static String PARAM_ = "";
     // public final static String PARAM_ = "";
     // public final static String PARAM_ = "";
+
+    /**
+     * JSON-specific parameters
+     * EXC = Exceedences
+     */
+    public final static String PARAM_JSON_LOC_EXC = "locExceedences";
+    public final static String PARAM_JSON_CLINE_EXC =  "centerLineExceedences";
+    public final static String PARAM_JSON_SELFDEF_GPANG = "selfDefinedGlideAngle";
+    public final static String PARAM_JSON_OPT_DES_WARN = "optimalDescentWarnings";
+    public final static String PARAM_JSON_OPT_DES_EXC = "optimalDescentExceedences";
+    public final static String PARAM_JSON_LATITUDE = "lat";
+    public final static String PARAM_JSON_LONGITUDE = "lon";
 }
