@@ -17,6 +17,7 @@ import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
 import { Filter } from './filter.js';
 
+import paginate from 'paginate-array';
 
 var moment = require('moment');
 
@@ -1114,13 +1115,24 @@ class FlightsCard extends React.Component {
         super(props);
 
         this.state = {
+            flights: [],
+            pages: null, // will be constructed in splitFlights()
+            nFltPg: 0,
+            fltPage: null,
             mapVisible : false,
             plotVisible : false,
             filterVisible : true,
+            size: 5,
+            page: 1,
+            currPage: null,
+            latestSubData: null
         }
-
         this.filterRef = React.createRef();
+        this.previousPage = this.previousPage.bind(this);
+        this.nextPage = this.nextPage.bind(this);
+        this.handleChange = this.handleChange.bind(this);
     }
+    
 
     setFlights(flights) {
         this.state.flights = flights;
@@ -1161,6 +1173,7 @@ class FlightsCard extends React.Component {
         }
 
     }
+
 
     hideMap() {
         if (!this.state.mapVisible) return;
@@ -1294,13 +1307,20 @@ class FlightsCard extends React.Component {
 
         var submissionData = {
             filterQuery : JSON.stringify(query)
-        };   
+        };
+        this.state.latestSubData = submissionData;
         console.log(submissionData);
 
+        this.reloadAjax();
+
+    }
+
+    //submissionData is passed via the class pointer latestSubData
+    reloadAjax(){
         $.ajax({
             type: 'POST',
             url: '/protected/get_flights',
-            data : submissionData,
+            data : this.state.latestSubData,
             dataType : 'json',
             success : function(response) {
                 console.log("received response: ");
@@ -1315,12 +1335,60 @@ class FlightsCard extends React.Component {
                 }
 
                 flightsCard.setFlights(response);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
+    }
+
+    previousPage() {
+        this.state.nFltPg--;
+        this.reloadAjax();
+    }
+
+    nextPage() {
+        console.log("Next page is called");
+        this.state.nFltPg++;
+
+        this.reloadAjax();
+
+    }
+
+    splitFlights(numpPg){
+        console.log("Splitting flights into 2d array");
+        this.state.pages = []; //have the page array behave as a sort of '2d list'
+        var fltsLen = this.state.flights.length;
+        var k = 0;
+        while(k<fltsLen){
+            for(var i = 0; i<Math.ceil(fltsLen/numpPg); i++){ // Ceiling to determine max num of elements per pg. Discrete is actually useful lol 
+                this.state.pages[i] = [];
+                for(var j = 0; j<numpPg; j++){
+                    this.state.pages[i][j] = this.state.flights[k];
+                    k++;
+                }
+            }
+        }
+        console.log(this.state.pages);
+    }
+
+    handleChange(e) {
+        const { value } = e.target;
+        const { todos, page } = this.state;
+
+        const newSize = +value;
+        const newPage = 1;
+        const newCurrPage = paginate(flights, newPage, newSize);
+
+        this.splitFlights(newSize);
+
+        this.setState({
+            ...this.state,
+            size: newSize,
+            page: newPage,
+            currPage: newCurrPage
+        });
     }
 
     render() {
@@ -1330,37 +1398,69 @@ class FlightsCard extends React.Component {
         if (typeof this.state.flights != 'undefined') {
             flights = this.state.flights;
         }
-
+        console.log("flights: ");
+        console.log(flights);
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
             console.log("rendering half");
-            style = { 
+            style = {
                 overflow : "scroll",
                 height : "calc(50% - 56px)"
-            };  
+            };
         } else {
-            style = { 
+            style = {
                 overflow : "scroll",
                 height : "calc(100% - 56px)"
-            };  
-        }   
+            };
+        }
         style.padding = "5";
 
-        return (
+        const npt = paginate(flights, 1, 5);
+        this.state.currPage  = npt;
+
+        if(flights.length <= 0){
+            return (
             <div className="card-body" style={style}>
                 <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-
-                {
-                    flights.map((flightInfo, index) => {
-                        return (
-                            <Flight flightInfo={flightInfo} key={flightInfo.id} />
-                        );
-                    })
-                }
-
-                <div id="load-more"></div>
             </div>
-        );
+            );
+        }else{
+            this.splitFlights(20);
+            console.log("Paginated flights, loading first page");
+            console.log(this.state.fltPage);
+            this.state.fltPage = this.state.pages[this.state.nFltPg]; //default to the first page
+            console.log(this.state.fltPage);
+            return (
+                <div className="card-body" style={style}>
+                    <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
+                    <div>
+                    <div>page: {this.state.page}</div>
+                    <div>size: {this.state.size}</div>
+                    <div>
+                    <label for="size">Size</label>
+                    <select name="size" id="size" onChange={this.handleChange}>
+                    <option value="5">5</option>
+                    <option value="10">10</option>
+                    <option value="25">25</option>
+                    </select>
+                    </div>
+                    {this.state.flights &&
+                    <ul>
+                    {this.state.fltPage.map((flightInfo, index) => {
+                        return (
+                                <Flight flightInfo={flightInfo} key={flightInfo.id} />
+                        );
+                    }) }
+                    </ul>
+                    }
+                    <button onClick={this.previousPage}>Previous Page</button>
+                    <button onClick={this.nextPage}>Next Page</button>
+                    </div>
+
+                </div>
+            );
+        }
+    console.log("Flights have been renedered");
     }
 }
 
