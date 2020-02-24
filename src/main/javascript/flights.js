@@ -1063,6 +1063,7 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
 
+
                             {flightInfo.endDateTime}
                         </div>
 
@@ -1110,29 +1111,25 @@ class Flight extends React.Component {
 }
 
 
+
 class FlightsCard extends React.Component {
     constructor(props) {
-        super(props);
-
+    super(props);
         this.state = {
             flights: [],
-            pages: null, // will be constructed in splitFlights()
-            nFltPg: 0,
-            fltPage: null,
             mapVisible : false,
             plotVisible : false,
-            filterVisible : true,
-            size: 5,
-            page: 1,
-            currPage: null,
-            latestSubData: null
+            filterVisible : true
         }
         this.filterRef = React.createRef();
-        this.previousPage = this.previousPage.bind(this);
-        this.nextPage = this.nextPage.bind(this);
-        this.handleChange = this.handleChange.bind(this);
+        this.state.pager = new PageCreator(this.state.flights, this.filterRef, 10);//the page creator
+
+        this.handleChange = this.state.pager.handleChange.bind(this.state.pager);
+        this.pageNum = this.state.pager.pageNum.bind(this.state.pager);
+        this.pageSize = this.state.pager.pageSize.bind(this.state.pager);
+        this.previousPage = this.state.pager.previousPage.bind(this.state.pager);
+        this.nextPage = this.state.pager.nextPage.bind(this.state.pager);
     }
-    
 
     setFlights(flights) {
         this.state.flights = flights;
@@ -1145,7 +1142,7 @@ class FlightsCard extends React.Component {
 
             console.log("setting layer " + i + " to:" + (styles[i] === style));
             layers[i].setVisible(styles[i] === style);
-        }   
+        }
     }
 
     showMap() {
@@ -1295,108 +1292,15 @@ class FlightsCard extends React.Component {
         }
     }
 
-    submitFilter() {
-        //console.log( this.state.filters );
-
-        let query = this.filterRef.current.getQuery();
-
-        console.log("Submitting filters:");
-        console.log( query );
-
-        $("#loading").show();
-
-        var submissionData = {
-            filterQuery : JSON.stringify(query)
-        };
-        this.state.latestSubData = submissionData;
-        console.log(submissionData);
-
-        this.reloadAjax();
-
-    }
-
-    //submissionData is passed via the class pointer latestSubData
-    reloadAjax(){
-        $.ajax({
-            type: 'POST',
-            url: '/protected/get_flights',
-            data : this.state.latestSubData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-
-                $("#loading").hide();
-
-                if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
-                    return false;
-                }
-
-                flightsCard.setFlights(response);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },
-            async: true
-        });
-    }
-
-    previousPage() {
-        this.state.nFltPg--;
-        this.reloadAjax();
-    }
-
-    nextPage() {
-        console.log("Next page is called");
-        this.state.nFltPg++;
-
-        this.reloadAjax();
-
-    }
-
-    splitFlights(numpPg){
-        console.log("Splitting flights into 2d array");
-        this.state.pages = []; //have the page array behave as a sort of '2d list'
-        var fltsLen = this.state.flights.length;
-        var k = 0;
-        while(k<fltsLen){
-            for(var i = 0; i<Math.ceil(fltsLen/numpPg); i++){ // Ceiling to determine max num of elements per pg. Discrete is actually useful lol 
-                this.state.pages[i] = [];
-                for(var j = 0; j<numpPg; j++){
-                    this.state.pages[i][j] = this.state.flights[k];
-                    k++;
-                }
-            }
-        }
-        console.log(this.state.pages);
-    }
-
-    handleChange(e) {
-        const { value } = e.target;
-        const { todos, page } = this.state;
-
-        const newSize = +value;
-        const newPage = 1;
-        const newCurrPage = paginate(flights, newPage, newSize);
-
-        this.splitFlights(newSize);
-
-        this.setState({
-            ...this.state,
-            size: newSize,
-            page: newPage,
-            currPage: newCurrPage
-        });
-    }
 
     render() {
         console.log("rendering flights!");
 
-        let flights = [];
+    
+    let flights = [];
         if (typeof this.state.flights != 'undefined') {
             flights = this.state.flights;
+            this.state.pager.setFlights(flights);
         }
         console.log("flights: ");
         console.log(flights);
@@ -1421,21 +1325,19 @@ class FlightsCard extends React.Component {
         if(flights.length <= 0){
             return (
             <div className="card-body" style={style}>
-                <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
+                <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.state.pager.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
             </div>
             );
         }else{
-            this.splitFlights(20);
             console.log("Paginated flights, loading first page");
-            console.log(this.state.fltPage);
-            this.state.fltPage = this.state.pages[this.state.nFltPg]; //default to the first page
-            console.log(this.state.fltPage);
+            console.log(this.state.pager.getPages());
+            var fltPage = this.state.pager.currPage();
             return (
                 <div className="card-body" style={style}>
-                    <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
+                    <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.state.pager.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
                     <div>
-                    <div>page: {this.state.page}</div>
-                    <div>size: {this.state.size}</div>
+                    <div>page: {this.pageNum}</div>
+                    <div>size: {this.pageSize}</div>
                     <div>
                     <label for="size">Size</label>
                     <select name="size" id="size" onChange={this.handleChange}>
@@ -1446,7 +1348,7 @@ class FlightsCard extends React.Component {
                     </div>
                     {this.state.flights &&
                     <ul>
-                    {this.state.fltPage.map((flightInfo, index) => {
+                    {fltPage.map((flightInfo, index) => {
                         return (
                                 <Flight flightInfo={flightInfo} key={flightInfo.id} />
                         );
@@ -1464,6 +1366,141 @@ class FlightsCard extends React.Component {
     }
 }
 
+
+class PageCreator {
+    constructor(flights, filter, defSize) {
+            this.size = defSize,
+            this.flights = flights;
+            this.nFltPg = 0;
+            this.latestSubData = null;
+            this.filterRef = filter;
+
+    }
+
+    getPages(){
+        return this.pages;
+    }
+
+    pageSize(){
+        return this.size;
+    }
+
+    pageNum(){
+        return this.nFltPg;
+    }
+
+    setSubData(data){
+        this.latestSubData = data;
+    }
+
+    setFlights(flights) {
+        this.flights = flights;
+        this.splitFlights();
+    }
+
+    submitFilter() {
+        //console.log( this.state.filters );
+
+        let query = this.filterRef.current.getQuery();
+
+        console.log("Submitting filters:");
+        console.log( query );
+
+        $("#loading").show();
+
+        var submissionData = {
+            filterQuery : JSON.stringify(query)
+        };
+        this.setSubData(submissionData);
+
+        console.log(submissionData);
+
+        this.reloadAjax();
+
+    }
+
+    splitFlights(){
+        console.log("Splitting flights into 2d array");
+        console.log(this.flights);
+        this.pages = []; //have the page array behave as a sort of '2d list'
+        var fltsLen = this.flights.length;
+        var k = 0;
+        while(k<fltsLen){
+            for(var i = 0; i<Math.ceil(fltsLen/this.size); i++){ // Ceiling to determine max num of elements per pg. Discrete is actually useful lol 
+                this.pages[i] = [];
+                for(var j = 0; j<this.size; j++){
+                    this.pages[i][j] = this.flights[k];
+                    k++;
+                }
+            }
+        }
+        console.log("PAGES CHANGED!! : ");
+        console.log(this.pages);
+    }
+
+    handleChange(e) {
+        const { value } = e.target;
+
+        const newSize = +value;
+
+        this.splitFlights(newSize);
+        this.size = newSize;
+        console.log(newSize);
+        this.reloadAjax();
+    }
+
+    reloadAjax(){
+        console.log("RELOAD");
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_flights',
+            data : this.latestSubData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                flightsCard.setFlights(response);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },
+            async: true
+        });
+    }
+
+    currPage(){
+        var pg = this.pages[this.nFltPg];
+        console.log(this.nFltPg);
+        console.log(pg);
+        return pg; 
+    }
+
+    previousPage() {
+        if(this.nFltPg > 0){
+            this.nFltPg--;
+            this.reloadAjax();
+        }
+    }
+
+    nextPage() {
+        console.log(this.nFltPg);
+        console.log(this.pages);
+        if(this.nFltPg < this.pages.length){
+            this.nFltPg++;
+            this.reloadAjax();
+        }
+    }
+
+}
 let flightsCard = null;
 //check to see if flights has been defined already. unfortunately
 //the navbar includes flights.js (bad design) for the navbar buttons
