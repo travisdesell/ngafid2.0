@@ -1129,6 +1129,7 @@ class FlightsCard extends React.Component {
         this.pageSize = this.state.pager.pageSize.bind(this.state.pager);
         this.previousPage = this.state.pager.previousPage.bind(this.state.pager);
         this.nextPage = this.state.pager.nextPage.bind(this.state.pager);
+        this.handleJump = this.handleJump.bind(this);
     }
 
     setFlights(flights) {
@@ -1291,6 +1292,10 @@ class FlightsCard extends React.Component {
             this.showFilter();
         }
     }
+    handleJump(e){
+        var val = e.target.value;
+        this.state.pager.jumpToPage(val);
+    }
 
 
     render() {
@@ -1332,19 +1337,26 @@ class FlightsCard extends React.Component {
             console.log("Paginated flights, loading first page");
             console.log(this.state.pager.getPages());
             var fltPage = this.state.pager.currPage();
+            var currentPg = this.state.pager.pageNum() + 1;
+            var totalPages = this.state.pager.totalPages();
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.state.pager.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
                     <div>
-                    <div>page: {this.pageNum}</div>
-                    <div>size: {this.pageSize}</div>
-                    <div>
-                    <label for="size">Size</label>
+                    <label for="jump">Jump to page: &nbsp; </label>
+                    <input type="number" id="jump" name="jump" onChange={this.handleJump}></input>
+                    <label for="size">&nbsp; Number of flights to display per page: </label>
                     <select name="size" id="size" onChange={this.handleChange}>
-                    <option value="5">5</option>
                     <option value="10">10</option>
                     <option value="25">25</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
                     </select>
+                        <div>
+                    &nbsp; &nbsp;
+                            <button onClick={this.previousPage}>Previous Page</button>
+                            <button onClick={this.nextPage}>Next Page</button>
+                        </div>
                     </div>
                     {this.state.flights &&
                     <ul>
@@ -1355,8 +1367,10 @@ class FlightsCard extends React.Component {
                     }) }
                     </ul>
                     }
+                    <div>
                     <button onClick={this.previousPage}>Previous Page</button>
                     <button onClick={this.nextPage}>Next Page</button>
+                    <div>Page: {currentPg} of {totalPages}</div>
                     </div>
 
                 </div>
@@ -1389,6 +1403,10 @@ class PageCreator {
         return this.nFltPg;
     }
 
+    totalPages(){
+        return this.pages.length;
+    }
+
     setSubData(data){
         this.latestSubData = data;
     }
@@ -1396,6 +1414,25 @@ class PageCreator {
     setFlights(flights) {
         this.flights = flights;
         this.splitFlights();
+    }
+
+
+    jumpToPage(page){
+        console.log("jump to page invoked!");
+        console.log(page);
+        if(typeof page != 'undefined'){
+            console.log(page);
+            page--;
+            let upperBound = this.pages.length-1;
+            if(page > upperBound){
+                this.nFltPg = upperBound;
+            }else if(page < 0){
+                this.nFltPg = 0;
+            }else{
+                this.nFltPg = page;
+            }
+            this.reloadAjax();
+        }
     }
 
     submitFilter() {
@@ -1426,7 +1463,7 @@ class PageCreator {
         var fltsLen = this.flights.length;
         var k = 0;
         while(k<fltsLen){
-            for(var i = 0; i<Math.ceil(fltsLen/this.size); i++){ // Ceiling to determine max num of elements per pg. Discrete is actually useful lol 
+            for(var i = 0; i<Math.ceil(fltsLen/this.size); i++){ // Ceiling to determine max num of elements per pg. Discrete is actually useful lol
                 this.pages[i] = [];
                 for(var j = 0; j<this.size; j++){
                     this.pages[i][j] = this.flights[k];
@@ -1434,7 +1471,6 @@ class PageCreator {
                 }
             }
         }
-        console.log("PAGES CHANGED!! : ");
         console.log(this.pages);
     }
 
@@ -1443,13 +1479,21 @@ class PageCreator {
 
         const newSize = +value;
 
+
         this.splitFlights(newSize);
         this.size = newSize;
-        console.log(newSize);
+        var nNumPgs = this.flights.length / newSize; 
+        console.log(this.nFltPg);
+        if(this.nFltPg >= nNumPgs){
+            this.nFltPg = nNumPgs - 1;
+        }
+        console.log("AFTER");
+        console.log(this.nFltPg);
         this.reloadAjax();
     }
 
     reloadAjax(){
+
         console.log("RELOAD");
         $.ajax({
             type: 'POST',
@@ -1481,7 +1525,7 @@ class PageCreator {
         var pg = this.pages[this.nFltPg];
         console.log(this.nFltPg);
         console.log(pg);
-        return pg; 
+        return pg;
     }
 
     previousPage() {
@@ -1494,7 +1538,7 @@ class PageCreator {
     nextPage() {
         console.log(this.nFltPg);
         console.log(this.pages);
-        if(this.nFltPg < this.pages.length){
+        if(this.nFltPg < this.pages.length - 1){
             this.nFltPg++;
             this.reloadAjax();
         }
