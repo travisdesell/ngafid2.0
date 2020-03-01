@@ -17,8 +17,6 @@ import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
 import { Filter } from './filter.js';
 
-import paginate from 'paginate-array';
-
 var moment = require('moment');
 
 
@@ -1324,8 +1322,6 @@ class FlightsCard extends React.Component {
         }
         style.padding = "5";
 
-        const npt = paginate(flights, 1, 5);
-        this.state.currPage  = npt;
 
         if(flights.length <= 0){
             return (
@@ -1340,11 +1336,15 @@ class FlightsCard extends React.Component {
             var currentPg = this.state.pager.pageNum() + 1;
             var totalPages = this.state.pager.totalPages();
             return (
-                <div className="card-body" style={style}>
+                <div className="card-mb-1" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.state.pager.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-                    <div>
+		    <div class="card mb-1 m-1 border-secondary">
+                    <div class="card mb-1 m-1 border-secondary">
+		    <div class="p-2">
                     <label for="jump">Jump to page: &nbsp; </label>
                     <input type="number" id="jump" name="jump" onChange={this.handleJump}></input>
+		    </div>
+		    <div class="p-2">
                     <label for="size">&nbsp; Number of flights to display per page: </label>
                     <select name="size" id="size" onChange={this.handleChange}>
                     <option value="10">10</option>
@@ -1352,25 +1352,31 @@ class FlightsCard extends React.Component {
                     <option value="50">50</option>
                     <option value="100">100</option>
                     </select>
-                        <div>
-                    &nbsp; &nbsp;
-                            <button onClick={this.previousPage}>Previous Page</button>
-                            <button onClick={this.nextPage}>Next Page</button>
-                        </div>
-                    </div>
+		    </div>
+		    </div>
+		    <div class="p-2">
+                            <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+                            <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+                    <div class="p-1">Page: {currentPg} of {totalPages}</div>
+			</div>
                     {this.state.flights &&
-                    <ul>
+		    <div class="card mb-1 m-1 border-secondary">
+                    <div class="p-2">
                     {fltPage.map((flightInfo, index) => {
                         return (
                                 <Flight flightInfo={flightInfo} key={flightInfo.id} />
                         );
                     }) }
-                    </ul>
+                    </div>
+		    </div>
                     }
-                    <div>
-                    <button onClick={this.previousPage}>Previous Page</button>
-                    <button onClick={this.nextPage}>Next Page</button>
-                    <div>Page: {currentPg} of {totalPages}</div>
+		    <div class="card mb-1 m-1 border-secondary">
+			    <div class="p-2">
+				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+			    <div class="p-1">Page: {currentPg} of {totalPages}</div>
+		    </div>
+                    </div>
                     </div>
 
                 </div>
