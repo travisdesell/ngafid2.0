@@ -1340,25 +1340,23 @@ class FlightsCard extends React.Component {
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.state.pager.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
 		    <div class="card mb-1 m-1 border-secondary">
                     <div class="card mb-1 m-1 border-secondary">
-		    <div class="p-2">
-                    <label for="jump">Jump to page: &nbsp; </label>
-                    <input type="number" id="jump" name="jump" onChange={this.handleJump}></input>
+		    <div class="btn-group">
+				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+					    <select name="size" id="size" onChange={this.handleChange}>
+					    <option value="10">10 flights per page</option>
+					    <option value="25">25 flights per page</option>
+					    <option value="50">50 flights per page</option>
+					    <option value="100">100 flights per page</option>
+					    </select>
+				     <div class="dropdown-menu">
+		    				<a class="dropdown-item" href="#">Action</a>
+				    </div>
+				    <label for="jump">&nbsp; Jump to page: &nbsp; </label>
+				    <input type="number" id="jump" name="jump" onChange={this.handleJump}></input>
+				    <div class="p-1">Page: {currentPg} of {totalPages}</div>
+				</div>
 		    </div>
-		    <div class="p-2">
-                    <label for="size">&nbsp; Number of flights to display per page: </label>
-                    <select name="size" id="size" onChange={this.handleChange}>
-                    <option value="10">10</option>
-                    <option value="25">25</option>
-                    <option value="50">50</option>
-                    <option value="100">100</option>
-                    </select>
-		    </div>
-		    </div>
-		    <div class="p-2">
-                            <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
-                            <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
-                    <div class="p-1">Page: {currentPg} of {totalPages}</div>
-			</div>
                     {this.state.flights &&
 		    <div class="card mb-1 m-1 border-secondary">
                     <div class="p-2">
