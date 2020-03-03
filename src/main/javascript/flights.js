@@ -1343,17 +1343,18 @@ class FlightsCard extends React.Component {
 		    <div class="btn-group">
 				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
 				    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
-					    <select name="size" id="size" onChange={this.handleChange}>
+				     <button type="button" onChange={this.handleChange} class="btn btn-danger dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+					Number of Flights to display per page:
+				      </button>
+					<a class="dropdown-item" value="25"  href="#">25</a>
+					    <select name="size" id="size" onChange={this.handleChange} class="selectpicker show-menu-arrow form-control" multiple>
 					    <option value="10">10 flights per page</option>
 					    <option value="25">25 flights per page</option>
 					    <option value="50">50 flights per page</option>
 					    <option value="100">100 flights per page</option>
 					    </select>
-				     <div class="dropdown-menu">
-		    				<a class="dropdown-item" href="#">Action</a>
-				    </div>
 				    <label for="jump">&nbsp; Jump to page: &nbsp; </label>
-				    <input type="number" id="jump" name="jump" onChange={this.handleJump}></input>
+				    <input class="form-control-sm" type="number" value={currentPg} min="1" max={totalPages} step="1" onChange={this.handleJump}/>
 				    <div class="p-1">Page: {currentPg} of {totalPages}</div>
 				</div>
 		    </div>
