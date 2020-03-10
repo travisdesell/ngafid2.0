@@ -4,16 +4,18 @@
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
 
+package org.ngafid.common;
 
 import java.lang.Math;
 import java.util.*;
+import org.ngafid.flights.Flight;
 
-public class FlightPagiantor{
+public class FlightPaginator{
 	private List<Flight> allFlights;
 	private Flight [][] pages;
 	private int numPages, numPerPage;
 
-	//master constructor 
+	//master constructor
 	private FlightPaginator(int numPages, int numPerPage, List<Flight> allFlights){
 		this.numPages = numPages;
 		this.numPerPage = numPerPage;
@@ -26,9 +28,11 @@ public class FlightPagiantor{
 		this( (allFlights.size() / numPerPage), numPerPage, allFlights);
 	}
 
+    /**
 	public FlightPaginator(int numPages, List<Flight> allFlights){
 		this( numPages, Math.ceil(allFlights.size() / , allFlights);
 	}
+    */
 
 	private void paginate(){
 		int i = 0;
@@ -40,5 +44,6 @@ public class FlightPagiantor{
 				}
 			}
 		}
+    System.out.println(this.pages);
 	}
 }
