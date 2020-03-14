@@ -44,6 +44,6 @@ public class FlightPaginator{
 				}
 			}
 		}
-    System.out.println(this.pages);
+    System.out.println(Arrays.toString(this.pages));
 	}
 }
