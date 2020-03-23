@@ -1,5 +1,6 @@
 package org.ngafid.routes;
 
+import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -17,12 +18,14 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
+import org.ngafid.common.FlightPaginator;
 
 import org.ngafid.filters.Filter;
 
 public class PostFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostFlights.class.getName());
     private Gson gson;
+    private FlightPaginator paginator;
 
     public PostFlights(Gson gson) {
         this.gson = gson;
@@ -39,8 +42,11 @@ public class PostFlights implements Route {
         LOG.info("filter JSON:");
 
         String filterJSON = request.queryParams("filterQuery");
+        System.out.println(request.queryParams("pageIndex"));
+        int pageNumber = Integer.parseInt(request.queryParams("pageIndex"));
 
         LOG.info(filterJSON);
+        LOG.info("Jumping to page " + pageNumber);
 
         Filter filter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
@@ -59,11 +65,14 @@ public class PostFlights implements Route {
         }
 
         try {
-            ArrayList<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, filter, 50);
+            System.out.println(pageNumber);
+            List<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, filter, 50);
+            this.paginator = new FlightPaginator(10, flights);
+
 
             //LOG.info(gson.toJson(flights));
-
-            return gson.toJson(flights);
+            this.paginator.jumpToPage(pageNumber);
+            return gson.toJson(this.paginator.currentPage());
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
