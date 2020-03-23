@@ -883,7 +883,7 @@ class Flight extends React.Component {
                 //user_id : user_id
                 user_id : 1,
                 flightId : this.props.flightInfo.id
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -1436,6 +1436,7 @@ class PageCreator {
             }else{
                 this.nFltPg = page;
             }
+            this.latestSubData.set('pageIndex', JSON.stringify(page));
             this.reloadAjax();
         }
     }
@@ -1451,7 +1452,8 @@ class PageCreator {
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(query)
+            filterQuery : JSON.stringify(query),
+            pageIndex : 0
         };
         this.setSubData(submissionData);
 
@@ -1498,7 +1500,7 @@ class PageCreator {
     }
 
     reloadAjax(){
-
+        //put the page num here instead
         console.log("RELOAD");
         $.ajax({
             type: 'POST',
