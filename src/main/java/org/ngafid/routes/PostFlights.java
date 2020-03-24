@@ -26,6 +26,7 @@ public class PostFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostFlights.class.getName());
     private Gson gson;
     private FlightPaginator paginator;
+    private Filter filter;
 
     public PostFlights(Gson gson) {
         this.gson = gson;
@@ -66,8 +67,13 @@ public class PostFlights implements Route {
 
         try {
             System.out.println(pageNumber);
-            List<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, filter, 50);
-            this.paginator = new FlightPaginator(10, flights);
+            if(this.filter == null || !this.filter.equals(filter)){
+                this.filter = filter;
+                List<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, this.filter, 50);
+                this.paginator = new FlightPaginator(flights);
+                //always start on page 0
+                pageNumber = 0;
+            }
 
 
             //LOG.info(gson.toJson(flights));
