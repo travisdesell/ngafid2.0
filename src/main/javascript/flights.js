@@ -882,7 +882,7 @@ class Flight extends React.Component {
                 //id_token : id_token,
                 //user_id : user_id
                 user_id : 1,
-                flightId : this.props.flightInfo.id
+                flightId : this.props.flightInfo.id,
             };   
 
             $.ajax({
@@ -1116,9 +1116,13 @@ class FlightsCard extends React.Component {
             mapVisible : false,
             plotVisible : false,
             filterVisible : true,
-        }
+            page : 0,
+            buffSize : 10   //def size of flights to show per page is 10
+        };
 
-        this.filterRef = React.createRef();
+       this.previousPage = this.previousPage.bind(this);
+       this.nextPage = this.nextPage.bind(this);
+       this.filterRef = React.createRef();
     }
 
     setFlights(flights) {
@@ -1281,6 +1285,17 @@ class FlightsCard extends React.Component {
         }
     }
 
+    nextPage(){
+        this.state.page++;
+        this.submitFilter();
+        console.log("NEXT PAGE");
+    }
+
+    previousPage(){
+        this.state.page--;
+        this.submitFilter();
+    }
+
     submitFilter() {
         //console.log( this.state.filters );
 
@@ -1292,8 +1307,10 @@ class FlightsCard extends React.Component {
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(query)
-        };   
+            filterQuery : JSON.stringify(query),
+            pageIndex : this.state.page,
+            numPerPage : this.state.buffSize
+        };
         console.log(submissionData);
 
         $.ajax({
@@ -1302,7 +1319,7 @@ class FlightsCard extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ");
+
                 console.log(response);
 
                 $("#loading").hide();
@@ -1344,22 +1361,44 @@ class FlightsCard extends React.Component {
             };  
         }   
         style.padding = "5";
+        console.log(flights);
+        if(flights.length > 0){
+            return (
+                <div className="card-body" style={style}>
+                    <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
+                    <div class="card mb-1 m-1 border-secondary">
+                    <div class="p-2">
+                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+                    <div class="p-1">Page: of </div>
+                    </div>
+                    </div>
+                    {
+                        flights.map((flightInfo, index) => {
+                            return (
+                                <Flight flightInfo={flightInfo} key={flightInfo.id} />
+                            );
+                        })
+                    }
+                    <div class="card mb-1 m-1 border-secondary">
+                    <div class="p-2">
+                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+                    <div class="p-1">Page: of </div>
+                    </div>
+                    </div>
 
-        return (
-            <div className="card-body" style={style}>
+
+                    <div id="load-more"></div>
+                </div>
+            );
+        }else{
+            return(
+                <div className="card-body" style={style}>
                 <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-
-                {
-                    flights.map((flightInfo, index) => {
-                        return (
-                            <Flight flightInfo={flightInfo} key={flightInfo.id} />
-                        );
-                    })
-                }
-
-                <div id="load-more"></div>
-            </div>
-        );
+                    </div>
+            );
+        }
     }
 }
 

@@ -11,24 +11,20 @@ import java.util.*;
 import org.ngafid.flights.Flight;
 
 public class FlightPaginator{
+
     private List<Flight> allFlights;
     private Flight [][] pages;
-    private int numPages, numPerPage;
-
-    private int currentIndex;
-
-	//master constructor
-    private FlightPaginator(int numPages, int numPerPage, List<Flight> allFlights, int currentIndex){
-        this.numPages = numPages;
-        this.numPerPage = numPerPage;
-        this.allFlights = allFlights;
-        this.pages = new Flight[this.numPages][this.numPerPage];
-        this.currentIndex = currentIndex;
-        this.paginate();
-    }
+    private PageConfig pageConfig;
 
     public FlightPaginator(int numPerPage, List<Flight> allFlights){
-        this((allFlights.size() / numPerPage), numPerPage, allFlights, 0);
+        this.allFlights = allFlights;
+        this.pageConfig = new PageConfig(allFlights.size(), numPerPage);
+        this.pages = new Flight[pageConfig.numPages()][pageConfig.numPerPage()];
+
+    }
+
+    public void setNumPerPage(int numPerPage){
+        this.pageConfig.update(numPerPage, 0); //always start on page 0
     }
 
     /**
@@ -37,11 +33,11 @@ public class FlightPaginator{
     }
     */
 
-    private void paginate(){
+    public void paginate(){
         int i = 0;
         while(i < this.allFlights.size()){
-            for(int y = 0; y<numPages; y++){
-                for(int x = 0; x<numPerPage; x++){
+            for(int y = 0; y<pageConfig.numPages(); y++){
+                for(int x = 0; x<pageConfig.numPerPage(); x++){
                     pages[y][x] = this.allFlights.get(i);
                     i++;
                 }
@@ -50,22 +46,22 @@ public class FlightPaginator{
     }
 
     public List<Flight> currentPage(){
-        return Arrays.asList(this.pages[currentIndex]);
+        return Arrays.asList(this.pages[this.pageConfig.page()]);
     }
 
     public void nextPage(){
-        if(this.currentIndex < this.pages.length - 1){
-            this.jumpToPage(this.currentIndex + 1);
+        if(pageConfig.page() < this.pages.length - 1){
+            this.jumpToPage(pageConfig.page() + 1);
         }
     }
 
     public void previousPage(){
-        if(this.currentIndex > 0){
-            this.jumpToPage(this.currentIndex - 1);
+        if(pageConfig.page() > 0){
+            this.jumpToPage(pageConfig.page() - 1);
         }
     }
 
     public void jumpToPage(int pageNumber){
-        this.currentIndex = pageNumber;
+        pageConfig.changePage(pageNumber);
     }
 }

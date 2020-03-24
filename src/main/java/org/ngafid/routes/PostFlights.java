@@ -43,13 +43,18 @@ public class PostFlights implements Route {
         LOG.info("filter JSON:");
 
         String filterJSON = request.queryParams("filterQuery");
-        System.out.println(request.queryParams("pageIndex"));
+
+
+        System.err.println(request.queryParams("pageIndex"));
+        System.err.println(request.queryParams("numPerPage"));
+
         int pageNumber = Integer.parseInt(request.queryParams("pageIndex"));
+        int numPerPage = Integer.parseInt(request.queryParams("numPerPage"));
 
         LOG.info(filterJSON);
-        LOG.info("Jumping to page " + pageNumber);
+        LOG.info("Jumping to page " + pageNumber + " with buffer size: "+numPerPage);
 
-        Filter filter = gson.fromJson(filterJSON, Filter.class);
+        Filter userFilter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
 
 
@@ -66,18 +71,19 @@ public class PostFlights implements Route {
         }
 
         try {
-            System.out.println(pageNumber);
-            if(this.filter == null || !this.filter.equals(filter)){
-                this.filter = filter;
+            System.out.println(this.filter+" "+userFilter);
+            if(this.filter == null || !this.filter.equals(userFilter)){
+                LOG.info("New filter applied");
+                this.filter = userFilter;
                 List<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, this.filter, 50);
-                this.paginator = new FlightPaginator(flights);
-                //always start on page 0
-                pageNumber = 0;
+                this.paginator = new FlightPaginator(10, flights);
+                this.paginator.paginate();
             }
 
 
             //LOG.info(gson.toJson(flights));
             this.paginator.jumpToPage(pageNumber);
+            System.out.println(this.paginator.currentPage());
             return gson.toJson(this.paginator.currentPage());
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
