@@ -5,7 +5,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 
-public class Filter {
+public class Filter{
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 
     protected String type = null;
@@ -379,5 +379,17 @@ public class Filter {
             System.exit(1);
         }
         return "";
+    }
+    /**
+     * Used for comparing two filters for equality
+     */
+    @Override
+    public boolean equals(Object e){
+        if(e instanceof Filter){
+            Filter t = (Filter)e;
+            return condition.equals(t.condition);
+        }else{
+            return false; 
+        }
     }
 }
