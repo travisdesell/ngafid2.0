@@ -13,13 +13,13 @@ import org.ngafid.flights.Flight;
 public class FlightPaginator{
 
     private List<Flight> allFlights;
-    private Flight [][] pages;
+    private Map<Integer, Page<Flight>> pages;
     private PageConfig pageConfig;
 
     public FlightPaginator(int numPerPage, List<Flight> allFlights){
         this.allFlights = allFlights;
         this.pageConfig = new PageConfig(allFlights.size(), numPerPage);
-        this.pages = new Flight[pageConfig.numPages()][pageConfig.numPerPage()];
+        this.pages = new HashMap<>();
 
     }
 
@@ -35,22 +35,28 @@ public class FlightPaginator{
 
     public void paginate(){
         int i = 0;
+        int numPerPage = pageConfig.numPerPage();
         while(i < this.allFlights.size()){
             for(int y = 0; y<pageConfig.numPages(); y++){
-                for(int x = 0; x<pageConfig.numPerPage(); x++){
-                    pages[y][x] = this.allFlights.get(i);
+                Flight [] data = new Flight[numPerPage];
+                for(int x = 0; x<numPerPage; x++){
+                    data[x] = this.allFlights.get(i);
                     i++;
                 }
+                Page<Flight> page = new Page(this.pageConfig, data, y);
+                this.pages.put(new Integer(y), page);
             }
         }
     }
 
-    public List<Flight> currentPage(){
-        return Arrays.asList(this.pages[this.pageConfig.page()]);
+    public Page currentPage(){
+        Page p = this.pages.get(new Integer(this.pageConfig.page()));
+        System.out.println(this.pages);
+        return p;
     }
 
     public void nextPage(){
-        if(pageConfig.page() < this.pages.length - 1){
+        if(pageConfig.page() < pages.entrySet().size() - 1){
             this.jumpToPage(pageConfig.page() + 1);
         }
     }
