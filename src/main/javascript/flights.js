@@ -1117,7 +1117,8 @@ class FlightsCard extends React.Component {
             plotVisible : false,
             filterVisible : true,
             page : 0,
-            buffSize : 10   //def size of flights to show per page is 10
+            buffSize : 10,   //def size of flights to show per page is 10
+            numPages : 0
         };
 
        this.previousPage = this.previousPage.bind(this);
@@ -1127,6 +1128,11 @@ class FlightsCard extends React.Component {
 
     setFlights(flights) {
         this.state.flights = flights;
+        this.setState(this.state);
+    }
+
+    setSize(size){
+        this.state.numPages = size;
         this.setState(this.state);
     }
 
@@ -1311,6 +1317,7 @@ class FlightsCard extends React.Component {
             pageIndex : this.state.page,
             numPerPage : this.state.buffSize
         };
+
         console.log(submissionData);
 
         $.ajax({
@@ -1330,8 +1337,12 @@ class FlightsCard extends React.Component {
                     return false;
                 }
 
-                flightsCard.setFlights(response);
-            },   
+                console.log("got response: "+response+" "+response.size);
+
+                //get page data
+                flightsCard.setFlights(response.data);
+                flightsCard.setSize(response.configuration.numPages);
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
             },   
@@ -1345,6 +1356,7 @@ class FlightsCard extends React.Component {
         let flights = [];
         if (typeof this.state.flights != 'undefined') {
             flights = this.state.flights;
+
         }
 
         let style = null;
@@ -1359,18 +1371,36 @@ class FlightsCard extends React.Component {
                 overflow : "scroll",
                 height : "calc(100% - 56px)"
             };  
-        }   
+        }
+
         style.padding = "5";
         console.log(flights);
         if(flights.length > 0){
+            var begin = this.state.page == 0;
+            var end = this.state.page == this.state.numPages-1;
+            var prev, next;
+            if(begin) {
+                prev = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+            }else{
+                prev = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+            }
+
+            if(end){
+                next = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage} disabled>Next Page</button>
+            }else{
+                next = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+            }
+
+
+            console.log(this.state.end);
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
                     <div class="card mb-1 m-1 border-secondary">
                     <div class="p-2">
-                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
-                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
-                    <div class="p-1">Page: of </div>
+                    {prev}
+                    {next}
+                    <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages} </div>
                     </div>
                     </div>
                     {
@@ -1382,9 +1412,9 @@ class FlightsCard extends React.Component {
                     }
                     <div class="card mb-1 m-1 border-secondary">
                     <div class="p-2">
-                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
-                    <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
-                    <div class="p-1">Page: of </div>
+                    {prev}
+                    {next}
+                    <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
                     </div>
                     </div>
 
