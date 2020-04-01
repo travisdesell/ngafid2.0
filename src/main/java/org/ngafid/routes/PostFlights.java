@@ -18,7 +18,7 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
-import org.ngafid.common.FlightPaginator;
+import org.ngafid.common.*;
 
 import org.ngafid.filters.Filter;
 
@@ -28,10 +28,13 @@ public class PostFlights implements Route {
     private FlightPaginator paginator;
     private Filter filter;
 
+    private int pageBufferSize, pageIndex;
+
     public PostFlights(Gson gson) {
         this.gson = gson;
-
         LOG.info("post " + this.getClass().getName() + " initalized");
+        this.pageBufferSize = 10;
+        this.pageIndex = 0;
     }
 
     @Override
@@ -48,11 +51,9 @@ public class PostFlights implements Route {
         System.err.println(request.queryParams("pageIndex"));
         System.err.println(request.queryParams("numPerPage"));
 
-        int pageNumber = Integer.parseInt(request.queryParams("pageIndex"));
-        int numPerPage = Integer.parseInt(request.queryParams("numPerPage"));
 
         LOG.info(filterJSON);
-        LOG.info("Jumping to page " + pageNumber + " with buffer size: "+numPerPage);
+
 
         Filter userFilter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
@@ -72,21 +73,39 @@ public class PostFlights implements Route {
 
         try {
             System.out.println(this.filter+" "+userFilter);
-            //check to see if the filter has changed
+
+
             if(this.filter == null || !this.filter.equals(userFilter)){
+                //check to see if the filter has changed
                 //if it has, then we change the pointer of this filter to the new filter
                 LOG.info("New filter applied");
                 this.filter = userFilter;
                 //get the flights associated with this filter
                 List<Flight> flights = Flight.getFlights(Database.getConnection(), fleetId, this.filter, 50);
-                this.paginator = new FlightPaginator(numPerPage, flights);
+                System.out.println("queried flights: "+flights);
                 //we must paginate the new flights if the filter changed or if this is the initial load
+                this.paginator = new FlightPaginator(10, flights);
                 this.paginator.paginate();
+                System.out.println("paginator paginated");
             }
 
+            int pageIndex = Integer.parseInt(request.queryParams("pageIndex"));
+            int pageBufferSize = Integer.parseInt(request.queryParams("numPerPage"));
+
+            if(pageBufferSize != this.pageBufferSize){
+                this.paginator.setNumPerPage(pageBufferSize);
+                this.pageBufferSize = pageBufferSize;
+                this.paginator.paginate();
+                pageIndex = 0;
+            }
+
+            if(pageIndex != this.pageIndex){
+                this.paginator.jumpToPage(pageIndex);
+            }
+
+            this.pageIndex = pageIndex;
 
             //LOG.info(gson.toJson(flights));
-            this.paginator.jumpToPage(pageNumber);
             System.out.println(this.paginator.currentPage());
             //LOG.info("page JSON: "+gson.toJson(this.paginator.currentPage()));//too verbose
             return gson.toJson(this.paginator.currentPage());
