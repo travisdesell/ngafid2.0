@@ -1,6 +1,8 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import Dropdown from 'react-bootstrap/Dropdown'
+import DropdownButton from 'react-bootstrap/DropdownButton'
 
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
@@ -1123,11 +1125,17 @@ class FlightsCard extends React.Component {
 
        this.previousPage = this.previousPage.bind(this);
        this.nextPage = this.nextPage.bind(this);
+       this.repaginate = this.repaginate.bind(this);
        this.filterRef = React.createRef();
     }
 
     setFlights(flights) {
         this.state.flights = flights;
+        this.setState(this.state);
+    }
+
+    setIndex(index){
+        this.state.page = index;
         this.setState(this.state);
     }
 
@@ -1302,6 +1310,12 @@ class FlightsCard extends React.Component {
         this.submitFilter();
     }
 
+    repaginate(pag){
+        console.log("Re-Paginating");
+        this.state.buffSize = pag;
+        this.submitFilter();
+    }
+
     submitFilter() {
         //console.log( this.state.filters );
 
@@ -1341,7 +1355,8 @@ class FlightsCard extends React.Component {
 
                 //get page data
                 flightsCard.setFlights(response.data);
-                flightsCard.setSize(response.configuration.numPages);
+                flightsCard.setIndex(response.index);
+                flightsCard.setSize(response.sizeAll);
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
@@ -1380,15 +1395,15 @@ class FlightsCard extends React.Component {
             var end = this.state.page == this.state.numPages-1;
             var prev, next;
             if(begin) {
-                prev = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+                prev = <button class="btn btn-info btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
             }else{
-                prev = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.previousPage}>Previous Page</button>
+                prev = <button class="btn btn-info btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
             }
 
             if(end){
-                next = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage} disabled>Next Page</button>
+                next = <button class="btn btn-info btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
             }else{
-                next = <button class="btn btn-primary btn-sm mr-1" type="button" onClick={this.nextPage}>Next Page</button>
+                next = <button class="btn btn-info btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
             }
 
 
@@ -1396,26 +1411,36 @@ class FlightsCard extends React.Component {
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-                    <div class="card mb-1 m-1 border-secondary">
-                    <div class="p-2">
-                    {prev}
-                    {next}
-                    <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages} </div>
-                    </div>
-                    </div>
-                    {
-                        flights.map((flightInfo, index) => {
-                            return (
-                                <Flight flightInfo={flightInfo} key={flightInfo.id} />
-                            );
-                        })
-                    }
-                    <div class="card mb-1 m-1 border-secondary">
-                    <div class="p-2">
-                    {prev}
-                    {next}
-                    <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
-                    </div>
+
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
+                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
+                                    </DropdownButton>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        {
+                            flights.map((flightInfo, index) => {
+                                return (
+                                    <Flight flightInfo={flightInfo} key={flightInfo.id} />
+                                );
+                            })
+                        }
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
+                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                    {prev}
+                                    {next}
+                                </div>
+                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
+                        </div>
                     </div>
 
 
@@ -1519,3 +1544,26 @@ if (typeof flights !== 'undefined') {
 }
 
 export { flightsCard };
+
+/**
+ *
+                    <form class="card-body p-2">
+                        <div class="form-row align-items-center">
+                            <div class="col-auto my-1">
+                                <label for="pager">Jump to page:</label>
+                                <input id="pager"></input>
+                            </div>
+                            <div class="col-auto my-1">
+                                <label class="custom-control-label" for="bufferSize">Number of flights to display per page:</label>
+                                <select class="form-control" id="bufferSize">
+                                    <option>10</option>
+                                    <option>15</option>
+                                    <option>25</option>
+                                    <option>50</option>
+                                    <option>100</option>
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+
+*/

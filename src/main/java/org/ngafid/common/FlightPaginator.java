@@ -14,17 +14,18 @@ public class FlightPaginator{
 
     private List<Flight> allFlights;
     private Map<Integer, Page<Flight>> pages;
-    private PageConfig pageConfig;
+    private int pageBuffSize, currentIndex, numPages;
 
-    public FlightPaginator(int numPerPage, List<Flight> allFlights){
+    public FlightPaginator(int pageBuffSize, List<Flight> allFlights){
         this.allFlights = allFlights;
-        this.pageConfig = new PageConfig(allFlights.size(), numPerPage);
-        this.pages = new HashMap<>();
+        this.currentIndex = 0; //always start at 0
+        this.setNumPerPage(pageBuffSize);
 
     }
 
     public void setNumPerPage(int numPerPage){
-        this.pageConfig.update(numPerPage, 0); //always start on page 0
+        this.pageBuffSize = numPerPage;
+        this.numPages = this.allFlights.size() / numPerPage;
     }
 
     /**
@@ -35,39 +36,42 @@ public class FlightPaginator{
 
     public void paginate(){
         int i = 0;
-        int numPerPage = pageConfig.numPerPage();
-        while(i < this.allFlights.size()){
-            for(int y = 0; y<pageConfig.numPages(); y++){
-                Flight [] data = new Flight[numPerPage];
-                for(int x = 0; x<numPerPage; x++){
+        this.pages = new HashMap<>();
+        while(i < allFlights.size()){
+            for(int y = 0; y<numPages; y++){
+                Flight [] data = new Flight[pageBuffSize];
+                for(int x = 0; x<pageBuffSize; x++){
+                    if(i == allFlights.size()){
+                        break;
+                    }
                     data[x] = this.allFlights.get(i);
                     i++;
                 }
-                Page<Flight> page = new Page(this.pageConfig, data, y);
+                Page<Flight> page = new Page(numPages, data, y);
                 this.pages.put(new Integer(y), page);
             }
         }
     }
 
     public Page currentPage(){
-        Page p = this.pages.get(new Integer(this.pageConfig.page()));
+        Page p = this.pages.get(new Integer(this.currentIndex));
         System.out.println(this.pages);
         return p;
     }
 
     public void nextPage(){
-        if(pageConfig.page() < pages.entrySet().size() - 1){
-            this.jumpToPage(pageConfig.page() + 1);
+        if(numPages < pages.entrySet().size() - 1){
+            this.jumpToPage(this.currentIndex + 1);
         }
     }
 
     public void previousPage(){
-        if(pageConfig.page() > 0){
-            this.jumpToPage(pageConfig.page() - 1);
+        if(numPages > 0){
+            this.jumpToPage(this.currentIndex - 1);
         }
     }
 
     public void jumpToPage(int pageNumber){
-        pageConfig.changePage(pageNumber);
+        this.currentIndex = pageNumber;
     }
 }

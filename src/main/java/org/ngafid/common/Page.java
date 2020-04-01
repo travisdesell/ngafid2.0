@@ -2,12 +2,13 @@ package org.ngafid.common;
 
 public class Page<T>{
     private T [] data;
-    private PageConfig configuration;
+    private int sizeAll; //the size of all pages in this collection
     private int index;
 
-    public Page(PageConfig pageConfig, T [] data, int index){
-       this.configuration = pageConfig;
+    public Page(int sizeAll, T [] data, int index){
+       this.sizeAll = sizeAll;
        this.data = data;
+       this.index = index;
     }
 
     public T[] getData(){
@@ -23,6 +24,11 @@ public class Page<T>{
      * @return an int with the size of the pages
      */
     public int size(){
-       return this.configuration.numPages();
+       return this.sizeAll;
+    }
+
+    @Override
+    public String toString(){
+        return "Page: "+index+" out of "+sizeAll;
     }
 }
