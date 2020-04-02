@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Dropdown from 'react-bootstrap/Dropdown'
 import DropdownButton from 'react-bootstrap/DropdownButton'
+import Form from 'react-bootstrap/Form'
 
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
@@ -1299,6 +1300,13 @@ class FlightsCard extends React.Component {
         }
     }
 
+    jumpPage(pg){
+        if(pg < this.state.numPages && pg >= 0){
+            this.state.page = pg;
+            this.submitFilter();
+        }
+    }
+
     nextPage(){
         this.state.page++;
         this.submitFilter();
@@ -1365,6 +1373,17 @@ class FlightsCard extends React.Component {
         });  
     }
 
+    genPages(){
+        var page = [];
+        for(var i = 0; i<this.state.numPages; i++){
+            page.push({
+                value : i,
+                name : "Page "+(i+1)
+            });
+        }
+        return page;
+    }
+
     render() {
         console.log("rendering flights!");
 
@@ -1373,6 +1392,8 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
 
         }
+
+        let pages = this.genPages();
 
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -1395,15 +1416,15 @@ class FlightsCard extends React.Component {
             var end = this.state.page == this.state.numPages-1;
             var prev, next;
             if(begin) {
-                prev = <button class="btn btn-info btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+                prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
             }else{
-                prev = <button class="btn btn-info btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+                prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
             }
 
             if(end){
-                next = <button class="btn btn-info btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+                next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
             }else{
-                next = <button class="btn btn-info btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+                next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
             }
 
 
@@ -1414,23 +1435,36 @@ class FlightsCard extends React.Component {
 
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
-                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                <div class="btn-group mr-1" role="group" aria-label="First group">
                                     <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
                                     </DropdownButton>
-
+                                        <DropdownButton id="dropdown-item-button" title={"Page " + (this.state.page + 1)} size="sm">
+                                        {
+                                            pages.map((pages, index) => {
+                                                return (
+                                                        <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                );
+                                            })
+                                        }
+                                    </DropdownButton>
+                                    {prev}
+                                    {next}
                                 </div>
                             </div>
                         </div>
 
                         {
                             flights.map((flightInfo, index) => {
-                                return (
-                                    <Flight flightInfo={flightInfo} key={flightInfo.id} />
-                                );
+                                if(flightInfo != null){
+                                    return (
+                                            <Flight flightInfo={flightInfo} key={flightInfo.id} />
+                                    );
+                                }
                             })
                         }
                         <div class="card mb-1 m-1 border-secondary">

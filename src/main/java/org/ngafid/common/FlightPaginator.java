@@ -25,14 +25,9 @@ public class FlightPaginator{
 
     public void setNumPerPage(int numPerPage){
         this.pageBuffSize = numPerPage;
-        this.numPages = this.allFlights.size() / numPerPage;
+        double quot = this.allFlights.size() / (double) numPerPage;
+        this.numPages = (int)Math.ceil(quot);
     }
-
-    /**
-    public FlightPaginator(int numPages, List<Flight> allFlights){
-        this( numPages, Math.ceil(allFlights.size() / , allFlights);
-    }
-    */
 
     public void paginate(){
         int i = 0;
@@ -57,18 +52,6 @@ public class FlightPaginator{
         Page p = this.pages.get(new Integer(this.currentIndex));
         System.out.println(this.pages);
         return p;
-    }
-
-    public void nextPage(){
-        if(numPages < pages.entrySet().size() - 1){
-            this.jumpToPage(this.currentIndex + 1);
-        }
-    }
-
-    public void previousPage(){
-        if(numPages > 0){
-            this.jumpToPage(this.currentIndex - 1);
-        }
     }
 
     public void jumpToPage(int pageNumber){
