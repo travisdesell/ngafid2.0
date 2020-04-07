@@ -1,9 +1,10 @@
 package org.ngafid.flights;
 
+import com.mysql.jdbc.Statement;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -52,7 +53,7 @@ public class Tails {
                 } else {
                     //tail did not exist in the database, insert it and return it's generated id
                     queryString = "INSERT INTO tails SET fleet_id = ?, tail = ?";
-                    query = connection.prepareStatement(queryString);
+                    query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
                     query.setInt(1, fleetId);
                     query.setString(2, tail);
 
