@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import com.mysql.jdbc.Statement;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
@@ -42,7 +44,7 @@ public class ErrorMessage {
             } else {
                 //message did not exist in the database, insert it and return it's generated id
                 queryString = "INSERT INTO flight_messages SET message = ?";
-                query = connection.prepareStatement(queryString);
+                query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
                 query.setString(1, message);
 
                 LOG.info(query.toString());
