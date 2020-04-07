@@ -1,5 +1,7 @@
 package org.ngafid.accounts;
 
+import com.mysql.jdbc.Statement;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -160,7 +162,7 @@ public class Fleet {
 
     public static Fleet create(Connection connection, String name) throws SQLException, AccountException {
         //check and see if the fleet already exists in the database, if it does then throw an exception
-        PreparedStatement query = connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?");
+        PreparedStatement query = connection.prepareStatement("INSERT INTO fleet SET fleet_name = ?", Statement.RETURN_GENERATED_KEYS);
         query.setString(1, name);
 
         LOG.info(query.toString());

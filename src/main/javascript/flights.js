@@ -347,7 +347,6 @@ class Itinerary extends React.Component {
         /*
         let cellClasses = "p-1 card mr-1 flex-fill"
         let itinerary = this.props.itinerary;
-
         let result = "";
         for (let i = 0; i < itinerary.length; i++) {
             result += itinerary[i].airport + " (" + itinerary[i].runway + ")";
