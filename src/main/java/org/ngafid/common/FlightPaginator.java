@@ -9,18 +9,29 @@ package org.ngafid.common;
 import java.lang.Math;
 import java.util.*;
 import org.ngafid.flights.Flight;
+import org.ngafid.filters.*;
+import org.ngafid.Database;
+import java.sql.SQLException;
 
 public class FlightPaginator{
 
     private List<Flight> allFlights;
+    private Filter filter;
+    private int fleetID;
+    private int[] flightIds;
     private Map<Integer, Page<Flight>> pages;
     private int pageBuffSize, currentIndex, numPages;
 
-    public FlightPaginator(int pageBuffSize, List<Flight> allFlights){
-        this.allFlights = allFlights;
+    public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException{
+        this.filter = filter;
+        this.fleetID = fleetID;
         this.currentIndex = 0; //always start at 0
+        allFlights = Flight.getFlights(Database.getConnection(), this.fleetID, this.filter, 50);
         this.setNumPerPage(pageBuffSize);
+    }
 
+    public int getNumFlights(){
+        return -1;
     }
 
     public void setNumPerPage(int numPerPage){
