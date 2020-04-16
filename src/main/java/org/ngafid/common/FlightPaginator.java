@@ -18,7 +18,6 @@ public class FlightPaginator{
     private List<Flight> allFlights;
     private Filter filter;
     private int fleetID;
-    private int[] flightIds;
     private Map<Integer, Page<Flight>> pages;
     private int pageBuffSize, currentIndex, numPages;
 
@@ -57,6 +56,10 @@ public class FlightPaginator{
                 this.pages.put(new Integer(y), page);
             }
         }
+    }
+
+    private String limitString(){
+        return "placeholder";
     }
 
     public Page currentPage(){
