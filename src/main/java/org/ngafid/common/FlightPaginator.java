@@ -14,18 +14,16 @@ import org.ngafid.Database;
 import java.sql.SQLException;
 
 public class FlightPaginator{
+    private static final String LIMIT = "LIMIT";
 
-    private List<Flight> allFlights;
     private Filter filter;
-    private int fleetID;
-    private Map<Integer, Page<Flight>> pages;
-    private int pageBuffSize, currentIndex, numPages;
+    private int fleetID, pageBuffSize, currentIndex, numPages, numFlights;
 
     public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException{
         this.filter = filter;
         this.fleetID = fleetID;
         this.currentIndex = 0; //always start at 0
-        allFlights = Flight.getFlights(Database.getConnection(), this.fleetID, this.filter, 50);
+        this.numFlights = Flight.getNumFlights(Database.getConnection(), this.fleetID, this.filter);
         this.setNumPerPage(pageBuffSize);
     }
 
@@ -35,37 +33,17 @@ public class FlightPaginator{
 
     public void setNumPerPage(int numPerPage){
         this.pageBuffSize = numPerPage;
-        double quot = this.allFlights.size() / (double) numPerPage;
+        double quot = this.numFlights / (double) numPerPage;
         this.numPages = (int)Math.ceil(quot);
     }
 
-    public void paginate(){
-        int i = 0;
-        this.pages = new HashMap<>();
-        while(i < allFlights.size()){
-            for(int y = 0; y<numPages; y++){
-                Flight [] data = new Flight[pageBuffSize];
-                for(int x = 0; x<pageBuffSize; x++){
-                    if(i == allFlights.size()){
-                        break;
-                    }
-                    data[x] = this.allFlights.get(i);
-                    i++;
-                }
-                Page<Flight> page = new Page(numPages, data, y);
-                this.pages.put(new Integer(y), page);
-            }
-        }
-    }
-
     private String limitString(){
-        return "placeholder";
+        return LIMIT+" "+(currentIndex * pageBuffSize)+","+pageBuffSize;
     }
 
-    public Page currentPage(){
-        Page p = this.pages.get(new Integer(this.currentIndex));
-        System.out.println(this.pages);
-        return p;
+    public Page currentPage() throws SQLException{
+        List<Flight> selectFlights = Flight.getFlights(Database.getConnection(), this.fleetID, this.filter, this.limitString());
+        return new Page(numPages, selectFlights, currentIndex);
     }
 
     public void jumpToPage(int pageNumber){

@@ -180,10 +180,47 @@ public class Flight {
         return getFlights(connection, fleetId, filter, 0);
     }
 
+    public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        for (int i = 0; i < parameters.size(); i++) {
+            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+
+            if (parameters.get(i) instanceof String) {
+                query.setString(i + 2, (String)parameters.get(i));
+            } else if (parameters.get(i) instanceof Double) {
+                query.setDouble(i + 2, (Double)parameters.get(i));
+            } else if (parameters.get(i) instanceof Integer) {
+                query.setInt(i + 2, (Integer)parameters.get(i));
+            }
+        }
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        int count = 0;
+        while (resultSet.next()) {
+            count++;
+        }
+        System.out.println("COUNT IS: "+count);
+
+        resultSet.close();
+        query.close();
+
+        return count;
+    }
+
+
     /**
      * This method allows us to specify the range of rows we want to get from the database
+     * which is useful for pagination
      */
-
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String sqlLimit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
