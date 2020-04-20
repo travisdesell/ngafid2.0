@@ -83,7 +83,6 @@ public class PostFlights implements Route {
                 //get the flights associated with this filter
                 //we must paginate the new flights if the filter changed or if this is the initial load
                 this.paginator = new FlightPaginator(10, this.filter, fleetId);
-                this.paginator.paginate();
                 System.out.println("paginator paginated");
             }
 
@@ -93,7 +92,6 @@ public class PostFlights implements Route {
             if(pageBufferSize != this.pageBufferSize){
                 this.paginator.setNumPerPage(pageBufferSize);
                 this.pageBufferSize = pageBufferSize;
-                this.paginator.paginate();
                 pageIndex = 0;
             }
 

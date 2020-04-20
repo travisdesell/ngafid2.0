@@ -1,17 +1,18 @@
 package org.ngafid.common;
+import java.util.List;
 
 public class Page<T>{
-    private T [] data;
+    private List<T> data;
     private int sizeAll; //the size of all pages in this collection
     private int index;
 
-    public Page(int sizeAll, T [] data, int index){
+    public Page(int sizeAll, List<T> data, int index){
        this.sizeAll = sizeAll;
        this.data = data;
        this.index = index;
     }
 
-    public T[] getData(){
+    public List<T> getData(){
         return data;
     }
 
