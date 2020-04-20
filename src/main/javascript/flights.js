@@ -1432,7 +1432,6 @@ class FlightsCard extends React.Component {
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
                                 <div class="btn-group mr-1" role="group" aria-label="First group">
@@ -1443,15 +1442,20 @@ class FlightsCard extends React.Component {
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
                                     </DropdownButton>
-                                        <DropdownButton id="dropdown-item-button" title={"Page " + (this.state.page + 1)} size="sm">
-                                        {
-                                            pages.map((pages, index) => {
-                                                return (
-                                                        <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
-                                                );
-                                            })
-                                        }
-                                    </DropdownButton>
+                                  <Dropdown>
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                        {"Page " + (this.state.page + 1)}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                            {
+                                                pages.map((pages, index) => {
+                                                    return (
+                                                            <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                    );
+                                                })
+                                            }
+                                    </Dropdown.Menu>
+                                  </Dropdown>
                                     {prev}
                                     {next}
                                 </div>
@@ -1578,26 +1582,3 @@ if (typeof flights !== 'undefined') {
 }
 
 export { flightsCard };
-
-/**
- *
-                    <form class="card-body p-2">
-                        <div class="form-row align-items-center">
-                            <div class="col-auto my-1">
-                                <label for="pager">Jump to page:</label>
-                                <input id="pager"></input>
-                            </div>
-                            <div class="col-auto my-1">
-                                <label class="custom-control-label" for="bufferSize">Number of flights to display per page:</label>
-                                <select class="form-control" id="bufferSize">
-                                    <option>10</option>
-                                    <option>15</option>
-                                    <option>25</option>
-                                    <option>50</option>
-                                    <option>100</option>
-                                </select>
-                            </div>
-                        </div>
-                    </form>
-
-*/
