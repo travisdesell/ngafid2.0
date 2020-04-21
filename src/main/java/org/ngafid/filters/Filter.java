@@ -388,7 +388,6 @@ public class Filter{
     public boolean equals(Object e){
         if(e instanceof Filter){
             Filter t = (Filter)e;
-            System.out.println(t.hashCode()+"======"+this.hashCode());
             return t.hashCode() == super.hashCode();
         }else{
             return false; 

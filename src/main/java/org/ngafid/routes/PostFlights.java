@@ -73,9 +73,7 @@ public class PostFlights implements Route {
 
         try {
             System.out.println("----"+this.filter+" "+userFilter);
-
-
-            if(this.filter == null || !this.filter.equals(userFilter)){
+            if(this.filter == null){
                 //check to see if the filter has changed
                 //if it has, then we change the pointer of this filter to the new filter
                 LOG.info("New filter applied");
@@ -84,6 +82,10 @@ public class PostFlights implements Route {
                 //we must paginate the new flights if the filter changed or if this is the initial load
                 this.paginator = new FlightPaginator(10, this.filter, fleetId);
                 System.out.println("paginator paginated");
+            }else if(!this.filter.equals(userFilter)){
+                LOG.info("New filter applied");
+                this.filter = userFilter;
+                this.paginator.setFilter(userFilter);
             }
 
             int pageIndex = Integer.parseInt(request.queryParams("pageIndex"));
