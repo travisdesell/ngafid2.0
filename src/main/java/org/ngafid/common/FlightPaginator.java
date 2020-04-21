@@ -27,6 +27,10 @@ public class FlightPaginator{
         this.setNumPerPage(pageBuffSize);
     }
 
+    public FlightPaginator(Filter filter, int fleetID) throws SQLException{
+        this(10, filter, fleetID); //the default page buffer size is 10
+    }
+
     public void setFilter(Filter filter){
         this.filter = filter;
     }
