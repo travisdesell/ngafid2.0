@@ -22,17 +22,23 @@ public class FlightPaginator{
     public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException{
         this.filter = filter;
         this.fleetID = fleetID;
+        this.pageBuffSize = pageBuffSize;
         this.currentIndex = 0; //always start at 0
+        this.setNumFlights();
+    }
+
+    private void setNumFlights() throws SQLException{
         this.numFlights = Flight.getNumFlights(Database.getConnection(), this.fleetID, this.filter);
-        this.setNumPerPage(pageBuffSize);
+        this.setNumPerPage(this.pageBuffSize);
     }
 
     public FlightPaginator(Filter filter, int fleetID) throws SQLException{
         this(10, filter, fleetID); //the default page buffer size is 10
     }
 
-    public void setFilter(Filter filter){
+    public void setFilter(Filter filter) throws SQLException{
         this.filter = filter;
+        this.setNumFlights();
     }
 
     public void setNumPerPage(int numPerPage){
