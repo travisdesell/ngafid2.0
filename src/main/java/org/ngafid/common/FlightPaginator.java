@@ -27,10 +27,6 @@ public class FlightPaginator{
         this.setNumPerPage(pageBuffSize);
     }
 
-    public int getNumFlights(){
-        return -1;
-    }
-
     public void setNumPerPage(int numPerPage){
         this.pageBuffSize = numPerPage;
         double quot = this.numFlights / (double) numPerPage;

@@ -380,6 +380,7 @@ public class Filter{
         }
         return "";
     }
+
     /**
      * Used for comparing two filters for equality
      */
@@ -387,7 +388,8 @@ public class Filter{
     public boolean equals(Object e){
         if(e instanceof Filter){
             Filter t = (Filter)e;
-            return condition.equals(t.condition);
+            System.out.println(t.hashCode()+"======"+this.hashCode());
+            return t.hashCode() == super.hashCode();
         }else{
             return false; 
         }
