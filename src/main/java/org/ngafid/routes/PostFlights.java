@@ -72,7 +72,7 @@ public class PostFlights implements Route {
         }
 
         try {
-            System.out.println(this.filter+" "+userFilter);
+            System.out.println("----"+this.filter+" "+userFilter);
 
 
             if(this.filter == null || !this.filter.equals(userFilter)){
