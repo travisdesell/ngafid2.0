@@ -25,7 +25,7 @@ and Fedora, RedHat/CentOS:
 ```
 You will also need to run
 ```
-~/ $ mariadb-install-db
+~/ $ sudo mysql_install_db --user=mysql --ldata=/var/lib/mysql
 ```
 and
 ```
