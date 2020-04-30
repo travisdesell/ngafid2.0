@@ -10,6 +10,28 @@ Install mysql on your system. For ubuntu:
 ```
 ~/ $ sudo apt install mysql-server
 ```
+### NOTE: On some Linux disributions, such as RHEL, SUSE and Arch, the mysql package is provided by mariadb.
+In this case you will need to run (on openSUSE):
+```
+~/ $ sudo zypper in mariadb
+```
+or, for arch:
+```
+~/ $ sudo pacman -S mariadb
+```
+and Fedora, RedHat/CentOS:
+```
+~/ $ sudo dnf install mariadb mariadb-server 
+```
+You will also need to run
+```
+~/ $ mariadb-install-db
+```
+and
+```
+~/ $ sudo systemctl enable --now mariadb
+```
+**the systemd service name may vary depending on your distro.
 
 Next we'll create the database in mysql:
 ```
