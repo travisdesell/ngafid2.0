@@ -94,11 +94,15 @@ public class PostFlights implements Route {
             if(pageBufferSize != this.pageBufferSize){
                 this.paginator.setNumPerPage(pageBufferSize);
                 this.pageBufferSize = pageBufferSize;
+                LOG.info("Page buffer size changed:");
+                LOG.info(this.paginator.toString());
                 pageIndex = 0;
             }
 
             if(pageIndex != this.pageIndex){
                 this.paginator.jumpToPage(pageIndex);
+                LOG.info("Jumping to flight page: "+this.paginator.currentPage());
+                LOG.info(this.paginator.toString());
             }
 
             this.pageIndex = pageIndex;
