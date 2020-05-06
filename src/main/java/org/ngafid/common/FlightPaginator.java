@@ -13,13 +13,12 @@ import org.ngafid.filters.*;
 import org.ngafid.Database;
 import java.sql.SQLException;
 
-public class FlightPaginator{
+public class FlightPaginator extends Paginator{
 
     //useful for SQL queries
     private static final String LIMIT = "LIMIT";
-
     private Filter filter;
-    private int fleetID, pageBuffSize, currentIndex, numPages, numFlights;
+    private int fleetID;
 
     /**
      * Default Constructor
@@ -29,10 +28,9 @@ public class FlightPaginator{
      * @throws SQLException if setNumFlights() does
      */
     public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException{
+        super(pageBuffSize);
         this.filter = filter;
         this.fleetID = fleetID;
-        this.pageBuffSize = pageBuffSize;
-        this.currentIndex = 0; //always start at 0
         this.setNumFlights();
     }
 
@@ -43,15 +41,14 @@ public class FlightPaginator{
      * @throws SQLException if setNumFlights() does
      */
     public FlightPaginator(Filter filter, int fleetID) throws SQLException{
-        this(10, filter, fleetID); //the default page buffer size is 10
+        this(10, filter, fleetID);//default buff. size is 10
     }
 
     /**
      * Sets the number of flights per page by first determining the amount of flights associated with the filter
      */
     private void setNumFlights() throws SQLException{
-        this.numFlights = Flight.getNumFlights(Database.getConnection(), this.fleetID, this.filter);
-        this.setNumPerPage(this.pageBuffSize);
+        super.setNumElements(Flight.getNumFlights(Database.getConnection(), this.fleetID, this.filter));
     }
 
     /**
@@ -64,16 +61,6 @@ public class FlightPaginator{
     }
 
     /**
-     * Sets the num of flights per page
-     * @param numPerPage the new num of flights to disp. per page
-     */
-    public void setNumPerPage(int numPerPage){
-        this.pageBuffSize = numPerPage;
-        double quot = this.numFlights / (double) numPerPage;
-        this.numPages = (int)Math.ceil(quot);
-    }
-
-    /**
      * Generates a SQL query string for page n
      * @return a String with the appropriate SQL query
      */
@@ -82,32 +69,20 @@ public class FlightPaginator{
     }
 
     /**
-     * Gets the current page
-     * @return the page as a Page instance
-     * @throws SQLException if Flight.getFlights does
+     * {inheritDoc}
      */
+    @Override
     public Page currentPage() throws SQLException{
         List<Flight> selectFlights = Flight.getFlights(Database.getConnection(), this.fleetID, this.filter, this.limitString());
         return new Page(numPages, selectFlights, currentIndex);
     }
 
     /**
-     * Changes the current page number
-     * @param pageNumber the new page to go to
-     */
-    public void jumpToPage(int pageNumber){
-        this.currentIndex = pageNumber;
-    }
-
-    /**
-     * Returns information about the page collection
-     * @return a String used for debugging and logging
+     * {inheritDoc}
      */
     @Override
-    public String toString() {
-        return "Flight Paginator for: "+this.fleetID+" buffer size: "+this.pageBuffSize+"; "+
-            "current index: "+this.currentIndex+"; number of pages: "+this.numPages+
-            "; total num of flights: "+this.numFlights+"\n";
-
+    protected String paginatorType(){
+        return "Flight Paginator";
     }
+
 }
