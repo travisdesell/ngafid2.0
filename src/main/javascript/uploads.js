@@ -175,7 +175,11 @@ class UploadsCard extends React.Component {
             page : 0,
             buffSize : 10,   //def size of uploads to show per page is 10
             numPages : 1
-        }
+        };
+
+        this.previousPage = this.previousPage.bind(this);
+        this.nextPage = this.nextPage.bind(this);
+        this.repaginate = this.repaginate.bind(this);
 
         console.log("constructed UploadsCard, set mainCards");
     }
@@ -450,25 +454,20 @@ class UploadsCard extends React.Component {
     jumpPage(pg){
         if(pg < this.state.numPages && pg >= 0){
             this.state.page = pg;
-            this.submitFilter();
         }
     }
 
     nextPage(){
         this.state.page++;
-        this.submitFilter();
-        console.log("NEXT PAGE");
     }
 
     previousPage(){
         this.state.page--;
-        this.submitFilter();
     }
 
     repaginate(pag){
         console.log("Re-Paginating");
         this.state.buffSize = pag;
-        this.submitFilter();
     }
 
     genPages(){
@@ -596,32 +595,3 @@ var uploadsCard = ReactDOM.render(
     <UploadsCard uploads={uploads} />,
     document.querySelector('#uploads-card')
 );
-
-/*
- *
-                                <div class="btn-group mr-1" role="group" aria-label="First group">
-                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 flights per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
-                                    </DropdownButton>
-                                  <Dropdown>
-                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                                        {"Page " + (this.state.page + 1)}
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
-                                            {
-                                                pages.map((pages, index) => {
-                                                    return (
-                                                            <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
-                                                    );
-                                                })
-                                            }
-                                    </Dropdown.Menu>
-                                  </Dropdown>
-                                    {prev}
-                                    {next}
-                                </div>
- */
