@@ -40,7 +40,7 @@ public class TurnToFinal {
 
     private ArrayList<Integer> locExceedences;
     private ArrayList<Integer> centerLineExceedences;
-    private double selfDefinedGlideAngle = Float.NaN;
+    private double selfDefinedGlideAngle;
     private ArrayList<Integer> optimalDescentSlopeWarnings;
     private ArrayList<Integer> optimalDescentSlopeExceedences;
     private ArrayList<Integer> optimalDescentSpeedExceedences;
@@ -86,7 +86,7 @@ public class TurnToFinal {
 
         // This is the angle from the ground between the aircrafts position at 400ft and the touchdown point
         // There should be one entry here per itinerary object
-        this.selfDefinedGlideAngle = Double.NaN;
+        this.selfDefinedGlideAngle = -1000;
         calculateSelfDefinedGlideAngle();
 
         // "Optimal descent exceedence"
@@ -171,6 +171,9 @@ public class TurnToFinal {
         double c = Math.sqrt(a * a + b * b);
 
         this.selfDefinedGlideAngle = Math.asin(b / c);
+        if (Double.isNaN(this.selfDefinedGlideAngle))
+            this.selfDefinedGlideAngle = -100000;
+        ;
     }
 
     private void calculateOptimalDescentExceedences() {
@@ -200,7 +203,7 @@ public class TurnToFinal {
                 latitude[start_idx], longitude[start_idx], latitude[end_index], longitude[end_index]);
         double altitude = this.altitude[start_idx];
 
-        this.selfDefinedGlideAngle = Math.atan(altitude / distance);
+        // this.selfDefinedGlideAngle = Math.atan(altitude / distance);
 
         // How the aircraft should descend optimally
         // 300 ft / 1 mile = x feet / distance miles
@@ -242,10 +245,7 @@ public class TurnToFinal {
         return new double[] { latitude[timestep], longitude[timestep] };
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId) throws SQLException {
-        // For now just use the flight object to get lat and long series
-        // In the future we could just get the lat and long series in isolation to speed things up
-        Flight flight = Flight.getFlight(connection, flightId);
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight) throws SQLException {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         // TODO: Verify that these are the correct names
@@ -253,8 +253,10 @@ public class TurnToFinal {
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
 
-        assert latTimeSeries != null;
-        assert lonTimeSeries != null;
+        int flightId = flight.getId();
+
+        if (latTimeSeries == null)
+            return new ArrayList<>();
 
         double[] lat = latTimeSeries.innerArray();
         double[] lon = lonTimeSeries.innerArray();
@@ -293,11 +295,11 @@ public class TurnToFinal {
                 from -= 1;
             }
             TurnToFinal ttf = new TurnToFinal(flight.getAirframeType(), runway, runwayAltitude,
-                                altTimeSeries.sliceCopy(from, to),
-                                rollTimeSeries.sliceCopy(from, to),
-                                latTimeSeries.sliceCopy(from, to),
-                                lonTimeSeries.sliceCopy(from, to),
-                                velocityTimeSeries.sliceCopy(from, to));
+                    altTimeSeries.sliceCopy(from, to),
+                    rollTimeSeries.sliceCopy(from, to),
+                    latTimeSeries.sliceCopy(from, to),
+                    lonTimeSeries.sliceCopy(from, to),
+                    velocityTimeSeries.sliceCopy(from, to));
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
@@ -305,8 +307,17 @@ public class TurnToFinal {
         return ttfs;
     }
 
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId) throws SQLException {
+        // For now just use the flight object to get lat and long series
+        // In the future we could just get the lat and long series in isolation to speed things up
+        Flight flight = Flight.getFlight(connection, flightId);
+        assert flight != null;
+        return getTurnToFinal(connection, flight);
+    }
+
     public JsonElement jsonify() {
         Gson gson = new Gson();
+        System.out.println(selfDefinedGlideAngle);
         return gson.toJsonTree(Map.of(
                 PARAM_JSON_LOC_EXC, gson.toJson(this.locExceedences),
                 PARAM_JSON_CLINE_EXC, gson.toJson(this.centerLineExceedences),

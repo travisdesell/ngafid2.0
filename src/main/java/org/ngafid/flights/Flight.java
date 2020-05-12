@@ -29,6 +29,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
@@ -99,6 +100,21 @@ public class Flight {
         query.close();
 
         return flights;
+    }
+
+    /**
+     * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
+     * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
+     * @param connection
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
+        System.out.println("Start date = " + startDate);
+        System.out.println("End date = " + endDate);
+        String extraCondition = "id >= 0";
+        return getFlights(connection, extraCondition);
     }
 
     public void remove(Connection connection) throws SQLException {
