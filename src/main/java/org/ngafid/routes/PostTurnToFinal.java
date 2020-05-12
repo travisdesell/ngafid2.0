@@ -8,9 +8,11 @@ import com.google.gson.JsonElement;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.flights.Flight;
 import org.ngafid.flights.TurnToFinal;
 import spark.*;
 
+import javax.xml.crypto.Data;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -32,39 +34,30 @@ public class PostTurnToFinal implements Route {
 
     @Override
     public Object handle(Request request, Response response) throws Exception {
-        String flightIdS = request.queryParams("flightId");
-        int flightId;
-        try {
-            flightId = Integer.parseInt(flightIdS);
-        } catch (NumberFormatException nfe) {
-            // Invalid flight Id
-            LOG.warning("GetTurnToFinal request supplied an invalid flight id: '" + flightIdS + "'");
-            return  gson.toJson(new ErrorResponse("Invalid Flight Id",
-                        "A turn to final request was made for an invalid flight Id"));
-        }
+        String startDate = request.queryParams("startDate");
+        String endDate = request.queryParams("endDate");
 
-        String resultString = "";
 
         final Session session = request.session();
         User user = session.attribute("user");
 
-        if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to this flight, id = " + flightIdS);
-            Spark.halt(401, "User did not have access to flight with id = " + flightIdS);
-            return null;
-        }
+        List<JsonElement> ttfs = new ArrayList<>();
 
-        try {
-            List<JsonElement> ttfs = TurnToFinal.getTurnToFinal(Database.getConnection(), flightId)
-                    .stream()
-                    .map(TurnToFinal::jsonify)
-                    .collect(Collectors.toList());
-            // This should be a list of js objects. each object represents 1 turn to final, containing the
-            // indices associated with exceedences
-            return gson.toJson(ttfs);
-        } catch (SQLException e) {
-            LOG.severe(e.toString());
-            return gson.toJson(new ErrorResponse(e));
+        List<Flight> flights = Flight.getFlightsWithinDateRange(Database.getConnection(), startDate, endDate);
+
+        for (Flight flight : flights) {
+            int flightId = flight.getId();
+
+            try {
+                TurnToFinal.getTurnToFinal(Database.getConnection(), flightId)
+                        .stream()
+                        .map(TurnToFinal::jsonify)
+                        .forEach(ttfs::add);
+            } catch (SQLException e) {
+                LOG.severe(e.toString());
+                return gson.toJson(new ErrorResponse(e));
+            }
         }
+        return gson.toJson(ttfs);
     }
 }

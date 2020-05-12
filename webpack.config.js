@@ -31,6 +31,7 @@ module.exports = {
         dashboard: __dirname + "/src/main/javascript/dashboard.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
+        ttf: __dirname + "/src/main/javascript/ttf.js"
     },
 
     output: {
