@@ -1414,17 +1414,14 @@ class FlightsCard extends React.Component {
         if(flights.length > 0){
             var begin = this.state.page == 0;
             var end = this.state.page == this.state.numPages-1;
-            var prev, next;
+            var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+            var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+
             if(begin) {
                 prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
-            }else{
-                prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
             }
-
             if(end){
                 next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
-            }else{
-                next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
             }
 
 

@@ -2,6 +2,8 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Dropdown from 'react-bootstrap/Dropdown'
+import DropdownButton from 'react-bootstrap/DropdownButton'
 import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
@@ -169,7 +171,10 @@ class UploadsCard extends React.Component {
         super(props);
 
         this.state = {
-            uploads : this.props.uploads
+            uploads : this.props.uploads,
+            page : 0,
+            buffSize : 10,   //def size of uploads to show per page is 10
+            numPages : 1
         }
 
         console.log("constructed UploadsCard, set mainCards");
@@ -442,6 +447,40 @@ class UploadsCard extends React.Component {
         xhr.send(formData);
     }
 
+    jumpPage(pg){
+        if(pg < this.state.numPages && pg >= 0){
+            this.state.page = pg;
+            this.submitFilter();
+        }
+    }
+
+    nextPage(){
+        this.state.page++;
+        this.submitFilter();
+        console.log("NEXT PAGE");
+    }
+
+    previousPage(){
+        this.state.page--;
+        this.submitFilter();
+    }
+
+    repaginate(pag){
+        console.log("Re-Paginating");
+        this.state.buffSize = pag;
+        this.submitFilter();
+    }
+
+    genPages(){
+        var page = [];
+        for(var i = 0; i<this.state.numPages; i++){
+            page.push({
+                value : i,
+                name : "Page "+(i+1)
+            });
+        }
+        return page;
+    }
 
     triggerInput() {
         var uploadsCard = this;
@@ -477,21 +516,66 @@ class UploadsCard extends React.Component {
         };
 
         let uploads = [];
+        let pages = this.genPages();
         if (typeof this.state.uploads != 'undefined') {
             uploads = this.state.uploads;
+        }
+
+        var begin = this.state.page == 0;
+        var end = this.state.page == this.state.numPages-1;
+        var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+        var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+
+        if(begin) {
+            prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+        }
+        if(end){
+            next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
         return (
             <div className="card-body">
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                    {
-                        uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
-                            return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                            );
-                        })
-                    }
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
+                                <div class="btn-group mr-1" role="group" aria-label="First group">
+                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
+                                    </DropdownButton>
+                                  <Dropdown>
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                        {"Page " + (this.state.page + 1)}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                        {
+                                            pages.map((pages, index) => {
+                                                return (
+                                                        <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                );
+                                            })
+                                        }
+                                    </Dropdown.Menu>
+                                  </Dropdown>
+                                    {prev}
+                                    {next}
+                            <button id="upload-flights-button"  className="btn btn-primary btn-sm" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-upload"></i> Upload Flights
+                            </button>
+                                </div>
+                            </div>
+                        </div>
+                        {
+                            uploads.map((uploadInfo, index) => {
+                                uploadInfo.position = index;
+                                return (
+                                    <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                                );
+                            })
+                        }
                     <div className="d-flex justify-content-center mt-2">
                         <div className="p-0">
                             <input id ="upload-file-input" type="file" style={hiddenStyle} />
@@ -512,3 +596,32 @@ var uploadsCard = ReactDOM.render(
     <UploadsCard uploads={uploads} />,
     document.querySelector('#uploads-card')
 );
+
+/*
+ *
+                                <div class="btn-group mr-1" role="group" aria-label="First group">
+                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
+                                    </DropdownButton>
+                                  <Dropdown>
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                        {"Page " + (this.state.page + 1)}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                            {
+                                                pages.map((pages, index) => {
+                                                    return (
+                                                            <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                    );
+                                                })
+                                            }
+                                    </Dropdown.Menu>
+                                  </Dropdown>
+                                    {prev}
+                                    {next}
+                                </div>
+ */
