@@ -369,8 +369,8 @@ class ImportsCard extends React.Component {
 
         this.state = {
             imports : this.props.imports,
-            page : 0,
-            numPages : 0,
+            page : this.props.page,
+            numPages : this.props.numPages,
             buffSize : 10
         };
 
@@ -397,6 +397,7 @@ class ImportsCard extends React.Component {
     nextPage(){
         this.state.page++;
         this.submitPagination();
+        console.log(this.state.page+" pg");
     }
 
     previousPage(){
@@ -532,13 +533,22 @@ class ImportsCard extends React.Component {
                         })
                     }
                 </div>
-            </div>
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
+                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                {prev}
+                                {next}
+                                </div>
+                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
+                        </div>
+                    </div>
+                </div>
         );
     }
 }
 
 
 var importsCard = ReactDOM.render(
-    <ImportsCard imports={imports} />,
+    <ImportsCard imports={imports} numPages={numPages} page={index} />,
     document.querySelector('#imports-card')
 );

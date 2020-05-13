@@ -15,6 +15,13 @@ public class ImportPaginator extends Paginator{
         System.out.println(numElements+" -------- ||||| ");
     }
 
+    public ImportPaginator(int startIndex, int bufferSize, int fleetID) throws SQLException{
+        super(startIndex, bufferSize);
+        this.fleetID = fleetID;
+        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID));
+        System.out.println(numElements+" -------- ||||| ");
+    }
+
     public Page currentPage() throws SQLException{
         List<Upload> uploadData = Upload.getUploads(Database.getConnection(), fleetID, new String[]{"IMPORTED", "ERROR"}, super.limitString());
         return new Page(numPages, uploadData, currentIndex);

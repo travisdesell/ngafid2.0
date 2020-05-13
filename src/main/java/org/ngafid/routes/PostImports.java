@@ -49,13 +49,18 @@ public class PostImports implements Route {
 
 
         try {
+
             int index = Integer.parseInt(request.queryParams("index"));
             int buffSize = Integer.parseInt(request.queryParams("buffSize"));
-            if(this.paginator == null || this.buffSize != buffSize){
+            if(this.paginator == null){
+                this.paginator = new ImportPaginator(index, buffSize, fleetId);
+            }
+            else if(this.buffSize != buffSize){
                 this.paginator = new ImportPaginator(buffSize, fleetId);
                 this.buffSize = buffSize;
                 index = 0;
             }
+            this.buffSize = buffSize;
             this.paginator.jumpToPage(index);
             Page<Upload> imports = paginator.currentPage();
             //LOG.info(gson.toJson(imports));

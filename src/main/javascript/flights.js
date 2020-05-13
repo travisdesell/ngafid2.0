@@ -1310,7 +1310,6 @@ class FlightsCard extends React.Component {
     nextPage(){
         this.state.page++;
         this.submitFilter();
-        console.log("NEXT PAGE");
     }
 
     previousPage(){

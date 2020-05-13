@@ -20,11 +20,20 @@ public abstract class Paginator{
 
     /**
      * Default Constructor
+     * @param startIndex the index to start at
+     * @param pageBuffSize the amount of elements to display per page
+     */
+    public Paginator(int startIndex, int pageBuffSize){
+        this.pageBuffSize = pageBuffSize;
+        this.currentIndex = startIndex;
+    }
+
+    /**
+     * Constructor
      * @param pageBuffSize the amount of elements to display per page
      */
     public Paginator(int pageBuffSize){
-        this.pageBuffSize = pageBuffSize;
-        this.currentIndex = 0; //always start at 0
+        this(0, pageBuffSize); //always start at 0 by default
     }
 
     /**
