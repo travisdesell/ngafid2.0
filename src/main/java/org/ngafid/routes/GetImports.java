@@ -87,6 +87,8 @@ public class GetImports implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
             this.paginator = new ImportPaginator(10, fleetId);
+            scopes.put("numPages_js", "var numPages = " + gson.toJson(this.paginator.currentPage().size()) + ";");
+            scopes.put("index_js", "var index = " + gson.toJson(this.paginator.currentPage().index()) + ";");
 
             try {
                 scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(this.paginator.currentPage().getData()) + "');");
@@ -98,11 +100,11 @@ public class GetImports implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
+            System.out.println("res str: "+scopes+resultString);
 
         } catch (Exception e) {
             LOG.severe(e.toString());
         }
-        System.out.println("res str: "+resultString);
 
         return resultString;
     }
