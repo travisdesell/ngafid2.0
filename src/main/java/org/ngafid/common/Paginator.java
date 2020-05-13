@@ -13,6 +13,9 @@ import org.ngafid.Database;
 import java.sql.SQLException;
 
 public abstract class Paginator{
+
+    //useful for SQL queries
+    private static final String LIMIT = "LIMIT";
     protected int pageBuffSize, currentIndex, numPages, numElements;
 
     /**
@@ -30,6 +33,15 @@ public abstract class Paginator{
     protected void setNumElements(int newNumElements) throws SQLException{
         this.numElements = newNumElements;
         this.setNumPerPage(this.pageBuffSize);
+    }
+
+
+    /**
+     * Generates a SQL query string for page n
+     * @return a String with the appropriate SQL query
+     */
+    protected String limitString(){
+        return LIMIT+" "+(currentIndex * pageBuffSize)+","+pageBuffSize;
     }
 
     /**

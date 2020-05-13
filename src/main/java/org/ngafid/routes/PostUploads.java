@@ -23,6 +23,7 @@ public class PostUploads implements Route {
     private static final Logger LOG = Logger.getLogger(PostUploads.class.getName());
     private Gson gson;
     private Paginator paginator;
+    private int numPerPage;
 
     public PostUploads(Gson gson) {
         this.gson = gson;
@@ -38,13 +39,19 @@ public class PostUploads implements Route {
         User user = session.attribute("user");
 
         int fleetId = user.getFleetId();
-	try{
-	    this.paginator = new UploadPaginator(bufferSize, fleetId);
-	}catch(SQLException e){
-	    LOG.severe("Uploads in DB error: "+e);//change this
-	}
+    try{
+        int numPerPage = Integer.parseInt(request.queryParams("numPerPage"));
+        if(this.paginator == null || this.numPerPage != numPerPage){
+            this.paginator = new UploadPaginator(numPerPage, fleetId);
+            this.numPerPage = numPerPage;
+        }
+        int currPage = Integer.parseInt(request.queryParams("pageIndex"));
+        this.paginator.jumpToPage(currPage);
+    }catch(SQLException e){
+        LOG.severe("Uploads in DB error: "+e);//change this
+    }
 
-			
+
         //check to see if the user has upload access for this fleet.
         if (!user.hasUploadAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access to upload flights for this fleet.");
@@ -54,7 +61,6 @@ public class PostUploads implements Route {
 
         try {
             Page<Upload> currPage = this.paginator.currentPage();
-
             //LOG.info(gson.toJson(uploads));
 
             return gson.toJson(currPage);

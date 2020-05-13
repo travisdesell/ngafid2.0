@@ -166,8 +166,8 @@ public final class WebServer {
         Spark.get("/protected/imports", new GetImports(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
 
-        //Spark.post("/protected/get_uploads", new PostUploads(gson));
-        //Spark.post("/protected/get_imports", new PostImports(gson));
+        Spark.post("/protected/uploads", new PostUploads(gson));
+        Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
         //add the pagination route

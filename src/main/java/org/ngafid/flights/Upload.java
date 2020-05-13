@@ -146,6 +146,25 @@ public class Upload {
         return uploads;
     }
 
+    public static int getNumUploads(Connection connection, int fleetId) throws SQLException{
+        int count = 0;
+        //PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
+        PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time");
+        uploadQuery.setInt(1, fleetId);
+        ResultSet resultSet = uploadQuery.executeQuery();
+
+        ArrayList<Upload> uploads = new ArrayList<Upload>();
+
+        while (resultSet.next()) {
+            count++;
+        }
+
+        //resultSet.close();
+        uploadQuery.close();
+
+        return count;
+    }
+
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
         //String query = "SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?";
         String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time";
@@ -177,6 +196,43 @@ public class Upload {
         uploadQuery.close();
 
         return uploads;
+    }
+
+    public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String [] types, String sqlLimit) throws SQLException{
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time";
+
+        if (types.length > 0) {
+            query += " AND (";
+
+            for (int i = 0; i < types.length; i++) {
+                if (i > 0) query += " OR ";
+                query += "status = ?";
+            }
+            query += ")";
+        }
+
+        if(!sqlLimit.isEmpty())
+            query += sqlLimit;
+
+        PreparedStatement uploadQuery = connection.prepareStatement(query);
+        uploadQuery.setInt(1, fleetId);
+
+        for (int i = 0; i < types.length; i++) {
+            uploadQuery.setString(i + 2, types[i]);
+        }
+        ResultSet resultSet = uploadQuery.executeQuery();
+
+        ArrayList<Upload> uploads = new ArrayList<Upload>();
+
+        while (resultSet.next()) {
+            uploads.add(new Upload(resultSet));
+        }
+
+        resultSet.close();
+        uploadQuery.close();
+
+        return uploads;
+
     }
 
     public Upload(ResultSet resultSet) throws SQLException {

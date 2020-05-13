@@ -15,8 +15,6 @@ import java.sql.SQLException;
 
 public class FlightPaginator extends Paginator{
 
-    //useful for SQL queries
-    private static final String LIMIT = "LIMIT";
     private Filter filter;
     private int fleetID;
 
@@ -60,13 +58,6 @@ public class FlightPaginator extends Paginator{
         this.setNumFlights();
     }
 
-    /**
-     * Generates a SQL query string for page n
-     * @return a String with the appropriate SQL query
-     */
-    private String limitString(){
-        return LIMIT+" "+(currentIndex * pageBuffSize)+","+pageBuffSize;
-    }
 
     /**
      * {inheritDoc}

@@ -7,19 +7,23 @@ import java.sql.SQLException;
 
 public class UploadPaginator extends Paginator{
 
-    private int fleetID, numUploads;
+    private int fleetID;
     public UploadPaginator(int bufferSize, int fleetID) throws SQLException{
         super(bufferSize);
         this.fleetID = fleetID;
-	this.numUploads = Upload.getNumUploads(Database.getConnection(), fleetID);
+        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID));
+        System.out.println(numElements+" -------- ||||| ");
     }
 
     public Page currentPage() throws SQLException{
-	List<Upload> uploadData = Upload.getUploads(Database.getConnection(), fleetID);
-	return new Page(uploadData.size(), uploadData, 0);
+        List<Upload> uploadData = Upload.getUploads(Database.getConnection(), fleetID);
+        uploadData.remove(10);
+        uploadData.remove(10);
+        uploadData.remove(10);
+        return new Page(numPages, uploadData, currentIndex);
     }
 
     public String paginatorType(){
-	return "Upload paginator";
+        return "Upload paginator";
     }
 }
