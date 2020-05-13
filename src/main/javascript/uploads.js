@@ -188,6 +188,10 @@ class UploadsCard extends React.Component {
         return this;
     }
 
+    setUploads(uploads){
+        this.state.uploads = uploads;
+        this.render();
+    }
 
     getMD5Hash(file, onFinish, uploadsCard) {
         var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
@@ -457,17 +461,70 @@ class UploadsCard extends React.Component {
         }
     }
 
+    setSize(size){
+        this.state.numPages = size;
+    }
+
     nextPage(){
         this.state.page++;
+        this.submitPagination();
     }
 
     previousPage(){
         this.state.page--;
+        this.submitPagination();
+    }
+
+    setIndex(index){
+        this.state.page = index;
     }
 
     repaginate(pag){
         console.log("Re-Paginating");
         this.state.buffSize = pag;
+        this.submitPagination();
+    }
+
+    submitPagination(){
+        //prep data
+        var uploadsCard = this;
+
+        var submissionData = {
+            pageIndex : this.state.page,
+            numPerPage : this.state.buffSize
+        };
+
+        console.log(submissionData);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/uploads',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                console.log("got response: "+response+" "+response.sizeAll);
+
+                //get page data
+                //uploadsCard.setUploads(response.data);
+                uploadsCard.setIndex(response.index);
+                uploadsCard.setSize(response.sizeAll);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },
+            async: true
+        });
     }
 
     genPages(){
@@ -520,6 +577,7 @@ class UploadsCard extends React.Component {
             uploads = this.state.uploads;
         }
 
+                            console.log("PRE- "+uploads);
         var begin = this.state.page == 0;
         var end = this.state.page == this.state.numPages-1;
         var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>

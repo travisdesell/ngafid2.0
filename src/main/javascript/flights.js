@@ -1332,6 +1332,7 @@ class FlightsCard extends React.Component {
         console.log("Submitting filters:");
         console.log( query );
 
+
         $("#loading").show();
 
         var submissionData = {
