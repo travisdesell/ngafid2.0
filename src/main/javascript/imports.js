@@ -1,6 +1,8 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import Dropdown from 'react-bootstrap/Dropdown'
+import DropdownButton from 'react-bootstrap/DropdownButton'
 
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
@@ -366,8 +368,103 @@ class ImportsCard extends React.Component {
         super(props);
 
         this.state = {
-            imports : this.props.imports
+            imports : this.props.imports,
+            page : 0,
+            numPages : 0,
+            buffSize : 10
         };
+
+       this.previousPage = this.previousPage.bind(this);
+       this.nextPage = this.nextPage.bind(this);
+       this.repaginate = this.repaginate.bind(this);
+    }
+
+    setIndex(index){
+        this.state.page = index;
+        this.setState(this.state);
+    }
+
+    setSize(size){
+        this.state.numPages = size;
+        this.setState(this.state);
+    }
+
+    setData(data) {
+        this.state.imports = data;
+        this.setState(this.state);
+    }
+
+    nextPage(){
+        this.state.page++;
+        this.submitPagination();
+    }
+
+    previousPage(){
+        this.state.page--;
+        this.submitPagination();
+    }
+
+    repaginate(pag){
+        console.log("Re-Paginating");
+        this.state.buffSize = pag;
+        this.submitPagination();
+    }
+
+    jumpPage(pg){
+        if(pg < this.state.numPages && pg >= 0){
+            this.state.page = pg;
+            this.submitPagination();
+        }
+    }
+
+    genPages(){
+        var page = [];
+        for(var i = 0; i<this.state.numPages; i++){
+            page.push({
+                value : i,
+                name : "Page "+(i+1)
+            });
+        }
+        return page;
+    }
+
+    submitPagination(){
+        var submissionData = {
+            index : this.state.page,
+            buffSize : this.state.buffSize
+        }
+
+        var importsCard = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_imports',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                console.log("got response: "+response+" "+response.size);
+
+                //get page data
+                importsCard.setData(response.data);
+                importsCard.setIndex(response.index);
+                importsCard.setSize(response.sizeAll);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },
+            async: true
+        });
     }
 
     render() {
@@ -377,13 +474,56 @@ class ImportsCard extends React.Component {
         };
 
         let imports = [];
+        let pages = this.genPages();
+
         if (typeof this.state.imports != 'undefined') {
             imports = this.state.imports;
+        }
+
+        var begin = this.state.page == 0;
+        var end = this.state.page == this.state.numPages-1;
+        var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+        var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+
+        if(begin) {
+            prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+        }
+        if(end){
+            next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
         return (
             <div className="card-body" hidden={hidden}>
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                 <div class="card mb-1 m-1 border-secondary">
+                    <div class="p-2">
+                        <div class="btn-group mr-1" role="group" aria-label="First group">
+                            <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
+                                <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
+                            </DropdownButton>
+                            <Dropdown>
+                            <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                {"Page " + (this.state.page + 1)}
+                            </Dropdown.Toggle>
+                            <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                {
+                                    pages.map((pages, index) => {
+                                        return (
+                                                <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                        );
+                                    })
+                                }
+                            </Dropdown.Menu>
+                            </Dropdown>
+                                    {prev}
+                                    {next}
+                                </div>
+                            </div>
+                        </div>
                     {
                         imports.map((importInfo, index) => {
                             return (
