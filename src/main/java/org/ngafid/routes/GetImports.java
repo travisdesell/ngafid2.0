@@ -100,7 +100,6 @@ public class GetImports implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-            System.out.println("res str: "+scopes+resultString);
 
         } catch (Exception e) {
             LOG.severe(e.toString());

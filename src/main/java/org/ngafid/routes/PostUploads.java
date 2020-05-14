@@ -23,7 +23,7 @@ public class PostUploads implements Route {
     private static final Logger LOG = Logger.getLogger(PostUploads.class.getName());
     private Gson gson;
     private Paginator paginator;
-    private int numPerPage;
+    private int buffSize;
 
     public PostUploads(Gson gson) {
         this.gson = gson;
@@ -39,17 +39,22 @@ public class PostUploads implements Route {
         User user = session.attribute("user");
 
         int fleetId = user.getFleetId();
-    try{
-        int numPerPage = Integer.parseInt(request.queryParams("numPerPage"));
-        if(this.paginator == null || this.numPerPage != numPerPage){
-            this.paginator = new UploadPaginator(numPerPage, fleetId);
-            this.numPerPage = numPerPage;
+        try{
+            int index = Integer.parseInt(request.queryParams("index"));
+            int buffSize = Integer.parseInt(request.queryParams("buffSize"));
+            if(this.paginator == null){
+                this.paginator = new ImportPaginator(index, buffSize, fleetId);
+            }
+            else if(this.buffSize != buffSize){
+                this.paginator = new ImportPaginator(buffSize, fleetId);
+                this.buffSize = buffSize;
+                index = 0;
+            }
+            this.buffSize = buffSize;
+            this.paginator.jumpToPage(index);
+        }catch(SQLException e){
+            LOG.severe("Uploads in DB error: "+e.toString());
         }
-        int currPage = Integer.parseInt(request.queryParams("pageIndex"));
-        this.paginator.jumpToPage(currPage);
-    }catch(SQLException e){
-        LOG.severe("Uploads in DB error: "+e);//change this
-    }
 
 
         //check to see if the user has upload access for this fleet.
