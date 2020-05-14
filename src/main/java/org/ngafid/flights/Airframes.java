@@ -1,9 +1,10 @@
 package org.ngafid.flights;
 
+import com.mysql.jdbc.Statement;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -65,7 +66,7 @@ public class Airframes {
             } else {
                 //airframe did not exist in the database, insert it and return it's generated id
                 queryString = "INSERT INTO airframes SET airframe = ?";
-                query = connection.prepareStatement(queryString);
+                query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
                 query.setString(1, airframe);
 
                 //LOG.info(query.toString());
