@@ -1,5 +1,7 @@
 package org.ngafid.accounts;
 
+import com.mysql.jdbc.Statement;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -356,7 +358,7 @@ public class User {
      * Updates the password for a user in the database.
      *
      * @param connection A connection to the mysql database.
-     * @param password The user's first name (optional, may be null).
+     * @param newPassword the new password
      *
      * @exception SQLException if there was a problem with the SQL query or the user already exists in the database.
      */
@@ -407,7 +409,7 @@ public class User {
         user.phoneNumber = phoneNumber;
         user.zipCode = zipCode;
 
-        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?");
+        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?", Statement.RETURN_GENERATED_KEYS);
         query.setString(1, user.email);
         query.setString(2, passwordToken);
         query.setString(3, user.firstName);
