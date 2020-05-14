@@ -172,9 +172,9 @@ class UploadsCard extends React.Component {
 
         this.state = {
             uploads : this.props.uploads,
-            page : 0,
+            page : this.props.page,
             buffSize : 10,   //def size of uploads to show per page is 10
-            numPages : 1
+            numPages : this.props.numPages
         };
 
         this.previousPage = this.previousPage.bind(this);
@@ -182,6 +182,7 @@ class UploadsCard extends React.Component {
         this.repaginate = this.repaginate.bind(this);
 
         console.log("constructed UploadsCard, set mainCards");
+        console.log("initial index: "+this.state.page);
     }
 
     getUploadsCard() {
@@ -190,7 +191,6 @@ class UploadsCard extends React.Component {
 
     setUploads(uploads){
         this.state.uploads = uploads;
-        this.render();
     }
 
     getMD5Hash(file, onFinish, uploadsCard) {
@@ -459,10 +459,13 @@ class UploadsCard extends React.Component {
         if(pg < this.state.numPages && pg >= 0){
             this.state.page = pg;
         }
+        this.setState(this.state);
+        this.submitPagination();
     }
 
     setSize(size){
         this.state.numPages = size;
+        this.setState(this.state);
     }
 
     nextPage(){
@@ -477,6 +480,7 @@ class UploadsCard extends React.Component {
 
     setIndex(index){
         this.state.page = index;
+        this.setState(this.state);
     }
 
     repaginate(pag){
@@ -490,8 +494,8 @@ class UploadsCard extends React.Component {
         var uploadsCard = this;
 
         var submissionData = {
-            pageIndex : this.state.page,
-            numPerPage : this.state.buffSize
+            index : this.state.page,
+            buffSize : this.state.buffSize
         };
 
         console.log(submissionData);
@@ -516,7 +520,7 @@ class UploadsCard extends React.Component {
                 console.log("got response: "+response+" "+response.sizeAll);
 
                 //get page data
-                //uploadsCard.setUploads(response.data);
+                uploadsCard.setUploads(response.data);
                 uploadsCard.setIndex(response.index);
                 uploadsCard.setSize(response.sizeAll);
             },
@@ -633,15 +637,18 @@ class UploadsCard extends React.Component {
                                 );
                             })
                         }
-                    <div className="d-flex justify-content-center mt-2">
-                        <div className="p-0">
-                            <input id ="upload-file-input" type="file" style={hiddenStyle} />
-                            <button id="upload-flights-button" className="btn btn-primary" onClick={() => this.triggerInput()}>
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
+                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                {prev}
+                                {next}
+                                <button id="upload-flights-button" className="btn btn-primary btn-sm" onClick={() => this.triggerInput()}>
+                                    <i className="fa fa-upload"></i> Upload Flights
+                                </button>
+                                </div>
+                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
                         </div>
                     </div>
-
                 </div>
             </div>
         );
@@ -650,6 +657,6 @@ class UploadsCard extends React.Component {
 
 
 var uploadsCard = ReactDOM.render(
-    <UploadsCard uploads={uploads} />,
+    <UploadsCard uploads={uploads} numPages={numPages} page={index}/>,
     document.querySelector('#uploads-card')
 );
