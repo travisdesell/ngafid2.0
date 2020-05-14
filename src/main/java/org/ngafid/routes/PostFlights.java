@@ -86,6 +86,7 @@ public class PostFlights implements Route {
                 LOG.info("New filter applied");
                 this.filter = userFilter;
                 this.paginator.setFilter(userFilter);
+                this.paginator.jumpToPage(0);
             }
 
             int pageIndex = Integer.parseInt(request.queryParams("pageIndex"));
