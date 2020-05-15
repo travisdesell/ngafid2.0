@@ -56,7 +56,6 @@ public class FlightPaginator extends Paginator{
     public void setFilter(Filter filter) throws SQLException{
         this.filter = filter;
         this.setNumFlights();
-        super.jumpToPage(0);
     }
 
 
