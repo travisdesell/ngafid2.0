@@ -94,7 +94,6 @@ public class GetFlights implements Route {
             int fleetId = user.getFleetId();
 
             Connection connection = Database.getConnection();
-
             scopes.put("flights_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection, fleetId)) + "');\n" +
                     "var tailNumbers = JSON.parse('" + gson.toJson(Tails.getAll(connection, fleetId)) + "');\n" +
