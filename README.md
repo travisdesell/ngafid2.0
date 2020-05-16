@@ -91,6 +91,13 @@ PHP script `db/create_tables.php`:
 (lots of output here)
 ```
 
+Now load the event definitions SQL to set up all the exceedence events in the database, filling in the appropriate things:
+
+```
+mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2019_09_25.sql
+```
+
+
 ## 3. Configure the environment
 We need to set up some environmental variables.
 
