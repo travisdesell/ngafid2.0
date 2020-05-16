@@ -94,7 +94,7 @@ PHP script `db/create_tables.php`:
 Now load the event definitions SQL to set up all the exceedence events in the database, filling in the appropriate things:
 
 ```
-mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2019_09_25.sql
+mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2020_05_15.sql
 ```
 
 
