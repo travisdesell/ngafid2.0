@@ -37,7 +37,7 @@ module.exports = {
 
     output: {
         // Farhad: for webpackCesium
-        // sourcePrefix: "",
+        sourcePrefix: "",
         //
         path: __dirname + "/src/main/resources/public/js/",
         filename: "[name]-bundle.js"
