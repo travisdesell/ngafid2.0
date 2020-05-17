@@ -870,6 +870,10 @@ class Flight extends React.Component {
         }
     }
 
+    cesiumClicked() {
+        window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
+    }
+    
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -1082,11 +1086,15 @@ class Flight extends React.Component {
                             </button>
 
                             <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
-                                <i className="fa fa-globe p-1"></i>
+                                <i className="fa fa-map-o p-1"></i>
                             </button>
 
                             <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
                                 <i className="fa fa-area-chart p-1"></i>
+                            </button>
+
+                            <button className={buttonClasses + globeClasses} style={styleButton} onClick={() => this.cesiumClicked()}>
+                                <i className="fa fa-globe p-1"></i>
                             </button>
 
                             <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.replayClicked()}>
