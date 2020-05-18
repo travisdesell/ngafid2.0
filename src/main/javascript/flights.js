@@ -803,8 +803,12 @@ class Flight extends React.Component {
         }));
     }
 
-    downloadClicked() {
-        window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+    downloadClicked(type) {
+        if(type == 'KML'){
+            window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+        }else if (type == "XPL"){
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id);
+        }
     }
 
     exclamationClicked() {
@@ -1093,9 +1097,10 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={lastButtonClasses + globeClasses} style={styleButton} onClick={() => this.downloadClicked()}>
-                                <i className="fa fa-download p-1"></i>
-                            </button>
+                          <DropdownButton className={buttonClasses} id="dropdown-item-button" title="Export" size="sm" variant="success">
+                                <Dropdown.Item onClick={() => this.downloadClicked('KML')}>Export to KML</Dropdown.Item>
+                                <Dropdown.Item onClick={() => this.downloadClicked('XPL')}>Export to X-Plane</Dropdown.Item>
+                            </DropdownButton>
                         </div>
                     </div>
 
