@@ -1,12 +1,12 @@
 package org.ngafid.flights;
 
-import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.ObjectOutputStream;
-import java.io.IOException;
+import java.io.*;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,7 +14,11 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import org.ngafid.filters.Pair;
 
@@ -22,14 +26,13 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
+    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
     private int id = -1;
     private int flightId = -1;
     private String name;
     private String dataType;
-    // private ArrayList<Double> timeSeries;
-    private double[] data;
-    private int size = 0;
+    private ArrayList<Double> timeSeries;
 
     private int length = -1;
     private double min = Double.MAX_VALUE;
@@ -40,7 +43,7 @@ public class DoubleTimeSeries {
     public DoubleTimeSeries(String name, String dataType) {
         this.name = name;
         this.dataType = dataType;
-        this.data = new double[16];
+        timeSeries = new ArrayList<Double>();
 
         min = Double.NaN;
         avg = Double.NaN;
@@ -53,24 +56,22 @@ public class DoubleTimeSeries {
         this.name = name;
         this.dataType = dataType;
 
-        // timeSeries = new ArrayList<Double>();
-        this.data = new double[stringTimeSeries.size()];
+        timeSeries = new ArrayList<Double>();
 
         int emptyValues = 0;
         avg = 0.0;
         validCount = 0;
 
-        for (int i = 0; i < stringTimeSeries.size(); i++) {
-            String currentValue = stringTimeSeries.get(i);
+        for (String currentValue : stringTimeSeries) {
             if (currentValue.length() == 0) {
                 //System.err.println("WARNING: double column '" + name + "' value[" + i + "] is empty.");
-                this.add(Double.NaN);
+                timeSeries.add(Double.NaN);
                 emptyValues++;
                 continue;
             }
-            double currentDouble = Double.parseDouble(stringTimeSeries.get(i));
+            double currentDouble = Double.parseDouble(currentValue);
 
-            this.add(currentDouble);
+            timeSeries.add(currentDouble);
 
             if (Double.isNaN(currentDouble)) continue;
             avg += currentDouble;
@@ -212,7 +213,7 @@ public class DoubleTimeSeries {
             query.close();
             return result;
         } else {
-            //TODO: should probably throw an exception 
+            //TODO: should probably throw an exception
             resultSet.close();
             query.close();
             return null;
@@ -231,64 +232,61 @@ public class DoubleTimeSeries {
         max = resultSet.getDouble(9);
 
         Blob values = resultSet.getBlob(10);
-        byte[] bytes = values.getBytes(1, (int) values.length());
+        byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
 
         System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + length + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
 
-        this.data = new double[ bytes.length / Double.BYTES ];
-        // timeSeries = new ArrayList<Double>();
         try {
-            DataInputStream inputStream = new DataInputStream(new ByteArrayInputStream(bytes));
-            while (inputStream.available() > 0) {
-                double d = inputStream.readDouble();
-                this.add(d);
-                //System.out.print(" " + d);
-            }
-            //System.out.println();
+            Inflater inflater = new Inflater();
+            inflater.setInput(bytes, 0, bytes.length);
+            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(length * Double.BYTES);
+            int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
+            double[] timeSeriesArray = new double[length];
+            timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
+            timeSeries = Arrays.stream(timeSeriesArray)
+                    .boxed()
+                    .collect(Collectors.toCollection(ArrayList::new));
         } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     public String toString() {
-        return "[DoubleTimeSeries '" + name + "' size: " + this.size + ", validCount: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max + "]";
+        return "[DoubleTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max + "]";
     }
 
 
     public void add(double d) {
-        // Need to resize
-        if (this.size == data.length) {
-            // Create a new buffer then copy the data to the new buffer.
-            double[] oldData = this.data;
-            this.data = new double[data.length * 2];
-            System.arraycopy(oldData, 0, this.data, 0, oldData.length);
+        if (Double.isNaN(d)) {
+            timeSeries.add(d);
+            return;
         }
 
-        data[this.size++] = d;
-        this.length = this.size;
-
-        if (Double.isNaN(d))
-            return;
-
         if (validCount == 0) {
+            min = Double.MAX_VALUE;
+            max = -Double.MAX_VALUE;
+            avg = 0;
+
+            timeSeries.add(d);
             avg = d;
             max = d;
             min = d;
             validCount = 1;
         } else {
+            timeSeries.add(d);
+
             if (d > max) max = d;
             if (d < min) min = d;
 
-            avg =   avg * ((double) validCount / (double) (validCount + 1))
-                    + (d / (double) (validCount + 1));
+            avg = avg * ((double)validCount / (double)(validCount + 1)) + (d / (double)(validCount + 1));
 
             validCount++;
         }
     }
 
     public double get(int i) {
-        return data[i];
+        return timeSeries.get(i);
     }
 
     public String getDataType() {
@@ -296,28 +294,11 @@ public class DoubleTimeSeries {
     }
 
     public int size() {
-        return this.size;
+        return timeSeries.size();
     }
 
     public int validCount() {
         return validCount;
-    }
-
-    public double[] innerArray() {
-        // double[] data = new double[this.size];
-        // System.arraycopy(this.data, 0, data, 0, this.size);
-        // This line can be used if arraycopy doesn't work for some reason
-        // for (int i = 0; i < this.size(); i ++) data[i] = this.get(i);
-        return data;
-    }
-
-    // including index from, up until (excluding)
-    // if from == to, we assume from was supposed to be from + 1
-    public double[] sliceCopy(int from, int to) {
-        if (from == to) to += 1;
-        double[] slice = new double[to - from];
-        System.arraycopy(this.data, from, slice, 0, slice.length);
-        return slice;
     }
 
     public void updateDatabase(Connection connection, int flightId) {
@@ -330,8 +311,7 @@ public class DoubleTimeSeries {
             preparedStatement.setString(2, name);
             preparedStatement.setString(3, dataType);
 
-            //preparedStatement.setInt(4, timeSeries.size());
-            preparedStatement.setInt(4, this.size);
+            preparedStatement.setInt(4, timeSeries.size());
             preparedStatement.setInt(5, validCount);
 
             if (Double.isNaN(min)) {
@@ -352,15 +332,44 @@ public class DoubleTimeSeries {
                 preparedStatement.setDouble(8, max);
             }
 
-            ByteBuffer byteBuffer = ByteBuffer.allocate(this.size * 8);
-            for (int i = 0; i < this.size; i++) {
-                byteBuffer.putDouble(data[i]);
+            // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
+            // is a list of objects rather than a list of primitives - it consumes much more memory.
+            // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
+            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(timeSeries.size() * Double.BYTES);
+            for (Double d : timeSeries) {
+                timeSeriesBytes.putDouble(d);
             }
-            byte[] byteArray = byteBuffer.array();
 
-            System.err.println(preparedStatement);
+            // Hopefully this is enough memory. It should be enough.
+            int bufferSize = timeSeriesBytes.capacity() + 256;
+            ByteBuffer compressedTimeSeries;
 
-            Blob seriesBlob = new SerialBlob(byteArray);
+            // This is probably super overkill but it won't hurt?
+            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
+            // allocate more memory.
+            // I don't think it should happen unless the time series unless the compressed data is larger than the
+            // raw data, which should never happen.
+            int compressedDataLength;
+
+            for (;;) {
+                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
+                try {
+                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
+                    deflater.setInput(timeSeriesBytes.array());
+                    deflater.finish();
+                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
+                    deflater.end();
+                    break;
+                } catch (BufferOverflowException _boe) {
+                    bufferSize *= 2;
+                }
+            }
+
+            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
+            // we don't know what the compressed data size until after it is done being compressed
+            byte[] blobBytes = new byte[compressedDataLength];
+            compressedTimeSeries.get(blobBytes);
+            Blob seriesBlob = new SerialBlob(blobBytes);
 
             preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();

@@ -49,7 +49,7 @@ public class PostUploadDetails implements Route {
         try {
             UploadDetails uploadDetails = new UploadDetails(uploadId);
 
-            //System.out.println(gson.toJson(uploadDetails));
+            System.out.println(gson.toJson(uploadDetails));
             //LOG.info(gson.toJson(uploadDetails));
 
             return gson.toJson(uploadDetails);
