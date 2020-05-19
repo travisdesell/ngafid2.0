@@ -1,6 +1,7 @@
 package org.ngafid.flights;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
@@ -261,8 +262,8 @@ public class TurnToFinal {
         double[] lat = latTimeSeries.innerArray();
         double[] lon = lonTimeSeries.innerArray();
         double[] altitude = altTimeSeries.innerArray();
-        double[] roll = rollTimeSeries.innerArray();
-        double[] velocity = velocityTimeSeries.innerArray();
+        // double[] roll = rollTimeSeries.innerArray();
+        // double[] velocity = velocityTimeSeries.innerArray();
         assert lat.length == lon.length;
 
         ArrayList<Itinerary> itineraries = Itinerary.getItinerary(connection, flightId);
@@ -316,7 +317,7 @@ public class TurnToFinal {
     }
 
     public JsonElement jsonify() {
-        Gson gson = new Gson();
+        Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
         System.out.println(selfDefinedGlideAngle);
         return gson.toJsonTree(Map.of(
                 PARAM_JSON_LOC_EXC, gson.toJson(this.locExceedences),

@@ -75,7 +75,7 @@ public class Flight {
     private int numberRows;
     private String fileInformation;
     private ArrayList<String> dataTypes;
-    private ArrayList<String> headers;
+    public ArrayList<String> headers;
 
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
@@ -113,8 +113,11 @@ public class Flight {
     public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
         System.out.println("Start date = " + startDate);
         System.out.println("End date = " + endDate);
-        String extraCondition = "id >= 0";
-        return getFlights(connection, extraCondition);
+        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
+                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
+        List<Flight> flights = getFlights(connection, extraCondition);
+        System.out.println("Number flights = " + flights.size());
+        return flights;
     }
 
     public void remove(Connection connection) throws SQLException {

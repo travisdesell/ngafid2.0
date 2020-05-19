@@ -34,7 +34,7 @@ public class GetTurnToFinal implements Route {
     public GetTurnToFinal(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
     @Override
