@@ -166,10 +166,12 @@ public final class WebServer {
         Spark.get("/protected/imports", new GetImports(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
 
-        //Spark.post("/protected/get_uploads", new PostUploads(gson));
-        //Spark.post("/protected/get_imports", new PostImports(gson));
+        Spark.post("/protected/uploads", new PostUploads(gson));
+        Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
+        //add the pagination route
+        //Spark.post("/protected/get_page", new PostFlightPage(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
         Spark.get("/protected/ttf", new GetTurnToFinal(gson));
 
@@ -178,6 +180,9 @@ public final class WebServer {
 
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
+        // Cesium related routes
+        Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
+        
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
 

@@ -10,6 +10,28 @@ Install mysql on your system. For ubuntu:
 ```
 ~/ $ sudo apt install mysql-server
 ```
+### NOTE: On some Linux disributions, such as RHEL, SUSE and Arch, the mysql package is provided by mariadb.
+In this case you will need to run (on openSUSE):
+```
+~/ $ sudo zypper in mariadb
+```
+or, for arch:
+```
+~/ $ sudo pacman -S mariadb
+```
+and Fedora, RedHat/CentOS:
+```
+~/ $ sudo dnf install mariadb mariadb-server 
+```
+You will also need to run
+```
+~/ $ sudo mysql_install_db --user=mysql --ldata=/var/lib/mysql
+```
+and
+```
+~/ $ sudo systemctl enable --now mariadb
+```
+**the systemd service name may vary depending on your distro.
 
 Next we'll create the database in mysql:
 ```
@@ -68,6 +90,13 @@ PHP script `db/create_tables.php`:
 ~/ngafid2.0 $ php db/create_tables.php
 (lots of output here)
 ```
+
+Now load the event definitions SQL to set up all the exceedence events in the database, filling in the appropriate things:
+
+```
+mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2019_09_25.sql
+```
+
 
 ## 3. Configure the environment
 We need to set up some environmental variables.

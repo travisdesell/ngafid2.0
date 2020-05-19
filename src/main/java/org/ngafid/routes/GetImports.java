@@ -20,6 +20,7 @@ import spark.Request;
 import spark.Response;
 import spark.Session;
 
+import org.ngafid.common.*;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -33,6 +34,7 @@ import com.github.mustachejava.MustacheFactory;
 public class GetImports implements Route {
     private static final Logger LOG = Logger.getLogger(GetImports.class.getName());
     private Gson gson;
+    private Paginator paginator;
 
     private static class Message {
         String type;
@@ -84,9 +86,12 @@ public class GetImports implements Route {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
+            this.paginator = new ImportPaginator(10, fleetId);
+            scopes.put("numPages_js", "var numPages = " + gson.toJson(this.paginator.currentPage().size()) + ";");
+            scopes.put("index_js", "var index = " + gson.toJson(this.paginator.currentPage().index()) + ";");
 
             try {
-                scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"})) + "');");
+                scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(this.paginator.currentPage().getData()) + "');");
 
             } catch (SQLException e) {
                 return gson.toJson(new ErrorResponse(e));
@@ -96,7 +101,7 @@ public class GetImports implements Route {
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.severe(e.toString());
         }
 

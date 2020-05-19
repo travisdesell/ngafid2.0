@@ -21,6 +21,7 @@ import spark.Response;
 import spark.Session;
 
 import org.ngafid.Database;
+import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
@@ -33,6 +34,7 @@ import com.github.mustachejava.MustacheFactory;
 public class GetUploads implements Route {
     private static final Logger LOG = Logger.getLogger(GetUploads.class.getName());
     private Gson gson;
+    private Paginator paginator;
 
     private static class Message {
         String type;
@@ -96,9 +98,14 @@ public class GetUploads implements Route {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
+            this.paginator = new ImportPaginator(10, fleetId);
+            scopes.put("numPages_js", "var numPages = " + gson.toJson(this.paginator.currentPage().size()) + ";");
+            scopes.put("index_js", "var index = " + gson.toJson(this.paginator.currentPage().index()) + ";");
+            this.paginator.jumpToPage(0);
+            System.out.println(this.paginator.currentPage());
 
             try {
-                StringBuilder uploadsJson = new StringBuilder(gson.toJson(Upload.getUploads(Database.getConnection(), fleetId)));
+                StringBuilder uploadsJson = new StringBuilder(gson.toJson(this.paginator.currentPage().getData()));
 
                 //replace uploading with upload incomplete so that the javascript knows we can restart this
                 //upload
@@ -113,7 +120,7 @@ public class GetUploads implements Route {
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
 
-        } catch (IOException e) {
+        } catch (Exception e) {
             LOG.severe(e.toString());
         }
 
