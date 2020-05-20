@@ -588,7 +588,7 @@ class Events extends React.Component  {
             })
         });
 
-        var hiddenStyle = new Style({                                                  // create style getter methods**
+        var hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
                 width: 1.5
@@ -604,26 +604,22 @@ class Events extends React.Component  {
 
         // get right layer
         let layers = map.getLayers();
-        for (let l = 0; l < layers.array_.length; l++) {                                       // ITERATE THRU EACH LAYER***
+        for (let l = layers.array_.length - 1; l >= 0; l--) {                          // Iterate through each layer
             let layer = layers.array_[l];
-            if (layer instanceof VectorLayer) {
-                if (layer.flightState.props.flightInfo.id == event.flightId) {      // roundabout way to get the right flight***
-                    if ('eventPoints' in layer.flightState.state){
-                        if (typeof layer.flightState.state.eventPoints !== 'undefined'){
-                            let eventMapped = layer.flightState.state.eventsMapped[index];
-                            let event = layer.flightState.state.eventsPoints[index];
+            if (layer instanceof VectorLayer && layer.flightState.props.flightInfo.id == event.flightId) {              // roundabout way to get the right flight***
+                let eventMapped = layer.flightState.state.eventsMapped[index];
+                let eventPoints = layer.flightState.state.eventPoints;
+                let event = eventPoints[index];
 
-                            //toggle eventLayer style
-                            if (!eventMapped) {                             // if event hidden
-                                event.setStyle(eventStyle);
-                                eventMapped = !eventMapped;
-                            } else {                                        // if event displayed
-                                event.setStyle(hiddenStyle);
-                                eventMapped = !eventMapped;
-                            }
-                        }
-                    }
+                //toggle eventLayer style
+                if (!eventMapped) {                             // if event hidden
+                    event.setStyle(eventStyle);
+                    layer.flightState.state.eventsMapped[index] = !eventMapped;
+                } else {                                        // if event displayed
+                    event.setStyle(hiddenStyle);
+                    layer.flightState.state.eventsMapped[index] = !eventMapped;
                 }
+                break;
             }
         }
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -923,12 +919,13 @@ class Flight extends React.Component {
 
                         // Create Feature for event
                         if (!thisFlight.state.mapLoaded){              // if points (coordinates) have not been fetched
-                            // create eventPoint with placeholder points
+                            // create eventPoint with placeholder coordinates
                             eventPoint = new Feature({
                                 geometry : new Point( [0,0] ),
                                 name: 'EventPoint'
                             });
                         } else {
+                            // create eventPoint with preloaded coordinates
                             points = thisFlight.state.points;
                             eventPoint = new Feature({
                                 geometry : new Point( points[event.startLine] ),      // set location of icon***
@@ -945,15 +942,15 @@ class Flight extends React.Component {
                     thisFlight.state.eventLayer = new VectorLayer({
                         style: new Style({
                             stroke: new Stroke({
-                                color: color,
+                                color: [1,1,1,1],
                                 width: 1.5
                             }),
                             image: new Circle({
                                 radius: 5,
                                 //fill: new Fill({color: [0, 0, 0, 255]}),
                                 stroke: new Stroke({
-                                    color: [0, 0, 0, 0],
-                                    width: 2
+                                    color: [0,0,0,0],
+                                    width: 3
                                 })
                             })
                         }),
@@ -962,6 +959,9 @@ class Flight extends React.Component {
                             features: thisFlight.state.eventPoints
                         })
                     });
+
+                    thisFlight.state.eventLayer.flightState = thisFlight;
+                    thisFlight.state.eventLayer.setVisible(true);
 
                     map.addLayer(thisFlight.state.eventLayer);
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1098,6 +1098,11 @@ class Flight extends React.Component {
             this.state.pathVisible = !this.state.pathVisible;
             this.state.itineraryVisible = !this.state.itineraryVisible;
             this.state.layer.setVisible(this.state.pathVisible);
+
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////
+            // toggle visibility of events
+            this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+            ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             if (this.state.pathVisibile) {
                 flightsCard.showMap();
