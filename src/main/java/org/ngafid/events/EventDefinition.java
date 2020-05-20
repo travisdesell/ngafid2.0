@@ -124,7 +124,15 @@ public class EventDefinition {
         this.startBuffer = resultSet.getInt(4);
         this.stopBuffer = resultSet.getInt(5);
         this.airframeId = resultSet.getInt(6);
+        try {
         this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+        } catch (Exception e) {
+            System.err.println("Error with filter: " + e);
+            System.err.println(resultSet.getString(7));
+
+            e.printStackTrace();
+            System.exit(1);
+        }
         this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
         this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         this.severityType = resultSet.getString(10);
