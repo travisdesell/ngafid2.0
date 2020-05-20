@@ -364,6 +364,13 @@ public class Flight {
         return fleetId;
     }
 
+    public String getAirframeType(){
+        return this.airframeType;
+    }
+
+    public String getTailNumber(){
+        return this.tailNumber;
+    }
 
     public String getFilename() {
         return filename;

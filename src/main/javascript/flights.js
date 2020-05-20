@@ -1044,6 +1044,10 @@ class Flight extends React.Component {
                 );
         }
 
+        let dropDownLinkStyle = {
+            color: 'white'
+        };
+
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
@@ -1097,7 +1101,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                          <DropdownButton className={buttonClasses} id="dropdown-item-button" title="Export" size="sm" variant="success">
+                          <DropdownButton className={buttonClasses} id="dropdown-item-button" title="Export" size="sm" style={styleButton} variant="secondary">
                                 <Dropdown.Item onClick={() => this.downloadClicked('KML')}>Export to KML</Dropdown.Item>
                                 <Dropdown.Item onClick={() => this.downloadClicked('XPL')}>Export to X-Plane</Dropdown.Item>
                             </DropdownButton>
@@ -1114,7 +1118,6 @@ class Flight extends React.Component {
         );
     }
 }
-
 
 class FlightsCard extends React.Component {
     constructor(props) {
