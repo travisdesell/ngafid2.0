@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1, maximum-scale=1, minimum-scale=1, user-scalable=no">
+    <title>NGAFID-Cesium Display</title>
+
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css"
+        integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
+    <link rel='stylesheet' href='/css/main.css'>
+    <link rel='stylesheet' href='/css/font-awesome.min.css'>
+    <link rel='stylesheet' href='/css/cesiumStyle.css'>
+    
+    <script>
+        var plotMapHidden = true;
+        {{{navbar_js}}}
+        {{{events_js}}}
+    </script>
+
+    <style>
+        /* @import url(../Build/Cesium/Widgets/widgets.css); */
+        /* @import url(/javascript/cesium/Build/Cesium/Widgets/widgets.css); */
+        /* Cesium my custom display */
+        html,
+        body,
+        #cesiumContainer {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* font-family: sans-serif;
+                background: #000; */
+        }
+    </style>
+
+    <!-- Cesium css file -->
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Cesium container load here -->
+    <div id="cesiumContainer"></div>
+
+    <script>
+        // Access Cesium Ion Token here
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
+
+        // Creates the Viewer 
+        var viewer = new Cesium.Viewer('cesiumContainer', {
+            terrainProvider: Cesium.createWorldTerrain(),
+            scene3DOnly: true,
+            selectionIndicator: false,
+            baseLayerPicker: false
+        });
+
+        var arrCoord = {{ geoFlightInfo }};
+        var flightLoad = viewer.entities.add({
+            name: 'NGAFID-CESIUM 3D Flight Reanimation',
+            wall: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoord),
+                material: Cesium.Color.YELLOW.withAlpha(0.8),
+                outline: true,
+                outlineColor: Cesium.Color.BLACK.withAlpha(0.3),
+                outlineWidth: 0.4,
+                cornerType: Cesium.CornerType.BEVELED,
+            }
+        });
+
+        viewer.zoomTo(viewer.entities);
+        var scene = viewer.scene;
+        var skyAtmosphere = scene.skyAtmosphere;
+        var globe = scene.globe;
+
+        var viewModel = {
+            hueShift: 0.0,
+            saturationShift: 0.0,
+            brightnessShift: 0.0
+        };
+
+        // Convert view into  observables model 
+        Cesium.knockout.track(viewModel);
+        // Model bind to the DOM elements 
+        var toolbar = document.getElementById('toolbar');
+        Cesium.knockout.applyBindings(viewModel, toolbar);
+
+        // Make globe view to 3D skyAtmosphere with HSB parameters. This can be use in ngafid flight on different altitutes
+        function subscribeParameter(name, globeName) {
+            Cesium.knockout.getObservable(viewModel, name).subscribe(
+                function (newValue) {
+                    skyAtmosphere[name] = newValue;
+                    globe[globeName] = newValue;
+                }
+            );
+        }
+        subscribeParameter('hueShift', 'atmosphereHueShift');
+        subscribeParameter('saturationShift', 'atmosphereSaturationShift');
+        subscribeParameter('brightnessShift', 'atmosphereBrightnessShift');
+
+        // cesium default globe layer removed for better view
+        viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+        // Added world asset with globe ID for better sentinel imagery view
+        viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
+    </script>
+
+    <script src="/js/ngafid_cesium-bundle.js"></script>
+
+</body>
+
+</html>
