@@ -148,7 +148,13 @@ Then run:
 ~/ngafid2.0 $ npm install
 ```
 
-This will download the javascript dependencies. Then, in order to compile the javascript
+This will download the javascript dependencies. 
+
+We also need to install React Bootstrap to use the bootstrap css libraries:
+```
+~/ngafid2.0 $ npm install react-bootstrap bootstrap
+```
+Then, in order to compile the javascript
 and automatically recompile whenever you change one of the files:
 ```
 ~/ngafid2.0 $ npm run watch
