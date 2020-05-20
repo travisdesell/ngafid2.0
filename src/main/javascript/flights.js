@@ -577,28 +577,14 @@ class Events extends React.Component  {
         var eventStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
-                width: 1.5
-            }),
-            image: new Circle({
-                radius: 5,
-                stroke: new Stroke({
-                    color: event.color,
-                    width: 2
-                })
+                width: 5
             })
         });
 
         var hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
-                width: 1.5
-            }),
-            image: new Circle({
-                radius: 5,
-                stroke: new Stroke({
-                    color: [0,0,0,0],
-                    width: 2
-                })
+                width: 5
             })
         });
 
@@ -921,16 +907,16 @@ class Flight extends React.Component {
                         if (!thisFlight.state.mapLoaded){              // if points (coordinates) have not been fetched
                             // create eventPoint with placeholder coordinates
                             eventPoint = new Feature({
-                                geometry : new Point( [0,0] ),
-                                name: 'EventPoint'
+                                geometry : new LineString( [0,0] ),
+                                name: 'Event'
                             });
                         } else {
                             // create eventPoint with preloaded coordinates
                             points = thisFlight.state.points;
                             eventPoint = new Feature({
-                                geometry : new Point( points[event.startLine] ),      // set location of icon***
-                                name: 'EventPoint'
-                            });
+                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 1)),
+                                 name: 'Event'
+                             });
                         }
 
                         // add eventPoint to flight
@@ -942,16 +928,8 @@ class Flight extends React.Component {
                     thisFlight.state.eventLayer = new VectorLayer({
                         style: new Style({
                             stroke: new Stroke({
-                                color: [1,1,1,1],
-                                width: 1.5
-                            }),
-                            image: new Circle({
-                                radius: 5,
-                                //fill: new Fill({color: [0, 0, 0, 255]}),
-                                stroke: new Stroke({
-                                    color: [0,0,0,0],
-                                    width: 3
-                                })
+                                color: [0,0,0,0],
+                                width: 8
                             })
                         }),
 
@@ -1028,7 +1006,8 @@ class Flight extends React.Component {
                         events = thisFlight.state.events;
                         eventPoints = thisFlight.state.eventPoints;
                         for (let i = 0; i < events.length; i++){
-                            eventPoints[i].getGeometry().setCoordinates(points[events[i].startLine]);        // set coordinates of eventPoint Features
+                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine));
+                            eventPoints[i].setGeometry(line);                                   // set geometry of eventPoint Features
                         }
                     }
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
