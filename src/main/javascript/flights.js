@@ -504,7 +504,7 @@ class TraceButtons extends React.Component {
     }
 }
 
-class Events extends React.Component {
+class Events extends React.Component  {
     constructor(props) {
         super(props);
 
@@ -527,7 +527,8 @@ class Events extends React.Component {
     }
 
     updateEventDisplay(index, toggle) {
-        let event = this.state.events[index];
+            // Draw rectangles on plot
+        var event = this.state.events[index];
         console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
         let shapes = plotlyLayout.shapes;
 
@@ -567,6 +568,65 @@ class Events extends React.Component {
         }
 
         Plotly.relayout('plot', plotlyLayout);
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // Toggle visibility of clicked event's VectorLayer
+
+        // create eventStyle & hiddenStyle
+        var eventStyle = new Style({                                                   // create style getter methods**
+            stroke: new Stroke({
+                color: event.color,
+                width: 1.5
+            }),
+            image: new Circle({
+                radius: 5,
+                stroke: new Stroke({
+                    color: event.color,
+                    width: 2
+                })
+            })
+        });
+
+        var hiddenStyle = new Style({                                                  // create style getter methods**
+            stroke: new Stroke({
+                color: [0,0,0,0],
+                width: 1.5
+            }),
+            image: new Circle({
+                radius: 5,
+                stroke: new Stroke({
+                    color: [0,0,0,0],
+                    width: 2
+                })
+            })
+        });
+
+        // get right layer
+        let layers = map.getLayers();
+        for (let l = 0; l < layers.array_.length; l++) {                                       // ITERATE THRU EACH LAYER***
+            let layer = layers.array_[l];
+            if (layer instanceof VectorLayer) {
+                if (layer.flightState.props.flightInfo.id == event.flightId) {      // roundabout way to get the right flight***
+                    if ('eventPoints' in layer.flightState.state){
+                        if (typeof layer.flightState.state.eventPoints !== 'undefined'){
+                            let eventMapped = layer.flightState.state.eventsMapped[index];
+                            let event = layer.flightState.state.eventsPoints[index];
+
+                            //toggle eventLayer style
+                            if (!eventMapped) {                             // if event hidden
+                                event.setStyle(eventStyle);
+                                eventMapped = !eventMapped;
+                            } else {                                        // if event displayed
+                                event.setStyle(hiddenStyle);
+                                eventMapped = !eventMapped;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
     changeColor(e, index) {
@@ -638,7 +698,11 @@ class Flight extends React.Component {
             eventsVisible : false,
             itineraryVisible : false,
             layer : null,
-            color : color
+            color : color,
+
+            eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
+            eventPoints : [],                               // list of event Features
+            eventLayer : null
         }
     }
 
@@ -837,7 +901,7 @@ class Flight extends React.Component {
                         eventDefinitionsLoaded = true;
                     }
 
-                    let events = response.events;
+                    var events = response.events;
                     for (let i = 0; i < events.length; i++) {
                         for (let j = 0; j < eventDefinitions.length; j++) {
 
@@ -850,13 +914,65 @@ class Flight extends React.Component {
                     }
                     thisFlight.state.events = events;
 
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    // create list of event Features to display on map
+                    for (let i = 0; i < events.length; i++) {
+                        var points;
+                        var eventPoint;
+                        let event = events[i];
+
+                        // Create Feature for event
+                        if (!thisFlight.state.mapLoaded){              // if points (coordinates) have not been fetched
+                            // create eventPoint with placeholder points
+                            eventPoint = new Feature({
+                                geometry : new Point( [0,0] ),
+                                name: 'EventPoint'
+                            });
+                        } else {
+                            points = thisFlight.state.points;
+                            eventPoint = new Feature({
+                                geometry : new Point( points[event.startLine] ),      // set location of icon***
+                                name: 'EventPoint'
+                            });
+                        }
+
+                        // add eventPoint to flight
+                        thisFlight.state.eventsMapped.push(false);
+                        thisFlight.state.eventPoints.push(eventPoint);
+                    }
+
+                    // create eventLayer & add eventPoints
+                    thisFlight.state.eventLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: color,
+                                width: 1.5
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                //fill: new Fill({color: [0, 0, 0, 255]}),
+                                stroke: new Stroke({
+                                    color: [0, 0, 0, 0],
+                                    width: 2
+                                })
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: thisFlight.state.eventPoints
+                        })
+                    });
+
+                    map.addLayer(thisFlight.state.eventLayer);
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+
                     thisFlight.setState(thisFlight.state);
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
-                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                    errorModal.show("Error Loading Flight Events", errorThrown);
                 },   
                 async: true 
             });  
@@ -904,6 +1020,18 @@ class Flight extends React.Component {
                         var point = fromLonLat(coordinates[i]);
                         points.push(point);
                     }
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    // adding coordinates to events, if needed
+                    var events = [];
+                    var eventPoints = [];
+                    if (thisFlight.state.eventsLoaded){
+                        events = thisFlight.state.events;
+                        eventPoints = thisFlight.state.eventPoints;
+                        for (let i = 0; i < events.length; i++){
+                            eventPoints[i].getGeometry().setCoordinates(points[events[i].startLine]);        // set coordinates of eventPoint Features
+                        }
+                    }
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     var color = thisFlight.state.color;
                     console.log(color);
