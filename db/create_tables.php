@@ -8,9 +8,17 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
 
+//need to drop and reload these tables for 2020_05_16 changes
+
+query_ngafid_db("DROP TABLE itinerary");
+query_ngafid_db("DROP TABLE double_series");
+query_ngafid_db("DROP TABLE string_series");
 query_ngafid_db("DROP TABLE flight_processed");
-query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE event_statistics");
+query_ngafid_db("DROP TABLE events");
+query_ngafid_db("DROP TABLE flights");
+query_ngafid_db("DROP TABLE tails");
+
 
 if ($drop_tables) {
     query_ngafid_db("DROP TABLE events");
@@ -117,26 +125,42 @@ $query = "CREATE TABLE `fleet_airframes` (
 query_ngafid_db($query);
 
 
-
 $query = "CREATE TABLE `tails` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `system_id` VARCHAR(16) NOT NULL,
     `fleet_id` INT(11) NOT NULL,
     `tail` VARCHAR(16),
+    `confirmed` TINYINT(1) NOT NULL,
 
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`fleet_id`, `tail`),
+    PRIMARY KEY(`system_id`),
+    UNIQUE KEY(`fleet_id`, `system_id`),
     INDEX(`fleet_id`),
+    INDEX(`tail`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+
+$query = "CREATE TABLE `flight_tags` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11) NOT NULL,
+    `name` VARCHAR(128) NOT NULL,
+    `color` VARCHAR(8) NOT NULL,
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`fleet_id`, `name`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 
 $query = "CREATE TABLE `flights` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
     `uploader_id` INT(11) NOT NULL,
     `upload_id` INT(11) NOT NULL,
-    `tail_id` INT(11) NOT NULL,
+    `system_id` VARCHAR(16) NOT NULL,
     `airframe_id` INT(11) NOT NULL,
     `start_time` DATETIME,
     `end_time` DATETIME,
@@ -148,19 +172,21 @@ $query = "CREATE TABLE `flights` (
     `has_agl` TINYINT(1) NOT NULL,
     `events_calculated` INT(1) NOT NULL DEFAULT 0,
     `insert_completed` INT(1) NOT NULL DEFAULT 0,
+    `tag_id` INT(11) DEFAULT NULL,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`fleet_id`, `md5_hash`),
     INDEX(`fleet_id`),
     INDEX(`uploader_id`),
-    INDEX(`tail_id`),
+    INDEX(`system_id`),
     INDEX(`airframe_id`),
     INDEX(`start_time`),
     INDEX(`end_time`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
+    FOREIGN KEY(`tag_id`) REFERENCES flight_tags(`id`),
     FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
     FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
-    FOREIGN KEY(`tail_id`) REFERENCES tails(`id`)
+    FOREIGN KEY(`system_id`) REFERENCES tails(`system_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);

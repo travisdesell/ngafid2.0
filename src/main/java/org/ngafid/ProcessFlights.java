@@ -156,6 +156,8 @@ public class ProcessFlights {
                         FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
                     }
 
+                    //TURN OFF FOR REGULAR USE
+                    //System.exit(1);
                 }
                 resultSet.close();
                 uploadsPreparedStatement.close();
