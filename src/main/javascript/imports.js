@@ -481,16 +481,32 @@ class ImportsCard extends React.Component {
             imports = this.state.imports;
         }
 
-        var begin = this.state.page == 0;
-        var end = this.state.page == this.state.numPages-1;
         var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
         var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+        var dropdownToggle = <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">{"Page " + (this.state.page + 1)} </Dropdown.Toggle>
+        var buffSizeSelector = <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
+                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
+                                </DropdownButton>
 
-        if(begin) {
+        if(this.state.page == 0 || this.state.numPages == 0) {
             prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
         }
-        if(end){
+        if(this.state.page == this.state.numPages-1 || this.state.numPages == 0){
             next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+        }
+
+        var pageStat;
+
+        if(this.state.numPages > 0){
+            pageStat = "Page: "+(this.state.page + 1)+" of "+(this.state.numPages);
+        }else{
+            pageStat = "No imports yet!";
+            dropdownToggle = <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm" disabled>No imports here yet!</Dropdown.Toggle>
+            buffSizeSelector = <DropdownButton id="dropdown-item-button" title="Number of imports per page" size="sm" disabled></DropdownButton>
         }
 
         return (
@@ -499,17 +515,9 @@ class ImportsCard extends React.Component {
                  <div class="card mb-1 m-1 border-secondary">
                     <div class="p-2">
                         <div class="btn-group mr-1" role="group" aria-label="First group">
-                            <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
-                            </DropdownButton>
+                            {buffSizeSelector}
                             <Dropdown>
-                            <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                                {"Page " + (this.state.page + 1)}
-                            </Dropdown.Toggle>
+                            {dropdownToggle}
                             <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
                                 {
                                     pages.map((pages, index) => {
@@ -539,7 +547,7 @@ class ImportsCard extends React.Component {
                                 {prev}
                                 {next}
                                 </div>
-                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
+                            <div class="p-1">{pageStat}</div>
                         </div>
                     </div>
                 </div>
