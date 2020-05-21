@@ -309,6 +309,13 @@ var rules = [
 
 ];
 
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+var eventColorScheme = {};
+for (let d = 0; d < 45; d++){
+    eventColorScheme[d] = Colors.randomValue();
+}
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Itinerary extends React.Component {
     constructor(props) {
@@ -517,7 +524,9 @@ class Events extends React.Component  {
             if (!definitionsPresent.includes(props.events[i].eventDefinition)) {
                 definitionsPresent.push(props.events[i].eventDefinition);
             }
-            props.events[i].color = Colors.randomValue();
+
+            // assign color scheme to events, based on definition ID
+            props.events[i].color = eventColorScheme[props.events[i].eventDefinitionId];
         }
 
         this.state = {
