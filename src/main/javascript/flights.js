@@ -941,7 +941,10 @@ class Flight extends React.Component {
                     thisFlight.state.eventLayer.flightState = thisFlight;
                     thisFlight.state.eventLayer.setVisible(true);
 
-                    map.addLayer(thisFlight.state.eventLayer);
+                    // add to map only if flightPath loaded
+                    if (thisFlight.state.mapLoaded){
+                        map.addLayer(thisFlight.state.eventLayer);
+                    }
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     thisFlight.setState(thisFlight.state);
@@ -998,19 +1001,6 @@ class Flight extends React.Component {
                         var point = fromLonLat(coordinates[i]);
                         points.push(point);
                     }
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
-                    // adding coordinates to events, if needed
-                    var events = [];
-                    var eventPoints = [];
-                    if (thisFlight.state.eventsLoaded){
-                        events = thisFlight.state.events;
-                        eventPoints = thisFlight.state.eventPoints;
-                        for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine));
-                            eventPoints[i].setGeometry(line);                                   // set geometry of eventPoint Features
-                        }
-                    }
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     var color = thisFlight.state.color;
                     console.log(color);
@@ -1057,6 +1047,24 @@ class Flight extends React.Component {
                     thisFlight.state.points = points;
 
                     map.addLayer(thisFlight.state.layer);
+
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    // adding coordinates to events, if needed
+                    var events = [];
+                    var eventPoints = [];
+                    if (thisFlight.state.eventsLoaded){
+                        events = thisFlight.state.events;
+                        eventPoints = thisFlight.state.eventPoints;
+                        for (let i = 0; i < events.length; i++){
+                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine));
+                            eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
+                        }
+
+                        // add eventLayer to front of map
+                        let eventLayer = thisFlight.state.eventLayer;
+                        map.addLayer(eventLayer);
+                    }
+                    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     let extent = thisFlight.state.layer.getSource().getExtent();
                     console.log(extent);
