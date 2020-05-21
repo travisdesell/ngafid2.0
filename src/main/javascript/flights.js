@@ -1056,7 +1056,7 @@ class Flight extends React.Component {
                         events = thisFlight.state.events;
                         eventPoints = thisFlight.state.eventPoints;
                         for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine));
+                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 1));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
                         }
 
