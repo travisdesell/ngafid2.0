@@ -598,8 +598,6 @@ class UploadsCard extends React.Component {
             pageStat = "Page: "+(this.state.page + 1)+" of "+(this.state.numPages);
         }else{
             pageStat = "No uploads yet!";
-            dropdownToggle = <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm" disabled>No uploads here yet!</Dropdown.Toggle>
-            buffSizeSelector = <DropdownButton id="dropdown-item-button" title="Number of uploads per page" size="sm" disabled></DropdownButton>
         }
 
         return (
@@ -607,7 +605,7 @@ class UploadsCard extends React.Component {
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
                     <div class="card mb-1 m-1 border-secondary">
                         <div class="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStat}</button>
                             <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
                                 <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
@@ -650,7 +648,7 @@ class UploadsCard extends React.Component {
                     }
                     <div class="card mb-1 m-1 border-secondary">
                         <div class="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStat}</button>
                             <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                 {prev}
                                 {next}
