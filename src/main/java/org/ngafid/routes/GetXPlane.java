@@ -1,3 +1,7 @@
+/**
+ * Generates flies for xplane animations
+ * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
+ */
 package org.ngafid.routes;
 
 import java.io.IOException;
@@ -42,6 +46,10 @@ public class GetXPlane implements Route {
     private static final Logger LOG = Logger.getLogger(GetXPlane.class.getName());
     private Gson gson;
 
+    /**
+     * Constructor
+     * @param gson the gson object for JSON conversions
+     */
     public GetXPlane(Gson gson) {
         this.gson = gson;
 
@@ -63,6 +71,9 @@ public class GetXPlane implements Route {
         return sb.toString();
     }
 
+    /**
+     * {inheritDoc}
+     */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
