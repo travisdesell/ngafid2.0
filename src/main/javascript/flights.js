@@ -1440,14 +1440,14 @@ class FlightsCard extends React.Component {
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
                                 <div class="btn-group mr-1" role="group" aria-label="First group">
-                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
+                                    <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 flights per page</Dropdown.Item>
                                     </DropdownButton>
-                                  <Dropdown>
+                                  <Dropdown className="pr-1">
                                     <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
                                         {"Page " + (this.state.page + 1)}
                                     </Dropdown.Toggle>
