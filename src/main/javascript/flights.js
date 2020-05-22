@@ -1439,7 +1439,8 @@ class FlightsCard extends React.Component {
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
-                                <div class="btn-group mr-1" role="group" aria-label="First group">
+                                <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                                <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
                                     <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
@@ -1478,11 +1479,11 @@ class FlightsCard extends React.Component {
                         }
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
-                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                                <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                     {prev}
                                     {next}
                                 </div>
-                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
                         </div>
                     </div>
 
