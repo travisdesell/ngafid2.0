@@ -533,13 +533,13 @@ class ImportsCard extends React.Component {
                             );
                         })
                     }
-                </div>
-                <div class="card mb-1 m-1 border-secondary">
-                    <div class="p-2">
-                        <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                        <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
-                            {prev}
-                            {next}
+                    <div class="card mb-1 m-1 border-secondary">
+                        <div class="p-2">
+                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
+                                {prev}
+                                {next}
+                            </div>
                         </div>
                     </div>
                 </div>
