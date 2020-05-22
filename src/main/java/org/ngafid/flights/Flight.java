@@ -54,7 +54,12 @@ public class Flight {
 
     private String filename;
     private String airframeType;
+    private String systemId;
+
     private String tailNumber;
+    private String suggestedTailNumber;
+    private boolean tailConfirmed;
+
     private String md5Hash;
     private String startDateTime;
     private String endDateTime;
@@ -82,7 +87,7 @@ public class Flight {
 
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, uploadId);
@@ -158,7 +163,7 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
         if (limit > 0) queryString += " LIMIT 100";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -183,7 +188,7 @@ public class Flight {
     public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
 
         LOG.info(queryString);
 
@@ -224,7 +229,7 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String sqlLimit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
 
         if(!sqlLimit.isEmpty())
             queryString += sqlLimit;
@@ -273,7 +278,7 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
 
@@ -309,7 +314,7 @@ public class Flight {
 
     // Added to use in pitch_db
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
 
@@ -337,10 +342,13 @@ public class Flight {
         uploaderId = resultSet.getInt(3);
         uploadId = resultSet.getInt(4);
 
-        int tailId = resultSet.getInt(5);
+        systemId = resultSet.getString(5);
         int airframeId = resultSet.getInt(6); 
 
-        tailNumber = Tails.getTail(connection, fleetId, tailId);
+        //this will set tailNumber and tailConfirmed
+        tailNumber = Tails.getTail(connection, fleetId, systemId);
+        tailConfirmed = Tails.getConfirmed(connection, fleetId, systemId);
+
         airframeType = Airframes.getAirframe(connection, airframeId);
 
         startDateTime = resultSet.getString(7);
@@ -464,6 +472,7 @@ public class Flight {
 
         //file information -- this is the first line
         fileInformation = bufferedReader.readLine();
+        //LOG.info("fileInformation line is: " + fileInformation);
         if (fileInformation == null || fileInformation.length() == 0) throw new FatalFlightFileException("The flight file was empty.");
         if (fileInformation.charAt(0) != '#') throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
 
@@ -471,6 +480,8 @@ public class Flight {
         airframeType = null;
         try {
             for (int i = 1; i < infoParts.length; i++) {
+                if (infoParts[i].trim().length() == 0) continue;
+
                 //System.err.println("splitting key/value: '" + infoParts[i] + "'");
                 String subParts[] = infoParts[i].trim().split("=");
                 String key = subParts[0];
@@ -481,16 +492,21 @@ public class Flight {
 
                 if (key.equals("airframe_name")) {
                     airframeType = value.substring(1, value.length() - 1);
-                    break;
+                } else if (key.equals("system_id")) {
+                    systemId = value.substring(1, value.length() - 1);
                 }
             }
         } catch (Exception e) {
+            //LOG.info("parsting flight information threw exception: " + e);
+            //e.printStackTrace();
             throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
         }
 
         if (airframeType == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
         System.err.println("detected airframe type: '" + airframeType + "'");
 
+        if (systemId == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'system_id' key/value pair.");
+        System.err.println("detected airframe type: '" + systemId + "'");
 
         //the next line is the column data types
         String dataTypesLine = bufferedReader.readLine();
@@ -755,13 +771,15 @@ public class Flight {
 
     public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = zipEntryName;
+        this.tailConfirmed = false;
 
         if (!filename.contains("/")) {
             throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
         }
 
         String[] parts = zipEntryName.split("/");
-        this.tailNumber = parts[0];
+        this.suggestedTailNumber = parts[0];
+        if (suggestedTailNumber.equals("")) suggestedTailNumber = null;
 
         try {
             inputStream = getReusableInputStream(inputStream);
@@ -790,7 +808,8 @@ public class Flight {
     public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
         this.filename = filename;
         String[] parts = filename.split("/");
-        this.tailNumber = parts[0];
+        this.suggestedTailNumber = parts[0];
+        this.tailConfirmed = false;
 
         try {
             File file = new File(this.filename);
@@ -807,9 +826,10 @@ public class Flight {
 
             inputStream.reset();
             process(inputStream);
-            //        } catch (FileNotFoundException e) {
-            //            System.err.println("ERROR: could not find flight file '" + filename + "'");
-            //            exceptions.add(e);
+
+       //} catch (FileNotFoundException e) {
+       //   System.err.println("ERROR: could not find flight file '" + filename + "'");
+       //   exceptions.add(e);
         } catch (FatalFlightFileException e) {
             status = "WARNING";
             throw e;
@@ -1188,14 +1208,16 @@ public class Flight {
             int airframeId = Airframes.getId(connection, airframeType);
             Airframes.setAirframeFleet(connection, airframeId, fleetId);
 
-            int tailId = Tails.getId(connection, fleetId, tailNumber);
+            Tails.setSuggestedTail(connection, fleetId, systemId, suggestedTailNumber);
+            tailNumber = Tails.getTail(connection, fleetId, systemId);
+            tailConfirmed = Tails.getConfirmed(connection, fleetId, systemId);
 
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, tail_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
             preparedStatement.setInt(3, uploadId);
             preparedStatement.setInt(4, airframeId);
-            preparedStatement.setInt(5, tailId);
+            preparedStatement.setString(5, systemId);
             preparedStatement.setString(6, startDateTime);
             preparedStatement.setString(7, endDateTime);
             preparedStatement.setString(8, filename);

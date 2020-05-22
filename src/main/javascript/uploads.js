@@ -585,7 +585,7 @@ class UploadsCard extends React.Component {
         var begin = this.state.page == 0;
         var end = this.state.page == this.state.numPages-1;
         var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-        var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+            var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
 
         if(begin) {
             prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
@@ -597,56 +597,59 @@ class UploadsCard extends React.Component {
         return (
             <div className="card-body">
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
-                                <div class="btn-group mr-1" role="group" aria-label="First group">
-                                    <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
-                                    </DropdownButton>
-                                  <Dropdown>
+                    <div class="card mb-1 m-1 border-secondary">
+                        <div class="p-2">
+                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
+                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
+                                </DropdownButton>
+                                <Dropdown className="pr-1">
                                     <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
                                         {"Page " + (this.state.page + 1)}
                                     </Dropdown.Toggle>
-                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                    <Dropdown.Menu style={{ maxHeight: "256px", overflowY: 'scroll' }}>
                                         {
                                             pages.map((pages, index) => {
                                                 return (
-                                                        <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                    <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
                                                 );
                                             })
                                         }
                                     </Dropdown.Menu>
-                                  </Dropdown>
-                                    {prev}
-                                    {next}
-                            <button id="upload-flights-button"  className="btn btn-primary btn-sm" onClick={() => this.triggerInput()}>
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
-                                </div>
-                            </div>
-                        </div>
-                        {
-                            uploads.map((uploadInfo, index) => {
-                                uploadInfo.position = index;
-                                return (
-                                    <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                                );
-                            })
-                        }
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
-                                <div class="btn-group mr-2" role="group" aria-label="First group">
+                                </Dropdown>
+
                                 {prev}
                                 {next}
-                                <button id="upload-flights-button" className="btn btn-primary btn-sm" onClick={() => this.triggerInput()}>
-                                    <i className="fa fa-upload"></i> Upload Flights
-                                </button>
-                                </div>
-                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
+                            </div>
+                            <button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-upload"></i> Upload Flights
+                            </button>
+                            <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                        </div>
+                    </div>
+                    {
+                        uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                            );
+                        })
+                    }
+                    <div class="card mb-1 m-1 border-secondary">
+                        <div class="p-2">
+                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
+                                {prev}
+                                {next}
+                            </div>
+                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-upload"></i> Upload Flights
+                            </button>
                         </div>
                     </div>
                 </div>

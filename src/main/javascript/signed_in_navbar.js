@@ -177,7 +177,7 @@ class SignedInNavbar extends React.Component {
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">
                                     <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
-                                        <i className="fa fa-globe p-1"></i>
+                                        <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
                                 <select className="custom-select" defaultValue="Road" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} onChange={() => this.mapSelectChanged()}>

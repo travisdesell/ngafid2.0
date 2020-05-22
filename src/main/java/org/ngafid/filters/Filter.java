@@ -160,9 +160,9 @@ public class Filter{
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {
-                    return "flights.tail_id = (SELECT id FROM tails WHERE fleet_id = ? AND tail = ?)";
+                    return "flights.system_id = (SELECT system_id FROM tails WHERE fleet_id = ? AND tail = ?)";
                 } else {
-                    return "flights.tail_id = (SELECT id FROM tails WHERE fleet_id = ? AND tail != ?)";
+                    return "flights.system_id = (SELECT system_id FROM tails WHERE fleet_id = ? AND tail != ?)";
                 }
 
             case "Duration":
