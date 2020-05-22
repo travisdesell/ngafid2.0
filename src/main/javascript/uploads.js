@@ -621,13 +621,14 @@ class UploadsCard extends React.Component {
                                         }
                                     </Dropdown.Menu>
                                 </Dropdown>
+
                                 {prev}
                                 {next}
-                                <input id ="upload-file-input" type="file" style={hiddenStyle} />
                             </div>
                             <button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
                                 <i className="fa fa-upload"></i> Upload Flights
                             </button>
+                            <input id ="upload-file-input" type="file" style={hiddenStyle} />
                         </div>
                     </div>
                     {
