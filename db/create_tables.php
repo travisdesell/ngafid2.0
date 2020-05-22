@@ -154,6 +154,17 @@ $query = "CREATE TABLE `flight_tags` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `flight_tag_map` (
+    `flight_id` INT(11) NOT NULL,
+    `tag_id` INT(11) NOT NULL,
+
+    UNIQUE KEY(`flight_id`, `tag_id`),
+    FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
+    FOREIGN KEY(`tag_id`) REFERENCES flight_tags(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 
 $query = "CREATE TABLE `flights` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -172,7 +183,6 @@ $query = "CREATE TABLE `flights` (
     `has_agl` TINYINT(1) NOT NULL,
     `events_calculated` INT(1) NOT NULL DEFAULT 0,
     `insert_completed` INT(1) NOT NULL DEFAULT 0,
-    `tag_id` INT(11) DEFAULT NULL,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`fleet_id`, `md5_hash`),
@@ -183,7 +193,6 @@ $query = "CREATE TABLE `flights` (
     INDEX(`start_time`),
     INDEX(`end_time`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
-    FOREIGN KEY(`tag_id`) REFERENCES flight_tags(`id`),
     FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
     FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
     FOREIGN KEY(`system_id`) REFERENCES tails(`system_id`)

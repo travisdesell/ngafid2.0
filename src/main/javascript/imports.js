@@ -496,35 +496,35 @@ class ImportsCard extends React.Component {
         return (
             <div className="card-body" hidden={hidden}>
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                 <div class="card mb-1 m-1 border-secondary">
-                    <div class="p-2">
-                        <div class="btn-group mr-1" role="group" aria-label="First group">
-                            <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
-                            </DropdownButton>
-                            <Dropdown>
-                            <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                                {"Page " + (this.state.page + 1)}
-                            </Dropdown.Toggle>
-                            <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
-                                {
-                                    pages.map((pages, index) => {
-                                        return (
-                                                <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
-                                        );
-                                    })
-                                }
-                            </Dropdown.Menu>
-                            </Dropdown>
-                                    {prev}
-                                    {next}
-                                </div>
+                    <div class="card mb-1 m-1 border-secondary">
+                        <div class="p-2">
+                            <div class="btn-group mr-1" role="group" aria-label="First group">
+                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
+                                    <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
+                                </DropdownButton>
+                                <Dropdown className="pr-1">
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                        {"Page " + (this.state.page + 1)}
+                                    </Dropdown.Toggle>
+                                    <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                        {
+                                            pages.map((pages, index) => {
+                                                return (
+                                                    <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                );
+                                            })
+                                        }
+                                    </Dropdown.Menu>
+                                </Dropdown>
+                                {prev}
+                                {next}
                             </div>
                         </div>
+                    </div>
                     {
                         imports.map((importInfo, index) => {
                             return (
@@ -533,16 +533,16 @@ class ImportsCard extends React.Component {
                         })
                     }
                 </div>
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
-                                <div class="btn-group mr-2" role="group" aria-label="First group">
-                                {prev}
-                                {next}
-                                </div>
-                            <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
+                <div class="card mb-1 m-1 border-secondary">
+                    <div class="p-2">
+                        <div class="btn-group mr-2" role="group" aria-label="First group">
+                            {prev}
+                            {next}
                         </div>
+                        <div class="p-1">Page: {this.state.page + 1} of {this.state.numPages}</div>
                     </div>
                 </div>
+            </div>
         );
     }
 }
