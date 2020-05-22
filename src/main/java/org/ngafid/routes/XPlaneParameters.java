@@ -1,5 +1,7 @@
 /**
  * Constants that are part of the FDR format definition
+ * for X-Plane animations
+ * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
 package org.ngafid.routes;
 
@@ -36,6 +38,7 @@ public interface XPlaneParameters {
     static String PA_28_181 = "PA-28-181";
     static String PA_44_180 = "PA-44-180";
 
+    //A hashmap that maps aircraft strings to their respective X-Plane names/paths
     Map<String, String> xplaneNames = Map.of(C172, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
                                 PA_28_181, PA_28_181+"XP",//TODO: put xplane path in for these values
                                 PA_44_180, PA_44_180+"XP");
