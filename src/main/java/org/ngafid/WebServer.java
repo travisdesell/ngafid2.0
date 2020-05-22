@@ -176,6 +176,9 @@ public final class WebServer {
 
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
+        // Cesium related routes
+        Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
+        
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
 
