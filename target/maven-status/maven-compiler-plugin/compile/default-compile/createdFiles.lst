@@ -25,6 +25,7 @@ org/ngafid/routes/PostUploadDetails$UploadDetails.class
 org/ngafid/routes/GetCreateAccount.class
 org/ngafid/common/FlightPaginator.class
 org/ngafid/routes/PostResetPassword.class
+org/ngafid/routes/GetNgafidCesium.class
 org/ngafid/routes/GetDashboard.class
 org/ngafid/routes/PostEvents.class
 org/ngafid/accounts/Fleet.class
