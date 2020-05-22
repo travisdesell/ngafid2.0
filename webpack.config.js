@@ -31,9 +31,14 @@ module.exports = {
         dashboard: __dirname + "/src/main/javascript/dashboard.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
+        // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
+
     },
 
     output: {
+        // Farhad: for webpackCesium
+        sourcePrefix: "",
+        //
         path: __dirname + "/src/main/resources/public/js/",
         filename: "[name]-bundle.js"
     },
