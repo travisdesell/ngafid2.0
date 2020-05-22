@@ -71,16 +71,6 @@ public class GetXPlane implements Route {
     }
 
     /**
-     * Create the line of data for the .fdr file
-     * @param index the index (corresponds to the second of flight)
-     * @return a string with the data in it
-     */
-    private String dataString(int index){
-        return "DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
-                    "," + altMSL.get(i) + "," + getZeros(NUM_NULL_PARAMS) + "\n";
-    }
-
-    /**
      * {inheritDoc}
      */
     @Override
@@ -141,7 +131,8 @@ public class GetXPlane implements Route {
             StringBuffer sb = new StringBuffer();
 
             for (int i = 0; i < altMSL.size(); i++) {
-                sb.append(this.dataString(i));
+                sb.append("DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
+                    "," + altMSL.get(i) + "," + getZeros(NUM_NULL_PARAMS) + "\n");
             }
 
             String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "template.fdr";
