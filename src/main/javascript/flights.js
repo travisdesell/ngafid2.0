@@ -8,6 +8,7 @@ import Form from 'react-bootstrap/Form'
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
+import { View } from 'ol'
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
@@ -314,7 +315,6 @@ var eventColorScheme = {};
 for (let d = 0; d < 45; d++){
     eventColorScheme[d] = Colors.randomValue();
 }
-
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Itinerary extends React.Component {
@@ -604,12 +604,19 @@ class Events extends React.Component  {
             if (layer instanceof VectorLayer && layer.flightState.props.flightInfo.id == event.flightId) {              // roundabout way to get the right flight***
                 let eventMapped = layer.flightState.state.eventsMapped[index];
                 let eventPoints = layer.flightState.state.eventPoints;
-                let event = eventPoints[index];
+                event = eventPoints[index];                                 //override event var w/ event Feature
 
                 //toggle eventLayer style
                 if (!eventMapped) {                             // if event hidden
                     event.setStyle(eventStyle);
                     layer.flightState.state.eventsMapped[index] = !eventMapped;
+
+                    // direct map view to event location
+                    let extent = event.values_.geometry.extent_;
+                    map.getView().fit(extent, map.getSize());
+
+                    // map.getView().adjustZoom(-5);                    //***adjustZoom NOT A FUNCTION???***
+
                 } else {                                        // if event displayed
                     event.setStyle(hiddenStyle);
                     layer.flightState.state.eventsMapped[index] = !eventMapped;
@@ -923,7 +930,7 @@ class Flight extends React.Component {
                             // create eventPoint with preloaded coordinates
                             points = thisFlight.state.points;
                             eventPoint = new Feature({
-                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 1)),
+                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
                                  name: 'Event'
                              });
                         }
@@ -1069,7 +1076,7 @@ class Flight extends React.Component {
                         events = thisFlight.state.events;
                         eventPoints = thisFlight.state.eventPoints;
                         for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 1));
+                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
                         }
 
