@@ -28,12 +28,14 @@ import java.sql.SQLException;
 
 import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Optional;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.MutableDouble;
+import org.ngafid.common.Tag;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -85,6 +87,7 @@ public class Flight {
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
+    private Optional<Tag<Flight>> tag = Optional.empty();
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
@@ -839,6 +842,11 @@ public class Flight {
         }
 
         checkExceptions();
+    }
+
+    public Flight(Tag<Flight> tag, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+        this(filename, connection);
+        this.tag = Optional.of(tag);
     }
 
     public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
