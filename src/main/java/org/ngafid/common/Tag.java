@@ -4,8 +4,8 @@ import java.lang.String;
 
 public class Tag<E>{
     //the key in the database
-    int hashId;
-    String name, description;
+    private int hashId;
+    private String name, description;
 
     /**
      * Creates an instance of a tag
