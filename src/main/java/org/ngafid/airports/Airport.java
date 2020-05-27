@@ -3,6 +3,9 @@ package org.ngafid.airports;
 import java.util.Collection;
 import java.util.HashMap;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonElement;
+import com.google.gson.annotations.Expose;
 import org.ngafid.common.MutableDouble;
 
 public class Airport {
@@ -73,4 +76,11 @@ public class Airport {
         return runways.size() > 0;
     }
 
+    public JsonElement jsonify(Gson gson) {
+        HashMap<String, Runway> runways = this.runways;
+        this.runways = null;
+        JsonElement je = gson.toJsonTree(this);
+        this.runways = runways;
+        return je;
+    }
 }

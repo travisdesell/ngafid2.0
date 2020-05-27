@@ -42,11 +42,11 @@ public interface Parameters {//this can be an interface since its static
      * JSON-specific parameters
      * EXC = Exceedences
      */
-    public final static String PARAM_JSON_LOC_EXC = "locExceedences";
-    public final static String PARAM_JSON_CLINE_EXC =  "centerLineExceedences";
-    public final static String PARAM_JSON_SELFDEF_GPANG = "selfDefinedGlideAngle";
-    public final static String PARAM_JSON_OPT_DES_WARN = "optimalDescentWarnings";
-    public final static String PARAM_JSON_OPT_DES_EXC = "optimalDescentExceedences";
+    public final static String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
+    public final static String PARAM_JSON_CENTER_LINE_EXC =  "centerLineExceedences";
+    public final static String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
+    public final static String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
+    public final static String PARAM_JSON_OPTIMAL_DESCENT_EXC = "optimalDescentExceedences";
     public final static String PARAM_JSON_LATITUDE = "lat";
     public final static String PARAM_JSON_LONGITUDE = "lon";
 }
