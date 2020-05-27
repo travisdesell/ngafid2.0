@@ -1,7 +1,7 @@
 package org.ngafid.flights;
 
 import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import com.google.gson.JsonSyntaxException;
 import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
@@ -37,6 +37,8 @@ public class TurnToFinal {
     private final Runway runway;
     private final String airframe;
 
+    public final String airportIataCode;
+
     private int nTimesteps;
 
     private ArrayList<Integer> locExceedences;
@@ -57,7 +59,7 @@ public class TurnToFinal {
      * @param lat
      * @param lon
      */
-    public TurnToFinal(String airframe, Runway runway, double runwayAltitude, double[] altitude, double[] roll,
+    public TurnToFinal(String airframe, Runway runway, String airportIataCode, double runwayAltitude, double[] altitude, double[] roll,
                        double[] lat, double[] lon, double[] velocity) {
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
@@ -67,6 +69,7 @@ public class TurnToFinal {
         this.roll = roll;
         this.airframe = airframe;
         this.velocity = velocity;
+        this.airportIataCode = airportIataCode;
 
         assert this.latitude.length == this.longitude.length;
         assert this.latitude.length == this.altitude.length;
@@ -295,11 +298,12 @@ public class TurnToFinal {
                     break;
                 from -= 1;
             }
-            TurnToFinal ttf = new TurnToFinal(flight.getAirframeType(), runway, runwayAltitude,
-                    altTimeSeries.sliceCopy(from, to),
-                    rollTimeSeries.sliceCopy(from, to),
-                    latTimeSeries.sliceCopy(from, to),
-                    lonTimeSeries.sliceCopy(from, to),
+            TurnToFinal ttf = new TurnToFinal(
+                    flight.getAirframeType(), runway, airport.iataCode, runwayAltitude,
+                         altTimeSeries.sliceCopy(from, to),
+                        rollTimeSeries.sliceCopy(from, to),
+                         latTimeSeries.sliceCopy(from, to),
+                         lonTimeSeries.sliceCopy(from, to),
                     velocityTimeSeries.sliceCopy(from, to));
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
@@ -317,16 +321,23 @@ public class TurnToFinal {
     }
 
     public JsonElement jsonify() {
-        Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+        Gson gson = new Gson();
         System.out.println(selfDefinedGlideAngle);
-        return gson.toJsonTree(Map.of(
-                PARAM_JSON_LOC_EXC, gson.toJson(this.locExceedences),
-                PARAM_JSON_CLINE_EXC, gson.toJson(this.centerLineExceedences),
-                PARAM_JSON_SELFDEF_GPANG, gson.toJson(this.selfDefinedGlideAngle),
-                PARAM_JSON_OPT_DES_WARN, gson.toJson(this.optimalDescentSlopeWarnings),
-                PARAM_JSON_OPT_DES_EXC, gson.toJson(this.optimalDescentSlopeExceedences),
-                PARAM_JSON_LATITUDE, gson.toJson(this.latitude),
-                PARAM_JSON_LONGITUDE, gson.toJson(this.longitude))
-          );
+        try {
+            return gson.toJsonTree(Map.of(
+                    PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences,
+                    PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences,
+                    PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle,
+                    PARAM_JSON_OPTIMAL_DESCENT_WARN, this.optimalDescentSlopeWarnings,
+                    PARAM_JSON_OPTIMAL_DESCENT_EXC, this.optimalDescentSlopeExceedences,
+                    PARAM_JSON_LATITUDE, this.latitude,
+                    PARAM_JSON_LONGITUDE, this.longitude)
+            );
+        }
+        catch (IllegalArgumentException _iae) {
+            // This means there were nans in some of the arrays which means we can't necissarily analyze it and it
+            // won't parse on the front end since nan is not included in the JSON spec for some reason
+            return null;
+        }
     }
 }

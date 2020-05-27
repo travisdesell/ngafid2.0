@@ -13,28 +13,6 @@
         var plotMapHidden = false;
         {{{navbar_js}}}
         {{{ttf_js}}}
-
-        function onFetchClicked() {
-            var startDateElement = document.getElementById("start");
-            var endDateElement = document.getElementById("end");
-
-            var submissionData = { startDate: startDateElement.value, endDate: endDateElement.value };
-
-            $.ajax({
-                type: 'POST',
-                url: '/protected/ttf',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-                },
-                error : function(jqXHR, textStatus, errorThrown) {
-                    console.log(textStatus);
-                },
-                async: true
-             });
-        }
     </script>
 
 </head>
@@ -52,27 +30,12 @@
     </div>
 </div>
 
-<div id="plot-map-div" class='row m-0' style="width:100%; height:0%;">
-    <div id="map" class="map" style="width:50%; display:none;">
-    </div> <div id="plot" style="width:50%; display:none;"></div>
+<div id="page-container" class="jumbotron">
+    <div id="ttf-card"></div>
+    <div id="map-container">
+        <div id="map" class="map" style="width: 100%; height: 75%;"></div>
+    </div>
 </div>
-
-<div id="area" class="jumbotron">
-    <label for="start">Start date:</label>
-
-    <input type="date" id="start" name="date-start"
-           value="2000-01-01"
-           min="2000-01-01" max="3000-12-31">
-
-    <label for="start">End date:</label>
-
-    <input type="date" id="end" name="date-end"
-           value="2020-01-01"
-           min="2000-01-01" max="3000-12-31">
-
-    <button onclick="onFetchClicked()">Fetch</button>
-</div>
-
 <!-- Load our javascript. -->
 
 <script src="/js/ttf-bundle.js"></script>

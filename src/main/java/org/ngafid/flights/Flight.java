@@ -105,10 +105,13 @@ public class Flight {
     /**
      * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
      * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
-     * @param connection
-     * @param startDate
-     * @param endDate
-     * @return
+     * @param connection connection to the database
+     * @param startDate start date which must be formatted like this: "MM-dd-yyyy HH:mm:ss".
+     *                  Note that the interpretation of this format can be found in the java SimpleDateFormat docs.
+     * @param endDate formatted the same as the start date.
+     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
+     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
+     *          full control over this parameter on the frontend? We'll see.
      */
     public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
         System.out.println("Start date = " + startDate);

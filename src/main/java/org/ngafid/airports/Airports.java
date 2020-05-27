@@ -5,6 +5,10 @@ import java.io.FileReader;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.ngafid.common.MutableDouble;
 
@@ -138,6 +142,16 @@ public class Airports {
         System.out.println("Read " + numberAirports + " airports.");
         System.out.println("airports HashMap size: " + geoHashToAirport.size());
         System.out.println("max airport ArrayList: " + maxHashSize);
+    }
+
+    /**
+     * Grab a group of airports based on iataCodes
+     * @param iataCodes the list of airport iata codes for which the airport object should be fetched
+     * @return a map which maps iata code to airport object for the specified. It will only contain airports
+     * specified in iataCodes
+     */
+    public static Map<String, Airport> getAirports(List<String> iataCodes) {
+        return iataCodes.stream().collect(Collectors.toMap(Function.identity(), Airports::getAirport));
     }
 
     public static Airport getAirport(String iataCode) {
