@@ -504,6 +504,108 @@ class TraceButtons extends React.Component {
     }
 }
 
+class Tags extends React.Component{
+    constructor(props) {
+        super(props);
+
+        console.log("constructing Tags, props.events:");
+
+        this.state = {
+            tags : props.tags,
+        };
+    }
+
+    updateEventDisplay(index, toggle) {
+        let event = this.state.events[index];
+        console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
+        let shapes = plotlyLayout.shapes;
+
+        let update = {
+            id: event.id,
+            type: 'rect',
+            // x-reference is assigned to the x-values
+            xref: 'x',
+            // y-reference is assigned to the plot paper [0,1]
+            yref: 'paper',
+            x0: event.startLine - 1,
+            y0: 0,
+            x1: event.endLine + 1,
+            y1: 1,
+            fillcolor: event.color,
+            'opacity': 0.5,
+            line: {
+                'width': 0,
+            }
+        };
+
+        let found = false;
+        for (let i = 0; i < shapes.length; i++) {
+            if (shapes[i].id == event.id) {
+                if (toggle) {
+                    shapes = shapes.splice(i, 1);
+                } else {
+                    shapes[i] = update;
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        if (!found && toggle) {
+            shapes.push(update);
+        }
+
+        Plotly.relayout('plot', plotlyLayout);
+    }
+
+    changeColor(e, index) {
+        this.state.events[index].color = e.target.value;
+        this.setState({
+            events : this.state.events
+        });
+
+        this.updateEventDisplay(index, false);
+    }
+
+    eventClicked(index) {
+        this.updateEventDisplay(index, true);
+    }
+
+    render() {
+        let cellClasses = "d-flex flex-row p-1";
+        let cellStyle = { "overflowX" : "auto" };
+        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const styleButton = {
+            flex : "0 10 10em"
+        };
+
+        return (
+            <div>
+                <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
+
+                {
+                    this.state.tags.map((tag, index) => {
+                        return (
+                            <div className={cellClasses} style={cellStyle} key={index}>
+                                <div style={{flex: "0 0"}}>
+                                    <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                                </div>
+
+                                <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
+                                </button>
+                            </div>
+
+                        );
+                    })
+                }
+
+            </div>
+        );
+
+    }
+}
+
 class Events extends React.Component {
     constructor(props) {
         super(props);
@@ -636,7 +738,9 @@ class Flight extends React.Component {
             traceVisibility : [],
             traceNamesVisible : false,
             eventsVisible : false,
+            tagsVisible : false,
             itineraryVisible : false,
+            tags : null,
             layer : null,
             color : color
         }
@@ -873,7 +977,66 @@ class Flight extends React.Component {
     cesiumClicked() {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
-    
+
+    tagClicked(){
+        console.log ("tag clicked!");
+
+        if (!this.state.eventsLoaded) {
+            console.log("loading events!");
+
+            var thisFlight = this;
+
+            var submissionData = {
+                flightId : this.props.flightInfo.id,
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: '/protected/flight_tags',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    if (!eventDefinitionsLoaded) {
+                        eventDefinitions = response.definitions;
+                        eventDefinitionsLoaded = true;
+                    }
+
+                    let events = response.events;
+                    for (let i = 0; i < events.length; i++) {
+                        for (let j = 0; j < eventDefinitions.length; j++) {
+
+                            if (events[i].eventDefinitionId == eventDefinitions[j].id) {
+                                events[i].eventDefinition = eventDefinitions[j];
+                                console.log("set events[" + i + "].eventDefinition to:");
+                                console.log(events[i].eventDefinition);
+                            }
+                        }
+                    }
+                    thisFlight.state.events = events;
+
+                    thisFlight.setState(thisFlight.state);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    thisFlight.state.mapLoaded = false;
+                    thisFlight.setState(thisFlight.state);
+
+                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                },   
+                async: true 
+            });  
+
+        } else {
+            console.log("tags already loaded!");
+
+            //toggle visibility if already loaded
+            this.state.tagsVisible = !this.state.tagsVisible;
+            this.setState(this.state);
+        }
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -1005,6 +1168,8 @@ class Flight extends React.Component {
         let globeClasses = "";
         let globeTooltip = "";
 
+        let tagTooltip = "Click to tag a flight for future queries and grouping";
+
         //console.log(flightInfo);
         if (!flightInfo.hasCoords) {
             //console.log("flight " + flightInfo.id + " doesn't have coords!");
@@ -1035,6 +1200,12 @@ class Flight extends React.Component {
             );
         }
 
+        let tagsRow = "";
+        if (this.state.tagsVisible) {
+            tagsRow = (
+                    <Tags tags={this.state.tags} parent={this} />
+            );
+        }
 
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
@@ -1085,6 +1256,10 @@ class Flight extends React.Component {
                                 <i className="fa fa-exclamation p-1"></i>
                             </button>
 
+                            <button className={buttonClasses + globeClasses} data-toggle="button" title={tagTooltip} aria-pressed="false" style={styleButton} onClick={() => this.tagClicked()}>
+                                <i className="fa fa-tag p-1"></i>
+                            </button>
+
                             <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
@@ -1108,6 +1283,8 @@ class Flight extends React.Component {
                     </div>
 
                     {itineraryRow}
+
+                    {tagsRow}
 
                     {eventsRow}
 
