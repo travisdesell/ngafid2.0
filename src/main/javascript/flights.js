@@ -611,11 +611,9 @@ class Events extends React.Component  {
                     event.setStyle(eventStyle);
                     layer.flightState.state.eventsMapped[index] = !eventMapped;
 
-                    // direct map view to event location
-                    let extent = event.values_.geometry.extent_;
-                    map.getView().fit(extent, map.getSize());
-
-                    // map.getView().adjustZoom(-5);                    //***adjustZoom NOT A FUNCTION???***
+                    // center map view on event location
+                    let coords = event.getGeometry().getFirstCoordinate();
+                    map.getView().setCenter(coords);
 
                 } else {                                        // if event displayed
                     event.setStyle(hiddenStyle);
