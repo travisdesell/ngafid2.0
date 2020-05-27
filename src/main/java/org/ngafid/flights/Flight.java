@@ -27,6 +27,7 @@ import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.HashMap;
@@ -34,8 +35,7 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.ngafid.common.MutableDouble;
-import org.ngafid.common.Tag;
+import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -87,7 +87,7 @@ public class Flight {
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
-    private Optional<Tag<Flight>> tag = Optional.empty();
+    private Optional<List<FlightTag>> tag = Optional.empty();
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
@@ -339,6 +339,30 @@ public class Flight {
     }
     ////
 
+    public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        List<FlightTag> tags = new ArrayList<>();
+
+        System.out.println("TAG QUERY \t RESULTS:");
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        System.out.println(tags.get(0));
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -374,7 +398,6 @@ public class Flight {
     public int getFleetId() {
         return fleetId;
     }
-
 
     public String getFilename() {
         return filename;
@@ -842,11 +865,6 @@ public class Flight {
         }
 
         checkExceptions();
-    }
-
-    public Flight(Tag<Flight> tag, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
-        this(filename, connection);
-        this.tag = Optional.of(tag);
     }
 
     public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
