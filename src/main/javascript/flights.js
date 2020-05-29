@@ -311,9 +311,19 @@ var rules = [
 ];
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+// establish set of RGB values to combine
+let BG_values = ["00", "55", "AA", "FF"];
+let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors
+
+// populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
 for (let d = 0; d < 45; d++){
-    eventColorScheme[d] = Colors.randomValue();
+    // iterate through RGB permutations (up to 64)
+    let green = d % 4;
+    let blue = Math.trunc(d/4) % 4;
+    let red = Math.trunc(d/16) % 4;
+
+    eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
 }
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -943,7 +953,7 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: [0,0,0,0],
-                                width: 8
+                                width: 3
                             })
                         }),
 
@@ -1032,7 +1042,7 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
-                                width: 1.5
+                                width: 3
                             }),
                             image: new Circle({
                                 radius: 5,
