@@ -515,65 +515,19 @@ class Tags extends React.Component{
         };
     }
 
-    updateEventDisplay(index, toggle) {
-        let event = this.state.events[index];
-        console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
-        let shapes = plotlyLayout.shapes;
-
-        let update = {
-            id: event.id,
-            type: 'rect',
-            // x-reference is assigned to the x-values
-            xref: 'x',
-            // y-reference is assigned to the plot paper [0,1]
-            yref: 'paper',
-            x0: event.startLine - 1,
-            y0: 0,
-            x1: event.endLine + 1,
-            y1: 1,
-            fillcolor: event.color,
-            'opacity': 0.5,
-            line: {
-                'width': 0,
-            }
-        };
-
-        let found = false;
-        for (let i = 0; i < shapes.length; i++) {
-            if (shapes[i].id == event.id) {
-                if (toggle) {
-                    shapes = shapes.splice(i, 1);
-                } else {
-                    shapes[i] = update;
-                    found = true;
-                    break;
-                }
-            }
-        }
-
-        if (!found && toggle) {
-            shapes.push(update);
-        }
-
-        Plotly.relayout('plot', plotlyLayout);
+    updateTagDisplay(index, toggle) {
     }
 
     changeColor(e, index) {
-        this.state.events[index].color = e.target.value;
-        this.setState({
-            events : this.state.events
-        });
-
-        this.updateEventDisplay(index, false);
     }
 
     eventClicked(index) {
-        this.updateEventDisplay(index, true);
     }
 
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
+        let tagStat = "No tags yet!";
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em"
@@ -581,28 +535,36 @@ class Tags extends React.Component{
 
         return (
             <div>
-                <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
-
-                {
-                    this.state.tags.map((tag, index) => {
-                        return (
-                            <div className={cellClasses} style={cellStyle} key={index}>
-                                <div style={{flex: "0 0"}}>
-                                    <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
-                                </div>
-
-                                <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
-                                </button>
-                            </div>
-
-                        );
-                    })
-                }
-
+                <div>
+                    <b className={"p-1"} style={{styleButton}}>Associated Tags:</b>
+                </div>
+                <div>
+                    <b className={"p-2"} style={{marginBottom:"2"}}>{tagStat}</b>
+                </div>
+                <div>
+                <button className={"p-2"} class="btn btn-primary btn-sm" type="button">Create new tag</button>
+                </div>
+                    <div style={{flex: "0 0"}}>
+                    <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"9 0 9 0", border:"20", margin:"0 4 4 0", height:"36px", width:"36px"}}/>
+                    </div>
             </div>
-        );
+                   // {
+                    // this.state.tags.map((tag, index) => {
+                    //     return (
+                    //         <div className={cellClasses} style={cellStyle} key={index}>
+                    //             <div style={{flex: "0 0"}}>
+                    //                 <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
+                    //             </div>
 
+                    //             <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                    //                 <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
+                    //             </button>
+                    //         </div>
+
+                    //     );
+                    // })
+                // }
+        );
     }
 }
 
@@ -999,23 +961,7 @@ class Flight extends React.Component {
                     console.log("received response: ");
                     console.log(response);
 
-                    if (!eventDefinitionsLoaded) {
-                        eventDefinitions = response.definitions;
-                        eventDefinitionsLoaded = true;
-                    }
 
-                    let events = response.events;
-                    for (let i = 0; i < events.length; i++) {
-                        for (let j = 0; j < eventDefinitions.length; j++) {
-
-                            if (events[i].eventDefinitionId == eventDefinitions[j].id) {
-                                events[i].eventDefinition = eventDefinitions[j];
-                                console.log("set events[" + i + "].eventDefinition to:");
-                                console.log(events[i].eventDefinition);
-                            }
-                        }
-                    }
-                    thisFlight.state.events = events;
 
                     thisFlight.setState(thisFlight.state);
                 },   
@@ -1035,6 +981,7 @@ class Flight extends React.Component {
             this.state.tagsVisible = !this.state.tagsVisible;
             this.setState(this.state);
         }
+        this.state.tagsVisible = !this.state.tagsVisible;
     }
 
     globeClicked() {
@@ -1053,7 +1000,7 @@ class Flight extends React.Component {
                 //user_id : user_id
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -1202,8 +1149,9 @@ class Flight extends React.Component {
 
         let tagsRow = "";
         if (this.state.tagsVisible) {
+            console.log("tags are visible");
             tagsRow = (
-                    <Tags tags={this.state.tags} parent={this} />
+                    <Tags tags="Test Tag" parent={this} />
             );
         }
 
