@@ -35,17 +35,6 @@ public class PostTags implements Route {
         LOG.info("initialized " + this.getClass().getName() + " route!");
     }
 
-    public static class EventInfo {
-        private ArrayList<Event> events;
-        private ArrayList<EventDefinition> definitions;
-
-        public EventInfo(ArrayList<Event> events, ArrayList<EventDefinition> definitions) {
-            this.events = events;
-            this.definitions = definitions;
-        }
-
-    }
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
@@ -53,10 +42,9 @@ public class PostTags implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = 1;
-        String name = request.queryParams("seriesName");
+        int flightId = Integer.parseInt(request.queryParams("flightId"));
+        System.out.println("TAGGED FLTID: "+flightId);
 
-        boolean eventDefinitionsLoaded = Boolean.parseBoolean(request.queryParams("eventDefinitionsLoaded"));
 
         try {
             Connection connection = Database.getConnection();
@@ -67,10 +55,14 @@ public class PostTags implements Route {
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            List<FlightTag> fts = Flight.getTags(connection, flightId);
+            Flight flight = Flight.getFlight(connection, flightId);
 
+            if(flight.getTags().isPresent()){
+                System.out.println(flight.getTags().get());
+                return flight.getTags().get();
+            }
 
-            return null;
+            return gson.toJson(null);
         } catch (SQLException e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

@@ -87,7 +87,7 @@ public class Flight {
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
-    private Optional<List<FlightTag>> tag = Optional.empty();
+    private Optional<List<FlightTag>> tags = Optional.empty();
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
@@ -337,25 +337,22 @@ public class Flight {
             return null;
         } 
     }
-    ////
+
+    private static List<Integer> getTagIds(int flightId){
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+        return null;//TODO: change this`:W
+    }
 
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
-
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
-
         ResultSet resultSet = query.executeQuery();
-
         List<FlightTag> tags = new ArrayList<>();
-
-        System.out.println("TAG QUERY \t RESULTS:");
 
         while(resultSet.next()){
             tags.add(new FlightTag(resultSet));
         }
-
-        System.out.println(tags.get(0));
 
         resultSet.close();
         query.close();
@@ -388,11 +385,20 @@ public class Flight {
         hasAGL = resultSet.getBoolean(14);
         insertCompleted = resultSet.getBoolean(15);
 
+        List<FlightTag> tags = getTags(connection, id);
+        if(!tags.isEmpty()){
+            this.tags = Optional.of(tags);
+        }
+
         itinerary = Itinerary.getItinerary(connection, id);
     }
 
     public int getId() {
         return id;
+    }
+
+    public Optional<List<FlightTag>> getTags(){
+        return this.tags; 
     }
 
     public int getFleetId() {
