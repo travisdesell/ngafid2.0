@@ -511,7 +511,13 @@ class Tags extends React.Component{
         console.log("constructing Tags, props.events:");
 
         this.state = {
-            tags : props.tags,
+            tags : [],
+            infoActive : false,
+            addActive : false
+        };
+        this.state.tags[0] = {
+            color : "#ff00ff",
+            name : "Tag #1"
         };
     }
 
@@ -524,13 +530,32 @@ class Tags extends React.Component{
     eventClicked(index) {
     }
 
+    addClicked(){
+        this.state.addActive = !this.state.addActive;
+        this.setState(this.state);
+    }
+
+    addTag(){
+        
+    }
+
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
-        let tagStat = "No tags yet!";
+        let vcellStyle = { "overflowY" : "visible"};
+
+
+        let tagStat = "";
+        if(this.state.tags.size == 0){
+            tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>"No tags yet!"</b></div>
+        }
+        let tagInfo = "";
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
-            flex : "0 10 10em"
+            flex : "0 10 10em",
+        };
+        const styleButtonSq = {
+            flex : "0 2 2em",
         };
 
         return (
@@ -538,16 +563,34 @@ class Tags extends React.Component{
                 <div>
                     <b className={"p-1"} style={{styleButton}}>Associated Tags:</b>
                 </div>
-                <div>
-                    <b className={"p-2"} style={{marginBottom:"2"}}>{tagStat}</b>
+                {tagStat} 
+                <div className={cellClasses} style={cellStyle}>
+                {
+                    this.state.tags.map((color, name) => {
+                        var cStyle = {
+                            flex : "0 10 10em",
+                            backgroundColor : color
+                        };
+                        return (
+                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.traceClicked(traceName)}>{name}</button>
+                        );
+                    })
+                }
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
                 </div>
-                <div>
-                <button className={"p-2"} class="btn btn-primary btn-sm" type="button">Create new tag</button>
+                <div class="flex-row p-1">
+                {this.state.addActive &&
+                    <Dropdown className="pr1">
+                        <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag">
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>Create new tag</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
+                        </DropdownButton>
+                    </Dropdown>
+                }
                 </div>
-                    <div style={{flex: "0 0"}}>
-                    <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"9 0 9 0", border:"20", margin:"0 4 4 0", height:"36px", width:"36px"}}/>
-                    </div>
-            </div>
+                </div>
                    // {
                     // this.state.tags.map((tag, index) => {
                     //     return (
@@ -638,7 +681,6 @@ class Events extends React.Component {
         this.setState({
             events : this.state.events
         });
-
         this.updateEventDisplay(index, false);
     }
 
