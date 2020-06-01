@@ -3,7 +3,7 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Dropdown from 'react-bootstrap/Dropdown'
 import DropdownButton from 'react-bootstrap/DropdownButton'
-import Form from 'react-bootstrap/Form'
+import {Button, InputGroup, Form, Col} from 'react-bootstrap'
 
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
@@ -513,7 +513,9 @@ class Tags extends React.Component{
         this.state = {
             tags : [],
             infoActive : false,
-            addActive : false
+            addActive : false,
+            addFormActive : false,
+            assocTagActice : false
         };
         this.state.tags[0] = {
             color : "#ff00ff",
@@ -531,19 +533,36 @@ class Tags extends React.Component{
     }
 
     addClicked(){
-        this.state.addActive = !this.state.addActive;
+        this.state.addActive = !this.state.addActive; 
         this.setState(this.state);
     }
 
     addTag(){
-        
+        let name = $("#comName").val(); 
+        let description = $("#description").val(); 
+        let color = $("#color").val(); 
+
+        console.log("tag params: "+name+" "+description+" "+color);
+    }
+
+    showAddForm(){
+        this.state.addFormActive = !this.state.addFormActive;
+        this.setState(this.state);
+        this.toggleAssociateTag();
+    }
+
+    toggleAssociateTag(){
+        this.state.assocTagActive = !this.state.assocTagActive;
+        this.setState(this.state);
     }
 
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
         let vcellStyle = { "overflowY" : "visible"};
-
+        let addForm = "";
+        let addDrop = "";
+        let submitButton = "";
 
         let tagStat = "";
         if(this.state.tags.size == 0){
@@ -558,6 +577,58 @@ class Tags extends React.Component{
             flex : "0 2 2em",
         };
 
+
+        if(this.state.addActive){
+            addDrop =  
+                <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag">
+                    <Dropdown.Item as="button" onSelect={() => this.showAddForm()}>Create new tag</Dropdown.Item>
+                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
+                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
+                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
+                </DropdownButton>
+            if(this.state.addFormActive){
+                addForm =
+
+                <div class="row p-4">
+                    <div class="col-">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <span class="fa fa-tag"></span>
+                                </span>                    
+                            </div>
+                            <input type="text" id="comName" class="form-control" placeholder="Common Name"/>
+                        </div>
+                    </div>
+                    <div class="col-sm">
+                        <div class="input-group">
+                            <div class="input-group-prepend">
+                                <span class="input-group-text">
+                                    <span class="fa fa-list"></span>
+                                </span>                    
+                            </div>
+                            <input type="text" id="description" class="form-control" placeholder="Description"/>
+                        </div>
+                    </div>
+                    <div class="col-">
+                        <div style={{flex: "0 0"}}>
+                    <input type="color" name="eventColor" value={event.color} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
+                        </div>
+                    </div>
+                    <div class="col-sm">
+                        <div class="input-group">
+                        <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={() => this.addTag()}>
+                                <i class="fa fa-check" aria-hidden="true"></i>
+                                 Submit
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            }
+        }
+
+
+    
         return (
             <div>
                 <div>
@@ -576,19 +647,13 @@ class Tags extends React.Component{
                         );
                     })
                 }
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                
                 </div>
                 <div class="flex-row p-1">
-                {this.state.addActive &&
-                    <Dropdown className="pr1">
-                        <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag">
-                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>Create new tag</Dropdown.Item>
-                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
-                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
-                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>sample filter</Dropdown.Item>
-                        </DropdownButton>
-                    </Dropdown>
-                }
+                    {addDrop}{addForm}{submitButton}
                 </div>
                 </div>
                    // {
