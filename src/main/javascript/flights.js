@@ -3,8 +3,9 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Dropdown from 'react-bootstrap/Dropdown'
 import DropdownButton from 'react-bootstrap/DropdownButton'
-import {Button, InputGroup, Form, Col} from 'react-bootstrap'
+import {Alert, Button, InputGroup, Form, Col} from 'react-bootstrap'
 
+// import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
@@ -25,6 +26,7 @@ var moment = require('moment');
 
 
 import Plotly from 'plotly.js';
+
 
 var plotlyLayout = { 
     shapes : []
@@ -512,18 +514,29 @@ class Tags extends React.Component{
 
         this.state = {
             tags : [],
+            activeTag : null, 
             infoActive : false,
             addActive : false,
+            detailsActive : false,
             addFormActive : false,
             assocTagActice : false
         };
-        this.state.tags[0] = {
-            color : "#ff00ff",
-            name : "Tag #1"
-        };
+        this.state.tags.push({
+            value : 0,
+            color : "EDFF00",
+            name : "Tag #1",
+            description : "Flights that flew above FL140"
+        });
+        this.state.tags.push({
+            value : 1,
+            color : "#FF000C",
+            name : "Tag #2",
+            description : "Flights that flew above FL190"
+        });
     }
 
     updateTagDisplay(index, toggle) {
+
     }
 
     changeColor(e, index) {
@@ -532,17 +545,46 @@ class Tags extends React.Component{
     eventClicked(index) {
     }
 
+    showDetails(index){
+        this.state.activeTag = this.state.tags[index];
+        console.log("ACT TAG: "+this.state.tags[index]+" "+index);
+        this.state.detailsActive = !this.state.detailsActive; 
+        this.setState(this.state);
+    }
+
     addClicked(){
         this.state.addActive = !this.state.addActive; 
         this.setState(this.state);
     }
 
-    addTag(){
-        let name = $("#comName").val(); 
-        let description = $("#description").val(); 
-        let color = $("#color").val(); 
+    editClicked(){
+        console.log("edit clicked!");
+    }
 
-        console.log("tag params: "+name+" "+description+" "+color);
+    addTag(){
+        let tname = $("#comName").val(); 
+        let tdescription = $("#description").val(); 
+        let tcolor = $("#color").val(); 
+
+        // console.log("tag params: "+name+" "+description+" "+color);
+        this.state.tags.push({
+            color : tcolor,
+            name : tname,
+            description : tdescription
+        });
+        this.setState(this.state);
+    }
+
+    deleteTag(){
+        console.log("delete tag invoked!");
+        confirmModal.show("Confirm Delete: '" + this.props.uploadInfo.filename + "'",
+                          "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flights associated tags. If other flights are still associated with this tag, it will remain on the server\n\n Otherwise, the tag will be removed from the server completely",
+                          () => {this.confirmDelete()}
+                         );
+    }
+
+    confirmDelete(){
+        console.log("delete is confirmed!")
     }
 
     showAddForm(){
@@ -569,6 +611,8 @@ class Tags extends React.Component{
             tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>"No tags yet!"</b></div>
         }
         let tagInfo = "";
+        let tags = this.state.tags;
+        console.log(tags);
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
@@ -577,15 +621,31 @@ class Tags extends React.Component{
             flex : "0 2 2em",
         };
 
+        let details = "";
+        if(this.state.detailsActive){
+            details = 
+                <Alert variant="primary">
+                    {this.state.activeTag.description}
+                </Alert>
+                // details = <div p-2 class="panel panel-default">
+                //     <div class="panel-heading">Heading</div>
+                //     <div class="panel-body">{this.state.activeDescription}</div>
+                // </div>
+        }
 
         if(this.state.addActive){
             addDrop =  
-                <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag">
-                    <Dropdown.Item as="button" onSelect={() => this.showAddForm()}>Create new tag</Dropdown.Item>
-                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
-                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
-                    <Dropdown.Item as="button" >sample filter</Dropdown.Item>
-                </DropdownButton>
+                <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
+                    <Dropdown.Item as="button" onSelect={() => this.showAddForm()}>Create a new tag</Dropdown.Item>
+                    <Dropdown.Divider />
+                    {
+                        tags.map((tags, index) => {
+                            return (
+                                    <Dropdown.Item as="button" color={tags.color} onSelect={() => this.showAddForm()}>{tags.name}</Dropdown.Item>
+                            );
+                        })
+                    }
+                    </DropdownButton>
             if(this.state.addFormActive){
                 addForm =
 
@@ -637,23 +697,23 @@ class Tags extends React.Component{
                 {tagStat} 
                 <div className={cellClasses} style={cellStyle}>
                 {
-                    this.state.tags.map((color, name) => {
+                    tags.map((tag, index) => {
                         var cStyle = {
                             flex : "0 10 10em",
-                            backgroundColor : color
+                            backgroundColor : tag.color
                         };
                         return (
-                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.traceClicked(traceName)}>{name}</button>
+                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.showDetails(index)}>{tag.name}</button>
                         );
                     })
                 }
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 
                 </div>
                 <div class="flex-row p-1">
-                    {addDrop}{addForm}{submitButton}
+                    {details}{addDrop}{addForm}{submitButton}
                 </div>
                 </div>
                    // {
