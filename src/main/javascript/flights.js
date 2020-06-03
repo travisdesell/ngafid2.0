@@ -517,6 +517,7 @@ class Tags extends React.Component{
             activeTag : null, 
             infoActive : false,
             addActive : false,
+            editing : false,
             detailsActive : false,
             addFormActive : false,
             assocTagActice : false
@@ -533,16 +534,6 @@ class Tags extends React.Component{
             name : "Tag #2",
             description : "Flights that flew above FL190"
         });
-    }
-
-    updateTagDisplay(index, toggle) {
-
-    }
-
-    changeColor(e, index) {
-    }
-
-    eventClicked(index) {
     }
 
     showDetails(index){
@@ -583,17 +574,28 @@ class Tags extends React.Component{
                          );
     }
 
+    editTag(){
+        console.log("Editing tag: "+this.state.activeTag.name);
+        // let tdescription = $("#description").val(); 
+        // let tcolor = $("#color").val(); 
+        this.state.editing = !this.state.editing;
+        this.showAddForm();
+        this.setState(this.state);
+    }
+
     confirmDelete(){
         console.log("delete is confirmed!")
     }
 
     showAddForm(){
+        console.log("displaying add form!");
         this.state.addFormActive = !this.state.addFormActive;
         this.setState(this.state);
         this.toggleAssociateTag();
     }
 
     toggleAssociateTag(){
+        console.log("displaying tag association!");
         this.state.assocTagActive = !this.state.assocTagActive;
         this.setState(this.state);
     }
@@ -633,6 +635,13 @@ class Tags extends React.Component{
                 // </div>
         }
 
+        let defName = "", defDescript = "", defColor="#ff00ff";
+        if(this.state.editing){
+            defName = this.state.activeTag.name;
+            defDescript = this.state.activeTag.description;
+            defColor = this.state.activeTag.color;
+        }
+
         if(this.state.addActive){
             addDrop =  
                 <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
@@ -646,45 +655,45 @@ class Tags extends React.Component{
                         })
                     }
                     </DropdownButton>
-            if(this.state.addFormActive){
-                addForm =
+        }
+        if(this.state.addFormActive){
+            addForm =
 
-                <div class="row p-4">
-                    <div class="col-">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <span class="fa fa-tag"></span>
-                                </span>                    
-                            </div>
-                            <input type="text" id="comName" class="form-control" placeholder="Common Name"/>
+            <div class="row p-4">
+                <div class="col-">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <span class="fa fa-tag"></span>
+                            </span>                    
                         </div>
-                    </div>
-                    <div class="col-sm">
-                        <div class="input-group">
-                            <div class="input-group-prepend">
-                                <span class="input-group-text">
-                                    <span class="fa fa-list"></span>
-                                </span>                    
-                            </div>
-                            <input type="text" id="description" class="form-control" placeholder="Description"/>
-                        </div>
-                    </div>
-                    <div class="col-">
-                        <div style={{flex: "0 0"}}>
-                    <input type="color" name="eventColor" value={event.color} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
-                        </div>
-                    </div>
-                    <div class="col-sm">
-                        <div class="input-group">
-                        <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={() => this.addTag()}>
-                                <i class="fa fa-check" aria-hidden="true"></i>
-                                 Submit
-                            </button>
-                        </div>
+                <input type="text" id="comName" class="form-control" placeholder="Common Name" value={defName}/>
                     </div>
                 </div>
-            }
+                <div class="col-sm">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <span class="fa fa-list"></span>
+                            </span>                    
+                        </div>
+                    <input type="text" id="description" class="form-control" placeholder="Description" value={defDescript}/>
+                    </div>
+                </div>
+                <div class="col-">
+                    <div style={{flex: "0 0"}}>
+                <input type="color" name="eventColor" value={defColor} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="input-group">
+                    <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={() => this.addTag()}>
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                                Submit
+                        </button>
+                    </div>
+                </div>
+            </div>
         }
 
 
@@ -707,9 +716,10 @@ class Tags extends React.Component{
                         );
                     })
                 }
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Remove the selected tag from this flight" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 
                 </div>
                 <div class="flex-row p-1">
@@ -717,7 +727,7 @@ class Tags extends React.Component{
                 </div>
                 </div>
                    // {
-                    // this.state.tags.map((tag, index) => {
+
                     //     return (
                     //         <div className={cellClasses} style={cellStyle} key={index}>
                     //             <div style={{flex: "0 0"}}>
@@ -1333,7 +1343,8 @@ class Flight extends React.Component {
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
-                    <div className="d-flex flex-row p-1">
+                    <div className="d-flex flex-row p-1"
+>
                         <div className={firstCellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
                             <i className="fa fa-plane p-1"> {flightInfo.id}</i>
                         </div>
