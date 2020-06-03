@@ -25,7 +25,7 @@ and Fedora, RedHat/CentOS:
 ```
 You will also need to run
 ```
-~/ $ sudo mysql_install_db --user=mysql --ldata=/var/lib/mysql
+~/ $ sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 ```
 and
 ```
