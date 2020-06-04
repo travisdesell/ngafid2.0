@@ -57,7 +57,7 @@ public class PostTags implements Route {
 
             Flight flight = Flight.getFlight(connection, flightId);
 
-            if(flight.getTags().isPresent()){
+            if(flight.hasTags()){
                 System.out.println(flight.getTags().get());
                 return flight.getTags().get();
             }
