@@ -64,6 +64,7 @@ public class PostTags implements Route {
 
             return gson.toJson(null);
         } catch (SQLException e) {
+            System.err.println("Error in SQL ");
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }

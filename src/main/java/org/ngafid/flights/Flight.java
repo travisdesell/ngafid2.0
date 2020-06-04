@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Iterator;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
@@ -341,7 +342,7 @@ public class Flight {
     }
 
     private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException{
-        String queryString = "SELECT tag_id FROM flight_tags WHERE id = ?";
+        String queryString = "SELECT tag_id FROM flight_tag_map WHERE flight_id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
         ResultSet resultSet = query.executeQuery();
@@ -349,7 +350,7 @@ public class Flight {
         Set<Integer> ids = new HashSet<>();
 
         while(resultSet.next()){
-            ids.add(resultSet.getInt(0));
+            ids.add(resultSet.getInt(1));
         }
 
         resultSet.close();
@@ -360,19 +361,24 @@ public class Flight {
 
     private static String idLimStr(Set<Integer> ids){
         StringBuilder sb = new StringBuilder("WHERE ID = ");
-        Integer [] idArr = (Integer [])ids.toArray();
-        int size = idArr.length;
-        for(int i = 0; i<size; i++){
-            sb.append(idArr[i]);
-            if(i != size - 1) {
-                sb.append(" OR ");
+        Iterator<Integer> it = ids.iterator();
+
+        while(it.hasNext()){
+            sb.append(it.next());
+            if(!it.hasNext()){
+                break;
             }
+            sb.append(" OR ");
         }
+
         return sb.toString();
     }
 
     private static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
+        if(tagIds.isEmpty()){
+            return null;
+        }
 
         System.out.println("TAG NUMS: "+tagIds.toString());
 
@@ -417,7 +423,7 @@ public class Flight {
         insertCompleted = resultSet.getBoolean(15);
 
         List<FlightTag> tags = getTags(connection, id);
-        if(!tags.isEmpty()){
+        if(tags != null && !tags.isEmpty()){
             this.tags = Optional.of(tags);
         }
 
