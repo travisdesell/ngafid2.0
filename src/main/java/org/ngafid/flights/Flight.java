@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Set;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
@@ -338,9 +339,21 @@ public class Flight {
         } 
     }
 
-    private static List<Integer> getTagIds(int flightId){
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
-        return null;//TODO: change this`:W
+    private static Set<Integer> getTagIds(int flightId){
+        String queryString = "SELECT tag_id FROM flight_tags WHERE id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+
+        Set<Integer> ids = new HashSet<>();
+
+        while(resultSet.next()){
+            ids.add(resultSet);
+        }
+
+        resultSet.close();
+        query.close();
+
+        return ids;
     }
 
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
@@ -398,11 +411,15 @@ public class Flight {
     }
 
     public Optional<List<FlightTag>> getTags(){
-        return this.tags; 
+        return this.tags;
     }
 
     public int getFleetId() {
         return fleetId;
+    }
+
+    public boolean hasTags(){
+        return this.tags.isPresent;
     }
 
     public String getFilename() {
