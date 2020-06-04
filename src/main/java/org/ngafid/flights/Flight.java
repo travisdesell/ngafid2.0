@@ -13,7 +13,6 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.Set;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
@@ -32,6 +31,8 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
@@ -339,15 +340,16 @@ public class Flight {
         } 
     }
 
-    private static Set<Integer> getTagIds(int flightId){
+    private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException{
         String queryString = "SELECT tag_id FROM flight_tags WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
+        ResultSet resultSet = query.executeQuery();
 
         Set<Integer> ids = new HashSet<>();
 
         while(resultSet.next()){
-            ids.add(resultSet);
+            ids.add(resultSet.getInt(0));
         }
 
         resultSet.close();
@@ -356,10 +358,26 @@ public class Flight {
         return ids;
     }
 
-    public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+    private static String idLimStr(Set<Integer> ids){
+        StringBuilder sb = new StringBuilder("WHERE ID = ");
+        Integer [] idArr = (Integer [])ids.toArray();
+        int size = idArr.length;
+        for(int i = 0; i<size; i++){
+            sb.append(idArr[i]);
+            if(i != size - 1) {
+                sb.append(" OR ");
+            }
+        }
+        return sb.toString();
+    }
+
+    private static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
+        Set<Integer> tagIds = getTagIds(connection, flightId);
+
+        System.out.println("TAG NUMS: "+tagIds.toString());
+
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds);
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, flightId);
         ResultSet resultSet = query.executeQuery();
         List<FlightTag> tags = new ArrayList<>();
 
@@ -419,7 +437,7 @@ public class Flight {
     }
 
     public boolean hasTags(){
-        return this.tags.isPresent;
+        return this.tags.isPresent();
     }
 
     public String getFilename() {
