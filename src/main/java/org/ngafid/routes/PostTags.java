@@ -3,6 +3,7 @@ package org.ngafid.routes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.Optional;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,20 +50,23 @@ public class PostTags implements Route {
         try {
             Connection connection = Database.getConnection();
 
+            List<FlightTag> fltTags = null;
+
+            List<FlightTag> tags = Flight.getTags(connection, flightId);
+            if(tags != null){
+                fltTags = tags;
+            }
+
             //check to see if the user has access to this data
             if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            Flight flight = Flight.getFlight(connection, flightId);
 
-            if(flight.hasTags()){
-                System.out.println(flight.getTags().get());
-                return flight.getTags().get();
-            }
 
-            return gson.toJson(null);
+
+            return gson.toJson(fltTags);
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();

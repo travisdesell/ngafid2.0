@@ -510,10 +510,11 @@ class Tags extends React.Component{
     constructor(props) {
         super(props);
 
-        console.log("constructing Tags, props.events:");
+        console.log("constructing Tags, props.tags:");
+        console.log(props.tags);
 
         this.state = {
-            tags : [],
+            tags : props.tags,
             activeTag : null, 
             infoActive : false,
             addActive : false,
@@ -522,18 +523,6 @@ class Tags extends React.Component{
             addFormActive : false,
             assocTagActice : false
         };
-        this.state.tags.push({
-            value : 0,
-            color : "EDFF00",
-            name : "Tag #1",
-            description : "Flights that flew above FL140"
-        });
-        this.state.tags.push({
-            value : 1,
-            color : "#FF000C",
-            name : "Tag #2",
-            description : "Flights that flew above FL190"
-        });
     }
 
     showDetails(index){
@@ -609,7 +598,7 @@ class Tags extends React.Component{
         let submitButton = "";
 
         let tagStat = "";
-        if(this.state.tags.size == 0){
+        if(this.state.tags == null || this.state.tags.size == 0){
             tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>"No tags yet!"</b></div>
         }
         let tagInfo = "";
@@ -875,6 +864,7 @@ class Flight extends React.Component {
             uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
+            tags : null, 
             traceNamesVisible : false,
             eventsVisible : false,
             tagsVisible : false,
@@ -1138,7 +1128,9 @@ class Flight extends React.Component {
                     console.log("received response: ");
                     console.log(response);
 
-
+                    if(response != null){
+                        thisFlight.state.tags = response;
+                    }
 
                     thisFlight.setState(thisFlight.state);
                 },   
@@ -1328,7 +1320,7 @@ class Flight extends React.Component {
         if (this.state.tagsVisible) {
             console.log("tags are visible");
             tagsRow = (
-                    <Tags tags="Test Tag" parent={this} />
+                    <Tags tags={this.state.tags} parent={this} />
             );
         }
 

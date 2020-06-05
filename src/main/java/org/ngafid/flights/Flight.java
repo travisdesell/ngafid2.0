@@ -30,7 +30,6 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Optional;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
@@ -89,8 +88,6 @@ public class Flight {
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
-
-    private Optional<List<FlightTag>> tags = Optional.empty();
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
@@ -374,7 +371,7 @@ public class Flight {
         return sb.toString();
     }
 
-    private static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
+    public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if(tagIds.isEmpty()){
             return null;
@@ -422,11 +419,6 @@ public class Flight {
         hasAGL = resultSet.getBoolean(14);
         insertCompleted = resultSet.getBoolean(15);
 
-        List<FlightTag> tags = getTags(connection, id);
-        if(tags != null && !tags.isEmpty()){
-            this.tags = Optional.of(tags);
-        }
-
         itinerary = Itinerary.getItinerary(connection, id);
     }
 
@@ -434,16 +426,8 @@ public class Flight {
         return id;
     }
 
-    public Optional<List<FlightTag>> getTags(){
-        return this.tags;
-    }
-
     public int getFleetId() {
         return fleetId;
-    }
-
-    public boolean hasTags(){
-        return this.tags.isPresent();
     }
 
     public String getFilename() {
