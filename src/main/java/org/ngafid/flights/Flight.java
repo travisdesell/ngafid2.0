@@ -335,7 +335,7 @@ public class Flight {
             query.close();
 
             return null;
-        } 
+        }
     }
 
     private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException{
@@ -392,6 +392,41 @@ public class Flight {
         query.close();
 
         return tags;
+    }
+
+    public static void associateTag(int flightId, int tagId, Connection connection) throws SQLException{
+        String queryString = "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES(?,?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+        query.setInt(2, tagId);
+
+        query.executeUpdate();
+
+    }
+
+    public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color, Connection connection) throws SQLException{
+        String queryString = "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)";
+
+        PreparedStatement stmt = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
+        
+        stmt.setInt(1, fleetId);
+        stmt.setString(2, name);
+        stmt.setString(3, description);
+        stmt.setString(4, color);
+
+        stmt.executeUpdate();
+
+        ResultSet resultSet = stmt.getGeneratedKeys();
+
+        int index = -1;
+        if(resultSet.next()){
+            index = resultSet.getInt(1);
+        }
+        System.out.println(index);
+        associateTag(flightId, index, connection);
+
+        return new FlightTag(index, fleetId, name, description, color);
     }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {

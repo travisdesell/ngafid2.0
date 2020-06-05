@@ -10,7 +10,7 @@ import java.sql.SQLException;
 
 public class FlightTag{
     //the key in the database
-    private int hashId;
+    private int hashId, fleetId;
     private String name, description;
     private String color;
 
@@ -20,8 +20,9 @@ public class FlightTag{
      * @param name the user specified name
      * @param description the user specified description of the tag
      */
-    public FlightTag(int hash, String name, String description, String color){
+    public FlightTag(int hash, int fleetId, String name, String description, String color){
         this.hashId = hash;
+        this.fleetId = fleetId;
         this.name = name;
         this.description = description;
         this.color = color;
@@ -32,10 +33,8 @@ public class FlightTag{
      * @param resultSet the result set containing the results of a query
      */
     public FlightTag(ResultSet resultSet) throws SQLException{
-        hashId = resultSet.getInt(1);
-        name = resultSet.getString(3);
-        description = resultSet.getString(4);
-        color = resultSet.getString(5);
+        this(resultSet.getInt(1), resultSet.getInt(2), resultSet.getString(3),
+             resultSet.getString(4), resultSet.getString(5));
     }
 
     /**
@@ -53,6 +52,14 @@ public class FlightTag{
      */
     public String getDescription(){
         return description;
+    }
+
+    /**
+     * Gives the fleetID for this flight
+     * @return the fleetID as an int
+     */
+    public int getFleetId(){
+        return fleetId;
     }
 
     /**

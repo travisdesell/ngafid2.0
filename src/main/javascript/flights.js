@@ -515,6 +515,7 @@ class Tags extends React.Component{
 
         this.state = {
             tags : props.tags,
+            flightId : props.flightId,
             activeTag : null, 
             infoActive : false,
             addActive : false,
@@ -546,13 +547,32 @@ class Tags extends React.Component{
         let tdescription = $("#description").val(); 
         let tcolor = $("#color").val(); 
 
-        // console.log("tag params: "+name+" "+description+" "+color);
-        this.state.tags.push({
-            color : tcolor,
+        var submissionData = {
             name : tname,
-            description : tdescription
-        });
-        this.setState(this.state);
+            description : tdescription,
+            color : tcolor,
+            id : this.state.flightId
+        };
+        console.log("Creating a new tag for flight #"+this.state.flightId);
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/create_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.tags.push(response);
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                //TODO: resolve duplicate tag creation here
+            },   
+            async: true 
+        });  
     }
 
     deleteTag(){
@@ -656,7 +676,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-tag"></span>
                             </span>                    
                         </div>
-                <input type="text" id="comName" class="form-control" placeholder="Common Name" value={defName}/>
+                <input type="text" id="comName" class="form-control" placeholder="Common Name"/>
                     </div>
                 </div>
                 <div class="col-sm">
@@ -666,7 +686,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-list"></span>
                             </span>                    
                         </div>
-                    <input type="text" id="description" class="form-control" placeholder="Description" value={defDescript}/>
+                    <input type="text" id="description" class="form-control" placeholder="Description"/>
                     </div>
                 </div>
                 <div class="col-">
@@ -1054,7 +1074,7 @@ class Flight extends React.Component {
             var submissionData = {
                 flightId : this.props.flightInfo.id,
                 eventDefinitionsLoaded : eventDefinitionsLoaded
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -1084,13 +1104,13 @@ class Flight extends React.Component {
                     thisFlight.state.events = events;
 
                     thisFlight.setState(thisFlight.state);
-                },   
+                },
                 error : function(jqXHR, textStatus, errorThrown) {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
                     errorModal.show("Error Loading Flight Coordinates", errorThrown);
-                },   
+                },
                 async: true 
             });  
 
@@ -1320,7 +1340,7 @@ class Flight extends React.Component {
         if (this.state.tagsVisible) {
             console.log("tags are visible");
             tagsRow = (
-                    <Tags tags={this.state.tags} parent={this} />
+                    <Tags tags={this.state.tags} flightId={flightInfo.id} parent={this} />
             );
         }
 
