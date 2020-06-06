@@ -356,6 +356,11 @@ public class Flight {
         return ids;
     }
 
+    /**
+     * Creates part of a SQL query to produce only the tags associated with a given flight
+     * @param ids the SET of tag ids this flight has
+     * @return a String that is usable in a SQL query
+     */
     private static String idLimStr(Set<Integer> ids){
         StringBuilder sb = new StringBuilder("WHERE ID = ");
         Iterator<Integer> it = ids.iterator();
@@ -371,6 +376,12 @@ public class Flight {
         return sb.toString();
     }
 
+    /**
+     * Gets the tags associated with a given flight
+     * @param connection the database connection
+     * @param flightId the id of the flight that the tags are retrieved for
+     * @return a List of tags
+     */
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if(tagIds.isEmpty()){
