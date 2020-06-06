@@ -596,14 +596,14 @@ class Events extends React.Component  {
         var eventStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
-                width: 5
+                width: 3
             })
         });
 
         var hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
-                width: 5
+                width: 3
             })
         });
 
@@ -708,7 +708,9 @@ class Flight extends React.Component {
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
-            eventLayer : null
+            eventLayer : null,
+
+            approachLayer : null
         }
     }
 
@@ -1077,6 +1079,86 @@ class Flight extends React.Component {
                     map.addLayer(thisFlight.state.layer);
 
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
+                    // adding itinerary (approaches and takeoffs) to flightpath
+                    var itinerary = thisFlight.props.flightInfo.itinerary;
+                    var itineraryLines = [];
+
+                    // TODO: port outside of function***
+                    var takeoff_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#34e5eb",
+                                    width: 3
+                                })
+                            });
+
+                    var go_around_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#3aeb34",
+                                    width: 3
+                                })
+                            });
+
+                    var touch_and_go_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#345feb",
+                                    width: 3
+                                })
+                            });
+
+                    var landing_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#ba34eb",
+                                    width: 3
+                                })
+                            });
+
+
+                    for (let i = 0; i < itinerary.length; i++) {
+                        // draw from different start and end points based on type (if takeoff)
+                        var stop = itinerary[i];
+                        let duration = null;
+                        if (stop.type == "takeoff") {
+                            duration = new LineString( stop.startOfTakeoff, stop.endOfTakeoff );
+                        } else {
+                            duration = new LineString( stop.startOfApproach, stop.minAltitudeIndex );       //TODO: add nanOffset
+                        }
+
+                        itineraryLines.push( new Feature({
+                                                 geometry: duration,
+                                                 name: 'Approach'
+                                             })
+                        );
+
+                        // set styles based on itin type
+                        if (stop.type == "takeoff") {
+                            itineraryLines[i].setStyle(takeoff_style);
+                        } else if (stop.type == "go_around") {
+                            itineraryLines[i].setStyle(go_around_style);
+                        } else if (stop.type == "landing") {
+                            itineraryLines[i].setStyle(landing_style);
+                        } else {
+                            itineraryLines[i].setStyle(touch_and_go_style);
+                        }
+                    }
+
+                    // create itineraryLayer
+                    thisFlight.state.itineraryLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [1,1,1,1],
+                                width: 3
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: itineraryLines
+                        })
+                    });
+
+                    // add approachLayer to map
+                    map.addLayer(thisFlight.state.approachLayer);
+
+
                     // adding coordinates to events, if needed
                     var events = [];
                     var eventPoints = [];
