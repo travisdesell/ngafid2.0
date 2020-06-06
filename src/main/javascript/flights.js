@@ -1081,63 +1081,59 @@ class Flight extends React.Component {
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
                     // adding itinerary (approaches and takeoffs) to flightpath
                     var itinerary = thisFlight.props.flightInfo.itinerary;
-                    var itineraryLines = [];
+                    var flight_phases = [];
 
+                    // Create flight phase styles
                     // TODO: port outside of function***
                     var takeoff_style = new Style({
                                 stroke: new Stroke({
-                                    color: "#34e5eb",
+                                    color: "#34eb52",
                                     width: 3
                                 })
                             });
 
-                    var go_around_style = new Style({
+                    var approach_style = new Style({
                                 stroke: new Stroke({
-                                    color: "#3aeb34",
+                                    color: "#347deb",
                                     width: 3
                                 })
                             });
 
-                    var touch_and_go_style = new Style({
-                                stroke: new Stroke({
-                                    color: "#345feb",
-                                    width: 3
-                                })
-                            });
-
-                    var landing_style = new Style({
-                                stroke: new Stroke({
-                                    color: "#ba34eb",
-                                    width: 3
-                                })
-                            });
-
-
+                    // create and add Features to flight_phases for each flight phase in itinerary
                     for (let i = 0; i < itinerary.length; i++) {
-                        // draw from different start and end points based on type (if takeoff)
                         var stop = itinerary[i];
-                        let duration = null;
-                        if (stop.type == "takeoff") {
-                            duration = new LineString( stop.startOfTakeoff, stop.endOfTakeoff );
+                        var approach = null;
+                        var takeoff = null;
+
+                        // creating Linestrings
+                        if (stop.type == "go_around") {
+                            approach = new LineString( points.slice( stop.startOfApproach, stop.minAltitudeIndex ) );
+                            takeoff = new LineString( points.slice( stop.minAltitudeIndex, stop.endOfApproach ) );
                         } else {
-                            duration = new LineString( stop.startOfApproach, stop.minAltitudeIndex );       //TODO: add nanOffset
+                            if (stop.type != "landing") {
+                                takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
+                            }
+                            if (stop.type != "takeoff") {
+                                approach = new LineString( points.slice( stop.startOfApproach, stop.minAltitudeIndex ) );
+                            }
                         }
 
-                        itineraryLines.push( new Feature({
-                                                 geometry: duration,
-                                                 name: 'Approach'
-                                             })
-                        );
-
-                        // set styles based on itin type
-                        if (stop.type == "takeoff") {
-                            itineraryLines[i].setStyle(takeoff_style);
-                        } else if (stop.type == "go_around") {
-                            itineraryLines[i].setStyle(go_around_style);
-                        } else if (stop.type == "landing") {
-                            itineraryLines[i].setStyle(landing_style);
-                        } else {
-                            itineraryLines[i].setStyle(touch_and_go_style);
+                        // set styles and add phases to flight_phases list
+                        if (approach != null) {
+                            let phase = new Feature({
+                                             geometry: approach,
+                                             name: 'Approach'
+                                         });
+                            phase.setStyle(approach_style);
+                            flight_phases.push( phase );
+                        }
+                        if (takeoff != null) {
+                            let phase = new Feature({
+                                             geometry: takeoff,
+                                             name: 'Takeoff'
+                                         });
+                            phase.setStyle(takeoff_style);
+                            flight_phases.push( phase );
                         }
                     }
 
@@ -1151,14 +1147,14 @@ class Flight extends React.Component {
                         }),
 
                         source : new VectorSource({
-                            features: itineraryLines
+                            features: flight_phases
                         })
                     });
 
                     // add approachLayer to map
-                    map.addLayer(thisFlight.state.approachLayer);
+                    map.addLayer(thisFlight.state.itineraryLayer);
 
-
+                    // EVENTS  //////////////////////////////////////
                     // adding coordinates to events, if needed
                     var events = [];
                     var eventPoints = [];
