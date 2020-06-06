@@ -210,6 +210,11 @@ $query = "CREATE TABLE `itinerary` (
     `min_runway_distance` double,
     `airport` VARCHAR(8),
     `runway` VARCHAR(16),
+    `start_of_approach` INT(11) NOT NULL,
+    `end_of_approach` INT(11) NOT NULL,
+    `start_of_takeoff` INT(11) NOT NULL,
+    `end_of_takeoff` INT(11) NOT NULL,
+    `type` VARCHAR(32),
 
     PRIMARY KEY(`id`),
     INDEX(`airport`),
