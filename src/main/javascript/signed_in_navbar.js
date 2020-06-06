@@ -13,7 +13,7 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
@@ -38,7 +38,7 @@ class DropdownLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
@@ -203,7 +203,7 @@ class SignedInNavbar extends React.Component {
                         <NavLink name={"Uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
-                            <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className="nav-link dropdown-toggle" href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 {"Account" + waitingUsersString}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">

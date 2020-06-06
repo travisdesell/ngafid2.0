@@ -1491,7 +1491,7 @@ class FlightsCard extends React.Component {
                     <div id="load-more"></div>
                 </div>
             );
-        }else{
+        } else {
             return(
                 <div className="card-body" style={style}>
                 <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
