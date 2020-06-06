@@ -1125,6 +1125,7 @@ public class Flight {
                     if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
                     currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
                 }
+
             } else {
                 //aiport is null, so if there was an airport being visited
                 //then we can determine it's runway and add it to the itinerary
@@ -1144,6 +1145,26 @@ public class Flight {
             currentItinerary.selectBestRunway();
             if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
         }
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // setting and determining itinerary type
+        int itinerary_size = itinerary.size();
+        for (int i = 0; i < itinerary_size; i++) {
+            itinerary.get(i).determineType();
+
+//            Itinerary itin = itinerary.get(i);
+//            // first and last must be take off and landing
+//            if (i == 0) {
+//                itin.setType(itin.TAKEOFF);}
+//            else if (i == itinerary_size - 1) {
+//                itin.setType(itin.LANDING);}
+//            else if (itin.determineTouchAndGo()) {
+//                itin.setType(itin.TOUCHANDGO);
+//            } else {
+//                itin.setType(itin.GOAROUND);
+//            }
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         System.err.println("Itinerary:");
         for (int i = 0; i < itinerary.size(); i++) {
