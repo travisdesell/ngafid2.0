@@ -1,3 +1,8 @@
+/**
+ * This class contains the data pertinent to a flight tag
+ * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
+ */
+
 package org.ngafid.common;
 
 import java.lang.String;
