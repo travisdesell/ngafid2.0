@@ -193,7 +193,43 @@ public class Tails {
         return fleet.getConfirmed(connection, systemId);
     }
 
-    public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
+    /**
+     * Gets an ArrayList of all the tails in the database for the given fleet, creating a Tail object for each.
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of Tail for each tail in this fleet
+     */
+    public static ArrayList<Tail> getAll(Connection connection, int fleetId) throws SQLException {
+        ArrayList<Tail> tails = new ArrayList<>();
+
+        String queryString = "SELECT * FROM tails WHERE fleet_id = ? ORDER BY tail";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //tail existed in the database, return the id
+            tails.add(new Tail(resultSet));
+        }
+        resultSet.close();
+        query.close();
+
+        return tails;
+    }
+
+    /**
+     * Gets an ArrayList of all the tail numbers in the database for the given fleet, as Strings
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of tail numbers for each tail in this fleet
+     */
+    public static ArrayList<String> getAllTails(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> tails = new ArrayList<>();
 
         String queryString = "SELECT tail FROM tails WHERE fleet_id = ? ORDER BY tail";
@@ -213,6 +249,36 @@ public class Tails {
 
         return tails;
     }
+
+    /**
+     * Gets an ArrayList of all the system ids in the database for this fleet, as Strings
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of system ids for each tail in this fleet
+     */
+    public static ArrayList<String> getAllSystemIds(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> systemIds = new ArrayList<>();
+
+        String queryString = "SELECT systemId FROM systemIds WHERE fleet_id = ? ORDER BY systemId";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //systemId existed in the database, return the id
+            String systemId = resultSet.getString(1);
+            systemIds.add(systemId);
+        }
+        resultSet.close();
+        query.close();
+
+        return systemIds;
+    }
+
 
     public static void removeUnused(Connection connection) throws SQLException {
         String queryString = "DELETE FROM tails WHERE NOT EXISTS (SELECT id FROM flights WHERE flights.system_id = tails.system_id AND flights.fleet_id = tails.fleet_id);";

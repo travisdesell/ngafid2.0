@@ -109,7 +109,7 @@ public class GetFlights implements Route {
             sb.append("var tailNumbers = JSON.parse('");
 
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAll(connection, fleetId)));
+            sb.append(gson.toJson(Tails.getAllTails(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tails names took: " + ((endTime - startTime) / 1000.0) + " seconds");
 
