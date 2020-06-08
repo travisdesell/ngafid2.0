@@ -77,6 +77,23 @@ var rules = [
     },
 
     {
+        name : "System ID",
+        conditions : [
+            { 
+                type : "select",
+                name : "condition",
+                options : [ "is", "is not" ]
+            },
+            {
+                type : "select",
+                name : "system id",
+                options : systemIds 
+            }
+        ]
+    },
+
+
+    {
         name : "Duration",
         conditions : [
             { 
@@ -423,11 +440,6 @@ class TraceButtons extends React.Component {
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
 
             var submissionData = {
-                request : "GET_DOUBLE_SERIES",
-                id_token : "TEST_ID_TOKEN",
-                //id_token : id_token,
-                //user_id : user_id
-                user_id : 1,
                 flightId : this.props.flightId,
                 seriesName : seriesName
             };   
@@ -768,11 +780,6 @@ class Flight extends React.Component {
             var thisFlight = this;
 
             var submissionData = {
-                request : "GET_DOUBLE_SERIES_NAMES",
-                id_token : "TEST_ID_TOKEN",
-                //id_token : id_token,
-                //user_id : user_id
-                user_id : 1,
                 flightId : this.props.flightInfo.id
             };   
 
@@ -1014,11 +1021,6 @@ class Flight extends React.Component {
             var thisFlight = this;
 
             var submissionData = {
-                request : "GET_COORDINATES",
-                id_token : "TEST_ID_TOKEN",
-                //id_token : id_token,
-                //user_id : user_id
-                user_id : 1,
                 flightId : this.props.flightInfo.id,
             };   
 
@@ -1232,6 +1234,7 @@ class Flight extends React.Component {
         let endTime = moment(flightInfo.endDateTime);
 
         let globeClasses = "";
+        let traceDisabled = false;
         let globeTooltip = "";
 
         //console.log(flightInfo);
@@ -1239,6 +1242,7 @@ class Flight extends React.Component {
             //console.log("flight " + flightInfo.id + " doesn't have coords!");
             globeClasses += " disabled";
             globeTooltip = "Cannot display flight on the map because the flight data did not have latitude/longitude.";
+            traceDisabled = true;
         } else {
             globeTooltip = "Click the globe to display the flight on the map.";
         }
@@ -1285,6 +1289,11 @@ class Flight extends React.Component {
                             {flightInfo.tailNumber}
                         </div>
 
+                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
+                            {flightInfo.systemId}
+                        </div>
+
+
                         <div className={cellClasses} style={{flexBasis:"120px", flexShrink:0, flexGrow:0}}>
 
                             {flightInfo.airframeType}
@@ -1314,7 +1323,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-exclamation p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
+                            <button className={buttonClasses + globeClasses} disabled={traceDisabled} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1322,7 +1331,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
@@ -1330,7 +1339,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={lastButtonClasses + globeClasses} style={styleButton} onClick={() => this.downloadClicked()}>
+                            <button className={lastButtonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.downloadClicked()}>
                                 <i className="fa fa-download p-1"></i>
                             </button>
                         </div>
@@ -1651,14 +1660,14 @@ class FlightsCard extends React.Component {
         if(flights.length > 0){
             var begin = this.state.page == 0;
             var end = this.state.page == this.state.numPages-1;
-            var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-            var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+            var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+            var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
 
             if(begin) {
-                prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+                prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
             }
             if(end){
-                next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+                next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
             }
 
 
@@ -1666,10 +1675,10 @@ class FlightsCard extends React.Component {
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
+                        <div className="card mb-1 m-1 border-secondary">
+                            <div className="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                                <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
+                                <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
                                     <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " flights per page"} size="sm">
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 flights per page</Dropdown.Item>
                                         <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 flights per page</Dropdown.Item>
@@ -1706,10 +1715,10 @@ class FlightsCard extends React.Component {
                                 }
                             })
                         }
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
+                        <div className="card mb-1 m-1 border-secondary">
+                            <div className="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                                <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
+                                <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                     {prev}
                                     {next}
                                 </div>
@@ -1720,7 +1729,7 @@ class FlightsCard extends React.Component {
                     <div id="load-more"></div>
                 </div>
             );
-        }else{
+        } else {
             return(
                 <div className="card-body" style={style}>
                 <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
