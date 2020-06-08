@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import org.ngafid.flights.Tails;
+
 
 public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
@@ -69,6 +71,13 @@ public class User {
      */
     public int getWaitingUserCount() {
         return fleet.getWaitingUserCount();
+    }
+
+    /**
+     * @return the number of unconfirmed tails for this user's fleet
+     */
+    public int getUnconfirmedTailsCount(Connection connection) throws SQLException {
+        return Tails.getUnconfirmedTailsCount(connection, fleet.getId());
     }
 
     /**

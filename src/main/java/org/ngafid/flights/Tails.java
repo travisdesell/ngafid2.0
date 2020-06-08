@@ -169,6 +169,19 @@ public class Tails {
         }
     }
 
+    public static void updateTail(Connection connection, int fleetId, String systemId, String tail) throws SQLException {
+        String queryString = "UPDATE tails SET tail = ?, confirmed = 1 WHERE fleet_id = ? AND system_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setString(1, tail);
+        query.setInt(2, fleetId);
+        query.setString(3, systemId);
+
+        LOG.info(query.toString());
+
+        query.executeUpdate();
+
+        query.close();
+    }
 
 
     public static String getId(Connection connection, int fleetId, String tail) throws SQLException {
@@ -193,7 +206,43 @@ public class Tails {
         return fleet.getConfirmed(connection, systemId);
     }
 
-    public static ArrayList<String> getAll(Connection connection, int fleetId) throws SQLException {
+    /**
+     * Gets an ArrayList of all the tails in the database for the given fleet, creating a Tail object for each.
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of Tail for each tail in this fleet
+     */
+    public static ArrayList<Tail> getAll(Connection connection, int fleetId) throws SQLException {
+        ArrayList<Tail> tails = new ArrayList<>();
+
+        String queryString = "SELECT * FROM tails WHERE fleet_id = ? ORDER BY tail";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //tail existed in the database, return the id
+            tails.add(new Tail(resultSet));
+        }
+        resultSet.close();
+        query.close();
+
+        return tails;
+    }
+
+    /**
+     * Gets an ArrayList of all the tail numbers in the database for the given fleet, as Strings
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of tail numbers for each tail in this fleet
+     */
+    public static ArrayList<String> getAllTails(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> tails = new ArrayList<>();
 
         String queryString = "SELECT tail FROM tails WHERE fleet_id = ? ORDER BY tail";
@@ -212,6 +261,59 @@ public class Tails {
         query.close();
 
         return tails;
+    }
+
+    /**
+     * Gets an ArrayList of all the system ids in the database for this fleet, as Strings
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of system ids for each tail in this fleet
+     */
+    public static ArrayList<String> getAllSystemIds(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> systemIds = new ArrayList<>();
+
+        String queryString = "SELECT system_id FROM tails WHERE fleet_id = ? ORDER BY system_id";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //systemId existed in the database, return the id
+            String systemId = resultSet.getString(1);
+            systemIds.add(systemId);
+        }
+        resultSet.close();
+        query.close();
+
+        return systemIds;
+    }
+
+
+    /**
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return the number of unconfirmed tails for this fleet
+     */
+    public static int getUnconfirmedTailsCount(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT count(*) FROM tails WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        int count = 0;
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            count = resultSet.getInt(1);
+        }
+        resultSet.close();
+        query.close();
+
+        return count;
     }
 
     public static void removeUnused(Connection connection) throws SQLException {

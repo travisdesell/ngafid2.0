@@ -295,8 +295,6 @@ class UploadsCard extends React.Component {
             };
 
             var formData = new FormData();
-            //formData.append("idToken", idToken);
-            formData.append("idToken", "TEST_ID_TOKEN");
             formData.append("request", "NEW_UPLOAD");
             formData.append("filename", filename);
             formData.append("identifier", identifier);
@@ -445,8 +443,6 @@ class UploadsCard extends React.Component {
 
         console.log("appending identifier: " + file.identifier);
         var formData = new FormData();
-        //formData.append("idToken", idToken);
-        formData.append("idToken", "TEST_ID_TOKEN");
         formData.append("request", "UPLOAD");
         formData.append("chunkNumber", chunkNumber);
         formData.append("identifier", file.identifier);
@@ -584,23 +580,23 @@ class UploadsCard extends React.Component {
                             console.log("PRE- "+uploads);
         var begin = this.state.page == 0;
         var end = this.state.page == this.state.numPages-1;
-        var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-            var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+        var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+            var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
 
         if(begin) {
-            prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+            prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
         }
         if(end){
-            next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+            next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
         return (
             <div className="card-body">
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <div class="card mb-1 m-1 border-secondary">
-                        <div class="p-2">
+                    <div className="card mb-1 m-1 border-secondary">
+                        <div className="p-2">
                             <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                            <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
+                            <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
                                 <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
@@ -616,7 +612,7 @@ class UploadsCard extends React.Component {
                                         {
                                             pages.map((pages, index) => {
                                                 return (
-                                                    <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                    <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
                                                 );
                                             })
                                         }
@@ -640,10 +636,10 @@ class UploadsCard extends React.Component {
                             );
                         })
                     }
-                    <div class="card mb-1 m-1 border-secondary">
-                        <div class="p-2">
+                    <div className="card mb-1 m-1 border-secondary">
+                        <div className="p-2">
                             <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                            <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
+                            <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                 {prev}
                                 {next}
                             </div>

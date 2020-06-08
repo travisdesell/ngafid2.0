@@ -10,14 +10,16 @@ $drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
-query_ngafid_db("DROP TABLE itinerary");
-query_ngafid_db("DROP TABLE double_series");
-query_ngafid_db("DROP TABLE string_series");
-query_ngafid_db("DROP TABLE flight_processed");
-query_ngafid_db("DROP TABLE event_statistics");
-query_ngafid_db("DROP TABLE events");
-query_ngafid_db("DROP TABLE flights");
-query_ngafid_db("DROP TABLE tails");
+query_ngafid_db("DROP TABLE flight_tag_map");
+query_ngafid_db("DROP TABLE flight_tags");
+//query_ngafid_db("DROP TABLE itinerary");
+//query_ngafid_db("DROP TABLE double_series");
+//query_ngafid_db("DROP TABLE string_series");
+//query_ngafid_db("DROP TABLE flight_processed");
+//query_ngafid_db("DROP TABLE event_statistics");
+//query_ngafid_db("DROP TABLE events");
+//query_ngafid_db("DROP TABLE flights");
+//query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
@@ -126,7 +128,7 @@ query_ngafid_db($query);
 
 
 $query = "CREATE TABLE `tails` (
-    `system_id` VARCHAR(16) NOT NULL,
+    `system_id` VARCHAR(64) NOT NULL,
     `fleet_id` INT(11) NOT NULL,
     `tail` VARCHAR(16),
     `confirmed` TINYINT(1) NOT NULL,
@@ -324,6 +326,7 @@ $query = "CREATE TABLE `event_definitions` (
     `condition_json` VARCHAR(512),
     `severity_column_names` VARCHAR(128),
     `severity_type` VARCHAR(3),
+    `color` VARCHAR(6) DEFAULT NULL,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`, `airframe_id`, `fleet_id`)

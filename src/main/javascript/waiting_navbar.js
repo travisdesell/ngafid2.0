@@ -9,7 +9,7 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
@@ -34,7 +34,7 @@ class DropdownLink extends React.Component {
 
         let onClick = this.props.onClick;
         let href = this.props.href;
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         if (typeof onClick == 'undefined') onClick = function(){};
 
         console.log("rendering dropdownlink '" + name + "'");
@@ -94,7 +94,7 @@ class UserNavbar extends React.Component {
 
                     <ul className="navbar-nav">
                         <li className="nav-item dropdown">
-                            <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
+                            <a className="nav-link dropdown-toggle" href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Account</a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
