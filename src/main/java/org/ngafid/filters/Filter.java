@@ -156,6 +156,16 @@ public class Filter{
                     return "flights.airframe_id = (SELECT id FROM airframes WHERE fleet_id = ? AND airframe != ?)";
                 }
 
+            case "System ID":
+                parameters.add(fleetId);
+                parameters.add(inputs.get(2));
+                if (inputs.get(1).equals("is")) {
+                    return "flights.fleet_id = ? AND flights.system_id = ?";
+                } else {
+                    return "flights.fleet_id = ? AND flights.system_id != ?";
+                }
+
+
             case "Tail Number":
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));

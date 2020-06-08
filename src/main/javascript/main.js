@@ -9,7 +9,7 @@ class TabHeader extends React.Component {
 
         return (
             <li className="nav-item">
-                <a className={classNames} href="javascript:void(0)" onClick={() => onClick()}>{name}</a>
+                <a className={classNames} href="#!" onClick={() => onClick()}>{name}</a>
             </li>
         );
     }

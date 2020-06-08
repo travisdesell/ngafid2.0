@@ -98,29 +98,35 @@ public class GetFlights implements Route {
             long startTime, endTime;
 
             StringBuilder sb = new StringBuilder();
-            sb.append("var airframes = JSON.parse('");
 
+            sb.append("var airframes = JSON.parse('");
             startTime = System.currentTimeMillis();
             sb.append(gson.toJson(Airframes.getAll(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all airframes took: " + ((endTime - startTime) / 1000.0) + " seconds");
-
             sb.append("');\n");
-            sb.append("var tailNumbers = JSON.parse('");
 
+
+            sb.append("var tailNumbers = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Tails.getAll(connection, fleetId)));
+            sb.append(gson.toJson(Tails.getAllTails(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tails names took: " + ((endTime - startTime) / 1000.0) + " seconds");
-
             sb.append("');\n");
-            sb.append("var doubleTimeSeriesNames = JSON.parse('");
 
+            sb.append("var systemIds = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Tails.getAllSystemIds(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all system ids names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+
+            sb.append("var doubleTimeSeriesNames = JSON.parse('");
             startTime = System.currentTimeMillis();
             sb.append(gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all double time series names took: " + ((endTime - startTime) / 1000.0) + " seconds");
-
             sb.append("');\n");
 
             sb.append("var visitedAirports = JSON.parse('");
