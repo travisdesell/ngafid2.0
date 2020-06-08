@@ -177,6 +177,7 @@ public final class WebServer {
         //Flight-Tagging routes
         Spark.post("/protected/flight_tags", new PostTags(gson));
         Spark.post("/protected/create_tag", new PostCreateTag(gson));
+        Spark.post("/protected/get_unassociated_tags", new PostUnassociatedTags(gson));
 
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
