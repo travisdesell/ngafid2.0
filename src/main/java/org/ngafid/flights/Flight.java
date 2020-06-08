@@ -1151,18 +1151,6 @@ public class Flight {
         int itinerary_size = itinerary.size();
         for (int i = 0; i < itinerary_size; i++) {
             itinerary.get(i).determineType();
-
-//            Itinerary itin = itinerary.get(i);
-//            // first and last must be take off and landing
-//            if (i == 0) {
-//                itin.setType(itin.TAKEOFF);}
-//            else if (i == itinerary_size - 1) {
-//                itin.setType(itin.LANDING);}
-//            else if (itin.determineTouchAndGo()) {
-//                itin.setType(itin.TOUCHANDGO);
-//            } else {
-//                itin.setType(itin.GOAROUND);
-//            }
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
