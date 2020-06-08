@@ -773,13 +773,19 @@ public class Flight {
         this.filename = zipEntryName;
         this.tailConfirmed = false;
 
+        /*
         if (!filename.contains("/")) {
             throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
         }
+        */
 
         String[] parts = zipEntryName.split("/");
-        this.suggestedTailNumber = parts[0];
-        if (suggestedTailNumber.equals("")) suggestedTailNumber = null;
+        if (parts.length == 0) {
+            suggestedTailNumber = null;
+        } else {
+            this.suggestedTailNumber = parts[0];
+            if (suggestedTailNumber.equals("")) suggestedTailNumber = null;
+        }
 
         try {
             inputStream = getReusableInputStream(inputStream);

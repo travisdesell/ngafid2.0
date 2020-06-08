@@ -169,6 +169,19 @@ public class Tails {
         }
     }
 
+    public static void updateTail(Connection connection, int fleetId, String systemId, String tail) throws SQLException {
+        String queryString = "UPDATE tails SET tail = ?, confirmed = 1 WHERE fleet_id = ? AND system_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setString(1, tail);
+        query.setInt(2, fleetId);
+        query.setString(3, systemId);
+
+        LOG.info(query.toString());
+
+        query.executeUpdate();
+
+        query.close();
+    }
 
 
     public static String getId(Connection connection, int fleetId, String tail) throws SQLException {
