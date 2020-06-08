@@ -70,6 +70,9 @@ class SystemIdsCard extends React.Component {
                 systemId.modified = false;
 
                 systemIdCard.setState(systemIdCard.state);
+
+                navbar.state.unconfirmedTailsCount--;
+                navbar.setState(navbar.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating Tail Number", errorThrown);

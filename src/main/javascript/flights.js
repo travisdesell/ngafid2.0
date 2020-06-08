@@ -76,6 +76,23 @@ var rules = [
     },
 
     {
+        name : "System ID",
+        conditions : [
+            { 
+                type : "select",
+                name : "condition",
+                options : [ "is", "is not" ]
+            },
+            {
+                type : "select",
+                name : "system id",
+                options : systemIds 
+            }
+        ]
+    },
+
+
+    {
         name : "Duration",
         conditions : [
             { 
@@ -1042,6 +1059,11 @@ class Flight extends React.Component {
                         <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
                             {flightInfo.tailNumber}
                         </div>
+
+                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
+                            {flightInfo.systemId}
+                        </div>
+
 
                         <div className={cellClasses} style={{flexBasis:"120px", flexShrink:0, flexGrow:0}}>
 

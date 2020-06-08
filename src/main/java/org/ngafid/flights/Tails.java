@@ -274,7 +274,7 @@ public class Tails {
     public static ArrayList<String> getAllSystemIds(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> systemIds = new ArrayList<>();
 
-        String queryString = "SELECT systemId FROM systemIds WHERE fleet_id = ? ORDER BY systemId";
+        String queryString = "SELECT system_id FROM tails WHERE fleet_id = ? ORDER BY system_id";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
 
@@ -292,6 +292,29 @@ public class Tails {
         return systemIds;
     }
 
+
+    /**
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return the number of unconfirmed tails for this fleet
+     */
+    public static int getUnconfirmedTailsCount(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT count(*) FROM tails WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        int count = 0;
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            count = resultSet.getInt(1);
+        }
+        resultSet.close();
+        query.close();
+
+        return count;
+    }
 
     public static void removeUnused(Connection connection) throws SQLException {
         String queryString = "DELETE FROM tails WHERE NOT EXISTS (SELECT id FROM flights WHERE flights.system_id = tails.system_id AND flights.fleet_id = tails.fleet_id);";
