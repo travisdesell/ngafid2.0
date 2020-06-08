@@ -660,6 +660,8 @@ class Events extends React.Component  {
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
 
+                <b className={"p-1"}> Display by event!</b>
+
                 {
                     this.state.events.map((event, index) => {
                         return (
