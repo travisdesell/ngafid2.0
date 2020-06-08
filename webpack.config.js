@@ -29,6 +29,8 @@ module.exports = {
         imports: __dirname + "/src/main/javascript/imports.js",
         flights: __dirname + "/src/main/javascript/flights.js",
         dashboard: __dirname + "/src/main/javascript/dashboard.js",
+        system_ids: __dirname + "/src/main/javascript/system_ids.js",
+        welcome: __dirname + "/src/main/javascript/welcome.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
