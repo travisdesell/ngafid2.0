@@ -656,11 +656,16 @@ class Events extends React.Component  {
             flex : "0 0 10em"
         };
 
+        let eventType = "type";
+
         return (
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
 
-                <b className={"p-1"}> Display by event!</b>
+                <div>
+                    <button className={buttonClasses} onClick={() => alert("it worked")} > Display by {eventType}</button>
+
+                </div>
 
                 {
                     this.state.events.map((event, index) => {
