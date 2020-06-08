@@ -74,15 +74,16 @@ public class GetSystemIds implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "system_ids.html";
         LOG.severe("template file: '" + templateFile + "'");
 
+        final Session session = request.session();
+        User user = session.attribute("user");
+        int fleetId = user.getFleetId();
+
         try  {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
             Connection connection = Database.getConnection();
 
-            final Session session = request.session();
-            User user = session.attribute("user");
-            int fleetId = user.getFleetId();
 
             ArrayList<Tail> tailInfo = Tails.getAll(connection, fleetId);
 

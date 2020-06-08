@@ -148,7 +148,6 @@ public final class WebServer {
         Spark.post("/reset_password", new PostResetPassword(gson));
 
 
-        Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/dashboard", new GetDashboard(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
@@ -192,6 +191,9 @@ public final class WebServer {
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+
+        Spark.get("/protected/system_ids", new GetSystemIds(gson));
+        Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
         Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
