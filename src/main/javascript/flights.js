@@ -674,11 +674,6 @@ class Events extends React.Component  {
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
 
-                <div>
-                    <button className={buttonClasses} onClick={() => alert("it worked")} > Display by {eventType}</button>
-
-                </div>
-
                 {
                     this.state.events.map((event, index) => {
                         return (
