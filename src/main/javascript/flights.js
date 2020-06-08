@@ -515,8 +515,9 @@ class Tags extends React.Component{
 
         this.state = {
             tags : props.tags,
+            unassociatedTags : null,
             flightId : props.flightId,
-            activeTag : null, 
+            activeTag : null,
             infoActive : false,
             addActive : false,
             editing : false,
@@ -536,6 +537,7 @@ class Tags extends React.Component{
     addClicked(){
         this.state.addActive = !this.state.addActive; 
         this.setState(this.state);
+        this.getUnassociatedTags();
     }
 
     editClicked(){
@@ -566,6 +568,33 @@ class Tags extends React.Component{
                 console.log("received response: ");
                 console.log(response);
                 thisFlight.state.tags.push(response);
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                //TODO: resolve duplicate tag creation here
+            },   
+            async: true 
+        });  
+    }
+
+    getUnassociatedTags(){
+        console.log("getting unassociated tags!")
+
+        var submissionData = {
+            id : this.state.flightId
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_unassociated_tags',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.unassociatedTags = response;
                 thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
@@ -616,14 +645,6 @@ class Tags extends React.Component{
         let addForm = "";
         let addDrop = "";
         let submitButton = "";
-
-        let tagStat = "";
-        if(this.state.tags == null || this.state.tags.size == 0){
-            tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>"No tags yet!"</b></div>
-        }
-        let tagInfo = "";
-        let tags = this.state.tags;
-        console.log(tags);
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
@@ -632,6 +653,38 @@ class Tags extends React.Component{
             flex : "0 2 2em",
         };
 
+        let tags = this.state.tags;
+        let unassociatedTags = this.state.unassociatedTags;
+        let hasOtherTags = unassociatedTags != null;
+
+        let tagStat = "";
+        if(this.state.tags == null || this.state.tags.size == 0){
+            tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
+            </div>
+        }else{
+           tagStat =  
+                <div className={cellClasses} style={cellStyle}>
+                {
+                    tags.map((tag, index) => {
+                        var cStyle = {
+                            flex : "0 10 10em",
+                            backgroundColor : tag.color
+                        };
+                        return (
+                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.showDetails(index)}>{tag.name}</button>
+                        );
+                    })
+                }
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Remove the selected tag from this flight" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
+                </div>
+        }
+        let tagInfo = "";
+        console.log(tags);
+       
         let details = "";
         if(this.state.detailsActive){
             details = 
@@ -655,8 +708,10 @@ class Tags extends React.Component{
             addDrop =  
                 <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
                     <Dropdown.Item as="button" onSelect={() => this.showAddForm()}>Create a new tag</Dropdown.Item>
-                    <Dropdown.Divider />
-                    {
+                    {this.state.unassociateTags != null &&
+                        <Dropdown.Divider />
+                    }
+                    {this.state.unassociatedTags != null &&
                         tags.map((tags, index) => {
                             return (
                                     <Dropdown.Item as="button" color={tags.color} onSelect={() => this.showAddForm()}>{tags.name}</Dropdown.Item>
@@ -713,24 +768,6 @@ class Tags extends React.Component{
                     <b className={"p-1"} style={{styleButton}}>Associated Tags:</b>
                 </div>
                 {tagStat} 
-                <div className={cellClasses} style={cellStyle}>
-                {
-                    tags.map((tag, index) => {
-                        var cStyle = {
-                            flex : "0 10 10em",
-                            backgroundColor : tag.color
-                        };
-                        return (
-                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.showDetails(index)}>{tag.name}</button>
-                        );
-                    })
-                }
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Remove the selected tag from this flight" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
-                
-                </div>
                 <div class="flex-row p-1">
                     {details}{addDrop}{addForm}{submitButton}
                 </div>

@@ -359,10 +359,11 @@ public class Flight {
     /**
      * Creates part of a SQL query to produce only the tags associated with a given flight
      * @param ids the SET of tag ids this flight has
+     * @param complement a flag to indicate if the string is used to query for tags that are not associated with this flight
      * @return a String that is usable in a SQL query
      */
-    private static String idLimStr(Set<Integer> ids){
-        StringBuilder sb = new StringBuilder("WHERE ID = ");
+    private static String idLimStr(Set<Integer> ids, boolean complement){
+        StringBuilder sb = new StringBuilder("WHERE ID " + ( complement ? "!" : "" ) + "= ");
         Iterator<Integer> it = ids.iterator();
 
         while(it.hasNext()){
@@ -370,7 +371,7 @@ public class Flight {
             if(!it.hasNext()){
                 break;
             }
-            sb.append(" OR ");
+            sb.append(complement ? " AND ID != " : " OR ID = ");
         }
 
         return sb.toString();
@@ -390,7 +391,46 @@ public class Flight {
 
         System.out.println("TAG NUMS: "+tagIds.toString());
 
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds);
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, false);
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<FlightTag> tags = new ArrayList<>();
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
+    public static List<FlightTag> getAllTags(Connection connection) throws SQLException{
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags ";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<FlightTag> tags = new ArrayList<>();
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
+    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId) throws SQLException{
+        Set<Integer> tagIds = getTagIds(connection, flightId);
+        if(tagIds.isEmpty()){
+            return getAllTags(connection);
+        }
+
+        System.out.println("TAG NUMS: "+tagIds.toString());
+
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, true);
         PreparedStatement query = connection.prepareStatement(queryString);
         ResultSet resultSet = query.executeQuery();
         List<FlightTag> tags = new ArrayList<>();
