@@ -124,7 +124,7 @@ public final class WebServer {
             User user = (User)request.session().attribute("user");
             if (user != null) {
                 LOG.info("user already logged in, redirecting to dashboard!");
-                response.redirect("/protected/dashboard");
+                response.redirect("/protected/welcome");
             }
         });
 
@@ -147,6 +147,7 @@ public final class WebServer {
         Spark.get("/reset_password", new GetResetPassword(gson));
         Spark.post("/reset_password", new PostResetPassword(gson));
 
+        Spark.get("/protected/welcome", new GetWelcome(gson));
 
         Spark.get("/protected/dashboard", new GetDashboard(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
