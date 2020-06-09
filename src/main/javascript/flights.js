@@ -510,11 +510,16 @@ class Tags extends React.Component{
     constructor(props) {
         super(props);
 
+        let pTags = [];
+        if(props.tags != null){
+            pTags = props.tags;
+        }
+
         console.log("constructing Tags, props.tags:");
         console.log(props.tags);
 
         this.state = {
-            tags : props.tags,
+            tags : pTags,
             unassociatedTags : [],
             flightId : props.flightId,
             activeTag : null,
@@ -606,10 +611,11 @@ class Tags extends React.Component{
 
     deleteTag(){
         console.log("delete tag invoked!");
-        confirmModal.show("Confirm Delete: '" + this.props.uploadInfo.filename + "'",
-                          "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flights associated tags. If other flights are still associated with this tag, it will remain on the server\n\n Otherwise, the tag will be removed from the server completely",
-                          () => {this.confirmDelete()}
-                         );
+        // confirmModal.show("Confirm Delete: '" + this.props.uploadInfo.filename + "'",
+        //                   "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flights associated tags. If other flights are still associated with this tag, it will remain on the server\n\n Otherwise, the tag will be removed from the server completely",
+        //                   () => {this.confirmDelete()}
+        //                  );
+
     }
 
     editTag(){
@@ -628,7 +634,8 @@ class Tags extends React.Component{
     showAddForm(){
         console.log("displaying add form!");
         this.state.addFormActive = !this.state.addFormActive;
-        this.setState(this.state);
+       
+ this.setState(this.state);
         this.toggleAssociateTag();
     }
 
@@ -638,6 +645,65 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+    removeTag(id, perm){
+        console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
+
+        var submissionData = {
+            id : this.state.flightId,
+            tag_id : id,
+            permanent : perm
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.tags = response;
+                thisFlight.setState(thisFlight.state);
+                thisFlight.getUnassociatedTags();
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                //TODO: resolve duplicate tag creation here
+            },   
+            async: true 
+        });  
+    }
+
+    associateTag(id){
+        console.log("associating tag #"+id+" with flight #"+this.state.flightId);
+
+        var submissionData = {
+            id : this.state.flightId,
+            tag_id : id
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/associate_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.tags.push(response);
+                thisFlight.getUnassociatedTags();
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                //TODO: resolve duplicate tag creation here
+            },   
+            async: true 
+        });  
+    }
+
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -645,6 +711,7 @@ class Tags extends React.Component{
         let addForm = "";
         let addDrop = "";
         let submitButton = "";
+        let activeTag = this.state.activeTag;
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
@@ -678,7 +745,7 @@ class Tags extends React.Component{
                     })
                 }
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Remove the selected tag from this flight" onClick={() => this.deleteTag()}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeTag.hashId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 </div>
@@ -716,7 +783,7 @@ class Tags extends React.Component{
                     {unassociatedTags != null &&
                         unassociatedTags.map((tag, index) => {
                             return (
-                                    <Dropdown.Item as="button" color={tag.color} onSelect={() => this.showAddForm()}>{tag.name}</Dropdown.Item>
+                                    <Dropdown.Item as="button" color={tag.color} onSelect={() => this.associateTag(tag.hashId)}>{tag.name}</Dropdown.Item>
                             );
                         })
                     }
