@@ -422,6 +422,25 @@ public class Flight {
         return tags;
     }
 
+    public static FlightTag getTag(Connection connection, int tagId) throws SQLException{
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, tagId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        FlightTag ft = null;
+
+        if(resultSet.next()){
+            ft = new FlightTag(resultSet);
+        }
+
+        resultSet.close();
+        query.close();
+
+        return ft;
+    }
+
     public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if(tagIds.isEmpty()){
@@ -445,8 +464,31 @@ public class Flight {
         return tags;
     }
 
+    /**
+     * Associates a tag with a given flight ID
+     * @param flightId the flightId that the tag will be associated with
+     * @param tagId the tagId being associated
+     * @param connection the database connection
+     */
     public static void associateTag(int flightId, int tagId, Connection connection) throws SQLException{
         String queryString = "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES(?,?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+        query.setInt(2, tagId);
+
+        query.executeUpdate();
+
+    }
+
+    /**
+     * dissociates a tag from a flight
+     * @param flightId the flightId to dissociate from
+     * @param tagId the tag to dissociate
+     * @param connection the database connection
+     */
+    public static void unassociateTag(int flightId, int tagId, Connection connection) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map WHERE flight_id = ? AND tag_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
