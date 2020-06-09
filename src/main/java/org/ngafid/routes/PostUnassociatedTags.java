@@ -48,6 +48,7 @@ public class PostUnassociatedTags implements Route {
 
 
         try {
+            System.out.println("try");
             Connection connection = Database.getConnection();
 
             List<FlightTag> fltTags = null;
@@ -63,7 +64,7 @@ public class PostUnassociatedTags implements Route {
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-
+            System.out.println("unassoc. tags: "+fltTags);
 
 
             return gson.toJson(fltTags);

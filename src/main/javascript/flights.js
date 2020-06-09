@@ -515,7 +515,7 @@ class Tags extends React.Component{
 
         this.state = {
             tags : props.tags,
-            unassociatedTags : null,
+            unassociatedTags : [],
             flightId : props.flightId,
             activeTag : null,
             infoActive : false,
@@ -655,6 +655,7 @@ class Tags extends React.Component{
 
         let tags = this.state.tags;
         let unassociatedTags = this.state.unassociatedTags;
+        console.log("usac tags: "+unassociatedTags);
         let hasOtherTags = unassociatedTags != null;
 
         let tagStat = "";
@@ -704,17 +705,18 @@ class Tags extends React.Component{
             defColor = this.state.activeTag.color;
         }
 
+
         if(this.state.addActive){
-            addDrop =  
+            addDrop =
                 <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
                     <Dropdown.Item as="button" onSelect={() => this.showAddForm()}>Create a new tag</Dropdown.Item>
-                    {this.state.unassociateTags != null &&
+                    {unassociatedTags != null &&
                         <Dropdown.Divider />
                     }
-                    {this.state.unassociatedTags != null &&
-                        tags.map((tags, index) => {
+                    {unassociatedTags != null &&
+                        unassociatedTags.map((tag, index) => {
                             return (
-                                    <Dropdown.Item as="button" color={tags.color} onSelect={() => this.showAddForm()}>{tags.name}</Dropdown.Item>
+                                    <Dropdown.Item as="button" color={tag.color} onSelect={() => this.showAddForm()}>{tag.name}</Dropdown.Item>
                             );
                         })
                     }
