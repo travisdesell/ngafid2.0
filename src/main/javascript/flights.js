@@ -1450,6 +1450,8 @@ class Flight extends React.Component {
             );
         }
 
+        let
+
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
             tracesRow = 
@@ -1491,8 +1493,12 @@ class Flight extends React.Component {
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
-                        <div className={cellClasses} style={{flexGrow:1}}>
+                        <div className={cellClasses} style={{flexBasis:"200", flexShrink:0, flexGrow:0}}>
                             {visitedAirports.join(", ")}
+                        </div>
+
+                        <div className={cellClasses} style={{flexGrow:1}}>
+                            {}
                         </div>
 
                         <div className="p-0">
