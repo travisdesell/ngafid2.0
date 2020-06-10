@@ -1428,6 +1428,14 @@ class Flight extends React.Component {
             }
         }
 
+        let tagNames = [];
+        if(this.state.tags != null){
+            for(var i = 0; i<this.state.tags.size; i++){
+                tagNames.push(this.state.tags[i].name);
+                console.log("----------"+name+",");
+            }
+        }
+
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
@@ -1450,7 +1458,7 @@ class Flight extends React.Component {
             );
         }
 
-        let
+        // let
 
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
@@ -1493,12 +1501,12 @@ class Flight extends React.Component {
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
-                        <div className={cellClasses} style={{flexBasis:"200", flexShrink:0, flexGrow:0}}>
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
                             {visitedAirports.join(", ")}
                         </div>
 
                         <div className={cellClasses} style={{flexGrow:1}}>
-                            {}
+                            {tagNames.join(", ")}
                         </div>
 
                         <div className="p-0">
