@@ -58,6 +58,15 @@ public class Page<T>{
     }
 
     /**
+     * Returns an element at a given index
+     * @param i the index of the page (1...size)
+     * @return an object of type T
+     */
+    public T at(int i){
+        return this.data.get(i);
+    }
+
+    /**
      * Returns a string represntation of the page, used for debugging and logging
      * @return a String
      */

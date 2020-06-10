@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
@@ -83,6 +84,9 @@ public class Flight {
     private String fileInformation;
     private ArrayList<String> dataTypes;
     private ArrayList<String> headers;
+
+    //the tags associated with this flight
+    private Optional<List<FlightTag>> tags = Optional.empty();
 
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
@@ -548,10 +552,19 @@ public class Flight {
         insertCompleted = resultSet.getBoolean(15);
 
         itinerary = Itinerary.getItinerary(connection, id);
+
+        List<FlightTag> tags = getTags(connection, id);
+        if(tags != null){
+            this.tags = Optional.of(tags);
+        }
     }
 
     public int getId() {
         return id;
+    }
+
+    public boolean hasTags(){
+        return this.tags.isPresent();
     }
 
     public int getFleetId() {
