@@ -772,7 +772,7 @@ class Flight extends React.Component {
 
             var submissionData = {
                 flightId : this.props.flightInfo.id
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -819,14 +819,14 @@ class Flight extends React.Component {
                     thisFlight.state.uncommonTraceNames = uncommonTraceNames;
                     thisFlight.state.traceNamesVisible = true;
                     thisFlight.setState(thisFlight.state);
-                },   
+                },
                 error : function(jqXHR, textStatus, errorThrown) {
                     this.state.commonTraceNames = null;
                     this.state.uncommonTraceNames = null;
                     errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
-                },   
-                async: true 
-            });  
+                },
+                async: true
+            });
         } else {
             let visible = !this.state.traceNamesVisible;
 
@@ -898,7 +898,7 @@ class Flight extends React.Component {
             var submissionData = {
                 flightId : this.props.flightInfo.id,
                 eventDefinitionsLoaded : eventDefinitionsLoaded
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -979,15 +979,15 @@ class Flight extends React.Component {
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     thisFlight.setState(thisFlight.state);
-                },   
+                },
                 error : function(jqXHR, textStatus, errorThrown) {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
                     errorModal.show("Error Loading Flight Events", errorThrown);
-                },   
-                async: true 
-            });  
+                },
+                async: true
+            });
 
         } else {
             console.log("events already loaded!");
@@ -1001,7 +1001,7 @@ class Flight extends React.Component {
     cesiumClicked() {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
-    
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -1013,7 +1013,7 @@ class Flight extends React.Component {
 
             var submissionData = {
                 flightId : this.props.flightInfo.id,
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
