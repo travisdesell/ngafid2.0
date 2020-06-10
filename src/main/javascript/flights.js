@@ -995,10 +995,11 @@ class Flight extends React.Component {
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
-            tags : null,
+            tags : props.tags.value,
             layer : null,
             color : color
         }
+        console.log(this.state.tags);
     }
 
     componentWillUnmount() {
@@ -1428,11 +1429,12 @@ class Flight extends React.Component {
             }
         }
 
+        console.log(this.state.tags);
         let tagNames = [];
         if(this.state.tags != null){
-            for(var i = 0; i<this.state.tags.size; i++){
+            for(let i = 0; i<this.state.tags.length; i++){
                 tagNames.push(this.state.tags[i].name);
-                console.log("----------"+name+",");
+                console.log("----------"+this.state.tags[i].name+",");
             }
         }
 
@@ -1454,7 +1456,7 @@ class Flight extends React.Component {
         if (this.state.tagsVisible) {
             console.log("tags are visible");
             tagsRow = (
-                    <Tags tags={this.state.tags} flightId={flightInfo.id} parent={this} />
+                    <Tags flightId={flightInfo.id} parent={this} />
             );
         }
 
@@ -1907,7 +1909,7 @@ class FlightsCard extends React.Component {
                             flights.map((flightInfo, index) => {
                                 if(flightInfo != null){
                                     return (
-                                            <Flight flightInfo={flightInfo} key={flightInfo.id} />
+                                            <Flight flightInfo={flightInfo} tags={flightInfo.tags} key={flightInfo.id} />
                                     );
                                 }
                             })
