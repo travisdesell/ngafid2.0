@@ -1411,6 +1411,10 @@ class Flight extends React.Component {
         let globeClasses = "";
         let globeTooltip = "";
 
+        var tagPillStyle = {
+            //TODO: put styling for the pills in here
+        };
+
         let tagTooltip = "Click to tag a flight for future queries and grouping";
 
         //console.log(flightInfo);
@@ -1456,7 +1460,7 @@ class Flight extends React.Component {
         if (this.state.tagsVisible) {
             console.log("tags are visible");
             tagsRow = (
-                    <Tags flightId={flightInfo.id} parent={this} />
+                    <Tags tags={this.state.tags} flightId={flightInfo.id} parent={this} />
             );
         }
 
@@ -1508,7 +1512,15 @@ class Flight extends React.Component {
                         </div>
 
                         <div className={cellClasses} style={{flexGrow:1}}>
-                            {tagNames.join(", ")}
+                            <div>
+                            {
+                                tagNames.map((name, index) => {
+                                    return(
+                                            <span class="badge badge-pill badge-primary" style={tagPillStyle}>{name}</span>
+                                    );
+                                })
+                            }
+                            </div>
                         </div>
 
                         <div className="p-0">
