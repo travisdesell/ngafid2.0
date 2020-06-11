@@ -1088,7 +1088,6 @@ class Flight extends React.Component {
                     var flight_phases = [];
 
                     // Create flight phase styles
-                    // TODO: port outside of function***
                     var takeoff_style = new Style({
                                 stroke: new Stroke({
                                     color: "#34eb52",
@@ -1158,7 +1157,7 @@ class Flight extends React.Component {
                     // add approachLayer to map
                     map.addLayer(thisFlight.state.itineraryLayer);
 
-                    // EVENTS  //////////////////////////////////////
+                    // EVENTS  ////////////////////////////////////////////////////////////////////////////////////////
                     // adding coordinates to events, if needed
                     var events = [];
                     var eventPoints = [];
@@ -1198,7 +1197,11 @@ class Flight extends React.Component {
 
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////
             // toggle visibility of events
-            this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+            if (this.state.eventLayer != null) {
+                this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+            }
+            // toggle visibility of itinerary
+            this.state.itineraryLayer.setVisible(this.state.pathVisible)
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             if (this.state.pathVisibile) {
