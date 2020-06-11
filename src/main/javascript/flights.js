@@ -602,47 +602,41 @@ class Events extends React.Component  {
 
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Toggle visibility of clicked event's VectorLayer
+        // Toggle visibility of clicked event's Feature
 
         // create eventStyle & hiddenStyle
         var eventStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
-                width: 5
+                width: 3
             })
         });
 
         var hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
-                width: 5
+                width: 3
             })
         });
 
-        // get right layer
-        let layers = map.getLayers();
-        for (let l = layers.array_.length - 1; l >= 0; l--) {                          // Iterate through each layer
-            let layer = layers.array_[l];
-            if (layer instanceof VectorLayer && layer.flightState.props.flightInfo.id == event.flightId) {              // roundabout way to get the right flight***
-                let eventMapped = layer.flightState.state.eventsMapped[index];
-                let eventPoints = layer.flightState.state.eventPoints;
-                event = eventPoints[index];                                 //override event var w/ event Feature
+        // get event info from flight
+        let flight = this.props.parent;
+        let eventMapped = flight.state.eventsMapped[index];
+        let eventPoints = flight.state.eventPoints;
+        event = eventPoints[index];                                 //override event var w/ event Feature
 
-                //toggle eventLayer style
-                if (!eventMapped) {                             // if event hidden
-                    event.setStyle(eventStyle);
-                    layer.flightState.state.eventsMapped[index] = !eventMapped;
+        //toggle eventLayer style
+        if (!eventMapped) {                             // if event hidden
+            event.setStyle(eventStyle);
+            flight.state.eventsMapped[index] = !eventMapped;
 
-                    // center map view on event location
-                    let coords = event.getGeometry().getFirstCoordinate();
-                    map.getView().setCenter(coords);
+            // center map view on event location
+            let coords = event.getGeometry().getFirstCoordinate();
+            map.getView().setCenter(coords);
 
-                } else {                                        // if event displayed
-                    event.setStyle(hiddenStyle);
-                    layer.flightState.state.eventsMapped[index] = !eventMapped;
-                }
-                break;
-            }
+        } else {                                        // if event displayed
+            event.setStyle(hiddenStyle);
+            flight.state.eventsMapped[index] = !eventMapped;
         }
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
@@ -668,9 +662,63 @@ class Events extends React.Component  {
             flex : "0 0 10em"
         };
 
+        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        let eventTypeSet = new Set();
+        let eventTypeButtons = [];
+
+        this.state.events.map((event, index) => {
+            if (!eventTypeSet.has(event.eventDefinitionId)) {
+                // add new eventDef to types set
+                eventTypeSet.add(event.eventDefinitionId);
+
+                // create button style (w/ proper color)
+                //let thisStyle = "flex:\"0 0 10em\";color:" + event.eventColor;
+
+                // create new button for toggle
+                let type =
+                        (
+                            <button className={buttonClasses} style={{flex : "0 0 10em", "background-color": event.color}} data-toggle="button" aria-pressed="false" key={index}
+                                        onClick={() =>
+                                            {
+                                                let flight = this.props.parent;
+                                                let eventsMapped = flight.state.eventsMapped;
+                                                let displayStatus = false;
+                                                let displayStatusSet = false;
+
+                                                // update eventDisplay for every event concerned
+                                                for (let e = 0; e < this.state.events.length; e++) {
+                                                    if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
+                                                        // ensure unified display
+                                                        if (!displayStatusSet) {
+                                                            displayStatus = eventsMapped[e];
+                                                            displayStatusSet = true;
+                                                        }
+                                                        eventsMapped[e] = displayStatus;
+                                                        this.updateEventDisplay(e);
+                                                    }
+                                                }
+                                            }
+                                        }>
+                                <b>{event.eventDefinition.name}</b>
+                            </button>
+                        );
+                eventTypeButtons.push(type);
+            }
+        })
+
         return (
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
+
+                <div className={"debug"}>
+                    {
+                        eventTypeButtons.map( (button) => {
+                            return (
+                                button
+                            )
+                        })
+                    }
+                </div>
 
                 {
                     this.state.events.map((event, index) => {
@@ -684,7 +732,6 @@ class Events extends React.Component  {
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
                                 </button>
                             </div>
-
                         );
                     })
                 }
