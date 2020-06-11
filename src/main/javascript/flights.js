@@ -528,7 +528,8 @@ class Tags extends React.Component{
             editing : false,
             detailsActive : false,
             addFormActive : false,
-            assocTagActice : false
+            assocTagActice : false,
+            parent : props.parent
         };
     }
 
@@ -574,6 +575,7 @@ class Tags extends React.Component{
                 console.log(response);
                 thisFlight.state.tags.push(response);
                 thisFlight.setState(thisFlight.state);
+                thisFlight.state.parent.setTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -601,6 +603,7 @@ class Tags extends React.Component{
                 console.log(response);
                 thisFlight.state.unassociatedTags = response;
                 thisFlight.setState(thisFlight.state);
+                thisFlight.state.parent.setTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -667,6 +670,7 @@ class Tags extends React.Component{
                 thisFlight.state.tags = response;
                 thisFlight.setState(thisFlight.state);
                 thisFlight.getUnassociatedTags();
+                thisFlight.state.parent.setTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -696,6 +700,7 @@ class Tags extends React.Component{
                 thisFlight.state.tags.push(response);
                 thisFlight.getUnassociatedTags();
                 thisFlight.setState(thisFlight.state);
+                thisFlight.state.parent.setTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -782,8 +787,11 @@ class Tags extends React.Component{
                     }
                     {unassociatedTags != null &&
                         unassociatedTags.map((tag, index) => {
+                            let style = {
+                                backgroundColor : tag.color
+                            }
                             return (
-                                    <Dropdown.Item as="button" color={tag.color} onSelect={() => this.associateTag(tag.hashId)}>{tag.name}</Dropdown.Item>
+                                    <Dropdown.Item as="button" style={style}  onSelect={() => this.associateTag(tag.hashId)}>{tag.name}</Dropdown.Item>
                             );
                         })
                     }
@@ -815,7 +823,7 @@ class Tags extends React.Component{
                 </div>
                 <div class="col-">
                     <div style={{flex: "0 0"}}>
-                <input type="color" name="eventColor" value={defColor} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
+                        <input type="color" name="eventColor" id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
                     </div>
                 </div>
                 <div class="col-sm">
@@ -1291,6 +1299,7 @@ class Flight extends React.Component {
 
             var submissionData = {
                 request : "GET_COORDINATES",
+
                 id_token : "TEST_ID_TOKEN",
                 //id_token : id_token,
                 //user_id : user_id
@@ -1395,6 +1404,11 @@ class Flight extends React.Component {
         }
     }
 
+    setTags(tags){
+        this.state.tags = tags;
+        this.setState(this.state);
+    }
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1434,12 +1448,9 @@ class Flight extends React.Component {
         }
 
         console.log(this.state.tags);
-        let tagNames = [];
+        let tags= [];
         if(this.state.tags != null){
-            for(let i = 0; i<this.state.tags.length; i++){
-                tagNames.push(this.state.tags[i].name);
-                console.log("----------"+this.state.tags[i].name+",");
-            }
+            tags = this.state.tags;
         }
 
         let itineraryRow = "";
@@ -1514,9 +1525,12 @@ class Flight extends React.Component {
                         <div className={cellClasses} style={{flexGrow:1}}>
                             <div>
                             {
-                                tagNames.map((name, index) => {
+                                tags.map((tag, index) => {
+                                    let style = {
+                                        backgroundColor : tag.color
+                                    }
                                     return(
-                                            <span class="badge badge-pill badge-primary" style={tagPillStyle}>{name}</span>
+                                            <span class="badge badge-pill badge-primary" style={style}>{tag.name}</span>
                                     );
                                 })
                             }
