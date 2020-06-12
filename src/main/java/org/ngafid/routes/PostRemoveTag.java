@@ -43,7 +43,7 @@ public class PostRemoveTag implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("id"));
+        int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int tagId = Integer.parseInt(request.queryParams("tag_id"));
         boolean isPermanent = Boolean.parseBoolean(request.queryParams("permanent"));
         System.out.println("TAGGED FLTID: "+flightId);
@@ -54,8 +54,9 @@ public class PostRemoveTag implements Route {
 
             if(isPermanent){
                 System.out.println("permanent deletion");
+                Flight.deleteTag(tagId, connection);
             }else{
-                Flight.unassociateTag(flightId, tagId, connection);
+                Flight.unassociateTags(tagId, connection, flightId);
             }
 
             List<FlightTag> tags = Flight.getTags(connection, flightId);

@@ -1,11 +1,11 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import Dropdown from 'react-bootstrap/Dropdown'
-import DropdownButton from 'react-bootstrap/DropdownButton'
-import {Alert, Button, InputGroup, Form, Col} from 'react-bootstrap'
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import {Alert, Button, InputGroup, Form, Col} from 'react-bootstrap';
 
-// import { confirmModal } from "./confirm_modal.js";
+import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
@@ -614,10 +614,10 @@ class Tags extends React.Component{
 
     deleteTag(){
         console.log("delete tag invoked!");
-        // confirmModal.show("Confirm Delete: '" + this.props.uploadInfo.filename + "'",
-        //                   "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flights associated tags. If other flights are still associated with this tag, it will remain on the server\n\n Otherwise, the tag will be removed from the server completely",
-        //                   () => {this.confirmDelete()}
-        //                  );
+        confirmModal.show("Confirm Delete Tag: '" + this.state.activeTag.name + "'",
+                          "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well ass all other flights that this tag is associated with. This operation cannot be undone!",
+                          () => {this.confirmDelete()}
+                         );
 
     }
 
@@ -631,14 +631,15 @@ class Tags extends React.Component{
     }
 
     confirmDelete(){
-        console.log("delete is confirmed!")
+        console.log("delete is confirmed!");
+        this.removeTag(this.state.activeTag.hashId, true);
     }
 
     showAddForm(){
         console.log("displaying add form!");
         this.state.addFormActive = !this.state.addFormActive;
        
- this.setState(this.state);
+        this.setState(this.state);
         this.toggleAssociateTag();
     }
 
@@ -652,7 +653,7 @@ class Tags extends React.Component{
         console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
 
         var submissionData = {
-            id : this.state.flightId,
+            flight_id : this.state.flightId,
             tag_id : id,
             permanent : perm
         };
@@ -731,7 +732,8 @@ class Tags extends React.Component{
         let hasOtherTags = unassociatedTags != null;
 
         let tagStat = "";
-        if(this.state.tags == null || this.state.tags.size == 0){
+        console.log("TAGS: "+tags);
+        if(tags == null || tags.length == 0){
             tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
             </div>
@@ -742,7 +744,9 @@ class Tags extends React.Component{
                     tags.map((tag, index) => {
                         var cStyle = {
                             flex : "0 10 10em",
-                            backgroundColor : tag.color
+                            backgroundColor : tag.color,
+                            color : 'white',
+                            fontWeight : '550'
                         };
                         return (
                                 <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.showDetails(index)}>{tag.name}</button>
@@ -752,7 +756,7 @@ class Tags extends React.Component{
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeTag.hashId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 </div>
         }
         let tagInfo = "";
@@ -788,7 +792,8 @@ class Tags extends React.Component{
                     {unassociatedTags != null &&
                         unassociatedTags.map((tag, index) => {
                             let style = {
-                                backgroundColor : tag.color
+                                backgroundColor : tag.color,
+                                color : 'white'
                             }
                             return (
                                     <Dropdown.Item as="button" style={style}  onSelect={() => this.associateTag(tag.hashId)}>{tag.name}</Dropdown.Item>
@@ -1485,6 +1490,21 @@ class Flight extends React.Component {
                 );
         }
 
+        let tagPills = "";
+        if(this.state.tags != null){
+            tagPills = 
+            tags.map((tag, index) => {
+                let style = {
+                    backgroundColor : tag.color,
+                    marginRight : '4px',
+                    lineHeight : '1.5'
+                }
+                return(
+                        <span class="badge badge-pill badge-primary" style={style}>{tag.name}</span>
+                );
+            });
+        }
+
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
@@ -1524,16 +1544,7 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{flexGrow:1}}>
                             <div>
-                            {
-                                tags.map((tag, index) => {
-                                    let style = {
-                                        backgroundColor : tag.color
-                                    }
-                                    return(
-                                            <span class="badge badge-pill badge-primary" style={style}>{tag.name}</span>
-                                    );
-                                })
-                            }
+                            {tagPills}
                             </div>
                         </div>
 
