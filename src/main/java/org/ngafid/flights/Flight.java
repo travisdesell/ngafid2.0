@@ -382,6 +382,27 @@ public class Flight {
     }
 
     /**
+     * Creates part of a SQL query to produce only the tags associated with a given flight
+     * @param ids the array of int ids
+     * @param complement a flag to indicate if the string is used to query for tags that are not associated with this flight
+     * @return a String that is usable in a SQL query
+     */
+    private static String idLimStr(int[] ids, String idName, boolean complement){
+        StringBuilder sb = new StringBuilder("WHERE "+idName+( complement ? "!" : "" ) + "= ");
+
+        int size = ids.length;
+        for(int i = 0; i<size; i++){
+            sb.append(ids[i]);
+            if(i == size - 1){
+                break;
+            }
+            sb.append(complement ? (" AND " + "idName" + " != ") : (" OR " + idName + " = "));
+        }
+           
+        return sb.toString();
+    }
+
+    /**
      * Gets the tags associated with a given flight
      * @param connection the database connection
      * @param flightId the id of the flight that the tags are retrieved for
@@ -491,15 +512,39 @@ public class Flight {
      * @param tagId the tag to dissociate
      * @param connection the database connection
      */
-    public static void unassociateTag(int flightId, int tagId, Connection connection) throws SQLException{
-        String queryString = "DELETE FROM flight_tag_map WHERE flight_id = ? AND tag_id = ?";
-
+    public static void unassociateTags(int tagId, Connection connection, int ... flightId) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, flightId);
-        query.setInt(2, tagId);
+        query.setInt(1, tagId);
 
         query.executeUpdate();
 
+    }
+
+    /**
+     * permanently deletes a tag from the database
+     * @param tagId the tag to dissociate
+     * @param connection the database connection
+     */
+    public static void deleteTag(int tagId, Connection connection) throws SQLException{
+        String queryString = "SELECT flight_id FROM flight_tag_map WHERE tag_id = "+tagId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Integer> ids = new ArrayList<>();
+
+        while(resultSet.next()){
+            ids.add(resultSet.getInt(1));
+        }
+
+        int [] args = ids.stream().mapToInt(Integer::intValue).toArray();
+        //unassociate the tags
+        unassociateTags(tagId, connection, args);
+
+        //delete them from the db
+        queryString = "DELETE FROM flight_tags WHERE id = "+tagId;
+        query = connection.prepareStatement(queryString);
+        query.executeUpdate();
     }
 
     public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color, Connection connection) throws SQLException{
@@ -517,9 +562,11 @@ public class Flight {
         ResultSet resultSet = stmt.getGeneratedKeys();
 
         int index = -1;
+
         if(resultSet.next()){
             index = resultSet.getInt(1);
         }
+
         System.out.println(index);
         associateTag(flightId, index, connection);
 
