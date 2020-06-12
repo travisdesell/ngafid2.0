@@ -547,6 +547,53 @@ public class Flight {
         query.executeUpdate();
     }
 
+    /**
+     * Edits a tag that is already in the database
+     * @pre @param flightTag is not equal to the tag currently in the db
+     * @param connection the database connection
+     * @param flightTag the edited flightTag
+     * @return the new instance of the flightTag in the database
+     * @throws SQLException if there is an error with a SQL query
+     */
+    public static FlightTag editTag(Connection connection, FlightTag flightTag) throws SQLException{
+        FlightTag current = getTag(connection, flightTag.hashCode());
+        String newName = flightTag.getName();
+        String newDescription = flightTag.getDescription();
+        String newColor = flightTag.getColor();
+
+        if(!current.equals(flightTag)){
+            StringBuilder queryString = new StringBuilder("UPDATE flight_tags SET");
+            boolean first = true;
+            if(!current.getName().equals(newName)){
+                queryString.append(" name = '");
+                queryString.append(newName);
+                queryString.append("' ");
+                first = false;
+            }
+            if(!current.getDescription().equals(newDescription)){
+                queryString.append( (first ? " " : ", ") );
+                queryString.append("description = '");
+                queryString.append(newDescription);
+                queryString.append("' ");
+                first = false;
+            }
+            if(!current.getColor().equals(newColor)){
+                queryString.append( (first ? " " : ", ") );
+                queryString.append("color = '");
+                queryString.append(newColor);
+                queryString.append("' ");
+            }
+
+            queryString.append("WHERE id = "+flightTag.hashCode());
+            System.out.println("Query String Update: "+queryString.toString());
+            PreparedStatement query = connection.prepareStatement(queryString.toString());
+            query.executeUpdate();
+
+            return getTag(connection, flightTag.hashCode());
+        }
+        return null; //this should never happen, it violates the precondition!
+    }
+
     public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color, Connection connection) throws SQLException{
         String queryString = "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)";
 

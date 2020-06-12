@@ -630,6 +630,40 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+    submitEdit(){
+        console.log("editing tag: "+this.state.activeTag.hashId);
+
+        var oldTag = this.state.activeTag;
+        var submissionData = {
+            tag_id : this.state.activeTag.hashId,
+            name : $("#comName").val(),
+            description : $("#description").val(),
+            color : $("#color").val()
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/edit_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.activeTag = oldTag;
+                thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
+                thisFlight.state.detailsActive = false;
+                thisFlight.setState(thisFlight.state);
+                thisFlight.state.parent.setTags(thisFlight.state.tags);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                //TODO: resolve duplicate tag creation here
+            },   
+            async: true 
+        });  
+    }
+
     confirmDelete(){
         console.log("delete is confirmed!");
         this.removeTag(this.state.activeTag.hashId, true);
@@ -774,11 +808,14 @@ class Tags extends React.Component{
                 // </div>
         }
 
-        let defName = "", defDescript = "", defColor="#ff00ff";
+        let defName = "", defDescript = "", defColor="#ff00ff", defAddAction = (() => this.addTag());
         if(this.state.editing){
             defName = this.state.activeTag.name;
             defDescript = this.state.activeTag.description;
             defColor = this.state.activeTag.color;
+            defAddAction = (
+                (() => this.submitEdit())
+            );
         }
 
 
@@ -813,7 +850,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-tag"></span>
                             </span>                    
                         </div>
-                <input type="text" id="comName" class="form-control" placeholder="Common Name"/>
+                <input type="text" id="comName" class="form-control" defaultValue={defName} placeholder="Common Name"/>
                     </div>
                 </div>
                 <div class="col-sm">
@@ -823,17 +860,17 @@ class Tags extends React.Component{
                                 <span class="fa fa-list"></span>
                             </span>                    
                         </div>
-                    <input type="text" id="description" class="form-control" placeholder="Description"/>
+                <input type="text" id="description" class="form-control" defaultValue={defDescript} placeholder="Description"/>
                     </div>
                 </div>
                 <div class="col-">
                     <div style={{flex: "0 0"}}>
-                        <input type="color" name="eventColor" id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
+                <input type="color" name="eventColor" defaultValue={defColor} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
                     </div>
                 </div>
                 <div class="col-sm">
                     <div class="input-group">
-                    <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={() => this.addTag()}>
+                    <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction}>
                             <i class="fa fa-check" aria-hidden="true"></i>
                                 Submit
                         </button>

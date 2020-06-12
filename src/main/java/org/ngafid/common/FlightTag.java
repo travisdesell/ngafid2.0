@@ -91,7 +91,10 @@ public class FlightTag{
     public boolean equals(Object other){
         if(other instanceof FlightTag){
             FlightTag t = (FlightTag)other;
-            return t.hashCode() == this.hashCode();
+            return t.description.equals(this.description) &&
+                t.name.equals(this.name) &&
+                t.color.equals(this.color) &&
+                t.fleetId == this.fleetId;
         }
         return false;
     }
