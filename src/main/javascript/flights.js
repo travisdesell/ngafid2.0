@@ -1003,7 +1003,8 @@ class Flight extends React.Component {
             uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
-            tags : null, 
+            tags : null,
+            allFlights : null,
             traceNamesVisible : false,
             eventsVisible : false,
             tagsVisible : false,
@@ -1012,7 +1013,7 @@ class Flight extends React.Component {
             layer : null,
             color : color
         }
-        console.log(this.state.tags);
+        console.log("ALL FLTS "+props.allFlights);
     }
 
     componentWillUnmount() {
@@ -1414,6 +1415,10 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
+    updateAllFlights(){
+        
+    }
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1500,7 +1505,7 @@ class Flight extends React.Component {
                     lineHeight : '1.5'
                 }
                 return(
-                        <span class="badge badge-pill badge-primary" style={style}>{tag.name}</span>
+                        <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>{tag.name}</span>
                 );
             });
         }
@@ -1544,7 +1549,7 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{flexGrow:1}}>
                             <div>
-                            {tagPills}
+                                {tagPills}
                             </div>
                         </div>
 
@@ -1870,6 +1875,7 @@ class FlightsCard extends React.Component {
         console.log("rendering flights!");
 
         let flights = [];
+        var allFlights = [];
         if (typeof this.state.flights != 'undefined') {
             flights = this.state.flights;
 
@@ -1943,10 +1949,10 @@ class FlightsCard extends React.Component {
                         </div>
 
                         {
-                            flights.map((flightInfo, index) => {
+                            allFlights = flights.map((flightInfo, index) => {
                                 if(flightInfo != null){
                                     return (
-                                            <Flight flightInfo={flightInfo} tags={flightInfo.tags} key={flightInfo.id} />
+                                            <Flight flightInfo={flightInfo} allFlights={allFlights} tags={flightInfo.tags} key={flightInfo.id} />
                                     );
                                 }
                             })
