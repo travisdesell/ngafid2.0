@@ -123,7 +123,7 @@ public final class WebServer {
         Spark.before("/", (request, response) -> {
             User user = (User)request.session().attribute("user");
             if (user != null) {
-                LOG.info("user already logged in, redirecting to dashboard!");
+                LOG.info("user already logged in, redirecting to welcome!");
                 response.redirect("/protected/welcome");
             }
         });

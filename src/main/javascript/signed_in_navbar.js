@@ -132,7 +132,7 @@ class SignedInNavbar extends React.Component {
                 //processing the response will update the navbar
                 //to the logged out state
 
-                //redirect to the dashboard page
+                //redirect to the welcome page
                 window.location.replace("/logout_success");
             },
             error : function(jqXHR, textStatus, errorThrown) {
