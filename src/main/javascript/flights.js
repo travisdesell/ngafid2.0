@@ -612,6 +612,13 @@ class Events extends React.Component  {
             })
         });
 
+        var outlineStyle = new Style({                                                   // create style getter methods**
+            stroke: new Stroke({
+                color: "#000000",
+                width: 5
+            })
+        });
+
         var hiddenStyle = new Style({
             stroke: new Stroke({
                 color: [0,0,0,0],
@@ -623,11 +630,13 @@ class Events extends React.Component  {
         let flight = this.props.parent;
         let eventMapped = flight.state.eventsMapped[index];
         let eventPoints = flight.state.eventPoints;
+        let eventOutline = flight.state.eventOutlines[index];
         event = eventPoints[index];                                 //override event var w/ event Feature
 
         //toggle eventLayer style
         if (!eventMapped) {                             // if event hidden
             event.setStyle(eventStyle);
+            eventOutline.setStyle(outlineStyle);
             flight.state.eventsMapped[index] = !eventMapped;
 
             // center map view on event location
@@ -636,6 +645,7 @@ class Events extends React.Component  {
 
         } else {                                        // if event displayed
             event.setStyle(hiddenStyle);
+            eventOutline.setStyle(hiddenStyle);
             flight.state.eventsMapped[index] = !eventMapped;
         }
         //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -665,19 +675,17 @@ class Events extends React.Component  {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         let eventTypeSet = new Set();
         let eventTypeButtons = [];
+        let thisFlight = this.props.parent;
 
         this.state.events.map((event, index) => {
             if (!eventTypeSet.has(event.eventDefinitionId)) {
                 // add new eventDef to types set
                 eventTypeSet.add(event.eventDefinitionId);
 
-                // create button style (w/ proper color)
-                //let thisStyle = "flex:\"0 0 10em\";color:" + event.eventColor;
-
                 // create new button for toggle
                 let type =
                         (
-                            <button className={buttonClasses} style={{flex : "0 0 10em", "background-color": event.color}} data-toggle="button" aria-pressed="false" key={index}
+                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": event.color, "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
                                                 let flight = this.props.parent;
@@ -690,11 +698,15 @@ class Events extends React.Component  {
                                                     if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
                                                         // ensure unified display
                                                         if (!displayStatusSet) {
-                                                            displayStatus = eventsMapped[e];
+                                                            displayStatus = !eventsMapped[e];
                                                             displayStatusSet = true;
                                                         }
-                                                        eventsMapped[e] = displayStatus;
-                                                        this.updateEventDisplay(e);
+                                                        // eventsMapped[e] = displayStatus;
+                                                        // this.updateEventDisplay(e);
+
+                                                        if (eventsMapped[e] != displayStatus) {
+                                                            document.getElementById("_" + flight.props.flightInfo.id + e).click();
+                                                        }
                                                     }
                                                 }
                                             }
@@ -710,7 +722,7 @@ class Events extends React.Component  {
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
 
-                <div className={"debug"}>
+                <div className={"eventTypes"}>
                     {
                         eventTypeButtons.map( (button) => {
                             return (
@@ -722,13 +734,14 @@ class Events extends React.Component  {
 
                 {
                     this.state.events.map((event, index) => {
+                        let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
                                 <div style={{flex: "0 0"}}>
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
                                 </button>
                             </div>
@@ -767,7 +780,9 @@ class Flight extends React.Component {
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
-            eventLayer : null
+            eventLayer : null,
+            eventOutlines : [],
+            eventOutlineLayer : null
         }
     }
 
@@ -979,6 +994,7 @@ class Flight extends React.Component {
                     for (let i = 0; i < events.length; i++) {
                         var points;
                         var eventPoint;
+                        var eventOutline;
                         let event = events[i];
 
                         // Create Feature for event
@@ -988,18 +1004,32 @@ class Flight extends React.Component {
                                 geometry : new LineString( [0,0] ),
                                 name: 'Event'
                             });
+
+                            // create outlines
+                            eventOutline = new Feature({
+                                geometry : new LineString( [0,0] ),
+                                name: 'EventOutline'
+                            });
+
                         } else {
                             // create eventPoint with preloaded coordinates
                             points = thisFlight.state.points;
                             eventPoint = new Feature({
                                  geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
                                  name: 'Event'
-                             });
+                            });
+
+                            // create outlines
+                            eventOutline = new Feature({
+                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
+                                 name: 'EventOutline'
+                            });
                         }
 
                         // add eventPoint to flight
                         thisFlight.state.eventsMapped.push(false);
                         thisFlight.state.eventPoints.push(eventPoint);
+                        thisFlight.state.eventOutlines.push(eventOutline);
                     }
 
                     // create eventLayer & add eventPoints
@@ -1016,11 +1046,27 @@ class Flight extends React.Component {
                         })
                     });
 
-                    thisFlight.state.eventLayer.flightState = thisFlight;
+                    // create eventLayer & add eventPoints
+                    thisFlight.state.eventOutlineLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [0,0,0,0],
+                                width: 4
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: thisFlight.state.eventOutlines
+                        })
+                    });
+
+                    //thisFlight.state.eventLayer.flightState = thisFlight;
+                    thisFlight.state.eventOutlineLayer.setVisible(true);
                     thisFlight.state.eventLayer.setVisible(true);
 
                     // add to map only if flightPath loaded
                     if (thisFlight.state.mapLoaded){
+                        map.addLayer(thisFlight.state.eventOutlineLayer);
                         map.addLayer(thisFlight.state.eventLayer);
                     }
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1129,16 +1175,21 @@ class Flight extends React.Component {
                     // adding coordinates to events, if needed
                     var events = [];
                     var eventPoints = [];
+                    var eventOutlines = [];
                     if (thisFlight.state.eventsLoaded){
                         events = thisFlight.state.events;
                         eventPoints = thisFlight.state.eventPoints;
+                        eventOutlines = thisFlight.state.eventOutlines;
                         for (let i = 0; i < events.length; i++){
                             let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
+                            eventOutlines[i].setGeometry(line);
                         }
 
                         // add eventLayer to front of map
                         let eventLayer = thisFlight.state.eventLayer;
+                        let outlineLayer = thisFlight.state.eventOutlineLayer;
+                        map.addLayer(outlineLayer);
                         map.addLayer(eventLayer);
                     }
                     ///////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1166,6 +1217,7 @@ class Flight extends React.Component {
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////
             // toggle visibility of events
             this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+            this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
             ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             if (this.state.pathVisibile) {
