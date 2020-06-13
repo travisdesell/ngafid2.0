@@ -6,6 +6,9 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -370,6 +373,57 @@ public class EventStatistics {
         preparedStatement.close();
 
         return eventStatistics;
+    }
+
+    /**
+     * Gets the number of exceedences for a given fleet between two dates. If either is null it will
+     * select greater than or less than the date specified. If both are null it gets the total amount
+     * of exceedences.
+     *
+     * @param connection is the connection to the database
+     * @param fleetId is the id of the fleet
+     * @param startTime is the earliest time to start counting events (it will count from the beginning of time if it is null)
+     * @param endTime is the latest time to count events (it will count until the current date if it is null)
+     *
+     * @return the number of events between the two given times
+     */
+    public static int getExceedenceCount(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
+        String query = "SELECT count(events.id) FROM events, flights WHERE flights.fleet_id = ? AND events.flight_id = flights.id";
+
+        if (startTime != null) {
+            query += " AND events.end_time >= ?";
+        }
+
+        if (endTime != null) {
+            query += " AND events.end_time <= ?";
+        }
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, fleetId);
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        int current = 2;
+        if (startTime != null) {
+            preparedStatement.setString(current, startTime.format(formatter));
+            current++;
+        }
+
+        if (endTime != null) {
+            preparedStatement.setString(current, endTime.format(formatter));
+            current++;
+        }
+        LOG.info(preparedStatement.toString());
+
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        resultSet.next();
+        int count = resultSet.getInt(1);
+
+        resultSet.close();
+        preparedStatement.close();
+
+        return count;
     }
 
 }

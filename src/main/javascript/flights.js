@@ -1465,7 +1465,7 @@ class FlightsCard extends React.Component {
                                             {
                                                 pages.map((pages, index) => {
                                                     return (
-                                                            <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                            <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
                                                     );
                                                 })
                                             }

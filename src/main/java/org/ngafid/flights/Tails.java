@@ -316,10 +316,44 @@ public class Tails {
         return count;
     }
 
+    /**
+     *  Gets the total number of tails for a fleet.
+     *
+     *  @param connection is the database connection
+     *  @param fleetId is the id of the fleet
+     *
+     *  @return the number of different tails in the fleet
+     */
+    public static int getNumberTails(Connection connection, int fleetId) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString  = "SELECT count(system_id) FROM tails WHERE fleet_id = ?";
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        resultSet.next();
+        int numberTails = resultSet.getInt(1);
+        System.out.println("number of tails is: " + numberTails);
+
+        resultSet.close();
+        query.close();
+
+        return numberTails;
+    }
+
+
     public static void removeUnused(Connection connection) throws SQLException {
         String queryString = "DELETE FROM tails WHERE NOT EXISTS (SELECT id FROM flights WHERE flights.system_id = tails.system_id AND flights.fleet_id = tails.fleet_id);";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.executeUpdate();
         query.close();
     }
+
+
 }

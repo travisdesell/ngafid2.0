@@ -14,6 +14,10 @@ import java.util.HashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+
 import com.google.gson.Gson;
 
 import spark.Route;
@@ -25,8 +29,14 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 
+import org.ngafid.filters.Filter;
+
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.FlightWarning;
 import org.ngafid.flights.Tail;
 import org.ngafid.flights.Tails;
+import org.ngafid.flights.Upload;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -92,24 +102,33 @@ public class GetWelcome implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
-            /*
+            LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
+            LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
+
             long startTime = System.currentTimeMillis();
-            scopes.put("system_ids_js",
-                    "var systemIds = JSON.parse('" + gson.toJson(tailInfo) + "');\n"
-                    );
+            String fleetInfo =
+                "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
+                "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +
+                "var numberAircraft = " + Tails.getNumberTails(connection, fleetId) + ";\n" +
+                "var totalExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, null, null) + ";\n" +
+                "var yearExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, firstOfYear, null) + ";\n" +
+                "var monthExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, firstOfMonth, null) + ";\n" +
+                "var uploadsNotImported = " + Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") + ";\n" +
+                "var uploadsWithError = " + Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") + ";\n" +
+                "var flightsWithWarning = " + FlightWarning.getCount(connection, fleetId) + ";\n" +
+                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n";
+
+            scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
-            */
+            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
 
-            /*
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
-            */
 
         } catch (IOException e) {
             LOG.severe(e.toString());

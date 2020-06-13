@@ -189,34 +189,49 @@ public class Flight {
         return getFlights(connection, fleetId, filter, 0);
     }
 
+    /**
+     *  Gets the total number of flights for a given fleet and filter. If the filter is null it returns the number of flights
+     *  for the fleet.
+     *
+     *  @param connection is the database connection
+     *  @param fleetId is the id of the fleet
+     *  @param is the filter to select the flights, can be null.
+     *
+     *  @return the number of flights for the fleet, given the specified filter (or no filter if the filter is null).
+     */
     public static int getNumFlights(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        String queryString;
+        if (filter != null) {
+            queryString = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        } else {
+            queryString = "SELECT count(id) FROM flights WHERE fleet_id = ?";
+        }
 
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
-        for (int i = 0; i < parameters.size(); i++) {
-            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+        if (filter != null) {
+            for (int i = 0; i < parameters.size(); i++) {
+                LOG.info("setting query parameter " + i + ": " + parameters.get(i));
 
-            if (parameters.get(i) instanceof String) {
-                query.setString(i + 2, (String)parameters.get(i));
-            } else if (parameters.get(i) instanceof Double) {
-                query.setDouble(i + 2, (Double)parameters.get(i));
-            } else if (parameters.get(i) instanceof Integer) {
-                query.setInt(i + 2, (Integer)parameters.get(i));
+                if (parameters.get(i) instanceof String) {
+                    query.setString(i + 2, (String)parameters.get(i));
+                } else if (parameters.get(i) instanceof Double) {
+                    query.setDouble(i + 2, (Double)parameters.get(i));
+                } else if (parameters.get(i) instanceof Integer) {
+                    query.setInt(i + 2, (Integer)parameters.get(i));
+                }
             }
         }
 
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
-        int count = 0;
-        while (resultSet.next()) {
-            count++;
-        }
+        resultSet.next();
+        int count = resultSet.getInt(1);
         System.out.println("COUNT IS: "+count);
 
         resultSet.close();
@@ -225,6 +240,57 @@ public class Flight {
         return count;
     }
 
+
+    /**
+     *  Gets the total number of flight hours for a given fleet and filter. If the filter is null it returns the number of flight hours
+     *  for the fleet.
+     *
+     *  @param connection is the database connection
+     *  @param fleetId is the id of the fleet
+     *  @param is the filter to select the flights, can be null.
+     *
+     *  @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
+     */
+    public static int getTotalFlightHours(Connection connection, int fleetId, Filter filter) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString;
+        if (filter != null) {
+            queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        } else {
+            queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ?";
+        }
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        if (filter != null) {
+            for (int i = 0; i < parameters.size(); i++) {
+                LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+
+                if (parameters.get(i) instanceof String) {
+                    query.setString(i + 2, (String)parameters.get(i));
+                } else if (parameters.get(i) instanceof Double) {
+                    query.setDouble(i + 2, (Double)parameters.get(i));
+                } else if (parameters.get(i) instanceof Integer) {
+                    query.setInt(i + 2, (Integer)parameters.get(i));
+                }
+            }
+        }
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        resultSet.next();
+        int diffSeconds = resultSet.getInt(1);
+        System.out.println("total time is: " + diffSeconds);
+
+        resultSet.close();
+        query.close();
+
+        return diffSeconds;
+    }
 
     /**
      * This method allows us to specify the range of rows we want to get from the database
