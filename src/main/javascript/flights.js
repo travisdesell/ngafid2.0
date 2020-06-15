@@ -38,6 +38,7 @@ var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", 
 var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
+var tagNames = ["Tag A", "Tag B"];
 
 //save the event definitions after the first event load so we can reuse them and not
 //have to keep sending them from the server
@@ -309,6 +310,18 @@ var rules = [
         ]
     },
 
+    {
+        name : "Has a tag with name",
+        conditions : [
+            {
+                type : "select",
+                name : "tagNames",
+                options : tagNames
+            },
+        ]
+    },
+
+
 ];
 
 
@@ -426,7 +439,9 @@ class TraceButtons extends React.Component {
                     console.log("received response: ");
                     console.log(response);
 
-                    var trace = {
+    
+
+                var trace = {
                         x : response.x,
                         y : response.y,
                         mode : "lines",
@@ -534,14 +549,22 @@ class Tags extends React.Component{
     }
 
     showDetails(index){
-        this.state.activeTag = this.state.tags[index];
-        console.log("ACT TAG: "+this.state.tags[index]+" "+index);
-        this.state.detailsActive = !this.state.detailsActive; 
+        let swTag = this.state.tags[index];
+        if(this.state.activeTag == null || this.state.activeTag != swTag){
+            this.state.activeTag = swTag;
+            this.state.detailsActive = true;
+        }else{
+            this.state.detailsActive = !this.state.detailsActive; 
+        }
         this.setState(this.state);
     }
 
     addClicked(){
-        this.state.addActive = !this.state.addActive; 
+        this.state.addActive = !this.state.addActive;
+        this.state.infoActive = !this.state.infoActive;
+        if(this.state.addFormActive){
+            this.state.addFormActive = false;
+        }
         this.setState(this.state);
         this.getUnassociatedTags();
     }
@@ -613,11 +636,16 @@ class Tags extends React.Component{
     }
 
     deleteTag(){
-        console.log("delete tag invoked!");
-        confirmModal.show("Confirm Delete Tag: '" + this.state.activeTag.name + "'",
-                          "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well ass all other flights that this tag is associated with. This operation cannot be undone!",
-                          () => {this.confirmDelete()}
-                         );
+        if(this.state.activeTag != null){
+            console.log("delete tag invoked!");
+            confirmModal.show("Confirm Delete Tag: '" + this.state.activeTag.name + "'",
+                            "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+                            () => {this.confirmDelete()}
+                            );
+        }else{
+            errorModal.show("Please select a tag to delete first!",
+                            "Cannot delete any tags");
+        }
 
     }
 
@@ -672,7 +700,6 @@ class Tags extends React.Component{
     showAddForm(){
         console.log("displaying add form!");
         this.state.addFormActive = !this.state.addFormActive;
-       
         this.setState(this.state);
         this.toggleAssociateTag();
     }
@@ -685,6 +712,12 @@ class Tags extends React.Component{
 
     removeTag(id, perm){
         console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
+
+        if(id == -1){
+            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+            return;
+        }
+
 
         var submissionData = {
             flight_id : this.state.flightId,
@@ -706,6 +739,10 @@ class Tags extends React.Component{
                 thisFlight.setState(thisFlight.state);
                 thisFlight.getUnassociatedTags();
                 thisFlight.state.parent.setTags(thisFlight.state.tags);
+                thisFlight.state.detailsActive = false;
+                thisFlight.state.addFormActive = false;
+                thisFlight.state.addActive = false;
+                thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -765,6 +802,11 @@ class Tags extends React.Component{
         console.log("usac tags: "+unassociatedTags);
         let hasOtherTags = unassociatedTags != null;
 
+        let activeId = -1;
+        if(this.state.activeTag != null){
+            activeId = activeTag.hashId;
+        }
+
         let tagStat = "";
         console.log("TAGS: "+tags);
         if(tags == null || tags.length == 0){
@@ -788,7 +830,7 @@ class Tags extends React.Component{
                     })
                 }
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeTag.hashId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 </div>
@@ -802,10 +844,6 @@ class Tags extends React.Component{
                 <Alert variant="primary">
                     {this.state.activeTag.description}
                 </Alert>
-                // details = <div p-2 class="panel panel-default">
-                //     <div class="panel-heading">Heading</div>
-                //     <div class="panel-body">{this.state.activeDescription}</div>
-                // </div>
         }
 
         let defName = "", defDescript = "", defColor="#ff00ff", defAddAction = (() => this.addTag());
@@ -841,14 +879,13 @@ class Tags extends React.Component{
         }
         if(this.state.addFormActive){
             addForm =
-
             <div class="row p-4">
                 <div class="col-">
                     <div class="input-group">
                         <div class="input-group-prepend">
                             <span class="input-group-text">
                                 <span class="fa fa-tag"></span>
-                            </span>                    
+                            </span>
                         </div>
                 <input type="text" id="comName" class="form-control" defaultValue={defName} placeholder="Common Name"/>
                     </div>
@@ -858,9 +895,9 @@ class Tags extends React.Component{
                         <div class="input-group-prepend">
                             <span class="input-group-text">
                                 <span class="fa fa-list"></span>
-                            </span>                    
+                            </span>
                         </div>
-                <input type="text" id="description" class="form-control" defaultValue={defDescript} placeholder="Description"/>
+                        <input type="text" id="description" class="form-control" defaultValue={defDescript} placeholder="Description"/>
                     </div>
                 </div>
                 <div class="col-">
@@ -880,7 +917,6 @@ class Tags extends React.Component{
         }
 
 
-    
         return (
             <div>
                 <div>
@@ -890,23 +926,7 @@ class Tags extends React.Component{
                 <div class="flex-row p-1">
                     {details}{addDrop}{addForm}{submitButton}
                 </div>
-                </div>
-                   // {
-
-                    //     return (
-                    //         <div className={cellClasses} style={cellStyle} key={index}>
-                    //             <div style={{flex: "0 0"}}>
-                    //                 <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
-                    //             </div>
-
-                    //             <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                    //                 <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
-                    //             </button>
-                    //         </div>
-
-                    //     );
-                    // })
-                // }
+            </div>
         );
     }
 }
@@ -1452,8 +1472,9 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    updateAllFlights(){
-        
+    //generate references to the other Tag instances
+    getTagRefs(){
+        return this.state.tags;
     }
 
     render() {
@@ -1595,7 +1616,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-exclamation p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={tagTooltip} aria-pressed="false" style={styleButton} onClick={() => this.tagClicked()}>
+                            <button className={buttonClasses} data-toggle="button" title={tagTooltip} aria-pressed="false" style={styleButton} onClick={() => this.tagClicked()}>
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
@@ -1984,9 +2005,8 @@ class FlightsCard extends React.Component {
                                 </div>
                             </div>
                         </div>
-
                         {
-                            allFlights = flights.map((flightInfo, index) => {
+                            flights.map((flightInfo, index) => {
                                 if(flightInfo != null){
                                     return (
                                             <Flight flightInfo={flightInfo} allFlights={allFlights} tags={flightInfo.tags} key={flightInfo.id} />
