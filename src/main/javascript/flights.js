@@ -324,6 +324,11 @@ var rules = [
 
 ];
 
+//This will be helpful for text inputs
+function invalidString(str){
+    return (str == null || str.length < 0 || /^\s*$/.test(str));
+}
+
 
 class Itinerary extends React.Component {
     constructor(props) {
@@ -379,6 +384,8 @@ class Itinerary extends React.Component {
                     <div style={{flex: "0 0"}}>
                         <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                     </div>
+
+
 
                     {
                         this.props.itinerary.map((stop, index) => {
@@ -578,6 +585,12 @@ class Tags extends React.Component{
         let tdescription = $("#description").val(); 
         let tcolor = $("#color").val(); 
 
+        if(invalidString(tname) || invalidString(tdescription)){
+            errorModal.show("Error creating tag!",
+                            "Please ensure the name and description fields are correctly filled out!");
+            return;
+        }
+
         var submissionData = {
             name : tname,
             description : tdescription,
@@ -650,6 +663,10 @@ class Tags extends React.Component{
     }
 
     editTag(){
+        if(this.state.activeTag == null){
+            errorModal.show("Error editing tag", "Please select a tag to edit before pressing this button!");
+            return;
+        }
         console.log("Editing tag: "+this.state.activeTag.name);
         // let tdescription = $("#description").val(); 
         // let tcolor = $("#color").val(); 
@@ -718,11 +735,13 @@ class Tags extends React.Component{
             return;
         }
 
+        let allTags = id == -2;
 
         var submissionData = {
             flight_id : this.state.flightId,
             tag_id : id,
-            permanent : perm
+            permanent : perm,
+            all : allTags
         };
 
         let thisFlight = this;
@@ -769,7 +788,11 @@ class Tags extends React.Component{
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
-                thisFlight.state.tags.push(response);
+                if(thisFlight.state.tags != null){
+                    thisFlight.state.tags.push(response);
+                }else{
+                    thisFlight.state.tags = new Array(response);
+                }
                 thisFlight.getUnassociatedTags();
                 thisFlight.setState(thisFlight.state);
                 thisFlight.state.parent.setTags(thisFlight.state.tags);
@@ -795,6 +818,10 @@ class Tags extends React.Component{
         };
         const styleButtonSq = {
             flex : "0 2 2em",
+        };
+
+        const styleColorInput = {
+            height : "38",
         };
 
         let tags = this.state.tags;
@@ -829,10 +856,11 @@ class Tags extends React.Component{
                         );
                     })
                 }
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.editing} title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.removeTag(-2, false)}><i class="fa fa-eraser" aria-hidden="true"></i></button>
                 </div>
         }
         let tagInfo = "";
@@ -902,7 +930,7 @@ class Tags extends React.Component{
                 </div>
                 <div class="col-">
                     <div style={{flex: "0 0"}}>
-                <input type="color" name="eventColor" defaultValue={defColor} id="color" onChange={(e) => {this.changeColor(e, index); }} style={{height:"38px", width:"38px"}}/>
+                        <input type="color" name="eventColor" defaultValue={defColor} id="color" style={styleColorInput}/>
                     </div>
                 </div>
                 <div class="col-sm">
