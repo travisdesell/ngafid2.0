@@ -667,16 +667,19 @@ class Tags extends React.Component{
                           () => {this.removeTag(-2, false)});
     }
 
-    editTag(){
-        if(this.state.activeTag == null){
-            errorModal.show("Error editing tag", "Please select a tag to edit before pressing this button!");
-            return;
-        }
-        console.log("Editing tag: "+this.state.activeTag.name);
+    editTag(tag){
+        console.log("Editing tag: "+tag.hashId);
         // let tdescription = $("#description").val(); 
         // let tcolor = $("#color").val(); 
-        this.state.editing = !this.state.editing;
-        this.showAddForm();
+        if(this.state.activeTag == null || this.state.activeTag != tag){
+            this.state.editing = true;
+            this.state.addFormActive = true;
+        }else{
+            this.state.editing = !this.state.editing;
+            this.state.addFormActive = !this.state.addFormActive;
+        }
+
+        this.state.activeTag = tag;
         this.setState(this.state);
     }
 
@@ -701,17 +704,24 @@ class Tags extends React.Component{
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
-                thisFlight.state.activeTag = oldTag;
-                thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
-                thisFlight.state.detailsActive = false;
-                thisFlight.setState(thisFlight.state);
-                thisFlight.state.parent.setTags(thisFlight.state.tags);
-            },   
+                if(response != "NOCHANGE"){
+                    thisFlight.state.activeTag = oldTag;
+                    thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
+                    thisFlight.state.detailsActive = false;
+                    thisFlight.setState(thisFlight.state);
+                    thisFlight.state.parent.setTags(thisFlight.state.tags);
+                }else{
+                    thisFlight.showNoEditError();
+                }
+            },
             error : function(jqXHR, textStatus, errorThrown) {
-                //TODO: resolve duplicate tag creation here
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
+    }
+
+    showNoEditError(){
+        errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
     confirmDelete(){
@@ -857,13 +867,12 @@ class Tags extends React.Component{
                             fontWeight : '550'
                         };
                         return (
-                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.showDetails(index)}>{tag.name}</button>
+                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.editTag(tag)}>{tag.name}</button>
                         );
                     })
                 }
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.editing} title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
                 </div>
@@ -881,9 +890,11 @@ class Tags extends React.Component{
 
         let defName = "", defDescript = "", defColor="#ff00ff", defAddAction = (() => this.addTag());
         if(this.state.editing){
+            console.log("EDITING THE FORMS");
             defName = this.state.activeTag.name;
             defDescript = this.state.activeTag.description;
             defColor = this.state.activeTag.color;
+            console.log(this.state.addFormActive);
             defAddAction = (
                 (() => this.submitEdit())
             );
@@ -920,7 +931,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-tag"></span>
                             </span>
                         </div>
-                <input type="text" id="comName" class="form-control" defaultValue={defName} placeholder="Common Name"/>
+                        <input type="text" id="comName" class="form-control" defaultValue={defName} placeholder="Common Name"/>
                     </div>
                 </div>
                 <div class="col-sm">
