@@ -1112,6 +1112,9 @@ public class Flight {
         //lat and longs
         if (!hasCoords) return;
 
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
+        DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
+
         StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
         DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
         DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
@@ -1132,13 +1135,13 @@ public class Flight {
                 //If the airport is a new airport (this shouldn't happen really),
                 //then create a new stop.
                 if (currentItinerary == null) {
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 } else if (airport.equals(currentItinerary.getAirport())) {
-                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 } else {
                     currentItinerary.selectBestRunway();
                     if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 }
 
             } else {

@@ -33,6 +33,8 @@ public class Itinerary {
     private int startOfTakeoff = -1;
     private int endOfTakeoff = -1;
     private int finalIndex;
+    private int takeoffCounter = 0;
+
 
     final String GOAROUND = "go_around";
     final String TOUCHANDGO = "touch_and_go";
@@ -124,14 +126,36 @@ public class Itinerary {
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
-    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance) {
+    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed, double rpm) {
         this.airport = airport;
-        update(runway, index, altitudeAGL, airportDistance, runwayDistance);
+        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed, rpm);
     }
 
-    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance) {
+    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed, double rpm) {
         // track finalIndex
         finalIndex = index;
+
+        // track takeoff criteria
+        if (rpm >= 2100 && groundSpeed > 14.5 && groundSpeed < 80) {
+            // set start index in case of takeoff event
+            if (startOfTakeoff == -1) {
+                startOfTakeoff = index;
+            } else if ( takeoffCounter > 15) {                                  // if takeoff started and sustained for 15 seconds
+                endOfTakeoff = index;
+            }
+
+            // increment counter to ensure criteria sustained for 15 seconds
+            takeoffCounter++;
+        } else {
+            // reset counter
+            takeoffCounter = 0;
+
+            // reset takeoff start if criteria not sustained
+            if (endOfTakeoff == -1) {
+                startOfTakeoff = -1;
+            }
+
+        }
 
         if (!Double.isNaN(altitudeAGL)) {
             if (minAltitude > altitudeAGL) {
@@ -139,26 +163,25 @@ public class Itinerary {
                 minAltitudeIndex = index;
             }
 
-            //TODO: update criteria for flight phases
 
             if (altitudeAGL <= 5) {                      // if grounded
                 // end approach phase
                 if (endOfApproach == -1 && startOfApproach != -1) {
                     endOfApproach = index;
                 }
-                // begin takeoff phase
-                if (endOfApproach != index) {           // track the index after takeoff phase initiated (until itinerary stops being updated)
-                    startOfTakeoff = index;
-                }
+//                // begin takeoff phase
+//                if (endOfApproach != index) {           // track the index after takeoff phase initiated (until itinerary stops being updated)
+//                    startOfTakeoff = index;
+//                }
             } else if (altitudeAGL > 6) {
                 // log beginning of approach phase
-                if (startOfApproach == -1 && startOfTakeoff == -1) {                        // if first update & not initial takeoff
+                if (startOfApproach == -1) {                        // if first update & not initial takeoff
                     startOfApproach = index;
                 }
-                // log end of takeoff phase
-                if (startOfTakeoff != -1) {
-                    endOfTakeoff = index;                   // tracks end of stop
-                }
+//                // log end of takeoff phase
+//                if (startOfTakeoff != -1) {
+//                    endOfTakeoff = index;                   // tracks end of stop
+//                }
             }
         }
 
