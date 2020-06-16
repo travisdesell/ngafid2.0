@@ -522,6 +522,18 @@ public class Flight {
     }
 
     /**
+     * dissociates all tags from a given flight
+     * @param flightId the flight to remove tags from
+     * @param connection the connection to the database
+     * @throws SQLException if there is an error in the database
+     */
+    public static void unassociateAllTags(int flightId, Connection connection) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map WHERE flight_id = "+flightId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.executeUpdate();
+    }
+
+    /**
      * permanently deletes a tag from the database
      * @param tagId the tag to dissociate
      * @param connection the database connection
