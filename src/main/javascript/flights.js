@@ -662,6 +662,11 @@ class Tags extends React.Component{
 
     }
 
+    clearTags(){
+        confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #"+this.state.flightId+"?",
+                          () => {this.removeTag(-2, false)});
+    }
+
     editTag(){
         if(this.state.activeTag == null){
             errorModal.show("Error editing tag", "Please select a tag to edit before pressing this button!");
@@ -735,7 +740,7 @@ class Tags extends React.Component{
             return;
         }
 
-        let allTags = id == -2;
+        let allTags = (id == -2);
 
         var submissionData = {
             flight_id : this.state.flightId,
@@ -860,7 +865,7 @@ class Tags extends React.Component{
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.editing} title="Edit the selected tag" onClick={() => this.editTag()}><i class="fa fa-pencil" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.removeTag(-2, false)}><i class="fa fa-eraser" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
                 </div>
         }
         let tagInfo = "";
