@@ -38,7 +38,7 @@ var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", 
 var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
-var tagNames = ["Tag A", "Tag B"];
+// var tagNames = ["Tag A", "Tag B"];
 
 //save the event definitions after the first event load so we can reuse them and not
 //have to keep sending them from the server
@@ -311,11 +311,11 @@ var rules = [
     },
 
     {
-        name : "Has a tag with name",
+        name : "Associated With Tag",
         conditions : [
             {
                 type : "select",
-                name : "tagNames",
+                name : "flight_tags",
                 options : tagNames
             },
         ]
