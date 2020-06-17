@@ -447,6 +447,41 @@ public class Flight {
         return tags;
     }
 
+    /**
+     * Returns a list of all the tag names in the database
+     * @param connection the connection to the database
+     * @return a List with strings containing the tag names
+     * @throws SQLException if there is an issue with the database query
+     */
+    public static List<String> getAllTagNames(Connection connection) throws SQLException{
+        String queryString = "SELECT name FROM flight_tags ";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<String> tagNames = new ArrayList<>();
+
+        while(resultSet.next()){
+            tagNames.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tagNames;
+    }
+
+    public static int getTagId(Connection connection, String name) throws SQLException{
+        String queryString = "SELECT id FROM flight_tags WHERE name = "+name;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+
+        int id = -1;
+        if(resultSet.next()){
+            id = resultSet.getInt(1);
+        }
+
+        return id;
+    }
+
     public static FlightTag getTag(Connection connection, int tagId) throws SQLException{
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
