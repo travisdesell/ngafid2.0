@@ -311,12 +311,17 @@ var rules = [
     },
 
     {
-        name : "Associated With Tag",
+        name : "Tag",
         conditions : [
             {
                 type : "select",
                 name : "flight_tags",
                 options : tagNames
+            },
+            {
+                type : "select",
+                name : "condition",
+                options : [ "Is Associated", "Is Not Associated"]
             },
         ]
     },

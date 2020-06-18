@@ -2,8 +2,8 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import Dropdown from 'react-bootstrap/Dropdown'
-import DropdownButton from 'react-bootstrap/DropdownButton'
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
 import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import { navbar } from "./signed_in_navbar.js";
