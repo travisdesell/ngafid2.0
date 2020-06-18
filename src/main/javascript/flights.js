@@ -614,12 +614,15 @@ class Tags extends React.Component{
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
-                thisFlight.state.tags.push(response);
-                thisFlight.setState(thisFlight.state);
-                thisFlight.state.parent.setTags(thisFlight.state.tags);
+				if(response != "ALREADY_EXISTS"){
+					thisFlight.state.tags.push(response);
+					thisFlight.setState(thisFlight.state);
+					thisFlight.state.parent.setTags(thisFlight.state.tags);
+				}else{
+					errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
+				}
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                //TODO: resolve duplicate tag creation here
             },   
             async: true 
         });  
