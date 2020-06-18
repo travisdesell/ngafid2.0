@@ -30,6 +30,8 @@ public class PostCreateTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostTags.class.getName());
     private Gson gson;
 
+	static String ALREADY_EXISTS = "ALREADY_EXISTS";
+
     public PostCreateTag(Gson gson) {
         this.gson = gson;
 
@@ -52,6 +54,10 @@ public class PostCreateTag implements Route {
 
         try {
             Connection connection = Database.getConnection();
+	
+			if(Flight.tagExists(connection, fleetId, name)){
+				return gson.toJson(ALREADY_EXISTS);
+			}
 
             FlightTag nTag = Flight.createTag(fleetId, flightId, name, description, color, connection);
 
