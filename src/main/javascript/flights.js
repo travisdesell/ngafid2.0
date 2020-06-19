@@ -855,7 +855,6 @@ class Tags extends React.Component{
         }
 
         let tagStat = "";
-        console.log("TAGS: "+tags);
         if(tags == null || tags.length == 0){
             tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
@@ -893,7 +892,7 @@ class Tags extends React.Component{
                 </Alert>
         }
 
-        let defName = "", defDescript = "", defColor="#ff00ff", defAddAction = (() => this.addTag());
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
         if(this.state.editing){
             console.log("EDITING THE FORMS");
             defName = this.state.activeTag.name;
@@ -1098,9 +1097,12 @@ class Flight extends React.Component {
     constructor(props) {
         super(props);
 
+		//TODO: the error with st not changing has to do with this not being called
         let color = Colors.randomValue();
         console.log("flight color: " );
         console.log(color);
+		console.log("!! FLIGHT CONSTRUCTED !!");
+        console.log("TAGS for: "+props.flightInfo.id+props.tags);
 
         this.state = {
             pathVisible : false,
@@ -1111,7 +1113,6 @@ class Flight extends React.Component {
             traceIndex : [],
             traceVisibility : [],
             tags : null,
-            allFlights : null,
             traceNamesVisible : false,
             eventsVisible : false,
             tagsVisible : false,
@@ -1121,7 +1122,6 @@ class Flight extends React.Component {
 			parent : props.parent,
             color : color
         }
-        console.log("ALL FLTS "+props.allFlights);
     }
 
     componentWillUnmount() {
@@ -1595,6 +1595,7 @@ class Flight extends React.Component {
 
         let tagPills = "";
         if(this.state.tags != null){
+			console.log("tags in card for "+flightInfo.id+": "+this.state.tags);
             tagPills = 
             tags.map((tag, index) => {
                 let style = {
@@ -1985,15 +1986,6 @@ class FlightsCard extends React.Component {
 
         let pages = this.genPages();
 		console.log("Flight State Changed!!");
-		let allFlights = (
-			flights.map((flightInfo, index) => {
-				if(flightInfo != null){
-					return (
-							<Flight flightInfo={flightInfo} allFlights={allFlights} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
-					);
-				}
-			})
-		);
 
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -2010,8 +2002,7 @@ class FlightsCard extends React.Component {
         }
 
         style.padding = "5";
-        console.log(flights);
-        if(flights.length > 0){
+        if(flights == null || flights.length > 0){
             var begin = this.state.page == 0;
             var end = this.state.page == this.state.numPages-1;
             var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
@@ -2059,7 +2050,16 @@ class FlightsCard extends React.Component {
                                 </div>
                             </div>
                         </div>
-                        {allFlights                        }
+						{
+							flights.map((flightInfo, index) => {
+								console.log("NEW FLIGHTS MAPPED!!");
+								if(flightInfo != null){
+									return (
+										<Flight flightInfo={flightInfo} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+									);
+								}
+							})
+						}
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
@@ -2067,7 +2067,7 @@ class FlightsCard extends React.Component {
                                     {prev}
                                     {next}
                                 </div>
-                        </div>
+						</div>
                     </div>
 
 
