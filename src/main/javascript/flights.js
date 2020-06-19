@@ -617,7 +617,6 @@ class Tags extends React.Component{
 				if(response != "ALREADY_EXISTS"){
 					thisFlight.state.tags.push(response);
 					thisFlight.setState(thisFlight.state);
-					thisFlight.state.parent.setTags(thisFlight.state.tags);
 				}else{
 					errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
 				}
@@ -647,7 +646,6 @@ class Tags extends React.Component{
                 console.log(response);
                 thisFlight.state.unassociatedTags = response;
                 thisFlight.setState(thisFlight.state);
-                thisFlight.state.parent.setTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -717,7 +715,7 @@ class Tags extends React.Component{
                     thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
                     thisFlight.state.detailsActive = false;
                     thisFlight.setState(thisFlight.state);
-                    thisFlight.state.parent.setTags(thisFlight.state.tags);
+                    thisFlight.state.parent.updateTags(thisFlight.state.tags);
                 }else{
                     thisFlight.showNoEditError();
                 }
@@ -780,14 +778,13 @@ class Tags extends React.Component{
                 thisFlight.state.tags = response;
                 thisFlight.setState(thisFlight.state);
                 thisFlight.getUnassociatedTags();
-                thisFlight.state.parent.setTags(thisFlight.state.tags);
                 thisFlight.state.detailsActive = false;
                 thisFlight.state.addFormActive = false;
                 thisFlight.state.addActive = false;
                 thisFlight.setState(thisFlight.state);
+                thisFlight.state.parent.invokeUpdate();
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                //TODO: resolve duplicate tag creation here
             },   
             async: true 
         });  
@@ -818,7 +815,7 @@ class Tags extends React.Component{
                 }
                 thisFlight.getUnassociatedTags();
                 thisFlight.setState(thisFlight.state);
-                thisFlight.state.parent.setTags(thisFlight.state.tags);
+                thisFlight.state.parent.updateTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 //TODO: resolve duplicate tag creation here
@@ -1055,6 +1052,7 @@ class Events extends React.Component {
         });
         this.updateEventDisplay(index, false);
     }
+	
 
     eventClicked(index) {
         this.updateEventDisplay(index, true);
@@ -1120,6 +1118,7 @@ class Flight extends React.Component {
             itineraryVisible : false,
             tags : props.tags.value,
             layer : null,
+			parent : props.parent,
             color : color
         }
         console.log("ALL FLTS "+props.allFlights);
@@ -1519,15 +1518,9 @@ class Flight extends React.Component {
         }
     }
 
-    setTags(tags){
-        this.state.tags = tags;
-        this.setState(this.state);
-    }
-
-    //generate references to the other Tag instances
-    getTagRefs(){
-        return this.state.tags;
-    }
+	invokeUpdate(){
+		this.state.parent.invokeUpdate();
+	}
 
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
@@ -1544,10 +1537,6 @@ class Flight extends React.Component {
 
         let globeClasses = "";
         let globeTooltip = "";
-
-        var tagPillStyle = {
-            //TODO: put styling for the pills in here
-        };
 
         let tagTooltip = "Click to tag a flight for future queries and grouping";
 
@@ -1567,8 +1556,7 @@ class Flight extends React.Component {
             }
         }
 
-        console.log(this.state.tags);
-        let tags= [];
+		var tags = [];
         if(this.state.tags != null){
             tags = this.state.tags;
         }
@@ -1980,18 +1968,32 @@ class FlightsCard extends React.Component {
         }
         return page;
     }
+	
+	invokeUpdate(){
+		this.submitFilter();
+		this.setState(this.state);
+	}
 
     render() {
         console.log("rendering flights!");
 
         let flights = [];
-        var allFlights = [];
         if (typeof this.state.flights != 'undefined') {
             flights = this.state.flights;
 
         }
 
         let pages = this.genPages();
+		console.log("Flight State Changed!!");
+		let allFlights = (
+			flights.map((flightInfo, index) => {
+				if(flightInfo != null){
+					return (
+							<Flight flightInfo={flightInfo} allFlights={allFlights} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+					);
+				}
+			})
+		);
 
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -2057,15 +2059,7 @@ class FlightsCard extends React.Component {
                                 </div>
                             </div>
                         </div>
-                        {
-                            flights.map((flightInfo, index) => {
-                                if(flightInfo != null){
-                                    return (
-                                            <Flight flightInfo={flightInfo} allFlights={allFlights} tags={flightInfo.tags} key={flightInfo.id} />
-                                    );
-                                }
-                            })
-                        }
+                        {allFlights                        }
                         <div class="card mb-1 m-1 border-secondary">
                             <div class="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
