@@ -109,6 +109,7 @@ public class PostFlights implements Route {
 
             //LOG.info(gson.toJson(flights));
             //LOG.info("page JSON: "+gson.toJson(this.paginator.currentPage()));//too verbose
+			WebServer.flightPaginator = this.paginator;
             return gson.toJson(this.paginator.currentPage());
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));

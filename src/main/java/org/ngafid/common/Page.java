@@ -1,6 +1,6 @@
 /**
  * Represents a page of data in the NGAFID
- * This is a generic class and can be used beyond flghts if need be
+ * This is a generic class and can house any of the NGAFID's modular elements (flights, uploads, etc...)
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella, RIT Computer Science</a>
  */
 
