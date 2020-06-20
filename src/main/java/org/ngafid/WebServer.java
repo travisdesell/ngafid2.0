@@ -9,6 +9,8 @@ import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
 
+import org.ngafid.common.FlightPaginator;
+
 import spark.Spark;
 import spark.Session;
 
@@ -37,6 +39,9 @@ import com.google.gson.GsonBuilder;
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+	
+	// Have a pointer to the paginator for flights so more than one route can mainpulate the flight pages
+	public static FlightPaginator flightPaginator;
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;

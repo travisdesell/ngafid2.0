@@ -775,14 +775,18 @@ class Tags extends React.Component{
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
-                thisFlight.state.tags = response;
-                thisFlight.setState(thisFlight.state);
-                thisFlight.getUnassociatedTags();
-                thisFlight.state.detailsActive = false;
-                thisFlight.state.addFormActive = false;
-                thisFlight.state.addActive = false;
-                thisFlight.setState(thisFlight.state);
-                thisFlight.state.parent.invokeUpdate();
+				if(perm){
+					let allFlights = response;
+					thisFlight.state.parent.invokeUpdate(allFlights);
+				}else{
+					thisFlight.state.tags = response;
+					thisFlight.setState(thisFlight.state);
+					thisFlight.getUnassociatedTags();
+					thisFlight.state.detailsActive = false;
+					thisFlight.state.addFormActive = false;
+					thisFlight.state.addActive = false;
+					thisFlight.setState(thisFlight.state);
+				}
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -1518,8 +1522,8 @@ class Flight extends React.Component {
         }
     }
 
-	invokeUpdate(){
-		this.state.parent.invokeUpdate();
+	invokeUpdate(flights){
+		this.state.parent.invokeUpdate(flights);
 	}
 
     render() {
@@ -1970,9 +1974,8 @@ class FlightsCard extends React.Component {
         return page;
     }
 	
-	invokeUpdate(){
-		this.submitFilter();
-		this.setState(this.state);
+	invokeUpdate(flights){
+		this.setFlights(flights);
 	}
 
     render() {
