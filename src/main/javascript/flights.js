@@ -920,10 +920,21 @@ class Tags extends React.Component{
                         unassociatedTags.map((tag, index) => {
                             let style = {
                                 backgroundColor : tag.color,
-                                color : 'white'
+								fontSize : "110%"
                             }
                             return (
-                                    <Dropdown.Item as="button" style={style}  onSelect={() => this.associateTag(tag.hashId)}>{tag.name}</Dropdown.Item>
+                                    <Dropdown.Item as="button" onSelect={() => this.associateTag(tag.hashId)}>
+										<div class="row">
+											<div class="col-xs-1 text-center">
+												<span class="badge badge-pill badge-primary" style={style}>
+													<i class="fa fa-tag" aria-hidden="true"></i>
+												</span>
+											</div>
+											<div class="col text-center">
+												{tag.name}
+											</div>
+										</div>
+									</Dropdown.Item>
                             );
                         })
                     }
@@ -1608,7 +1619,9 @@ class Flight extends React.Component {
                     lineHeight : '1.5'
                 }
                 return(
-                        <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>{tag.name}</span>
+                        <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>
+							<i class="fa fa-tag" aria-hidden="true"></i>   {tag.name}
+						</span>
                 );
             });
         }
