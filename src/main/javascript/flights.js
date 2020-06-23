@@ -777,7 +777,6 @@ class Tags extends React.Component{
                 console.log(response);
 				if(perm){
 					let allFlights = response;
-					thisFlight.state.parent.invokeUpdate(allFlights);
 				}else{
 					thisFlight.state.tags = response;
 					thisFlight.setState(thisFlight.state);
@@ -786,7 +785,8 @@ class Tags extends React.Component{
 					thisFlight.state.addFormActive = false;
 					thisFlight.state.addActive = false;
 					thisFlight.setState(thisFlight.state);
-				}
+                }
+                thisFlight.updateParent(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -819,6 +819,7 @@ class Tags extends React.Component{
                 }
                 thisFlight.getUnassociatedTags();
                 thisFlight.setState(thisFlight.state);
+                thisFlight.updateParent(thisFlight.state.tags);
                 thisFlight.state.parent.updateTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
@@ -826,6 +827,10 @@ class Tags extends React.Component{
             },   
             async: true 
         });  
+    }
+
+    updateParent(tags){
+        this.state.parent.invokeUpdate(tags);
     }
 
     render() {
@@ -1533,8 +1538,9 @@ class Flight extends React.Component {
         }
     }
 
-	invokeUpdate(flights){
-		this.state.parent.invokeUpdate(flights);
+	invokeUpdate(tags){
+		this.state.tags = tags;
+        this.setState(this.state);
 	}
 
     render() {
