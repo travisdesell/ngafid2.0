@@ -4,11 +4,13 @@ import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
 
+var activePage = "";
+
 class NavLink extends React.Component {
     render() {
         const name = this.props.name;
         const hidden = this.props.hidden;
-        const active = this.props.active;
+        let active = this.props.active;
 
         let onClick = this.props.onClick;
         let href = this.props.href;
@@ -60,10 +62,11 @@ class SignedInNavbar extends React.Component {
             waitingUserCount : this.props.waitingUserCount,
             fleetManager : this.props.fleetManager ,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount,
-            modifyTailsAccess : this.props.modifyTailsAccess
+            modifyTailsAccess : this.props.modifyTailsAccess,
+            activePage : this.props.activePage
         };
 
-        navbar = this;
+        //navbar = this;
     }
 
     setFlightsCard(flightsCard) {
@@ -206,14 +209,15 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink name={"Dashboard"} href="/protected/dashboard"/>
-                        <NavLink name={"Flights"} href="/protected/flights"/>
-                        <NavLink name={"Imports"} href="/protected/imports"/>
-                        <NavLink name={"Uploads"} href="/protected/uploads"/>
+                        <NavLink name={"Home"} active={this.state.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink name={"Dashboard"} active={this.state.activePage === "dashboard"} href="/protected/dashboard"/>
+                        <NavLink name={"Flights"} active={this.state.activePage === "flights"} href="/protected/flights"/>
+                        <NavLink name={"Imports"} active={this.state.activePage === "imports"} href="/protected/imports"/>
+                        <NavLink name={"Uploads"} active={this.state.activePage === "uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
-                            <a className="nav-link dropdown-toggle" href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {"Account" + accountNotifications}
+                            <a className={"nav-link dropdown-toggle" + (this.state.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {"Account" + accountNotifications} {this.state.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
@@ -233,9 +237,12 @@ class SignedInNavbar extends React.Component {
     }
 }
 
+/*
 var navbar = ReactDOM.render(
     <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
+*/
 
-export { navbar };
+
+export default SignedInNavbar;

@@ -4,10 +4,9 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 
-import Plotly from 'plotly.js';
-
+import  TimeHeader from "./time_header.js";
 
 class Notifications extends React.Component {
     constructor(props) {
@@ -36,7 +35,7 @@ class Notifications extends React.Component {
                             {
                                 this.state.notifications.map((info, index) => {
                                     if (info.count == 0) {
-                                        return "";
+                                        return;
                                     } else {
                                         return (
                                             <tr key={index}>
@@ -60,7 +59,10 @@ class WelcomeCard extends React.Component {
     constructor(props) {
         super(props);
 
+        var date = new Date();
         this.state = {
+            startDate : "2000-01-01",
+            endDate :  date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()
         };
     }
 
@@ -71,7 +73,6 @@ class WelcomeCard extends React.Component {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2 
         };
-
 
         return (
             <div className="container-fluid">
@@ -98,15 +99,15 @@ class WelcomeCard extends React.Component {
 
                                 <div className="row">
                                     <div className = "col-sm-4">
-                                        <h3>{Number(totalExceedences).toLocaleString('en')}</h3> Total Exceedences<br></br>
+                                        <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
                                     </div>
 
                                     <div className = "col-sm-4">
-                                        <h3>{Number(yearExceedences).toLocaleString('en')}</h3> Exceedences This Year<br></br>
+                                        <h3>{Number(yearEvents).toLocaleString('en')}</h3> Events This Year<br></br>
                                     </div>
 
                                     <div className = "col-sm-4">
-                                        <h3>{Number(monthExceedences).toLocaleString('en')}</h3> Exceedences This Month<br></br>
+                                        <h3>{Number(monthEvents).toLocaleString('en')}</h3> Events This Month<br></br>
                                     </div>
 
                                 </div>
@@ -122,9 +123,17 @@ class WelcomeCard extends React.Component {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Exceedences</h4>
+                            {this.state.timeHeader}
+
                             <div className="card-body" style={{padding:"0"}}>
-                                <div id="exceedences-plot" style={{width:"100%"}}></div>
+                                <div className="row" style={{margin:"0"}}>
+                                    <div className="col-lg-6" style={{padding:"0 8 0 0"}}>
+                                        <div id="event-counts-plot"></div>
+                                    </div>
+                                    <div className="col-lg-6" style={{padding:"0 0 0 8"}}>
+                                        <div id="event-percents-plot"></div>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -168,6 +177,7 @@ var data = [
 ];
 */
 
+/*
 var data = [
     {
         type: 'bar',
@@ -184,7 +194,95 @@ var data = [
         orientation: 'h'
     }
 ];
+*/
 
 
-Plotly.newPlot('exceedences-plot', data);
+//console.log(eventCounts);
+
+var countData = [];
+var percentData = [];
+
+for (let [key, value] of Object.entries(eventCounts)) {
+    console.log(key);
+    console.log(value);
+
+    value.name = value.airframeName;
+    value.y = value.names;
+    value.type = 'bar';
+    value.orientation = 'h';
+    //value.hoverinfo = 'text';
+    if (value.name === "all" || value.name === "fleet") {
+        if (value.name === "all") value.name = "NGAFID Aggregate";
+        if (value.name === "fleet") value.name = "Your Fleet";
+
+        percentData.push(value);
+        value.x = [];
+
+        value.hoverinfo = 'y+text';
+        value.hovertext = [];
+
+        for (let i = 0; i < value.totalFlightsCounts.length; i++) {
+            value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
+
+            console.log(value.x[i]);
+            var fixedText = "";
+            if (value.x[i] > 0 && value.x[i] < 1) {
+                console.log("Log10 of x is " + Math.log10(value.x[i]));
+                fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%"
+            } else {
+                fixedText = value.x[i].toFixed(2) + "%";
+            }
+            value.hovertext.push(fixedText);
+
+            console.log("converted to " + fixedText);
+        }
+    } else {
+        countData.push(value);
+        value.x = value.totalEventsCounts;
+    }
+}
+
+var countLayout = {
+    title : 'Event Counts',
+    barmode: 'stack',
+    //autosize: false,
+    //width: 500,
+    //height: 500,
+      margin: {
+              l: 250,
+              r: 50,
+              b: 50,
+              t: 50,
+              pad: 4
+            }
+};
+
+var percentLayout = {
+    title : 'Percentage of Flights With Event',
+    //autosize: false,
+    //width: 500,
+    //height: 500,
+      margin: {
+              l: 250,
+              r: 50,
+              b: 50,
+              t: 50,
+              pad: 4
+            }
+};
+
+
+
+import Plotly from 'plotly.js';
+
+var config = {responsive: true}
+
+Plotly.newPlot('event-counts-plot', countData, countLayout, config);
+Plotly.newPlot('event-percents-plot', percentData, percentLayout, config);
+
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
 

@@ -12,14 +12,14 @@ $drop_tables = false;
 
 query_ngafid_db("DROP TABLE flight_tag_map");
 query_ngafid_db("DROP TABLE flight_tags");
-//query_ngafid_db("DROP TABLE itinerary");
-//query_ngafid_db("DROP TABLE double_series");
-//query_ngafid_db("DROP TABLE string_series");
-//query_ngafid_db("DROP TABLE flight_processed");
-//query_ngafid_db("DROP TABLE event_statistics");
-//query_ngafid_db("DROP TABLE events");
-//query_ngafid_db("DROP TABLE flights");
-//query_ngafid_db("DROP TABLE tails");
+query_ngafid_db("DROP TABLE itinerary");
+query_ngafid_db("DROP TABLE double_series");
+query_ngafid_db("DROP TABLE string_series");
+query_ngafid_db("DROP TABLE flight_processed");
+query_ngafid_db("DROP TABLE event_statistics");
+query_ngafid_db("DROP TABLE events");
+query_ngafid_db("DROP TABLE flights");
+query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
@@ -382,6 +382,7 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `event_statistics` (
     `fleet_id` INT(11) NOT NULL,
+    `airframe_id` INT(11) NOT NULL,
     `event_definition_id` INT(11) NOT NULL,
     `month_first_day` DATE NOT NULL,
     `flights_with_event` INT(11) DEFAULT 0,
@@ -397,6 +398,7 @@ $query = "CREATE TABLE `event_statistics` (
     PRIMARY KEY(`fleet_id`, `event_definition_id`, `month_first_day`),
     INDEX(`month_first_day`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
+    FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
     FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 

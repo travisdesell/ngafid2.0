@@ -6,7 +6,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton'
 import Form from 'react-bootstrap/Form'
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
@@ -25,6 +25,12 @@ var moment = require('moment');
 
 
 import Plotly from 'plotly.js';
+
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="flights" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
 
 var plotlyLayout = { 
     shapes : []

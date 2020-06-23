@@ -105,18 +105,22 @@ public class GetWelcome implements Route {
             LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
 
+            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
+
             long startTime = System.currentTimeMillis();
             String fleetInfo =
                 "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
                 "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +
                 "var numberAircraft = " + Tails.getNumberTails(connection, fleetId) + ";\n" +
-                "var totalExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, null, null) + ";\n" +
-                "var yearExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, firstOfYear, null) + ";\n" +
-                "var monthExceedences = " + EventStatistics.getExceedenceCount(connection, fleetId, firstOfMonth, null) + ";\n" +
+                "var totalEvents = " + EventStatistics.getEventCount(connection, fleetId, null, null) + ";\n" +
+                "var yearEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfYear, null) + ";\n" +
+                "var monthEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null) + ";\n" +
                 "var uploadsNotImported = " + Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") + ";\n" +
                 "var uploadsWithError = " + Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") + ";\n" +
                 "var flightsWithWarning = " + FlightWarning.getCount(connection, fleetId) + ";\n" +
-                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n";
+                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n" +
+                "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
+                //"var eventCounts = JSON.parse('" + gson.toJson(eventCountsMap) + "');";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

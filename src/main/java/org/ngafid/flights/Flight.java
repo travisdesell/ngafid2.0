@@ -55,6 +55,7 @@ public class Flight {
     private int uploadId = -1;
 
     private String filename;
+    private int airframeId;
     private String airframeType;
     private String systemId;
 
@@ -413,7 +414,7 @@ public class Flight {
         uploadId = resultSet.getInt(4);
 
         systemId = resultSet.getString(5);
-        int airframeId = resultSet.getInt(6); 
+        airframeId = resultSet.getInt(6); 
 
         //this will set tailNumber and tailConfirmed
         tailNumber = Tails.getTail(connection, fleetId, systemId);
@@ -442,6 +443,19 @@ public class Flight {
         return fleetId;
     }
 
+    /**
+     * @return the airframe id for this flight
+     */
+    public int getAirframeId() {
+        return airframeId;
+    }
+
+    /**
+     * @return the airframe type for this aircraft
+     */
+    public String getAirframeType() {
+        return airframeType;
+    }
 
     public String getFilename() {
         return filename;
@@ -781,6 +795,13 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
+            } else if (airframeType.equals("Cessna 182T")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
             } else if (airframeType.equals("Garmin Flight Display")) {
                 LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
@@ -850,7 +871,7 @@ public class Flight {
         */
 
         String[] parts = zipEntryName.split("/");
-        if (parts.length == 0) {
+        if (parts.length <= 1) {
             suggestedTailNumber = null;
         } else {
             this.suggestedTailNumber = parts[0];
@@ -1286,7 +1307,7 @@ public class Flight {
         try {
             //first check and see if the airframe and tail number already exist in the database for this 
             //flight
-            int airframeId = Airframes.getId(connection, airframeType);
+            airframeId = Airframes.getId(connection, airframeType);
             Airframes.setAirframeFleet(connection, airframeId, fleetId);
 
             Tails.setSuggestedTail(connection, fleetId, systemId, suggestedTailNumber);
