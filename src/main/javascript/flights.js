@@ -938,10 +938,10 @@ class Tags extends React.Component{
                         unassociatedTags.map((tag, index) => {
                             let style = {
                                 backgroundColor : tag.color,
-                                fontSize : "110%"
+								fontSize : "110%"
                             }
                             return (
-                                <Dropdown.Item as="button" onSelect={() => this.associateTag(tag.hashId)}>
+                                    <Dropdown.Item as="button" onSelect={() => this.associateTag(tag.hashId)}>
 										<div class="row">
 											<div class="col-xs-1 text-center">
 												<span class="badge badge-pill badge-primary" style={style}>
