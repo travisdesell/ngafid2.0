@@ -558,6 +558,7 @@ class Tags extends React.Component{
             assocTagActice : false,
             parent : props.parent
         };
+        this.handleFormChange = this.handleFormChange.bind(this);
     }
 
     showDetails(index){
@@ -715,7 +716,7 @@ class Tags extends React.Component{
                     thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
                     thisFlight.state.detailsActive = false;
                     thisFlight.setState(thisFlight.state);
-                    thisFlight.state.parent.updateTags(thisFlight.state.tags);
+                    thisFlight.updateParent(thisFlight.state.tags);
                 }else{
                     thisFlight.showNoEditError();
                 }
@@ -777,7 +778,6 @@ class Tags extends React.Component{
                 console.log(response);
 				if(perm){
 					let allFlights = response;
-					thisFlight.state.parent.invokeUpdate(allFlights);
 				}else{
 					thisFlight.state.tags = response;
 					thisFlight.setState(thisFlight.state);
@@ -786,7 +786,8 @@ class Tags extends React.Component{
 					thisFlight.state.addFormActive = false;
 					thisFlight.state.addActive = false;
 					thisFlight.setState(thisFlight.state);
-				}
+                }
+                thisFlight.updateParent(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -819,6 +820,7 @@ class Tags extends React.Component{
                 }
                 thisFlight.getUnassociatedTags();
                 thisFlight.setState(thisFlight.state);
+                thisFlight.updateParent(thisFlight.state.tags);
                 thisFlight.state.parent.updateTags(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
@@ -826,6 +828,23 @@ class Tags extends React.Component{
             },   
             async: true 
         });  
+    }
+
+    updateParent(tags){
+        this.state.parent.invokeUpdate(tags);
+    }
+
+    handleFormChange(e) {
+        if(e.target.id == 'comName'){
+            this.state.activeTag.name = e.target.value;
+        }
+        else if(e.target.id == 'description'){
+            this.state.activeTag.description = e.target.value;
+        }
+		else if(e.target.id == 'color'){
+            this.state.activeTag.color = e.target.value;
+        }
+        this.setState(this.state);
     }
 
     render() {
@@ -887,14 +906,6 @@ class Tags extends React.Component{
         }
         let tagInfo = "";
         console.log(tags);
-       
-        let details = "";
-        if(this.state.detailsActive){
-            details = 
-                <Alert variant="primary">
-                    {this.state.activeTag.description}
-                </Alert>
-        }
 
         let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
         if(this.state.editing){
@@ -907,7 +918,6 @@ class Tags extends React.Component{
                 (() => this.submitEdit())
             );
         }
-
 
         if(this.state.addActive){
             addDrop =
@@ -941,6 +951,7 @@ class Tags extends React.Component{
                     </DropdownButton>
         }
         if(this.state.addFormActive){
+            console.log("rendering the add/edit form");
             addForm =
             <div class="row p-4">
                 <div class="col-">
@@ -950,7 +961,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-tag"></span>
                             </span>
                         </div>
-                        <input type="text" id="comName" class="form-control" defaultValue={defName} placeholder="Common Name"/>
+                        <input type="text" id="comName" class="form-control" onChange={this.handleFormChange} value={defName} placeholder="Common Name"/>
                     </div>
                 </div>
                 <div class="col-sm">
@@ -960,12 +971,12 @@ class Tags extends React.Component{
                                 <span class="fa fa-list"></span>
                             </span>
                         </div>
-                        <input type="text" id="description" class="form-control" defaultValue={defDescript} placeholder="Description"/>
+                      <input type="text" id="description" class="form-control" onChange={this.handleFormChange} value={this.state.activeTag.description} placeholder="Description"/>
                     </div>
                 </div>
                 <div class="col-">
                     <div style={{flex: "0 0"}}>
-                        <input type="color" name="eventColor" defaultValue={defColor} id="color" style={styleColorInput}/>
+                      <input type="color" name="eventColor" value={defColor} onChange={this.handleFormChange} id="color" style={styleColorInput}/>
                     </div>
                 </div>
                 <div class="col-sm">
@@ -987,7 +998,7 @@ class Tags extends React.Component{
                 </div>
                 {tagStat} 
                 <div class="flex-row p-1">
-                    {details}{addDrop}{addForm}{submitButton}
+                    {addDrop}{addForm}{submitButton}
                 </div>
             </div>
         );
@@ -1533,8 +1544,9 @@ class Flight extends React.Component {
         }
     }
 
-	invokeUpdate(flights){
-		this.state.parent.invokeUpdate(flights);
+	invokeUpdate(tags){
+		this.state.tags = tags;
+        this.setState(this.state);
 	}
 
     render() {
