@@ -550,6 +550,7 @@ class Tags extends React.Component{
             unassociatedTags : [],
             flightId : props.flightId,
             activeTag : null,
+			editedTag : null,  //the tag currently being edited
             infoActive : false,
             addActive : false,
             editing : false,
@@ -853,7 +854,6 @@ class Tags extends React.Component{
         let vcellStyle = { "overflowY" : "visible"};
         let addForm = "";
         let addDrop = "";
-        let submitButton = "";
         let activeTag = this.state.activeTag;
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
@@ -905,10 +905,18 @@ class Tags extends React.Component{
                 </div>
         }
         let tagInfo = "";
+
         console.log(tags);
 
         let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
+
+        let submitButton = (<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >);
+		if(this.state.activeTag != this.state.editedTag){
+			submitButton = (<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} disabled>);
+		}
+
         if(this.state.editing){
+			this.state.editedTag = this.state.activeTag;
             console.log("EDITING THE FORMS");
             defName = this.state.activeTag.name;
             defDescript = this.state.activeTag.description;
@@ -981,7 +989,7 @@ class Tags extends React.Component{
                 </div>
                 <div class="col-sm">
                     <div class="input-group">
-                    <button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction}>
+							{submitButton}
                             <i class="fa fa-check" aria-hidden="true"></i>
                                 Submit
                         </button>
