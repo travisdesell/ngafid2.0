@@ -404,7 +404,7 @@ public class Flight {
             if(i == size - 1){
                 break;
             }
-            sb.append(complement ? (" AND " + "idName" + " != ") : (" OR " + idName + " = "));
+            sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
         }
            
         return sb.toString();
@@ -602,16 +602,15 @@ public class Flight {
     }
 
     /**
-     * dissociates a tag from a flight
-     * @param flightId the flightId to dissociate from
+     * dissociates tag(s) from a flight
      * @param tagId the tag to dissociate
      * @param connection the database connection
+     * @param flightId (vararg) the flightId to dissociate from
 	 * @throws SQLException if there is an error with the database query
      */
     public static void unassociateTags(int tagId, Connection connection, int ... flightId) throws SQLException{
-        String queryString = "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = ?";
+        String queryString = "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = "+tagId;
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, tagId);
 
         query.executeUpdate();
 
@@ -636,21 +635,10 @@ public class Flight {
 	 * @throws SQLException if there is an error with the database query
      */
     public static void deleteTag(int tagId, Connection connection) throws SQLException{
-        String queryString = "SELECT flight_id FROM flight_tag_map WHERE tag_id = "+tagId;
+        String queryString = "DELETE FROM flight_tag_map WHERE tag_id = "+tagId;
         PreparedStatement query = connection.prepareStatement(queryString);
-        ResultSet resultSet = query.executeQuery();
+        query.executeUpdate();
 
-        ArrayList<Integer> ids = new ArrayList<>();
-
-        while(resultSet.next()){
-            ids.add(resultSet.getInt(1));
-        }
-
-        int [] args = ids.stream().mapToInt(Integer::intValue).toArray();
-        //unassociate the tags
-        unassociateTags(tagId, connection, args);
-
-        //delete them from the db
         queryString = "DELETE FROM flight_tags WHERE id = "+tagId;
         query = connection.prepareStatement(queryString);
         query.executeUpdate();
