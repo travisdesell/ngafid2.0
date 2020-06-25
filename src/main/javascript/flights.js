@@ -27,6 +27,8 @@ var moment = require('moment');
 
 import Plotly from 'plotly.js';
 
+const cloneDeep = require('clone-deep');
+
 
 var plotlyLayout = { 
     shapes : []
@@ -675,6 +677,12 @@ class Tags extends React.Component{
                           () => {this.removeTag(-2, false)});
     }
 
+	tagEquals(tagA, tagB){  //we must define an equality function to compare two tags that are equal but reside in different memory locations
+		return tagA.name == tagB.name &&
+			tagA.description == tagB.description &&
+			tagA.color == tagB.color;
+	}
+
     editTag(tag){
         console.log("Editing tag: "+tag.hashId);
         // let tdescription = $("#description").val(); 
@@ -688,6 +696,8 @@ class Tags extends React.Component{
         }
 
         this.state.activeTag = tag;
+		this.state.editedTag = cloneDeep(tag);
+		console.log(this.state.editedTag.name+"    "+this.state);
         this.setState(this.state);
     }
 
@@ -837,13 +847,13 @@ class Tags extends React.Component{
 
     handleFormChange(e) {
         if(e.target.id == 'comName'){
-            this.state.activeTag.name = e.target.value;
+            this.state.editedTag.name = e.target.value;
         }
         else if(e.target.id == 'description'){
-            this.state.activeTag.description = e.target.value;
+            this.state.editedTag.description = e.target.value;
         }
 		else if(e.target.id == 'color'){
-            this.state.activeTag.color = e.target.value;
+            this.state.editedTag.color = e.target.value;
         }
         this.setState(this.state);
     }
@@ -855,6 +865,9 @@ class Tags extends React.Component{
         let addForm = "";
         let addDrop = "";
         let activeTag = this.state.activeTag;
+		let editedTag = this.state.editedTag;
+		console.log(activeTag);
+		console.log(editedTag);
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
@@ -876,14 +889,15 @@ class Tags extends React.Component{
         if(this.state.activeTag != null){
             activeId = activeTag.hashId;
         }
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
 
         let tagStat = "";
         if(tags == null || tags.length == 0){
-            tagStat = <div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
+            tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
-            </div>
+            </div>);
         }else{
-           tagStat =  
+           tagStat = ( 
                 <div className={cellClasses} style={cellStyle}>
                 {
                     tags.map((tag, index) => {
@@ -902,30 +916,42 @@ class Tags extends React.Component{
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
-                </div>
+                </div> );
         }
         let tagInfo = "";
 
         console.log(tags);
 
-        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
-
-        let submitButton = (<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >);
-		if(this.state.activeTag != this.state.editedTag){
-			submitButton = (<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} disabled>);
-		}
-
         if(this.state.editing){
-			this.state.editedTag = this.state.activeTag;
             console.log("EDITING THE FORMS");
-            defName = this.state.activeTag.name;
-            defDescript = this.state.activeTag.description;
-            defColor = this.state.activeTag.color;
+            defName = this.state.editedTag.name;
+            defDescript = this.state.editedTag.description;
+            defColor = this.state.editedTag.color;
             console.log(this.state.addFormActive);
             defAddAction = (
                 (() => this.submitEdit())
             );
         }
+
+		let submitButton = (
+						<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} disabled>
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                                Submit
+						</button> );
+		if(editedTag != null && activeTag !=null){
+			console.log(activeTag);
+			console.log(editedTag);
+			console.log(this.tagEquals(activeTag, editedTag));
+
+			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
+				submitButton = (
+							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
+								<i class="fa fa-check" aria-hidden="true"></i>
+									Submit
+							</button> );
+			}
+		}
+
 
         if(this.state.addActive){
             addDrop =
@@ -979,7 +1005,7 @@ class Tags extends React.Component{
                                 <span class="fa fa-list"></span>
                             </span>
                         </div>
-                      <input type="text" id="description" class="form-control" onChange={this.handleFormChange} value={this.state.activeTag.description} placeholder="Description"/>
+                      <input type="text" id="description" class="form-control" onChange={this.handleFormChange} value={defDescript} placeholder="Description"/>
                     </div>
                 </div>
                 <div class="col-">
@@ -989,10 +1015,7 @@ class Tags extends React.Component{
                 </div>
                 <div class="col-sm">
                     <div class="input-group">
-							{submitButton}
-                            <i class="fa fa-check" aria-hidden="true"></i>
-                                Submit
-                        </button>
+						{submitButton}
                     </div>
                 </div>
             </div>
@@ -1006,7 +1029,7 @@ class Tags extends React.Component{
                 </div>
                 {tagStat} 
                 <div class="flex-row p-1">
-                    {addDrop}{addForm}{submitButton}
+                    {addDrop}{addForm}
                 </div>
             </div>
         );
