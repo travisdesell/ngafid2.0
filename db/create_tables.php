@@ -133,8 +133,7 @@ $query = "CREATE TABLE `tails` (
     `tail` VARCHAR(16),
     `confirmed` TINYINT(1) NOT NULL,
 
-    PRIMARY KEY(`system_id`),
-    UNIQUE KEY(`fleet_id`, `system_id`),
+    PRIMARY KEY(`fleet_id`, `system_id`),
     INDEX(`fleet_id`),
     INDEX(`tail`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
@@ -197,7 +196,7 @@ $query = "CREATE TABLE `flights` (
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
     FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
     FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
-    FOREIGN KEY(`system_id`) REFERENCES tails(`system_id`)
+    FOREIGN KEY(`fleet_id`, `system_id`) REFERENCES tails(`fleet_id`, `system_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);

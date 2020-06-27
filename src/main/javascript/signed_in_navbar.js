@@ -210,6 +210,7 @@ class SignedInNavbar extends React.Component {
 
                     <ul className="navbar-nav">
                         <NavLink name={"Home"} active={this.state.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink name={"Trends"} active={this.state.activePage === "trends"} href="/protected/trends"/>
                         <NavLink name={"Dashboard"} active={this.state.activePage === "dashboard"} href="/protected/dashboard"/>
                         <NavLink name={"Flights"} active={this.state.activePage === "flights"} href="/protected/flights"/>
                         <NavLink name={"Imports"} active={this.state.activePage === "imports"} href="/protected/imports"/>
