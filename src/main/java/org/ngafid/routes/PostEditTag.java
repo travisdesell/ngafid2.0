@@ -19,7 +19,9 @@ import spark.Session;
 import spark.Spark;
 
 import org.ngafid.Database;
+import org.ngafid.WebServer;
 import org.ngafid.common.FlightTag;
+import org.ngafid.common.Page;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -51,7 +53,6 @@ public class PostEditTag implements Route {
         String name = request.queryParams("name");
         String description = request.queryParams("description");
         String color = request.queryParams("color");
-        System.out.println("tag id: "+tagId);
 
 
         try {
@@ -66,8 +67,9 @@ public class PostEditTag implements Route {
             }
 
             FlightTag changedTag = Flight.editTag(connection, flightTag);
+			Page<Flight> page = WebServer.flightPaginator.currentPage();
 
-            return gson.toJson(changedTag);
+            return gson.toJson(page);
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();

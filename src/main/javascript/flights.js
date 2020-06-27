@@ -550,6 +550,7 @@ class Tags extends React.Component{
         this.state = {
             tags : pTags,
             unassociatedTags : [],
+			flightIndex : props.flightIndex,
             flightId : props.flightId,
             activeTag : [],
 			editedTag : [],  //the tag currently being edited
@@ -564,6 +565,15 @@ class Tags extends React.Component{
         };
         this.handleFormChange = this.handleFormChange.bind(this);
     }
+
+	//componentWillReceiveProps(nextProps) {
+		//console.log("recieved new props");
+        //let pTags = [];
+        //if(nextProps.tags != null){
+            //pTags = nextProps.tags;
+        //}
+		//this.setState({ tags: pTags });  
+	//}
 
     showDetails(index){
         let swTag = this.state.tags[index];
@@ -725,13 +735,14 @@ class Tags extends React.Component{
                 if(response != "NOCHANGE"){
 					console.log("tag was edited!");
                     thisFlight.state.activeTag = oldTag;
-                    thisFlight.state.tags[thisFlight.state.tags.indexOf(oldTag)] = response;
-                    thisFlight.state.detailsActive = false;
-                    thisFlight.updateParent(thisFlight.state.tags);
-                    thisFlight.setState(thisFlight.state);
+					let index = thisFlight.state.tags.indexOf(oldTag);
+                    thisFlight.state.tags = response.data[thisFlight.state.flightIndex].tags.value;
+					console.log(response.data[thisFlight.state.flightIndex]);
+                    thisFlight.updateFlights(response.data);
                 }else{
                     thisFlight.showNoEditError();
                 }
+				thisFlight.setState(thisFlight.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
             },
@@ -803,7 +814,9 @@ class Tags extends React.Component{
 				if(perm){
 					console.log("permanent deletion, refreshing all flights with: ");
 					console.log(response);
-					let allFlights = response;
+					console.log(response.data[thisFlight.state.flightIndex]);
+					let allFlights = response.data;
+					thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
 					thisFlight.updateFlights(allFlights);
 				}else{
 					thisFlight.state.tags = response;
@@ -812,9 +825,9 @@ class Tags extends React.Component{
 					thisFlight.state.detailsActive = false;
 					thisFlight.state.addFormActive = false;
 					thisFlight.state.addActive = false;
-					thisFlight.setState(thisFlight.state);
 					thisFlight.updateParent(thisFlight.state.tags);
                 }
+				thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -1182,15 +1195,13 @@ class Flight extends React.Component {
     constructor(props) {
         super(props);
 
-		//TODO: the error with st not changing has to do with this not being called
         let color = Colors.randomValue();
         console.log("flight color: " );
         console.log(color);
-		console.log("!! FLIGHT CONSTRUCTED !!");
-        console.log("TAGS for: "+props.flightInfo.id+props.tags);
 
         this.state = {
             pathVisible : false,
+			pageIndex : props.pageIndex,
             mapLoaded : false,
             eventsLoaded : false,
             commonTraceNames : null,
@@ -1208,6 +1219,11 @@ class Flight extends React.Component {
             color : color
         }
     }
+
+	componentWillReceiveProps(nextProps) {
+		console.log("recieved new props");
+	    this.setState({ tags: nextProps.tags.value });  
+	}
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -1605,7 +1621,6 @@ class Flight extends React.Component {
 
 	updateFlights(flights){
 		console.log("Updating all flights as a result of tag manipulation");
-		this.state.parent.updateFlights(flights);
 		this.props.updateParentState();
 	}
 
@@ -1671,7 +1686,7 @@ class Flight extends React.Component {
         if (this.state.tagsVisible) {
             console.log("tags are visible");
             tagsRow = (
-                    <Tags tags={this.state.tags} flightId={flightInfo.id} parent={this} />
+                    <Tags tags={this.state.tags} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} />
             );
         }
 
@@ -1687,7 +1702,6 @@ class Flight extends React.Component {
 
         let tagPills = "";
         if(this.state.tags != null){
-			console.log("tags in card for "+flightInfo.id+": "+this.state.tags);
             tagPills = 
             tags.map((tag, index) => {
                 let style = {
@@ -1811,9 +1825,6 @@ class FlightsCard extends React.Component {
     }
 
 	//update the flights without setting the state
-	updateFlights(flights){
-		this.state.flights = flights;
-	}
 
     setFlights(flights) {
         this.state.flights = flights;
@@ -2157,10 +2168,9 @@ class FlightsCard extends React.Component {
                         </div>
 						{
 							flights.map((flightInfo, index) => {
-								console.log("NEW FLIGHTS MAPPED!!");
 								if(flightInfo != null){
 									return (
-										<Flight flightInfo={flightInfo} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+										<Flight flightInfo={flightInfo} pageIndex={index} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
 									);
 								}
 							})
