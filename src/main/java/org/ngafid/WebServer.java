@@ -148,6 +148,10 @@ public final class WebServer {
         Spark.post("/reset_password", new PostResetPassword(gson));
 
         Spark.get("/protected/welcome", new GetWelcome(gson));
+        Spark.post("/protected/event_counts", new PostEventCounts(gson));
+
+        Spark.get("/protected/trends", new GetTrends(gson));
+        Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
 
         Spark.get("/protected/dashboard", new GetDashboard(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));

@@ -8,6 +8,156 @@ import SignedInNavbar from "./signed_in_navbar.js";
 
 import  TimeHeader from "./time_header.js";
 
+import Plotly from 'plotly.js';
+
+
+airframes.unshift("All Airframes");
+var index = airframes.indexOf("Garmin Flight Display");
+if (index !== -1) airframes.splice(index, 1);
+
+console.log(eventCounts);
+
+function displayPlots(selectedAirframe) {
+    console.log("displaying plots with airframe: '" + selectedAirframe + "'");
+
+    var countData = [];
+    var percentData = [];
+
+    var fleetPercents = {
+        name : 'Your Fleet',
+        type : 'bar',
+        orientation : 'h',
+        hoverinfo : 'y+text',
+        hovertext : [],
+        y : [],
+        x : [],
+        flightsWithEventCounts : [],
+        totalFlightsCounts : []
+    }
+
+
+    var ngafidPercents = {
+        name : 'NGAFID Aggregate',
+        type : 'bar',
+        orientation : 'h',
+        hoverinfo : 'y+text',
+        hovertext : [],
+        y : [],
+        x : [],
+        flightsWithEventCounts : [],
+        totalFlightsCounts : []
+    }
+
+    for (let [key, value] of Object.entries(eventCounts)) {
+        if (value.airframeName === "Garmin Flight Display") continue;
+        if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
+
+        //console.log(key);
+        //console.log(value);
+
+        value.name = value.airframeName;
+        value.y = value.names;
+        value.type = 'bar';
+        value.orientation = 'h';
+        //value.hoverinfo = 'text';
+
+        //don't add airframes to the count plot that the fleet doesn't have
+        if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
+        value.x = value.totalEventsCounts;
+
+        for (let i = 0; i < value.names.length; i++) {
+            //don't add airframes to the fleet percentage plot that the fleet doesn't have
+            if (airframes.indexOf(value.airframeName) >= 0) {
+                var index = fleetPercents.y.indexOf(value.names[i]);
+                if (index !== -1) {
+                    fleetPercents.flightsWithEventCounts[index] += value.flightsWithEventCounts[i];
+                    fleetPercents.totalFlightsCounts[index] += value.totalFlightsCounts[i];
+                } else {
+                    let pos = fleetPercents.y.length;
+                    fleetPercents.y.push(value.names[i]);
+                    fleetPercents.flightsWithEventCounts[pos] = value.flightsWithEventCounts[i];
+                    fleetPercents.totalFlightsCounts[pos] = value.totalFlightsCounts[i];
+                }
+            }
+
+            var index = ngafidPercents.y.indexOf(value.names[i]);
+            if (index !== -1) {
+                ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
+                ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
+            } else {
+                let pos = ngafidPercents.y.length;
+                ngafidPercents.y.push(value.names[i]);
+                ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
+                ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
+            }
+        }
+    }
+
+    percentData.push(ngafidPercents);
+    percentData.push(fleetPercents);
+
+    console.log(fleetPercents);
+    console.log(ngafidPercents);
+
+    for (let j = 0; j < percentData.length; j++) {
+        let value = percentData[j];
+        value.x = [];
+
+        for (let i = 0; i < value.totalFlightsCounts.length; i++) {
+            value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
+
+            //console.log(value.x[i]);
+            var fixedText = "";
+            if (value.x[i] > 0 && value.x[i] < 1) {
+                //console.log("Log10 of x is " + Math.log10(value.x[i]));
+                fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%"
+            } else {
+                fixedText = value.x[i].toFixed(2) + "%";
+            }
+            value.hovertext.push(fixedText);
+
+            //console.log("converted to " + fixedText);
+        }
+    }
+
+    var countLayout = {
+        title : 'Event Counts',
+        barmode: 'stack',
+        //autosize: false,
+        //width: 500,
+        //height: 500,
+        margin: {
+            l: 250,
+            r: 50,
+            b: 50,
+            t: 50,
+            pad: 4
+        }
+    };
+
+    var percentLayout = {
+        title : 'Percentage of Flights With Event',
+        //autosize: false,
+        //width: 500,
+        //height: 500,
+        margin: {
+            l: 250,
+            r: 50,
+            b: 50,
+            t: 50,
+            pad: 4
+        }
+    };
+
+
+    var config = {responsive: true}
+
+    Plotly.newPlot('event-counts-plot', countData, countLayout, config);
+    Plotly.newPlot('event-percents-plot', percentData, percentLayout, config);
+}
+
+
+
 class Notifications extends React.Component {
     constructor(props) {
         super(props);
@@ -61,9 +211,91 @@ class WelcomeCard extends React.Component {
 
         var date = new Date();
         this.state = {
-            startDate : "2000-01-01",
-            endDate :  date.getFullYear() + "-" + (date.getMonth() + 1) + "-" + date.getDate()
+            airframe : "All Airframes",
+            startYear : 2000,
+            startMonth : 1,
+            endYear : date.getFullYear(),
+            endMonth : date.getMonth() + 1,
+            datesChanged : false
         };
+    }
+
+    updateStartYear(newStartYear) {
+        console.log("setting new start year to: " + newStartYear);
+        this.setState({startYear : newStartYear, datesChanged : true});
+        console.log(this.state);
+    }
+
+    updateStartMonth(newStartMonth) {
+        console.log("setting new start month to: " + newStartMonth);
+        this.setState({startMonth : newStartMonth, datesChanged : true});
+        console.log(this.state);
+    }
+
+    updateEndYear(newEndYear) {
+        console.log("setting new end year to: " + newEndYear);
+        this.setState({endYear : newEndYear, datesChanged : true});
+        console.log(this.state);
+    }
+
+    updateEndMonth(newEndMonth) {
+        console.log("setting new end month to: " + newEndMonth);
+        this.setState({endMonth : newEndMonth, datesChanged : true});
+        console.log(this.state);
+    }
+
+    dateChange() {
+        console.log("[welcomecard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'"); 
+
+        let startDate = this.state.startYear + "-";
+        let endDate = this.state.endYear + "-";
+
+        //0 pad the months on the front
+        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        else startDate += this.state.startMonth;
+        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        else endDate += this.state.endMonth;
+
+        var submission_data = {
+            startDate : startDate + "-01",
+            endDate : endDate + "-28"
+        };
+
+        $('#loading').show();
+        console.log("showing loading spinner!");
+
+        let welcomeCard = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/event_counts',
+            data : submission_data,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $('#loading').hide();
+
+                if (response.err_msg) {
+                    errorModal.show(response.err_title, response.err_msg);
+                    return;
+                }   
+
+                eventCounts = response;
+                displayPlots(welcomeCard.state.airframe);
+                welcomeCard.setState({datesChanged : false});
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    airframeChange(airframe) {
+        this.setState({airframe});
+        displayPlots(airframe);
     }
 
     render() {
@@ -123,7 +355,22 @@ class WelcomeCard extends React.Component {
                 <div className="row">
                     <div className="col-lg-12">
                         <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            {this.state.timeHeader}
+                            <TimeHeader
+                                name="Events"
+                                airframes={airframes}
+                                airframe={this.state.airframe}
+                                startYear={this.state.startYear} 
+                                startMonth={this.state.startMonth} 
+                                endYear={this.state.endYear} 
+                                endMonth={this.state.endMonth} 
+                                datesChanged={this.state.datesChanged}
+                                dateChange={() => this.dateChange()}
+                                airframeChange={(airframe) => this.airframeChange(airframe)}
+                                updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
+                                updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
+                                updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
+                                updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                            />
 
                             <div className="card-body" style={{padding:"0"}}>
                                 <div className="row" style={{margin:"0"}}>
@@ -143,143 +390,13 @@ class WelcomeCard extends React.Component {
     }
 }
 
-var profileCard = ReactDOM.render(
+
+var welcomeCard = ReactDOM.render(
     <WelcomeCard />,
     document.querySelector('#welcome-card')
 );
 
-/*
-var y = [];
-for (var i = 0; i < 500; i ++) {
-    y[i] = Math.random();
-}
-
-var z = [];
-for (var i = 0; i < 500; i ++) {
-    z[i] = Math.random();
-}
-
-var data = [
-    {
-        y: y,
-        type: 'histogram',
-        marker: {
-            color: 'orange',
-        },
-    },
-    {
-        y: z,
-        type: 'histogram',
-        marker: {
-            color: 'blue',
-        },
-    }
-];
-*/
-
-/*
-var data = [
-    {
-        type: 'bar',
-        name: 'Bronx Zoo',
-        x: [20, 14, 23],
-        y: ['giraffes', 'orangutans', 'monkeys'],
-        orientation: 'h'
-    },
-    {
-        type: 'bar',
-        name: 'Rochester Zoo',
-        x: [25, 11, 18],
-        y: ['giraffes', 'orangutans', 'monkeys'],
-        orientation: 'h'
-    }
-];
-*/
-
-
-//console.log(eventCounts);
-
-var countData = [];
-var percentData = [];
-
-for (let [key, value] of Object.entries(eventCounts)) {
-    console.log(key);
-    console.log(value);
-
-    value.name = value.airframeName;
-    value.y = value.names;
-    value.type = 'bar';
-    value.orientation = 'h';
-    //value.hoverinfo = 'text';
-    if (value.name === "all" || value.name === "fleet") {
-        if (value.name === "all") value.name = "NGAFID Aggregate";
-        if (value.name === "fleet") value.name = "Your Fleet";
-
-        percentData.push(value);
-        value.x = [];
-
-        value.hoverinfo = 'y+text';
-        value.hovertext = [];
-
-        for (let i = 0; i < value.totalFlightsCounts.length; i++) {
-            value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
-
-            console.log(value.x[i]);
-            var fixedText = "";
-            if (value.x[i] > 0 && value.x[i] < 1) {
-                console.log("Log10 of x is " + Math.log10(value.x[i]));
-                fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%"
-            } else {
-                fixedText = value.x[i].toFixed(2) + "%";
-            }
-            value.hovertext.push(fixedText);
-
-            console.log("converted to " + fixedText);
-        }
-    } else {
-        countData.push(value);
-        value.x = value.totalEventsCounts;
-    }
-}
-
-var countLayout = {
-    title : 'Event Counts',
-    barmode: 'stack',
-    //autosize: false,
-    //width: 500,
-    //height: 500,
-      margin: {
-              l: 250,
-              r: 50,
-              b: 50,
-              t: 50,
-              pad: 4
-            }
-};
-
-var percentLayout = {
-    title : 'Percentage of Flights With Event',
-    //autosize: false,
-    //width: 500,
-    //height: 500,
-      margin: {
-              l: 250,
-              r: 50,
-              b: 50,
-              t: 50,
-              pad: 4
-            }
-};
-
-
-
-import Plotly from 'plotly.js';
-
-var config = {responsive: true}
-
-Plotly.newPlot('event-counts-plot', countData, countLayout, config);
-Plotly.newPlot('event-percents-plot', percentData, percentLayout, config);
-
+displayPlots("All Airframes");
 
 var navbar = ReactDOM.render(
     <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
