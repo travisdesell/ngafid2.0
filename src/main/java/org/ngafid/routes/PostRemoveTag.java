@@ -58,7 +58,7 @@ public class PostRemoveTag implements Route {
 				LOG.info("deleting tag: "+tagId);
                 Flight.deleteTag(tagId, connection);
 				Page<Flight> page = WebServer.flightPaginator.currentPage();
-				return page;
+				return gson.toJson(page);
             }else if(allTags){
                 LOG.info("Clearing all tags from flight "+flightId);
                 Flight.unassociateAllTags(flightId, connection);

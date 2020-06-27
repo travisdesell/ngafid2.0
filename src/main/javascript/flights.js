@@ -790,6 +790,7 @@ class Tags extends React.Component{
         };
 
         let thisFlight = this;
+		console.log("calling deletion ajax");
 
         $.ajax({
             type: 'POST',
@@ -923,7 +924,8 @@ class Tags extends React.Component{
                             flex : "0 10 10em",
                             backgroundColor : tag.color,
                             color : 'white',
-                            fontWeight : '550'
+                            fontWeight : '650',
+							textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
                         };
                         return (
                                 <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.editTag(tag)}>{tag.name}</button>
@@ -1601,14 +1603,14 @@ class Flight extends React.Component {
         }
     }
 
-	invokeUpdate(tags){
-		this.state.tags = tags;
-        this.setState(this.state);
-	}
-	
 	updateFlights(flights){
 		console.log("Updating all flights as a result of tag manipulation");
-		this.state.parent.setFlights(flights);
+		this.state.parent.updateFlights(flights);
+		this.props.updateParentState();
+	}
+
+	invokeUpdate(tags){
+		this.state.tags = tags;
 		this.setState(this.state);
 	}
 
@@ -1704,8 +1706,7 @@ class Flight extends React.Component {
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
-                    <div className="d-flex flex-row p-1"
->
+                    <div className="d-flex flex-row p-1">
                         <div className={firstCellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
                             <i className="fa fa-plane p-1"> {flightInfo.id}</i>
                         </div>
@@ -1805,13 +1806,25 @@ class FlightsCard extends React.Component {
        this.previousPage = this.previousPage.bind(this);
        this.nextPage = this.nextPage.bind(this);
        this.repaginate = this.repaginate.bind(this);
+       this.updateState = this.updateState.bind(this);
        this.filterRef = React.createRef();
     }
+
+	//update the flights without setting the state
+	updateFlights(flights){
+		this.state.flights = flights;
+	}
 
     setFlights(flights) {
         this.state.flights = flights;
         this.setState(this.state);
     }
+
+	//used to update the state from a child component
+	updateState(){
+		console.log("flightcard update state called");
+		this.setState(this.state);
+	}
 
     setIndex(index){
         this.state.page = index;
@@ -2074,9 +2087,10 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
 
         }
+		console.log(this.state.flights);
+		console.log(flights);
 
         let pages = this.genPages();
-		console.log("Flight State Changed!!");
 
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -2146,7 +2160,7 @@ class FlightsCard extends React.Component {
 								console.log("NEW FLIGHTS MAPPED!!");
 								if(flightInfo != null){
 									return (
-										<Flight flightInfo={flightInfo} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+										<Flight flightInfo={flightInfo} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
 									);
 								}
 							})
