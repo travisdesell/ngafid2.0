@@ -938,7 +938,8 @@ class Tags extends React.Component{
                             backgroundColor : tag.color,
                             color : 'white',
                             fontWeight : '650',
-							textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+						    "-webkit-text-stroke-width" : "0.25px",
+						    "-webkit-text-stroke-color" : "black"
                         };
                         return (
                                 <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.editTag(tag)}>{tag.name}</button>
@@ -1753,7 +1754,13 @@ class Flight extends React.Component {
                             {visitedAirports.join(", ")}
                         </div>
 
-                        <div className={cellClasses} style={{flexGrow:1}}>
+                        <div className={cellClasses} style={{
+							flexGrow:1,
+						    "-webkit-text-stroke-width" : "0.25px",
+						    "-webkit-text-stroke-color" : "black"
+							//textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+						}}>
+
                             <div>
                                 {tagPills}
                             </div>
