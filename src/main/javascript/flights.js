@@ -585,7 +585,8 @@ class Events extends React.Component  {
         for (let i = 0; i < shapes.length; i++) {
             if (shapes[i].id == event.id) {
                 if (toggle) {
-                    shapes = shapes.splice(i, 1);
+                    shapes.splice(i, 1);
+                    found = true;
                 } else {
                     shapes[i] = update;
                     found = true;
@@ -641,7 +642,9 @@ class Events extends React.Component  {
 
             // center map view on event location
             let coords = event.getGeometry().getFirstCoordinate();
-            map.getView().setCenter(coords);
+            if (coords.length > 0) {
+                map.getView().setCenter(coords);
+            }
 
         } else {                                        // if event displayed
             event.setStyle(hiddenStyle);
@@ -685,7 +688,7 @@ class Events extends React.Component  {
                 // create new button for toggle
                 let type =
                         (
-                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": event.color, "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
+                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
                                                 let flight = this.props.parent;
@@ -1792,44 +1795,46 @@ if (typeof flights !== 'undefined') {
 
             map.getLayers().forEach(function(layer) {
                 if (layer instanceof VectorLayer) {
-                    //console.log("VECTOR layer:");
+                    if ('flightState' in layer) {
+                        //console.log("VECTOR layer:");
 
-                    var hiddenStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5
-                        }),
-                        image: new Circle({
-                            radius: 5,
-                            stroke: new Stroke({
-                                color: [0,0,0,0],
-                                width: 2
-                            })
-                        })
-                    });
-
-                    var visibleStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5
-                        }),
-                        image: new Circle({
-                            radius: 5,
+                        var hiddenStyle = new Style({
                             stroke: new Stroke({
                                 color: layer.flightState.state.color,
-                                width: 2
+                                width: 1.5
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: [0,0,0,0],
+                                    width: 2
+                                })
                             })
-                        })
-                    });
+                        });
 
-                    if (layer.getVisible()) {
-                        if (x < layer.flightState.state.points.length) {
-                            console.log("need to draw point at: " + layer.flightState.state.points[x]);
-                            layer.flightState.state.trackingPoint.setStyle(visibleStyle);
-                            layer.flightState.state.trackingPoint.getGeometry().setCoordinates(layer.flightState.state.points[x]);
-                        } else {
-                            console.log("not drawing point x: " + x + " >= points.length: " + layer.flightState.state.points.length);
-                            layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                        var visibleStyle = new Style({
+                            stroke: new Stroke({
+                                color: layer.flightState.state.color,
+                                width: 1.5
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: layer.flightState.state.color,
+                                    width: 2
+                                })
+                            })
+                        });
+
+                        if (layer.getVisible()) {
+                            if (x < layer.flightState.state.points.length) {
+                                console.log("need to draw point at: " + layer.flightState.state.points[x]);
+                                layer.flightState.state.trackingPoint.setStyle(visibleStyle);
+                                layer.flightState.state.trackingPoint.getGeometry().setCoordinates(layer.flightState.state.points[x]);
+                            } else {
+                                console.log("not drawing point x: " + x + " >= points.length: " + layer.flightState.state.points.length);
+                                layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                            }
                         }
                     }
                 }
