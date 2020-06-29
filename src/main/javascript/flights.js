@@ -327,8 +327,7 @@ var rules = [
 
 ];
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// establish set of RGB values to combine
+// establish set of RGB values to combine //
 let BG_values = ["00", "55", "AA", "FF"];
 let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors
 
@@ -342,7 +341,6 @@ for (let d = 0; d < 45; d++){
 
     eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
 }
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Itinerary extends React.Component {
     constructor(props) {
@@ -602,8 +600,7 @@ class Events extends React.Component  {
         Plotly.relayout('plot', plotlyLayout);
 
 
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // Toggle visibility of clicked event's Feature
+        // Toggle visibility of clicked event's Feature //
 
         // create eventStyle & hiddenStyle
         var eventStyle = new Style({                                                   // create style getter methods**
@@ -651,7 +648,6 @@ class Events extends React.Component  {
             eventOutline.setStyle(hiddenStyle);
             flight.state.eventsMapped[index] = !eventMapped;
         }
-        //////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
     changeColor(e, index) {
@@ -675,7 +671,6 @@ class Events extends React.Component  {
             flex : "0 0 10em"
         };
 
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         let eventTypeSet = new Set();
         let eventTypeButtons = [];
         let thisFlight = this.props.parent;
@@ -992,8 +987,7 @@ class Flight extends React.Component {
                     }
                     thisFlight.state.events = events;
 
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
-                    // create list of event Features to display on map
+                    // create list of event Features to display on map //
                     for (let i = 0; i < events.length; i++) {
                         var points;
                         var eventPoint;
@@ -1072,7 +1066,6 @@ class Flight extends React.Component {
                         map.addLayer(thisFlight.state.eventOutlineLayer);
                         map.addLayer(thisFlight.state.eventLayer);
                     }
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     thisFlight.setState(thisFlight.state);
                 },
@@ -1174,8 +1167,7 @@ class Flight extends React.Component {
 
                     map.addLayer(thisFlight.state.layer);
 
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
-                    // adding coordinates to events, if needed
+                    // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
                     var eventOutlines = [];
@@ -1195,7 +1187,6 @@ class Flight extends React.Component {
                         map.addLayer(outlineLayer);
                         map.addLayer(eventLayer);
                     }
-                    ///////////////////////////////////////////////////////////////////////////////////////////////////
 
                     let extent = thisFlight.state.layer.getSource().getExtent();
                     console.log(extent);
@@ -1217,11 +1208,9 @@ class Flight extends React.Component {
             this.state.itineraryVisible = !this.state.itineraryVisible;
             this.state.layer.setVisible(this.state.pathVisible);
 
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////
-            // toggle visibility of events
+            // toggle visibility of events //
             this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
             this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
-            ///////////////////////////////////////////////////////////////////////////////////////////////////////////
 
             if (this.state.pathVisibile) {
                 flightsCard.showMap();
