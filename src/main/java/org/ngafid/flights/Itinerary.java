@@ -122,7 +122,7 @@ public class Itinerary {
         endOfApproach = resultSet.getInt(9);
         startOfTakeoff = resultSet.getInt(10);
         endOfTakeoff = resultSet.getInt(11);
-        type = resultSet.getString(12);                     //test: string? or is enum int?
+        type = resultSet.getString(12);
         ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
@@ -166,22 +166,14 @@ public class Itinerary {
 
             if (altitudeAGL <= 5) {                      // if grounded
                 // end approach phase
-                if (endOfApproach == -1 && startOfApproach != -1) {
+                if (startOfApproach != -1) {
                     endOfApproach = index;
                 }
-//                // begin takeoff phase
-//                if (endOfApproach != index) {           // track the index after takeoff phase initiated (until itinerary stops being updated)
-//                    startOfTakeoff = index;
-//                }
             } else if (altitudeAGL > 6) {
                 // log beginning of approach phase
                 if (startOfApproach == -1) {                        // if first update & not initial takeoff
                     startOfApproach = index;
                 }
-//                // log end of takeoff phase
-//                if (startOfTakeoff != -1) {
-//                    endOfTakeoff = index;                   // tracks end of stop
-//                }
             }
         }
 
@@ -289,7 +281,7 @@ public class Itinerary {
 
         if (startOfTakeoff != -1 && (endOfApproach == -1 || approachTime < 10)) {
             type = TAKEOFF;
-        } else if (endOfTakeoff == -1 && (endOfApproach != -1 || startOfTakeoff == finalIndex || startOfTakeoff > endOfTakeoff)) {
+        } else if (endOfTakeoff == -1 && (endOfApproach != -1 || startOfTakeoff > endOfTakeoff)) {
             type = LANDING;
         } else if (runwayTime >= 5) {
             type = TOUCHANDGO;
