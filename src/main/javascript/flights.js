@@ -934,17 +934,17 @@ class Tags extends React.Component{
                             fontWeight : '650'
                         };
                         return (
-                                <button className={buttonClasses} onClick={() => this.editTag(tag)}>
+                                <button key={index} className={buttonClasses} onClick={() => this.editTag(tag)}>
 									<i className="fa fa-tag p-1" style={{color : tag.color, marginRight : '10px'}}></i>
 									{tag.name}
 								</button>
                         );
                     })
                 }
-                <button className={buttonClasses} style={styleButtonSq} aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
-                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} aria-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i className="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i className="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i className="fa fa-trash" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i className="fa fa-eraser" aria-hidden="true"></i></button>
                 </div> );
         }
 
@@ -971,14 +971,14 @@ class Tags extends React.Component{
 
 		let submitButton = (
 						<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} disabled>
-                            <i class="fa fa-check" aria-hidden="true"></i>
+                            <i className="fa fa-check" aria-hidden="true"></i>
                                 Submit
 						</button> );
 		if(editedTag != null && activeTag !=null){
 			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
 				submitButton = (
 							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
-								<i class="fa fa-check" aria-hidden="true"></i>
+								<i className="fa fa-check" aria-hidden="true"></i>
 									Submit
 							</button> );
 			}
@@ -999,14 +999,14 @@ class Tags extends React.Component{
 								fontSize : "110%"
                             }
                             return (
-                                    <Dropdown.Item as="button" onSelect={() => this.associateTag(tag.hashId)}>
-										<div class="row">
-											<div class="col-xs-1 text-center">
-												<span class="badge badge-pill badge-primary" style={style}>
-													<i class="fa fa-tag" aria-hidden="true"></i>
+                                    <Dropdown.Item key={index} as="button" onSelect={() => this.associateTag(tag.hashId)}>
+										<div className="row">
+											<div className="col-xs-1 text-center">
+												<span className="badge badge-pill badge-primary" style={style}>
+													<i className="fa fa-tag" aria-hidden="true"></i>
 												</span>
 											</div>
-											<div class="col text-center">
+											<div className="col text-center">
 												{tag.name}
 											</div>
 										</div>
@@ -1019,34 +1019,34 @@ class Tags extends React.Component{
         if(this.state.addFormActive){
             console.log("rendering the add/edit form");
             addForm =
-            <div class="row p-4">
-                <div class="col-">
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">
-                                <span class="fa fa-tag"></span>
+            <div className="row p-4">
+                <div className="col-">
+                    <div className="input-group">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text">
+                                <span className="fa fa-tag"></span>
                             </span>
                         </div>
-                        <input type="text" id="comName" class="form-control" onChange={this.handleFormChange} value={defName} placeholder="Common Name"/>
+                        <input type="text" id="comName" className="form-control" onChange={this.handleFormChange} value={defName} placeholder="Common Name"/>
                     </div>
                 </div>
-                <div class="col-sm">
-                    <div class="input-group">
-                        <div class="input-group-prepend">
-                            <span class="input-group-text">
-                                <span class="fa fa-list"></span>
+                <div className="col-sm">
+                    <div className="input-group">
+                        <div className="input-group-prepend">
+                            <span className="input-group-text">
+                                <span className="fa fa-list"></span>
                             </span>
                         </div>
-                      <input type="text" id="description" class="form-control" onChange={this.handleFormChange} value={defDescript} placeholder="Description"/>
+                      <input type="text" id="description" className="form-control" onChange={this.handleFormChange} value={defDescript} placeholder="Description"/>
                     </div>
                 </div>
-                <div class="col-">
+                <div className="col-">
                     <div style={{flex: "0 0"}}>
                       <input type="color" name="eventColor" value={defColor} onChange={this.handleFormChange} id="color" style={styleColorInput}/>
                     </div>
                 </div>
-                <div class="col-sm">
-                    <div class="input-group">
+                <div className="col-sm">
+                    <div className="input-group">
 						{submitButton}
                     </div>
                 </div>
@@ -1060,7 +1060,7 @@ class Tags extends React.Component{
                     <b className={"p-1"} style={{styleButton}}>Associated Tags:</b>
                 </div>
                 {tagStat} 
-                <div class="flex-row p-1">
+                <div className="flex-row p-1">
                     {addDrop}{addForm}
                 </div>
             </div>
@@ -1694,9 +1694,9 @@ class Flight extends React.Component {
 					opacity : '75%'
                 }
                 return(
-					<span class="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
-                        <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>
-							<i class="fa fa-tag" aria-hidden="true"></i>
+					<span key={index} className="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
+                        <span className="badge badge-pill badge-primary" style={style} page={this.state.page}>
+							<i className="fa fa-tag" aria-hidden="true"></i>
 						</span>   {tag.name}
 					</span>
                 );
@@ -2171,8 +2171,8 @@ class FlightsCard extends React.Component {
 								}
 							})
 						}
-                        <div class="card mb-1 m-1 border-secondary">
-                            <div class="p-2">
+                        <div className="card mb-1 m-1 border-secondary">
+                            <div className="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
                                 <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                     {prev}
