@@ -221,6 +221,8 @@ public class FleetAccess {
         query.setString(1, accessType);
         query.setInt(2, userId);
         query.setInt(3, fleetId);
+
+        LOG.info(query.toString());
         query.executeUpdate();
     }
 }

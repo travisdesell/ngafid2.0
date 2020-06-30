@@ -49,8 +49,10 @@ public class CalculateExceedences {
 
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
-        
+        int airframeId = flight.getAirframeId();
+
         try {
+
             System.out.println("Event is: '" + eventDefinition.getName() + "'");
 
             //first check and see if this was actually a flight (RPM > 800)
@@ -110,7 +112,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
                 return;
             }
 
@@ -238,9 +240,9 @@ public class CalculateExceedences {
                 Event event = eventList.get(i);
                 event.updateDatabase(connection, flightId, eventDefinition.getId());
                 if (event.getStartTime() != null) {
-                    EventStatistics.updateEventStatistics(connection, fleetId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
+                    EventStatistics.updateEventStatistics(connection, fleetId, airframeId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
                 } else if (event.getEndTime() != null) {
-                    EventStatistics.updateEventStatistics(connection, fleetId, eventDefinition.getId(), event.getEndTime(), event.getSeverity(), event.getDuration());
+                    EventStatistics.updateEventStatistics(connection, fleetId, airframeId, eventDefinition.getId(), event.getEndTime(), event.getSeverity(), event.getDuration());
                 } else {
                     System.out.println("WARNING: could not update event statistics for event: " + event);
                     System.out.println("WARNING: event start and end time were both null.");
@@ -273,7 +275,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
 
             } else {
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0");
@@ -284,7 +286,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
             }
 
         } catch(SQLException e) {

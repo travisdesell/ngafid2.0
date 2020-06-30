@@ -4,7 +4,13 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
+
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
 
 class SystemIdsCard extends React.Component {
     constructor(props) {
@@ -49,6 +55,7 @@ class SystemIdsCard extends React.Component {
     updateSystemId(systemId) {
         let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
         console.log("updating system id on server -- original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "', newTail: '" + newTail + "'");
+        if (systemId.tail === "") systemId.tail = systemId.originalTail;
 
         var submissionData = {
             systemId : systemId.systemId,

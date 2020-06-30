@@ -12,14 +12,14 @@ $drop_tables = false;
 
 query_ngafid_db("DROP TABLE flight_tag_map");
 query_ngafid_db("DROP TABLE flight_tags");
-//query_ngafid_db("DROP TABLE itinerary");
-//query_ngafid_db("DROP TABLE double_series");
-//query_ngafid_db("DROP TABLE string_series");
-//query_ngafid_db("DROP TABLE flight_processed");
-//query_ngafid_db("DROP TABLE event_statistics");
-//query_ngafid_db("DROP TABLE events");
-//query_ngafid_db("DROP TABLE flights");
-//query_ngafid_db("DROP TABLE tails");
+query_ngafid_db("DROP TABLE itinerary");
+query_ngafid_db("DROP TABLE double_series");
+query_ngafid_db("DROP TABLE string_series");
+query_ngafid_db("DROP TABLE flight_processed");
+query_ngafid_db("DROP TABLE event_statistics");
+query_ngafid_db("DROP TABLE events");
+query_ngafid_db("DROP TABLE flights");
+query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
@@ -133,8 +133,7 @@ $query = "CREATE TABLE `tails` (
     `tail` VARCHAR(16),
     `confirmed` TINYINT(1) NOT NULL,
 
-    PRIMARY KEY(`system_id`),
-    UNIQUE KEY(`fleet_id`, `system_id`),
+    PRIMARY KEY(`fleet_id`, `system_id`),
     INDEX(`fleet_id`),
     INDEX(`tail`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
@@ -147,6 +146,7 @@ $query = "CREATE TABLE `flight_tags` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
     `name` VARCHAR(128) NOT NULL,
+    `description` VARCHAR(4096) NOT NULL,
     `color` VARCHAR(8) NOT NULL,
 
     PRIMARY KEY(`id`),
@@ -197,7 +197,7 @@ $query = "CREATE TABLE `flights` (
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
     FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
     FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
-    FOREIGN KEY(`system_id`) REFERENCES tails(`system_id`)
+    FOREIGN KEY(`fleet_id`, `system_id`) REFERENCES tails(`fleet_id`, `system_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -382,6 +382,7 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `event_statistics` (
     `fleet_id` INT(11) NOT NULL,
+    `airframe_id` INT(11) NOT NULL,
     `event_definition_id` INT(11) NOT NULL,
     `month_first_day` DATE NOT NULL,
     `flights_with_event` INT(11) DEFAULT 0,
@@ -397,6 +398,7 @@ $query = "CREATE TABLE `event_statistics` (
     PRIMARY KEY(`fleet_id`, `event_definition_id`, `month_first_day`),
     INDEX(`month_first_day`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
+    FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
     FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
