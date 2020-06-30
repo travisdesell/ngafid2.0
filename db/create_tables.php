@@ -146,6 +146,7 @@ $query = "CREATE TABLE `flight_tags` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
     `name` VARCHAR(128) NOT NULL,
+    `description` VARCHAR(4096) NOT NULL,
     `color` VARCHAR(8) NOT NULL,
 
     PRIMARY KEY(`id`),
