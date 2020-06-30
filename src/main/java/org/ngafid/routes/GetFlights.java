@@ -30,6 +30,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.Tails;
+import org.ngafid.flights.Flight;
 
 import org.ngafid.events.EventDefinition;
 
@@ -106,6 +107,14 @@ public class GetFlights implements Route {
             LOG.info("get all airframes took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
 
+            sb.append("var tagNames = JSON.parse('");
+
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Flight.getAllTagNames(connection)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all tag names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
+            sb.append("');\n");
 
             sb.append("var tailNumbers = JSON.parse('");
             startTime = System.currentTimeMillis();
