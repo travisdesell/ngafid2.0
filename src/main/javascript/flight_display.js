@@ -23,7 +23,7 @@ class FlightDisplayCard extends React.Component {
 
     render() {
         return (
-            <div class="card">
+            <div className="card">
                 <h4>HELLO WORLD!</h4>
             </div>
         );
