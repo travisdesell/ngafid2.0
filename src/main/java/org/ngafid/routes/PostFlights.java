@@ -72,7 +72,6 @@ public class PostFlights implements Route {
         }
 
         try {
-            System.out.println("----"+this.filter+" "+userFilter);
             if(this.filter == null){
                 //check to see if the filter has changed
                 //if it has, then we change the pointer of this filter to the new filter
@@ -86,6 +85,7 @@ public class PostFlights implements Route {
                 LOG.info("New filter applied");
                 this.filter = userFilter;
                 this.paginator.setFilter(userFilter);
+                this.paginator.jumpToPage(0);
             }
 
             int pageIndex = Integer.parseInt(request.queryParams("pageIndex"));
@@ -109,8 +109,10 @@ public class PostFlights implements Route {
 
             //LOG.info(gson.toJson(flights));
             //LOG.info("page JSON: "+gson.toJson(this.paginator.currentPage()));//too verbose
+			WebServer.flightPaginator = this.paginator;
             return gson.toJson(this.paginator.currentPage());
         } catch (SQLException e) {
+			WebServer.flightPaginator = this.paginator;
             return gson.toJson(new ErrorResponse(e));
         }
     }

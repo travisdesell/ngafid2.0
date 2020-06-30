@@ -4,7 +4,12 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="flight_display" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
 
 
 

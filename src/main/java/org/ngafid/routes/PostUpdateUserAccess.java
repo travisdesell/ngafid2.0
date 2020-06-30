@@ -53,7 +53,9 @@ public class PostUpdateUserAccess implements Route {
             return null;
         } else {
             try {
-                FleetAccess.update(Database.getConnection(), fleetUserId, fleetId, accessType);
+                Connection connection = Database.getConnection();
+                FleetAccess.update(connection, fleetUserId, fleetId, accessType);
+                user.updateFleet(connection);
                 return gson.toJson(new UpdateUserAccess());
             } catch (SQLException e) {
                 e.printStackTrace();

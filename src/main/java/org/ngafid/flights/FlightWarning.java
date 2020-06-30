@@ -47,6 +47,27 @@ public class FlightWarning {
         return warnings;
     }
 
+    /**
+     * @param connection is the connection to the database
+     * @param fleetId is the fleet's id
+     *
+     * @return the number of flight warnings for a fleet
+     */
+    public static int getCount(Connection connection, int fleetId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT sum(n_warning_flights) FROM uploads WHERE fleet_id = ?");
+        query.setInt(1, fleetId);
+        LOG.info(query.toString());
+
+        ResultSet resultSet = query.executeQuery();
+        resultSet.next();
+
+        int count = resultSet.getInt(1);
+
+        resultSet.close();
+        query.close();
+        return count ;
+    }
+
     public FlightWarning(Connection connection, ResultSet resultSet) throws SQLException {
         filename = resultSet.getString(1);
         uploadId = resultSet.getInt(2);

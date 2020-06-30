@@ -1,12 +1,13 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import Dropdown from 'react-bootstrap/Dropdown'
-import DropdownButton from 'react-bootstrap/DropdownButton'
-import Form from 'react-bootstrap/Form'
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import {Alert, Button, InputGroup, Form, Col} from 'react-bootstrap';
 
+import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
 import { View } from 'ol'
 
@@ -27,6 +28,13 @@ var moment = require('moment');
 
 import Plotly from 'plotly.js';
 
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="flights" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
+const cloneDeep = require('clone-deep');
+
+
 var plotlyLayout = { 
     shapes : []
 };
@@ -37,6 +45,7 @@ var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", 
 var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
+// var tagNames = ["Tag A", "Tag B"];
 
 //save the event definitions after the first event load so we can reuse them and not
 //have to keep sending them from the server
@@ -325,6 +334,23 @@ var rules = [
         ]
     },
 
+    {
+        name : "Tag",
+        conditions : [
+            {
+                type : "select",
+                name : "flight_tags",
+                options : tagNames
+            },
+            {
+                type : "select",
+                name : "condition",
+                options : [ "Is Associated", "Is Not Associated"]
+            },
+        ]
+    },
+
+
 ];
 
 // establish set of RGB values to combine //
@@ -340,6 +366,11 @@ for (let d = 0; d < 45; d++){
     let red = Math.trunc(d/16) % 4;
 
     eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
+}
+
+//This will be helpful for text inputs
+function invalidString(str){
+    return (str == null || str.length < 0 || /^\s*$/.test(str));
 }
 
 class Itinerary extends React.Component {
@@ -397,6 +428,8 @@ class Itinerary extends React.Component {
                         <input type="color" name="itineraryColor" value={this.state.color} onChange={(event) => {this.changeColor(event); this.props.flightColorChange(this.props.parent, event)}} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                     </div>
 
+
+
                     {
                         this.props.itinerary.map((stop, index) => {
                             let identifier = stop.airport;
@@ -451,7 +484,9 @@ class TraceButtons extends React.Component {
                     console.log("received response: ");
                     console.log(response);
 
-                    var trace = {
+    
+
+                var trace = {
                         x : response.x,
                         y : response.y,
                         mode : "lines",
@@ -531,7 +566,524 @@ class TraceButtons extends React.Component {
     }
 }
 
-class Events extends React.Component  {
+class Tags extends React.Component{
+    constructor(props) {
+        super(props);
+
+        let pTags = [];
+        if(props.tags != null){
+            pTags = props.tags;
+        }
+
+        this.state = {
+            tags : pTags,
+            unassociatedTags : [],
+			flightIndex : props.flightIndex,
+            flightId : props.flightId,
+            activeTag : [],
+			editedTag : [],  //the tag currently being edited
+            infoActive : false,
+            addActive : false,
+            editing : false,
+			adding : false,
+            addFormActive : false,
+            assocTagActice : false,
+            parent : props.parent
+        };
+        this.handleFormChange = this.handleFormChange.bind(this);
+    }
+
+	componentWillReceiveProps(nextProps) {
+		let pTags = [];
+		if(nextProps.tags != null){
+			pTags = nextProps.tags;
+		}
+		this.state.addActive = false;
+		this.state.addFormActive = false;
+		this.setState({ tags: pTags });  
+	}
+
+    addClicked(){
+        this.state.addActive = !this.state.addActive;
+        this.state.infoActive = !this.state.infoActive;
+		if(this.state.addFormActive){
+            this.state.addFormActive = false;
+		}
+        this.setState(this.state);
+        this.getUnassociatedTags();
+    }
+
+    addTag(){
+        let tname = $("#comName").val(); 
+        let tdescription = $("#description").val(); 
+        let tcolor = $("#color").val(); 
+
+        if(invalidString(tname) || invalidString(tdescription)){
+            errorModal.show("Error creating tag!",
+                            "Please ensure the name and description fields are correctly filled out!");
+            return;
+        }
+
+        var submissionData = {
+            name : tname,
+            description : tdescription,
+            color : tcolor,
+            id : this.state.flightId
+        };
+        console.log("Creating a new tag for flight #"+this.state.flightId);
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/create_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+				if(response != "ALREADY_EXISTS"){
+					thisFlight.state.tags.push(response);
+					thisFlight.setState(thisFlight.state);
+					thisFlight.updateParent(thisFlight.state.tags);
+				}else{
+					errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
+				}
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+    getUnassociatedTags(){
+        console.log("getting unassociated tags!")
+
+        var submissionData = {
+            id : this.state.flightId
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_unassociated_tags',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                thisFlight.state.unassociatedTags = response;
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+    deleteTag(){
+        if(this.state.activeTag != null){
+            console.log("delete tag invoked!");
+            confirmModal.show("Confirm Delete Tag: '" + this.state.activeTag.name + "'",
+                            "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+                            () => {this.confirmDelete()}
+                            );
+        }else{
+            errorModal.show("Please select a tag to delete first!",
+                            "Cannot delete any tags");
+        }
+
+    }
+
+    clearTags(){
+        confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #"+this.state.flightId+"?",
+                          () => {this.removeTag(-2, false)});
+    }
+
+	tagEquals(tagA, tagB){  //we must define an equality function to compare two tags that are equal but reside in different memory locations
+		return tagA.name == tagB.name &&
+			tagA.description == tagB.description &&
+			tagA.color == tagB.color;
+	}
+
+    editTag(tag){
+        console.log("Editing tag: "+tag.hashId);
+        if(this.state.activeTag == null || this.state.activeTag != tag){
+            this.state.editing = true;
+            this.state.addFormActive = true;
+        }else{
+            this.state.editing = !this.state.editing;
+            this.state.addFormActive = !this.state.addFormActive;
+        }
+		this.state.adding = false;
+
+        this.state.activeTag = tag;
+		this.state.editedTag = cloneDeep(tag);
+        this.setState(this.state);
+    }
+
+    submitEdit(){
+        console.log("submitting edit for tag: "+this.state.activeTag.hashId);
+
+        var oldTag = this.state.activeTag;
+        var submissionData = {
+            tag_id : this.state.activeTag.hashId,
+            name : $("#comName").val(),
+            description : $("#description").val(),
+            color : $("#color").val()
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/edit_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if(response != "NOCHANGE"){
+					console.log("tag was edited!");
+                    thisFlight.state.activeTag = oldTag;
+					let index = thisFlight.state.tags.indexOf(oldTag);
+                    thisFlight.state.tags = response.data[thisFlight.state.flightIndex].tags.value;
+					console.log(response.data[thisFlight.state.flightIndex]);
+                    thisFlight.updateFlights(response.data);
+                }else{
+                    thisFlight.showNoEditError();
+                }
+				thisFlight.setState(thisFlight.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: true
+        });
+    }
+
+    showNoEditError(){
+        errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
+    }
+
+    confirmDelete(){
+        this.removeTag(this.state.activeTag.hashId, true);
+    }
+
+	createClicked(){
+		this.state = {
+			addActive : true,
+			adding : true,
+			editing : false,
+		};
+		this.showAddForm();
+	}
+
+    showAddForm(){
+        this.state.addFormActive = !this.state.addFormActive;
+		this.state.editedTag = {
+			name : "",
+			description : "",
+			color : Colors.randomValue()
+		};
+        this.setState(this.state);
+        this.toggleAssociateTag();
+    }
+
+    toggleAssociateTag(){
+        this.state.assocTagActive = !this.state.assocTagActive;
+        this.setState(this.state);
+    }
+
+    removeTag(id, perm){
+        console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
+
+        if(id == -1){
+            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+            return;
+        }
+
+        let allTags = (id == -2);
+
+        var submissionData = {
+            flight_id : this.state.flightId,
+            tag_id : id,
+            permanent : perm,
+            all : allTags
+        };
+
+        let thisFlight = this;
+		console.log("calling deletion ajax");
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+				if(perm){
+					console.log("permanent deletion, refreshing all flights with: ");
+					console.log(response);
+					console.log(response.data[thisFlight.state.flightIndex]);
+					let allFlights = response.data;
+					thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
+					thisFlight.updateFlights(allFlights);
+				}else{
+					thisFlight.state.tags = response;
+					thisFlight.setState(thisFlight.state);
+					thisFlight.getUnassociatedTags();
+					thisFlight.state.detailsActive = false;
+					thisFlight.state.addFormActive = false;
+					thisFlight.state.addActive = false;
+					thisFlight.updateParent(thisFlight.state.tags);
+                }
+				thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+    associateTag(id){
+        console.log("associating tag #"+id+" with flight #"+this.state.flightId);
+
+        var submissionData = {
+            id : this.state.flightId,
+            tag_id : id
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/associate_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if(thisFlight.state.tags != null){
+                    thisFlight.state.tags.push(response);
+                }else{
+                    thisFlight.state.tags = new Array(response);
+                }
+                thisFlight.getUnassociatedTags();
+                thisFlight.setState(thisFlight.state);
+                thisFlight.updateParent(thisFlight.state.tags);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+	updateFlights(flights){
+		this.state.parent.updateFlights(flights);
+	}
+
+    updateParent(tags){
+        this.state.parent.invokeUpdate(tags);
+    }
+
+    handleFormChange(e) {
+        if(e.target.id == 'comName'){
+            this.state.editedTag.name = e.target.value;
+        }
+        else if(e.target.id == 'description'){
+            this.state.editedTag.description = e.target.value;
+        }
+		else if(e.target.id == 'color'){
+            this.state.editedTag.color = e.target.value;
+        }
+        this.setState(this.state);
+    }
+
+    render() {
+        let cellClasses = "d-flex flex-row p-1";
+        let cellStyle = { "overflowX" : "auto" };
+        let vcellStyle = { "overflowY" : "visible"};
+        let addForm = "";
+        let addDrop = "";
+        let activeTag = this.state.activeTag;
+		let editedTag = this.state.editedTag;
+        let buttonClasses = "m-1 btn btn-outline-secondary";
+        const styleButton = {
+            flex : "0 10 10em",
+        };
+        const styleButtonSq = {
+            flex : "0 2 2em",
+        };
+
+        const styleColorInput = {
+            height : "38",
+        };
+
+        let tags = this.state.tags;
+        let unassociatedTags = this.state.unassociatedTags;
+        let hasOtherTags = unassociatedTags != null;
+
+        let activeId = -1;
+
+        if(this.state.activeTag != null){
+            activeId = activeTag.hashId;
+        }
+
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag()), tagStat = "";
+
+        if(tags == null || tags.length == 0){
+            tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
+                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
+            </div>);
+        }else{
+           tagStat = ( 
+                <div className={cellClasses} style={cellStyle}>
+                {
+                    tags.map((tag, index) => {
+                        var cStyle = {
+                            flex : "0 10 10em",
+                            //backgroundColor : tag.color,
+                            color : tag.color, 
+                            fontWeight : '650'
+                        };
+                        return (
+                                <button className={buttonClasses} onClick={() => this.editTag(tag)}>
+									<i className="fa fa-tag p-1" style={{color : tag.color, marginRight : '10px'}}></i>
+									{tag.name}
+								</button>
+                        );
+                    })
+                }
+                <button className={buttonClasses} style={styleButtonSq} aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
+                </div> );
+        }
+
+        let tagInfo = "";
+
+        if(this.state.editing){
+            defName = this.state.editedTag.name;
+            defDescript = this.state.editedTag.description;
+            defColor = this.state.editedTag.color;
+            console.log(this.state.addFormActive);
+            defAddAction = (
+                (() => this.submitEdit())
+            );
+        }
+
+		if(this.state.adding){
+            defName = this.state.editedTag.name;
+            defDescript = this.state.editedTag.description;
+            defColor = this.state.editedTag.color;
+            defAddAction = (
+                (() => this.addTag())
+            );
+		}
+
+		let submitButton = (
+						<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} disabled>
+                            <i class="fa fa-check" aria-hidden="true"></i>
+                                Submit
+						</button> );
+		if(editedTag != null && activeTag !=null){
+			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
+				submitButton = (
+							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
+								<i class="fa fa-check" aria-hidden="true"></i>
+									Submit
+							</button> );
+			}
+		}
+
+
+        if(this.state.addActive){
+            addDrop =
+                <DropdownButton className={cellClasses + {maxHeight: "256px", overflowY: 'scroll'}} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
+                    <Dropdown.Item as="button" onSelect={() => this.createClicked()}>Create a new tag</Dropdown.Item>
+                    {unassociatedTags != null &&
+                        <Dropdown.Divider />
+                    }
+                    {unassociatedTags != null &&
+                        unassociatedTags.map((tag, index) => {
+                            let style = {
+                                backgroundColor : tag.color,
+								fontSize : "110%"
+                            }
+                            return (
+                                    <Dropdown.Item as="button" onSelect={() => this.associateTag(tag.hashId)}>
+										<div class="row">
+											<div class="col-xs-1 text-center">
+												<span class="badge badge-pill badge-primary" style={style}>
+													<i class="fa fa-tag" aria-hidden="true"></i>
+												</span>
+											</div>
+											<div class="col text-center">
+												{tag.name}
+											</div>
+										</div>
+									</Dropdown.Item>
+                            );
+                        })
+                    }
+                    </DropdownButton>
+        }
+        if(this.state.addFormActive){
+            console.log("rendering the add/edit form");
+            addForm =
+            <div class="row p-4">
+                <div class="col-">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <span class="fa fa-tag"></span>
+                            </span>
+                        </div>
+                        <input type="text" id="comName" class="form-control" onChange={this.handleFormChange} value={defName} placeholder="Common Name"/>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="input-group">
+                        <div class="input-group-prepend">
+                            <span class="input-group-text">
+                                <span class="fa fa-list"></span>
+                            </span>
+                        </div>
+                      <input type="text" id="description" class="form-control" onChange={this.handleFormChange} value={defDescript} placeholder="Description"/>
+                    </div>
+                </div>
+                <div class="col-">
+                    <div style={{flex: "0 0"}}>
+                      <input type="color" name="eventColor" value={defColor} onChange={this.handleFormChange} id="color" style={styleColorInput}/>
+                    </div>
+                </div>
+                <div class="col-sm">
+                    <div class="input-group">
+						{submitButton}
+                    </div>
+                </div>
+            </div>
+        }
+
+
+        return (
+            <div>
+                <div>
+                    <b className={"p-1"} style={{styleButton}}>Associated Tags:</b>
+                </div>
+                {tagStat} 
+                <div class="flex-row p-1">
+                    {addDrop}{addForm}
+                </div>
+            </div>
+        );
+    }
+}
+
+class Events extends React.Component {
     constructor(props) {
         super(props);
 
@@ -655,9 +1207,9 @@ class Events extends React.Component  {
         this.setState({
             events : this.state.events
         });
-
         this.updateEventDisplay(index, false);
     }
+	
 
     eventClicked(index) {
         this.updateEventDisplay(index, true);
@@ -764,16 +1316,21 @@ class Flight extends React.Component {
 
         this.state = {
             pathVisible : false,
+			pageIndex : props.pageIndex,
             mapLoaded : false,
             eventsLoaded : false,
             commonTraceNames : null,
             uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
+            tags : null,
             traceNamesVisible : false,
             eventsVisible : false,
+            tagsVisible : false,
             itineraryVisible : false,
+            tags : props.tags.value,
             layer : null,
+            parent : props.parent,
             color : color,
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
@@ -783,6 +1340,11 @@ class Flight extends React.Component {
             eventOutlineLayer : null
         }
     }
+
+	componentWillReceiveProps(nextProps) {
+		console.log("recieved new props");
+	    this.setState({ tags: nextProps.tags.value });  
+	}
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -1091,6 +1653,52 @@ class Flight extends React.Component {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
 
+    tagClicked(){
+        console.log ("tag clicked!");
+
+        if (!this.state.eventsLoaded) {
+            console.log("loading events!");
+
+            var thisFlight = this;
+
+            var submissionData = {
+                flightId : this.props.flightInfo.id,
+            };
+
+            $.ajax({
+                type: 'POST',
+                url: '/protected/flight_tags',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    if(response != null){
+                        thisFlight.state.tags = response;
+                    }
+
+                    thisFlight.setState(thisFlight.state);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    thisFlight.state.mapLoaded = false;
+                    thisFlight.setState(thisFlight.state);
+
+                    errorModal.show("Error Loading Flight Tags", errorThrown);
+                },   
+                async: true 
+            });  
+
+        } else {
+            console.log("tags already loaded!");
+
+            //toggle visibility if already loaded
+            this.state.tagsVisible = !this.state.tagsVisible;
+            this.setState(this.state);
+        }
+        this.state.tagsVisible = !this.state.tagsVisible;
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -1101,6 +1709,11 @@ class Flight extends React.Component {
             var thisFlight = this;
 
             var submissionData = {
+                request : "GET_COORDINATES",
+                id_token : "TEST_ID_TOKEN",
+                //id_token : id_token,
+                //user_id : user_id
+                user_id : 1,
                 flightId : this.props.flightInfo.id,
             };
 
@@ -1226,6 +1839,15 @@ class Flight extends React.Component {
         }
     }
 
+	updateFlights(flights){
+		this.props.updateParentState(flights);
+	}
+
+	invokeUpdate(tags){
+		this.state.tags = tags;
+		this.setState(this.state);
+	}
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1242,6 +1864,8 @@ class Flight extends React.Component {
         let globeClasses = "";
         let traceDisabled = false;
         let globeTooltip = "";
+
+        let tagTooltip = "Click to tag a flight for future queries and grouping";
 
         //console.log(flightInfo);
         if (!flightInfo.hasCoords) {
@@ -1260,6 +1884,11 @@ class Flight extends React.Component {
             }
         }
 
+		var tags = [];
+        if(this.state.tags != null){
+            tags = this.state.tags;
+        }
+
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
@@ -1274,6 +1903,12 @@ class Flight extends React.Component {
             );
         }
 
+        let tagsRow = "";
+        if (this.state.tagsVisible) {
+            tagsRow = (
+                    <Tags tags={this.state.tags} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} />
+            );
+        }
 
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
@@ -1281,6 +1916,26 @@ class Flight extends React.Component {
                 (
                     <TraceButtons parentFlight={this} flightId={flightInfo.id}/>
                 );
+        }
+
+        let tagPills = "";
+        if(this.state.tags != null){
+            tagPills = 
+            tags.map((tag, index) => {
+                let style = {
+                    backgroundColor : tag.color,
+                    marginRight : '4px',
+                    lineHeight : '2',
+					opacity : '75%'
+                }
+                return(
+					<span class="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
+                        <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>
+							<i class="fa fa-tag" aria-hidden="true"></i>
+						</span>   {tag.name}
+					</span>
+                );
+            });
         }
 
         return (
@@ -1320,8 +1975,18 @@ class Flight extends React.Component {
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
-                        <div className={cellClasses} style={{flexGrow:1}}>
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
                             {visitedAirports.join(", ")}
+                        </div>
+
+                        <div className={cellClasses} style={{
+							flexGrow:1,
+							//textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+						}}>
+
+                            <div>
+                                {tagPills}
+                            </div>
                         </div>
 
                         <div className="p-0">
@@ -1329,7 +1994,11 @@ class Flight extends React.Component {
                                 <i className="fa fa-exclamation p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} disabled={traceDisabled} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
+                            <button className={buttonClasses} data-toggle="button" title={tagTooltip} aria-pressed="false" style={styleButton} onClick={() => this.tagClicked()}>
+                                <i className="fa fa-tag p-1"></i>
+                            </button>
+
+                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1352,6 +2021,8 @@ class Flight extends React.Component {
                     </div>
 
                     {itineraryRow}
+
+                    {tagsRow}
 
                     {eventsRow}
 
@@ -1379,13 +2050,23 @@ class FlightsCard extends React.Component {
        this.previousPage = this.previousPage.bind(this);
        this.nextPage = this.nextPage.bind(this);
        this.repaginate = this.repaginate.bind(this);
+       this.updateState = this.updateState.bind(this);
        this.filterRef = React.createRef();
     }
+
+	//update the flights without setting the state
 
     setFlights(flights) {
         this.state.flights = flights;
         this.setState(this.state);
     }
+
+	//used to update the state from a child component
+	updateState(flights){
+		console.log("flightcard update state called");
+		this.state.flights = flights;
+		this.setState(this.state);
+	}
 
     setIndex(index){
         this.state.page = index;
@@ -1635,6 +2316,10 @@ class FlightsCard extends React.Component {
         }
         return page;
     }
+	
+	invokeUpdate(flights){
+		this.setFlights(flights);
+	}
 
     render() {
         console.log("rendering flights!");
@@ -1644,6 +2329,8 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
 
         }
+		console.log(this.state.flights);
+		console.log(flights);
 
         let pages = this.genPages();
 
@@ -1662,8 +2349,7 @@ class FlightsCard extends React.Component {
         }
 
         style.padding = "5";
-        console.log(flights);
-        if(flights.length > 0){
+        if(flights == null || flights.length > 0){
             var begin = this.state.page == 0;
             var end = this.state.page == this.state.numPages-1;
             var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
@@ -1700,7 +2386,7 @@ class FlightsCard extends React.Component {
                                             {
                                                 pages.map((pages, index) => {
                                                     return (
-                                                            <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                            <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
                                                     );
                                                 })
                                             }
@@ -1711,24 +2397,23 @@ class FlightsCard extends React.Component {
                                 </div>
                             </div>
                         </div>
-
-                        {
-                            flights.map((flightInfo, index) => {
-                                if(flightInfo != null){
-                                    return (
-                                            <Flight flightInfo={flightInfo} key={flightInfo.id} />
-                                    );
-                                }
-                            })
-                        }
-                        <div className="card mb-1 m-1 border-secondary">
-                            <div className="p-2">
+						{
+							flights.map((flightInfo, index) => {
+								if(flightInfo != null){
+									return (
+										<Flight flightInfo={flightInfo} pageIndex={index} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+									);
+								}
+							})
+						}
+                        <div class="card mb-1 m-1 border-secondary">
+                            <div class="p-2">
                                 <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
                                 <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                     {prev}
                                     {next}
                                 </div>
-                        </div>
+						</div>
                     </div>
 
 

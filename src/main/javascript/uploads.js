@@ -2,13 +2,19 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import Dropdown from 'react-bootstrap/Dropdown'
-import DropdownButton from 'react-bootstrap/DropdownButton'
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
 import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 
 import SparkMD5 from "spark-md5";
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
+
 
 var paused = [];
 
