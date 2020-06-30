@@ -544,9 +544,6 @@ class Tags extends React.Component{
             pTags = props.tags;
         }
 
-        console.log("constructing Tags, props.tags:");
-        console.log(props.tags);
-
         this.state = {
             tags : pTags,
             unassociatedTags : [],
@@ -558,7 +555,6 @@ class Tags extends React.Component{
             addActive : false,
             editing : false,
 			adding : false,
-            detailsActive : false,
             addFormActive : false,
             assocTagActice : false,
             parent : props.parent
@@ -566,38 +562,24 @@ class Tags extends React.Component{
         this.handleFormChange = this.handleFormChange.bind(this);
     }
 
-	//componentWillReceiveProps(nextProps) {
-		//console.log("recieved new props");
-        //let pTags = [];
-        //if(nextProps.tags != null){
-            //pTags = nextProps.tags;
-        //}
-		//this.setState({ tags: pTags });  
-	//}
-
-    showDetails(index){
-        let swTag = this.state.tags[index];
-        if(this.state.activeTag == null || this.state.activeTag != swTag){
-            this.state.activeTag = swTag;
-            this.state.detailsActive = true;
-        }else{
-            this.state.detailsActive = !this.state.detailsActive; 
-        }
-        this.setState(this.state);
-    }
+	componentWillReceiveProps(nextProps) {
+		let pTags = [];
+		if(nextProps.tags != null){
+			pTags = nextProps.tags;
+		}
+		this.state.addActive = false;
+		this.state.addFormActive = false;
+		this.setState({ tags: pTags });  
+	}
 
     addClicked(){
         this.state.addActive = !this.state.addActive;
         this.state.infoActive = !this.state.infoActive;
-        if(this.state.addFormActive){
+		if(this.state.addFormActive){
             this.state.addFormActive = false;
-        }
+		}
         this.setState(this.state);
         this.getUnassociatedTags();
-    }
-
-    editClicked(){
-        console.log("edit clicked!");
     }
 
     addTag(){
@@ -664,7 +646,6 @@ class Tags extends React.Component{
                 thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                //TODO: resolve duplicate tag creation here
             },   
             async: true 
         });  
@@ -712,7 +693,7 @@ class Tags extends React.Component{
     }
 
     submitEdit(){
-        console.log("editing tag: "+this.state.activeTag.hashId);
+        console.log("submitting edit for tag: "+this.state.activeTag.hashId);
 
         var oldTag = this.state.activeTag;
         var submissionData = {
@@ -755,18 +736,19 @@ class Tags extends React.Component{
     }
 
     confirmDelete(){
-        console.log("delete is confirmed!");
         this.removeTag(this.state.activeTag.hashId, true);
     }
 
 	createClicked(){
-		this.state.adding = true;
-		this.state.editing = false;
+		this.state = {
+			addActive : true,
+			adding : true,
+			editing : false,
+		};
 		this.showAddForm();
 	}
 
     showAddForm(){
-        console.log("displaying add form!");
         this.state.addFormActive = !this.state.addFormActive;
 		this.state.editedTag = {
 			name : "",
@@ -778,7 +760,6 @@ class Tags extends React.Component{
     }
 
     toggleAssociateTag(){
-        console.log("displaying tag association!");
         this.state.assocTagActive = !this.state.assocTagActive;
         this.setState(this.state);
     }
@@ -863,7 +844,6 @@ class Tags extends React.Component{
                 thisFlight.updateParent(thisFlight.state.tags);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                //TODO: resolve duplicate tag creation here
             },   
             async: true 
         });  
@@ -898,8 +878,6 @@ class Tags extends React.Component{
         let addDrop = "";
         let activeTag = this.state.activeTag;
 		let editedTag = this.state.editedTag;
-		console.log(activeTag);
-		console.log(editedTag);
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 10 10em",
@@ -914,16 +892,16 @@ class Tags extends React.Component{
 
         let tags = this.state.tags;
         let unassociatedTags = this.state.unassociatedTags;
-        console.log("usac tags: "+unassociatedTags);
         let hasOtherTags = unassociatedTags != null;
 
         let activeId = -1;
+
         if(this.state.activeTag != null){
             activeId = activeTag.hashId;
         }
-        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag());
 
-        let tagStat = "";
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag()), tagStat = "";
+
         if(tags == null || tags.length == 0){
             tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
@@ -935,26 +913,26 @@ class Tags extends React.Component{
                     tags.map((tag, index) => {
                         var cStyle = {
                             flex : "0 10 10em",
-                            backgroundColor : tag.color,
-                            color : 'white',
-                            fontWeight : '650',
-						    "-webkit-text-stroke-width" : "0.25px",
-						    "-webkit-text-stroke-color" : "black"
+                            //backgroundColor : tag.color,
+                            color : tag.color, 
+                            fontWeight : '650'
                         };
                         return (
-                                <button className={buttonClasses} style={cStyle} data-toggle="button" onClick={() => this.editTag(tag)}>{tag.name}</button>
+                                <button className={buttonClasses} onClick={() => this.editTag(tag)}>
+									<i className="fa fa-tag p-1" style={{color : tag.color, marginRight : '10px'}}></i>
+									{tag.name}
+								</button>
                         );
                     })
                 }
-                <button className={buttonClasses} style={styleButtonSq} data-toggle="button" aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
+                <button className={buttonClasses} style={styleButtonSq} aira-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()}><i class="fa fa-plus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag(activeId, false)}><i class="fa fa-minus" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i class="fa fa-trash" aria-hidden="true"></i></button>
                 <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.clearTags()}><i class="fa fa-eraser" aria-hidden="true"></i></button>
                 </div> );
         }
-        let tagInfo = "";
 
-        console.log(tags);
+        let tagInfo = "";
 
         if(this.state.editing){
             defName = this.state.editedTag.name;
@@ -981,10 +959,6 @@ class Tags extends React.Component{
                                 Submit
 						</button> );
 		if(editedTag != null && activeTag !=null){
-			console.log(activeTag);
-			console.log(editedTag);
-			console.log(this.tagEquals(activeTag, editedTag));
-
 			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
 				submitButton = (
 							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
@@ -997,7 +971,7 @@ class Tags extends React.Component{
 
         if(this.state.addActive){
             addDrop =
-                <DropdownButton className={cellClasses} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
+                <DropdownButton className={cellClasses + {maxHeight: "256px", overflowY: 'scroll'}} id="dropdown-item-button" variant="outline-secondary" title="Add a tag to this flight">
                     <Dropdown.Item as="button" onSelect={() => this.createClicked()}>Create a new tag</Dropdown.Item>
                     {unassociatedTags != null &&
                         <Dropdown.Divider />
@@ -1621,8 +1595,7 @@ class Flight extends React.Component {
     }
 
 	updateFlights(flights){
-		console.log("Updating all flights as a result of tag manipulation");
-		this.props.updateParentState();
+		this.props.updateParentState(flights);
 	}
 
 	invokeUpdate(tags){
@@ -1685,13 +1658,10 @@ class Flight extends React.Component {
 
         let tagsRow = "";
         if (this.state.tagsVisible) {
-            console.log("tags are visible");
             tagsRow = (
                     <Tags tags={this.state.tags} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} />
             );
         }
-
-        // let
 
         let tracesRow = "";
         if (this.state.traceNamesVisible) {
@@ -1708,12 +1678,15 @@ class Flight extends React.Component {
                 let style = {
                     backgroundColor : tag.color,
                     marginRight : '4px',
-                    lineHeight : '1.5'
+                    lineHeight : '2',
+					opacity : '75%'
                 }
                 return(
+					<span class="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
                         <span class="badge badge-pill badge-primary" style={style} page={this.state.page}>
-							<i class="fa fa-tag" aria-hidden="true"></i>   {tag.name}
-						</span>
+							<i class="fa fa-tag" aria-hidden="true"></i>
+						</span>   {tag.name}
+					</span>
                 );
             });
         }
@@ -1756,8 +1729,6 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{
 							flexGrow:1,
-						    "-webkit-text-stroke-width" : "0.25px",
-						    "-webkit-text-stroke-color" : "black"
 							//textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
 						}}>
 
@@ -1839,8 +1810,9 @@ class FlightsCard extends React.Component {
     }
 
 	//used to update the state from a child component
-	updateState(){
+	updateState(flights){
 		console.log("flightcard update state called");
+		this.state.flights = flights;
 		this.setState(this.state);
 	}
 
