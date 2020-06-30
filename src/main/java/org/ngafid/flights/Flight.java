@@ -13,6 +13,7 @@ import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Iterator;
 
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
@@ -27,15 +28,17 @@ import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.Arrays;
-import java.util.Optional;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Optional;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
-import org.ngafid.common.MutableDouble;
-import org.ngafid.common.Tag;
+import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -83,13 +86,13 @@ public class Flight {
     private ArrayList<String> dataTypes;
     private ArrayList<String> headers;
 
+    //the tags associated with this flight
+    private Optional<List<FlightTag>> tags = Optional.empty();
+
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
-
-    private Optional<Tag<Flight>> tag = Optional.empty();
-
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
@@ -403,9 +406,394 @@ public class Flight {
             query.close();
 
             return null;
-        } 
+        }
     }
-    ////
+
+	/**
+	 * Generates a unique set of tagIds whose cardinality is not greater than the total number of tags in
+	 * the database
+	 * @param connection the database connection
+	 * @param flightId the flightId to get tag ids for
+	 * @return a Set of Integers with the tag ids
+	 * @throws SQLException if there is an error with the database query
+	 */
+    private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException{
+        String queryString = "SELECT tag_id FROM flight_tag_map WHERE flight_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+        ResultSet resultSet = query.executeQuery();
+
+        Set<Integer> ids = new HashSet<>();
+
+        while(resultSet.next()){
+            ids.add(resultSet.getInt(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return ids;
+    }
+
+    /**
+     * Creates part of a SQL query to produce only the tags associated with a given flight
+     * @param ids the SET of tag ids this flight has
+     * @param complement a flag to indicate if the string is used to query for tags that are not associated with this flight
+     * @return a String that is usable in a SQL query
+     */
+    private static String idLimStr(Set<Integer> ids, boolean complement){
+        StringBuilder sb = new StringBuilder("WHERE ID " + ( complement ? "!" : "" ) + "= ");
+        Iterator<Integer> it = ids.iterator();
+
+        while(it.hasNext()){
+            sb.append(it.next());
+            if(!it.hasNext()){
+                break;
+            }
+            sb.append(complement ? " AND ID != " : " OR ID = ");
+        }
+
+        return sb.toString();
+    }
+
+    /**
+     * Creates part of a SQL query to produce only the tags associated with a given flight
+     * @param ids the array of int ids
+     * @param complement a flag to indicate if the string is used to query for tags that are not associated with this flight
+     * @return a String that is usable in a SQL query
+     */
+    private static String idLimStr(int[] ids, String idName, boolean complement){
+        StringBuilder sb = new StringBuilder("WHERE "+idName+( complement ? "!" : "" ) + "= ");
+
+        int size = ids.length;
+        for(int i = 0; i<size; i++){
+            sb.append(ids[i]);
+            if(i == size - 1){
+                break;
+            }
+            sb.append(complement ? (" AND " + idName + " != ") : (" OR " + idName + " = "));
+        }
+           
+        return sb.toString();
+    }
+
+    /**
+     * Gets the tags associated with a given flight
+     * @param connection the database connection
+     * @param flightId the id of the flight that the tags are retrieved for
+     * @return a List of tags
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
+        Set<Integer> tagIds = getTagIds(connection, flightId);
+        if(tagIds.isEmpty()){
+            return null;
+        }
+
+        System.out.println("TAG NUMS: "+tagIds.toString());
+
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, false);
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<FlightTag> tags = new ArrayList<>();
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
+	/**
+	 * Gets all the tags for a given fleet
+	 * @param connection the database connection
+	 * @param fleetId the fleet to query
+	 * @return a List with all the tags
+	 * @throws SQLException if there is an error with the database query
+	 */
+    public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException{
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = "+fleetId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<FlightTag> tags = new ArrayList<>();
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
+    /**
+     * Returns a list of all the tag names in the database
+     * @param connection the connection to the database
+     * @return a List with strings containing the tag names
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static List<String> getAllTagNames(Connection connection) throws SQLException{
+        String queryString = "SELECT name FROM flight_tags ";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<String> tagNames = new ArrayList<>();
+
+        while(resultSet.next()){
+            tagNames.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tagNames;
+    }
+
+	/**
+	 * Gets the tag id associated with a name
+	 * @param connection the database connection
+	 * @param name the name that we want to get the id for
+	 * @return the id as an integer
+	 * @throws SQLException if there is an error with the database query
+	 */
+    public static int getTagId(Connection connection, String name) throws SQLException{
+        String queryString = "SELECT id FROM flight_tags WHERE name = "+name;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+
+        int id = -1;
+        if(resultSet.next()){
+            id = resultSet.getInt(1);
+        }
+
+        return id;
+    }
+
+	/**
+	 * Gets a specific tag from the database
+	 * @param connection the database connection
+	 * @param tagId the tag id to query
+	 * @return the FlightTag instance associated with the id
+	 * @throws SQLException if there is an error with the database query
+	 */
+    public static FlightTag getTag(Connection connection, int tagId) throws SQLException{
+		String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, tagId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        FlightTag ft = null;
+
+        if(resultSet.next()){
+            ft = new FlightTag(resultSet);
+        }
+
+        resultSet.close();
+        query.close();
+
+        return ft;
+    }
+
+	/**
+	 * Provides a collection of all the tags not yet associated with a given flight
+	 * @param connection the db connection
+	 * @param flightId the flightId used to find th unassociated tags
+	 * @param fleetId the id of the fleet
+	 * @return a List of FlightTags
+	 * @throws SQLException if there is an error with the database query
+	 */
+    public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId, int fleetId) throws SQLException{
+        Set<Integer> tagIds = getTagIds(connection, flightId);
+        if(tagIds.isEmpty()){
+            return getAllTags(connection, fleetId);
+        }
+
+        System.out.println("TAG NUMS: "+tagIds.toString());
+
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, true);
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<FlightTag> tags = new ArrayList<>();
+
+        while(resultSet.next()){
+            tags.add(new FlightTag(resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tags;
+    }
+
+	/**
+	 * Checks to see if a tag already exists in the database
+	 * Tags are considered unique if they have different names
+	 * @param connection the connection to the database
+	 * @param fleetId the fleetId for the fleet
+	 * @param name the name to check for
+	 * @return true if the tag already exists, false otherwise
+	 * @throws SQLException if there is an error with the database query
+	 */
+	public static boolean tagExists(Connection connection, int fleetId, String name) throws SQLException{
+		String queryString = "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = '"+name+"' AND fleet_id = "+fleetId+")";
+        PreparedStatement query = connection.prepareStatement(queryString);
+		ResultSet resultSet = query.executeQuery();
+
+		if(resultSet.next()){
+			return resultSet.getBoolean(1);
+		}
+
+		return false;
+	}
+
+    /**
+     * Associates a tag with a given flight ID
+     * @param flightId the flightId that the tag will be associated with
+     * @param tagId the tagId being associated
+     * @param connection the database connection
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static void associateTag(int flightId, int tagId, Connection connection) throws SQLException{
+        String queryString = "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES(?,?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, flightId);
+        query.setInt(2, tagId);
+
+        query.executeUpdate();
+
+    }
+
+    /**
+     * dissociates tag(s) from a flight
+     * @param tagId the tag to dissociate
+     * @param connection the database connection
+     * @param flightId (vararg) the flightId to dissociate from
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static void unassociateTags(int tagId, Connection connection, int ... flightId) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = "+tagId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.executeUpdate();
+
+    }
+
+    /**
+     * dissociates all tags from a given flight
+     * @param flightId the flight to remove tags from
+     * @param connection the connection to the database
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static void unassociateAllTags(int flightId, Connection connection) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map WHERE flight_id = "+flightId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.executeUpdate();
+    }
+
+    /**
+     * permanently deletes a tag from the database
+     * @param tagId the tag to dissociate
+     * @param connection the database connection
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static void deleteTag(int tagId, Connection connection) throws SQLException{
+        String queryString = "DELETE FROM flight_tag_map WHERE tag_id = "+tagId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.executeUpdate();
+
+        queryString = "DELETE FROM flight_tags WHERE id = "+tagId;
+        query = connection.prepareStatement(queryString);
+        query.executeUpdate();
+    }
+
+    /**
+     * Edits a tag that is already in the database
+     * @pre @param flightTag is not equal to the tag currently in the db
+     * @param connection the database connection
+     * @param flightTag the edited flightTag
+     * @return the new instance of the flightTag in the database
+	 * @throws SQLException if there is an error with the database query
+     */
+    public static FlightTag editTag(Connection connection, FlightTag flightTag) throws SQLException{
+        FlightTag current = getTag(connection, flightTag.hashCode());
+        String newName = flightTag.getName();
+        String newDescription = flightTag.getDescription();
+        String newColor = flightTag.getColor();
+
+        if(!current.equals(flightTag)){
+            StringBuilder queryString = new StringBuilder("UPDATE flight_tags SET");
+            boolean first = true;
+            if(!current.getName().equals(newName)){
+                queryString.append(" name = '");
+                queryString.append(newName);
+                queryString.append("' ");
+                first = false;
+            }
+            if(!current.getDescription().equals(newDescription)){
+                queryString.append( (first ? " " : ", ") );
+                queryString.append("description = '");
+                queryString.append(newDescription);
+                queryString.append("' ");
+                first = false;
+            }
+            if(!current.getColor().equals(newColor)){
+                queryString.append( (first ? " " : ", ") );
+                queryString.append("color = '");
+                queryString.append(newColor);
+                queryString.append("' ");
+            }
+
+            queryString.append("WHERE id = "+flightTag.hashCode());
+            System.out.println("Query String Update: "+queryString.toString());
+            PreparedStatement query = connection.prepareStatement(queryString.toString());
+            query.executeUpdate();
+
+            return getTag(connection, flightTag.hashCode());
+        }
+        return null; //this should never happen, it violates the precondition!
+    }
+
+	/**
+	 * Creates a tag in the database tables
+	 * @param fleetId the fleetId to use
+	 * @param flightId the flightId to use 
+	 * @param name the name of the new tag (has to be unique!)
+	 * @param description the description of the new tag
+	 * @param color the color of the new tag
+	 * @param connection the database connection
+	 * @return the new FlightTag instance
+	 * @throws SQLException if there is an error with the database query
+	 */
+    public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color, Connection connection) throws SQLException{
+        String queryString = "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)";
+
+        PreparedStatement stmt = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
+        
+        stmt.setInt(1, fleetId);
+        stmt.setString(2, name);
+        stmt.setString(3, description);
+        stmt.setString(4, color);
+
+        stmt.executeUpdate();
+
+        ResultSet resultSet = stmt.getGeneratedKeys();
+
+        int index = -1;
+
+        if(resultSet.next()){
+            index = resultSet.getInt(1);
+        }
+
+        System.out.println(index);
+        associateTag(flightId, index, connection);
+
+        return new FlightTag(index, fleetId, name, description, color);
+    }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
@@ -433,10 +821,19 @@ public class Flight {
         insertCompleted = resultSet.getBoolean(15);
 
         itinerary = Itinerary.getItinerary(connection, id);
+
+        List<FlightTag> tags = getTags(connection, id);
+        if(tags != null){
+            this.tags = Optional.of(tags);
+        }
     }
 
     public int getId() {
         return id;
+    }
+
+    public boolean hasTags(){
+        return this.tags.isPresent();
     }
 
     public int getFleetId() {
@@ -936,11 +1333,6 @@ public class Flight {
         }
 
         checkExceptions();
-    }
-
-    public Flight(Tag<Flight> tag, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
-        this(filename, connection);
-        this.tag = Optional.of(tag);
     }
 
     public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
