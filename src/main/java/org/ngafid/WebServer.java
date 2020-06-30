@@ -9,6 +9,8 @@ import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
 
+import org.ngafid.common.FlightPaginator;
+
 import spark.Spark;
 import spark.Session;
 
@@ -37,6 +39,9 @@ import com.google.gson.GsonBuilder;
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+	
+	// Have a pointer to the paginator for flights so more than one route can mainpulate the flight pages
+	public static FlightPaginator flightPaginator;
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
@@ -179,6 +184,14 @@ public final class WebServer {
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
 
+        //Flight-Tagging routes
+        Spark.post("/protected/flight_tags", new PostTags(gson));
+        Spark.post("/protected/create_tag", new PostCreateTag(gson));
+        Spark.post("/protected/get_unassociated_tags", new PostUnassociatedTags(gson));
+        Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
+        Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
+        Spark.post("/protected/edit_tag", new PostEditTag(gson));
+        
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
         // Cesium related routes
