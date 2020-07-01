@@ -1415,7 +1415,7 @@ class Flight extends React.Component {
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
             eventLayer : null,
-            approachLayer : null
+            itineraryLayer : null,
             eventOutlines : [],
             eventOutlineLayer : null
         }
@@ -1439,7 +1439,7 @@ class Flight extends React.Component {
         if (this.state.eventLayer) {
             this.state.eventLayer.setVisible(false);
             this.state.eventOutlineLayer.setVisible(false);
-            this.state.approachLayer.setVisible(false);
+            this.state.itineraryLayer.setVisible(false);
 
             // plot
             let shapes = plotlyLayout.shapes;
@@ -1868,7 +1868,7 @@ class Flight extends React.Component {
 
                     map.addLayer(thisFlight.state.layer);
 
-                    // adding itinerary (approaches and takeoffs) to flightpath ////////////////////////////////////////
+                    // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
                     var flight_phases = [];
 
@@ -1894,16 +1894,11 @@ class Flight extends React.Component {
                         var takeoff = null;
 
                         // creating Linestrings
-                        if (stop.type == "go_around") {
-                            approach = new LineString( points.slice( stop.startOfApproach, stop.minAltitudeIndex ) );       //TODO
-                            takeoff = new LineString( points.slice( stop.minAltitudeIndex, stop.endOfApproach ) );
-                        } else {
-                            if (stop.type != "landing") {
-                                takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
-                            }
-                            if (stop.type != "takeoff") {
-                                approach = new LineString( points.slice( stop.startOfApproach, stop.minAltitudeIndex ) );
-                            }
+                        if (stop.startOfApproach != -1 && stop.endOfApproach != -1) {
+                            approach = new LineString( points.slice( stop.startOfApproach, stop.endOfApproach ) );
+                        }
+                        if (stop.startOfTakeoff != -1 && stop.endOfTakeoff != -1) {
+                            takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
                         }
 
                         // set styles and add phases to flight_phases list
@@ -1939,7 +1934,7 @@ class Flight extends React.Component {
                         })
                     });
 
-                    // add approachLayer to map
+                    // add itineraryLayer to map
                     map.addLayer(thisFlight.state.itineraryLayer);
 
                     // adding coordinates to events, if needed //
@@ -1990,7 +1985,7 @@ class Flight extends React.Component {
                 this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
             }
             // toggle visibility of itinerary
-            this.state.itineraryLayer.setVisible(this.state.pathVisible)
+            this.state.itineraryLayer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
                 flightsCard.showMap();
