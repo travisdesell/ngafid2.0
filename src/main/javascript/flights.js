@@ -566,7 +566,18 @@ class TraceButtons extends React.Component {
     }
 }
 
+/**
+ * Tags module
+ * Houses the state and information for user-defined tags
+ * @module flights/Tags
+ */
 class Tags extends React.Component{
+
+	/**
+	 * ReactJS Constructor
+	 * Intializes the state of this component
+	 * @param props the props that are sent from the parent component
+	 */
     constructor(props) {
         super(props);
 
@@ -580,8 +591,8 @@ class Tags extends React.Component{
             unassociatedTags : [],
 			flightIndex : props.flightIndex,
             flightId : props.flightId,
-            activeTag : [],
-			editedTag : [],  //the tag currently being edited
+            activeTag : null,
+			editedTag : null,  //the tag currently being edited
             infoActive : false,
             addActive : false,
             editing : false,
@@ -593,16 +604,23 @@ class Tags extends React.Component{
         this.handleFormChange = this.handleFormChange.bind(this);
     }
 
-	componentWillReceiveProps(nextProps) {
-		let pTags = [];
-		if(nextProps.tags != null){
-			pTags = nextProps.tags;
-		}
-		this.state.addActive = false;
-		this.state.addFormActive = false;
-		this.setState({ tags: pTags });  
+	/**
+	 * called everytime props are updated
+	 * @param oldProps the old props before the update
+	 */
+	componentDidUpdate(oldProps) {
+		console.log("props updated");
+		const newProps = this.props;
+	  	if(oldProps.tags !== newProps.tags) {
+			this.state.tags = this.props.tags;
+			this.state.addFormActive = false; //close the add form to indicate the tag has been edited or no longer exists
+			this.setState(this.state);
+	  	}
 	}
 
+	/**
+	 * Handles the event for which the add button is pressed
+	 */
     addClicked(){
         this.state.addActive = !this.state.addActive;
         this.state.infoActive = !this.state.infoActive;
@@ -613,6 +631,9 @@ class Tags extends React.Component{
         this.getUnassociatedTags();
     }
 
+	/**
+	 * Uses a ajax-json call to create a new tag in the server database
+	 */
     addTag(){
         let tname = $("#comName").val(); 
         let tdescription = $("#description").val(); 
@@ -643,7 +664,12 @@ class Tags extends React.Component{
                 console.log("received response: ");
                 console.log(response);
 				if(response != "ALREADY_EXISTS"){
-					thisFlight.state.tags.push(response);
+					if(thisFlight.state.tags != null){
+						thisFlight.state.tags.push(response);
+					}else{
+						thisFlight.state.tags = new Array(response);
+					}
+					thisFlight.state.addFormActive = false;
 					thisFlight.setState(thisFlight.state);
 					thisFlight.updateParent(thisFlight.state.tags);
 				}else{
@@ -656,6 +682,9 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Uses a ajax-json call to get the tags that are unassoicated with the current flight 
+	 */
     getUnassociatedTags(){
         console.log("getting unassociated tags!")
 
@@ -682,6 +711,9 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Handles when the user presses the delete button, and prompts them with @module confirmModal
+	 */
     deleteTag(){
         if(this.state.activeTag != null){
             console.log("delete tag invoked!");
@@ -696,17 +728,33 @@ class Tags extends React.Component{
 
     }
 
+
+	/**
+	 * Handles when the user presses the clear all tags button, and prompts them with @module confirmModal
+	 */
     clearTags(){
         confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #"+this.state.flightId+"?",
                           () => {this.removeTag(-2, false)});
     }
 
-	tagEquals(tagA, tagB){  //we must define an equality function to compare two tags that are equal but reside in different memory locations
-		return tagA.name == tagB.name &&
+	/**
+	 * Used to compare two tags for equality
+	 * @param tagA the first tag to compare
+	 * @param tagB the second tag to compare
+	 * @return a boolean representing whether or not the two tags are equal
+	 */
+	tagEquals(tagA, tagB){
+		return (tagA != null && tagB != null) && //they cant be null!
+			tagA.name == tagB.name &&
 			tagA.description == tagB.description &&
 			tagA.color == tagB.color;
 	}
 
+	/**
+	 * Prepares to edit a tag by creating a deep copy of the original tag
+	 * to be used later on to determine if any changes have been made.
+	 * @param tag the tag to edit
+	 */
     editTag(tag){
         console.log("Editing tag: "+tag.hashId);
         if(this.state.activeTag == null || this.state.activeTag != tag){
@@ -723,15 +771,18 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+	/**
+	 * Calls the server using ajax-json to notify it of the new tag change
+	 */
     submitEdit(){
         console.log("submitting edit for tag: "+this.state.activeTag.hashId);
 
         var oldTag = this.state.activeTag;
         var submissionData = {
             tag_id : this.state.activeTag.hashId,
-            name : $("#comName").val(),
-            description : $("#description").val(),
-            color : $("#color").val()
+            name : this.state.editedTag.name,
+            description : this.state.editedTag.description,
+            color : this.state.editedTag.color
         };
 
         let thisFlight = this;
@@ -762,14 +813,23 @@ class Tags extends React.Component{
         });
     }
 
+	/**
+	 * shows @module errorModal when a tag has not been edited properly
+	 */
     showNoEditError(){
         errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
+	/**
+	 * invoked by another function when the user has confirmed they would like to delete the tag permanently
+	 */
     confirmDelete(){
         this.removeTag(this.state.activeTag.hashId, true);
     }
 
+	/**
+	 * Handles state changes for when the 'Create a new tag' option is selected
+	 */
 	createClicked(){
 		this.state = {
 			addActive : true,
@@ -779,6 +839,9 @@ class Tags extends React.Component{
 		this.showAddForm();
 	}
 
+	/**
+	 * Shows the form for adding and/or editing a tag
+	 */
     showAddForm(){
         this.state.addFormActive = !this.state.addFormActive;
 		this.state.editedTag = {
@@ -787,18 +850,17 @@ class Tags extends React.Component{
 			color : Colors.randomValue()
 		};
         this.setState(this.state);
-        this.toggleAssociateTag();
     }
 
-    toggleAssociateTag(){
-        this.state.assocTagActive = !this.state.assocTagActive;
-        this.setState(this.state);
-    }
-
+	/**
+	 * removes a tag from a flight, either permanent or just from one flight
+	 * @param id the tagid of the tag being removed
+	 * @param perm a bool representing whether or not the removal is permanent
+	 */
     removeTag(id, perm){
         console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
 
-        if(id == -1){
+        if(id==null || id == -1){
             errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
             return;
         }
@@ -811,6 +873,8 @@ class Tags extends React.Component{
             permanent : perm,
             all : allTags
         };
+		
+		this.state.activeTag = null;
 
         let thisFlight = this;
 		console.log("calling deletion ajax");
@@ -829,12 +893,12 @@ class Tags extends React.Component{
 					console.log(response.data[thisFlight.state.flightIndex]);
 					let allFlights = response.data;
 					thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
+					thisFlight.state.addFormActive = false;
 					thisFlight.updateFlights(allFlights);
 				}else{
 					thisFlight.state.tags = response;
 					thisFlight.setState(thisFlight.state);
 					thisFlight.getUnassociatedTags();
-					thisFlight.state.detailsActive = false;
 					thisFlight.state.addFormActive = false;
 					thisFlight.state.addActive = false;
 					thisFlight.updateParent(thisFlight.state.tags);
@@ -847,6 +911,10 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Associates a tag with this flight
+	 * @param id the tag id to associate
+	 */
     associateTag(id){
         console.log("associating tag #"+id+" with flight #"+this.state.flightId);
 
@@ -869,10 +937,11 @@ class Tags extends React.Component{
                     thisFlight.state.tags.push(response);
                 }else{
                     thisFlight.state.tags = new Array(response);
+					console.log(thisFlight.state.tags);
                 }
                 thisFlight.getUnassociatedTags();
-                thisFlight.setState(thisFlight.state);
                 thisFlight.updateParent(thisFlight.state.tags);
+                thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -880,14 +949,27 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Updates the parent when the flights on the current page have changed
+	 */
 	updateFlights(flights){
+		console.log("sending new flights to parents");
+		console.log(flights);
 		this.state.parent.updateFlights(flights);
 	}
 
+	/**
+	 * Updates the parent of changes ONLY made to this flights tags
+	 */
     updateParent(tags){
         this.state.parent.invokeUpdate(tags);
     }
 
+	/**
+	 * sets the state value editedTag which is used to make sure that the user has made an edit, before
+	 * enabling the submit button
+	 * @param e the onChange() event
+	 */
     handleFormChange(e) {
         if(e.target.id == 'comName'){
             this.state.editedTag.name = e.target.value;
@@ -901,6 +983,9 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+	/**
+	 * Renders the Tags component
+	 */
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -923,16 +1008,14 @@ class Tags extends React.Component{
 
         let tags = this.state.tags;
         let unassociatedTags = this.state.unassociatedTags;
-        let hasOtherTags = unassociatedTags != null;
+        let hasOtherTags = (unassociatedTags != null);
 
         let activeId = -1;
-
         if(this.state.activeTag != null){
             activeId = activeTag.hashId;
         }
 
         let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag()), tagStat = "";
-
         if(tags == null || tags.length == 0){
             tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
@@ -944,7 +1027,6 @@ class Tags extends React.Component{
                     tags.map((tag, index) => {
                         var cStyle = {
                             flex : "0 10 10em",
-                            //backgroundColor : tag.color,
                             color : tag.color, 
                             fontWeight : '650'
                         };
@@ -964,12 +1046,10 @@ class Tags extends React.Component{
         }
 
         let tagInfo = "";
-
         if(this.state.editing){
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
             defColor = this.state.editedTag.color;
-            console.log(this.state.addFormActive);
             defAddAction = (
                 (() => this.submitEdit())
             );
@@ -989,14 +1069,12 @@ class Tags extends React.Component{
                             <i className="fa fa-check" aria-hidden="true"></i>
                                 Submit
 						</button> );
-		if(editedTag != null && activeTag !=null){
-			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
-				submitButton = (
-							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
-								<i className="fa fa-check" aria-hidden="true"></i>
-									Submit
-							</button> );
-			}
+		if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
+			submitButton = (
+						<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
+							<i className="fa fa-check" aria-hidden="true"></i>
+								Submit
+						</button> );
 		}
 
 
@@ -1032,7 +1110,6 @@ class Tags extends React.Component{
                     </DropdownButton>
         }
         if(this.state.addFormActive){
-            console.log("rendering the add/edit form");
             addForm =
             <div className="row p-4">
                 <div className="col-">
@@ -1324,12 +1401,11 @@ class Flight extends React.Component {
             uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
-            tags : null,
             traceNamesVisible : false,
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
-            tags : props.tags.value,
+            tags : props.tags,
             layer : null,
             parent : props.parent,
             color : color,
@@ -1341,11 +1417,6 @@ class Flight extends React.Component {
             eventOutlineLayer : null
         }
     }
-
-	componentWillReceiveProps(nextProps) {
-		console.log("recieved new props");
-	    this.setState({ tags: nextProps.tags.value });  
-	}
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -1853,13 +1924,33 @@ class Flight extends React.Component {
         }
     }
 
+	/**
+	 * Changes all the flights on a given page by calling the parent function
+	 */
 	updateFlights(flights){
 		this.props.updateParentState(flights);
 	}
 
+	/**
+	 * Changes the tags associated with this flight
+	 */
 	invokeUpdate(tags){
 		this.state.tags = tags;
 		this.setState(this.state);
+	}
+
+	/**
+	 * Called when props are updated
+	 * changes state if props have in fact changed
+	 * @param oldProps the old props before the update
+	 */
+	componentDidUpdate(oldProps) {
+		console.log("props updated");
+		const newProps = this.props;
+	  	if(oldProps.tags !== newProps.tags) {
+			this.state.tags = this.props.tags;
+			this.setState(this.state);
+	  	}
 	}
 
     render() {
@@ -1898,11 +1989,6 @@ class Flight extends React.Component {
             }
         }
 
-		var tags = [];
-        if(this.state.tags != null){
-            tags = this.state.tags;
-        }
-
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
@@ -1935,7 +2021,7 @@ class Flight extends React.Component {
         let tagPills = "";
         if(this.state.tags != null){
             tagPills = 
-            tags.map((tag, index) => {
+            this.state.tags.map((tag, index) => {
                 let style = {
                     backgroundColor : tag.color,
                     marginRight : '4px',
@@ -2068,18 +2154,14 @@ class FlightsCard extends React.Component {
        this.filterRef = React.createRef();
     }
 
-	//update the flights without setting the state
-
     setFlights(flights) {
         this.state.flights = flights;
         this.setState(this.state);
     }
 
 	//used to update the state from a child component
-	updateState(flights){
-		console.log("flightcard update state called");
-		this.state.flights = flights;
-		this.setState(this.state);
+	updateState(newFlights){
+		this.setFlights(newFlights);
 	}
 
     setIndex(index){
@@ -2247,6 +2329,10 @@ class FlightsCard extends React.Component {
         }
     }
 
+	/**
+	 * Jumps to a page in this collection of queried flights
+	 * @param pg the page to jump to
+	 */
     jumpPage(pg){
         if(pg < this.state.numPages && pg >= 0){
             this.state.page = pg;
@@ -2254,16 +2340,25 @@ class FlightsCard extends React.Component {
         }
     }
 
+	/**
+	 * jumps to the next page in this collection of queried flights
+	 */
     nextPage(){
         this.state.page++;
         this.submitFilter();
     }
 
+	/**
+	 * jumps to the previous page in this collection of queried flights
+	 */
     previousPage(){
         this.state.page--;
         this.submitFilter();
     }
 
+	/**
+	 * Repaginates the page configuration when the numPerPage field has been changed by the user
+	 */
     repaginate(pag){
         console.log("Re-Paginating");
         this.state.buffSize = pag;
@@ -2320,6 +2415,11 @@ class FlightsCard extends React.Component {
         });  
     }
 
+	/**
+	 * Generates an array representing all the pages in this collection of 
+	 * queried flights
+	 * @return an array of String objects containing page names
+	 */
     genPages(){
         var page = [];
         for(var i = 0; i<this.state.numPages; i++){
@@ -2331,10 +2431,9 @@ class FlightsCard extends React.Component {
         return page;
     }
 	
-	invokeUpdate(flights){
-		this.setFlights(flights);
-	}
-
+	/**
+	 * Renders the flightsCard
+	 */
     render() {
         console.log("rendering flights!");
 
@@ -2343,8 +2442,6 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
 
         }
-		console.log(this.state.flights);
-		console.log(flights);
 
         let pages = this.genPages();
 
@@ -2377,7 +2474,6 @@ class FlightsCard extends React.Component {
             }
 
 
-            console.log(this.state.end);
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
@@ -2415,7 +2511,9 @@ class FlightsCard extends React.Component {
 							flights.map((flightInfo, index) => {
 								if(flightInfo != null){
 									return (
-										<Flight flightInfo={flightInfo} pageIndex={index} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+										<Flight flightInfo={flightInfo} pageIndex={index}
+										updateParentState={(newFlights) => this.updateState(newFlights)}
+										parent={this} tags={flightInfo.tags.value} key={flightInfo.id}/>
 									);
 								}
 							})
