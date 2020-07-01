@@ -1179,6 +1179,7 @@ class Events extends React.Component {
         // get event info from flight
         let flight = this.props.parent;
         let eventMapped = flight.state.eventsMapped[index];
+        let pathVisible = flight.state.pathVisible;
         let eventPoints = flight.state.eventPoints;
         let eventOutline = flight.state.eventOutlines[index];
         event = eventPoints[index];                                 //override event var w/ event Feature
@@ -1191,7 +1192,7 @@ class Events extends React.Component {
 
             // center map view on event location
             let coords = event.getGeometry().getFirstCoordinate();
-            if (coords.length > 0) {
+            if (coords.length > 0 && pathVisible) {
                 map.getView().setCenter(coords);
             }
 
@@ -1358,6 +1359,19 @@ class Flight extends React.Component {
         if (this.state.layer) {
             this.state.layer.setVisible(false);
         }
+
+        //// DEBUG: hiding events
+        // map
+        if (this.state.eventLayer) {
+            this.state.eventLayer.setVisible(false);
+            this.state.eventOutlineLayer.setVisible(false);
+
+            // plot
+            // let's just clear all shapes?
+            let shapes = plotlyLayout.shapes;
+            shapes.length = 0;
+        }
+
 
         console.log("hiding plots");
         if (this.state.commonTraceNames) {
