@@ -27,7 +27,6 @@ public class Itinerary {
 
     int minAltitudeIndex = -1;
     double minAltitude = Double.MAX_VALUE;
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     private int startOfApproach = -1;
     private int endOfApproach = -1;
     private int startOfTakeoff = -1;
@@ -41,7 +40,6 @@ public class Itinerary {
     final String TAKEOFF = "takeoff";
     final String LANDING = "landing";
     private String type = GOAROUND;                              // go_around is the default -> will be updated or set if otherwise
-    ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     double minAirportDistance = Double.MAX_VALUE;
     double minRunwayDistance = Double.MAX_VALUE;
 
@@ -117,13 +115,11 @@ public class Itinerary {
         runway = resultSet.getString(5);
         minAirportDistance = resultSet.getDouble(6);
         minRunwayDistance = resultSet.getDouble(7);
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         startOfApproach = resultSet.getInt(8);
         endOfApproach = resultSet.getInt(9);
         startOfTakeoff = resultSet.getInt(10);
         endOfTakeoff = resultSet.getInt(11);
         type = resultSet.getString(12);
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
     }
 
     public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed, double rpm) {
@@ -140,7 +136,7 @@ public class Itinerary {
             // set start index in case of takeoff event
             if (startOfTakeoff == -1) {
                 startOfTakeoff = index;
-            } else if ( takeoffCounter > 15) {                                  // if takeoff started and sustained for 15 seconds
+            } else if ( takeoffCounter >= 15) {                                  // if takeoff started and sustained for 15 seconds
                 endOfTakeoff = index;
             }
 
@@ -249,13 +245,11 @@ public class Itinerary {
         preparedStatement.setDouble(6, minRunwayDistance);
         preparedStatement.setString(7, airport);
         preparedStatement.setString(8, runway);
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         preparedStatement.setInt(9, startOfApproach);
         preparedStatement.setInt(10, endOfApproach);
         preparedStatement.setInt(11, startOfTakeoff);
         preparedStatement.setInt(12, endOfTakeoff);
         preparedStatement.setString(13, type);
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
         System.err.println(preparedStatement);
