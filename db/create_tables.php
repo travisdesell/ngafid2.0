@@ -156,17 +156,6 @@ $query = "CREATE TABLE `flight_tags` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `flight_tag_map` (
-    `flight_id` INT(11) NOT NULL,
-    `tag_id` INT(11) NOT NULL,
-
-    UNIQUE KEY(`flight_id`, `tag_id`),
-    FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
-    FOREIGN KEY(`tag_id`) REFERENCES flight_tags(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
 
 $query = "CREATE TABLE `flights` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -201,6 +190,18 @@ $query = "CREATE TABLE `flights` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+$query = "CREATE TABLE `flight_tag_map` (
+    `flight_id` INT(11) NOT NULL,
+    `tag_id` INT(11) NOT NULL,
+
+    UNIQUE KEY(`flight_id`, `tag_id`),
+    FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
+    FOREIGN KEY(`tag_id`) REFERENCES flight_tags(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 
 $query = "CREATE TABLE `itinerary` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,

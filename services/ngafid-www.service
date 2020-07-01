@@ -15,6 +15,7 @@ Environment="RUNWAYS_FILE=/mnt/ngafid/runways/runways_parsed.csv"
 Environment="MUSTACHE_TEMPLATE_DIR=/ngafid/ngafid2.0/src/main/resources/public/templates/"
 Environment="SPARK_STATIC_FILES=/ngafid/ngafid2.0/src/main/resources/public/"
 Environment="MAVEN_OPTS=-Xmx4096M"
+Environment=PATH=/usr/lib64/apache-maven-3.6.0/bin:/usr/lib64/apache-maven-3.6.0/bin:/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin
 
 WorkingDirectory=/ngafid/ngafid2.0
 ExecStart=/bin/sh /ngafid/ngafid2.0/run_webserver.sh
