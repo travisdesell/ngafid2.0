@@ -1,6 +1,6 @@
 /**
  * Represents a page of data in the NGAFID
- * This is a generic class and can be used beyond flghts if need be
+ * This is a generic class and can house any of the NGAFID's modular elements (flights, uploads, etc...)
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella, RIT Computer Science</a>
  */
 
@@ -55,6 +55,15 @@ public class Page<T>{
      */
     public int size(){
        return this.sizeAll;
+    }
+
+    /**
+     * Returns an element at a given index
+     * @param i the index of the page (1...size)
+     * @return an object of type T
+     */
+    public T at(int i){
+        return this.data.get(i);
     }
 
     /**

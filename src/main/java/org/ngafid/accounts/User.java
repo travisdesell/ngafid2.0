@@ -278,6 +278,19 @@ public class User {
         return user;
     }
 
+    /**
+     * This is called if the fleet info (like waiting users) is modified, and it will re-calculate
+     * the fleet information for a user.
+     *
+     * @param connection is the connection to the database
+     */
+    public void updateFleet(Connection connection) throws SQLException {
+        fleet = Fleet.get(connection, fleetAccess.getFleetId());
+        if (fleetAccess.isManager()) {
+            fleet.populateUsers(connection, getId());
+        }
+    }
+
 
     /**
      * Check to see if a user already exists in the database.
