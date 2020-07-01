@@ -37,6 +37,9 @@ public class Upload {
     private int warningFlights;
     private int errorFlights;
 
+    public int getId() {
+        return id;
+    }
 
     private static void deleteDirectory(File folder) {
         File[] files = folder.listFiles();
