@@ -29,6 +29,9 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
+
 import org.ngafid.filters.Filter;
 
 import org.ngafid.flights.Airframes;
@@ -44,10 +47,9 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-import org.ngafid.events.EventStatistics;
 
-public class GetWelcome implements Route {
-    private static final Logger LOG = Logger.getLogger(GetWelcome.class.getName());
+public class GetTrends implements Route {
+    private static final Logger LOG = Logger.getLogger(GetTrends.class.getName());
     private Gson gson;
 
     private static class Message {
@@ -62,13 +64,13 @@ public class GetWelcome implements Route {
 
     private List<Message> messages = new ArrayList<Message>();
 
-    public GetWelcome(Gson gson) {
+    public GetTrends(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetWelcome(Gson gson, String messageType, String messageText) {
+    public GetTrends(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -82,7 +84,7 @@ public class GetWelcome implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "welcome.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "trends.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         final Session session = request.session();
@@ -103,28 +105,10 @@ public class GetWelcome implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
-            LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
-            LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
-
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-
-
-
             long startTime = System.currentTimeMillis();
             String fleetInfo =
-                "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
-                "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +
-                "var numberAircraft = " + Tails.getNumberTails(connection, fleetId) + ";\n" +
-                "var totalEvents = " + EventStatistics.getEventCount(connection, fleetId, null, null) + ";\n" +
-                "var yearEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfYear, null) + ";\n" +
-                "var monthEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null) + ";\n" +
-                "var uploadsNotImported = " + Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") + ";\n" +
-                "var uploadsWithError = " + Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") + ";\n" +
-                "var flightsWithWarning = " + FlightWarning.getCount(connection, fleetId) + ";\n" +
-                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n" +
                 "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
-                "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
-                //"var eventCounts = JSON.parse('" + gson.toJson(eventCountsMap) + "');";
+                "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

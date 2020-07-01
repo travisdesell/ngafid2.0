@@ -23,7 +23,7 @@ public class ImportPaginator extends Paginator{
     public ImportPaginator(int bufferSize, int fleetID) throws SQLException{
         super(bufferSize);
         this.fleetID = fleetID;
-        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID));
+        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID, null));
     }
 
     /**
@@ -36,7 +36,7 @@ public class ImportPaginator extends Paginator{
     public ImportPaginator(int startIndex, int bufferSize, int fleetID) throws SQLException{
         super(startIndex, bufferSize);
         this.fleetID = fleetID;
-        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID));
+        super.setNumElements(Upload.getNumUploads(Database.getConnection(), fleetID, null));
     }
 
     /**

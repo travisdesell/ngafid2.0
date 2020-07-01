@@ -67,7 +67,7 @@ class UserNavbar extends React.Component {
                 //processing the response will update the navbar
                 //to the logged out state
 
-                //redirect to the dashboard page
+                //logout so they can log back in
                 window.location.replace("/logout_success");
             },
             error : function(jqXHR, textStatus, errorThrown) {

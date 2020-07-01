@@ -50,7 +50,7 @@ public class ProcessFlights {
                     int fleetId = resultSet.getInt(3);
                     String filename = resultSet.getString(4);
 
-                    filename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + filename;
+                    filename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + uploadId + "__" + filename;
                     System.err.println("processing: '" + filename + "'");
 
                     String extension = filename.substring(filename.length() - 4);
