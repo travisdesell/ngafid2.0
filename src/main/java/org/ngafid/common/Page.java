@@ -57,6 +57,14 @@ public class Page<T>{
        return this.sizeAll;
     }
 
+	/**
+	 * Checks to see if this page has any data
+	 * @return true if the page has any data
+	 */
+	public boolean hasData(){
+		return this.data != null && !this.data.isEmpty();
+	}
+
     /**
      * Returns an element at a given index
      * @param i the index of the page (1...size)
