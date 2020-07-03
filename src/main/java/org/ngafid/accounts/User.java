@@ -10,6 +10,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import org.ngafid.flights.Tails;
+
 
 public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
@@ -69,6 +71,13 @@ public class User {
      */
     public int getWaitingUserCount() {
         return fleet.getWaitingUserCount();
+    }
+
+    /**
+     * @return the number of unconfirmed tails for this user's fleet
+     */
+    public int getUnconfirmedTailsCount(Connection connection) throws SQLException {
+        return Tails.getUnconfirmedTailsCount(connection, fleet.getId());
     }
 
     /**
@@ -267,6 +276,19 @@ public class User {
         }
 
         return user;
+    }
+
+    /**
+     * This is called if the fleet info (like waiting users) is modified, and it will re-calculate
+     * the fleet information for a user.
+     *
+     * @param connection is the connection to the database
+     */
+    public void updateFleet(Connection connection) throws SQLException {
+        fleet = Fleet.get(connection, fleetAccess.getFleetId());
+        if (fleetAccess.isManager()) {
+            fleet.populateUsers(connection, getId());
+        }
     }
 
 

@@ -102,7 +102,7 @@ class CreateAccountCard extends React.Component {
                 }
 
                 if (checkedRadio == "newFleet") {
-                    window.location.replace("/protected/dashboard");
+                    window.location.replace("/protected/welcome");
 
                 } else if (checkedRadio == "existingFleet") {
                     window.location.replace("/protected/waiting");

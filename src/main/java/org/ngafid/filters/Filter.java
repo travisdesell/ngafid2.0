@@ -148,6 +148,7 @@ public class Filter{
 
         switch (inputs.get(0)) {
             case "Airframe":
+                System.out.println(inputs);
                 parameters.add(fleetId);
                 parameters.add(inputs.get(2));
                 if (inputs.get(1).equals("is")) {
@@ -155,6 +156,16 @@ public class Filter{
                 } else {
                     return "flights.airframe_id = (SELECT id FROM airframes WHERE fleet_id = ? AND airframe != ?)";
                 }
+
+            case "System ID":
+                parameters.add(fleetId);
+                parameters.add(inputs.get(2));
+                if (inputs.get(1).equals("is")) {
+                    return "flights.fleet_id = ? AND flights.system_id = ?";
+                } else {
+                    return "flights.fleet_id = ? AND flights.system_id != ?";
+                }
+
 
             case "Tail Number":
                 parameters.add(fleetId);
@@ -283,6 +294,16 @@ public class Filter{
 
                     return "EXISTS (SELECT id FROM events WHERE flights.id = events.flight_id AND events.event_definition_id = (SELECT id FROM event_definitions WHERE event_definitions.name = ? AND event_definitions.airframe_id = (SELECT id FROM airframes WHERE airframe = ?)) AND ((events.end_line - events.start_line) + 1) " + condition + " ?)";
                 }
+
+            case "Tag":
+                parameters.add(fleetId);
+                parameters.add(inputs.get(1)); //we can ignore index 0, it is for the UI only
+				String det = inputs.get(2);
+				if(det.substring(0,6).equals("Is Not")){
+					return "NOT EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+				}else{
+					return "EXISTS (SELECT flight_id FROM flight_tag_map WHERE tag_id = (SELECT id FROM flight_tags WHERE fleet_id = ? AND name = ?) AND flight_id = flights.id)";
+				}
 
             default:
                 return "";
