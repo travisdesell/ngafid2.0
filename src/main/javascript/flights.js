@@ -2195,12 +2195,16 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                          <DropdownButton className={buttonClasses} id="dropdown-item-button" title="Export" size="sm" style={styleButton} variant="secondary">
-                                <Dropdown.Item onClick={() => this.downloadClicked('KML')}>Export to KML</Dropdown.Item>
-                                <Dropdown.Item onClick={() => this.downloadClicked('XPL')}>Export to X-Plane</Dropdown.Item>
-                            </DropdownButton>
+						    <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                  <i className="fa fa-download p-1"></i>
+						    </button>
+							<div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL')}>Export to X-Plane FDR</button>
+						   </div>
                         </div>
-                    </div>
+                     </div>
 
                     {itineraryRow}
 
