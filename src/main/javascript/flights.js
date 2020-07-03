@@ -1301,6 +1301,8 @@ class Events extends React.Component {
             flex : "0 0 10em"
         };
 
+        let eventType = "type";
+
         let eventTypeSet = new Set();
         let eventTypeButtons = [];
         let thisFlight = this.props.parent;
@@ -1413,6 +1415,7 @@ class Flight extends React.Component {
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
             eventLayer : null,
+            itineraryLayer : null,
             eventOutlines : [],
             eventOutlineLayer : null
         }
@@ -1431,14 +1434,14 @@ class Flight extends React.Component {
             this.state.layer.setVisible(false);
         }
 
-        //// DEBUG: hiding events
+        // hiding events
         // map
         if (this.state.eventLayer) {
             this.state.eventLayer.setVisible(false);
             this.state.eventOutlineLayer.setVisible(false);
+            this.state.itineraryLayer.setVisible(false);
 
             // plot
-            // let's just clear all shapes?
             let shapes = plotlyLayout.shapes;
             shapes.length = 0;
         }
@@ -1865,6 +1868,75 @@ class Flight extends React.Component {
 
                     map.addLayer(thisFlight.state.layer);
 
+                    // adding itinerary (approaches and takeoffs) to flightpath 
+                    var itinerary = thisFlight.props.flightInfo.itinerary;
+                    var flight_phases = [];
+
+                    // Create flight phase styles
+                    var takeoff_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#34eb52",
+                                    width: 3
+                                })
+                            });
+
+                    var approach_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#347deb",
+                                    width: 3
+                                })
+                            });
+
+                    // create and add Features to flight_phases for each flight phase in itinerary
+                    for (let i = 0; i < itinerary.length; i++) {
+                        var stop = itinerary[i];
+                        var approach = null;
+                        var takeoff = null;
+
+                        // creating Linestrings
+                        if (stop.startOfApproach != -1 && stop.endOfApproach != -1) {
+                            approach = new LineString( points.slice( stop.startOfApproach, stop.endOfApproach ) );
+                        }
+                        if (stop.startOfTakeoff != -1 && stop.endOfTakeoff != -1) {
+                            takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
+                        }
+
+                        // set styles and add phases to flight_phases list
+                        if (approach != null) {
+                            let phase = new Feature({
+                                             geometry: approach,
+                                             name: 'Approach'
+                                         });
+                            phase.setStyle(approach_style);
+                            flight_phases.push( phase );
+                        }
+                        if (takeoff != null) {
+                            let phase = new Feature({
+                                             geometry: takeoff,
+                                             name: 'Takeoff'
+                                         });
+                            phase.setStyle(takeoff_style);
+                            flight_phases.push( phase );
+                        }
+                    }
+
+                    // create itineraryLayer
+                    thisFlight.state.itineraryLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [1,1,1,1],
+                                width: 3
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: flight_phases
+                        })
+                    });
+
+                    // add itineraryLayer to map
+                    map.addLayer(thisFlight.state.itineraryLayer);
+
                     // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
@@ -1906,9 +1978,14 @@ class Flight extends React.Component {
             this.state.itineraryVisible = !this.state.itineraryVisible;
             this.state.layer.setVisible(this.state.pathVisible);
 
-            // toggle visibility of events //
-            this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
-            this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
+
+            // toggle visibility of events
+            if (this.state.eventLayer != null) {
+                this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+                this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
+            }
+            // toggle visibility of itinerary
+            this.state.itineraryLayer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
                 flightsCard.showMap();

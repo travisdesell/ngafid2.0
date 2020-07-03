@@ -1591,6 +1591,9 @@ public class Flight {
         //lat and longs
         if (!hasCoords) return;
 
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
+        DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
+
         StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
         DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
         DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
@@ -1611,14 +1614,15 @@ public class Flight {
                 //If the airport is a new airport (this shouldn't happen really),
                 //then create a new stop.
                 if (currentItinerary == null) {
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 } else if (airport.equals(currentItinerary.getAirport())) {
-                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 } else {
                     currentItinerary.selectBestRunway();
                     if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i));
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
                 }
+
             } else {
                 //aiport is null, so if there was an airport being visited
                 //then we can determine it's runway and add it to the itinerary
@@ -1638,6 +1642,14 @@ public class Flight {
             currentItinerary.selectBestRunway();
             if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
         }
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // setting and determining itinerary type
+        int itinerary_size = itinerary.size();
+        for (int i = 0; i < itinerary_size; i++) {
+            itinerary.get(i).determineType();
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
         System.err.println("Itinerary:");
         for (int i = 0; i < itinerary.size(); i++) {
