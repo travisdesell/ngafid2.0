@@ -2404,8 +2404,8 @@ class FlightsCard extends React.Component {
                 console.log("got response: "+response+" "+response.size);
 
                 //get page data
-				if(response.size == null){
-					errorModal.show("No flights found with the given query.", "Please try a different one");
+				if(response == "NO_RESULTS"){
+					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
 				}else{
 					flightsCard.setFlights(response.data);
 					flightsCard.setIndex(response.index);
