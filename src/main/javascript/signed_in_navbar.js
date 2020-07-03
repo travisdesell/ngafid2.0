@@ -4,16 +4,18 @@ import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
 
+var activePage = "";
+
 class NavLink extends React.Component {
     render() {
         const name = this.props.name;
         const hidden = this.props.hidden;
-        const active = this.props.active;
+        let active = this.props.active;
 
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
@@ -38,7 +40,7 @@ class DropdownLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
@@ -58,10 +60,13 @@ class SignedInNavbar extends React.Component {
 
         this.state = {
             waitingUserCount : this.props.waitingUserCount,
-            fleetManager : this.props.fleetManager 
+            fleetManager : this.props.fleetManager ,
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            modifyTailsAccess : this.props.modifyTailsAccess,
+            activePage : this.props.activePage
         };
 
-        navbar = this;
+        //navbar = this;
     }
 
     setFlightsCard(flightsCard) {
@@ -130,7 +135,7 @@ class SignedInNavbar extends React.Component {
                 //processing the response will update the navbar
                 //to the logged out state
 
-                //redirect to the dashboard page
+                //redirect to the welcome page
                 window.location.replace("/logout_success");
             },
             error : function(jqXHR, textStatus, errorThrown) {
@@ -145,6 +150,13 @@ class SignedInNavbar extends React.Component {
         let waitingUsersString = "";
         if (this.state.waitingUserCount > 0) waitingUsersString = " (" + this.state.waitingUserCount + ")";
         let manageHidden = !this.state.fleetManager;
+
+        let tailsHidden = !this.state.modifyTailsAccess;
+
+        let unconfirmedTailsString = "";
+        if (this.state.unconfirmedTailsCount > 0) unconfirmedTailsString = " (" + this.state.unconfirmedTailsCount + ")";
+
+        let accountNotifications = " (" + (this.state.waitingUserCount + this.state.unconfirmedTailsCount) + ")";
 
         let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary active";
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
@@ -197,17 +209,20 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink name={"Dashboard"} href="/protected/dashboard"/>
-                        <NavLink name={"Flights"} href="/protected/flights"/>
-                        <NavLink name={"Imports"} href="/protected/imports"/>
-                        <NavLink name={"Uploads"} href="/protected/uploads"/>
+                        <NavLink name={"Home"} active={this.state.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink name={"Trends"} active={this.state.activePage === "trends"} href="/protected/trends"/>
+                        <NavLink name={"Dashboard"} active={this.state.activePage === "dashboard"} href="/protected/dashboard"/>
+                        <NavLink name={"Flights"} active={this.state.activePage === "flights"} href="/protected/flights"/>
+                        <NavLink name={"Imports"} active={this.state.activePage === "imports"} href="/protected/imports"/>
+                        <NavLink name={"Uploads"} active={this.state.activePage === "uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
-                            <a className="nav-link dropdown-toggle" href="javascript:void(0)" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {"Account" + waitingUsersString}
+                            <a className={"nav-link dropdown-toggle" + (this.state.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {"Account" + accountNotifications} {this.state.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
+                                <DropdownLink name={"Manage Tail Numbers" + unconfirmedTailsString} hidden={tailsHidden} href="/protected/system_ids"/>
                                 <div className="dropdown-divider" hidden={manageHidden}></div>
                                 <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
@@ -223,9 +238,12 @@ class SignedInNavbar extends React.Component {
     }
 }
 
+/*
 var navbar = ReactDOM.render(
-    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} plotMapHidden={plotMapHidden}/>,
+    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
+*/
 
-export { navbar };
+
+export default SignedInNavbar;

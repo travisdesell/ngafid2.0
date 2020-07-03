@@ -5,7 +5,14 @@ import Dropdown from 'react-bootstrap/Dropdown'
 import DropdownButton from 'react-bootstrap/DropdownButton'
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
+import SignedInNavbar from "./signed_in_navbar.js";
+
+
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
+);
+
 
 class FlightWarning extends React.Component {
     constructor(props) {
@@ -177,11 +184,7 @@ class Import extends React.Component {
         var thisImport = this;
 
         var submissionData = {
-            request : "GET_UPLOAD_DETAILS",
-            //idToken : idToken,
-            idToken : "TEST_ID_TOKEN",
-            uploadId : this.props.importInfo.id,
-            user_id : 1
+            uploadId : this.props.importInfo.id
         };   
 
         if (this.state.loaded) {
@@ -481,22 +484,24 @@ class ImportsCard extends React.Component {
             imports = this.state.imports;
         }
 
-        var prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-        var next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
-        var dropdownToggle = <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">{"Page " + (this.state.page + 1)} </Dropdown.Toggle>
-        var buffSizeSelector = <DropdownButton id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
-                                        <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
-                                </DropdownButton>
+		let pageStatus = "Page "+(this.state.page + 1)+" of "+(this.state.numPages);
+		let noImports = false;
+		if(this.state.numPages == 0){
+			pageStatus = "No imports yet!";
+			noImports = true;
+		}
 
-        if(this.state.page == 0 || this.state.numPages == 0) {
-            prev = <button class="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+        var begin = this.state.page == 0;
+        var end = this.state.page == this.state.numPages-1 || noImports;
+
+        var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
+        var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+
+        if(begin) {
+            prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
         }
-        if(this.state.page == this.state.numPages-1 || this.state.numPages == 0){
-            next = <button class="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+        if(end){
+            next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
         var pageStat;
@@ -510,11 +515,11 @@ class ImportsCard extends React.Component {
         return (
             <div className="card-body" hidden={hidden}>
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <div class="card mb-1 m-1 border-secondary">
-                        <div class="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStat}</button>
-                            <div class="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                    <div className="card mb-1 m-1 border-secondary">
+                        <div className="p-2">
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
+                            <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
+                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm" disabled={noImports}>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
@@ -522,14 +527,14 @@ class ImportsCard extends React.Component {
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
                                 </DropdownButton>
                                 <Dropdown className="pr-1">
-                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm" disabled={noImports}>
                                         {"Page " + (this.state.page + 1)}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
                                         {
                                             pages.map((pages, index) => {
                                                 return (
-                                                    <Dropdown.Item as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
+                                                    <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
                                                 );
                                             })
                                         }
@@ -547,10 +552,10 @@ class ImportsCard extends React.Component {
                             );
                         })
                     }
-                    <div class="card mb-1 m-1 border-secondary">
-                        <div class="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStat}</button>
-                            <div class="btn-group mr-2 pl-1" role="group" aria-label="First group">
+                    <div className="card mb-1 m-1 border-secondary" hidden={noImports}>
+                        <div className="p-2">
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
+                            <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                 {prev}
                                 {next}
                             </div>
