@@ -37,8 +37,6 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import org.ngafid.filters.Filter;
-
 //Parameters that have to do with fdr file format
 import static org.ngafid.routes.XPlaneParameters.*;
 
@@ -118,6 +116,7 @@ public class GetXPlane implements Route {
             List<String> allICAO = Itinerary.getAllAirports(connection, fleetId);
             List<Itinerary> allWaypoints = Itinerary.getItinerary(connection, fleetId);
 
+			scopes.put(ENDL, POSIX_ENDL);
             scopes.put(ACFT, ACFT.toUpperCase()+","+xplaneNames.get(airframe)+",");
             scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
 
@@ -125,14 +124,22 @@ public class GetXPlane implements Route {
             DoubleTimeSeries altMSL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
             DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
+            DoubleTimeSeries heading = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG");
+			DoubleTimeSeries pitch = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Pitch");
+			DoubleTimeSeries roll = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Roll");
+			DoubleTimeSeries ias = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
+			DoubleTimeSeries e1RPM = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 RPM");
 
             //LOG.info(gson.toJson(flights));
 
             StringBuffer sb = new StringBuffer();
 
             for (int i = 0; i < altMSL.size(); i++) {
-                sb.append("DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
-                    "," + altMSL.get(i) + "," + getZeros(NUM_NULL_PARAMS) + "\n");
+				if(!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))){
+					sb.append("DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
+						"," + altMSL.get(i) + "," + getZeros(4) + pitch.get(i) + "," + roll.get(i) + "," +
+						heading.get(i) + "," + ias.get(i) + getZeros(55) + e1RPM.get(i) + getZeros(10) + "\n");
+				}
             }
 
             String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "template.fdr";

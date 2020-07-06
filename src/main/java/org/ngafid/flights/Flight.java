@@ -410,6 +410,26 @@ public class Flight {
     }
 
 	/**
+	 * Gets the CSV filepath from the database for a flight
+	 * @param connection the database connection
+	 * @param flightId the id of the flight which we want the CSV file for
+	 * @return a String with the filepath in unix-format
+	 * @throws SQLException if there is an error with the database query
+	 */
+	public static String getFilename(Connection connection, int flightId) throws SQLException{
+        String queryString = "SELECT filename FROM flights WHERE id = "+flightId; 
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+		ResultSet resultSet = query.executeQuery();
+		String filename = "";
+		if(resultSet.next()){
+			filename = resultSet.getString(1);
+		}	
+		
+		return filename;
+	}
+
+	/**
 	 * Generates a unique set of tagIds whose cardinality is not greater than the total number of tags in
 	 * the database
 	 * @param connection the database connection
