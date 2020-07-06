@@ -12,6 +12,15 @@ public interface XPlaneParameters {
     //the file extension
     static String FDR_FILE_EXTENSION = ".fdr";
 
+	/**
+	 * The FDR format needs to know what returns to use
+	 * @param A is unix/posix endlines
+	 * @param I is MS DOS/NT endlines
+	 */
+	static String POSIX_ENDL = "A";
+	static String NT_ENDL = "I";
+
+	static String ENDL = "endl_type";
     static String COMM = "comm";
     static String ACFT = "acft";
     static String TAIL = "tail";
@@ -30,7 +39,7 @@ public interface XPlaneParameters {
 
     //The current number of empty/untracked parameters in the format
     //NOTE: change this if we incorporate more params
-    static int NUM_NULL_PARAMS = 74;
+    //static int NUM_NULL_PARAMS = 66;
 
     //The following are the aircraft specifications within X-Plane
     //

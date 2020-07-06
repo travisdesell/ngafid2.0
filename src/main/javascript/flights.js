@@ -1591,11 +1591,13 @@ class Flight extends React.Component {
     }
 
     downloadClicked(type) {
-        if(type == 'KML'){
+        if(type === 'KML'){
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
-        }else if (type == "XPL"){
+        }else if (type === 'XPL'){
             window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id);
-        }
+        }else if(type === 'CSV'){
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
+		}
     }
 
     exclamationClicked() {
