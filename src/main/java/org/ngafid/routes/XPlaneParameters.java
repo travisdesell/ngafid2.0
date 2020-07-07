@@ -49,7 +49,7 @@ public interface XPlaneParameters {
 
     //A hashmap that maps aircraft strings to their respective X-Plane names/paths
     Map<String, String> xplaneNames = Map.of(C172, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
-                                PA_28_181, PA_28_181+"XP",//TODO: put xplane path in for these values
+                                PA_28_181, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
                                 PA_44_180, PA_44_180+"XP");
 
 }

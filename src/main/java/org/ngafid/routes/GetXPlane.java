@@ -130,15 +130,18 @@ public class GetXPlane implements Route {
 			DoubleTimeSeries ias = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
 			DoubleTimeSeries e1RPM = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 RPM");
 
-            //LOG.info(gson.toJson(flights));
+			LOG.info("e1 rpm series");
+			System.out.println(e1RPM.toString());
 
             StringBuffer sb = new StringBuffer();
 
             for (int i = 0; i < altMSL.size(); i++) {
+				//make sure we dont log where the GPS wasn't recording coordinates as this will 
+				//cause X-Plane to crash
 				if(!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))){
 					sb.append("DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
 						"," + altMSL.get(i) + "," + getZeros(4) + pitch.get(i) + "," + roll.get(i) + "," +
-						heading.get(i) + "," + ias.get(i) + getZeros(55) + e1RPM.get(i) + getZeros(10) + "\n");
+						heading.get(i) + "," + ias.get(i) + getZeros(83) + "\n");
 				}
             }
 
