@@ -9,6 +9,7 @@ import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
+import { View } from 'ol'
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
@@ -352,11 +353,25 @@ var rules = [
 
 ];
 
+// establish set of RGB values to combine //
+let BG_values = ["00", "55", "AA", "FF"];
+let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors
+
+// populate hashmap of event definition IDs to RGB values
+var eventColorScheme = {};
+for (let d = 0; d < 45; d++){
+    // iterate through RGB permutations (up to 64)
+    let green = d % 4;
+    let blue = Math.trunc(d/4) % 4;
+    let red = Math.trunc(d/16) % 4;
+
+    eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
+}
+
 //This will be helpful for text inputs
 function invalidString(str){
     return (str == null || str.length < 0 || /^\s*$/.test(str));
 }
-
 
 class Itinerary extends React.Component {
     constructor(props) {
@@ -551,7 +566,18 @@ class TraceButtons extends React.Component {
     }
 }
 
+/**
+ * Tags module
+ * Houses the state and information for user-defined tags
+ * @module flights/Tags
+ */
 class Tags extends React.Component{
+
+	/**
+	 * ReactJS Constructor
+	 * Intializes the state of this component
+	 * @param props the props that are sent from the parent component
+	 */
     constructor(props) {
         super(props);
 
@@ -565,8 +591,8 @@ class Tags extends React.Component{
             unassociatedTags : [],
 			flightIndex : props.flightIndex,
             flightId : props.flightId,
-            activeTag : [],
-			editedTag : [],  //the tag currently being edited
+            activeTag : null,
+			editedTag : null,  //the tag currently being edited
             infoActive : false,
             addActive : false,
             editing : false,
@@ -578,16 +604,23 @@ class Tags extends React.Component{
         this.handleFormChange = this.handleFormChange.bind(this);
     }
 
-	componentWillReceiveProps(nextProps) {
-		let pTags = [];
-		if(nextProps.tags != null){
-			pTags = nextProps.tags;
-		}
-		this.state.addActive = false;
-		this.state.addFormActive = false;
-		this.setState({ tags: pTags });  
+	/**
+	 * called everytime props are updated
+	 * @param oldProps the old props before the update
+	 */
+	componentDidUpdate(oldProps) {
+		console.log("props updated");
+		const newProps = this.props;
+	  	if(oldProps.tags !== newProps.tags) {
+			this.state.tags = this.props.tags;
+			this.state.addFormActive = false; //close the add form to indicate the tag has been edited or no longer exists
+			this.setState(this.state);
+	  	}
 	}
 
+	/**
+	 * Handles the event for which the add button is pressed
+	 */
     addClicked(){
         this.state.addActive = !this.state.addActive;
         this.state.infoActive = !this.state.infoActive;
@@ -598,6 +631,9 @@ class Tags extends React.Component{
         this.getUnassociatedTags();
     }
 
+	/**
+	 * Uses a ajax-json call to create a new tag in the server database
+	 */
     addTag(){
         let tname = $("#comName").val(); 
         let tdescription = $("#description").val(); 
@@ -628,7 +664,12 @@ class Tags extends React.Component{
                 console.log("received response: ");
                 console.log(response);
 				if(response != "ALREADY_EXISTS"){
-					thisFlight.state.tags.push(response);
+					if(thisFlight.state.tags != null){
+						thisFlight.state.tags.push(response);
+					}else{
+						thisFlight.state.tags = new Array(response);
+					}
+					thisFlight.state.addFormActive = false;
 					thisFlight.setState(thisFlight.state);
 					thisFlight.updateParent(thisFlight.state.tags);
 				}else{
@@ -641,6 +682,9 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Uses a ajax-json call to get the tags that are unassoicated with the current flight 
+	 */
     getUnassociatedTags(){
         console.log("getting unassociated tags!")
 
@@ -667,6 +711,9 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Handles when the user presses the delete button, and prompts them with @module confirmModal
+	 */
     deleteTag(){
         if(this.state.activeTag != null){
             console.log("delete tag invoked!");
@@ -681,17 +728,33 @@ class Tags extends React.Component{
 
     }
 
+
+	/**
+	 * Handles when the user presses the clear all tags button, and prompts them with @module confirmModal
+	 */
     clearTags(){
         confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #"+this.state.flightId+"?",
                           () => {this.removeTag(-2, false)});
     }
 
-	tagEquals(tagA, tagB){  //we must define an equality function to compare two tags that are equal but reside in different memory locations
-		return tagA.name == tagB.name &&
+	/**
+	 * Used to compare two tags for equality
+	 * @param tagA the first tag to compare
+	 * @param tagB the second tag to compare
+	 * @return a boolean representing whether or not the two tags are equal
+	 */
+	tagEquals(tagA, tagB){
+		return (tagA != null && tagB != null) && //they cant be null!
+			tagA.name == tagB.name &&
 			tagA.description == tagB.description &&
 			tagA.color == tagB.color;
 	}
 
+	/**
+	 * Prepares to edit a tag by creating a deep copy of the original tag
+	 * to be used later on to determine if any changes have been made.
+	 * @param tag the tag to edit
+	 */
     editTag(tag){
         console.log("Editing tag: "+tag.hashId);
         if(this.state.activeTag == null || this.state.activeTag != tag){
@@ -708,15 +771,18 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+	/**
+	 * Calls the server using ajax-json to notify it of the new tag change
+	 */
     submitEdit(){
         console.log("submitting edit for tag: "+this.state.activeTag.hashId);
 
         var oldTag = this.state.activeTag;
         var submissionData = {
             tag_id : this.state.activeTag.hashId,
-            name : $("#comName").val(),
-            description : $("#description").val(),
-            color : $("#color").val()
+            name : this.state.editedTag.name,
+            description : this.state.editedTag.description,
+            color : this.state.editedTag.color
         };
 
         let thisFlight = this;
@@ -747,14 +813,23 @@ class Tags extends React.Component{
         });
     }
 
+	/**
+	 * shows @module errorModal when a tag has not been edited properly
+	 */
     showNoEditError(){
         errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
+	/**
+	 * invoked by another function when the user has confirmed they would like to delete the tag permanently
+	 */
     confirmDelete(){
         this.removeTag(this.state.activeTag.hashId, true);
     }
 
+	/**
+	 * Handles state changes for when the 'Create a new tag' option is selected
+	 */
 	createClicked(){
 		this.state = {
 			addActive : true,
@@ -764,6 +839,9 @@ class Tags extends React.Component{
 		this.showAddForm();
 	}
 
+	/**
+	 * Shows the form for adding and/or editing a tag
+	 */
     showAddForm(){
         this.state.addFormActive = !this.state.addFormActive;
 		this.state.editedTag = {
@@ -772,18 +850,17 @@ class Tags extends React.Component{
 			color : Colors.randomValue()
 		};
         this.setState(this.state);
-        this.toggleAssociateTag();
     }
 
-    toggleAssociateTag(){
-        this.state.assocTagActive = !this.state.assocTagActive;
-        this.setState(this.state);
-    }
-
+	/**
+	 * removes a tag from a flight, either permanent or just from one flight
+	 * @param id the tagid of the tag being removed
+	 * @param perm a bool representing whether or not the removal is permanent
+	 */
     removeTag(id, perm){
         console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
 
-        if(id == -1){
+        if(id==null || id == -1){
             errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
             return;
         }
@@ -796,6 +873,8 @@ class Tags extends React.Component{
             permanent : perm,
             all : allTags
         };
+		
+		this.state.activeTag = null;
 
         let thisFlight = this;
 		console.log("calling deletion ajax");
@@ -814,12 +893,12 @@ class Tags extends React.Component{
 					console.log(response.data[thisFlight.state.flightIndex]);
 					let allFlights = response.data;
 					thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
+					thisFlight.state.addFormActive = false;
 					thisFlight.updateFlights(allFlights);
 				}else{
 					thisFlight.state.tags = response;
 					thisFlight.setState(thisFlight.state);
 					thisFlight.getUnassociatedTags();
-					thisFlight.state.detailsActive = false;
 					thisFlight.state.addFormActive = false;
 					thisFlight.state.addActive = false;
 					thisFlight.updateParent(thisFlight.state.tags);
@@ -832,6 +911,10 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Associates a tag with this flight
+	 * @param id the tag id to associate
+	 */
     associateTag(id){
         console.log("associating tag #"+id+" with flight #"+this.state.flightId);
 
@@ -854,10 +937,11 @@ class Tags extends React.Component{
                     thisFlight.state.tags.push(response);
                 }else{
                     thisFlight.state.tags = new Array(response);
+					console.log(thisFlight.state.tags);
                 }
                 thisFlight.getUnassociatedTags();
-                thisFlight.setState(thisFlight.state);
                 thisFlight.updateParent(thisFlight.state.tags);
+                thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
@@ -865,14 +949,27 @@ class Tags extends React.Component{
         });  
     }
 
+	/**
+	 * Updates the parent when the flights on the current page have changed
+	 */
 	updateFlights(flights){
+		console.log("sending new flights to parents");
+		console.log(flights);
 		this.state.parent.updateFlights(flights);
 	}
 
+	/**
+	 * Updates the parent of changes ONLY made to this flights tags
+	 */
     updateParent(tags){
         this.state.parent.invokeUpdate(tags);
     }
 
+	/**
+	 * sets the state value editedTag which is used to make sure that the user has made an edit, before
+	 * enabling the submit button
+	 * @param e the onChange() event
+	 */
     handleFormChange(e) {
         if(e.target.id == 'comName'){
             this.state.editedTag.name = e.target.value;
@@ -886,6 +983,9 @@ class Tags extends React.Component{
         this.setState(this.state);
     }
 
+	/**
+	 * Renders the Tags component
+	 */
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -908,16 +1008,14 @@ class Tags extends React.Component{
 
         let tags = this.state.tags;
         let unassociatedTags = this.state.unassociatedTags;
-        let hasOtherTags = unassociatedTags != null;
+        let hasOtherTags = (unassociatedTags != null);
 
         let activeId = -1;
-
         if(this.state.activeTag != null){
             activeId = activeTag.hashId;
         }
 
         let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag()), tagStat = "";
-
         if(tags == null || tags.length == 0){
             tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
@@ -929,7 +1027,6 @@ class Tags extends React.Component{
                     tags.map((tag, index) => {
                         var cStyle = {
                             flex : "0 10 10em",
-                            //backgroundColor : tag.color,
                             color : tag.color, 
                             fontWeight : '650'
                         };
@@ -949,12 +1046,10 @@ class Tags extends React.Component{
         }
 
         let tagInfo = "";
-
         if(this.state.editing){
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
             defColor = this.state.editedTag.color;
-            console.log(this.state.addFormActive);
             defAddAction = (
                 (() => this.submitEdit())
             );
@@ -974,14 +1069,12 @@ class Tags extends React.Component{
                             <i className="fa fa-check" aria-hidden="true"></i>
                                 Submit
 						</button> );
-		if(editedTag != null && activeTag !=null){
-			if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
-				submitButton = (
-							<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
-								<i className="fa fa-check" aria-hidden="true"></i>
-									Submit
-							</button> );
-			}
+		if(!this.state.editing || !this.tagEquals(activeTag, editedTag)){
+			submitButton = (
+						<button className="btn btn-outline-secondary" style={styleButtonSq} onClick={defAddAction} >
+							<i className="fa fa-check" aria-hidden="true"></i>
+								Submit
+						</button> );
 		}
 
 
@@ -1017,7 +1110,6 @@ class Tags extends React.Component{
                     </DropdownButton>
         }
         if(this.state.addFormActive){
-            console.log("rendering the add/edit form");
             addForm =
             <div className="row p-4">
                 <div className="col-">
@@ -1081,7 +1173,9 @@ class Events extends React.Component {
             if (!definitionsPresent.includes(props.events[i].eventDefinition)) {
                 definitionsPresent.push(props.events[i].eventDefinition);
             }
-            props.events[i].color = Colors.randomValue();
+
+            // assign color scheme to events, based on definition ID
+            props.events[i].color = eventColorScheme[props.events[i].eventDefinitionId];
         }
 
         this.state = {
@@ -1091,7 +1185,8 @@ class Events extends React.Component {
     }
 
     updateEventDisplay(index, toggle) {
-        let event = this.state.events[index];
+            // Draw rectangles on plot
+        var event = this.state.events[index];
         console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
         let shapes = plotlyLayout.shapes;
 
@@ -1117,7 +1212,8 @@ class Events extends React.Component {
         for (let i = 0; i < shapes.length; i++) {
             if (shapes[i].id == event.id) {
                 if (toggle) {
-                    shapes = shapes.splice(i, 1);
+                    shapes.splice(i, 1);
+                    found = true;
                 } else {
                     shapes[i] = update;
                     found = true;
@@ -1131,6 +1227,57 @@ class Events extends React.Component {
         }
 
         Plotly.relayout('plot', plotlyLayout);
+
+
+        // Toggle visibility of clicked event's Feature //
+
+        // create eventStyle & hiddenStyle
+        var eventStyle = new Style({                                                   // create style getter methods**
+            stroke: new Stroke({
+                color: event.color,
+                width: 3
+            })
+        });
+
+        var outlineStyle = new Style({                                                   // create style getter methods**
+            stroke: new Stroke({
+                color: "#000000",
+                width: 5
+            })
+        });
+
+        var hiddenStyle = new Style({
+            stroke: new Stroke({
+                color: [0,0,0,0],
+                width: 3
+            })
+        });
+
+        // get event info from flight
+        let flight = this.props.parent;
+        let eventMapped = flight.state.eventsMapped[index];
+        let pathVisible = flight.state.pathVisible;
+        let eventPoints = flight.state.eventPoints;
+        let eventOutline = flight.state.eventOutlines[index];
+        event = eventPoints[index];                                 //override event var w/ event Feature
+
+        //toggle eventLayer style
+        if (!eventMapped) {                             // if event hidden
+            event.setStyle(eventStyle);
+            eventOutline.setStyle(outlineStyle);
+            flight.state.eventsMapped[index] = !eventMapped;
+
+            // center map view on event location
+            let coords = event.getGeometry().getFirstCoordinate();
+            if (coords.length > 0 && pathVisible) {
+                map.getView().setCenter(coords);
+            }
+
+        } else {                                        // if event displayed
+            event.setStyle(hiddenStyle);
+            eventOutline.setStyle(hiddenStyle);
+            flight.state.eventsMapped[index] = !eventMapped;
+        }
     }
 
     changeColor(e, index) {
@@ -1154,23 +1301,80 @@ class Events extends React.Component {
             flex : "0 0 10em"
         };
 
+        let eventType = "type";
+
+        let eventTypeSet = new Set();
+        let eventTypeButtons = [];
+        let thisFlight = this.props.parent;
+
+        this.state.events.map((event, index) => {
+            if (!eventTypeSet.has(event.eventDefinitionId)) {
+                // add new eventDef to types set
+                eventTypeSet.add(event.eventDefinitionId);
+
+                // create new button for toggle
+                let type =
+                        (
+                            <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
+                                        onClick={() =>
+                                            {
+                                                let flight = this.props.parent;
+                                                let eventsMapped = flight.state.eventsMapped;
+                                                let displayStatus = false;
+                                                let displayStatusSet = false;
+
+                                                // update eventDisplay for every event concerned
+                                                for (let e = 0; e < this.state.events.length; e++) {
+                                                    if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
+                                                        // ensure unified display
+                                                        if (!displayStatusSet) {
+                                                            displayStatus = !eventsMapped[e];
+                                                            displayStatusSet = true;
+                                                        }
+                                                        // eventsMapped[e] = displayStatus;
+                                                        // this.updateEventDisplay(e);
+
+                                                        if (eventsMapped[e] != displayStatus) {
+                                                            document.getElementById("_" + flight.props.flightInfo.id + e).click();
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }>
+                                <b>{event.eventDefinition.name}</b>
+                            </button>
+                        );
+                eventTypeButtons.push(type);
+            }
+        })
+
         return (
             <div>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
 
+                <div className={"eventTypes"}>
+                    {
+                        eventTypeButtons.map( (button) => {
+                            return (
+                                button
+                            )
+                        })
+                    }
+                </div>
+
                 {
                     this.state.events.map((event, index) => {
+                        let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
                                 <div style={{flex: "0 0"}}>
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
                                 </button>
                             </div>
-
                         );
                     })
                 }
@@ -1199,22 +1403,23 @@ class Flight extends React.Component {
             uncommonTraceNames : null,
             traceIndex : [],
             traceVisibility : [],
-            tags : null,
             traceNamesVisible : false,
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
-            tags : props.tags.value,
+            tags : props.tags,
             layer : null,
-			parent : props.parent,
-            color : color
+            parent : props.parent,
+            color : color,
+
+            eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
+            eventPoints : [],                               // list of event Features
+            eventLayer : null,
+            itineraryLayer : null,
+            eventOutlines : [],
+            eventOutlineLayer : null
         }
     }
-
-	componentWillReceiveProps(nextProps) {
-		console.log("recieved new props");
-	    this.setState({ tags: nextProps.tags.value });  
-	}
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -1228,6 +1433,19 @@ class Flight extends React.Component {
         if (this.state.layer) {
             this.state.layer.setVisible(false);
         }
+
+        // hiding events
+        // map
+        if (this.state.eventLayer) {
+            this.state.eventLayer.setVisible(false);
+            this.state.eventOutlineLayer.setVisible(false);
+            this.state.itineraryLayer.setVisible(false);
+
+            // plot
+            let shapes = plotlyLayout.shapes;
+            shapes.length = 0;
+        }
+
 
         console.log("hiding plots");
         if (this.state.commonTraceNames) {
@@ -1264,7 +1482,7 @@ class Flight extends React.Component {
 
             var submissionData = {
                 flightId : this.props.flightInfo.id
-            };   
+            };
 
             $.ajax({
                 type: 'POST',
@@ -1311,14 +1529,14 @@ class Flight extends React.Component {
                     thisFlight.state.uncommonTraceNames = uncommonTraceNames;
                     thisFlight.state.traceNamesVisible = true;
                     thisFlight.setState(thisFlight.state);
-                },   
+                },
                 error : function(jqXHR, textStatus, errorThrown) {
                     this.state.commonTraceNames = null;
                     this.state.uncommonTraceNames = null;
                     errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
-                },   
-                async: true 
-            });  
+                },
+                async: true
+            });
         } else {
             let visible = !this.state.traceNamesVisible;
 
@@ -1406,7 +1624,7 @@ class Flight extends React.Component {
                         eventDefinitionsLoaded = true;
                     }
 
-                    let events = response.events;
+                    var events = response.events;
                     for (let i = 0; i < events.length; i++) {
                         for (let j = 0; j < eventDefinitions.length; j++) {
 
@@ -1419,16 +1637,96 @@ class Flight extends React.Component {
                     }
                     thisFlight.state.events = events;
 
+                    // create list of event Features to display on map //
+                    for (let i = 0; i < events.length; i++) {
+                        var points;
+                        var eventPoint;
+                        var eventOutline;
+                        let event = events[i];
+
+                        // Create Feature for event
+                        if (!thisFlight.state.mapLoaded){              // if points (coordinates) have not been fetched
+                            // create eventPoint with placeholder coordinates
+                            eventPoint = new Feature({
+                                geometry : new LineString( [0,0] ),
+                                name: 'Event'
+                            });
+
+                            // create outlines
+                            eventOutline = new Feature({
+                                geometry : new LineString( [0,0] ),
+                                name: 'EventOutline'
+                            });
+
+                        } else {
+                            // create eventPoint with preloaded coordinates
+                            points = thisFlight.state.points;
+                            eventPoint = new Feature({
+                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
+                                 name: 'Event'
+                            });
+
+                            // create outlines
+                            eventOutline = new Feature({
+                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
+                                 name: 'EventOutline'
+                            });
+                        }
+
+                        // add eventPoint to flight
+                        thisFlight.state.eventsMapped.push(false);
+                        thisFlight.state.eventPoints.push(eventPoint);
+                        thisFlight.state.eventOutlines.push(eventOutline);
+                    }
+
+                    // create eventLayer & add eventPoints
+                    thisFlight.state.eventLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [0,0,0,0],
+                                width: 3
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: thisFlight.state.eventPoints
+                        })
+                    });
+
+                    // create eventLayer & add eventPoints
+                    thisFlight.state.eventOutlineLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [0,0,0,0],
+                                width: 4
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: thisFlight.state.eventOutlines
+                        })
+                    });
+
+                    //thisFlight.state.eventLayer.flightState = thisFlight;
+                    thisFlight.state.eventOutlineLayer.setVisible(true);
+                    thisFlight.state.eventLayer.setVisible(true);
+
+                    // add to map only if flightPath loaded
+                    if (thisFlight.state.mapLoaded){
+                        map.addLayer(thisFlight.state.eventOutlineLayer);
+                        map.addLayer(thisFlight.state.eventLayer);
+                    }
+
                     thisFlight.setState(thisFlight.state);
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
-                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                    errorModal.show("Error Loading Flight Events", errorThrown);
                 },
-                async: true 
-            });  
+                async: true
+            });
 
         } else {
             console.log("events already loaded!");
@@ -1474,7 +1772,7 @@ class Flight extends React.Component {
                     thisFlight.state.mapLoaded = false;
                     thisFlight.setState(thisFlight.state);
 
-                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                    errorModal.show("Error Loading Flight Tags", errorThrown);
                 },   
                 async: true 
             });  
@@ -1536,7 +1834,7 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
-                                width: 1.5
+                                width: 3
                             }),
                             image: new Circle({
                                 radius: 5,
@@ -1570,6 +1868,96 @@ class Flight extends React.Component {
 
                     map.addLayer(thisFlight.state.layer);
 
+                    // adding itinerary (approaches and takeoffs) to flightpath 
+                    var itinerary = thisFlight.props.flightInfo.itinerary;
+                    var flight_phases = [];
+
+                    // Create flight phase styles
+                    var takeoff_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#34eb52",
+                                    width: 3
+                                })
+                            });
+
+                    var approach_style = new Style({
+                                stroke: new Stroke({
+                                    color: "#347deb",
+                                    width: 3
+                                })
+                            });
+
+                    // create and add Features to flight_phases for each flight phase in itinerary
+                    for (let i = 0; i < itinerary.length; i++) {
+                        var stop = itinerary[i];
+                        var approach = null;
+                        var takeoff = null;
+
+                        // creating Linestrings
+                        if (stop.startOfApproach != -1 && stop.endOfApproach != -1) {
+                            approach = new LineString( points.slice( stop.startOfApproach, stop.endOfApproach ) );
+                        }
+                        if (stop.startOfTakeoff != -1 && stop.endOfTakeoff != -1) {
+                            takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
+                        }
+
+                        // set styles and add phases to flight_phases list
+                        if (approach != null) {
+                            let phase = new Feature({
+                                             geometry: approach,
+                                             name: 'Approach'
+                                         });
+                            phase.setStyle(approach_style);
+                            flight_phases.push( phase );
+                        }
+                        if (takeoff != null) {
+                            let phase = new Feature({
+                                             geometry: takeoff,
+                                             name: 'Takeoff'
+                                         });
+                            phase.setStyle(takeoff_style);
+                            flight_phases.push( phase );
+                        }
+                    }
+
+                    // create itineraryLayer
+                    thisFlight.state.itineraryLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [1,1,1,1],
+                                width: 3
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: flight_phases
+                        })
+                    });
+
+                    // add itineraryLayer to map
+                    map.addLayer(thisFlight.state.itineraryLayer);
+
+                    // adding coordinates to events, if needed //
+                    var events = [];
+                    var eventPoints = [];
+                    var eventOutlines = [];
+                    if (thisFlight.state.eventsLoaded){
+                        events = thisFlight.state.events;
+                        eventPoints = thisFlight.state.eventPoints;
+                        eventOutlines = thisFlight.state.eventOutlines;
+                        for (let i = 0; i < events.length; i++){
+                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
+                            eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
+                            eventOutlines[i].setGeometry(line);
+                        }
+
+                        // add eventLayer to front of map
+                        let eventLayer = thisFlight.state.eventLayer;
+                        let outlineLayer = thisFlight.state.eventOutlineLayer;
+                        map.addLayer(outlineLayer);
+                        map.addLayer(eventLayer);
+                    }
+
                     let extent = thisFlight.state.layer.getSource().getExtent();
                     console.log(extent);
                     map.getView().fit(extent, map.getSize());
@@ -1590,6 +1978,15 @@ class Flight extends React.Component {
             this.state.itineraryVisible = !this.state.itineraryVisible;
             this.state.layer.setVisible(this.state.pathVisible);
 
+
+            // toggle visibility of events
+            if (this.state.eventLayer != null) {
+                this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
+                this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
+            }
+            // toggle visibility of itinerary
+            this.state.itineraryLayer.setVisible(this.state.pathVisible);
+
             if (this.state.pathVisibile) {
                 flightsCard.showMap();
             }
@@ -1604,13 +2001,33 @@ class Flight extends React.Component {
         }
     }
 
+	/**
+	 * Changes all the flights on a given page by calling the parent function
+	 */
 	updateFlights(flights){
 		this.props.updateParentState(flights);
 	}
 
+	/**
+	 * Changes the tags associated with this flight
+	 */
 	invokeUpdate(tags){
 		this.state.tags = tags;
 		this.setState(this.state);
+	}
+
+	/**
+	 * Called when props are updated
+	 * changes state if props have in fact changed
+	 * @param oldProps the old props before the update
+	 */
+	componentDidUpdate(oldProps) {
+		console.log("props updated");
+		const newProps = this.props;
+	  	if(oldProps.tags !== newProps.tags) {
+			this.state.tags = this.props.tags;
+			this.setState(this.state);
+	  	}
 	}
 
     render() {
@@ -1649,11 +2066,6 @@ class Flight extends React.Component {
             }
         }
 
-		var tags = [];
-        if(this.state.tags != null){
-            tags = this.state.tags;
-        }
-
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
@@ -1686,7 +2098,7 @@ class Flight extends React.Component {
         let tagPills = "";
         if(this.state.tags != null){
             tagPills = 
-            tags.map((tag, index) => {
+            this.state.tags.map((tag, index) => {
                 let style = {
                     backgroundColor : tag.color,
                     marginRight : '4px',
@@ -1819,18 +2231,14 @@ class FlightsCard extends React.Component {
        this.filterRef = React.createRef();
     }
 
-	//update the flights without setting the state
-
     setFlights(flights) {
         this.state.flights = flights;
         this.setState(this.state);
     }
 
 	//used to update the state from a child component
-	updateState(flights){
-		console.log("flightcard update state called");
-		this.state.flights = flights;
-		this.setState(this.state);
+	updateState(newFlights){
+		this.setFlights(newFlights);
 	}
 
     setIndex(index){
@@ -1998,6 +2406,10 @@ class FlightsCard extends React.Component {
         }
     }
 
+	/**
+	 * Jumps to a page in this collection of queried flights
+	 * @param pg the page to jump to
+	 */
     jumpPage(pg){
         if(pg < this.state.numPages && pg >= 0){
             this.state.page = pg;
@@ -2005,16 +2417,25 @@ class FlightsCard extends React.Component {
         }
     }
 
+	/**
+	 * jumps to the next page in this collection of queried flights
+	 */
     nextPage(){
         this.state.page++;
         this.submitFilter();
     }
 
+	/**
+	 * jumps to the previous page in this collection of queried flights
+	 */
     previousPage(){
         this.state.page--;
         this.submitFilter();
     }
 
+	/**
+	 * Repaginates the page configuration when the numPerPage field has been changed by the user
+	 */
     repaginate(pag){
         console.log("Re-Paginating");
         this.state.buffSize = pag;
@@ -2060,9 +2481,13 @@ class FlightsCard extends React.Component {
                 console.log("got response: "+response+" "+response.size);
 
                 //get page data
-                flightsCard.setFlights(response.data);
-                flightsCard.setIndex(response.index);
-                flightsCard.setSize(response.sizeAll);
+				if(response == "NO_RESULTS"){
+					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
+				}else{
+					flightsCard.setFlights(response.data);
+					flightsCard.setIndex(response.index);
+					flightsCard.setSize(response.sizeAll);
+				}
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
@@ -2071,6 +2496,11 @@ class FlightsCard extends React.Component {
         });  
     }
 
+	/**
+	 * Generates an array representing all the pages in this collection of 
+	 * queried flights
+	 * @return an array of String objects containing page names
+	 */
     genPages(){
         var page = [];
         for(var i = 0; i<this.state.numPages; i++){
@@ -2082,10 +2512,9 @@ class FlightsCard extends React.Component {
         return page;
     }
 	
-	invokeUpdate(flights){
-		this.setFlights(flights);
-	}
-
+	/**
+	 * Renders the flightsCard
+	 */
     render() {
         console.log("rendering flights!");
 
@@ -2094,8 +2523,6 @@ class FlightsCard extends React.Component {
             flights = this.state.flights;
 
         }
-		console.log(this.state.flights);
-		console.log(flights);
 
         let pages = this.genPages();
 
@@ -2128,7 +2555,6 @@ class FlightsCard extends React.Component {
             }
 
 
-            console.log(this.state.end);
             return (
                 <div className="card-body" style={style}>
                     <Filter ref={this.filterRef} hidden={!this.state.filterVisible} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" submitFilter={() => {this.submitFilter()}} rules={rules} submitButtonName="Apply Filter"/>
@@ -2166,7 +2592,9 @@ class FlightsCard extends React.Component {
 							flights.map((flightInfo, index) => {
 								if(flightInfo != null){
 									return (
-										<Flight flightInfo={flightInfo} pageIndex={index} updateParentState={this.updateState} parent={this} tags={flightInfo.tags} key={flightInfo.id}/>
+										<Flight flightInfo={flightInfo} pageIndex={index}
+										updateParentState={(newFlights) => this.updateState(newFlights)}
+										parent={this} tags={flightInfo.tags.value} key={flightInfo.id}/>
 									);
 								}
 							})
@@ -2234,44 +2662,46 @@ if (typeof flights !== 'undefined') {
 
             map.getLayers().forEach(function(layer) {
                 if (layer instanceof VectorLayer) {
-                    //console.log("VECTOR layer:");
+                    if ('flightState' in layer) {
+                        //console.log("VECTOR layer:");
 
-                    var hiddenStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5
-                        }),
-                        image: new Circle({
-                            radius: 5,
-                            stroke: new Stroke({
-                                color: [0,0,0,0],
-                                width: 2
-                            })
-                        })
-                    });
-
-                    var visibleStyle = new Style({
-                        stroke: new Stroke({
-                            color: layer.flightState.state.color,
-                            width: 1.5
-                        }),
-                        image: new Circle({
-                            radius: 5,
+                        var hiddenStyle = new Style({
                             stroke: new Stroke({
                                 color: layer.flightState.state.color,
-                                width: 2
+                                width: 1.5
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: [0,0,0,0],
+                                    width: 2
+                                })
                             })
-                        })
-                    });
+                        });
 
-                    if (layer.getVisible()) {
-                        if (x < layer.flightState.state.points.length) {
-                            console.log("need to draw point at: " + layer.flightState.state.points[x]);
-                            layer.flightState.state.trackingPoint.setStyle(visibleStyle);
-                            layer.flightState.state.trackingPoint.getGeometry().setCoordinates(layer.flightState.state.points[x]);
-                        } else {
-                            console.log("not drawing point x: " + x + " >= points.length: " + layer.flightState.state.points.length);
-                            layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                        var visibleStyle = new Style({
+                            stroke: new Stroke({
+                                color: layer.flightState.state.color,
+                                width: 1.5
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                stroke: new Stroke({
+                                    color: layer.flightState.state.color,
+                                    width: 2
+                                })
+                            })
+                        });
+
+                        if (layer.getVisible()) {
+                            if (x < layer.flightState.state.points.length) {
+                                console.log("need to draw point at: " + layer.flightState.state.points[x]);
+                                layer.flightState.state.trackingPoint.setStyle(visibleStyle);
+                                layer.flightState.state.trackingPoint.getGeometry().setCoordinates(layer.flightState.state.points[x]);
+                            } else {
+                                console.log("not drawing point x: " + x + " >= points.length: " + layer.flightState.state.points.length);
+                                layer.flightState.state.trackingPoint.setStyle(hiddenStyle);
+                            }
                         }
                     }
                 }

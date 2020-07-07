@@ -27,6 +27,19 @@ public class Itinerary {
 
     int minAltitudeIndex = -1;
     double minAltitude = Double.MAX_VALUE;
+    private int startOfApproach = -1;
+    private int endOfApproach = -1;
+    private int startOfTakeoff = -1;
+    private int endOfTakeoff = -1;
+    private int finalIndex;
+    private int takeoffCounter = 0;
+
+
+    final String GOAROUND = "go_around";
+    final String TOUCHANDGO = "touch_and_go";
+    final String TAKEOFF = "takeoff";
+    final String LANDING = "landing";
+    private String type = GOAROUND;                              // go_around is the default -> will be updated or set if otherwise
     double minAirportDistance = Double.MAX_VALUE;
     double minRunwayDistance = Double.MAX_VALUE;
 
@@ -39,7 +52,7 @@ public class Itinerary {
     }
 
     public static ArrayList<Itinerary> getItinerary(Connection connection, int flightId) throws SQLException {
-        String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, min_airport_distance, min_runway_distance FROM itinerary WHERE flight_id = ? ORDER BY `order`";
+        String queryString = "SELECT `order`, min_altitude_index, min_altitude, airport, runway, min_airport_distance, min_runway_distance, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type FROM itinerary WHERE flight_id = ? ORDER BY `order`";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
 
@@ -102,18 +115,61 @@ public class Itinerary {
         runway = resultSet.getString(5);
         minAirportDistance = resultSet.getDouble(6);
         minRunwayDistance = resultSet.getDouble(7);
+        startOfApproach = resultSet.getInt(8);
+        endOfApproach = resultSet.getInt(9);
+        startOfTakeoff = resultSet.getInt(10);
+        endOfTakeoff = resultSet.getInt(11);
+        type = resultSet.getString(12);
     }
 
-    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance) {
+    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed, double rpm) {
         this.airport = airport;
-        update(runway, index, altitudeAGL, airportDistance, runwayDistance);
+        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed, rpm);
     }
 
-    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance) {
+    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed, double rpm) {
+        // track finalIndex
+        finalIndex = index;
+
+        // track takeoff criteria
+        if (rpm >= 2100 && groundSpeed > 14.5 && groundSpeed < 80) {
+            // set start index in case of takeoff event
+            if (startOfTakeoff == -1) {
+                startOfTakeoff = index;
+            } else if ( takeoffCounter >= 15) {                                  // if takeoff started and sustained for 15 seconds
+                endOfTakeoff = index;
+            }
+
+            // increment counter to ensure criteria sustained for 15 seconds
+            takeoffCounter++;
+        } else {
+            // reset counter
+            takeoffCounter = 0;
+
+            // reset takeoff start if criteria not sustained
+            if (endOfTakeoff == -1) {
+                startOfTakeoff = -1;
+            }
+
+        }
+
         if (!Double.isNaN(altitudeAGL)) {
             if (minAltitude > altitudeAGL) {
                 minAltitude = altitudeAGL;
                 minAltitudeIndex = index;
+            }
+
+
+            if (altitudeAGL <= 5) {                      // if grounded
+                // end approach phase
+                if (startOfApproach != -1) {
+                    endOfApproach = index;
+                }
+            } else if (altitudeAGL > 6) {
+                // log beginning of approach phase
+                if (startOfApproach == -1) {                        // if first update & not initial takeoff
+                    startOfApproach = index;
+                }
             }
         }
 
@@ -180,7 +236,7 @@ public class Itinerary {
     public void updateDatabase(Connection connection, int flightId, int order) throws SQLException {
         this.order = order;
 
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, order);
         preparedStatement.setInt(3, minAltitudeIndex);
@@ -189,6 +245,12 @@ public class Itinerary {
         preparedStatement.setDouble(6, minRunwayDistance);
         preparedStatement.setString(7, airport);
         preparedStatement.setString(8, runway);
+        preparedStatement.setInt(9, startOfApproach);
+        preparedStatement.setInt(10, endOfApproach);
+        preparedStatement.setInt(11, startOfTakeoff);
+        preparedStatement.setInt(12, endOfTakeoff);
+        preparedStatement.setString(13, type);
+
 
         System.err.println(preparedStatement);
 
@@ -197,8 +259,29 @@ public class Itinerary {
         preparedStatement.close();
     }
 
-    public String toString() {
+    public String toString() {          // TODO: add new columns to toString?
         return airport + "(" + runway + ") -- altitude: " + minAltitude + ", airport distance: " + minAirportDistance + ", runway distance: " + minRunwayDistance;
     }
 
+    // Simple setter for type variable (might want some defensive checks given use of strings)***
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    // method to determine if itinerary stop is a touch and go or go around
+    public void determineType(){
+        int approachTime = endOfApproach - startOfApproach;
+        int runwayTime = startOfTakeoff - endOfApproach;
+
+        if (startOfTakeoff != -1 && (endOfApproach == -1 || approachTime < 10)) {
+            type = TAKEOFF;
+        } else if (endOfTakeoff == -1 && (endOfApproach != -1 || startOfTakeoff > endOfTakeoff)) {
+            type = LANDING;
+        } else if (runwayTime >= 5) {
+            type = TOUCHANDGO;
+        } else {
+            type = GOAROUND;
+            endOfApproach = finalIndex;
+        }
+    }
 }
