@@ -1,8 +1,6 @@
 package org.ngafid.flights;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.ArrayList;
+import java.util.*;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -93,6 +91,31 @@ public class Itinerary {
         return runways;
     }
 
+    /**
+     * Gets all runways that have coordinates (lat / long) available. It is returned in a map, where they key is the
+     * airport iataCode and the values are the runways to that airport.
+     * @param connection database connection
+     * @param fleetId the fleetId for which we should be gathering airports from (we get all runways from all airports
+     *                in this fleet
+     * @return
+     * @throws SQLException
+     */
+    public static Map<String, List<Runway>> getAllRunwaysWithCoordinates(Connection connection, int fleetId) throws SQLException {
+        ArrayList<String> airports = getAllAirports(connection, fleetId);
+
+        Map<String, List<Runway>> runways = new HashMap<>(1024);
+
+        for (String iataCode : airports) {
+            Airport airport = Airports.getAirport(iataCode);
+            List<Runway> rws = new ArrayList<>();
+            for (Runway rw : airport.getRunways())
+                if (rw.hasCoordinates)
+                    rws.add(rw);
+            runways.put(airport.iataCode, rws);
+        }
+
+        return runways;
+    }
 
     public Itinerary(ResultSet resultSet) throws SQLException {
         order = resultSet.getInt(1);

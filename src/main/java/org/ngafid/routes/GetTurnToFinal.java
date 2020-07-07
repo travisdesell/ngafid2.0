@@ -4,6 +4,7 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -31,9 +32,8 @@ public class GetTurnToFinal implements Route {
 
     private List<Event> events = null;
 
-    public GetTurnToFinal(Gson gson) {
-        this.gson = gson;
-
+    public GetTurnToFinal() {
+        this.gson = new GsonBuilder().setPrettyPrinting().create();
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
@@ -49,7 +49,7 @@ public class GetTurnToFinal implements Route {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
-            HashMap<String, Object> scopes = new HashMap<String, Object>();
+            HashMap<String, Object> scopes = new HashMap<>();
 
             if (events != null) {
                 scopes.put("events", events);
@@ -63,14 +63,9 @@ public class GetTurnToFinal implements Route {
 
             Connection connection = Database.getConnection();
 
-            scopes.put("ttf_js",
-                            "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection, fleetId)) + "');\n" +
-                            "var tailNumbers = JSON.parse('" + gson.toJson(Tails.getAll(connection, fleetId)) + "');\n" +
-                            "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                            "var visitedAirports = JSON.parse('" + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + "');\n" +
-                            "var visitedRunways = JSON.parse('" + gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)) + "');\n" +
-                            "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getAllNames(connection, fleetId)) + "');\n" +
-                            "var flights = [];"
+            scopes.put( "ttf_js",
+                        "var airports = " + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" +
+                        "var runways = " + gson.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n"
             );
             /*
             try {

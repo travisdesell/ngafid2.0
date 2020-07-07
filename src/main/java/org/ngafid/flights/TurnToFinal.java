@@ -35,9 +35,11 @@ public class TurnToFinal {
     private final double[] latitude, longitude, altitude, roll, velocity;
     private double runwayAltitude;
     private final Runway runway;
+    private final String flightId;
     private final String airframe;
 
     public final String airportIataCode;
+    public final String flightStartDate;
 
     private int nTimesteps;
 
@@ -59,8 +61,9 @@ public class TurnToFinal {
      * @param lat
      * @param lon
      */
-    public TurnToFinal(String airframe, Runway runway, String airportIataCode, double runwayAltitude, double[] altitude, double[] roll,
+    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate, double runwayAltitude, double[] altitude, double[] roll,
                        double[] lat, double[] lon, double[] velocity) {
+        this.flightId = flightId;
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
         this.latitude = lat;
@@ -70,6 +73,7 @@ public class TurnToFinal {
         this.airframe = airframe;
         this.velocity = velocity;
         this.airportIataCode = airportIataCode;
+        this.flightStartDate = flightStartDate;
 
         assert this.latitude.length == this.longitude.length;
         assert this.latitude.length == this.altitude.length;
@@ -249,7 +253,15 @@ public class TurnToFinal {
         return new double[] { latitude[timestep], longitude[timestep] };
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight) throws SQLException {
+    /**
+     * Returns an array list of all of the turn to finals for the given flight that occur at the specified airport
+     * @param connection database connection
+     * @param flight the flight for which the turn to finals should be analyzed
+     * @param airportIataCode the IATA code for the airport. If this is null, all of the TTFs will be returned.
+     * @return
+     * @throws SQLException
+     */
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         // TODO: Verify that these are the correct names
@@ -281,25 +293,27 @@ public class TurnToFinal {
             int from = to;
 
             Airport airport = Airports.getAirport(it.getAirport());
+            if (airportIataCode != null && !airport.iataCode.equals(airportIataCode))
+                continue;
+
             Runway runway = airport.getRunway(it.getRunway());
 
             double runwayAltitude = altitude[to];
 
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
-            theyhavelabelsinjavawow:
             for (;;) {
                 if (from < 0) {
                     // We never found a point in time where there is a turn to final
                     // We assume all aircraft that perform a turn to final will reach 400 feet above the runway
                     from = 0;
-                    break theyhavelabelsinjavawow;
+                    break;
                 }
                 if (altitude[from] - runwayAltitude > 400)
                     break;
                 from -= 1;
             }
-            TurnToFinal ttf = new TurnToFinal(
-                    flight.getAirframeType(), runway, airport.iataCode, runwayAltitude,
+            TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
+                    flight.getAirframeType(), runway, airport.iataCode, flight.getStartDateTime(), runwayAltitude,
                          altTimeSeries.sliceCopy(from, to),
                         rollTimeSeries.sliceCopy(from, to),
                          latTimeSeries.sliceCopy(from, to),
@@ -312,26 +326,29 @@ public class TurnToFinal {
         return ttfs;
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId) throws SQLException {
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode) throws SQLException {
         // For now just use the flight object to get lat and long series
         // In the future we could just get the lat and long series in isolation to speed things up
         Flight flight = Flight.getFlight(connection, flightId);
         assert flight != null;
-        return getTurnToFinal(connection, flight);
+        return getTurnToFinal(connection, flight, airportIataCode);
     }
 
     public JsonElement jsonify() {
         Gson gson = new Gson();
-        System.out.println(selfDefinedGlideAngle);
         try {
-            return gson.toJsonTree(Map.of(
-                    PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences,
-                    PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences,
-                    PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle,
-                    PARAM_JSON_OPTIMAL_DESCENT_WARN, this.optimalDescentSlopeWarnings,
-                    PARAM_JSON_OPTIMAL_DESCENT_EXC, this.optimalDescentSlopeExceedences,
-                    PARAM_JSON_LATITUDE, this.latitude,
-                    PARAM_JSON_LONGITUDE, this.longitude)
+            return gson.toJsonTree(Map.ofEntries(
+                    Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
+                    Map.entry(PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences),
+                    Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
+                    Map.entry(PARAM_JSON_OPTIMAL_DESCENT_WARN, this.optimalDescentSlopeWarnings),
+                    Map.entry(PARAM_JSON_OPTIMAL_DESCENT_EXC, this.optimalDescentSlopeExceedences),
+                    Map.entry(PARAM_JSON_LATITUDE, this.latitude),
+                    Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
+                    Map.entry("flightId", this.flightId),
+                    Map.entry("runway", this.runway),
+                    Map.entry("airportIataCode", this.airportIataCode),
+                    Map.entry("flightStartDate", this.flightStartDate))
             );
         }
         catch (IllegalArgumentException _iae) {

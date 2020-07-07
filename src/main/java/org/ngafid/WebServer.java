@@ -173,7 +173,7 @@ public final class WebServer {
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
-        Spark.get("/protected/ttf", new GetTurnToFinal(gson));
+        Spark.get("/protected/ttf", new GetTurnToFinal());
 
         // For turn to final
         Spark.post("/protected/ttf", new PostTurnToFinal(gson));

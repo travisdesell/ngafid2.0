@@ -106,20 +106,90 @@ public class Flight {
      * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
      * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
      * @param connection connection to the database
-     * @param startDate start date which must be formatted like this: "MM-dd-yyyy HH:mm:ss".
-     *                  Note that the interpretation of this format can be found in the java SimpleDateFormat docs.
+     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
      * @param endDate formatted the same as the start date.
      * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
      *          This list could be potentially huge if the date range is large so it may be smart to not give the users
      *          full control over this parameter on the frontend? We'll see.
+     * @throws SQLException
      */
-    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
+    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate,
+                                                         String extraCondition) throws SQLException {
         System.out.println("Start date = " + startDate);
         System.out.println("End date = " + endDate);
-        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
-                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
-        List<Flight> flights = getFlights(connection, extraCondition);
+        String condition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
+                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "')) AND " + extraCondition;
+        List<Flight> flights = getFlights(connection, condition);
         System.out.println("Number flights = " + flights.size());
+        return flights;
+    }
+
+    /**
+     * Like Flights.getFlightsWithinDateRange, but also only grabs flights that visit a certain airport.
+     * @param connection connection to the database
+     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
+     * @param endDate formatted the same as the start date.
+     * @param airportIataCode
+     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
+     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
+     *          full control over this parameter on the frontend? We'll see.
+     * @throws SQLException
+     */
+
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate,
+                                                                    String endDate, String airportIataCode, int limit) throws SQLException {
+        String queryString =
+                "SELECT         " +
+                "  flights.id,  " +
+                "  fleet_id,    " +
+                "  uploader_id, " +
+                "  upload_id,   " +
+                "  tail_id,     " +
+                "  airframe_id, " +
+                "  start_time,  " +
+                "  end_time,    " +
+                "  filename,    " +
+                "  md5_hash,    " +
+                "  number_rows, " +
+                "  status,      " +
+                "  has_coords,  " +
+                "  has_agl,     " +
+                "  insert_completed   " +
+                "FROM flights         " +
+                "WHERE                " +
+                "    (                " +
+                "    EXISTS(          " +
+                "        SELECT       " +
+                "          id         " +
+                "        FROM         " +
+                "          itinerary  " +
+                "        WHERE        " +
+                "          airport = '" + airportIataCode + "' " +
+                "    ) " +
+                "AND   " +
+                "    ( " +
+                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
+                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
+                "    )" +
+                " ) ";
+
+        if (limit > 0) queryString += " LIMIT 100";
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        List<Flight> flights = new ArrayList<>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+    query.close();
+
         return flights;
     }
 
@@ -296,8 +366,6 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
-
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
@@ -305,22 +373,11 @@ public class Flight {
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-        for (int i = 0; i < parameters.size(); i++) {
-            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
-
-            if (parameters.get(i) instanceof String) {
-                query.setString(i + 1, (String)parameters.get(i));
-            } else if (parameters.get(i) instanceof Double) {
-                query.setDouble(i + 1, (Double)parameters.get(i));
-            } else if (parameters.get(i) instanceof Integer) {
-                query.setInt(i + 1, (Integer)parameters.get(i));
-            }
-        }
 
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
-        ArrayList<Flight> flights = new ArrayList<Flight>();
+        ArrayList<Flight> flights = new ArrayList<>();
         while (resultSet.next()) {
             flights.add(new Flight(connection, resultSet));
         }
