@@ -37,20 +37,24 @@ public class PostTurnToFinal implements Route {
     public Object handle(Request request, Response response) throws Exception {
         String startDate = request.queryParams("startDate");
         String endDate = request.queryParams("endDate");
+        String airportIataCode = request.queryParams("airport");
+        System.out.println(startDate);
+        System.out.println(endDate);
 
         final Session session = request.session();
         User user = session.attribute("user");
 
         List<JsonElement> _ttfs = new ArrayList<>();
 
-        List<Flight> flights = Flight.getFlightsWithinDateRange(Database.getConnection(), startDate, endDate);
+        List<Flight> flights =
+                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 0);
         Set<String> iataCodes = new HashSet<>();
 
         for (Flight flight : flights) {
             int flightId = flight.getId();
 
             try {
-                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flightId)) {
+                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flightId, airportIataCode)) {
                     JsonElement jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         _ttfs.add(jsonElement);
@@ -63,6 +67,8 @@ public class PostTurnToFinal implements Route {
             }
             // break;
         }
+
+        System.out.println("hiii");
 
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
@@ -81,7 +87,7 @@ public class PostTurnToFinal implements Route {
             "airports", airports,
             "ttfs", _ttfs
         ));
-
+        System.out.println("What the fu");
         return json;
     }
 }
