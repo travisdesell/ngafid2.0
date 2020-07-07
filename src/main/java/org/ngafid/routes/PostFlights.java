@@ -28,6 +28,8 @@ public class PostFlights implements Route {
     private FlightPaginator paginator;
     private Filter filter;
 
+	static String NO_RESULTS = "NO_RESULTS";
+
     private int pageBufferSize, pageIndex;
 
     public PostFlights(Gson gson) {
@@ -110,7 +112,11 @@ public class PostFlights implements Route {
             //LOG.info(gson.toJson(flights));
             //LOG.info("page JSON: "+gson.toJson(this.paginator.currentPage()));//too verbose
 			WebServer.flightPaginator = this.paginator;
-            return gson.toJson(this.paginator.currentPage());
+			Page<?> currentPage = this.paginator.currentPage();
+			if(!currentPage.hasData()){
+				return gson.toJson(NO_RESULTS);
+			}
+            return gson.toJson(currentPage);
         } catch (SQLException e) {
 			WebServer.flightPaginator = this.paginator;
             return gson.toJson(new ErrorResponse(e));
