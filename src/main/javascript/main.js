@@ -9,7 +9,7 @@ class TabHeader extends React.Component {
 
         return (
             <li className="nav-item">
-                <a className={classNames} href="javascript:void(0)" onClick={() => onClick()}>{name}</a>
+                <a className={classNames} href="#!" onClick={() => onClick()}>{name}</a>
             </li>
         );
     }
@@ -188,7 +188,7 @@ class MainContent extends React.Component {
 
 
                     if (response.err_msg) {
-                        display_error_modal(response.err_title, response.err_msg);
+                        errorModal.show(response.err_title, response.err_msg);
                         return;
                     }
 
@@ -200,7 +200,7 @@ class MainContent extends React.Component {
 
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    display_error_modal("Error Loading Uploads", errorThrown);
+                    errorModal.show("Error Loading Uploads", errorThrown);
                 },   
                 async: true 
             });  
@@ -224,7 +224,7 @@ class MainContent extends React.Component {
                     $('#loading').hide();
 
                     if (response.err_msg) {
-                        display_error_modal(response.err_title, response.err_msg);
+                        errorModal.show(response.err_title, response.err_msg);
                         return;
                     }
 
@@ -241,7 +241,7 @@ class MainContent extends React.Component {
                     mainCards[ucNewName].setContent( response );
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
-                    display_error_modal("Error Loading Uploads", errorThrown);
+                    errorModal.show("Error Loading Uploads", errorThrown);
                 },   
                 async: true 
             });  

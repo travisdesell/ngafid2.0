@@ -30,6 +30,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.Tails;
+import org.ngafid.flights.Flight;
 
 import org.ngafid.events.EventDefinition;
 
@@ -77,7 +78,7 @@ public class GetFlights implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flights.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -94,15 +95,71 @@ public class GetFlights implements Route {
             int fleetId = user.getFleetId();
 
             Connection connection = Database.getConnection();
-            scopes.put("flights_js",
-                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection, fleetId)) + "');\n" +
-                    "var tailNumbers = JSON.parse('" + gson.toJson(Tails.getAll(connection, fleetId)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var visitedAirports = JSON.parse('" + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + "');\n" +
-                    "var visitedRunways = JSON.parse('" + gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)) + "');\n" +
-                    "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getAllNames(connection, fleetId)) + "');\n" +
-                    "var flights = [];"
-                    );
+
+            long startTime, endTime;
+
+            StringBuilder sb = new StringBuilder();
+
+            sb.append("var airframes = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Airframes.getAll(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all airframes took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var tagNames = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Flight.getAllTagNames(connection)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all tag names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var tailNumbers = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Tails.getAllTails(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all tails names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var systemIds = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Tails.getAllSystemIds(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all system ids names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var doubleTimeSeriesNames = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all double time series names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var visitedAirports = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Itinerary.getAllAirports(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all airports names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var visitedRunways = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(Itinerary.getAllAirportRunways(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all runways names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var eventNames = JSON.parse('");
+            startTime = System.currentTimeMillis();
+            sb.append(gson.toJson(EventDefinition.getAllNames(connection, fleetId)));
+            endTime = System.currentTimeMillis();
+            LOG.info("get all event definition names took: " + ((endTime - startTime) / 1000.0) + " seconds");
+            sb.append("');\n");
+
+            sb.append("var flights = [];");
+
+
+            scopes.put("flights_js", sb.toString());
             /*
             try {
                 //scopes.put("flights_js", "var flights = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"})) + "');");
@@ -113,7 +170,11 @@ public class GetFlights implements Route {
             */
 
             StringWriter stringOut = new StringWriter();
+            startTime = System.currentTimeMillis();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
+            endTime = System.currentTimeMillis();
+            LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
             resultString = stringOut.toString();
         } catch (SQLException e) {
             LOG.severe(e.toString());

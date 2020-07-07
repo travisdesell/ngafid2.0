@@ -13,7 +13,7 @@ class NavLink extends React.Component {
         let onClick = this.props.onClick;
         let href = this.props.href;
 
-        if (typeof href == 'undefined') href = "javascript:void(0)";
+        if (typeof href == 'undefined') href = "#!";
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
