@@ -25,7 +25,7 @@ and Fedora, RedHat/CentOS:
 ```
 You will also need to run
 ```
-~/ $ sudo mysql_install_db --user=mysql --ldata=/var/lib/mysql
+~/ $ sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 ```
 and
 ```
@@ -94,7 +94,7 @@ PHP script `db/create_tables.php`:
 Now load the event definitions SQL to set up all the exceedence events in the database, filling in the appropriate things:
 
 ```
-mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2019_09_25.sql
+mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2020_05_15.sql
 ```
 
 
@@ -148,7 +148,13 @@ Then run:
 ~/ngafid2.0 $ npm install
 ```
 
-This will download the javascript dependencies. Then, in order to compile the javascript
+This will download the javascript dependencies. 
+
+We also need to install React Bootstrap to use the bootstrap css libraries:
+```
+~/ngafid2.0 $ npm install react-bootstrap bootstrap
+```
+Then, in order to compile the javascript
 and automatically recompile whenever you change one of the files:
 ```
 ~/ngafid2.0 $ npm run watch

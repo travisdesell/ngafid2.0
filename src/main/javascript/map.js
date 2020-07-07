@@ -12,7 +12,6 @@ import XYZ from 'ol/source/XYZ.js';
 import OSM from 'ol/source/OSM';
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
 
 console.log("doing first load after setting state!");
 

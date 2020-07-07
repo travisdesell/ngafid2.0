@@ -9,6 +9,8 @@ import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
 
+import org.ngafid.common.FlightPaginator;
+
 import spark.Spark;
 import spark.Session;
 
@@ -37,6 +39,9 @@ import com.google.gson.GsonBuilder;
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+	
+	// Have a pointer to the paginator for flights so more than one route can mainpulate the flight pages
+	public static FlightPaginator flightPaginator;
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
@@ -123,8 +128,8 @@ public final class WebServer {
         Spark.before("/", (request, response) -> {
             User user = (User)request.session().attribute("user");
             if (user != null) {
-                LOG.info("user already logged in, redirecting to dashboard!");
-                response.redirect("/protected/dashboard");
+                LOG.info("user already logged in, redirecting to welcome!");
+                response.redirect("/protected/welcome");
             }
         });
 
@@ -147,6 +152,11 @@ public final class WebServer {
         Spark.get("/reset_password", new GetResetPassword(gson));
         Spark.post("/reset_password", new PostResetPassword(gson));
 
+        Spark.get("/protected/welcome", new GetWelcome(gson));
+        Spark.post("/protected/event_counts", new PostEventCounts(gson));
+
+        Spark.get("/protected/trends", new GetTrends(gson));
+        Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
 
         Spark.get("/protected/dashboard", new GetDashboard(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
@@ -178,6 +188,14 @@ public final class WebServer {
         // For turn to final
         Spark.post("/protected/ttf", new PostTurnToFinal(gson));
 
+        //Flight-Tagging routes
+        Spark.post("/protected/flight_tags", new PostTags(gson));
+        Spark.post("/protected/create_tag", new PostCreateTag(gson));
+        Spark.post("/protected/get_unassociated_tags", new PostUnassociatedTags(gson));
+        Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
+        Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
+        Spark.post("/protected/edit_tag", new PostEditTag(gson));
+        
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
         // Cesium related routes
@@ -195,6 +213,9 @@ public final class WebServer {
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+
+        Spark.get("/protected/system_ids", new GetSystemIds(gson));
+        Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
         Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
