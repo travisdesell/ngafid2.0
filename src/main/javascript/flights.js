@@ -1435,15 +1435,19 @@ class Flight extends React.Component {
         }
 
         // hiding events
-        // map
         if (this.state.eventLayer) {
+            // map
             this.state.eventLayer.setVisible(false);
             this.state.eventOutlineLayer.setVisible(false);
-            this.state.itineraryLayer.setVisible(false);
 
             // plot
             let shapes = plotlyLayout.shapes;
             shapes.length = 0;
+        }
+        
+        // hiding phases
+        if (this.state.itineraryLayer) {
+            this.state.itineraryLayer.setVisible(false);
         }
 
 
