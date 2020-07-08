@@ -121,7 +121,7 @@ public class GetXPlane implements Route {
             scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
 
 
-            DoubleTimeSeries altMSL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
+            DoubleTimeSeries altAGL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
             DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
             DoubleTimeSeries heading = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG");
@@ -135,12 +135,12 @@ public class GetXPlane implements Route {
 
             StringBuffer sb = new StringBuffer();
 
-            for (int i = 0; i < altMSL.size(); i++) {
+            for (int i = 0; i < altAGL.size(); i++) {
 				//make sure we dont log where the GPS wasn't recording coordinates as this will 
 				//cause X-Plane to crash
 				if(!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))){
 					sb.append("DATA, " + i + "," + NULL_DATA + longitude.get(i) + "," + latitude.get(i) +
-						"," + altMSL.get(i) + "," + getZeros(4) + pitch.get(i) + "," + roll.get(i) + "," +
+						"," + altAGL.get(i) + "," + getZeros(4) + pitch.get(i) + "," + roll.get(i) + "," +
 						heading.get(i) + "," + ias.get(i) + getZeros(83) + "\n");
 				}
             }
