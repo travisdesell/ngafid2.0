@@ -1176,7 +1176,7 @@ public class Flight {
         }
 
         try {
-            calculateAirportProximity("Latitude", "Longitude");
+            calculateAirportProximity("Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -1223,7 +1223,14 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
-            } else if (airframeType.equals("Garmin Flight Display")) {
+            } else if (airframeType.equals("Diamond DA 40")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG")) {
                 LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
 
@@ -1523,13 +1530,14 @@ public class Flight {
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
     }
 
-    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
+    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName, String altitudeAGLColumnName) throws MalformedFlightFileException {
         //calculates if the aircraft is within maxAirportDistance from an airport
 
         DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
+        DoubleTimeSeries altitudeAGLTS = doubleTimeSeries.get(altitudeAGLColumnName);
 
-        if (latitudeTS == null || longitudeTS == null) {
+        if (latitudeTS == null || longitudeTS == null || altitudeAGLTS == null) {
             String message = "Cannot calculate airport and runway distances, flight file had empty or missing ";
 
             int count = 0;
@@ -1541,6 +1549,11 @@ public class Flight {
             if (longitudeTS == null) {
                 if (count > 0) message += " and ";
                 message += "'" + longitudeColumnName + "'";
+                count++;
+            }
+
+            if (altitudeAGLTS == null) {
+                message += "'" + altitudeAGLColumnName+ "'";
                 count++;
             }
 
@@ -1580,9 +1593,14 @@ public class Flight {
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
             double longitude = longitudeTS.get(i);
+            double altitudeAGL = altitudeAGLTS.get(i);
 
             MutableDouble airportDistance = new MutableDouble();
-            Airport airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+            Airport airport = null;
+            if (altitudeAGL <= 2000) {
+                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+            }
+
             if (airport == null) {
                 nearestAirportTS.add("");
                 airportDistanceTS.add(Double.NaN);
