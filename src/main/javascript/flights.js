@@ -1597,8 +1597,10 @@ class Flight extends React.Component {
     downloadClicked(type) {
         if(type === 'KML'){
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
-        }else if (type === 'XPL'){
-            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id);
+        }else if (type === 'XPL10'){
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=10");
+        }else if (type === 'XPL11'){
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=11");
         }else if(type === 'CSV'){
             window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
 		}
@@ -2207,7 +2209,8 @@ class Flight extends React.Component {
 							<div class="dropdown-menu" aria-labelledby="dropdownMenu2">
 								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
 								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
-								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL')}>Export to X-Plane FDR</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
 						   </div>
                         </div>
                      </div>

@@ -40,7 +40,7 @@ public class GetCSV implements Route {
     public GetCSV(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
     @Override
@@ -49,7 +49,7 @@ public class GetCSV implements Route {
 
         String flightIdStr = request.queryParams("flight_id");
 
-        LOG.info("getting kml for flight id: " + flightIdStr);
+        LOG.info("getting csv for flight id: " + flightIdStr);
 
         int flightId = Integer.parseInt(flightIdStr);
 
@@ -69,6 +69,7 @@ public class GetCSV implements Route {
 		try {
 			String filename = Flight.getFilename(Database.getConnection(), flightId);
 			LOG.info("Got file path for flight #"+flightId+": "+filename);
+
 		} catch (SQLException e) {
 			return gson.toJson(new ErrorResponse(e));
 		//} catch (IOException e) {
