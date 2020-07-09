@@ -3,7 +3,7 @@
  * for X-Plane animations
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
-package org.ngafid.routes;
+package org.ngafid.flights;
 
 import java.lang.String;
 import java.util.Map;
@@ -20,6 +20,8 @@ public interface XPlaneParameters {
 	static String POSIX_ENDL = "A";
 	static String NT_ENDL = "I";
 
+	//String constants
+	
 	static String ENDL = "endl_type";
     static String COMM = "comm";
     static String ACFT = "acft";
@@ -35,6 +37,17 @@ public interface XPlaneParameters {
     static String MARK = "mark";
     static String EVNT = "evnt";
     static String DATA = "data";
+
+	//Data segment parameters
+	static String ALT_AGL = "altAGL";
+	static String LATITUDE = "latitude";
+	static String LONGITUDE = "longitude";
+	static String HEADING = "heading";
+	static String PITCH = "pitch";
+	static String ROLL = "roll";
+	static String IAS = "ias";
+	static String E1_RPM = "e1RPM";
+
     static String NULL_DATA = "0,";
 
     //The current number of empty/untracked parameters in the format
