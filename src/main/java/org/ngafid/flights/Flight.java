@@ -158,7 +158,7 @@ public class Flight {
                 "  fleet_id,    " +
                 "  uploader_id, " +
                 "  upload_id,   " +
-                "  tail_id,     " +
+                "  system_id,     " +
                 "  airframe_id, " +
                 "  start_time,  " +
                 "  end_time,    " +
@@ -444,7 +444,7 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, tail_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
 

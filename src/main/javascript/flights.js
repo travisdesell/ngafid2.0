@@ -1786,7 +1786,6 @@ class Flight extends React.Component {
         this.state.tagsVisible = !this.state.tagsVisible;
     }
 
->>>>>>> origin/main
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
