@@ -498,7 +498,7 @@ class Filter extends React.Component {
 
                         <div className="p-2">
                             <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter()} hidden={externalSubmit} >{this.props.submitButtonName}</button>
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => saveQueriesModal.show()} hidden={externalSubmit} >Save</button>
+                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => {saveQueriesModal.updateQuery(this.getQuery()); saveQueriesModal.show();}} hidden={externalSubmit} >Save</button>
                         </div>
                     </div>
 
