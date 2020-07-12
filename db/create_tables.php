@@ -410,6 +410,17 @@ $query = "CREATE TABLE `event_statistics` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `saved_queries` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `user_id` INT(11) NOT NULL,
+    `fleet_id` INT(11) NOT NULL,
+    `query` VARCHAR(2048),
 
+    PRIMARY KEY(`id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+    ) ENGINE InnoDB DEFAULT CHARSET=latin1;"   
+
+query_ngafid_db($query);
 
 ?>
