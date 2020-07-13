@@ -39,7 +39,7 @@ public interface XPlaneParameters {
     static String DATA = "data";
 
 	//Data segment parameters
-	static String ALT_AGL = "altAGL";
+	static String ALT_MSL = "altMSL";
 	static String LATITUDE = "latitude";
 	static String LONGITUDE = "longitude";
 	static String HEADING = "heading";
@@ -47,6 +47,7 @@ public interface XPlaneParameters {
 	static String ROLL = "roll";
 	static String IAS = "ias";
 	static String E1_RPM = "e1RPM";
+	static String E1_EGT = "e1EGT";
 
     static String NULL_DATA = "0,";
 

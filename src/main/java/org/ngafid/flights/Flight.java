@@ -882,6 +882,22 @@ public class Flight {
         return filename;
     }
 
+	/**
+	 * Gets the upload id for this flight
+	 * @return the upload id as an int
+	 */
+	public int getUploadId(){
+		return uploadId;
+	}
+
+	/**
+	 * Gets the uploader id for this flight
+	 * @return the uploader id as an int
+	 */
+	public int getUploaderId(){
+		return uploaderId;
+	}
+
     public int getNumberRows() {
         return numberRows;
     }

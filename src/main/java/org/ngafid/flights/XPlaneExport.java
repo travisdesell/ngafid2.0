@@ -44,7 +44,7 @@ public abstract class XPlaneExport{
 	public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId) throws SQLException{
 		Map<String, DoubleTimeSeries> seriesData = new HashMap<>();
 
-		seriesData.put(ALT_AGL, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL"));
+		seriesData.put(ALT_MSL, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL"));
 		seriesData.put(LATITUDE, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
 		seriesData.put(LONGITUDE, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 		seriesData.put(HEADING, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG"));
@@ -52,6 +52,7 @@ public abstract class XPlaneExport{
 		seriesData.put(ROLL, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Roll"));
 		seriesData.put(IAS, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS"));
 	    seriesData.put(E1_RPM, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 RPM"));
+	    seriesData.put(E1_EGT, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 EGT2"));
 
 		return seriesData;
 	}
