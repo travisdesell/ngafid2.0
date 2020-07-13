@@ -66,7 +66,7 @@ public class GetXPlane implements Route {
         }
 
 
-        response.header("Content-Disposition", "attachment; filename=flight_" + flightId + FDR_FILE_EXTENSION);
+        response.header("Content-Disposition", "attachment; filename=flight_" + flightId + "_xp"+version+ FDR_FILE_EXTENSION);
 		response.type("application/force-download");
 
 

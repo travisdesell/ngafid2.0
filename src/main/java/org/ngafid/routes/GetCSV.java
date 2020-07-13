@@ -4,9 +4,17 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.io.FileFilter;
+import java.io.File;
+
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import java.util.ArrayList;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.HashMap;
+import java.util.Enumeration;
 
 import java.util.logging.Logger;
 
@@ -43,6 +51,24 @@ public class GetCSV implements Route {
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
+	private File getZipFile(String directoryRoot, String targetFile){
+		File target = new File(directoryRoot, targetFile);
+
+		File root = new File(directoryRoot);
+		File[] dirs = root.listFiles(new FileFilter(){
+			public boolean accept(File path) {
+				return path.isDirectory();
+			}
+		});
+
+		List<File> files = new LinkedList<File>();
+		for (File directory : dirs) {
+			if (file.exists())
+				files.add(file);
+		}
+
+	}
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -67,12 +93,43 @@ public class GetCSV implements Route {
 
 
 		try {
-			String filename = Flight.getFilename(Database.getConnection(), flightId);
-			LOG.info("Got file path for flight #"+flightId+": "+filename);
+			Flight flight = Flight.getFlight(Database.getConnection(), flightId);
 
+			int uploadId = flight.getUploadId();
+			int uploaderId = flight.getUploaderId(); 
+
+			File zipArchive = new File(WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
+				uploaderId + "/" + uploadId + "__");
+
+			LOG.info("Got file path for flight #"+flightId+": "+zipArchive.toString());
+
+			String [] dirs = zipArchive.toString().split("/");
+
+			String filename = dirs[dirs.length - 1];
+
+			System.out.println("filename: "+filename);
+
+			ZipFile zipFile = new ZipFile(zipArchive);
+			System.out.println(zipFile);
+			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+
+			while (entries.hasMoreElements()) {
+				ZipEntry entry = entries.nextElement();
+				String name = entry.getName();
+
+				System.err.println("PROCESSING: " + name);
+
+				if (entry.getName().equals(filename)) {
+					LOG.info("found file: "+entry.toString());	
+					return entry.toString();
+				} 
+			} 
+			zipFile.close();
+
+			return "";
 		} catch (SQLException e) {
 			return gson.toJson(new ErrorResponse(e));
-		//} catch (IOException e) {
+		} catch (IOException e) {
 			//LOG.severe(e.toString());
 		}
 

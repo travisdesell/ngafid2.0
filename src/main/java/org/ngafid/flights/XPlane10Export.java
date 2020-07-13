@@ -39,7 +39,7 @@ public class XPlane10Export extends XPlaneExport{
 
 		StringBuffer sb = new StringBuffer();
 
-		int length = parameters.get(ALT_AGL).size();
+		int length = parameters.get(ALT_MSL).size();
 
 		for (int i = 0; i < length; i++) {
 			//make sure we dont log where the GPS wasn't recording coordinates as this will 
@@ -47,9 +47,10 @@ public class XPlane10Export extends XPlaneExport{
 			if(!Double.isNaN(parameters.get(LONGITUDE).get(i))
 			&& !Double.isNaN(parameters.get(LATITUDE).get(i))){
 				sb.append("DATA, " + i + "," + NULL_DATA + parameters.get(LONGITUDE).get(i) + "," +
-					parameters.get(LATITUDE).get(i) +	"," + parameters.get(ALT_AGL).get(i) + "," +
+					parameters.get(LATITUDE).get(i) +	"," + parameters.get(ALT_MSL).get(i) + "," +
 					getZeros(4) + parameters.get(PITCH).get(i) + "," + parameters.get(ROLL).get(i) + "," +
-					parameters.get(HEADING).get(i) + "," + parameters.get(IAS).get(i) + getZeros(83) + "\n");
+					parameters.get(HEADING).get(i) + "," + parameters.get(IAS).get(i) + getZeros(70) +
+					parameters.get(E1_EGT).get(i) + getZeros(19) + "\n");
 			}
 		}
 
