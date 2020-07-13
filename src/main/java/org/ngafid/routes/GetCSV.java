@@ -51,21 +51,21 @@ public class GetCSV implements Route {
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
-	private File getZipFile(String directoryRoot, String targetFile){
-		File target = new File(directoryRoot, targetFile);
-
+	private File getZipFile(String directoryRoot, int uploadId){
 		File root = new File(directoryRoot);
-		File[] dirs = root.listFiles(new FileFilter(){
-			public boolean accept(File path) {
-				return path.isDirectory();
-			}
-		});
+		File[] dirs = root.listFiles();
 
-		List<File> files = new LinkedList<File>();
-		for (File directory : dirs) {
-			if (file.exists())
-				files.add(file);
+		System.out.println("target id: "+uploadId);
+		for (File archive : dirs) {
+			String archPath = archive.toString();
+			String [] archDirs = archPath.split("/");
+			String archName = archDirs[archDirs.length - 1];
+			if(archName.contains(Integer.toString(uploadId))){
+				return archive;
+			}
 		}
+		
+		return null;
 
 	}
 
@@ -98,20 +98,18 @@ public class GetCSV implements Route {
 			int uploadId = flight.getUploadId();
 			int uploaderId = flight.getUploaderId(); 
 
-			File zipArchive = new File(WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
-				uploaderId + "/" + uploadId + "__");
+			String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
+				uploaderId + "/";
+
+			ZipFile zipArchive = new ZipFile(getZipFile(zipRoot, uploadId));
 
 			LOG.info("Got file path for flight #"+flightId+": "+zipArchive.toString());
 
-			String [] dirs = zipArchive.toString().split("/");
-
-			String filename = dirs[dirs.length - 1];
+			String filename = flight.getFilename();
 
 			System.out.println("filename: "+filename);
 
-			ZipFile zipFile = new ZipFile(zipArchive);
-			System.out.println(zipFile);
-			Enumeration<? extends ZipEntry> entries = zipFile.entries();
+			Enumeration<? extends ZipEntry> entries = zipArchive.entries();
 
 			while (entries.hasMoreElements()) {
 				ZipEntry entry = entries.nextElement();
@@ -121,10 +119,10 @@ public class GetCSV implements Route {
 
 				if (entry.getName().equals(filename)) {
 					LOG.info("found file: "+entry.toString());	
-					return entry.toString();
+					return Spark.entry;
 				} 
 			} 
-			zipFile.close();
+			zipArchive.close();
 
 			return "";
 		} catch (SQLException e) {
