@@ -7,6 +7,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton'
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
+
 var navbar = ReactDOM.render(
     <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
@@ -483,8 +484,16 @@ class ImportsCard extends React.Component {
             imports = this.state.imports;
         }
 
+		let pageStatus = "Page "+(this.state.page + 1)+" of "+(this.state.numPages);
+		let noImports = false;
+		if(this.state.numPages == 0){
+			pageStatus = "No imports yet!";
+			noImports = true;
+		}
+
         var begin = this.state.page == 0;
-        var end = this.state.page == this.state.numPages-1;
+        var end = this.state.page == this.state.numPages-1 || noImports;
+
         var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
         var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
 
@@ -500,9 +509,9 @@ class ImportsCard extends React.Component {
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
                     <div className="card mb-1 m-1 border-secondary">
                         <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
                             <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm" disabled={noImports}>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
@@ -510,7 +519,7 @@ class ImportsCard extends React.Component {
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
                                 </DropdownButton>
                                 <Dropdown className="pr-1">
-                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm" disabled={noImports}>
                                         {"Page " + (this.state.page + 1)}
                                     </Dropdown.Toggle>
                                     <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
@@ -535,9 +544,9 @@ class ImportsCard extends React.Component {
                             );
                         })
                     }
-                    <div className="card mb-1 m-1 border-secondary">
+                    <div className="card mb-1 m-1 border-secondary" hidden={noImports}>
                         <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
                             <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                 {prev}
                                 {next}
