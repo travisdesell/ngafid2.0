@@ -57,12 +57,14 @@ public interface XPlaneParameters {
 
     //The following are the aircraft specifications within X-Plane
     //
-    static String C172 = "Cessna 172S";
+	static String C172_10 = "Cessna 172SXP10";
+    static String C172_11 = "Cessna 172SXP11";
     static String PA_28_181 = "PA-28-181";
     static String PA_44_180 = "PA-44-180";
 
     //A hashmap that maps aircraft strings to their respective X-Plane names/paths
-    Map<String, String> xplaneNames = Map.of(C172, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
+    Map<String, String> xplaneNames = Map.of(C172_10, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
+                                C172_11, "Aircraft/Laminar Research/Cessna 172SP/Cessna_172SP.acf",
                                 PA_28_181, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
                                 PA_44_180, PA_44_180+"XP");
 
