@@ -1,14 +1,17 @@
 package org.ngafid.routes;
 
 import java.io.IOException;
+import java.io.BufferedOutputStream;
 import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.io.FileFilter;
+import java.io.FileWriter;
 import java.io.File;
 
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
@@ -51,6 +54,12 @@ public class GetCSV implements Route {
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
+	/**
+	 * Finds the zip file with the filght requested
+	 * @param directoryRoot the root directory of the zipped files
+	 * @param uploadId the id of the upload
+	 * @return a File pointing to the zip containing the entry
+	 */
 	private File getZipFile(String directoryRoot, int uploadId){
 		File root = new File(directoryRoot);
 		File[] dirs = root.listFiles();
@@ -69,6 +78,29 @@ public class GetCSV implements Route {
 
 	}
 
+	/**
+	 * Writes data to a file output stream
+	 * @param inputStream the input stream to copy data from
+	 * @return a String with all the data for the CSV file
+	 * @throws IOException if there is an IOException when parsing the inputStream
+	 */
+	private String writeToFile(InputStream inputStream) throws IOException{
+		StringWriter strOut = new StringWriter();
+		byte [] buffer = new byte[1024];
+
+		while(inputStream.available() > 0){
+			inputStream.read(buffer);
+			strOut.append(new String(buffer, "UTF-8"));
+		}
+
+		inputStream.close();
+		return strOut.toString();
+	}
+
+
+	/**
+	 * {inheritDoc}
+	 */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -93,6 +125,9 @@ public class GetCSV implements Route {
 
 
 		try {
+            response.header("Content-Disposition", "attachment; filename=flight_" + flightId + ".csv");
+            response.type("application/force-download");
+
 			Flight flight = Flight.getFlight(Database.getConnection(), flightId);
 
 			int uploadId = flight.getUploadId();
@@ -110,27 +145,24 @@ public class GetCSV implements Route {
 			System.out.println("filename: "+filename);
 
 			Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+			String fileOut = "";
 
 			while (entries.hasMoreElements()) {
 				ZipEntry entry = entries.nextElement();
-				String name = entry.getName();
-
-				System.err.println("PROCESSING: " + name);
 
 				if (entry.getName().equals(filename)) {
 					LOG.info("found file: "+entry.toString());	
-					return Spark.entry;
+					fileOut = writeToFile(zipArchive.getInputStream(entry));
 				} 
 			} 
 			zipArchive.close();
+			return fileOut;
 
-			return "";
 		} catch (SQLException e) {
 			return gson.toJson(new ErrorResponse(e));
 		} catch (IOException e) {
-			//LOG.severe(e.toString());
+			LOG.severe(e.toString());
 		}
-
         return "";
     }
 }
