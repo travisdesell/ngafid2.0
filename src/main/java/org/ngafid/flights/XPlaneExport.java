@@ -3,12 +3,21 @@ package org.ngafid.flights;
 import org.ngafid.Database;
 import org.ngafid.flights.DoubleTimeSeries;
 
+import com.github.mustachejava.DefaultMustacheFactory;
+import com.github.mustachejava.Mustache;
+import com.github.mustachejava.MustacheFactory;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.Map;
 import java.util.HashMap;
+
 import java.io.StringWriter;
+import java.io.PrintWriter;
+import java.io.IOException;
+
+import org.ngafid.WebServer;
 
 import static org.ngafid.flights.XPlaneParameters.*;
 
@@ -23,6 +32,10 @@ public abstract class XPlaneExport{
 	protected Flight flight;
 	protected Map<String, DoubleTimeSeries> parameters;
 
+	/**
+	 * Defualt constructor for X-Plane exports
+	 * @param flightId the flightId to create the export for
+	 */
 	public XPlaneExport(int flightId){
 		try{
 			this.flight = Flight.getFlight(connection, flightId);
@@ -57,6 +70,38 @@ public abstract class XPlaneExport{
 		return seriesData;
 	}
 
+	/**
+	 * Creates an export using MustacheFactory
+	 * @return an instance of a StringWriter that contains the export in the respective *.fdr format
+	 */
+	private StringWriter export(){
+		HashMap<String, Object> scopes = new HashMap<String, Object>();
+
+		scopes.put(ENDL, POSIX_ENDL);
+		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
+
+		StringBuffer sb = new StringBuffer();
+		this.writeFlightData(sb, scopes);
+
+		String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "template.fdr";
+
+		MustacheFactory mf = new DefaultMustacheFactory();
+		Mustache mustache = mf.compile(templateFile);
+
+		scopes.put(DATA, sb.toString());
+		scopes.put(COMM, COMM.toUpperCase()+",Flight " + flight.getId() +",");
+
+		StringWriter stringOut = new StringWriter();
+
+		try{
+			mustache.execute(new PrintWriter(stringOut), scopes).flush();
+		}catch(IOException e){
+			stringOut.write(e.toString());
+		}
+
+		return stringOut;
+	}
+
     /**
      * Returns a string full of 0's, follwed by a comma, to poplulate the extra as null in the FDR format.
      * If we start tracking other data, we can change this method to include such data
@@ -72,11 +117,16 @@ public abstract class XPlaneExport{
     }
 
 	/**
-	 * Creates an export as a StringWriter
-	 * @return the text within an X-Plane export as a {@link StringBuffer}
+	 * Fills the data block with the flight data for the version of X-Plane requested
+	 * @param buffer the {@link StringBuffer} to write to 
+	 * @param scopes the scopes used by {@link MustacheFactory}
 	 */
-	protected abstract StringWriter export();
+	protected abstract void writeFlightData(StringBuffer buffer, Map<String, Object> scopes);
 
+	/**
+	 * Returns the file as a String
+	 * @return a {@link String} instance of the data
+	 */
 	public String toFdrFile(){
 		return dataOut.toString();
 	}
