@@ -504,6 +504,14 @@ class ImportsCard extends React.Component {
             next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
+        var pageStat;
+
+        if(this.state.numPages > 0){
+            pageStat = "Page: "+(this.state.page + 1)+" of "+(this.state.numPages);
+        }else{
+            pageStat = "No imports yet!";
+        }
+
         return (
             <div className="card-body" hidden={hidden}>
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>

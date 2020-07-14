@@ -183,6 +183,8 @@ public final class WebServer {
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
+        Spark.get("/protected/get_xplane", new GetXPlane(gson));
+        Spark.get("/protected/get_csv", new GetCSV(gson));
 
         //Flight-Tagging routes
         Spark.post("/protected/flight_tags", new PostTags(gson));
