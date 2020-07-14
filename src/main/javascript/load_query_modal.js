@@ -65,7 +65,7 @@ class LoadQueriesModal extends React.Component {
         } else {
             return (
                 <select name="querySelect" id="querySelect" type={"select"} className="form-control" onChange={(event) => { this.state.selectedQuery = querySelect.value; }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
-                     <option selected="">Please Select Group</option>
+                     <option>Please Select Group</option>
                  </select>
             )
         }
@@ -148,8 +148,7 @@ class LoadQueriesModal extends React.Component {
                             <label htmlFor="queryText" style={labelStyle}>Full Query:</label>
                         </div>
                         <div className="p-2 flex-fill" style={formHeaderStyle}>
-                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" readOnly>
-                                {"Oh Lookie at all the Query Details. Fancy Fancy. Oh, I wonder if the text is gonna wrap. It'd be such a tragedy if the text left the textarea"}
+                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={"Oh Lookie at all the Query Details. Fancy Fancy. Oh, I wonder if the text is gonna wrap. It'd be such a tragedy if the text left the textarea"} readOnly>
                             </textarea>
                         </div>
                     </div>
@@ -174,4 +173,6 @@ export { loadQueriesModal };
 
 
 // need validation checking to ensure all fields selected & appropriate access
-// disable Select button based on val
+// disable submit button based on val
+// load query from database and populate filter
+// load queryString from db and populate textarea

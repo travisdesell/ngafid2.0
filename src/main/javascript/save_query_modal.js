@@ -15,18 +15,17 @@ class SaveQueriesModal extends React.Component {
         this.state = {
             noEntriesMessage : "Sorry, No Entries Found",
             selectedGroup : "user",
-            queryText : "placeholder"
+            query : null,
+            queryText : null
         };
     }
 
     updateQuery(queryObject) {
         this.state.queryText = JSON.stringify(queryObject);
-        this.setState(this.state);
     }
 
     show() {
-        this.forceUpdate();
-        $("#save-query-modal").modal('show');
+        this.setState(this.state, () => {$("#save-query-modal").modal('show')});
     }
 
     getGroups(){
@@ -48,12 +47,23 @@ class SaveQueriesModal extends React.Component {
         )
     }
 
+    validateSave() {
+        // method to validate fields before enabling save button
+        valid = false;
+        if (this.state.query && this.state.selectedGroup) {     // ensure fields not blank (TODO: namefield)
+            valid = true;
+        }
+
+        //if (valid && $())                                       // ensure name not taken
+    }
+
     render() {
         const hidden = this.props.hidden;
 
         let formGroupStyle = {
             marginBottom: '8px'
         };
+
 
         let formHeaderStyle = {
             width: '150px',
@@ -78,10 +88,11 @@ class SaveQueriesModal extends React.Component {
         // generate header message
         let groups = this.getGroups();
         let names = this.getNames();
-        //let queryText = this.state.queryText;
+        let queryText = this.state.queryText;
         let headerMessage = "Where would you like to save to?";
         let dropdownLabel = "Destination:";
         let submitLabel = "Save";
+        let saveDisabled = this.validateSave();
 
 
         //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
@@ -126,8 +137,7 @@ class SaveQueriesModal extends React.Component {
                                 <label htmlFor="queryText" style={labelStyle}>Your Query Text:</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" readOnly>
-                                    {this.state.queryText}
+                                <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={queryText} readOnly>
                                 </textarea>
                             </div>
                         </div>
@@ -156,4 +166,3 @@ export { saveQueriesModal };
 // need validation checking to ensure all fields selected & appropriate access
 // disable Select button based on val
 // need validation that name is not taken*
-// need current query to show on modal
