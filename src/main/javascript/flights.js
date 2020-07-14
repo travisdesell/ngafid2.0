@@ -2480,9 +2480,13 @@ class FlightsCard extends React.Component {
                 console.log("got response: "+response+" "+response.size);
 
                 //get page data
-                flightsCard.setFlights(response.data);
-                flightsCard.setIndex(response.index);
-                flightsCard.setSize(response.sizeAll);
+				if(response == "NO_RESULTS"){
+					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
+				}else{
+					flightsCard.setFlights(response.data);
+					flightsCard.setIndex(response.index);
+					flightsCard.setSize(response.sizeAll);
+				}
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);

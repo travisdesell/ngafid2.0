@@ -355,8 +355,11 @@ class UploadsCard extends React.Component {
 
         let state = this.state;
         state.uploads = uploads;
+		if(this.state.numPages == 0){
+			this.state.numPages = 1;
+			this.state.index = 0;
+		}
         this.setState(state);
-
         this.startUpload(file);
     }
 
@@ -577,15 +580,22 @@ class UploadsCard extends React.Component {
             display : "none"
         };
 
+		console.log(this.state.numPages+ " pages");
+		let pageStatus = "Page "+(this.state.page + 1)+" of "+(this.state.numPages);
+		let noUploads = false;
+		if(this.state.numPages == 0){
+			pageStatus = "No uploads yet!";
+			noUploads = true;
+		}
+
         let uploads = [];
         let pages = this.genPages();
         if (typeof this.state.uploads != 'undefined') {
             uploads = this.state.uploads;
         }
 
-                            console.log("PRE- "+uploads);
         var begin = this.state.page == 0;
-        var end = this.state.page == this.state.numPages-1;
+        var end = this.state.page == this.state.numPages-1 || this.state.numPages == 0;
         var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
             var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
 
@@ -601,9 +611,9 @@ class UploadsCard extends React.Component {
                 <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
                     <div className="card mb-1 m-1 border-secondary">
                         <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
                             <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
+                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm" disabled={noUploads}>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
@@ -611,10 +621,10 @@ class UploadsCard extends React.Component {
                                     <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
                                 </DropdownButton>
                                 <Dropdown className="pr-1">
-                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
+                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm" disabled={noUploads}>
                                         {"Page " + (this.state.page + 1)}
                                     </Dropdown.Toggle>
-                                    <Dropdown.Menu style={{ maxHeight: "256px", overflowY: 'scroll' }}>
+                                    <Dropdown.Menu style={{ maxHeight: "256px", overflowY: 'scroll' }} >
                                         {
                                             pages.map((pages, index) => {
                                                 return (
@@ -642,9 +652,9 @@ class UploadsCard extends React.Component {
                             );
                         })
                     }
-                    <div className="card mb-1 m-1 border-secondary">
+                    <div className="card mb-1 m-1 border-secondary" hidden={noUploads}>
                         <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
+                            <button className="btn btn-sm btn-info pr-2" disabled>{pageStatus}</button>
                             <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
                                 {prev}
                                 {next}
