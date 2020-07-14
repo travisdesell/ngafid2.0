@@ -36,7 +36,7 @@ class Upload extends React.Component {
         var submissionData = {
             uploadId : this.props.uploadInfo.id,
             md5Hash : this.props.uploadInfo.md5Hash
-        };   
+        };
 
         let thisUpload = this;
 
@@ -61,13 +61,13 @@ class Upload extends React.Component {
                 }
 
                 uploadsCard.removeUpload(thisUpload.props.uploadInfo);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error removing upload", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     confirmRemoveUpload() {
@@ -374,6 +374,7 @@ class UploadsCard extends React.Component {
             let state = this.state;
             state.uploads = uploads;
             this.setState(state);
+            this.submitPagination(); //refresh data for UI
         }
     }
 
@@ -381,7 +382,7 @@ class UploadsCard extends React.Component {
         var file = uploadInfo.file;
         var position = uploadInfo.position;
 
-        var numberChunks = parseInt(uploadInfo.numberChunks); 
+        var numberChunks = parseInt(uploadInfo.numberChunks);
         var filename = uploadInfo.filename;
         var identifier = uploadInfo.identifier;
 
@@ -556,7 +557,7 @@ class UploadsCard extends React.Component {
             console.log("number files selected: " + this.files.length);
             console.log( this.files );
 
-            if (this.files.length > 0) { 
+            if (this.files.length > 0) {
                 var file = this.files[0];
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
@@ -569,9 +570,9 @@ class UploadsCard extends React.Component {
                     errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsCard.addUpload(file);
-                }    
-            }    
-        });  
+                }
+            }
+        });
     }
 
     render() {
@@ -604,6 +605,14 @@ class UploadsCard extends React.Component {
         }
         if(end){
             next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
+        }
+
+        var pageStat;
+
+        if(this.state.numPages > 0){
+            pageStat = "Page: "+(this.state.page + 1)+" of "+(this.state.numPages);
+        }else{
+            pageStat = "No uploads yet!";
         }
 
         return (

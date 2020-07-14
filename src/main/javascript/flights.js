@@ -1435,15 +1435,19 @@ class Flight extends React.Component {
         }
 
         // hiding events
-        // map
         if (this.state.eventLayer) {
+            // map
             this.state.eventLayer.setVisible(false);
             this.state.eventOutlineLayer.setVisible(false);
-            this.state.itineraryLayer.setVisible(false);
 
             // plot
             let shapes = plotlyLayout.shapes;
             shapes.length = 0;
+        }
+        
+        // hiding phases
+        if (this.state.itineraryLayer) {
+            this.state.itineraryLayer.setVisible(false);
         }
 
 
@@ -1590,8 +1594,16 @@ class Flight extends React.Component {
         }));
     }
 
-    downloadClicked() {
-        window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+    downloadClicked(type) {
+        if(type === 'KML'){
+            window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+        }else if (type === 'XPL10'){
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=10");
+        }else if (type === 'XPL11'){
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=11");
+        }else if(type === 'CSV'){
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
+		}
     }
 
     exclamationClicked() {
@@ -2191,11 +2203,17 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={lastButtonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.downloadClicked()}>
-                                <i className="fa fa-download p-1"></i>
-                            </button>
+						    <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                  <i className="fa fa-download p-1"></i>
+						    </button>
+							<div class="dropdown-menu" aria-labelledby="dropdownMenu2">
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
+						   </div>
                         </div>
-                    </div>
+                     </div>
 
                     {itineraryRow}
 
@@ -2209,7 +2227,6 @@ class Flight extends React.Component {
         );
     }
 }
-
 
 class FlightsCard extends React.Component {
     constructor(props) {
