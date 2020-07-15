@@ -16,11 +16,12 @@ class SaveQueriesModal extends React.Component {
             noEntriesMessage : "Sorry, No Entries Found",
             selectedGroup : "user",
             query : null,
-            queryText : null
+            queryText : ""
         };
     }
 
     updateQuery(queryObject) {
+        this.state.query = queryObject;
         this.state.queryText = JSON.stringify(queryObject);
     }
 
@@ -40,21 +41,21 @@ class SaveQueriesModal extends React.Component {
         )
     }
 
-    getNames() {
-        // method to construct query name section of modal (load associated query names or create input field for 'naming' query)
-        return (
-            <input type="name" className="form-control" id="name" placeholder="Name your query!" required={true} />
-        )
-    }
-
-    validateSave() {
+    isValidSave() {
         // method to validate fields before enabling save button
-        valid = false;
-        if (this.state.query && this.state.selectedGroup) {     // ensure fields not blank (TODO: namefield)
-            valid = true;
+        let valid = false;
+
+        // ensure fields not blank
+        let nameElement = $("#name")[0];
+        if (this.state.query && this.state.selectedGroup && nameElement) {
+            if (nameElement.value) {
+                valid = true;
+            }
         }
 
-        //if (valid && $())                                       // ensure name not taken
+        // TODO: ensure name not taken
+
+        return valid;
     }
 
     render() {
@@ -87,12 +88,12 @@ class SaveQueriesModal extends React.Component {
 
         // generate header message
         let groups = this.getGroups();
-        let names = this.getNames();
+        //let names = this.getNames();
         let queryText = this.state.queryText;
         let headerMessage = "Where would you like to save to?";
         let dropdownLabel = "Destination:";
         let submitLabel = "Save";
-        let saveDisabled = this.validateSave();
+        let saveDisabled = !this.isValidSave();
 
 
         //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
@@ -126,7 +127,7 @@ class SaveQueriesModal extends React.Component {
                                 <label htmlFor="queryName" style={labelStyle}>Query Name:</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                {names}
+                                <input type="name" className="form-control" id="name" placeholder="Name your query!" onChange={() => this.setState(this.state)} required={true} />
                             </div>
                         </div>
                     </div>
@@ -147,7 +148,7 @@ class SaveQueriesModal extends React.Component {
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
-                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {}} disabled={true}>{submitLabel}</button>
+                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {$("#save-query-modal").modal('hide')}} disabled={saveDisabled}>{submitLabel}</button>
                 </div>
 
             </div>
@@ -163,6 +164,6 @@ var saveQueriesModal = ReactDOM.render(
 export { saveQueriesModal };
 
 
-// need validation checking to ensure all fields selected & appropriate access
-// disable Select button based on val
 // need validation that name is not taken*
+// load groups user has upload / owner access levels
+// save query to DB

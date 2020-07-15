@@ -15,7 +15,8 @@ class LoadQueriesModal extends React.Component {
             noEntriesMessage : "Sorry, No Entries Found",
             selectedGroup : null,
             selectedQuery : null,
-            user_id : null
+            user_id : null,
+            queryText : ""
         };
     }
 
@@ -53,8 +54,7 @@ class LoadQueriesModal extends React.Component {
 
         if (names) {
             return (
-                <select name="querySelect" id="querySelect" type={"select"} className="form-control" onChange={(event) => { this.state.selectedQuery = querySelect.value; }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
-                    <option>Please Select</option>
+                <select name="querySelect" id="querySelect" type={"select"} className="form-control" placeholder="Please Select Query" onChange={(event) => { this.state.selectedQuery = querySelect.value; this.setState(this.state);}} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
                     {
                         names.map( (queryName, index) =>
                             <option key={index} value={queryName}>{queryName}</option>
@@ -71,6 +71,17 @@ class LoadQueriesModal extends React.Component {
         }
     }
 
+    isValidLoad() {
+        // method to validate fields before enabling save button
+        let valid = false;
+
+        // ensure fields not blank
+        if (this.state.selectedGroup && this.state.selectedQuery) {
+            valid = true;
+        }
+
+        return valid;
+    }
 
     render() {
         const hidden = this.props.hidden;
@@ -105,6 +116,7 @@ class LoadQueriesModal extends React.Component {
         let headerMessage = "Where would you like to load from?";
         let dropdownLabel = "Source:";
         let submitLabel = "Load";
+        let submitDisabled = !this.isValidLoad();
 
 
         //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
@@ -157,7 +169,7 @@ class LoadQueriesModal extends React.Component {
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
-                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {}} disabled={true}>{submitLabel}</button>
+                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {}} disabled={submitDisabled}>{submitLabel}</button>
                 </div>
             </div>
         );
@@ -172,7 +184,9 @@ var loadQueriesModal = ReactDOM.render(
 export { loadQueriesModal };
 
 
-// need validation checking to ensure all fields selected & appropriate access
+// need validation checking to ensure all fields selected
 // disable submit button based on val
+
+// validate user has appropriate access
 // load query from database and populate filter
 // load queryString from db and populate textarea
