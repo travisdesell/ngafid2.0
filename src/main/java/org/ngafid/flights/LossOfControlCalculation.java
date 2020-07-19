@@ -7,6 +7,8 @@ package org.ngafid.flights;
 
 import java.util.*;
 
+import java.lang.Math;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -34,6 +36,40 @@ public class LossOfControlCalculation{
 		}
 		return params;		
 	}
+
+	private double getVSpdAt(int index){
+		DoubleTimeSeries vspd = this.parameters.get("VSPD");
+		return vspd.get(index);
+	}
+
+	private double getIASAt(int index){
+		DoubleTimeSeries ias = this.parameters.get("IAS");
+		return ias.get(index);
+	}
+
+	/**
+	 * Calculate the Angle of Attack
+	 * @param index the {@link DoubleTimeSeries} index for which instant the LOC probability is calculated
+	 *
+	 * @return a double representing Angle of Attack
+	 */
+	private double calculateAOA(int index){
+		double b = (this.getVSpdAt(index) * this.beta()) / (this.getIASAt(index) * this.beta() * 101.267); //TODO: figure out what these constants mean?
+		b = Math.asin(b);
+
+		//TODO: implement the phi / cos gamma here
+		
+		return 0.0;
+	}
+
+	/**
+	 * Beta is the part of the equation with the inverted radical
+	 * TODO: figure out what the deltas represnt and other constants to make this code more readable
+	 */
+	private double beta(){
+		return 0.0;
+	}
+
 
 	/**
 	 * Calculates the loss of control probability
