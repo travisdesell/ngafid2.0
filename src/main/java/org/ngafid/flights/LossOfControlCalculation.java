@@ -7,6 +7,10 @@ package org.ngafid.flights;
 
 import java.util.*;
 
+import java.io.PrintWriter;
+import java.io.File;
+import java.io.IOException;
+
 import java.lang.Math;
 
 import java.sql.Connection;
@@ -18,11 +22,24 @@ import org.ngafid.flights.DoubleTimeSeries;
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 	private int flightId;
+	private PrintWriter pw;
 	private Map<String, DoubleTimeSeries> parameters;
 
 	public LossOfControlCalculation(int flightId){
 		this.flightId = flightId;
 		this.parameters = getParameters(flightId);
+		this.pw = null;
+	}
+
+	public void printToFile(File file){
+		try{
+			this.pw = new PrintWriter(file);
+			this.pw.println("this is a file for LOC-I");
+		}catch(IOException ioe){
+			ioe.printStackTrace();
+		}finally{
+			pw.close();
+		}
 	}
 
 	static Map<String, DoubleTimeSeries> getParameters(int flightId){
@@ -96,11 +113,15 @@ public class LossOfControlCalculation{
 	
 	/**
 	 * Main method for testing
-	 * @param args args from the command line
+	 * @param args args from the command line, with the first being a filename for output
 	 */
 	public static void main(String [] args){
 		System.out.println("Loss of control calculator");
 		LossOfControlCalculation loc = new LossOfControlCalculation(1);
+		if(args.length > 0){
+			File file = new File(args[0]);
+			loc.printToFile(file);
+		}
 		System.out.println(loc.calculate());
 	}
 }

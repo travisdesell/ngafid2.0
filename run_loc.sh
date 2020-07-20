@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.flights.LossOfControlCalculation"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.flights.LossOfControlCalculation" -Dexec.args="$1"
