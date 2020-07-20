@@ -34,11 +34,9 @@ public class LossOfControlCalculation{
 	public void printToFile(File file){
 		try{
 			this.pw = new PrintWriter(file);
-			this.pw.println("this is a file for LOC-I");
+			this.pw.println("TIME\tLOC-I PROBABILITY");
 		}catch(IOException ioe){
 			ioe.printStackTrace();
-		}finally{
-			pw.close();
 		}
 	}
 
@@ -100,15 +98,23 @@ public class LossOfControlCalculation{
 		return Math.pow((n/d), -2);
 	}
 
+	private double calculateProbability(int i){
+		return i+1.0;
+	}
+
 
 	/**
 	 * Calculates the loss of control probability
 	 * @return a floating-point percentage of the probability of loss of control
 	 */
-	public double calculate(){
+	public void calculate(){
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
+		DoubleTimeSeries heading = this.parameters.get("Heading");
+		for(int i = 0; i<heading.size(); i++){
+			this.pw.println(i+"\t\t"+heading.get(i));
+		}
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
-		return 0.0;
+		pw.close();
 	}
 	
 	/**
@@ -120,8 +126,8 @@ public class LossOfControlCalculation{
 		LossOfControlCalculation loc = new LossOfControlCalculation(1);
 		if(args.length > 0){
 			File file = new File(args[0]);
+			System.out.println("Will log to file: "+file.toString());
 			loc.printToFile(file);
 		}
-		System.out.println(loc.calculate());
 	}
 }
