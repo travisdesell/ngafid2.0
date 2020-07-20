@@ -31,6 +31,7 @@ public class LossOfControlCalculation{
 			params.put("Heading", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG"));
 			params.put("IAS", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS"));
 			params.put("VSPD", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "VSpd"));	
+			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
@@ -47,6 +48,11 @@ public class LossOfControlCalculation{
 		return ias.get(index);
 	}
 
+	private double getOATAt(int index){
+		DoubleTimeSeries oat = this.parameters.get("OAT");
+		return oat.get(index);
+	}
+
 	/**
 	 * Calculate the Angle of Attack
 	 * @param index the {@link DoubleTimeSeries} index for which instant the LOC probability is calculated
@@ -54,7 +60,7 @@ public class LossOfControlCalculation{
 	 * @return a double representing Angle of Attack
 	 */
 	private double calculateAOA(int index){
-		double b = (this.getVSpdAt(index) * this.beta()) / (this.getIASAt(index) * this.beta() * 101.267); //TODO: figure out what these constants mean?
+		double b = (this.getVSpdAt(index) * this.beta(0,0)) / (this.getIASAt(index) * this.beta(0,0) * 101.267); //TODO: figure out what these constants mean?
 		b = Math.asin(b);
 
 		//TODO: implement the phi / cos gamma here
@@ -62,12 +68,19 @@ public class LossOfControlCalculation{
 		return 0.0;
 	}
 
+	private double delta(int sub){
+		return 0.0;
+	}
+
 	/**
 	 * Beta is the part of the equation with the inverted radical
 	 * TODO: figure out what the deltas represnt and other constants to make this code more readable
 	 */
-	private double beta(){
-		return 0.0;
+	private double beta(int index, int z){
+		double n = (1 - (1 - this.delta(1) / this.delta(0)) + (1 - ((-2.94 * Math.pow(10, -5) * z) + .986)));
+		double d = (273 + this.getOATAt(index)) / 288;
+
+		return Math.pow((n/d), -2);
 	}
 
 
