@@ -72,11 +72,20 @@ public class Itinerary {
     public static ArrayList<String> getAllAirports(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> airports = new ArrayList<>();
 
+        /*
         String queryString = "select distinct(airport) from itinerary where exists (select id from flights where flights.id = itinerary.flight_id AND flights.fleet_id = ?) ORDER BY airport";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
 
-        //LOG.info(query.toString());
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+        */
+
+        String queryString = "SELECT airport FROM visited_airports WHERE fleet_id = ? ORDER BY airport";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
         while (resultSet.next()) {
@@ -84,6 +93,7 @@ public class Itinerary {
             String airport = resultSet.getString(1);
             airports.add(airport);
         }
+        LOG.info("airports.length: " + airports.size());
 
         resultSet.close();
         query.close();
@@ -92,16 +102,21 @@ public class Itinerary {
     }
 
     public static ArrayList<String> getAllAirportRunways(Connection connection, int fleetId) throws SQLException {
-        ArrayList<String> airports = getAllAirports(connection, fleetId);
+        String queryString = "SELECT runway FROM visited_runways WHERE fleet_id = ? ORDER BY runway";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
 
         ArrayList<String> runways = new ArrayList<String>();
 
-        for (String iataCode : airports) {
-            Airport airport = Airports.getAirport(iataCode);
-            Collection<Runway> rws = airport.getRunways();
-            for (Runway runway : rws)
-                runways.add(iataCode + " - " + runway.getName());
+        while (resultSet.next()) {
+            //airport existed in the database, return the id
+            String runway = resultSet.getString(1);
+            runways.add(runway);
         }
+        LOG.info("runways.length: " + runways.size());
 
         return runways;
     }
@@ -233,10 +248,28 @@ public class Itinerary {
         }
     }
 
-    public void updateDatabase(Connection connection, int flightId, int order) throws SQLException {
+    public void updateDatabase(Connection connection, int fleetId, int flightId, int order) throws SQLException {
         this.order = order;
 
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        //insert new visited airports and runways -- will ignore if it already exists
+        PreparedStatement preparedStatement = connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setString(2, airport);
+
+        System.err.println(preparedStatement);
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        preparedStatement = connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setString(2, airport + " - " + runway);
+
+        System.err.println(preparedStatement);
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        //now insert the itinerary
+        preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, order);
         preparedStatement.setInt(3, minAltitudeIndex);
@@ -251,11 +284,8 @@ public class Itinerary {
         preparedStatement.setInt(12, endOfTakeoff);
         preparedStatement.setString(13, type);
 
-
         System.err.println(preparedStatement);
-
         preparedStatement.executeUpdate();
-
         preparedStatement.close();
     }
 
