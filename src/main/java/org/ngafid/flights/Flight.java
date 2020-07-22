@@ -1259,9 +1259,14 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (hasCoords && hasAGL) {
-            calculateItinerary();
+        try {
+            if (hasCoords && hasAGL) {
+                calculateItinerary("GndSpd", "E1 RPM");
+            }
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
         }
+
     }
 
     private void checkExceptions() {
@@ -1569,6 +1574,7 @@ public class Flight {
             }
 
             if (altitudeAGLTS == null) {
+                if (count > 0) message += " and ";
                 message += "'" + altitudeAGLColumnName+ "'";
                 count++;
             }
@@ -1644,13 +1650,15 @@ public class Flight {
         }
     }
 
-    public void calculateItinerary() {
+    public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
         if (!hasCoords) return;
 
-        DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
-        DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
+        DoubleTimeSeries rpm = doubleTimeSeries.get(rpmColumnName);
+        //DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
+        //DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
 
         StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
         DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
@@ -1658,6 +1666,32 @@ public class Flight {
 
         StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
         DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+
+        if (groundSpeed == null || rpm == null) {
+            String message = "Cannot calculate itinerary, flight file had empty or missing ";
+
+            int count = 0;
+            if (groundSpeed == null) {
+                message += "'" + groundSpeedColumnName + "'";
+                count++;
+            }
+
+            if (rpm == null) {
+                if (count > 0) message += " and ";
+                message += "'" + rpmColumnName + "'";
+                count++;
+            }
+
+            message += " column";
+            if (count >= 2) message += "s";
+            message += ".";
+
+            //should be initialized to false, but lets make sure
+            hasCoords = false;
+            throw new MalformedFlightFileException(message);
+        }
+        hasCoords = true;
+
 
         itinerary.clear();
 
@@ -1813,7 +1847,7 @@ public class Flight {
                 }
 
                 for (int i = 0; i < itinerary.size(); i++) {
-                    itinerary.get(i).updateDatabase(connection, flightId, i);
+                    itinerary.get(i).updateDatabase(connection, fleetId, flightId, i);
                 }
 
                 PreparedStatement ps = connection.prepareStatement("UPDATE flights SET insert_completed = 1 WHERE id = ?");

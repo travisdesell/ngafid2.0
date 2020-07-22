@@ -38,7 +38,7 @@ public class ProcessFlights {
             Instant start = Instant.now();
 
             try {
-                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
+                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
                 uploadsPreparedStatement.setString(1, "UPLOADED");
                 ResultSet resultSet = uploadsPreparedStatement.executeQuery();
 
@@ -128,17 +128,14 @@ public class ProcessFlights {
                         } catch (IOException e) {
                             System.err.println("IOException: " + e );
                             e.printStackTrace();
+
+                            UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
                             status = "ERROR";
-                            uploadException = e;
-                            System.exit(1);
                         }
 
                     } else {
                         //insert an upload error for this upload
                         status = "ERROR";
-                    }
-
-                    if (status == "ERROR") {
                         UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
                     }
 
