@@ -98,7 +98,7 @@ class TrendsCard extends React.Component {
                 }   
 
                 ngafidPercents = { 
-                    name : eventName + ' - NGAFID Aggregate',
+                    name : eventName + ' - All Other Fleets',
                     type : 'scatter',
                     hoverinfo : 'x+text',
                     hovertext : [], 

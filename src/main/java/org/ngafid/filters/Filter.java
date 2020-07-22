@@ -5,7 +5,7 @@ import java.util.TreeSet;
 import java.util.logging.Logger;
 
 
-public class Filter{
+public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
 
     protected String type = null;

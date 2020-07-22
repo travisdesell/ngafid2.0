@@ -37,7 +37,7 @@ function displayPlots(selectedAirframe) {
 
 
     var ngafidPercents = {
-        name : 'NGAFID Aggregate',
+        name : 'All Other Fleets',
         type : 'bar',
         orientation : 'h',
         hoverinfo : 'y+text',
