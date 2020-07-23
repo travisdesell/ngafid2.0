@@ -815,6 +815,34 @@ public class Flight {
         return new FlightTag(index, fleetId, name, description, color);
     }
 
+	public static void addSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+        String queryString = "INSERT INTO sim_aircraft (fleet_id, path) VALUES(?,?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        query.setString(1, path);
+
+        query.executeUpdate();
+	}
+
+	public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException{
+        String queryString = "SELECT FROM path FROM sim_aircraft WHERE fleet_id = "+fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+		ResultSet resultSet = query.executeQuery();
+
+		List<String> paths = new ArrayList<>();
+        while(resultSet.next()){
+			paths.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return paths;
+	}
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);

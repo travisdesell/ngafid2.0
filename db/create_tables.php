@@ -437,6 +437,16 @@ $query = "CREATE TABLE `event_statistics` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `sim_aircraft` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11) NOT NULL,
+    `path` VARCHAR(2048) NOT NULL,
+
+	PRIMARY KEY(`id`),
+	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 
 ?>

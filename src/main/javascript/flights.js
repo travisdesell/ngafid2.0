@@ -6,6 +6,7 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import {Alert, Button, InputGroup, Form, Col} from 'react-bootstrap';
 
 import { confirmModal } from "./confirm_modal.js";
+import { selectAircraftModal } from "./select_acft_modal.js";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import { map, styles, layers, Colors } from "./map.js";
@@ -1595,6 +1596,7 @@ class Flight extends React.Component {
     }
 
     downloadClicked(type) {
+		selectAircraftModal.show();	
         if(type === 'KML'){
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
         }else if (type === 'XPL10'){
