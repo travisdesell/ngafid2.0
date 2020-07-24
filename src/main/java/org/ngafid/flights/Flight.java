@@ -1170,7 +1170,7 @@ public class Flight {
         }
 
         try {
-            if (airframeType.equals("Cessna 172S") || airframeType.equals("PA-28-181")) {
+            if (airframeType.equals("Cessna 172S") || airframeType.equals("Cessna 172R") || airframeType.equals("PA-28-181")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
                 calculateVariance(chtNames, "E1 CHT Variance", "deg F");
 
@@ -1206,7 +1206,7 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
-            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG")) {
+            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG") || airframeType.equals("Piper PA-46-500TP Meridian")) {
                 LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
 
