@@ -13,7 +13,7 @@ import org.ngafid.filters.*;
 import org.ngafid.Database;
 import java.sql.SQLException;
 
-public class FlightPaginator extends Paginator{
+public class FlightPaginator extends Paginator {
 
     private Filter filter;
     private int fleetID;

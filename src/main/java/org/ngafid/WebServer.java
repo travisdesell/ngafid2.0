@@ -116,20 +116,39 @@ public final class WebServer {
             //if the user session variable has not been set, then don't allow
             //access to the protected pages (the user is not logged in).
             User user = (User)request.session().attribute("user");
+
+            String previousURI = request.session().attribute("previous_uri");
             if (user == null) {
+                //save the previous uri so we can redirect there after the user logs in
+                LOG.info("request uri: '" + request.uri());
+                LOG.info("request url: '" + request.url());
+                LOG.info("request queryString: '" + request.queryString());
+
+                request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
+
                 LOG.info("redirecting to access_denied");
                 response.redirect("/access_denied");
             } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
                 LOG.info("user waiting status, redirecting to waiting page!");
                 response.redirect("/protected/waiting");
-            } 
+            } else if (previousURI != null) {
+                response.redirect(previousURI);
+                request.session().attribute("previous_uri", null);
+            }
         });
 
         Spark.before("/", (request, response) -> {
             User user = (User)request.session().attribute("user");
             if (user != null) {
-                LOG.info("user already logged in, redirecting to welcome!");
-                response.redirect("/protected/welcome");
+                String previousURI = request.session().attribute("previous_uri");
+                if (previousURI != null) {
+                    LOG.info("user already logged in, redirecting to the previous page because previous URI was not null");
+                    response.redirect(previousURI);
+                    request.session().attribute("previous_uri", null);
+                } else {
+                    LOG.info("user already logged in but accessing the '/' route, redirecting to welcome!");
+                    response.redirect("/protected/welcome");
+                }
             }
         });
 
@@ -180,6 +199,9 @@ public final class WebServer {
         Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
+
+        Spark.get("/protected/flight", new GetFlight(gson));
+
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
         Spark.get("/protected/get_kml", new GetKML(gson));
