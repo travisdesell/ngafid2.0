@@ -3,6 +3,7 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import Plotly from 'plotly.js';
+import { errorModal } from "./error_modal.js";
 
 class TraceButtons extends React.Component {
     constructor(props) {

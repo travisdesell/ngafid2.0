@@ -9,329 +9,21 @@ import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 
-import { Filter } from './filter.js';
-import { Paginator } from './paginator_component.js';
 import { FlightsCard } from './flights_card_component.js';
 
 import Plotly from 'plotly.js';
 
+global.plotlyLayout = { 
+    shapes : []
+};
 
-/*
-var airframes = [ "PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"  ];
-var tailNumbers = [ "N765ND", "N744ND", "N771ND", "N731ND", "N714ND", "N766ND", "N743ND" , "N728ND" , "N768ND" , "N713ND" , "N732ND", "N718ND" , "N739ND" ];
-var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
-var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
-*/
-// var tagNames = ["Tag A", "Tag B"];
-
-var rules = [
-    {
-        name : "Airframe",
-        conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "is", "is not" ]
-            },
-            { 
-                type : "select",
-                name : "airframes",
-                options : airframes
-            }
-        ]
-    },
-
-    {
-        name : "Tail Number",
-        conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "is", "is not" ]
-            },
-            {
-                type : "select",
-                name : "tail numbers",
-                options : tailNumbers
-            }
-        ]
-    },
-
-    {
-        name : "System ID",
-        conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "is", "is not" ]
-            },
-            {
-                type : "select",
-                name : "system id",
-                options : systemIds 
-            }
-        ]
-    },
-
-
-    {
-        name : "Duration",
-        conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type : "number",
-                name : "hours"
-            },
-            {
-                type : "number",
-                name : "minutes"
-            },
-            {
-                type : "number",
-                name : "seconds"
-            }
-        ]
-    },
-
-    {
-        name : "Start Date and Time",
-        conditions : [
-            {
-                type : "select",
-                name : "condition", 
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "datetime-local",
-                name : "date and time"
-            }
-        ]
-    },
-
-    {
-        name : "End Date and Time",
-        conditions : [
-            {
-                type : "select",
-                name : "condition", 
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "datetime-local",
-                name : "date and time"
-            }
-        ]
-    },
-
-    {
-        name : "Start Date",
-        conditions : [
-            {
-                type : "select",
-                name : "condition", 
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "date",
-                name : "date"
-            }
-        ]
-    },
-
-    {
-        name : "End Date",
-        conditions : [
-            {
-                type : "select",
-                name : "condition", 
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "date",
-                name : "date"
-            }
-        ]
-    },
-
-
-    {
-        name : "Start Time",
-        conditions : [
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "time",
-                name : "time"
-            }
-        ]
-    },
-
-    {
-        name : "End Time",
-        conditions : [
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "time",
-                name : "time"
-            }
-        ]
-    },
-
-
-    {
-        name : "Parameter",
-        conditions : [
-            {
-                type : "select",
-                name : "statistic",
-                options : [ "min", "avg", "max" ]
-            },
-            {
-                type : "select",
-                name : "doubleSeries",
-                options : doubleTimeSeriesNames
-            },
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "number",
-                name : "number"
-            }
-        ]
-    },
-
-    {
-        name : "Airport",
-        conditions : [
-            { 
-                type : "select",
-                name : "airports",
-                options : visitedAirports
-            },
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "visited", "not visited" ]
-            }
-        ]
-    },
-
-    {
-        name : "Runway",
-        conditions : [
-            { 
-                type : "select",
-                name : "runways",
-                options : visitedRunways
-            },
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "visited", "not visited" ]
-            }
-        ]
-    },
-
-    {
-        name : "Event Count",
-        conditions : [
-            {
-                type : "select",
-                name : "eventNames",
-                options : eventNames
-            },
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "number",
-                name : "number"
-            }
-        ]
-    },
-
-    {
-        name : "Event Severity",
-        conditions : [
-            {
-                type : "select",
-                name : "eventNames",
-                options : eventNames
-            },
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "number",
-                name : "number"
-            }
-        ]
-    },
-
-    {
-        name : "Event Duration",
-        conditions : [
-            {
-                type : "select",
-                name : "eventNames",
-                options : eventNames
-            },
-            {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", "=", ">", ">=" ]
-            },
-            {
-                type  : "number",
-                name : "number"
-            }
-        ]
-    },
-
-    {
-        name : "Tag",
-        conditions : [
-            {
-                type : "select",
-                name : "flight_tags",
-                options : tagNames
-            },
-            {
-                type : "select",
-                name : "condition",
-                options : [ "Is Associated", "Is Not Associated"]
-            },
-        ]
-    },
-
-
-];
-
-class FlightsPage extends React.Component {
+class FlightPage extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            filterVisible : true,
-            filterSelected : true,
+            filterVisible : false,
+            //filterSelected : false,
             plotVisible : false,
             plotSelected : false,
             mapVisible : false,
@@ -339,12 +31,7 @@ class FlightsPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
-            flights : undefined, //start out with no specified flights
-
-            //needed for paginator
-            currentPage : 0,
-            numberPages : 1,
-            itemsPerPage : 10
+            flights : flights, //start out with the provided flight
         };
 
     }
@@ -534,34 +221,6 @@ class FlightsPage extends React.Component {
                 </div>
 
                 <div style={style}>
-                    <Filter
-                        ref={elem => this.filterRef = elem}
-                        submitFilter={() => {this.submitFilter();}}
-                        filterVisible={this.state.filterVisible}
-                        depth={0}
-                        baseIndex="[0-0]"
-                        key="[0-0]"
-                        parent={null}
-                        type="GROUP"
-                        rules={rules}
-                        submitButtonName="Apply Filter"
-                    />
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.flights}
-                        itemName="flights"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        itemsPerPage={this.state.itemsPerPage}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(itemsPerPage) => {
-                            this.state.itemsPerPage = itemsPerPage;
-                        }}
-                    />
-
                     <FlightsCard
                         parent={this}
                         flights={this.state.flights} 
@@ -575,48 +234,24 @@ class FlightsPage extends React.Component {
                                 flights : flights
                             });
                         }}
-                        updateNumberPages={(numberPages) => {
-                            this.setState({
-                                numberPages : numberPages
-                            });
-                        }}
                     />
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.flights}
-                        itemName="flights"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        itemsPerPage={this.state.itemsPerPage}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(itemsPerPage) => {
-                            this.state.itemsPerPage = itemsPerPage;
-                        }}
-                    />
-
                 </div>
             </div>
         );
     }
 }
 
-global.plotlyLayout = { 
-    shapes : []
-};
 
-var flightsPage = ReactDOM.render(
-    <FlightsPage />,
-    document.querySelector('#flights-page')
+var flightPage = ReactDOM.render(
+    <FlightPage />,
+    document.querySelector('#flight-page')
 );
 
 
 console.log("rendered flightsCard!");
 
 
-//need to wait for the page to load so the 1
+//need to wait for the page to load before initializing maps
 //TODO: this is the same as in flights.js, put it in a single spot
 $(document).ready(function() {
     Plotly.newPlot('plot', [], global.plotlyLayout);
