@@ -1199,7 +1199,7 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
-            } else if (airframeType.equals("Diamond DA 40")) {
+            } else if (airframeType.equals("Diamond DA 40") || airframeType.equals("Diamond DA 40 F")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
                 calculateVariance(chtNames, "E1 CHT Variance", "deg F");
 

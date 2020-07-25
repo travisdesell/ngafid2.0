@@ -65,33 +65,6 @@ class SignedInNavbar extends React.Component {
             modifyTailsAccess : this.props.modifyTailsAccess,
             activePage : this.props.activePage
         };
-
-        //navbar = this;
-    }
-
-    setFlightsCard(flightsCard) {
-        this.state.flightsCard = flightsCard;
-    }
-
-    toggleMap() {
-        this.state.flightsCard.toggleMap();
-    }
-
-    togglePlot() {
-        this.state.flightsCard.togglePlot();
-    }
-
-    toggleFilter() {
-        this.state.flightsCard.toggleFilter();
-    }
-
-    mapSelectChanged() {
-        console.log("map select changed!");
-
-        var select = document.getElementById('mapLayerSelect');
-        var style = select.value;
-
-        this.state.flightsCard.mapSelectChanged(style);
     }
 
     setWaiting(waitingUserCount) {
@@ -158,7 +131,10 @@ class SignedInNavbar extends React.Component {
 
         let accountNotifications = " (" + (this.state.waitingUserCount + this.state.unconfirmedTailsCount) + ")";
 
-        let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary active";
+        let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+
+        if (this.props.filterVisible) filterButtonClasses += " active";
+
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
@@ -166,6 +142,8 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
+
+        console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
@@ -178,21 +156,29 @@ class SignedInNavbar extends React.Component {
                     <ul className="navbar-nav mr-auto">
 
                         <ul className="navbar-nav mr-auto" hidden={this.props.plotMapHidden}>
-                            <button id="filter-toggle-button" className={filterButtonClasses} data-toggle="button" title="Toggle the filter." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleFilter()}>
-                                <i className="fa fa-search p-1"></i>
-                            </button>
+                            { 
+                                //only display the filter icon on the navbar if it's being used
+                                this.props.filterVisible ? (
+                                    <button id="filter-toggle-button" className={filterButtonClasses} data-toggle="button" title="Toggle the filter." aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
+                                        <i className="fa fa-search p-1"></i>
+                                    </button>
+                                ) : ( "" )
+                            }
 
-                            <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.togglePlot()}>
+                            <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.toggleMap()}>
+                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()}>
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" defaultValue="Road" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} onChange={() => this.mapSelectChanged()}>
+                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+                                    value={this.props.mapStyle}
+                                    onChange={event => this.props.mapSelectChanged(event.target.value)}>
+
                                     <option value="Aerial">Aerial</option>
                                     <option value="AerialWithLabels">Aerial with labels</option>
                                     <option value="Road">Road (static)</option>

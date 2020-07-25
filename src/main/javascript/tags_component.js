@@ -6,6 +6,9 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import { Colors } from "./map.js";
 
+import { errorModal } from "./error_modal.js";
+import { confirmModal } from "./confirm_modal.js";
+
 const cloneDeep = require('clone-deep');
 
 //This will be helpful for text inputs
