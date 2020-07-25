@@ -482,12 +482,58 @@ class FlightsPage extends React.Component {
 
     submitFilter() {
         console.log("submitting filter! currentPage: " + this.state.currentPage + ", itemsPerPage: " + this.state.itemsPerPage);
-        this.flightsRef.submitFilter(this.state.currentPage, this.state.itemsPerPage);
-    }
 
-    getQuery() {
-        console.log("getting query!");
-        return this.filterRef.getQuery();
+        let query = this.filterRef.getQuery();
+
+        console.log("Submitting filters:");
+        console.log( query );
+
+        $("#loading").show();
+
+        var submissionData = {
+            filterQuery : JSON.stringify(query),
+            pageIndex : this.state.currentPage,
+            numPerPage : this.state.itemsPerPage
+        };
+
+        console.log(submissionData);
+
+        let flightsPage = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_flights',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                console.log("got response: "+response+" "+response.size);
+
+                //get page data
+				if (response == "NO_RESULTS") {
+					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
+ 				} else {
+                    flightsPage.setState({
+                        flights : response.data,
+                        numberPages : response.sizeAll
+                    });
+				}
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
     }
 
     render() {
@@ -568,7 +614,6 @@ class FlightsPage extends React.Component {
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}
-                        getFilterQuery={() => {return this.getQuery();}}
                         flights={this.state.flights}
                         setFlights={(flights) => {
                             this.setState({
@@ -616,7 +661,7 @@ var flightsPage = ReactDOM.render(
 console.log("rendered flightsCard!");
 
 
-//need to wait for the page to load so the 1
+//need to wait for the page to load before initializing maps
 //TODO: this is the same as in flights.js, put it in a single spot
 $(document).ready(function() {
     Plotly.newPlot('plot', [], global.plotlyLayout);

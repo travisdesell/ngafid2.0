@@ -51,60 +51,6 @@ class FlightsCard extends React.Component {
     }
 
 
-    submitFilter(pageIndex, numberPerPage) {
-        console.log(this.state);
-        let query = this.state.getFilterQuery();
-
-        console.log("Submitting filters:");
-        console.log( query );
-
-
-        $("#loading").show();
-
-        var submissionData = {
-            filterQuery : JSON.stringify(query),
-            pageIndex : pageIndex,
-            numPerPage : numberPerPage
-        };
-
-        console.log(submissionData);
-
-        let flightsCard = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/get_flights',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-
-                console.log(response);
-
-                $("#loading").hide();
-
-                if (response.errorTitle) {
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
-                    return false;
-                }
-
-                console.log("got response: "+response+" "+response.size);
-
-                //get page data
-				if (response == "NO_RESULTS") {
-					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
- 				} else {
-                    flightsCard.props.setFlights(response.data);
-                    flightsCard.props.updateNumberPages(response.sizeAll);
-				}
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
-    }
-
     /**
      * Renders the flightsCard
      */
