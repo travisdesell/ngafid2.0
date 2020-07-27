@@ -45,18 +45,20 @@ public class PostSimAircraft implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
+		String type = request.queryParams("TYPE");
 		int fleetId = user.getFleetId();
-		String [] addedAcft = session.attribute("added_acft");
-
 
         try {
             Connection connection = Database.getConnection();
 
-			for(String acft : addedAcft){
-				Flight.addSimAircraft(connection, fleetId, acft);
+			switch (type) {
+				case "INIT":
+					List<String> acft = Flight.getSimAircraft(connection, fleetId);
+					return gson.toJson(acft);
+				default:
+					return gson.toJson(type);
 			}
 
-            return gson.toJson(true);
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();
