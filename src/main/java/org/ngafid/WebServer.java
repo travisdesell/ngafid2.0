@@ -185,6 +185,8 @@ public final class WebServer {
         Spark.get("/protected/get_kml", new GetKML(gson));
         Spark.get("/protected/get_xplane", new GetXPlane(gson));
         Spark.get("/protected/get_csv", new GetCSV(gson));
+        Spark.get("/protected/sim_acft", new GetSimAircraft(gson));
+        Spark.post("/protected/sim_acft", new PostSimAircraft(gson));
 
         //Flight-Tagging routes
         Spark.post("/protected/flight_tags", new PostTags(gson));

@@ -53,6 +53,7 @@ public class GetSimAircraft implements Route {
 
 		try{
 			List<String> paths = Flight.getSimAircraft(Database.getConnection(), fleetId);
+			System.out.println("paths: "+paths.toString());
 			return gson.toJson(paths);
 		}catch(SQLException e){
 			return gson.toJson(new ErrorResponse(e));

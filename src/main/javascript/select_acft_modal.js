@@ -11,6 +11,8 @@ window.$ = $;
 class SelectAircraftModal extends React.Component {
     constructor(props) {
         super();
+		console.log("getSimAircraft invoked");
+		this.getSimAircraft();
 	}
 
     show() {
@@ -24,6 +26,37 @@ class SelectAircraftModal extends React.Component {
         console.log("modal submit clicked!");
         this.state.submitMethod();
     }
+
+	triggerInput(){
+		$('#upload-file-input').trigger('click');
+        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
+            console.log("number files selected: " + this.files.length);
+            console.log( this.files );
+        });
+	}
+
+
+	getSimAircraft(){
+		let thisModal = this;
+
+		let submissionData = {
+			type : "INIT"
+		}
+
+		$.ajax({
+			type: 'POST',
+            data : submissionData,
+			url: '/protected/sim_acft',
+			success : function(response) {
+				console.log("received response: ");
+				console.log(response);
+
+			},   
+			error : function(jqXHR, textStatus, errorThrown) {
+			},   
+			async: true 
+		});  
+	}
 
     render() {
         let formGroupStyle = {
@@ -42,6 +75,10 @@ class SelectAircraftModal extends React.Component {
             textAlign: 'right'
         };
 
+        let hiddenStyle = {
+            display : "none"
+        };
+
         let validationMessageStyle = {
             padding : '7 0 7 0',
             margin : '0',
@@ -51,6 +88,7 @@ class SelectAircraftModal extends React.Component {
         };
 
 		console.log("rendering select aircraft (xplane) modal");
+		this.getSimAircraft();
 
         return (
             <div className='modal-content'>
@@ -65,10 +103,12 @@ class SelectAircraftModal extends React.Component {
                     <h4>Select *.acf filepath for X-Plane</h4>
 
                     Please select (or create) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
+
+					<input id ="upload-file-input" type="file" style={hiddenStyle} />
+					<button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+						<i className="fa fa-file"></i> Choose a new *.acf File
+					</button>
                 </div>
-				<select class="form-control">
-				  <option>/Aircraft/A320</option>
-				</select>
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
