@@ -43,11 +43,11 @@ public class GetXPlane implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String flightIdStr = request.queryParams("flight_id");
+		String aircraftPath = request.queryParams("acft_path");
         int version = Integer.parseInt(request.queryParams("version"));
 
 
-		LOG.info("Generating an X-Plane "+version+" FDR file for flight #"+flightIdStr);
-		//TODO: differentiate between xp10 and 11 here
+		LOG.info("Generating an X-Plane "+version+" FDR file for flight #"+flightIdStr+" with path for .acf: "+aircraftPath);
 
         int flightId = Integer.parseInt(flightIdStr);
 
@@ -70,7 +70,7 @@ public class GetXPlane implements Route {
 		response.type("application/force-download");
 
 
-		export = (version == 10) ? new XPlane10Export(flightId) : new XPlane11Export(flightId);
+		export = (version == 10) ? new XPlane10Export(flightId, aircraftPath) : new XPlane11Export(flightId, aircraftPath);
 
         return export.toFdrFile();
     }

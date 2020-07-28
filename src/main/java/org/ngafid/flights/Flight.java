@@ -826,7 +826,7 @@ public class Flight {
 	}
 
 	public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException{
-        String queryString = "SELECT FROM path FROM sim_aircraft WHERE fleet_id = "+fleetId;
+        String queryString = "SELECT path FROM sim_aircraft WHERE fleet_id = "+fleetId;
 
         PreparedStatement query = connection.prepareStatement(queryString);
 
