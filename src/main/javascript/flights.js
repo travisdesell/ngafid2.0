@@ -344,7 +344,7 @@ class FlightsPage extends React.Component {
             //needed for paginator
             currentPage : 0,
             numberPages : 1,
-            itemsPerPage : 10
+            pageSize : 10
         };
 
     }
@@ -481,7 +481,7 @@ class FlightsPage extends React.Component {
     }
 
     submitFilter() {
-        console.log("submitting filter! currentPage: " + this.state.currentPage + ", itemsPerPage: " + this.state.itemsPerPage);
+        console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize);
 
         let query = this.filterRef.getQuery();
 
@@ -492,8 +492,8 @@ class FlightsPage extends React.Component {
 
         var submissionData = {
             filterQuery : JSON.stringify(query),
-            pageIndex : this.state.currentPage,
-            numPerPage : this.state.itemsPerPage
+            currentPage : this.state.currentPage,
+            pageSize : this.state.pageSize
         };
 
         console.log(submissionData);
@@ -517,15 +517,15 @@ class FlightsPage extends React.Component {
                     return false;
                 }
 
-                console.log("got response: "+response+" "+response.size);
+                console.log("got response: " + response + " " + response.size);
 
                 //get page data
 				if (response == "NO_RESULTS") {
 					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
  				} else {
                     flightsPage.setState({
-                        flights : response.data,
-                        numberPages : response.sizeAll
+                        flights : response.flights,
+                        numberPages : response.numberPages  
                     });
 				}
             },
@@ -599,12 +599,12 @@ class FlightsPage extends React.Component {
                         itemName="flights"
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
-                        itemsPerPage={this.state.itemsPerPage}
+                        pageSize={this.state.pageSize}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
-                        updateItemsPerPage={(itemsPerPage) => {
-                            this.state.itemsPerPage = itemsPerPage;
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
                         }}
                     />
 
@@ -633,12 +633,12 @@ class FlightsPage extends React.Component {
                         itemName="flights"
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
-                        itemsPerPage={this.state.itemsPerPage}
+                        pageSize={this.state.pageSize}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
-                        updateItemsPerPage={(itemsPerPage) => {
-                            this.state.itemsPerPage = itemsPerPage;
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
                         }}
                     />
 
