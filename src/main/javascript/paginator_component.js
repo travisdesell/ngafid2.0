@@ -81,6 +81,7 @@ class Paginator extends React.Component {
             next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
 
+
         if (typeof this.props.items != 'undefined') {
             return (
                 <div className="card mb-1 border-secondary">
@@ -111,6 +112,7 @@ class Paginator extends React.Component {
                             {prev}
                             {next}
                         </div>
+
                     </div>
                 </div>
             );
