@@ -6,7 +6,6 @@
 package org.ngafid.flights;
 
 import java.lang.String;
-import java.util.Map;
 
 public interface XPlaneParameters {
     //the file extension
@@ -63,14 +62,5 @@ public interface XPlaneParameters {
     static String PA_28_181_11 = "PA-28-181XP11";
     static String PA_44_180_10 = "PA-44-180XP10";
     static String PA_44_180_11 = "PA-44-180XP11";
-
-    //A hashmap that maps aircraft strings to their respective X-Plane names/paths
-    Map<String, String> xplaneNames = Map.of(C172_10, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
-                                C172_11, "Aircraft/Laminar Research/Cessna 172SP/Cessna_172SP.acf",
-                                PA_28_181_10, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
-                                PA_28_181_11, "Aircraft/Laminar Research/Cessna 172SP/Cessna_172SP.acf",
-                                PA_44_180_10, "Aircraft/General Aviation/Cessna 172SP/Cessna_172SP.acf",
-								PA_44_180_11,"Aircraft/Laminar Research/Cessna 172SP/Cessna_172SP.acf"
-								);
 
 }

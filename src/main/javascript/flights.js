@@ -1420,6 +1420,7 @@ class Flight extends React.Component {
             eventOutlines : [],
             eventOutlineLayer : null
         }
+		this.submitXPlanePath = this.submitXPlanePath.bind(this);
     }
 
     componentWillUnmount() {
@@ -1599,15 +1600,22 @@ class Flight extends React.Component {
         if(type === 'KML'){
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
         }else if (type === 'XPL10'){
-			selectAircraftModal.show();	
-            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=10");
+			selectAircraftModal.show('10', this.submitXPlanePath);	
         }else if (type === 'XPL11'){
-			selectAircraftModal.show();	
-            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=11");
+			selectAircraftModal.show('11', this.submitXPlanePath);	
         }else if(type === 'CSV'){
             window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
 		}
     }
+
+	submitXPlanePath(type, path){
+		console.log("submitting the xplane path to server"+type+" "+path);
+		if (type === '10') {
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=10"+"&acft_path="+path);
+        }else if (type === '11') {
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=11"+"&acft_path="+path);
+        }
+	}
 
     exclamationClicked() {
         console.log ("exclamation clicked!");

@@ -3,6 +3,9 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
@@ -12,19 +15,24 @@ class SelectAircraftModal extends React.Component {
     constructor(props) {
         super();
 		console.log("getSimAircraft invoked");
+		this.state = {
+			paths : [],
+			selectedPath : null
+		}
 		this.getSimAircraft();
 	}
 
-    show() {
+    show(type, submitMethod) {
         //this.state.submitMethod = submitMethod;
+		this.state.version = type;
+		this.state.submitMethod = submitMethod;
         this.setState(this.state);
-
         $("#select_aircraft-modal").modal('show');
     }
 
     modalClicked() {
         console.log("modal submit clicked!");
-        this.state.submitMethod();
+        this.state.submitMethod(this.state.version, this.state.selectedPath);
     }
 
 	triggerInput(){
@@ -35,22 +43,48 @@ class SelectAircraftModal extends React.Component {
         });
 	}
 
+	selectPath(path){
+		this.state.selectedPath = path;
+		this.setState(this.state);
+	}
 
 	getSimAircraft(){
 		let thisModal = this;
 
-		let submissionData = {
-			type : "INIT"
-		}
-
 		$.ajax({
-			type: 'POST',
-            data : submissionData,
+			type: 'GET',
 			url: '/protected/sim_acft',
+            dataType : 'json',
 			success : function(response) {
 				console.log("received response: ");
 				console.log(response);
+				
+				thisModal.state.paths = response;
+				if(thisModal.state.paths != null & thisModal.state.paths.length > 0){
+					thisModal.state.selectedPath = thisModal.state.paths[0];
+				}
+			},   
+			error : function(jqXHR, textStatus, errorThrown) {
+			},   
+			async: true 
+		});  
+	}
 
+	addFile(){
+		let thisModal = this;
+
+		let submissionData = {
+			"type" : "ADD"
+		};
+
+		$.ajax({
+			type: 'POST',
+			url: '/protected/sim_acft',
+			data : submissionData,
+            dataType : 'json',
+			success : function(response) {
+				console.log("received response: ");
+				console.log(response);
 			},   
 			error : function(jqXHR, textStatus, errorThrown) {
 			},   
@@ -88,7 +122,24 @@ class SelectAircraftModal extends React.Component {
         };
 
 		console.log("rendering select aircraft (xplane) modal");
-		this.getSimAircraft();
+		console.log(this.state.paths);
+		let paths = this.state.paths;
+
+		let selectRow = "";
+		if(paths != null && paths.length > 0){
+			selectRow = (
+				<DropdownButton  className="pr-1" id="dropdown-item-button" title={this.state.selectedPath} size="sm">
+				{
+					paths.map((path, index) => {
+						return(
+							<Dropdown.Item as="button" onClick={() => this.selectPath(path)}>{path}</Dropdown.Item>
+						);
+					})
+				}
+				</DropdownButton>
+			);
+		}
+
 
         return (
             <div className='modal-content'>
@@ -104,15 +155,24 @@ class SelectAircraftModal extends React.Component {
 
                     Please select (or create) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
 
-					<input id ="upload-file-input" type="file" style={hiddenStyle} />
-					<button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
-						<i className="fa fa-file"></i> Choose a new *.acf File
-					</button>
+					<div className="row p-2">
+
+						<div className="col">
+							{selectRow}
+						</div>
+
+						<div className="col">
+							<input id ="upload-file-input" type="file" style={hiddenStyle} />
+							<button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.addFile()}>
+								<i className="fa fa-file"></i> Choose a new *.acf File
+							</button>
+						</div>
+					</div>
                 </div>
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
-                    <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
+                    <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
                 </div>
             </div>
         );

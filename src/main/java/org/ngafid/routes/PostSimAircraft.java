@@ -52,9 +52,10 @@ public class PostSimAircraft implements Route {
             Connection connection = Database.getConnection();
 
 			switch (type) {
-				case "INIT":
-					List<String> acft = Flight.getSimAircraft(connection, fleetId);
-					return gson.toJson(acft);
+				case "ADD":
+					break;
+				case "REMOVE":
+					break;
 				default:
 					return gson.toJson(type);
 			}
