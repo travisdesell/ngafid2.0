@@ -57,36 +57,6 @@ class DropdownLink extends React.Component {
 class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
-
-        this.state = {
-            waitingUserCount : this.props.waitingUserCount,
-            fleetManager : this.props.fleetManager ,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
-            modifyTailsAccess : this.props.modifyTailsAccess,
-            activePage : this.props.activePage
-        };
-    }
-
-    setWaiting(waitingUserCount) {
-        console.log("setting waiting to: " + waitingUserCount + "!");
-        this.state.waitingUserCount = waitingUserCount;
-        console.log("waiting now: " + this.state.waitingUserCount);
-        this.setState(this.state);
-    }
-
-
-    incrementWaiting() {
-        console.log("decrementing waiting!");
-        this.state.waitingUserCount++;
-        console.log("waiting now: " + this.state.waitingUserCount);
-        this.setState(this.state);
-    }
-
-    decrementWaiting() {
-        console.log("decrementing waiting!");
-        this.state.waitingUserCount--;
-        console.log("waiting now: " + this.state.waitingUserCount);
-        this.setState(this.state);
     }
 
     attemptLogIn() {
@@ -121,15 +91,15 @@ class SignedInNavbar extends React.Component {
 
     render() {
         let waitingUsersString = "";
-        if (this.state.waitingUserCount > 0) waitingUsersString = " (" + this.state.waitingUserCount + ")";
-        let manageHidden = !this.state.fleetManager;
+        if (this.props.waitingUserCount > 0) waitingUsersString = " (" + this.props.waitingUserCount + ")";
+        let manageHidden = !this.props.fleetManager;
 
-        let tailsHidden = !this.state.modifyTailsAccess;
+        let tailsHidden = !this.props.modifyTailsAccess;
 
         let unconfirmedTailsString = "";
-        if (this.state.unconfirmedTailsCount > 0) unconfirmedTailsString = " (" + this.state.unconfirmedTailsCount + ")";
+        if (this.props.unconfirmedTailsCount > 0) unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
 
-        let accountNotifications = " (" + (this.state.waitingUserCount + this.state.unconfirmedTailsCount) + ")";
+        let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
 
         let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
 
@@ -195,16 +165,16 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink name={"Home"} active={this.state.activePage === "welcome"} href="/protected/welcome"/>
-                        <NavLink name={"Trends"} active={this.state.activePage === "trends"} href="/protected/trends"/>
-                        <NavLink name={"Dashboard"} active={this.state.activePage === "dashboard"} href="/protected/dashboard"/>
-                        <NavLink name={"Flights"} active={this.state.activePage === "flights"} href="/protected/flights"/>
-                        <NavLink name={"Imports"} active={this.state.activePage === "imports"} href="/protected/imports"/>
-                        <NavLink name={"Uploads"} active={this.state.activePage === "uploads"} href="/protected/uploads"/>
+                        <NavLink name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink name={"Trends"} active={this.props.activePage === "trends"} href="/protected/trends"/>
+                        <NavLink name={"Dashboard"} active={this.props.activePage === "dashboard"} href="/protected/dashboard"/>
+                        <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
+                        <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
+                        <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (this.state.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {"Account" + accountNotifications} {this.state.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
+                            <a className={"nav-link dropdown-toggle" + (this.props.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                {"Account" + accountNotifications} {this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
@@ -223,13 +193,5 @@ class SignedInNavbar extends React.Component {
         );
     }
 }
-
-/*
-var navbar = ReactDOM.render(
-    <SignedInNavbar waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
-*/
-
 
 export default SignedInNavbar;
