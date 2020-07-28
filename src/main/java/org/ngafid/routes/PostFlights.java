@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -25,18 +26,20 @@ import org.ngafid.filters.Filter;
 public class PostFlights implements Route {
     private static final Logger LOG = Logger.getLogger(PostFlights.class.getName());
     private Gson gson;
-    private FlightPaginator paginator;
-    private Filter filter;
-
-	static String NO_RESULTS = "NO_RESULTS";
-
-    private int pageBufferSize, pageIndex;
 
     public PostFlights(Gson gson) {
         this.gson = gson;
         LOG.info("post " + this.getClass().getName() + " initalized");
-        this.pageBufferSize = 10;
-        this.pageIndex = 0;
+    }
+
+    public static class FlightsResponse {
+        public ArrayList<Flight> flights;
+        public int numberPages;
+
+        public FlightsResponse(ArrayList<Flight> flights, int numberPages) {
+            this.flights = flights;
+            this.numberPages = numberPages;
+        }
     }
 
     @Override
@@ -50,20 +53,21 @@ public class PostFlights implements Route {
         String filterJSON = request.queryParams("filterQuery");
 
 
-        System.err.println(request.queryParams("pageIndex"));
+        System.err.println(request.queryParams("currentPage"));
         System.err.println(request.queryParams("numPerPage"));
 
 
         LOG.info(filterJSON);
 
 
-        Filter userFilter = gson.fromJson(filterJSON, Filter.class);
+        Filter filter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
-
 
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
+
+        LOG.info("USER: " + user.getId() + ", '" + user.getFullName() + "', fleetId: " + fleetId);
 
 
         //check to see if the user has upload access for this fleet.
@@ -74,51 +78,22 @@ public class PostFlights implements Route {
         }
 
         try {
-            if(this.filter == null){
-                //check to see if the filter has changed
-                //if it has, then we change the pointer of this filter to the new filter
-                LOG.info("New filter applied");
-                this.filter = userFilter;
-                //get the flights associated with this filter
-                //we must paginate the new flights if the filter changed or if this is the initial load
-                this.paginator = new FlightPaginator(this.filter, fleetId);
-                System.out.println("paginator paginated");
-            }else if(!this.filter.equals(userFilter)){
-                LOG.info("New filter applied");
-                this.filter = userFilter;
-                this.paginator.setFilter(userFilter);
-                this.paginator.jumpToPage(0);
+            int currentPage = Integer.parseInt(request.queryParams("currentPage"));
+            int pageSize = Integer.parseInt(request.queryParams("pageSize"));
+
+            Connection connection = Database.getConnection();
+
+            int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
+            int numberPages = totalFlights / pageSize;
+            ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+
+            if (flights.size() == 0) {
+                return gson.toJson("NO_RESULTS");
+            } else {
+                return gson.toJson(new FlightsResponse(flights, numberPages));
             }
 
-            int pageIndex = Integer.parseInt(request.queryParams("pageIndex"));
-            int pageBufferSize = Integer.parseInt(request.queryParams("numPerPage"));
-
-            if(pageBufferSize != this.pageBufferSize){
-                this.paginator.setNumPerPage(pageBufferSize);
-                this.pageBufferSize = pageBufferSize;
-                LOG.info("Page buffer size changed:");
-                LOG.info(this.paginator.toString());
-                pageIndex = 0;
-            }
-
-            if(pageIndex != this.pageIndex){
-                this.paginator.jumpToPage(pageIndex);
-                LOG.info("Jumping to flight page: "+this.paginator.currentPage());
-                LOG.info(this.paginator.toString());
-            }
-
-            this.pageIndex = pageIndex;
-
-            //LOG.info(gson.toJson(flights));
-            //LOG.info("page JSON: "+gson.toJson(this.paginator.currentPage()));//too verbose
-			WebServer.flightPaginator = this.paginator;
-			Page<?> currentPage = this.paginator.currentPage();
-			if(!currentPage.hasData()){
-				return gson.toJson(NO_RESULTS);
-			}
-            return gson.toJson(currentPage);
         } catch (SQLException e) {
-			WebServer.flightPaginator = this.paginator;
             return gson.toJson(new ErrorResponse(e));
         }
     }

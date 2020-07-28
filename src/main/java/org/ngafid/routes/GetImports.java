@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -86,20 +87,29 @@ public class GetImports implements Route {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
-            this.paginator = new ImportPaginator(10, fleetId);
-            scopes.put("numPages_js", "var numPages = " + gson.toJson(this.paginator.currentPage().size()) + ";");
-            scopes.put("index_js", "var index = " + gson.toJson(this.paginator.currentPage().index()) + ";");
 
-            try {
-                scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(this.paginator.currentPage().getData()) + "');");
+            //default page values
+            int currentPage = 0;
+            int pageSize = 10;
 
-            } catch (SQLException e) {
-                return gson.toJson(new ErrorResponse(e));
-            }
+            Connection connection = Database.getConnection();
+
+            int totalImports = Upload.getNumUploads(connection, fleetId, null);
+            int numberPages = totalImports / pageSize;
+            ArrayList<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+
+
+            scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
+            scopes.put("index_js", "var currentPage = 0;");
+
+            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
+
+        } catch (SQLException e) {
+            return gson.toJson(new ErrorResponse(e));
 
         } catch (Exception e) {
             LOG.severe(e.toString());

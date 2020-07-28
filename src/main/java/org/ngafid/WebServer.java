@@ -124,7 +124,11 @@ public final class WebServer {
                 LOG.info("request url: '" + request.url());
                 LOG.info("request queryString: '" + request.queryString());
 
-                request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
+                if (request.queryString() != null) {
+                    request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
+                } else {
+                    request.session().attribute("previous_uri", request.url());
+                }
 
                 LOG.info("redirecting to access_denied");
                 response.redirect("/access_denied");

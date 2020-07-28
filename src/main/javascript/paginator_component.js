@@ -44,9 +44,9 @@ class Paginator extends React.Component {
     /**
      ** Repaginates the page configuration when the numPerPage field has been changed by the user
      **/
-    repaginate(itemsPerPage) {
+    repaginate(pageSize) {
         console.log("Re-Paginating");
-        this.props.updateItemsPerPage(itemsPerPage);
+        this.props.updateItemsPerPage(pageSize);
         this.props.submitFilter();
     }
 
@@ -87,7 +87,7 @@ class Paginator extends React.Component {
                     <div className="p-2">
                         <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
                         <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                            <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.props.itemsPerPage+ " " + this.props.itemName + " per page"} size="sm">
+                            <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
                                 <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
                                 <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
                                 <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>
