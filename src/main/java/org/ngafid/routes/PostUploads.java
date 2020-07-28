@@ -65,7 +65,7 @@ public class PostUploads implements Route {
 
             int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
-            ArrayList<Upload> uploads = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            ArrayList<Upload> uploads = Upload.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             return gson.toJson(new UploadsResponse(uploads, numberPages));
         } catch (SQLException e) {

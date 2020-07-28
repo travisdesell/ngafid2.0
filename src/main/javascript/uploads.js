@@ -56,7 +56,7 @@ class Upload extends React.Component {
                     return false;
                 }
 
-                uploadsPage.removeUpload(thisUpload.props.uploadInfo);
+                thisUpload.props.removeUpload(thisUpload.props.uploadInfo);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
@@ -174,16 +174,13 @@ class UploadsPage extends React.Component {
 
         this.state = {
             uploads : this.props.uploads,
+            pending_uploads : this.props.pending_uploads,
 
             //needed for paginator
             currentPage : this.props.currentPage,
             numberPages : this.props.numberPages, //this will be set globally in the javascript
             pageSize : 10
         };
-    }
-
-    setUploads(uploads){
-        this.state.uploads = uploads;
     }
 
     getMD5Hash(file, onFinish, uploadsPage) {
@@ -206,7 +203,7 @@ class UploadsPage extends React.Component {
                 console.log("inside onload function!");
                 console.log(state);
                 console.log(file);
-                state.uploads[file.position].progressSize = currentChunk * chunkSize;
+                state.pending_uploads[file.position].progressSize = currentChunk * chunkSize;
 
                 uploadsPage.setState(state);
 
@@ -218,8 +215,8 @@ class UploadsPage extends React.Component {
             } else {
                 //reset progress bar for uploading
                 let state = uploadsPage.state;
-                state.uploads[file.position].progressSize = 0;
-                state.uploads[file.position].status = "UPLOADING";
+                state.pending_uploads[file.position].progressSize = 0;
+                state.pending_uploads[file.position].status = "UPLOADING";
                 uploadsPage.setState(state);
 
                 onFinish(spark.end());
@@ -276,7 +273,7 @@ class UploadsPage extends React.Component {
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
                     errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
-                    uploadsPage.removeUpload(file);
+                    uploadsPage.removePendingUpload(file);
 
                 } else {
                     var uploadInfo = response;
@@ -308,18 +305,18 @@ class UploadsPage extends React.Component {
         const totalSize = file.size;
         console.log("adding filename: '" + filename + "'");
 
-        let uploads = this.state.uploads;
+        let pending_uploads = this.state.pending_uploads;
 
         let identifier = getUploadeIdentifier(filename, totalSize);
         console.log("CREATED IDENTIFIER: " + identifier);
         file.identifier = identifier;
-        file.position = uploads.length;
+        file.position = 0;
 
         let alreadyExists = false;
-        for (var i = 0; i < uploads.length; i++) {
-            if (uploads[i].identifier == identifier) {
+        for (var i = 0; i < pending_uploads.length; i++) {
+            if (pending_uploads[i].identifier == identifier) {
 
-                if (uploads[i].status == "UPLOAD INCOMPLETE") {
+                if (pending_uploads[i].status == "UPLOAD INCOMPLETE") {
                     //upload already exists in the list but is incomplete, so we need to restart it
                     alreadyExists = true;
                     file.position = i;
@@ -331,7 +328,7 @@ class UploadsPage extends React.Component {
         }
 
         if (!alreadyExists) {
-            uploads.push({
+            pending_uploads.unshift({
                 identifier : identifier,
                 filename : filename,
                 status : status,
@@ -341,7 +338,7 @@ class UploadsPage extends React.Component {
         }
 
         let state = this.state;
-        state.uploads = uploads;
+        state.pending_uploads = pending_uploads;
 
 		if (this.state.numberPages == 0) {
 			this.state.numberPages = 1;
@@ -351,6 +348,21 @@ class UploadsPage extends React.Component {
         this.setState(state);
         this.startUpload(file);
     }
+
+    removePendingUpload(file) {
+        if (file.position < pending_uploads.length) {
+            let pending_uploads = this.state.pending_uploads;
+            pending_uploads.splice(file.position, 1);
+            for (var i = 0; i < pending_uploads.length; i++) {
+                pending_uploads[i].position = i;
+            }
+
+            let state = this.state;
+            state.pending_uploads = pending_uploads;
+            this.setState(state);
+        }
+    }
+
 
     removeUpload(file) {
         if (file.position < uploads.length) {
@@ -382,8 +394,8 @@ class UploadsPage extends React.Component {
         uploadInfo.progressSize = uploadInfo.bytesUploaded;
         uploadInfo.totalSize = uploadInfo.sizeBytes;
 
-        let uploads = this.state.uploads;
-        uploads[uploadInfo.position] = uploadInfo;
+        let pending_uploads = this.state.pending_uploads;
+        pending_uploads[uploadInfo.position] = uploadInfo;
         let state = this.state;
         this.setState(state);
 
@@ -425,14 +437,17 @@ class UploadsPage extends React.Component {
                 //chunkNumber = chunkNumber + 1;
 
                 if (chunkNumber > -1) {
-                    //console.log("uploading next chunk with response:");
-                    //console.log(response);
+                    console.log("uploading next chunk with response:");
+                    console.log(response);
+                    console.log("uploadInfo:");
+                    console.log(uploadInfo);
 
                     uploadsPage.updateUpload(uploadInfo);
                 } else {
+                    console.log("Should be finished upload!");
 
-                    let uploads = uploadsPage.state.uploads;
-                    uploads[uploadInfo.position] = uploadInfo;
+                    let pending_uploads = uploadsPage.state.pending_uploads;
+                    pending_uploads[uploadInfo.position] = uploadInfo;
                     let state = uploadsPage.state;
                     uploadsPage.setState(state);
                 }
@@ -485,13 +500,15 @@ class UploadsPage extends React.Component {
                 });
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
+                errorModal.show("Error Loading Uploads", errorThrown);
             },
             async: true
         });
     }
 
     triggerInput() {
+        console.log("input triggered!");
+
         var uploadsPage = this;
 
         $('#upload-file-input').trigger('click');
@@ -521,48 +538,80 @@ class UploadsPage extends React.Component {
     render() {
         console.log("rendering uploads!");
 
+        const hiddenStyle = {
+            display : "none"
+        };
+
         return (
+
             <div>
                 <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.uploads}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
+                <div className="p-1">
+                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
 
-                {
-                    this.state.uploads.map((uploadInfo, index) => {
-                        uploadInfo.position = index;
-                        return (
-                            <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                        );
-                    })
-                }
+                    <div className="card mb-1 border-secondary">
+                        <div className="p-2">
+                            { 
+                                this.state.pending_uploads.length > 0
+                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
+                                    : ""
+                            }
+                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-upload"></i> Upload Flights
+                            </button>
+                        </div>
+                    </div>
 
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.uploads}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
+                    {
+                        this.state.pending_uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}} />
+                            );
+                        })
+                    }
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                    {
+                        this.state.uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                            );
+                        })
+                    }
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                </div>
 
             </div>
         );
@@ -571,6 +620,6 @@ class UploadsPage extends React.Component {
 
 
 var uploadsPage = ReactDOM.render(
-    <UploadsPage uploads={uploads} numberPages={numberPages} currentPage={currentPage}/>,
+    <UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages} currentPage={currentPage}/>,
     document.querySelector('#uploads-page')
 );
