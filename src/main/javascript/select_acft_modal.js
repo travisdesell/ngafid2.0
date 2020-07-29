@@ -5,6 +5,9 @@ import ReactDOM from "react-dom";
 
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
+import Container from 'react-bootstrap/Container'
+import Col from 'react-bootstrap/Col'
+import Row from 'react-bootstrap/Row'
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -74,7 +77,7 @@ class SelectAircraftModal extends React.Component {
 		let thisModal = this;
 
 		let submissionData = {
-			"type" : "ADD"
+			"type" : "CACHE"
 		};
 
 		$.ajax({
@@ -91,6 +94,29 @@ class SelectAircraftModal extends React.Component {
 			async: true 
 		});  
 	}
+
+	removeFile(){
+		let thisModal = this;
+
+		let submissionData = {
+			"type" : "RMCACHE"
+		};
+
+		$.ajax({
+			type: 'POST',
+			url: '/protected/sim_acft',
+			data : submissionData,
+            dataType : 'json',
+			success : function(response) {
+				console.log("received response: ");
+				console.log(response);
+			},   
+			error : function(jqXHR, textStatus, errorThrown) {
+			},   
+			async: true 
+		});  
+	}
+
 
     render() {
         let formGroupStyle = {
@@ -121,6 +147,11 @@ class SelectAircraftModal extends React.Component {
             color: 'red'
         };
 
+        let styleButtonSq = {
+            flex : "right",
+			float : "auto"
+        };
+
 		console.log("rendering select aircraft (xplane) modal");
 		console.log(this.state.paths);
 		let paths = this.state.paths;
@@ -132,7 +163,18 @@ class SelectAircraftModal extends React.Component {
 				{
 					paths.map((path, index) => {
 						return(
-							<Dropdown.Item as="button" onClick={() => this.selectPath(path)}>{path}</Dropdown.Item>
+							<Dropdown.Item as="button" onSelect={() => this.selectPath(path)}>
+								<Container>
+									<Row>
+										<Col>
+											{path}
+										</Col>
+										<Col xs={1}>
+											<button className="m-1 btn btn-outline-secondary" style={styleButtonSq}><i className="fa fa-times" aria-hidden="true"></i></button>
+										</Col>
+								  	</Row>
+								</Container>
+							</Dropdown.Item>
 						);
 					})
 				}
