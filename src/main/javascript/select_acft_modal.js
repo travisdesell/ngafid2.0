@@ -3,11 +3,10 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import Container from 'react-bootstrap/Container'
-import Col from 'react-bootstrap/Col'
-import Row from 'react-bootstrap/Row'
+import ListGroup from 'react-bootstrap/ListGroup';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -44,6 +43,9 @@ class SelectAircraftModal extends React.Component {
             console.log("number files selected: " + this.files.length);
             console.log( this.files );
         });
+		
+		let filePath = $('#upload-file-input').val();
+		console.log("selected path from input: "+filePath);
 	}
 
 	selectPath(path){
@@ -152,6 +154,11 @@ class SelectAircraftModal extends React.Component {
 			float : "auto"
         };
 
+		let listStyle = {
+			maxHeight: "400px",
+			overflowY: "scroll"
+		}
+
 		console.log("rendering select aircraft (xplane) modal");
 		console.log(this.state.paths);
 		let paths = this.state.paths;
@@ -159,34 +166,42 @@ class SelectAircraftModal extends React.Component {
 		let selectRow = "";
 		if(paths != null && paths.length > 0){
 			selectRow = (
-				<DropdownButton  className="pr-1" id="dropdown-item-button" title={this.state.selectedPath} size="sm">
+				<ListGroup id="listgrp" defaultActiveKey="#custom" style={listStyle}>
+				<ListGroup.Item action href="#custom">
+				  <input type="text" id="description" className="form-control" placeholder="Enter a new or custom path to a *.acf file"/>
+				</ListGroup.Item>
 				{
 					paths.map((path, index) => {
+						let key = "#" + index;
 						return(
-							<Dropdown.Item as="button" onSelect={() => this.selectPath(path)}>
+							<ListGroup.Item action href={key}>
 								<Container>
-									<Row>
-										<Col>
+									<Row className="justify-content-md-center">
+										<Col xs lg="11">
 											{path}
 										</Col>
-										<Col xs={1}>
-											<button className="m-1 btn btn-outline-secondary" style={styleButtonSq}><i className="fa fa-times" aria-hidden="true"></i></button>
+										<Col xs lg="1">
+											<button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} title="Permanently delete this cached aircraft">
+												<i className="fa fa-trash" aria-hidden="true"></i>
+											</button>
 										</Col>
-								  	</Row>
+									  </Row>
 								</Container>
-							</Dropdown.Item>
+							</ListGroup.Item>
 						);
 					})
 				}
-				</DropdownButton>
+				</ListGroup>
 			);
 		}
 
 
+		//have to use a plaintext form for the filepath here
+		// see https://stackoverflow.com/questions/3489133/full-path-from-file-input-using-jquery
         return (
             <div className='modal-content'>
                 <div className='modal-header'>
-                    <h5 id='confirm-modal-title' className='modal-title'>Confirm Operation</h5>
+                    <h5 id='confirm-modal-title' className='modal-title'>Select Aircraft Filepath for X-Plane</h5>
                     <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
@@ -203,14 +218,8 @@ class SelectAircraftModal extends React.Component {
 							{selectRow}
 						</div>
 
-						<div className="col">
-							<input id ="upload-file-input" type="file" style={hiddenStyle} />
-							<button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.addFile()}>
-								<i className="fa fa-file"></i> Choose a new *.acf File
-							</button>
 						</div>
 					</div>
-                </div>
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
