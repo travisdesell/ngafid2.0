@@ -31,6 +31,11 @@ import org.ngafid.flights.Flight;
 
 public class PostSimAircraft implements Route {
     private static final Logger LOG = Logger.getLogger(PostSimAircraft.class.getName());
+	private static Connection connection = Database.getConnection();
+
+	private final static String CACHE = "cache";
+	private final static String RMCACHE = "rmcache";
+
     private Gson gson;
 
     public PostSimAircraft(Gson gson) {
@@ -38,6 +43,9 @@ public class PostSimAircraft implements Route {
         LOG.info("initialized " + this.getClass().getName() + " route!");
     }
 
+	/**
+	 * {inheritDoc}
+	 */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
@@ -45,22 +53,33 @@ public class PostSimAircraft implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-		String type = request.queryParams("TYPE");
+		String type = request.queryParams("type");
+		String path = request.queryParams("path");
+
+		LOG.info("performing "+type+" on "+path);
+
 		int fleetId = user.getFleetId();
 
         try {
-            Connection connection = Database.getConnection();
-
 			switch (type) {
-				case "ADD":
-					break;
-				case "REMOVE":
-					break;
+				case CACHE:
+					List<String> currPaths = Flight.getSimAircraft(connection, fleetId);
+					if (!currPaths.contains(path)) {
+						Flight.addSimAircraft(connection, fleetId, path);
+						return gson.toJson("SUCCESS");
+					} else {
+						return gson.toJson("FAILURE");
+					}
+
+				case RMCACHE:
+					Flight.removeSimAircraft(connection, fleetId, path);
+					return gson.toJson(Flight.getSimAircraft(connection, fleetId));
+
 				default:
-					return gson.toJson(type);
+					return gson.toJson("FAILURE");
 			}
 
-        } catch (SQLException e) {
+        } catch (Exception e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

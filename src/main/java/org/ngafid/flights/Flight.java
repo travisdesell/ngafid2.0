@@ -820,7 +820,17 @@ public class Flight {
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
-        query.setString(1, path);
+        query.setString(2, path);
+
+        query.executeUpdate();
+	}
+
+	public static void removeSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+        String queryString = "DELETE FROM sim_aircraft WHERE fleet_id = ? AND path = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        query.setString(2, path);
 
         query.executeUpdate();
 	}
