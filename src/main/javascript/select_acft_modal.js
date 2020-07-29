@@ -19,7 +19,7 @@ class SelectAircraftModal extends React.Component {
 		console.log("getSimAircraft invoked");
 		this.state = {
 			paths : [],
-			selectedPath : null
+			activeId : 0
 		}
 		this.getSimAircraft();
 	}
@@ -33,8 +33,15 @@ class SelectAircraftModal extends React.Component {
     }
 
     modalClicked() {
+		var selectedPath = this.state.paths[this.state.activeId - 1];
+
+		if(this.state.activeId == 0){
+			selectedPath = $('#cust_path').val();
+			this.addFile(selectedPath); //cache the filepath in the server
+		}
+			
         console.log("modal submit clicked!");
-        this.state.submitMethod(this.state.version, this.state.selectedPath);
+        this.state.submitMethod(this.state.version, selectedPath);
     }
 
 	triggerInput(){
@@ -48,8 +55,8 @@ class SelectAircraftModal extends React.Component {
 		console.log("selected path from input: "+filePath);
 	}
 
-	selectPath(path){
-		this.state.selectedPath = path;
+	selectPathId(pathId){
+		this.state.activeId = pathId;
 		this.setState(this.state);
 	}
 
@@ -75,11 +82,12 @@ class SelectAircraftModal extends React.Component {
 		});  
 	}
 
-	addFile(){
+	addFile(filepath){
 		let thisModal = this;
 
 		let submissionData = {
-			"type" : "CACHE"
+			"type" : "cache",
+			"path" : filepath
 		};
 
 		$.ajax({
@@ -97,11 +105,12 @@ class SelectAircraftModal extends React.Component {
 		});  
 	}
 
-	removeFile(){
+	removeFile(index){
 		let thisModal = this;
 
 		let submissionData = {
-			"type" : "RMCACHE"
+			"type" : "rmcache",
+			"path" : this.state.paths[index]
 		};
 
 		$.ajax({
@@ -112,6 +121,8 @@ class SelectAircraftModal extends React.Component {
 			success : function(response) {
 				console.log("received response: ");
 				console.log(response);
+				thisModal.state.paths = response;
+				thisModal.setState(thisModal.state);
 			},   
 			error : function(jqXHR, textStatus, errorThrown) {
 			},   
@@ -163,43 +174,42 @@ class SelectAircraftModal extends React.Component {
 		console.log(this.state.paths);
 		let paths = this.state.paths;
 
-		let selectRow = "";
-		if(paths != null && paths.length > 0){
-			selectRow = (
-				<ListGroup id="listgrp" defaultActiveKey="#custom" style={listStyle}>
-				<ListGroup.Item action href="#custom">
-				  <input type="text" id="description" className="form-control" placeholder="Enter a new or custom path to a *.acf file"/>
-				</ListGroup.Item>
-				{
-					paths.map((path, index) => {
-						let key = "#" + index;
-						return(
-							<ListGroup.Item action href={key}>
-								<Container>
-									<Row className="justify-content-md-center">
-										<Col xs lg="11">
-											{path}
-										</Col>
-										<Col xs lg="1">
-											<button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} title="Permanently delete this cached aircraft">
-												<i className="fa fa-trash" aria-hidden="true"></i>
-											</button>
-										</Col>
-									  </Row>
-								</Container>
-							</ListGroup.Item>
-						);
-					})
-				}
-				</ListGroup>
-			);
-		}
+		let selectRow = (
+			<ListGroup id="listgrp" defaultActiveKey="#custom" style={listStyle}>
+			<ListGroup.Item active={this.state.activeId == 0} onClick={() => this.selectPathId(0)}>
+			  <input type="text" id="cust_path" className="form-control" placeholder="Enter a new or custom path to a *.acf file"/>
+			</ListGroup.Item>
+			{paths != null && paths.length > 0 &&
+				paths.map((path, index) => {
+					let relIndex = index + 1;
+					let isActive = (this.state.activeId - 1 == index);
+					return(
+						<ListGroup.Item active={isActive} onClick={() => this.selectPathId(relIndex)}>
+							<Container>
+								<Row className="justify-content-md-center">
+									<Col xs lg="11">
+										{path}
+									</Col>
+									<Col xs lg="1">
+										<button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeFile(index)} title="Permanently delete this cached aircraft">
+											<i className="fa fa-trash" aria-hidden="true"></i>
+										</button>
+									</Col>
+								  </Row>
+							</Container>
+						</ListGroup.Item>
+					);
+				})
+			}
+			</ListGroup>
+		);
 
 
 		//have to use a plaintext form for the filepath here
 		// see https://stackoverflow.com/questions/3489133/full-path-from-file-input-using-jquery
         return (
             <div className='modal-content'>
+
                 <div className='modal-header'>
                     <h5 id='confirm-modal-title' className='modal-title'>Select Aircraft Filepath for X-Plane</h5>
                     <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
@@ -209,22 +219,19 @@ class SelectAircraftModal extends React.Component {
 
                 <div id='confirm-modal-body' className='modal-body'>
                     <h4>Select *.acf filepath for X-Plane</h4>
-
-                    Please select (or create) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
-
+						Please select (or create) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
 					<div className="row p-2">
-
 						<div className="col">
 							{selectRow}
 						</div>
-
-						</div>
 					</div>
+				</div>
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
                 </div>
+
             </div>
         );
     }
