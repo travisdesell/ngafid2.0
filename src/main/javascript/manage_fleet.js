@@ -6,11 +6,6 @@ import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 
-var navbar = ReactDOM.render(
-        <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-        document.querySelector('#navbar')
-);
-
 class AccessCheck extends React.Component {
     constructor(props) {
         super(props);
@@ -49,7 +44,9 @@ class FleetUserRow extends React.Component {
 
         fleetUser.fleetAccess.originalAccess = fleetUser.fleetAccess.accessType;
         this.state = {
-            fleetUser : fleetUser
+            fleetUser : fleetUser,
+            waitingUserCount : this.props.waitingUserCount,
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
     }
 
@@ -90,12 +87,14 @@ class FleetUserRow extends React.Component {
                 let previousAccess = fleetUser.fleetAccess.originalAccess;
                 let newAccess = fleetUser.fleetAccess.accessType;
 
+                console.log("previousAccess: " + previousAccess + ", newAccess: " + newAccess);
+
                 if (newAccess == "WAITING" && previousAccess != "WAITING") {
                     console.log("incrementing waiting!");
-                    navbar.incrementWaiting();
+                    fleetUserRow.props.incrementWaiting();
                 } else if (newAccess != "WAITING" && previousAccess == "WAITING") {
                     console.log("decrementing waiting!");
-                    navbar.decrementWaiting();
+                    fleetUserRow.props.decrementWaiting();
                 }
 
                 //update the fleetUser's new original access (so the update button will be disabled unless the access is changed again)
@@ -144,23 +143,41 @@ class FleetUserRow extends React.Component {
     }
 }
 
-class ManageFleetCard extends React.Component {
+class ManageFleetPage extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
-            user : this.props.user
+            user : this.props.user,
+            waitingUserCount : this.props.waitingUserCount,
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
 
-        console.log("constructed ManageFleetCard");
+        console.log("constructed ManageFleetPage");
     }
 
     setUser(user) {
         console.log("set manage fleet card user");
         console.log(user);
-        this.state.user = user;
-        this.setState(this.state);
+        this.setState({
+            user : user
+        });
     }
+
+    incrementWaiting() {
+        console.log("incrementing waiting on page!");
+        this.setState({
+            waitingUserCount : (this.state.waitingUserCount + 1)
+        });
+    }
+
+    decrementWaiting() {
+        console.log("decrementing waiting on page!");
+        this.setState({
+            waitingUserCount : (this.state.waitingUserCount - 1)
+        });
+    }
+
 
     render() {
         const hidden = this.props.hidden;
@@ -180,39 +197,58 @@ class ManageFleetCard extends React.Component {
         }
 
         return (
-            <div className="card-body" hidden={hidden}>
-                <div className="card mb-1" style={bgStyle}>
-                    <h5 className="card-header" style={fgStyle}>
-                        Manage {fleetName} Users
-                    </h5>
+            <div>
+                <SignedInNavbar
+                    activePage="account"
+                    waitingUserCount={this.state.waitingUserCount}
+                    fleetManager={fleetManager}
+                    unconfirmedTailsCount={this.state.unconfirmedTailsCount}
+                    modifyTailsAccess={modifyTailsAccess}
+                    plotMapHidden={plotMapHidden}
+                />
 
-                    <div className="card-body" style={fgStyle}>
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th scope="col">Email</th>
-                                    <th scope="col">Name</th>
-                                    <th scope="col">Access Level</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {
-                                    fleetUsers.map((fleetUser, index) => {
-                                        return <FleetUserRow key={fleetUser.id} fleetUser={fleetUser} />
-                                    })
-                                }
-                            </tbody>
-                        </table>
+                <div className="card-body" hidden={hidden}>
+                    <div className="card mb-1" style={bgStyle}>
+                        <h5 className="card-header" style={fgStyle}>
+                            Manage {fleetName} Users
+                        </h5>
+
+                        <div className="card-body" style={fgStyle}>
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th scope="col">Email</th>
+                                        <th scope="col">Name</th>
+                                        <th scope="col">Access Level</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {
+                                        fleetUsers.map((fleetUser, index) => {
+                                            return (
+                                                <FleetUserRow
+                                                    key={fleetUser.id}
+                                                    fleetUser={fleetUser}
+                                                    incrementWaiting={() => {this.incrementWaiting();}}
+                                                    decrementWaiting={() => {this.decrementWaiting();}}
+                                                />
+                                            );
+
+                                        })
+                                    }
+                                </tbody>
+                            </table>
+
+                        </div>
 
                     </div>
-
                 </div>
             </div>
         );
     }
 }
 
-var manageFleetCard = ReactDOM.render(
-    <ManageFleetCard user={user} />,
-    document.querySelector('#manage-fleet-card')
+var manageFleetPage = ReactDOM.render(
+    <ManageFleetPage user={user} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
+    document.querySelector('#manage-fleet-page')
 );

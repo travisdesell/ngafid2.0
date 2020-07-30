@@ -43,7 +43,7 @@ var eventCounts = {};
 var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
 
-class TrendsCard extends React.Component {
+class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
 
@@ -276,13 +276,13 @@ class TrendsCard extends React.Component {
 
         if (eventName in eventCounts) {
             console.log("already loaded counts for event: '" + eventName + "'");
-            trendsCard.displayPlots(trendsCard.state.airframe);
+            trendsPage.displayPlots(trendsPage.state.airframe);
 
         } else {
             $('#loading').show();
             console.log("showing loading spinner!");
 
-            let trendsCard = this;
+            let trendsPage = this;
 
             $.ajax({
                 type: 'POST',
@@ -301,7 +301,7 @@ class TrendsCard extends React.Component {
                     }   
 
                     eventCounts[eventName] = response;
-                    trendsCard.displayPlots(trendsCard.state.airframe);
+                    trendsPage.displayPlots(trendsPage.state.airframe);
                 },   
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Loading Uploads", errorThrown);
@@ -362,26 +362,30 @@ class TrendsCard extends React.Component {
         };
 
         return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-lg-12">
-                        <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <TimeHeader
-                                name="Event Trends"
-                                airframes={airframes}
-                                airframe={this.state.airframe}
-                                startYear={this.state.startYear} 
-                                startMonth={this.state.startMonth} 
-                                endYear={this.state.endYear} 
-                                endMonth={this.state.endMonth} 
-                                datesChanged={this.state.datesChanged}
-                                dateChange={() => this.dateChange()}
-                                airframeChange={(airframe) => this.airframeChange(airframe)}
-                                updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
-                            />
+            <div>
+                <SignedInNavbar activePage={"trends"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="container-fluid">
+
+                    <div className="row">
+                        <div className="col-lg-12">
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <TimeHeader
+                                    name="Event Trends"
+                                    airframes={airframes}
+                                    airframe={this.state.airframe}
+                                    startYear={this.state.startYear} 
+                                    startMonth={this.state.startMonth} 
+                                    endYear={this.state.endYear} 
+                                    endMonth={this.state.endMonth} 
+                                    datesChanged={this.state.datesChanged}
+                                    dateChange={() => this.dateChange()}
+                                    airframeChange={(airframe) => this.airframeChange(airframe)}
+                                    updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
+                                    updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
+                                    updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
+                                    updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                />
 
                             <div className="card-body" style={{padding:"0"}}>
                                 <div className="row" style={{margin:"0"}}>
@@ -412,20 +416,15 @@ class TrendsCard extends React.Component {
                     </div>
                 </div>
             </div>
+        </div>
         );
     }
 }
 
 
-var trendsCard = ReactDOM.render(
-    <TrendsCard />,
-    document.querySelector('#trends-card')
+var trendsPage = ReactDOM.render(
+    <TrendsPage />,
+    document.querySelector('#trends-page')
 );
 
-trendsCard.displayPlots("All Airframes");
-
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage={"trends"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
-
+trendsPage.displayPlots("All Airframes");
