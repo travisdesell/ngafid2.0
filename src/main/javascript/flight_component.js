@@ -17,6 +17,7 @@ import { Itinerary } from './itinerary_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
 import { Tags } from './tags_component.js';
 import { Events } from './events_component.js';
+import { selectAircraftModal } from './select_acft_modal';
 
 import Plotly from 'plotly.js';
 
@@ -377,6 +378,38 @@ class Flight extends React.Component {
             this.setState(this.state);
         }
     }
+
+	/**
+	 * Handles when the download button was clicked
+	 * @param type which type of download (xplane, csv etc)
+	 */
+    downloadClicked(type) {
+        if(type === 'KML'){
+            window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
+        }else if (type === 'XPL10'){
+			selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
+        }else if (type === 'XPL11'){
+			selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
+        }else if(type === 'CSV'){
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
+		}
+    }
+
+	/**
+	 * Gets the aircraft path from the submit aircraft modal
+	 * @param type the xplane version
+	 * @param path the selected path
+	 * @param flightId the flightId
+	 **/
+	submitXPlanePath(type, path, flightId){
+		console.log("submitting the xplane path to server"+type+" "+path);
+		console.log(this.props);
+		if (type === '10') {
+            window.open("/protected/get_xplane?flight_id=" + flightId + "&version=10"+"&acft_path="+path);
+        }else if (type === '11') {
+            window.open("/protected/get_xplane?flight_id=" + flightId + "&version=11"+"&acft_path="+path);
+        }
+	}
 
     cesiumClicked() {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
@@ -833,9 +866,17 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={lastButtonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.downloadClicked()}>
-                                <i className="fa fa-download p-1"></i>
-                            </button>
+						    <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                  <i className="fa fa-download p-1"></i>
+						    </button>
+
+							<div className="dropdown-menu" aria-labelledby="dropdownMenu2">
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
+						   </div>
+
                         </div>
                     </div>
 

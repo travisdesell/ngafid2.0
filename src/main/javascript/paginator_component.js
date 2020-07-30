@@ -3,15 +3,40 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
+import Pagination from 'react-bootstrap/Pagination';
+import Form from 'react-bootstrap/Form';
 
 
 class Paginator extends React.Component {
     constructor(props) {
         super(props);
 
+        this.state = {
+            goto_active : false,
+            goto_value : 1
+        };
+
         this.previousPage = this.previousPage.bind(this);
         this.nextPage = this.nextPage.bind(this);
         this.repaginate = this.repaginate.bind(this);
+    }
+
+    updateGoto(event) {
+        let value = event.target.value;
+        console.log("goto updated to: '" + value + "'");
+        if (/^\d+$/.test(value) && value > 0 && value <= this.props.numberPages) {
+            console.log("setting goto active to true!");
+            this.setState({
+                goto_active : true,
+                goto_value : value
+            });
+
+        } else {
+            console.log("setting goto active to false!");
+            this.setState({
+                goto_active : false
+            });
+        }
     }
 
     /**
@@ -50,69 +75,83 @@ class Paginator extends React.Component {
         this.props.submitFilter();
     }
 
-    /**
-     * Generates an array representing all the pages in this collection of 
-     * queried flights
-     * @return an array of String objects containing page names
-     */
-    genPages() {
-        var page = [];
-        for(var i = 0; i < this.props.numberPages; i++) {
-            page.push({
-                value : i,
-                name : "Page "+(i+1)
-            });
-        }
-        return page;
-    }
-
     render() {
-        let pages = this.genPages();
+        let pages = [];
 
-        var begin = this.props.currentPage == 0;
-        var end = this.props.currentPage == this.props.numberPages-1;
-        var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-            var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
+        let totalVisiblePages = 9;
+        let pagesAround = 4;
 
-            if (begin) {
-                prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
+        let firstVisiblePage = this.props.currentPage - pagesAround;
+        let lastVisiblePage = this.props.currentPage + pagesAround + 1;
+
+        if (this.props.numberPages > totalVisiblePages) {
+            if (firstVisiblePage < 0) {
+                lastVisiblePage -= firstVisiblePage;
+                firstVisiblePage -= firstVisiblePage;
+            } else if (lastVisiblePage > this.props.numberPages) {
+                firstVisiblePage -= (lastVisiblePage - this.props.numberPages);
+                //lastVisiblePage -= (this.props.numberPages - lastVisiblePage);
             }
-        if (end) {
-            next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
         }
+
+
+
+        /*
+        if ((this.props.currentPage - pagesAround) > 0) {
+            pages.push(
+                <Pagination.Ellipsis key="begin_ellipsis" disabled />
+            );
+        }
+        */
+
+        for (let pageNumber = firstVisiblePage; pageNumber < lastVisiblePage; pageNumber++) {
+            if (pageNumber < 0 || pageNumber >= this.props.numberPages) continue;
+
+            pages.push(
+                <Pagination.Item key={pageNumber} onClick={() => this.jumpPage(pageNumber)} active={pageNumber === this.props.currentPage}>{pageNumber + 1}</Pagination.Item>
+            );
+        }
+
+        /*
+        if ((this.props.currentPage + pagesAround) < (this.props.numberPages - 2)) {
+            pages.push(
+                <Pagination.Ellipsis key="end_ellipsis" disabled />
+            );
+        }
+        */
+
 
 
         if (typeof this.props.items != 'undefined') {
             return (
                 <div className="card mb-1 border-secondary">
-                    <div className="p-2">
-                        <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
-                        <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                            <DropdownButton  className="pr-1" id="dropdown-item-button" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 {this.props.itemName} per page</Dropdown.Item>
-                                <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 {this.props.itemName} per page</Dropdown.Item>
-                            </DropdownButton>
-                            <Dropdown className="pr-1">
-                                <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                                    {"Page " + (this.props.currentPage + 1)}
-                                </Dropdown.Toggle>
-                                <Dropdown.Menu  style={{ maxHeight: "256px", overflowY: 'scroll' }}>
-                                    {
-                                        pages.map((pages, index) => {
-                                            return (
-                                                <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
-                                            );
-                                        })
-                                    }
-                                </Dropdown.Menu>
-                            </Dropdown>
-                            {prev}
-                            {next}
+                    <div className="row m-0 p-2">
+                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
+
+                        <Pagination size="sm" className="m-0 mr-2">
+                            <Pagination.First disabled={this.props.currentPage === 0} onClick={() => this.jumpPage(0)}/>
+                            <Pagination.Prev disabled={this.props.currentPage === 0} onClick={() => this.previousPage()}/>
+
+                            {pages}
+
+                            <Pagination.Next disabled={this.props.currentPage === this.props.numberPages - 1} onClick={() => this.nextPage()} />
+                            <Pagination.Last disabled={this.props.currentPage === this.props.numberPages - 1} onClick={() => this.jumpPage(this.props.numberPages - 1)} />
+                        </Pagination>
+
+                        <div className="col form-row input-group m-0 p-0">
+                            <div className="input-group-prepend p-0">
+                                <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
+                            </div>
+                            <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
                         </div>
 
+                        <DropdownButton className="ml-auto" id="dropdown-item-button" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 {this.props.itemName} per page</Dropdown.Item>
+                        </DropdownButton>
                     </div>
                 </div>
             );
