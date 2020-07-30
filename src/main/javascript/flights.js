@@ -2217,11 +2217,11 @@ class Flight extends React.Component {
 						    <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                   <i className="fa fa-download p-1"></i>
 						    </button>
-							<div class="dropdown-menu" aria-labelledby="dropdownMenu2">
-								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
-								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
-								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
-								<button class="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
+							<div className="dropdown-menu" aria-labelledby="dropdownMenu2">
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
 						   </div>
                         </div>
                      </div>
