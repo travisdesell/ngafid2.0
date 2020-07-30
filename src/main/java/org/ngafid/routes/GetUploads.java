@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -34,7 +35,6 @@ import com.github.mustachejava.MustacheFactory;
 public class GetUploads implements Route {
     private static final Logger LOG = Logger.getLogger(GetUploads.class.getName());
     private Gson gson;
-    private Paginator paginator;
 
     private static class Message {
         String type;
@@ -98,27 +98,37 @@ public class GetUploads implements Route {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
-            this.paginator = new ImportPaginator(10, fleetId);
-            scopes.put("numPages_js", "var numPages = " + gson.toJson(this.paginator.currentPage().size()) + ";");
-            scopes.put("index_js", "var index = " + gson.toJson(this.paginator.currentPage().index()) + ";");
-            this.paginator.jumpToPage(0);
-            System.out.println(this.paginator.currentPage());
 
-            try {
-                StringBuilder uploadsJson = new StringBuilder(gson.toJson(this.paginator.currentPage().getData()));
+            //default page values
+            int currentPage = 0;
+            int pageSize = 10;
 
-                //replace uploading with upload incomplete so that the javascript knows we can restart this
-                //upload
-                replaceAll(uploadsJson, "UPLOADING", "UPLOAD INCOMPLETE");
+            Connection connection = Database.getConnection();
 
-                scopes.put("uploads_js", "var uploads = JSON.parse('" + uploadsJson + "');");
-            } catch (SQLException e) {
-                return gson.toJson(new ErrorResponse(e));
+            int totalUploads = Upload.getNumUploads(connection, fleetId, null);
+            int numberPages = totalUploads / pageSize;
+
+            ArrayList<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            //update the status of all the uploads currently uploading to incomplete so the webpage knows they
+            //need to be restarted and aren't currently being uploaded.
+            for (Upload upload : pending_uploads) {
+                upload.setStatus("UPLOAD INCOMPLETE");
             }
+
+            ArrayList<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+
+
+            scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
+            scopes.put("index_js", "var currentPage = 0;");
+
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pending_uploads = JSON.parse('" + gson.toJson(pending_uploads) + "');");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
+
+        } catch (SQLException e) {
+            return gson.toJson(new ErrorResponse(e));
 
         } catch (Exception e) {
             LOG.severe(e.toString());

@@ -38,7 +38,7 @@ public class ProcessFlights {
             Instant start = Instant.now();
 
             try {
-                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
+                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
                 uploadsPreparedStatement.setString(1, "UPLOADED");
                 ResultSet resultSet = uploadsPreparedStatement.executeQuery();
 

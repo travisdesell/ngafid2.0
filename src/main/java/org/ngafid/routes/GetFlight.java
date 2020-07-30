@@ -20,22 +20,29 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
-import org.ngafid.common.*;
+
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
+import org.ngafid.flights.Itinerary;
+import org.ngafid.flights.Tails;
+import org.ngafid.flights.Flight;
+
+import org.ngafid.events.EventDefinition;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-public class GetImports implements Route {
-    private static final Logger LOG = Logger.getLogger(GetImports.class.getName());
+public class GetFlight implements Route {
+    private static final Logger LOG = Logger.getLogger(GetFlight.class.getName());
     private Gson gson;
-    private Paginator paginator;
 
     private static class Message {
         String type;
@@ -49,13 +56,13 @@ public class GetImports implements Route {
 
     private List<Message> messages = null;
 
-    public GetImports(Gson gson) {
+    public GetFlight(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetImports(Gson gson, String messageType, String messageText) {
+    public GetFlight(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -69,10 +76,10 @@ public class GetImports implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "imports.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flight.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -88,31 +95,43 @@ public class GetImports implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            //default page values
-            int currentPage = 0;
-            int pageSize = 10;
-
             Connection connection = Database.getConnection();
 
-            int totalImports = Upload.getNumUploads(connection, fleetId, null);
-            int numberPages = totalImports / pageSize;
-            ArrayList<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            String flightId = request.queryParams("flight_id");
+            LOG.info("URL flight id is: " + flightId);
 
+            long startTime, endTime;
 
-            scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
-            scopes.put("index_js", "var currentPage = 0;");
+            Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
 
-            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
+            if (flight.getFleetId() != fleetId) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                Spark.halt(401, "User did not have access to this flight.");
 
-            StringWriter stringOut = new StringWriter();
-            mustache.execute(new PrintWriter(stringOut), scopes).flush();
-            resultString = stringOut.toString();
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append("var flights = [" + gson.toJson(flight) + "];");
 
+                scopes.put("flight_js", sb.toString());
+
+                StringWriter stringOut = new StringWriter();
+                startTime = System.currentTimeMillis();
+                mustache.execute(new PrintWriter(stringOut), scopes).flush();
+                endTime = System.currentTimeMillis();
+                LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
+                resultString = stringOut.toString();
+            }
         } catch (SQLException e) {
+            LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOG.severe(e.toString());
+
+        } catch (NumberFormatException e) {
+            LOG.severe(e.toString());
+            return gson.toJson(new ErrorResponse(e));
         }
 
         return resultString;

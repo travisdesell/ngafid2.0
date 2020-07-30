@@ -7,12 +7,7 @@ import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
-
-class SystemIdsCard extends React.Component {
+class SystemIdsPage extends React.Component {
     constructor(props) {
         super(props);
 
@@ -26,7 +21,9 @@ class SystemIdsCard extends React.Component {
         });
 
         this.state = {
-            systemIds : systemIds
+            systemIds : systemIds,
+            waitingUserCount : this.props.waitingUserCount,
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
     }
 
@@ -62,7 +59,7 @@ class SystemIdsCard extends React.Component {
             tail : systemId.tail
         };
 
-        let systemIdCard = this;
+        let systemIdsPage = this;
 
         $.ajax({
             type: 'POST',
@@ -76,10 +73,9 @@ class SystemIdsCard extends React.Component {
                 systemId.confirmed = true;
                 systemId.modified = false;
 
-                systemIdCard.setState(systemIdCard.state);
-
-                navbar.state.unconfirmedTailsCount--;
-                navbar.setState(navbar.state);
+                systemIdsPage.setState({
+                    unconfirmedTailsCount : (systemIdsPage.state.unconfirmedTailsCount - 1)
+                });
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating Tail Number", errorThrown);
@@ -88,7 +84,7 @@ class SystemIdsCard extends React.Component {
         });  
     }
 
-    getSystemIdCard(name, type) {
+    getSystemIdsPage(name, type) {
         return (
             <div style={{marginTop:"4", padding:"0 0 0 0"}}>
                 <div className="col-sm-12" style={{padding:"0 0 0 0"}}>
@@ -150,17 +146,21 @@ class SystemIdsCard extends React.Component {
     render() {
         //console.log(systemIds);
 
-        let unconfirmedHtml = this.getSystemIdCard("Unconfirmed System Ids", false);
-        let confirmedHtml = this.getSystemIdCard("Confirmed System Ids", true);
+        let unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System Ids", false);
+        let confirmedHtml = this.getSystemIdsPage("Confirmed System Ids", true);
 
         return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-lg-6" style={{paddingRight:"0"}}>
-                        {unconfirmedHtml}
-                    </div>
-                    <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                        {confirmedHtml}
+            <div>
+                <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-lg-6" style={{paddingRight:"0"}}>
+                            {unconfirmedHtml}
+                        </div>
+                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
+                            {confirmedHtml}
+                        </div>
                     </div>
                 </div>
             </div>
@@ -168,7 +168,9 @@ class SystemIdsCard extends React.Component {
     }
 }
 
-var profileCard = ReactDOM.render(
-    <SystemIdsCard />,
-    document.querySelector('#system-ids-card')
+console.log("setting system ids page with react!");
+
+var systemIdsPage = ReactDOM.render(
+    <SystemIdsPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
+   document.querySelector('#system-ids-page')
 );
