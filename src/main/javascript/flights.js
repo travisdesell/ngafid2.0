@@ -9,6 +9,7 @@ import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 
+import { errorModal } from "./error_modal.js";
 import { Filter } from './filter.js';
 import { Paginator } from './paginator_component.js';
 import { FlightsCard } from './flights_card_component.js';
@@ -505,6 +506,7 @@ class FlightsPage extends React.Component {
             url: '/protected/get_flights',
             data : submissionData,
             dataType : 'json',
+            timeout : 0, //set timeout to be unlimited for slow queries
             success : function(response) {
 
                 console.log(response);

@@ -115,6 +115,8 @@ class SignedInNavbar extends React.Component {
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
+        let eventsActive = this.props.activePage === "trends" || this.props.activePage === "dashboard";
+
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
                 <a className="navbar-brand" href="../">NGAFID</a>
@@ -166,15 +168,24 @@ class SignedInNavbar extends React.Component {
 
                     <ul className="navbar-nav">
                         <NavLink name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
-                        <NavLink name={"Trends"} active={this.props.activePage === "trends"} href="/protected/trends"/>
-                        <NavLink name={"Dashboard"} active={this.props.activePage === "dashboard"} href="/protected/dashboard"/>
+
+                        <li className="nav-item dropdown">
+                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
+                            </a>
+                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
+                                <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
+                                <DropdownLink name={"Statistics"} hidden={false} href="/protected/dashboard"/>
+                            </div>
+                        </li>
+
                         <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
                         <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
                         <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
 
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (this.props.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {"Account" + accountNotifications} {this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
+                                {"Account" + accountNotifications}{this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
