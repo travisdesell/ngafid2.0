@@ -44,17 +44,6 @@ class SelectAircraftModal extends React.Component {
         this.state.submitMethod(this.state.version, selectedPath);
     }
 
-	triggerInput(){
-		$('#upload-file-input').trigger('click');
-        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
-            console.log("number files selected: " + this.files.length);
-            console.log( this.files );
-        });
-		
-		let filePath = $('#upload-file-input').val();
-		console.log("selected path from input: "+filePath);
-	}
-
 	selectPathId(pathId){
 		this.state.activeId = pathId;
 		this.setState(this.state);
@@ -132,34 +121,6 @@ class SelectAircraftModal extends React.Component {
 
 
     render() {
-        let formGroupStyle = {
-            marginBottom: '8px'
-        };
-
-        let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
-        };
-
-        let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let hiddenStyle = {
-            display : "none"
-        };
-
-        let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
         let styleButtonSq = {
             flex : "right",
 			float : "auto"
@@ -184,7 +145,7 @@ class SelectAircraftModal extends React.Component {
 					let relIndex = index + 1;
 					let isActive = (this.state.activeId - 1 == index);
 					return(
-						<ListGroup.Item active={isActive} onClick={() => this.selectPathId(relIndex)}>
+						<ListGroup.Item active={isActive} key={index} onClick={() => this.selectPathId(relIndex)}>
 							<Container>
 								<Row className="justify-content-md-center">
 									<Col xs lg="11">
@@ -219,7 +180,7 @@ class SelectAircraftModal extends React.Component {
 
                 <div id='confirm-modal-body' className='modal-body'>
                     <h4>Select *.acf filepath for X-Plane</h4>
-						Please select (or create) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
+						Please select (or add) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
 					<div className="row p-2">
 						<div className="col">
 							{selectRow}
