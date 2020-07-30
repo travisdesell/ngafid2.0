@@ -24,11 +24,14 @@ class SelectAircraftModal extends React.Component {
 		this.getSimAircraft();
 	}
 
-    show(type, submitMethod) {
+    show(type, submitMethod, flightId) {
         //this.state.submitMethod = submitMethod;
-		this.state.version = type;
-		this.state.submitMethod = submitMethod;
-        this.setState(this.state);
+		this.setState({
+			version : type,
+			submitMethod : submitMethod,
+			flightId : flightId
+		});
+
         $("#select_aircraft-modal").modal('show');
     }
 
@@ -41,7 +44,7 @@ class SelectAircraftModal extends React.Component {
 		}
 			
         console.log("modal submit clicked!");
-        this.state.submitMethod(this.state.version, selectedPath);
+        this.state.submitMethod(this.state.version, selectedPath, this.state.flightId);
     }
 
 	selectPathId(pathId){

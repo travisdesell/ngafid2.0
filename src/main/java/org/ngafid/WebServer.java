@@ -98,6 +98,12 @@ public final class WebServer {
 
         // Get the port for the NGAFID webserver to listen on
         Spark.port( Integer.parseInt(System.getenv("NGAFID_PORT")) );
+        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
+
+        int maxThreads = 32;
+        int minThreads = 2;
+        int timeOutMillis = 1000 * 60 * 5;
+        Spark.threadPool(maxThreads, minThreads, timeOutMillis);
         //String base = "/" + System.getenv("NGAFID_NAME") + "/";
 
         // Configuration to serve static files

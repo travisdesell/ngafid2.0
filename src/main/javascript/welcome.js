@@ -308,7 +308,7 @@ class WelcomePage extends React.Component {
 
         return (
             <div>
-                <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+                <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="container-fluid">
                     <div className="row">
