@@ -57,6 +57,8 @@ class Flight extends React.Component {
             eventOutlines : [],
             eventOutlineLayer : null
         }
+
+		this.submitXPlanePath = this.submitXPlanePath.bind(this);
     }
 
     componentWillUnmount() {
@@ -401,13 +403,13 @@ class Flight extends React.Component {
 	 * @param path the selected path
 	 * @param flightId the flightId
 	 **/
-	submitXPlanePath(type, path, flightId){
+	submitXPlanePath(type, path){
 		console.log("submitting the xplane path to server"+type+" "+path);
 		console.log(this.props);
 		if (type === '10') {
-            window.open("/protected/get_xplane?flight_id=" + flightId + "&version=10"+"&acft_path="+path);
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=10"+"&acft_path="+path);
         }else if (type === '11') {
-            window.open("/protected/get_xplane?flight_id=" + flightId + "&version=11"+"&acft_path="+path);
+            window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=11"+"&acft_path="+path);
         }
 	}
 

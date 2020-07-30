@@ -8,6 +8,8 @@ import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 
+import { helpModal } from './help_modal.js';
+
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
@@ -15,6 +17,8 @@ window.$ = $;
 
 class SelectAircraftModal extends React.Component {
     constructor(props) {
+		console.log("cstr slam");
+		console.log(props);
         super();
 		console.log("getSimAircraft invoked");
 		this.state = {
@@ -22,18 +26,22 @@ class SelectAircraftModal extends React.Component {
 			activeId : 0
 		}
 		this.getSimAircraft();
+	    this.reOpen = this.reOpen.bind(this);
 	}
 
-    show(type, submitMethod, flightId) {
+    show(type, submitMethod) {
         //this.state.submitMethod = submitMethod;
 		this.setState({
 			version : type,
-			submitMethod : submitMethod,
-			flightId : flightId
+			submitMethod : submitMethod
 		});
 
         $("#select_aircraft-modal").modal('show');
     }
+
+	reOpen(){
+		this.show(this.state.version, this.state.submitMethod, this.state.flightId);
+	}
 
     modalClicked() {
 		var selectedPath = this.state.paths[this.state.activeId - 1];
@@ -50,6 +58,14 @@ class SelectAircraftModal extends React.Component {
 	selectPathId(pathId){
 		this.state.activeId = pathId;
 		this.setState(this.state);
+	}
+
+	helpClicked(){
+		let title = "X-Plane Aircraft Selector Help";
+		let message = "The paths in the list are filepaths to aircraft from previous exports. To add a new aircraft, use the text "+
+					  "field at the top of the list. The path should follow the format (no quotes): \"Aircraft/Laminar Research/Cessna 172SP/Cessna172SP.acf\"."+
+					  " It is very important to exclude the leading '/' from the filepath right before the 'Aircraft' directory.";
+		helpModal.show(title, message, this.reOpen);
 	}
 
 	getSimAircraft(){
@@ -184,6 +200,7 @@ class SelectAircraftModal extends React.Component {
                 <div id='confirm-modal-body' className='modal-body'>
                     <h4>Select *.acf filepath for X-Plane</h4>
 						Please select (or add) a filepath for the *.acf file that matches the aircraft in your X-Plane library that you would like simulated.
+
 					<div className="row p-2">
 						<div className="col">
 							{selectRow}
@@ -193,6 +210,7 @@ class SelectAircraftModal extends React.Component {
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
+                    <button type='button' className='btn btn-success' data-dismiss='modal' onClick={() => this.helpClicked()}>Help</button>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
                 </div>
 
@@ -202,7 +220,7 @@ class SelectAircraftModal extends React.Component {
 }
 
 var selectAircraftModal = ReactDOM.render(
-    <SelectAircraftModal />,
+    <SelectAircraftModal backdrop="static" />,
     document.querySelector("#select_aircraft-modal-content")
 );
 
