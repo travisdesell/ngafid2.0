@@ -10,26 +10,27 @@ Install mysql on your system. For ubuntu:
 ```
 ~/ $ sudo apt install mysql-server
 ```
-### NOTE: On some Linux disributions, such as RHEL, SUSE and Arch, the mysql package is provided by mariadb.
-In this case you will need to run (on openSUSE):
+### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
+Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
+i.e.
 ```
-~/ $ sudo zypper in mariadb
+~/ $ sudo zypper in mysql mysql-server
 ```
-or, for arch:
+or, for Arch:
 ```
 ~/ $ sudo pacman -S mariadb
 ```
-and Fedora, RedHat/CentOS:
-```
-~/ $ sudo dnf install mariadb mariadb-server 
-```
-You will also need to run
+You will also need to run 
 ```
 ~/ $ sudo mysql_install_db --user=mysql --basedir=/usr --datadir=/var/lib/mysql
 ```
-and
+before starting the systemd service (see below)
 ```
 ~/ $ sudo systemctl enable --now mariadb
+```
+or
+```
+~/ $ sudo systemctl enable --now mysql
 ```
 **the systemd service name may vary depending on your distro.
 
@@ -150,10 +151,6 @@ Then run:
 
 This will download the javascript dependencies. 
 
-We also need to install React Bootstrap to use the bootstrap css libraries:
-```
-~/ngafid2.0 $ npm install react-bootstrap bootstrap
-```
 Then, in order to compile the javascript
 and automatically recompile whenever you change one of the files:
 ```
