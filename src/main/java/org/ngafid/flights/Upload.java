@@ -53,6 +53,13 @@ public class Upload {
         status = newStatus;
     }
 
+    /**
+     * @return the status of this upload
+     */
+    public String getStatus() {
+        return status;
+    }
+
     private static void deleteDirectory(File folder) {
         File[] files = folder.listFiles();
         if (files != null) { //some JVMs return null for empty dirs
