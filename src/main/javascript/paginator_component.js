@@ -1,0 +1,165 @@
+import 'bootstrap';
+import React, { Component } from "react";
+import ReactDOM from "react-dom";
+import Dropdown from 'react-bootstrap/Dropdown';
+import DropdownButton from 'react-bootstrap/DropdownButton';
+import Pagination from 'react-bootstrap/Pagination';
+import Form from 'react-bootstrap/Form';
+
+
+class Paginator extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            goto_active : false,
+            goto_value : 1
+        };
+
+        this.previousPage = this.previousPage.bind(this);
+        this.nextPage = this.nextPage.bind(this);
+        this.repaginate = this.repaginate.bind(this);
+    }
+
+    updateGoto(event) {
+        let value = event.target.value;
+        console.log("goto updated to: '" + value + "'");
+        if (/^\d+$/.test(value) && value > 0 && value <= this.props.numberPages) {
+            console.log("setting goto active to true!");
+            this.setState({
+                goto_active : true,
+                goto_value : value
+            });
+
+        } else {
+            console.log("setting goto active to false!");
+            this.setState({
+                goto_active : false
+            });
+        }
+    }
+
+    /**
+     ** Jumps to a page in this collection of queried flights
+     ** @param pg the page to jump to
+     **/
+    jumpPage(page) {
+        if (page < this.props.numberPages && page >= 0){
+            this.props.updateCurrentPage(page);
+            this.props.submitFilter();
+        }
+    }
+
+    /**
+     *    * jumps to the next page in this collection of queried flights
+     *        */
+    nextPage() {
+        this.props.updateCurrentPage(this.props.currentPage + 1);
+        this.props.submitFilter();
+    }
+
+    /**
+     ** jumps to the previous page in this collection of queried flights
+     **/
+    previousPage() {
+        this.props.updateCurrentPage(this.props.currentPage - 1);
+        this.props.submitFilter();
+    }
+
+    /**
+     ** Repaginates the page configuration when the numPerPage field has been changed by the user
+     **/
+    repaginate(pageSize) {
+        console.log("Re-Paginating");
+        this.props.updateItemsPerPage(pageSize);
+        this.props.submitFilter();
+    }
+
+    render() {
+        let pages = [];
+
+        let totalVisiblePages = 9;
+        let pagesAround = 4;
+
+        let firstVisiblePage = this.props.currentPage - pagesAround;
+        let lastVisiblePage = this.props.currentPage + pagesAround + 1;
+
+        if (this.props.numberPages > totalVisiblePages) {
+            if (firstVisiblePage < 0) {
+                lastVisiblePage -= firstVisiblePage;
+                firstVisiblePage -= firstVisiblePage;
+            } else if (lastVisiblePage > this.props.numberPages) {
+                firstVisiblePage -= (lastVisiblePage - this.props.numberPages);
+                //lastVisiblePage -= (this.props.numberPages - lastVisiblePage);
+            }
+        }
+
+
+
+        /*
+        if ((this.props.currentPage - pagesAround) > 0) {
+            pages.push(
+                <Pagination.Ellipsis key="begin_ellipsis" disabled />
+            );
+        }
+        */
+
+        for (let pageNumber = firstVisiblePage; pageNumber < lastVisiblePage; pageNumber++) {
+            if (pageNumber < 0 || pageNumber >= this.props.numberPages) continue;
+
+            pages.push(
+                <Pagination.Item key={pageNumber} onClick={() => this.jumpPage(pageNumber)} active={pageNumber === this.props.currentPage}>{pageNumber + 1}</Pagination.Item>
+            );
+        }
+
+        /*
+        if ((this.props.currentPage + pagesAround) < (this.props.numberPages - 2)) {
+            pages.push(
+                <Pagination.Ellipsis key="end_ellipsis" disabled />
+            );
+        }
+        */
+
+
+
+        if (typeof this.props.items != 'undefined') {
+            return (
+                <div className="card mb-1 border-secondary">
+                    <div className="row m-0 p-2">
+                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
+
+                        <Pagination size="sm" className="m-0 mr-2">
+                            <Pagination.First disabled={this.props.currentPage === 0} onClick={() => this.jumpPage(0)}/>
+                            <Pagination.Prev disabled={this.props.currentPage === 0} onClick={() => this.previousPage()}/>
+
+                            {pages}
+
+                            <Pagination.Next disabled={this.props.currentPage === this.props.numberPages - 1} onClick={() => this.nextPage()} />
+                            <Pagination.Last disabled={this.props.currentPage === this.props.numberPages - 1} onClick={() => this.jumpPage(this.props.numberPages - 1)} />
+                        </Pagination>
+
+                        <div className="col form-row input-group m-0 p-0">
+                            <div className="input-group-prepend p-0">
+                                <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
+                            </div>
+                            <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
+                        </div>
+
+                        <DropdownButton className="ml-auto" id="dropdown-item-button" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 {this.props.itemName} per page</Dropdown.Item>
+                            <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 {this.props.itemName} per page</Dropdown.Item>
+                        </DropdownButton>
+                    </div>
+                </div>
+            );
+        } else {
+            return ( <div></div> );
+        }
+    }
+}
+
+
+export { Paginator };

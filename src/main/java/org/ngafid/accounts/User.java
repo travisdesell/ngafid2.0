@@ -53,6 +53,15 @@ public class User {
     }
 
     /**
+     * @return the full name (first + last) of the user.
+     */
+    public String getFullName() {
+        return firstName + " " + lastName;
+    }
+
+
+
+    /**
      * @return the user's fleet id
      */
     public int getFleetId() {

@@ -89,15 +89,19 @@ var center = fromLonLat([-97.0329, 47.9253]);
 
 layers[2].setVisible(true);
 
-var map = new Map({
-    target: 'map',
-    layers: layers,
-    loadTilesWhileInteracting: true,
-    view: new View({
-        center: center,
-        zoom: 9
-    })
-});
+var map;
+
+function initializeMap() {
+    map = new Map({
+        target: 'map',
+        layers: layers,
+        loadTilesWhileInteracting: true,
+        view: new View({
+            center: center,
+            zoom: 9
+        })
+    });
+}
 
 /*
 var layer = new ol.layer.Tile({
@@ -184,4 +188,4 @@ Colors.randomValue = function() {
 };
 
 
-export { map, styles, layers, Colors };
+export { map, styles, layers, Colors, initializeMap };

@@ -20,20 +20,28 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
+
 
 import org.ngafid.Database;
-import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
+import org.ngafid.flights.Itinerary;
+import org.ngafid.flights.Tails;
+import org.ngafid.flights.Flight;
+
+import org.ngafid.events.EventDefinition;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-public class GetUploads implements Route {
-    private static final Logger LOG = Logger.getLogger(GetUploads.class.getName());
+public class GetFlight implements Route {
+    private static final Logger LOG = Logger.getLogger(GetFlight.class.getName());
     private Gson gson;
 
     private static class Message {
@@ -48,13 +56,13 @@ public class GetUploads implements Route {
 
     private List<Message> messages = null;
 
-    public GetUploads(Gson gson) {
+    public GetFlight(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetUploads(Gson gson, String messageType, String messageText) {
+    public GetFlight(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -63,27 +71,15 @@ public class GetUploads implements Route {
         messages.add(new Message(messageType, messageText));
     }
 
-    public void replaceAll(StringBuilder builder, String from, String to)
-    {
-        int index = builder.indexOf(from);
-        while (index != -1)
-        {
-            builder.replace(index, index + from.length(), to);
-            index += to.length(); // Move to the end of the replacement
-            index = builder.indexOf(from, index);
-        }
-    }
-
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "uploads.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flight.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -99,39 +95,43 @@ public class GetUploads implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            //default page values
-            int currentPage = 0;
-            int pageSize = 10;
-
             Connection connection = Database.getConnection();
 
-            int totalUploads = Upload.getNumUploads(connection, fleetId, null);
-            int numberPages = totalUploads / pageSize;
+            String flightId = request.queryParams("flight_id");
+            LOG.info("URL flight id is: " + flightId);
 
-            ArrayList<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
-            //update the status of all the uploads currently uploading to incomplete so the webpage knows they
-            //need to be restarted and aren't currently being uploaded.
-            for (Upload upload : pending_uploads) {
-                upload.setStatus("UPLOAD INCOMPLETE");
+            long startTime, endTime;
+
+            Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
+
+            if (flight.getFleetId() != fleetId) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                Spark.halt(401, "User did not have access to this flight.");
+
+            } else {
+                StringBuilder sb = new StringBuilder();
+                sb.append("var flights = [" + gson.toJson(flight) + "];");
+
+                scopes.put("flight_js", sb.toString());
+
+                StringWriter stringOut = new StringWriter();
+                startTime = System.currentTimeMillis();
+                mustache.execute(new PrintWriter(stringOut), scopes).flush();
+                endTime = System.currentTimeMillis();
+                LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
+                resultString = stringOut.toString();
             }
-
-            ArrayList<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
-
-
-            scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
-            scopes.put("index_js", "var currentPage = 0;");
-
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pending_uploads = JSON.parse('" + gson.toJson(pending_uploads) + "');");
-
-            StringWriter stringOut = new StringWriter();
-            mustache.execute(new PrintWriter(stringOut), scopes).flush();
-            resultString = stringOut.toString();
-
         } catch (SQLException e) {
+            LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
 
-        } catch (Exception e) {
+        } catch (IOException e) {
             LOG.severe(e.toString());
+
+        } catch (NumberFormatException e) {
+            LOG.severe(e.toString());
+            return gson.toJson(new ErrorResponse(e));
         }
 
         return resultString;

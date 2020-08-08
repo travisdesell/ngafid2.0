@@ -7,17 +7,17 @@
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
 
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/css/ol.css" type="text/css">
+
     <script>
-        var plotMapHidden = true;
-		{{{numPages_js}}}
-		{{{index_js}}}
+        var plotMapHidden = false;
         {{{navbar_js}}}
-        {{{uploads_js}}}
+        {{{flight_js}}}
     </script>
 
 </head>
 <body>
-    <div id="uploads-page"></div>
+    <div id="flight-page"></div>
 
     <div id="loading" style="display:none">
         <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
@@ -38,7 +38,9 @@
     </div>
 
     <!-- Load our javascript. -->
-    <script src="/js/uploads-bundle.js"></script>
+
+    <script src="/js/flight-bundle.js"></script>
+
 
 </body>
 </html>
