@@ -14,8 +14,8 @@ public class XPlane11Export extends XPlaneExport{
 	/**
 	 * {inheritDoc}
 	 */
-	public XPlane11Export(int flightId){
-		super(flightId);
+	public XPlane11Export(int flightId, String aircraftPath){
+		super(flightId, aircraftPath);
 	}
 
 	/**
@@ -23,7 +23,6 @@ public class XPlane11Export extends XPlaneExport{
 	 * */
 	@Override
 	public void writeFlightData(StringBuffer buffer, Map<String, Object> scopes){
-		scopes.put(ACFT, ACFT.toUpperCase()+","+xplaneNames.get(flight.getAirframeType()+"XP11")+",");
 		int length = parameters.get(ALT_MSL).size();
 		for (int i = 0; i < length; i++) {
 			//make sure we dont log where the GPS wasn't recording coordinates as this will 

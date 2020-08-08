@@ -37,7 +37,7 @@ function displayPlots(selectedAirframe) {
 
 
     var ngafidPercents = {
-        name : 'NGAFID Aggregate',
+        name : 'All Other Fleets',
         type : 'bar',
         orientation : 'h',
         hoverinfo : 'y+text',
@@ -205,7 +205,7 @@ class Notifications extends React.Component {
 }
 
 
-class WelcomeCard extends React.Component {
+class WelcomePage extends React.Component {
     constructor(props) {
         super(props);
 
@@ -264,7 +264,7 @@ class WelcomeCard extends React.Component {
         $('#loading').show();
         console.log("showing loading spinner!");
 
-        let welcomeCard = this;
+        let welcomePage = this;
 
         $.ajax({
             type: 'POST',
@@ -283,8 +283,8 @@ class WelcomeCard extends React.Component {
                 }   
 
                 eventCounts = response;
-                displayPlots(welcomeCard.state.airframe);
-                welcomeCard.setState({datesChanged : false});
+                displayPlots(welcomePage.state.airframe);
+                welcomePage.setState({datesChanged : false});
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
@@ -307,70 +307,73 @@ class WelcomeCard extends React.Component {
         };
 
         return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-lg-6" style={{paddingRight:"0"}}>
-                        <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Your Fleet</h4>
-                            <div className="card-body">
-                                <div className="row">
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(flightHours / (60 * 60)).toLocaleString('en', numberOptions)}</h3> Flight Hours <br></br>
+            <div>
+                <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-lg-6" style={{paddingRight:"0"}}>
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Your Fleet</h4>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(flightHours / (60 * 60)).toLocaleString('en', numberOptions)}</h3> Flight Hours <br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(numberFlights).toLocaleString('en')}</h3> Flights <br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(numberAircraft).toLocaleString('en')}</h3> Aircraft <br></br>
+                                        </div>
                                     </div>
 
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(numberFlights).toLocaleString('en')}</h3> Flights <br></br>
+                                    <hr></hr>
+
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(yearEvents).toLocaleString('en')}</h3> Events This Year<br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(monthEvents).toLocaleString('en')}</h3> Events This Month<br></br>
+                                        </div>
+
                                     </div>
-
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(numberAircraft).toLocaleString('en')}</h3> Aircraft <br></br>
-                                    </div>
-                                </div>
-
-                                <hr></hr>
-
-                                <div className="row">
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
-                                    </div>
-
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(yearEvents).toLocaleString('en')}</h3> Events This Year<br></br>
-                                    </div>
-
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(monthEvents).toLocaleString('en')}</h3> Events This Month<br></br>
-                                    </div>
-
                                 </div>
                             </div>
                         </div>
+
+                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
+                            <Notifications />
+                        </div>
                     </div>
 
-                    <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                        <Notifications />
-                   </div>
-                </div>
-
-                <div className="row">
-                    <div className="col-lg-12">
-                        <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <TimeHeader
-                                name="Events"
-                                airframes={airframes}
-                                airframe={this.state.airframe}
-                                startYear={this.state.startYear} 
-                                startMonth={this.state.startMonth} 
-                                endYear={this.state.endYear} 
-                                endMonth={this.state.endMonth} 
-                                datesChanged={this.state.datesChanged}
-                                dateChange={() => this.dateChange()}
-                                airframeChange={(airframe) => this.airframeChange(airframe)}
-                                updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
-                            />
+                    <div className="row">
+                        <div className="col-lg-12">
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <TimeHeader
+                                    name="Events"
+                                    airframes={airframes}
+                                    airframe={this.state.airframe}
+                                    startYear={this.state.startYear} 
+                                    startMonth={this.state.startMonth} 
+                                    endYear={this.state.endYear} 
+                                    endMonth={this.state.endMonth} 
+                                    datesChanged={this.state.datesChanged}
+                                    dateChange={() => this.dateChange()}
+                                    airframeChange={(airframe) => this.airframeChange(airframe)}
+                                    updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
+                                    updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
+                                    updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
+                                    updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                />
 
                             <div className="card-body" style={{padding:"0"}}>
                                 <div className="row" style={{margin:"0"}}>
@@ -386,20 +389,17 @@ class WelcomeCard extends React.Component {
                     </div>
                 </div>
             </div>
+        </div>
         );
     }
 }
 
 
-var welcomeCard = ReactDOM.render(
-    <WelcomeCard />,
-    document.querySelector('#welcome-card')
+var welcomePage= ReactDOM.render(
+    <WelcomePage/>,
+    document.querySelector('#welcome-page')
 );
 
 displayPlots("All Airframes");
 
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
 

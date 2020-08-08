@@ -28,6 +28,7 @@ import static org.ngafid.flights.XPlaneParameters.*;
 
 public abstract class XPlaneExport{
 	protected static Connection connection = Database.getConnection();
+	protected String aircraftPath;
 	protected StringWriter dataOut;
 	protected Flight flight;
 	protected Map<String, DoubleTimeSeries> parameters;
@@ -36,8 +37,9 @@ public abstract class XPlaneExport{
 	 * Defualt constructor for X-Plane exports
 	 * @param flightId the flightId to create the export for
 	 */
-	public XPlaneExport(int flightId){
+	public XPlaneExport(int flightId, String aircraftPath){
 		try{
+			this.aircraftPath = aircraftPath+",";
 			this.flight = Flight.getFlight(connection, flightId);
 			this.parameters = getSeriesData(connection, flightId);
 			this.dataOut = this.export();
@@ -79,6 +81,7 @@ public abstract class XPlaneExport{
 
 		scopes.put(ENDL, POSIX_ENDL);
 		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
+		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
 
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
