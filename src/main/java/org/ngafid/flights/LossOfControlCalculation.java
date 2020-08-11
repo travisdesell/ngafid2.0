@@ -21,6 +21,10 @@ import org.ngafid.flights.DoubleTimeSeries;
 
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
+
+	//Standard atmospheric pressure in in. mercury
+	static double STD_PRESS_INHG = 29.92;
+
 	private int flightId;
 	private PrintWriter pw;
 	private Map<String, DoubleTimeSeries> parameters;
@@ -47,25 +51,43 @@ public class LossOfControlCalculation{
 			params.put("IAS", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS"));
 			params.put("VSPD", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "VSpd"));	
 			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
+			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));	
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
 		return params;		
 	}
 
-	private double getVSpdAt(int index){
+	private double getVspd(int index){
 		DoubleTimeSeries vspd = this.parameters.get("VSPD");
 		return vspd.get(index);
 	}
 
-	private double getIASAt(int index){
+	private double getIAS(int index){
 		DoubleTimeSeries ias = this.parameters.get("IAS");
 		return ias.get(index);
 	}
 
-	private double getOATAt(int index){
+	private double getOAT(int index){
 		DoubleTimeSeries oat = this.parameters.get("OAT");
 		return oat.get(index);
+	}
+
+	private double getBaroPress(int index){
+		DoubleTimeSeries press = this.parameters.get("BaroA");
+		return press.get(index);
+	}
+
+	private double getTempRatio(int index){
+		return (273 + getOAT(index)) / 288;
+	}
+
+	private double getPressureRatio(int index){
+		return this.getBaroPress(index) / STD_PRESS_INHG;
+	}
+
+	private double getDensityRatio(int index){
+		return this.getPressureRatio(index) / this.getTempRatio(index);
 	}
 
 	/**
@@ -75,7 +97,7 @@ public class LossOfControlCalculation{
 	 * @return a double representing Angle of Attack
 	 */
 	private double calculateAOA(int index){
-		double b = (this.getVSpdAt(index) * this.beta(0,0)) / (this.getIASAt(index) * this.beta(0,0) * 101.267); //TODO: figure out what these constants mean?
+		double b = (this.getVspd(index) * this.beta(0,0)) / (this.getIAS(index) * this.beta(0,0) * 101.267); //TODO: figure out what these constants mean?
 		b = Math.asin(b);
 
 		//TODO: implement the phi / cos gamma here
@@ -93,7 +115,7 @@ public class LossOfControlCalculation{
 	 */
 	private double beta(int index, int z){
 		double n = (1 - (1 - this.delta(1) / this.delta(0)) + (1 - ((-2.94 * Math.pow(10, -5) * z) + .986)));
-		double d = (273 + this.getOATAt(index)) / 288;
+		double d = (273 + this.getOAT(index)) / 288;
 
 		return Math.pow((n/d), -2);
 	}
@@ -111,7 +133,7 @@ public class LossOfControlCalculation{
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
 		DoubleTimeSeries heading = this.parameters.get("Heading");
 		for(int i = 0; i<heading.size(); i++){
-			this.pw.println(i+"\t\t"+heading.get(i));
+			this.pw.println(i+"\t\t"+getDensityRatio(i));
 		}
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
@@ -128,6 +150,7 @@ public class LossOfControlCalculation{
 			File file = new File(args[0]);
 			System.out.println("Will log to file: "+file.toString());
 			loc.printToFile(file);
+			loc.calculate();
 		}
 	}
 }
