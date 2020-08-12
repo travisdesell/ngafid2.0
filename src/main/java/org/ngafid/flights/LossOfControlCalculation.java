@@ -51,7 +51,7 @@ public class LossOfControlCalculation{
 			params.put("IAS", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS"));
 			params.put("VSPD", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "VSpd"));	
 			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
-			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));	
+			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
@@ -89,6 +89,10 @@ public class LossOfControlCalculation{
 	private double getDensityRatio(int index){
 		return this.getPressureRatio(index) / this.getTempRatio(index);
 	}
+
+    private double getTrueAirspeed(int index){
+        return this.getIAS(index) * (1 / (Math.sqrt(this.getDensityRatio(index))));
+    }
 
 	/**
 	 * Calculate the Angle of Attack
