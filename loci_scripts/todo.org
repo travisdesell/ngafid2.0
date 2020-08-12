@@ -1,0 +1,17 @@
+* TODO Parameters to track/calculate for LOCI and put in the map
+  - [X] Temp. Ratio
+  - [X] Pressure Ratio
+  - [X] Density Ratio
+  - [ ] True Airspeed
+  - [ ] TAS Feet Per Minute
+  - [ ] VSPD Geometric
+  - [ ] Offset
+  - [ ] Flight Path Angle
+  - [ ] AOA_Simple
+  - [ ] Yaw Rate
+  - [ ] Roll Comp
+  - [ ] Yaw Comp
+  - [ ] VR Comp
+  - [ ] CT Comp
+  - [ ] Cold Comp
+
