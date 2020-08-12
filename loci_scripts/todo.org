@@ -2,7 +2,7 @@
   - [X] Temp. Ratio
   - [X] Pressure Ratio
   - [X] Density Ratio
-  - [ ] True Airspeed
+  - [X] True Airspeed
   - [ ] TAS Feet Per Minute
   - [ ] VSPD Geometric
   - [ ] Offset
