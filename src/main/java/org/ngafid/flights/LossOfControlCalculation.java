@@ -52,10 +52,17 @@ public class LossOfControlCalculation{
 			params.put("VSPD", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "VSpd"));	
 			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
 			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));
+			params.put("Pitch", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Pitch"));
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
 		return params;		
+	}
+
+	private double lag(DoubleTimeSeries series){
+		//TODO: implement some sort of lag function that replicates R's implementation
+		// see: https://math.stackexchange.com/questions/2548314/what-is-lag-in-a-time-series
+		return 0.0;
 	}
 
 	private double getVspd(int index){
@@ -91,8 +98,38 @@ public class LossOfControlCalculation{
 	}
 
     private double getTrueAirspeed(int index){
-        return this.getIAS(index) * (1 / (Math.sqrt(this.getDensityRatio(index))));
+        return this.getIAS(index) * Math.pow(this.getDensityRatio(index), -0.5);
     }
+
+	private double getTrueAirspeedFtMin(int index){
+		return this.getTrueAirspeed(index) * (6076 / 60);
+	}
+
+	private double getVspdGeometric(int index){
+		return this.getVspd(index) * Math.pow(this.getDensityRatio(index), -0.5);
+	}
+
+	private double getFlightPathAngle(int index){
+		double fltPthAngle = Math.asin(this.getVspdGeometric(index) / this.getTrueAirspeedFtMin(index));
+		fltPthAngle = fltPthAngle * (180 / Math.PI);
+		return fltPthAngle;
+	}
+
+	private double getAOASimple(int index){
+		DoubleTimeSeries pitch = this.parameters.get("Pitch");
+		return pitch.get(index) - this.getFlightPathAngle(index);
+	}
+
+	private double getYawRate(int index){
+		DoubleTimeSeries hdg = this.parameters.get("Heading"); 
+		//double yawRate =  
+		//Flight_Data$Yaw_Rate <- (Flight_Data$HDG - lag(Flight_Data$HDG))
+		//Flight_Data$Yaw_Rate <-
+		// 180 - abs(180 - abs(Flight_Data$HDG - lag(Flight_Data$HDG)) %% 360)
+		// TODO: these rates are calculated and stored as a constant for the entire timeseries, I believe
+		return 0.0;
+	}
+
 
 	/**
 	 * Calculate the Angle of Attack

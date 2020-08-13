@@ -3,8 +3,8 @@
   - [X] Pressure Ratio
   - [X] Density Ratio
   - [X] True Airspeed
-  - [ ] TAS Feet Per Minute
-  - [ ] VSPD Geometric
+  - [X] TAS Feet Per Minute
+  - [X] VSPD Geometric
   - [ ] Offset
   - [ ] Flight Path Angle
   - [ ] AOA_Simple

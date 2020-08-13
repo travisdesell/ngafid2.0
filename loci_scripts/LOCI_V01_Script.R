@@ -1,6 +1,10 @@
 
 
 ## Load the required packages
+install.packages("readxl",
+"readr",
+"dplyr",
+"ggplot2")
 library(readxl)
 library(readr)
 library(dplyr)
