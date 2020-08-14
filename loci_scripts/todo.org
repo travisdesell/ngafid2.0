@@ -6,8 +6,8 @@
   - [X] TAS Feet Per Minute
   - [X] VSPD Geometric
   - [ ] Offset
-  - [ ] Flight Path Angle
-  - [ ] AOA_Simple
+  - [X] Flight Path Angle
+  - [X] AOA_Simple
   - [ ] Yaw Rate
   - [ ] Roll Comp
   - [ ] Yaw Comp
