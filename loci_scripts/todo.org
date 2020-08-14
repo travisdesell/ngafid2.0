@@ -8,10 +8,10 @@
   - [ ] Offset
   - [X] Flight Path Angle
   - [X] AOA_Simple
-  - [ ] Yaw Rate
-  - [ ] Roll Comp
-  - [ ] Yaw Comp
-  - [ ] VR Comp
-  - [ ] CT Comp
-  - [ ] Cold Comp
+  - [X] Yaw Rate
+  - [X] Roll Comp
+  - [X] Yaw Comp
+  - [X] VR Comp
+  - [X] CT Comp
+  - [X] Cord Comp
 

@@ -23,7 +23,10 @@ public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 
 	//Standard atmospheric pressure in in. mercury
-	static double STD_PRESS_INHG = 29.92;
+	static final double STD_PRESS_INHG = 29.92;
+	static final double COMP_CONV = Math.PI / 180; 
+	static final double AOACrit = 15;
+	static final double proSpinLim = 4;
 
 	private int flightId;
 	private PrintWriter pw;
@@ -53,16 +56,19 @@ public class LossOfControlCalculation{
 			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
 			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));
 			params.put("Pitch", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Pitch"));
+			params.put("Roll", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Roll"));
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
 		return params;		
 	}
 
-	private double lag(DoubleTimeSeries series){
-		//TODO: implement some sort of lag function that replicates R's implementation
-		// see: https://math.stackexchange.com/questions/2548314/what-is-lag-in-a-time-series
-		return 0.0;
+	private double lag(DoubleTimeSeries series, int index){
+		double currIndex = series.get(index);
+		if(index > 1){
+			return currIndex - series.get(index -1);
+		}
+		return currIndex;
 	}
 
 	private double getVspd(int index){
@@ -122,14 +128,39 @@ public class LossOfControlCalculation{
 
 	private double getYawRate(int index){
 		DoubleTimeSeries hdg = this.parameters.get("Heading"); 
-		//double yawRate =  
-		//Flight_Data$Yaw_Rate <- (Flight_Data$HDG - lag(Flight_Data$HDG))
-		//Flight_Data$Yaw_Rate <-
-		// 180 - abs(180 - abs(Flight_Data$HDG - lag(Flight_Data$HDG)) %% 360)
-		// TODO: these rates are calculated and stored as a constant for the entire timeseries, I believe
-		return 0.0;
+		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index) % 360));
+		return yawRate;
 	}
 
+	private double getRollComp(int index){
+		DoubleTimeSeries roll = this.parameters.get("Roll");
+		return roll.get(index) * COMP_CONV;
+	}
+
+	private double getYawComp(int index){
+		return this.getYawRate(index) * COMP_CONV;
+	}
+	
+	private double getVRComp(int index){
+		return ((this.getTrueAirspeedFtMin(index) / 60) * this.getYawComp(index));
+	}
+
+	private double getCTComp(int index){
+		return Math.sin(this.getRollComp(index)) * 32.2;
+	}
+
+	private double getCordComp(int index){
+	  	return Math.abs(this.getCTComp(index) - this.getVRComp(index)) * 100;
+	}
+
+	private double getProSpin(int index){
+	  	return Math.min((this.getCordComp(index) / proSpinLim), 100);
+	}
+
+	private double calculateStallProbability(int index){
+	    double prob = Math.min(((Math.abs(this.getAOASimple(index) / AOACrit)) * 100), 100);
+	    return prob;
+	}
 
 	/**
 	 * Calculate the Angle of Attack
@@ -174,7 +205,7 @@ public class LossOfControlCalculation{
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
 		DoubleTimeSeries heading = this.parameters.get("Heading");
 		for(int i = 0; i<heading.size(); i++){
-			this.pw.println(i+"\t\t"+getDensityRatio(i));
+			this.pw.println(i+"\t\t"+this.calculateStallProbability(i));
 		}
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
@@ -186,7 +217,7 @@ public class LossOfControlCalculation{
 	 */
 	public static void main(String [] args){
 		System.out.println("Loss of control calculator");
-		LossOfControlCalculation loc = new LossOfControlCalculation(1);
+		LossOfControlCalculation loc = new LossOfControlCalculation(3);
 		if(args.length > 0){
 			File file = new File(args[0]);
 			System.out.println("Will log to file: "+file.toString());
