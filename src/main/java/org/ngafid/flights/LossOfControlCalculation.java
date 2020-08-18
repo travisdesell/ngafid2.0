@@ -42,7 +42,7 @@ public class LossOfControlCalculation{
 	public void printToFile(File file){
 		try{
 			this.pw = new PrintWriter(file);
-			this.pw.println("TIME\tLOC-I PROBABILITY");
+			this.pw.println("TIME\tSTALL PROBABILITY\tLOC-I PROBABILITY");
 		}catch(IOException ioe){
 			ioe.printStackTrace();
 		}
@@ -205,9 +205,15 @@ public class LossOfControlCalculation{
 	public void calculate(){
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
 		DoubleTimeSeries heading = this.parameters.get("Heading");
+		double maxProb = Double.MIN_VALUE;
 		for(int i = 0; i<heading.size(); i++){
-			this.pw.println(i+"\t\t"+this.calculateStallProbability(i));
+			double prob = this.calculateStallProbability(i);
+			if(prob > maxProb){
+				maxProb = prob;
+			}
+			this.pw.printf(i+"\t\t %."+this.precision+"f\n", prob);
 		}
+		this.pw.println("\n\n MAX STALL PROBABILITY: "+maxProb);
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
 	}
@@ -223,11 +229,10 @@ public class LossOfControlCalculation{
 	 */
 	public static void main(String [] args){
 		System.out.println("Loss of control calculator");
-		if(args.length == 3){
+		if(args.length > 2 && args.length <= 3){
 			int flightId = Integer.parseInt(args[0]);
 			int precision = Integer.parseInt(args[2]);
 			File file = new File(args[1]);
-
 			System.err.println("\n\n");
 			System.err.println("+---------- LOCI CALCULATION INFO ----------+");
 			System.err.println("| flight_id: "+flightId+"                   |");
