@@ -492,7 +492,7 @@ class Filter extends React.Component {
                         </div>
 
                         <div className="p-2">
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter()} hidden={externalSubmit} >{this.props.submitButtonName}</button>
+                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={externalSubmit} >{this.props.submitButtonName}</button>
                         </div>
                     </div>
 
