@@ -28,12 +28,13 @@ public class LossOfControlCalculation{
 	static final double AOACrit = 15;
 	static final double proSpinLim = 4;
 
-	private int flightId;
+	private int flightId, precision;
 	private PrintWriter pw;
 	private Map<String, DoubleTimeSeries> parameters;
 
-	public LossOfControlCalculation(int flightId){
+	public LossOfControlCalculation(int flightId, int precision){
 		this.flightId = flightId;
+		this.precision = precision;
 		this.parameters = getParameters(flightId);
 		this.pw = null;
 	}
@@ -210,6 +211,11 @@ public class LossOfControlCalculation{
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
 	}
+
+	public static void displayHelp(){
+		System.err.println("Usage: loci [flight number] [logfile path] [precision]");
+		System.exit(0);
+	}
 	
 	/**
 	 * Main method for testing
@@ -217,12 +223,24 @@ public class LossOfControlCalculation{
 	 */
 	public static void main(String [] args){
 		System.out.println("Loss of control calculator");
-		LossOfControlCalculation loc = new LossOfControlCalculation(3);
-		if(args.length > 0){
-			File file = new File(args[0]);
-			System.out.println("Will log to file: "+file.toString());
+		if(args.length == 3){
+			int flightId = Integer.parseInt(args[0]);
+			int precision = Integer.parseInt(args[2]);
+			File file = new File(args[1]);
+
+			System.err.println("\n\n");
+			System.err.println("+---------- LOCI CALCULATION INFO ----------+");
+			System.err.println("| flight_id: "+flightId+"                   |");
+			System.err.println("| logfile: "+file.toString()+"              |");
+			System.err.println("| precision: "+precision+"                  |");
+			System.err.println("+-------------------------------------------+");
+			System.err.println("\n\n");
+			LossOfControlCalculation loc = new LossOfControlCalculation(flightId, precision);
 			loc.printToFile(file);
 			loc.calculate();
+		}else{
+			displayHelp();
 		}
+
 	}
 }
