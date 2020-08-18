@@ -194,7 +194,8 @@ public class LossOfControlCalculation{
 	}
 
 	private double calculateProbability(int i){
-		return i+1.0;
+		double prob = (this.calculateStallProbability(i) * this.getProSpin(i)) / 100;
+		return prob;
 	}
 
 
@@ -205,15 +206,21 @@ public class LossOfControlCalculation{
 	public void calculate(){
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
 		DoubleTimeSeries heading = this.parameters.get("Heading");
-		double maxProb = Double.MIN_VALUE;
+		double maxsProb = Double.MIN_VALUE;
+		double maxlProb = Double.MIN_VALUE;
 		for(int i = 0; i<heading.size(); i++){
-			double prob = this.calculateStallProbability(i);
-			if(prob > maxProb){
-				maxProb = prob;
+			double sprob = this.calculateStallProbability(i);
+			double lprob = this.calculateProbability(i);
+			if(sprob > maxsProb) {
+				maxsProb = sprob;
 			}
-			this.pw.printf(i+"\t\t %."+this.precision+"f\n", prob);
+			if(lprob > maxlProb) {
+				maxlProb = lprob;
+			}
+			this.pw.printf(i+"\t\t %."+this.precision+"f"+"\t\t\t\t %."+this.precision+"f\n", sprob, lprob);
 		}
-		this.pw.println("\n\n MAX STALL PROBABILITY: "+maxProb);
+		this.pw.println("\n\n MAX STALL PROBABILITY: "+maxsProb);
+		this.pw.println("\n\n MAX LOC-I PROBABILITY: "+maxlProb);
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
 	}
@@ -234,11 +241,11 @@ public class LossOfControlCalculation{
 			int precision = Integer.parseInt(args[2]);
 			File file = new File(args[1]);
 			System.err.println("\n\n");
-			System.err.println("+---------- LOCI CALCULATION INFO ----------+");
-			System.err.println("| flight_id: "+flightId+"                   |");
-			System.err.println("| logfile: "+file.toString()+"              |");
-			System.err.println("| precision: "+precision+"                  |");
-			System.err.println("+-------------------------------------------+");
+			System.err.println("+----------- LOCI CALCULATION INFO -----------+");
+			System.err.println("| flight_id: "+flightId+"\t\t\t\t|");
+			System.err.println("| logfile: "+file.toString()+"\t\t\t|");
+			System.err.println("| precision: "+precision+"\t\t\t\t|");
+			System.err.println("+---------------------------------------------+");
 			System.err.println("\n\n");
 			LossOfControlCalculation loc = new LossOfControlCalculation(flightId, precision);
 			loc.printToFile(file);
