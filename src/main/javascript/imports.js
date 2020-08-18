@@ -375,9 +375,15 @@ class ImportsPage extends React.Component {
         };
     }
 
-    submitFilter() {
+    submitFilter(resetCurrentPage = false) {
+
+        let currentPage = this.state.currentPage;
+        if (resetCurrentPage === true) {
+            currentPage = 0;
+        }
+
         var submissionData = {
-            currentPage : this.state.currentPage,
+            currentPage : currentPage,
             pageSize : this.state.pageSize
         }
 
@@ -404,6 +410,7 @@ class ImportsPage extends React.Component {
 
                 importsPage.setState({
                     imports : response.imports,
+                    currentPage : currentPage,
                     numberPages : response.numberPages
                 });
             },
@@ -421,7 +428,7 @@ class ImportsPage extends React.Component {
 
 
                 <Paginator
-                    submitFilter={() => {this.submitFilter();}}
+                    submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                     items={this.state.imports}
                     itemName="uploads"
                     currentPage={this.state.currentPage}
@@ -445,7 +452,7 @@ class ImportsPage extends React.Component {
 
 
                 <Paginator
-                    submitFilter={() => {this.submitFilter();}}
+                    submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                     items={this.state.imports}
                     itemName="uploads"
                     currentPage={this.state.currentPage}
