@@ -2,8 +2,8 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import { saveQueriesModal } from "./save_query_modal.js"
-import { loadQueriesModal } from "./load_query_modal.js"
+//import { saveQueriesModal } from "./save_query_modal.js"
+import { loadQueriesModal, saveQueriesModal } from "./load_query_modal.js"
 
 class Filter extends React.Component {
     constructor(props) {
