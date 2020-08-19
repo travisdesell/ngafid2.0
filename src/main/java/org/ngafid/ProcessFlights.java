@@ -38,10 +38,8 @@ public class ProcessFlights {
             Instant start = Instant.now();
 
             try {
-<<<<<<< HEAD
                 // PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
                 PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
-=======
                 PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
 
@@ -63,10 +61,8 @@ public class ProcessFlights {
                int targetFleetId = fleetSet.getInt(1);
                System.err.println("Importing an upload from fleet: " + targetFleetId);
 
-                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id = ?");
                 //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
                 //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
->>>>>>> main
                 uploadsPreparedStatement.setString(1, "UPLOADED");
                 uploadsPreparedStatement.setInt(2, targetFleetId);
 
