@@ -10,10 +10,11 @@ $drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
-query_ngafid_db("DROP TABLE visited_airports");
-query_ngafid_db("DROP TABLE visited_runways");
+query_ngafid_db("DROP TABLE sim_aircraft");
 
 /*
+query_ngafid_db("DROP TABLE visited_airports");
+query_ngafid_db("DROP TABLE visited_runways");
 query_ngafid_db("DROP TABLE flight_tag_map");
 query_ngafid_db("DROP TABLE flight_tags");
 query_ngafid_db("DROP TABLE itinerary");
