@@ -66,8 +66,8 @@ public class LossOfControlCalculation{
 
 	private double lag(DoubleTimeSeries series, int index){
 		double currIndex = series.get(index);
-		if(index > 1){
-			return currIndex - series.get(index -1);
+		if(index < series.size() - 1){
+			return currIndex - series.get(index + 1);
 		}
 		return currIndex;
 	}
@@ -129,7 +129,8 @@ public class LossOfControlCalculation{
 
 	private double getYawRate(int index){
 		DoubleTimeSeries hdg = this.parameters.get("Heading"); 
-		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index) % 360));
+		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index)) % 360);
+		//double yawRate = lag(hdg, index);
 		return yawRate;
 	}
 
@@ -241,11 +242,11 @@ public class LossOfControlCalculation{
 			int precision = Integer.parseInt(args[2]);
 			File file = new File(args[1]);
 			System.err.println("\n\n");
-			System.err.println("+----------- LOCI CALCULATION INFO -----------+");
-			System.err.println("| flight_id: "+flightId+"\t\t\t\t|");
+			System.err.println("+------------ LOCI CALCULATION INFO ------------+");
+			System.err.println("| flight_id: "+flightId+"\t\t\t\t\t|");
 			System.err.println("| logfile: "+file.toString()+"\t\t\t|");
-			System.err.println("| precision: "+precision+"\t\t\t\t|");
-			System.err.println("+---------------------------------------------+");
+			System.err.println("| precision: "+precision+"\t\t\t\t\t|");
+			System.err.println("+-----------------------------------------------+");
 			System.err.println("\n\n");
 			LossOfControlCalculation loc = new LossOfControlCalculation(flightId, precision);
 			loc.printToFile(file);

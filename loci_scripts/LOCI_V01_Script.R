@@ -1,18 +1,14 @@
 
 
 ## Load the required packages
-install.packages("readxl",
-"readr",
-"dplyr",
-"ggplot2")
 library(readxl)
 library(readr)
 library(dplyr)
 library(ggplot2)
 
 ## set the directory where the data is located
-directory <- ("")
-flight_data_file <- ("")
+directory <- ("~/Downloads")
+flight_data_file <- ("flight_4.csv")
 
 ## set the critical angle of attack and pro-spin force limits
 AOA_Crit <- (15)
@@ -103,4 +99,4 @@ Flight_Data_Limited <- Flight_Data[!notvars]
 ##Save a couple of files.
 
 write.csv(Flight_Data_Limited, file = "output_filepath_and_name.csv", col.names = TRUE)
-write.csv(Flight_Data, file = "output_filepath_and_name.csv", col.names = TRUE)
+write.csv(Flight_Data$Stall_Prob, file = "output_filepath_and_name.csv", col.names = TRUE)
