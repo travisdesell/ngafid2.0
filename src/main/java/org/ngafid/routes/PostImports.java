@@ -3,6 +3,7 @@ package org.ngafid.routes;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -22,14 +23,23 @@ import org.ngafid.flights.Upload;
 public class PostImports implements Route {
     private static final Logger LOG = Logger.getLogger(PostImports.class.getName());
     private Gson gson;
-    private Paginator paginator;
-    private int buffSize;
 
     public PostImports(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
+
+    public static class ImportsResponse {
+        public ArrayList<Upload> imports;
+        public int numberPages;
+
+        public ImportsResponse(ArrayList<Upload> imports, int numberPages) {
+            this.imports = imports;
+            this.numberPages = numberPages;
+        }
+    }
+
 
     @Override
     public Object handle(Request request, Response response) {
@@ -49,23 +59,16 @@ public class PostImports implements Route {
 
 
         try {
+            int currentPage = Integer.parseInt(request.queryParams("currentPage"));
+            int pageSize = Integer.parseInt(request.queryParams("pageSize"));
 
-            int index = Integer.parseInt(request.queryParams("index"));
-            int buffSize = Integer.parseInt(request.queryParams("buffSize"));
-            if(this.paginator == null){
-                this.paginator = new ImportPaginator(index, buffSize, fleetId);
-            }
-            else if(this.buffSize != buffSize){
-                this.paginator = new ImportPaginator(buffSize, fleetId);
-                this.buffSize = buffSize;
-                index = 0;
-            }
-            this.buffSize = buffSize;
-            this.paginator.jumpToPage(index);
-            Page<Upload> imports = paginator.currentPage();
-            //LOG.info(gson.toJson(imports));
+            Connection connection = Database.getConnection();
 
-            return gson.toJson(imports);
+            int totalImports = Upload.getNumUploads(connection, fleetId, null);
+            int numberPages = totalImports / pageSize;
+            ArrayList<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+
+            return gson.toJson(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
