@@ -37,7 +37,7 @@ public class GetQueries implements Route {
         try {
             final Session session = request.session();
             User user = session.attribute("user");
-            int fleetID = request.attribute("fleetID");                    // get fleet ID from submissionData (request?)
+            int fleetID = Integer.parseInt(request.queryParams("fleetID"));                    // get fleet ID from submissionData
             Connection connection = Database.getConnection();
             // prepare query
             //String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
@@ -47,18 +47,20 @@ public class GetQueries implements Route {
             //query.setInt(1, fleetID);
             //ResultSet resultSet = query.executeQuery();
 
-            // check if querying by user
+            // check if querying by userID
+            PreparedStatement query;
             if (fleetID == -1) {
-
+                query = connection.prepareStatement("SELECT * FROM saved_queries WHERE fleet_id = ? AND user_id = ?");
+                query.setInt(1, fleetID);
+                query.setInt(2, user.getId());
             } else {
-
+                query = connection.prepareStatement("SELECT * FROM saved_queries WHERE fleet_id = ?");
+                query.setInt(1, fleetID);
             }
+            ResultSet results = query.executeQuery();
+            results.next();
 
-            Fleet fleet = Fleet.get(connection, fleetID);
-
-            String resultString = user.getId() + "," + fleetID + "," + fleet.getName() + "," + user.getFleetAccessType();
-
-            return resultString;
+            return results;
 
         } catch (SQLException e) {
             LOG.severe(e.toString());

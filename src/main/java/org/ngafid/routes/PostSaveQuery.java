@@ -40,15 +40,20 @@ public class PostSaveQuery implements Route {
             Connection connection = Database.getConnection();
 
             // check if name is taken
-            PreparedStatement check = connection.prepareStatement("SELECT COUNT(1) FROM saved_queries WHERE fleet_id = ? AND query_name = ?");
-            check.setInt(1, fleetID);
-            check.setString(2, queryName);
+            // query name must be unique to fleet_id, unless fleet_id == -1 (a personal query), then query name must be unique to user_id
+            PreparedStatement check;
+            if (fleetID != -1) {
+                check = connection.prepareStatement("SELECT COUNT(1) FROM saved_queries WHERE fleet_id = ? AND query_name = ?");
+                check.setInt(1, fleetID);
+                check.setString(2, queryName);
+            } else {
+                check = connection.prepareStatement("SELECT COUNT(1) FROM saved_queries WHERE fleet_id = ? AND query_name = ? AND user_id = ?");
+                check.setInt(1, fleetID);
+                check.setString(2, queryName);
+                check.setInt(3, user.getId());
+            }
             ResultSet results = check.executeQuery();
             results.next();
-
-            // unique to what... user, fleet, everything?
-            // just fleet
-            // need to get fleet_id / group id from ajax and not user session
 
             // if query name unique
             if (results.getInt(1) < 1) {
