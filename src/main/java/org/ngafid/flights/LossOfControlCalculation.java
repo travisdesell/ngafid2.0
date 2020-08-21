@@ -18,6 +18,7 @@ import java.sql.SQLException;
 
 import org.ngafid.Database;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
 
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
@@ -206,22 +207,13 @@ public class LossOfControlCalculation{
 	 */
 	public void calculate(){
 		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
+		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries heading = this.parameters.get("Heading");
-		double maxsProb = Double.MIN_VALUE;
-		double maxlProb = Double.MIN_VALUE;
 		for(int i = 0; i<heading.size(); i++){
-			double sprob = this.calculateStallProbability(i);
 			double lprob = this.calculateProbability(i);
-			if(sprob > maxsProb) {
-				maxsProb = sprob;
-			}
-			if(lprob > maxlProb) {
-				maxlProb = lprob;
-			}
-			this.pw.printf(i+"\t\t %."+this.precision+"f"+"\t\t\t\t %."+this.precision+"f\n", sprob, lprob);
+			loci.add(lprob);
 		}
-		this.pw.println("\n\n MAX STALL PROBABILITY: "+maxsProb);
-		this.pw.println("\n\n MAX LOC-I PROBABILITY: "+maxlProb);
+		pw.println(loci.toString());
 		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
 		pw.close();
 	}
