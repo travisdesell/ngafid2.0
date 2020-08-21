@@ -7,13 +7,9 @@ import DropdownButton from 'react-bootstrap/DropdownButton';
 import { confirmModal } from "./confirm_modal.js";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { Paginator } from "./paginator_component.js";
 
 import SparkMD5 from "spark-md5";
-
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
 
 
 var paused = [];
@@ -60,7 +56,7 @@ class Upload extends React.Component {
                     return false;
                 }
 
-                uploadsCard.removeUpload(thisUpload.props.uploadInfo);
+                thisUpload.props.removeUpload(thisUpload.props.uploadInfo);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
@@ -172,34 +168,22 @@ function getUploadeIdentifier(filename, size) {
 }
 
 
-class UploadsCard extends React.Component {
+class UploadsPage extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
             uploads : this.props.uploads,
-            page : this.props.page,
-            buffSize : 10,   //def size of uploads to show per page is 10
-            numPages : this.props.numPages
+            pending_uploads : this.props.pending_uploads,
+
+            //needed for paginator
+            currentPage : this.props.currentPage,
+            numberPages : this.props.numberPages, //this will be set globally in the javascript
+            pageSize : 10
         };
-
-        this.previousPage = this.previousPage.bind(this);
-        this.nextPage = this.nextPage.bind(this);
-        this.repaginate = this.repaginate.bind(this);
-
-        console.log("constructed UploadsCard, set mainCards");
-        console.log("initial index: "+this.state.page);
     }
 
-    getUploadsCard() {
-        return this;
-    }
-
-    setUploads(uploads){
-        this.state.uploads = uploads;
-    }
-
-    getMD5Hash(file, onFinish, uploadsCard) {
+    getMD5Hash(file, onFinish, uploadsPage) {
         var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
             chunkSize = 2097152,                             // Read in chunks of 2MB
             chunks = Math.ceil(file.size / chunkSize),
@@ -215,13 +199,13 @@ class UploadsCard extends React.Component {
             if (currentChunk % 5 == 0) {
                 //var percent = (currentChunk / chunks) * 100.0;
 
-                let state = uploadsCard.state;
+                let state = uploadsPage.state;
                 console.log("inside onload function!");
                 console.log(state);
                 console.log(file);
-                state.uploads[file.position].progressSize = currentChunk * chunkSize;
+                state.pending_uploads[file.position].progressSize = currentChunk * chunkSize;
 
-                uploadsCard.setState(state);
+                uploadsPage.setState(state);
 
                 //set_progressbar_percent(file.identifier, percent);
             }
@@ -230,10 +214,10 @@ class UploadsCard extends React.Component {
                 loadNext();
             } else {
                 //reset progress bar for uploading
-                let state = uploadsCard.state;
-                state.uploads[file.position].progressSize = 0;
-                state.uploads[file.position].status = "UPLOADING";
-                uploadsCard.setState(state);
+                let state = uploadsPage.state;
+                state.pending_uploads[file.position].progressSize = 0;
+                state.pending_uploads[file.position].status = "UPLOADING";
+                uploadsPage.setState(state);
 
                 onFinish(spark.end());
             }
@@ -272,7 +256,7 @@ class UploadsCard extends React.Component {
         uploadInfo.bytesUploaded = 0;
         uploadInfo.status = 'HASHING';
 
-        var uploadsCard = this;
+        var uploadsPage = this;
 
         function onFinish(md5Hash) {
             file.md5Hash = md5Hash;
@@ -289,14 +273,14 @@ class UploadsCard extends React.Component {
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
                     errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
-                    uploadsCard.removeUpload(file);
+                    uploadsPage.removePendingUpload(file);
 
                 } else {
                     var uploadInfo = response;
                     uploadInfo.file = file; //set the file in the response uploadInfo so it can be used later
                     uploadInfo.identifier = identifier;
                     uploadInfo.position = position;
-                    uploadsCard.updateUpload(uploadInfo);
+                    uploadsPage.updateUpload(uploadInfo);
                 }
             };
 
@@ -321,18 +305,18 @@ class UploadsCard extends React.Component {
         const totalSize = file.size;
         console.log("adding filename: '" + filename + "'");
 
-        let uploads = this.state.uploads;
+        let pending_uploads = this.state.pending_uploads;
 
         let identifier = getUploadeIdentifier(filename, totalSize);
         console.log("CREATED IDENTIFIER: " + identifier);
         file.identifier = identifier;
-        file.position = uploads.length;
+        file.position = 0;
 
         let alreadyExists = false;
-        for (var i = 0; i < uploads.length; i++) {
-            if (uploads[i].identifier == identifier) {
+        for (var i = 0; i < pending_uploads.length; i++) {
+            if (pending_uploads[i].identifier == identifier) {
 
-                if (uploads[i].status == "UPLOAD INCOMPLETE") {
+                if (pending_uploads[i].status == "UPLOAD INCOMPLETE") {
                     //upload already exists in the list but is incomplete, so we need to restart it
                     alreadyExists = true;
                     file.position = i;
@@ -344,7 +328,7 @@ class UploadsCard extends React.Component {
         }
 
         if (!alreadyExists) {
-            uploads.push({
+            pending_uploads.unshift({
                 identifier : identifier,
                 filename : filename,
                 status : status,
@@ -354,11 +338,31 @@ class UploadsCard extends React.Component {
         }
 
         let state = this.state;
-        state.uploads = uploads;
-        this.setState(state);
+        state.pending_uploads = pending_uploads;
 
+		if (this.state.numberPages == 0) {
+			this.state.numberPages = 1;
+			this.state.currentPage = 0;
+		}
+
+        this.setState(state);
         this.startUpload(file);
     }
+
+    removePendingUpload(file) {
+        if (file.position < pending_uploads.length) {
+            let pending_uploads = this.state.pending_uploads;
+            pending_uploads.splice(file.position, 1);
+            for (var i = 0; i < pending_uploads.length; i++) {
+                pending_uploads[i].position = i;
+            }
+
+            let state = this.state;
+            state.pending_uploads = pending_uploads;
+            this.setState(state);
+        }
+    }
+
 
     removeUpload(file) {
         if (file.position < uploads.length) {
@@ -390,12 +394,12 @@ class UploadsCard extends React.Component {
         uploadInfo.progressSize = uploadInfo.bytesUploaded;
         uploadInfo.totalSize = uploadInfo.sizeBytes;
 
-        let uploads = this.state.uploads;
-        uploads[uploadInfo.position] = uploadInfo;
+        let pending_uploads = this.state.pending_uploads;
+        pending_uploads[uploadInfo.position] = uploadInfo;
         let state = this.state;
         this.setState(state);
 
-        var uploadsCard = this;
+        var uploadsPage = this;
 
         var fileReader = new FileReader();
 
@@ -433,16 +437,19 @@ class UploadsCard extends React.Component {
                 //chunkNumber = chunkNumber + 1;
 
                 if (chunkNumber > -1) {
-                    //console.log("uploading next chunk with response:");
-                    //console.log(response);
+                    console.log("uploading next chunk with response:");
+                    console.log(response);
+                    console.log("uploadInfo:");
+                    console.log(uploadInfo);
 
-                    uploadsCard.updateUpload(uploadInfo);
+                    uploadsPage.updateUpload(uploadInfo);
                 } else {
+                    console.log("Should be finished upload!");
 
-                    let uploads = uploadsCard.state.uploads;
-                    uploads[uploadInfo.position] = uploadInfo;
-                    let state = uploadsCard.state;
-                    uploadsCard.setState(state);
+                    let pending_uploads = uploadsPage.state.pending_uploads;
+                    pending_uploads[uploadInfo.position] = uploadInfo;
+                    let state = uploadsPage.state;
+                    uploadsPage.setState(state);
                 }
             }
         };
@@ -457,47 +464,18 @@ class UploadsCard extends React.Component {
         xhr.send(formData);
     }
 
-    jumpPage(pg){
-        if(pg < this.state.numPages && pg >= 0){
-            this.state.page = pg;
-        }
-        this.setState(this.state);
-        this.submitPagination();
-    }
-
-    setSize(size){
-        this.state.numPages = size;
-        this.setState(this.state);
-    }
-
-    nextPage(){
-        this.state.page++;
-        this.submitPagination();
-    }
-
-    previousPage(){
-        this.state.page--;
-        this.submitPagination();
-    }
-
-    setIndex(index){
-        this.state.page = index;
-        this.setState(this.state);
-    }
-
-    repaginate(pag){
-        console.log("Re-Paginating");
-        this.state.buffSize = pag;
-        this.submitPagination();
-    }
-
-    submitPagination(){
+    submitFilter(resetCurrentPage = false) {
         //prep data
-        var uploadsCard = this;
+        var uploadsPage = this;
+
+        let currentPage = this.state.currentPage;
+        if (resetCurrentPage === true) {
+            currentPage = 0;
+        }
 
         var submissionData = {
-            index : this.state.page,
-            buffSize : this.state.buffSize
+            currentPage : currentPage,
+            pageSize : this.state.pageSize
         };
 
         console.log(submissionData);
@@ -521,31 +499,23 @@ class UploadsCard extends React.Component {
 
                 console.log("got response: "+response+" "+response.sizeAll);
 
-                //get page data
-                uploadsCard.setUploads(response.data);
-                uploadsCard.setIndex(response.index);
-                uploadsCard.setSize(response.sizeAll);
+                uploadsPage.setState({
+                    uploads : response.uploads,
+                    currentPage : currentPage,
+                    numberPages : response.numberPages
+                });
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
+                errorModal.show("Error Loading Uploads", errorThrown);
             },
             async: true
         });
     }
 
-    genPages(){
-        var page = [];
-        for(var i = 0; i<this.state.numPages; i++){
-            page.push({
-                value : i,
-                name : "Page "+(i+1)
-            });
-        }
-        return page;
-    }
-
     triggerInput() {
-        var uploadsCard = this;
+        console.log("input triggered!");
+
+        var uploadsPage = this;
 
         $('#upload-file-input').trigger('click');
 
@@ -565,7 +535,7 @@ class UploadsCard extends React.Component {
                 } else if (!isZip) {
                     errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
-                    uploadsCard.addUpload(file);
+                    uploadsPage.addUpload(file);
                 }    
             }    
         });  
@@ -573,95 +543,89 @@ class UploadsCard extends React.Component {
 
     render() {
         console.log("rendering uploads!");
+
         const hiddenStyle = {
             display : "none"
         };
 
-        let uploads = [];
-        let pages = this.genPages();
-        if (typeof this.state.uploads != 'undefined') {
-            uploads = this.state.uploads;
-        }
-
-                            console.log("PRE- "+uploads);
-        var begin = this.state.page == 0;
-        var end = this.state.page == this.state.numPages-1;
-        var prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage}>Previous Page</button>
-            var next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage}>Next Page</button>
-
-        if(begin) {
-            prev = <button className="btn btn-primary btn-sm" type="button" onClick={this.previousPage} disabled>Previous Page</button>
-        }
-        if(end){
-            next = <button className="btn btn-primary btn-sm" type="button" onClick={this.nextPage} disabled>Next Page</button>
-        }
-
         return (
-            <div className="card-body">
-                <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <div className="card mb-1 m-1 border-secondary">
-                        <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                            <div className="btn-group mr-1 pl-1" role="group" aria-label="First group">
-                                <DropdownButton className="pr-1" id="dropdown-item-button" title={this.state.buffSize + " uploads per page"} size="sm">
-                                    <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 uploads per page</Dropdown.Item>
-                                    <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 uploads per page</Dropdown.Item>
-                                    <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 uploads per page</Dropdown.Item>
-                                    <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 uploads per page</Dropdown.Item>
-                                    <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 uploads per page</Dropdown.Item>
-                                </DropdownButton>
-                                <Dropdown className="pr-1">
-                                    <Dropdown.Toggle variant="primary" id="dropdown-basic" size="sm">
-                                        {"Page " + (this.state.page + 1)}
-                                    </Dropdown.Toggle>
-                                    <Dropdown.Menu style={{ maxHeight: "256px", overflowY: 'scroll' }}>
-                                        {
-                                            pages.map((pages, index) => {
-                                                return (
-                                                    <Dropdown.Item key={index} as="button" onClick={() => this.jumpPage(pages.value)}>{pages.name}</Dropdown.Item>
-                                                );
-                                            })
-                                        }
-                                    </Dropdown.Menu>
-                                </Dropdown>
 
-                                {prev}
-                                {next}
-                            </div>
-                            <button id="upload-flights-button"  className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
-                            <input id ="upload-file-input" type="file" style={hiddenStyle} />
-                        </div>
-                    </div>
-                    {
-                        uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
-                            return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                            );
-                        })
-                    }
-                    <div className="card mb-1 m-1 border-secondary">
+            <div>
+                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="p-1">
+                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
+
+                    <div className="card mb-1 border-secondary">
                         <div className="p-2">
-                            <button className="btn btn-sm btn-info pr-2" disabled>Page: {this.state.page + 1} of {this.state.numPages}</button>
-                            <div className="btn-group mr-2 pl-1" role="group" aria-label="First group">
-                                {prev}
-                                {next}
-                            </div>
+                            { 
+                                this.state.pending_uploads.length > 0
+                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
+                                    : ""
+                            }
                             <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
                                 <i className="fa fa-upload"></i> Upload Flights
                             </button>
                         </div>
                     </div>
+
+                    {
+                        this.state.pending_uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}} />
+                            );
+                        })
+                    }
+
+                    <Paginator
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                    {
+                        this.state.uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                            );
+                        })
+                    }
+
+                    <Paginator
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
                 </div>
+
             </div>
         );
     }
 }
 
 
-var uploadsCard = ReactDOM.render(
-    <UploadsCard uploads={uploads} numPages={numPages} page={index}/>,
-    document.querySelector('#uploads-card')
+var uploadsPage = ReactDOM.render(
+    <UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages} currentPage={currentPage}/>,
+    document.querySelector('#uploads-page')
 );

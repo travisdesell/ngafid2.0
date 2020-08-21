@@ -10,6 +10,11 @@ $drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
+query_ngafid_db("DROP TABLE sim_aircraft");
+
+/*
+query_ngafid_db("DROP TABLE visited_airports");
+query_ngafid_db("DROP TABLE visited_runways");
 query_ngafid_db("DROP TABLE flight_tag_map");
 query_ngafid_db("DROP TABLE flight_tags");
 query_ngafid_db("DROP TABLE itinerary");
@@ -20,6 +25,7 @@ query_ngafid_db("DROP TABLE event_statistics");
 query_ngafid_db("DROP TABLE events");
 query_ngafid_db("DROP TABLE flights");
 query_ngafid_db("DROP TABLE tails");
+ */
 
 
 if ($drop_tables) {
@@ -57,6 +63,28 @@ $query = "CREATE TABLE `fleet` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+$query = "CREATE TABLE `visited_airports` (
+    `fleet_id` INT(11) NOT NULL,
+    `airport` VARCHAR(8),
+
+    PRIMARY KEY(`airport`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `visited_runways` (
+    `fleet_id` INT(11) NOT NULL,
+    `runway` VARCHAR(26),
+
+    PRIMARY KEY(`runway`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+
 
 $query = "CREATE TABLE `user` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -410,6 +438,7 @@ $query = "CREATE TABLE `event_statistics` (
 
 query_ngafid_db($query);
 
+
 $query = "CREATE TABLE `saved_queries` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `user_id` INT(11) NOT NULL,
@@ -421,6 +450,18 @@ $query = "CREATE TABLE `saved_queries` (
     PRIMARY KEY(`id`),
     FOREIGN KEY(`user_id`) REFERENCES user(`id`)
     ) ENGINE InnoDB DEFAULT CHARSET=latin1;"   
+
+query_ngafid_db($query);
+
+
+$query = "CREATE TABLE `sim_aircraft` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11) NOT NULL,
+    `path` VARCHAR(2048) NOT NULL,
+
+	PRIMARY KEY(`id`),
+	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
 

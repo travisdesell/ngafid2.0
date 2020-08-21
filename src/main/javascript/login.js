@@ -83,8 +83,8 @@ class LoginModal extends React.Component {
                     //redirect to the waiting page
                     window.location.replace("/protected/waiting");
                 } else {
-                    //redirect to the welcome page
-                    window.location.replace("/protected/welcome");
+                    //redirect to the base page (which will redirect to either welcome, waiting or the page before login)
+                    window.location.replace("/");
                 }
 
             },

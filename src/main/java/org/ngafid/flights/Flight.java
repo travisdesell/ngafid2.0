@@ -410,6 +410,26 @@ public class Flight {
     }
 
 	/**
+	 * Gets the CSV filepath from the database for a flight
+	 * @param connection the database connection
+	 * @param flightId the id of the flight which we want the CSV file for
+	 * @return a String with the filepath in unix-format
+	 * @throws SQLException if there is an error with the database query
+	 */
+	public static String getFilename(Connection connection, int flightId) throws SQLException{
+        String queryString = "SELECT filename FROM flights WHERE id = "+flightId; 
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+		ResultSet resultSet = query.executeQuery();
+		String filename = "";
+		if(resultSet.next()){
+			filename = resultSet.getString(1);
+		}	
+		
+		return filename;
+	}
+
+	/**
 	 * Generates a unique set of tagIds whose cardinality is not greater than the total number of tags in
 	 * the database
 	 * @param connection the database connection
@@ -795,6 +815,44 @@ public class Flight {
         return new FlightTag(index, fleetId, name, description, color);
     }
 
+	public static void addSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+        String queryString = "INSERT INTO sim_aircraft (fleet_id, path) VALUES(?,?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        query.setString(2, path);
+
+        query.executeUpdate();
+	}
+
+	public static void removeSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+        String queryString = "DELETE FROM sim_aircraft WHERE fleet_id = ? AND path = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        query.setString(2, path);
+
+        query.executeUpdate();
+	}
+
+	public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException{
+        String queryString = "SELECT path FROM sim_aircraft WHERE fleet_id = "+fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+		ResultSet resultSet = query.executeQuery();
+
+		List<String> paths = new ArrayList<>();
+        while(resultSet.next()){
+			paths.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return paths;
+	}
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -840,6 +898,10 @@ public class Flight {
         return fleetId;
     }
 
+    public String getTailNumber(){
+        return this.tailNumber;
+	}
+
     /**
      * @return the airframe id for this flight
      */
@@ -857,6 +919,22 @@ public class Flight {
     public String getFilename() {
         return filename;
     }
+
+	/**
+	 * Gets the upload id for this flight
+	 * @return the upload id as an int
+	 */
+	public int getUploadId(){
+		return uploadId;
+	}
+
+	/**
+	 * Gets the uploader id for this flight
+	 * @return the uploader id as an int
+	 */
+	public int getUploaderId(){
+		return uploaderId;
+	}
 
     public int getNumberRows() {
         return numberRows;
@@ -1152,7 +1230,7 @@ public class Flight {
         }
 
         try {
-            calculateAirportProximity("Latitude", "Longitude");
+            calculateAirportProximity("Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -1170,7 +1248,7 @@ public class Flight {
         }
 
         try {
-            if (airframeType.equals("Cessna 172S") || airframeType.equals("PA-28-181")) {
+            if (airframeType.equals("Cessna 172S") || airframeType.equals("Cessna 172R") || airframeType.equals("PA-28-181")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
                 calculateVariance(chtNames, "E1 CHT Variance", "deg F");
 
@@ -1199,7 +1277,14 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
-            } else if (airframeType.equals("Garmin Flight Display")) {
+            } else if (airframeType.equals("Diamond DA 40") || airframeType.equals("Diamond DA 40 F")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                calculateVariance(chtNames, "E1 CHT Variance", "deg F");
+
+                String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
+                calculateVariance(egtNames, "E1 EGT Variance", "deg F");
+
+            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG") || airframeType.equals("Diamond DA42NG") || airframeType.equals("Piper PA-46-500TP Meridian") || airframeType.equals("Unknown Aircraft")) {
                 LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
 
@@ -1212,9 +1297,14 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (hasCoords && hasAGL) {
-            calculateItinerary();
+        try {
+            if (hasCoords && hasAGL) {
+                calculateItinerary("GndSpd", "E1 RPM");
+            }
+        } catch (MalformedFlightFileException e) {
+            exceptions.add(e);
         }
+
     }
 
     private void checkExceptions() {
@@ -1499,13 +1589,14 @@ public class Flight {
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
     }
 
-    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
+    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName, String altitudeAGLColumnName) throws MalformedFlightFileException {
         //calculates if the aircraft is within maxAirportDistance from an airport
 
         DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
         DoubleTimeSeries longitudeTS = doubleTimeSeries.get(longitudeColumnName);
+        DoubleTimeSeries altitudeAGLTS = doubleTimeSeries.get(altitudeAGLColumnName);
 
-        if (latitudeTS == null || longitudeTS == null) {
+        if (latitudeTS == null || longitudeTS == null || altitudeAGLTS == null) {
             String message = "Cannot calculate airport and runway distances, flight file had empty or missing ";
 
             int count = 0;
@@ -1517,6 +1608,12 @@ public class Flight {
             if (longitudeTS == null) {
                 if (count > 0) message += " and ";
                 message += "'" + longitudeColumnName + "'";
+                count++;
+            }
+
+            if (altitudeAGLTS == null) {
+                if (count > 0) message += " and ";
+                message += "'" + altitudeAGLColumnName+ "'";
                 count++;
             }
 
@@ -1556,9 +1653,14 @@ public class Flight {
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
             double longitude = longitudeTS.get(i);
+            double altitudeAGL = altitudeAGLTS.get(i);
 
             MutableDouble airportDistance = new MutableDouble();
-            Airport airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+            Airport airport = null;
+            if (altitudeAGL <= 2000) {
+                airport = Airports.getNearestAirportWithin(latitude, longitude, MAX_AIRPORT_DISTANCE_FT, airportDistance);
+            }
+
             if (airport == null) {
                 nearestAirportTS.add("");
                 airportDistanceTS.add(Double.NaN);
@@ -1586,13 +1688,15 @@ public class Flight {
         }
     }
 
-    public void calculateItinerary() {
+    public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
         if (!hasCoords) return;
 
-        DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
-        DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
+        DoubleTimeSeries rpm = doubleTimeSeries.get(rpmColumnName);
+        //DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
+        //DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
 
         StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
         DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
@@ -1600,6 +1704,32 @@ public class Flight {
 
         StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
         DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+
+        if (groundSpeed == null || rpm == null) {
+            String message = "Cannot calculate itinerary, flight file had empty or missing ";
+
+            int count = 0;
+            if (groundSpeed == null) {
+                message += "'" + groundSpeedColumnName + "'";
+                count++;
+            }
+
+            if (rpm == null) {
+                if (count > 0) message += " and ";
+                message += "'" + rpmColumnName + "'";
+                count++;
+            }
+
+            message += " column";
+            if (count >= 2) message += "s";
+            message += ".";
+
+            //should be initialized to false, but lets make sure
+            hasCoords = false;
+            throw new MalformedFlightFileException(message);
+        }
+        hasCoords = true;
+
 
         itinerary.clear();
 
@@ -1755,7 +1885,7 @@ public class Flight {
                 }
 
                 for (int i = 0; i < itinerary.size(); i++) {
-                    itinerary.get(i).updateDatabase(connection, flightId, i);
+                    itinerary.get(i).updateDatabase(connection, fleetId, flightId, i);
                 }
 
                 PreparedStatement ps = connection.prepareStatement("UPDATE flights SET insert_completed = 1 WHERE id = ?");

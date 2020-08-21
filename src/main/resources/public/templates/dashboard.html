@@ -15,7 +15,7 @@
 
 </head>
 <body>
-    <div id='navbar'></div>
+    <div id="dashboard-page"></div>
 
     <div id="loading" style="display:none">
         <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
@@ -26,21 +26,6 @@
             <div id='error-modal-content'>
             </div>
         </div>
-    </div>
-
-    {{#messages}}
-    <div class="card-body" style="padding-bottom:0px;">
-        <div class="card bg-{{type}}" style="opacity:0.8">
-            <div class="card-body" style="opacity:1.0;">
-                <p class="card-text">
-                {{message}}
-                </p>
-            </div>
-        </div>
-    </div>
-    {{/messages}}
-
-    <div id="dashboard-card">
     </div>
 
     <!-- Load our javascript. -->
