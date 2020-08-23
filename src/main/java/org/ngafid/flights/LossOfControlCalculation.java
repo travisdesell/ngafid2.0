@@ -165,36 +165,6 @@ public class LossOfControlCalculation{
 	    return prob;
 	}
 
-	/**
-	 * Calculate the Angle of Attack
-	 * @param index the {@link DoubleTimeSeries} index for which instant the LOC probability is calculated
-	 *
-	 * @return a double representing Angle of Attack
-	 */
-	private double calculateAOA(int index){
-		double b = (this.getVspd(index) * this.beta(0,0)) / (this.getIAS(index) * this.beta(0,0) * 101.267); //TODO: figure out what these constants mean?
-		b = Math.asin(b);
-
-		//TODO: implement the phi / cos gamma here
-		
-		return 0.0;
-	}
-
-	private double delta(int sub){
-		return 0.0;
-	}
-
-	/**
-	 * Beta is the part of the equation with the inverted radical
-	 * TODO: figure out what the deltas represnt and other constants to make this code more readable
-	 */
-	private double beta(int index, int z){
-		double n = (1 - (1 - this.delta(1) / this.delta(0)) + (1 - ((-2.94 * Math.pow(10, -5) * z) + .986)));
-		double d = (273 + this.getOAT(index)) / 288;
-
-		return Math.pow((n/d), -2);
-	}
-
 	private double calculateProbability(int i){
 		double prob = (this.calculateStallProbability(i) * this.getProSpin(i)) / 100;
 		return prob;
@@ -213,10 +183,25 @@ public class LossOfControlCalculation{
 			double lprob = this.calculateProbability(i);
 			loci.add(lprob);
 		}
-		pw.println(loci.toString());
-		//TODO: implement the caluclation logic here and put parts of the calc. in helper methods 
-		pw.close();
+		loci.updateDatabase(connection, this.flightId);  
+		if(this.pw != null){
+			this.writeFile();
+		}
 	}
+
+	public void writeFile(){
+		try{
+			DoubleTimeSeries loci = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "LOCI");
+			for(int i = 0; i<loci.size(); i++){
+				pw.println(i+"\t\t\t"+loci.get(i));
+			}
+		}catch (Exception e) { 
+			e.printStackTrace();
+		}finally{
+			pw.close();
+		}
+	}
+
 
 	public static void displayHelp(){
 		System.err.println("Usage: loci [flight number] [logfile path] [precision]");
