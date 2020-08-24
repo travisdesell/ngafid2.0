@@ -230,7 +230,8 @@ public class LossOfControlCalculation{
 
 
 	public static void displayHelp(){
-		System.err.println("USAGE: loci-calculator [OPTION]");
+		System.err.println("USAGE: loci-calculator [fleet id] [OPTION]");
+		System.err.println("fleet_id: the id of the fleet to calculate flights for");
 		System.err.println("Options: ");
 		System.err.println("-f [directory root]");
 		System.err.println("\tPrint calculations to file(s) where the argument is the root directory in which the files will be created in.\n" +
@@ -260,7 +261,15 @@ public class LossOfControlCalculation{
 		Optional<Path> path = Optional.empty();	
 		Optional<int[]> flightNums = Optional.empty();
 
-		for(int i = 0; i < args.length; i++) {
+		int fleetId = 1;
+
+		if(args.length < 1){
+			displayHelp();
+		}else{
+			fleetId = Integer.parseInt(args[0]);
+		}
+
+		for(int i = 1; i < args.length; i++) {
 			if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")){
 				displayHelp();
 				System.exit(0);
@@ -295,7 +304,7 @@ public class LossOfControlCalculation{
 			}
 		}
 
-		if(flightNums.isPresent()){
+		if(flightNums.isPresent()) {
 			int [] nums = flightNums.get();
 
 			for(int i = 0; i < nums.length; i++){
@@ -303,6 +312,21 @@ public class LossOfControlCalculation{
 					new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
 				loc.calculate();
 			}
+		} else {
+			try{
+				int [] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId);
+				for(int i = 0; i < nums.length; i++){
+					//LossOfControlCalculation loc = path.isPresent() ?
+						//new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
+					//loc.calculate();
+					System.out.println(nums[i]);
+				}
+				//here assume we will calcaulate for all flights for the given fleet
+				//
+			}catch (SQLException e) {
+				e.printStackTrace();
+			}
+
 		}
 	}
 }
