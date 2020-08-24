@@ -10,6 +10,11 @@ import java.util.*;
 import java.io.PrintWriter;
 import java.io.File;
 import java.io.IOException;
+import java.io.FileNotFoundException;
+
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.nio.file.Files;
 
 import java.lang.Math;
 
@@ -29,23 +34,32 @@ public class LossOfControlCalculation{
 	static final double AOACrit = 15;
 	static final double proSpinLim = 4;
 
-	private int flightId, precision;
+	private int flightId;
+	private File file;
 	private PrintWriter pw;
 	private Map<String, DoubleTimeSeries> parameters;
 
-	public LossOfControlCalculation(int flightId, int precision){
+	public LossOfControlCalculation(int flightId){ 
 		this.flightId = flightId;
-		this.precision = precision;
 		this.parameters = getParameters(flightId);
-		this.pw = null;
 	}
 
-	public void printToFile(File file){
+	public LossOfControlCalculation(int flightId, Path path){ 
+		this(flightId);
+		this.createFileOut(path);
+	}
+
+	private void createFileOut(Path path){
+		String filename = "/flight_"+flightId+".out";
+
+		file = new File(path.toString()+filename);
+		System.out.println("LOCI_CALCULATOR: printing to file "+file.toString()+" for flight #"+this.flightId);
+
 		try{
 			this.pw = new PrintWriter(file);
-			this.pw.println("TIME\tSTALL PROBABILITY\tLOC-I PROBABILITY");
-		}catch(IOException ioe){
-			ioe.printStackTrace();
+		}catch(FileNotFoundException e) {
+			System.err.println("File not writable!");
+			System.exit(1);
 		}
 	}
 
@@ -176,25 +190,37 @@ public class LossOfControlCalculation{
 	 * @return a floating-point percentage of the probability of loss of control
 	 */
 	public void calculate(){
-		System.out.println("Calculating Loss of Control probability for: flight "+flightId);
+		System.out.println("LOCI_CALCULATOR: Now calculating Loss of Control probability for: flight "+flightId);
+		this.printDetails();
+
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
+		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
 		DoubleTimeSeries heading = this.parameters.get("Heading");
+
 		for(int i = 0; i<heading.size(); i++){
-			double lprob = this.calculateProbability(i);
-			loci.add(lprob);
+			stallProbability.add(this.calculateStallProbability(i));
+			loci.add(this.calculateProbability(i));
 		}
+
 		loci.updateDatabase(connection, this.flightId);  
+		stallProbability.updateDatabase(connection, this.flightId);
+
 		if(this.pw != null){
-			this.writeFile();
+			this.writeFile(loci, stallProbability);
 		}
 	}
 
-	public void writeFile(){
+	public void writeFile(DoubleTimeSeries loci, DoubleTimeSeries sProb){
 		try{
-			DoubleTimeSeries loci = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "LOCI");
+			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:");
 			for(int i = 0; i<loci.size(); i++){
-				pw.println(i+"\t\t\t"+loci.get(i));
+				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i));
 			}
+			pw.println("\n\nMaximum Values: ");
+			pw.println("Stall Probability: "+sProb.getMax()+" LOC-I: "+loci.getMax());
+
+			pw.println("Average Values: ");
+			pw.println("Stall Probability: "+sProb.getAvg()+" LOC-I: "+loci.getAvg());
 		}catch (Exception e) { 
 			e.printStackTrace();
 		}finally{
@@ -204,33 +230,79 @@ public class LossOfControlCalculation{
 
 
 	public static void displayHelp(){
-		System.err.println("Usage: loci [flight number] [logfile path] [precision]");
+		System.err.println("USAGE: loci-calculator [OPTION]");
+		System.err.println("Options: ");
+		System.err.println("-f [directory root]");
+		System.err.println("\tPrint calculations to file(s) where the argument is the root directory in which the files will be created in.\n" +
+				"\tFilenames will be in the format: flight_N.out, where N is the flight number");
+		System.err.println("-n [flight number(s)]");
+		System.err.println("\tOnly calculate LOC-I for the flight numbers specified. If specifiying more than one flight, delimit flight numbers by commas with no spaces\n"+
+				"\ti.e 10,5,3,65,2");
 		System.exit(0);
+	}
+
+	public void printDetails(){
+		System.err.println("\n\n");
+		System.err.println("+------------ LOCI CALCULATION INFO ------------+");
+		System.err.println("| flight_id: "+flightId+"\t\t\t\t\t\t\t\t|");
+		System.err.println("| logfile: "+(file != null ? file.toString() : "None specified.")+"\t\t\t\t\t\t|");
+		System.err.println("+-----------------------------------------------+");
+		System.err.println("\n\n");
 	}
 	
 	/**
-	 * Main method for testing
+	 * Main method for running calculations
 	 * @param args args from the command line, with the first being a filename for output
 	 */
 	public static void main(String [] args){
 		System.out.println("Loss of control calculator");
-		if(args.length > 2 && args.length <= 3){
-			int flightId = Integer.parseInt(args[0]);
-			int precision = Integer.parseInt(args[2]);
-			File file = new File(args[1]);
-			System.err.println("\n\n");
-			System.err.println("+------------ LOCI CALCULATION INFO ------------+");
-			System.err.println("| flight_id: "+flightId+"\t\t\t\t\t|");
-			System.err.println("| logfile: "+file.toString()+"\t\t\t|");
-			System.err.println("| precision: "+precision+"\t\t\t\t\t|");
-			System.err.println("+-----------------------------------------------+");
-			System.err.println("\n\n");
-			LossOfControlCalculation loc = new LossOfControlCalculation(flightId, precision);
-			loc.printToFile(file);
-			loc.calculate();
-		}else{
-			displayHelp();
+
+		Optional<Path> path = Optional.empty();	
+		Optional<int[]> flightNums = Optional.empty();
+
+		for(int i = 0; i < args.length; i++) {
+			if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")){
+				displayHelp();
+				System.exit(0);
+			}else if(args[i].equals("-f")) {
+				if(i == args.length - 1) {
+					System.err.println("No arguments specified for -f option! Exiting!");
+					System.exit(1);
+				}
+				path = Optional.of(FileSystems.getDefault().getPath(args[i+1]));
+				if(!Files.exists(path.get())) {
+					System.err.println("Non-existent filepath: "+path.get().toString()+", exiting!");
+					System.exit(1);
+				}else if(!new File(path.get().toUri()).isDirectory()){
+					System.err.println("Filepath: "+path.get().toString()+" is not a directory, exiting!");
+					System.exit(1);
+				}
+			}else if(args[i].equals("-n")) {
+				if(i == args.length - 1) {
+					System.err.println("No arguments specified for -n option! Exiting!");
+					System.exit(1);
+				}
+				String numbers = args[i+1];
+
+				String [] numsAsStrings = numbers.split(",");
+				int [] nums = new int[numsAsStrings.length];
+
+				for(int j = 0; j < nums.length; j++){
+					nums[j] = Integer.parseInt(numsAsStrings[j]);
+				}
+
+				flightNums = Optional.of(nums);
+			}
 		}
 
+		if(flightNums.isPresent()){
+			int [] nums = flightNums.get();
+
+			for(int i = 0; i < nums.length; i++){
+				LossOfControlCalculation loc = path.isPresent() ?
+					new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
+				loc.calculate();
+			}
+		}
 	}
 }
