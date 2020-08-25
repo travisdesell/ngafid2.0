@@ -9,7 +9,6 @@ import java.util.*;
 
 import java.io.PrintWriter;
 import java.io.File;
-import java.io.IOException;
 import java.io.FileNotFoundException;
 
 import java.nio.file.FileSystems;
@@ -22,8 +21,6 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.ngafid.Database;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
 
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
