@@ -370,6 +370,10 @@ class WelcomeCard extends React.Component {
                                 updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
                                 updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                 updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                airports={[]}
+                                airportChange={(airport) => airport}
+                                runways={[]}
+                                runwayChange={(runway) => runway}
                             />
 
                             <div className="card-body" style={{padding:"0"}}>

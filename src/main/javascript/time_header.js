@@ -18,35 +18,64 @@ export default class TimeHeader extends React.Component {
 
         this.state = {
             years : years,
-            months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+            months : ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
         };
+    }
+
+    makeDropdown(currentItem, items, onChange) {
+        return (
+            <div className="col-auto">
+                <div className="dropdown">
+                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {currentItem}
+                    </button>
+                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {
+                            items.map((itemName, index) => {
+                                return (
+                                    <a key={index} className="dropdown-item" onClick={event => onChange(itemName)}>{itemName}</a>
+                                );
+                            })
+                        }
+                    </div>
+                </div>
+            </div>
+        )
     }
 
     render() {
         console.log(this.props.airframes);
         console.log(this.state);
 
+        var airportsHTML;
+        if (this.props.airports.length > 0) {
+            airportsHTML = this.makeDropdown(this.props.airport, this.props.airports, this.props.airportChange);
+        }
+
+        var runwaysHTML;
+        if (this.props.runways.length > 0) {
+            runwaysHTML = this.makeDropdown(this.props.runway, this.props.runways, this.props.runwayChange);
+        } else {
+            runwaysHTML = '';
+        }
+
+        var airframesHTML;
+        if (this.props.airframes.length > 0) {
+            airframesHTML = this.makeDropdown(this.props.airframe, this.props.airframes, this.props.airframeChange);
+        } else {
+            airframesHTML = '';
+        }
+
         return (
             <div className="row card-header d-flex" style={{color : "rgba(75,75,75,250)", padding:"7 20 7 20", margin:"0"}}>
                 <h4 className="mr-auto" style={{margin:"4 0 4 0"}}>{this.props.name}</h4>
 
                 <div className="form-row">
-                    <div className="col-auto">
-                        <div className="dropdown">
-                            <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {this.props.airframe}
-                            </button>
-                            <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                                {
-                                    this.props.airframes.map((airframeName, index) => {
-                                        return (
-                                            <a key={index} className="dropdown-item" onClick={event => this.props.airframeChange(airframeName)}>{airframeName}</a>
-                                        );
-                                    })
-                                }
-                            </div>
-                        </div>
-                    </div>
+                    {airframesHTML}
+
+                    {airportsHTML}
+
+                    {runwaysHTML}
 
                     <div className="col-auto">
                         <div className="input-group">

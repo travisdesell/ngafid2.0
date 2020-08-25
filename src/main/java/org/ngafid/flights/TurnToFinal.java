@@ -290,6 +290,9 @@ public class TurnToFinal {
 
         for (Itinerary it : itineraries) {
             int to = it.minAltitudeIndex;
+            if (!it.wasApproach())
+                continue;
+
             int from = to;
 
             Airport airport = Airports.getAirport(it.getAirport());
@@ -300,6 +303,18 @@ public class TurnToFinal {
 
             double runwayAltitude = altitude[to];
 
+            for (;;) {
+                if (to < 0) {
+                    to = 0;
+                    break;
+                }
+
+                if (altitude[to] - runwayAltitude > 30)
+                    break;
+
+                to -= 1;
+            }
+
             // Find the timestep at which the aircraft is 400ft above the runway's altitude
             for (;;) {
                 if (from < 0) {
@@ -308,10 +323,16 @@ public class TurnToFinal {
                     from = 0;
                     break;
                 }
+
                 if (altitude[from] - runwayAltitude > 400)
                     break;
+
                 from -= 1;
             }
+
+            if (to == from)
+                continue;
+
             TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
                     flight.getAirframeType(), runway, airport.iataCode, flight.getStartDateTime(), runwayAltitude,
                          altTimeSeries.sliceCopy(from, to),
