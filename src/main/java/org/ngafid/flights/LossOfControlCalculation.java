@@ -244,10 +244,9 @@ public class LossOfControlCalculation{
 
 	public void printDetails(){
 		System.err.println("\n\n");
-		System.err.println("+------------ LOCI CALCULATION INFO ------------+");
-		System.err.println("| flight_id: "+flightId+"\t\t\t\t\t\t\t\t|");
-		System.err.println("| logfile: "+(file != null ? file.toString() : "None specified.")+"\t\t\t\t\t\t|");
-		System.err.println("+-----------------------------------------------+");
+		System.err.println("+------------ LOCI/Stall Probability CALCULATION INFO ------------+");
+		System.err.println("| flight_id: "+flightId);
+		System.err.println("| logfile: "+(file != null ? file.toString() : "None specified."));
 		System.err.println("\n\n");
 	}
 	
@@ -319,6 +318,7 @@ public class LossOfControlCalculation{
 			long time = System.currentTimeMillis() - start;
 			long secondsTime = time / 1000;
 			System.out.println("calculations took: "+secondsTime+"s");
+			System.exit(0);
 		} else {
 			try{
 				//Find the C172 flights only!
@@ -339,6 +339,7 @@ public class LossOfControlCalculation{
 				long time = System.currentTimeMillis() - start;
 				long secondsTime = time / 1000;
 				System.out.println("calculations took: "+secondsTime+"s");
+				System.exit(0);
 				//here assume we will calcaulate for all flights for the given fleet
 			}catch (SQLException e) {
 				e.printStackTrace();
