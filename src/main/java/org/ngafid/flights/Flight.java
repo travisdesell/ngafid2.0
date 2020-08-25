@@ -346,10 +346,10 @@ public class Flight {
         return getFlights(connection, fleetId, filter, lim);
     }
 
-	public static int[] getFlightNumbers(Connection connection, int fleetId) throws SQLException{
+	public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException{
 		String queryString = "SELECT id FROM flights WHERE fleet_id = "+fleetId+" AND airframe_id=1";
 
-		int [] nums = new int[getNumFlights(connection, fleetId, new Filter("Aircraft is C172"))];
+		int [] nums = new int[getNumFlights(connection, fleetId, filter)];
 
         PreparedStatement query = connection.prepareStatement(queryString);
 		ResultSet resultSet = query.executeQuery();

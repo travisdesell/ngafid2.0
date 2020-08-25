@@ -22,6 +22,8 @@ import java.sql.SQLException;
 
 import org.ngafid.Database;
 
+import org.ngafid.filters.Filter;
+
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 
@@ -311,7 +313,12 @@ public class LossOfControlCalculation{
 			}
 		} else {
 			try{
-				int [] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId);
+				ArrayList<String> inputs = new ArrayList<>();
+				inputs.add("Airframe");
+				inputs.add("=");
+				inputs.add("Cessna 172S");
+
+				int [] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId, new Filter(inputs));
 				for(int i = 0; i < nums.length; i++){
 					//LossOfControlCalculation loc = path.isPresent() ?
 						//new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
