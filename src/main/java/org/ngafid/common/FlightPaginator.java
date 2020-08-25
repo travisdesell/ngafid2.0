@@ -13,7 +13,7 @@ import org.ngafid.filters.*;
 import org.ngafid.Database;
 import java.sql.SQLException;
 
-public class FlightPaginator extends Paginator{
+public class FlightPaginator extends Paginator {
 
     private Filter filter;
     private int fleetID;
@@ -25,7 +25,7 @@ public class FlightPaginator extends Paginator{
      * @param fleetID the fleetID as an int
      * @throws SQLException if setNumFlights() does
      */
-    public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException{
+    public FlightPaginator(int pageBuffSize, Filter filter, int fleetID) throws SQLException {
         super(pageBuffSize);
         this.filter = filter;
         this.fleetID = fleetID;
@@ -38,14 +38,14 @@ public class FlightPaginator extends Paginator{
      * @param fleetID the fleetID as an int
      * @throws SQLException if setNumFlights() does
      */
-    public FlightPaginator(Filter filter, int fleetID) throws SQLException{
+    public FlightPaginator(Filter filter, int fleetID) throws SQLException {
         this(10, filter, fleetID);//default buff. size is 10
     }
 
     /**
      * Sets the number of flights per page by first determining the amount of flights associated with the filter
      */
-    private void setNumFlights() throws SQLException{
+    private void setNumFlights() throws SQLException {
         super.setNumElements(Flight.getNumFlights(Database.getConnection(), this.fleetID, this.filter));
     }
 
@@ -53,7 +53,7 @@ public class FlightPaginator extends Paginator{
      * Changes the filter used to query flights
      * @param filter the new filter
      */
-    public void setFilter(Filter filter) throws SQLException{
+    public void setFilter(Filter filter) throws SQLException {
         this.filter = filter;
         this.setNumFlights();
     }
@@ -63,7 +63,7 @@ public class FlightPaginator extends Paginator{
      * {inheritDoc}
      */
     @Override
-    public Page currentPage() throws SQLException{
+    public Page currentPage() throws SQLException {
         List<Flight> selectFlights = Flight.getFlights(Database.getConnection(), this.fleetID, this.filter, this.limitString());
         return new Page(numPages, selectFlights, currentIndex);
     }
@@ -72,7 +72,7 @@ public class FlightPaginator extends Paginator{
      * {inheritDoc}
      */
     @Override
-    protected String paginatorType(){
+    protected String paginatorType() {
         return "Flight Paginator";
     }
 

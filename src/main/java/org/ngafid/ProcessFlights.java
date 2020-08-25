@@ -38,8 +38,33 @@ public class ProcessFlights {
             Instant start = Instant.now();
 
             try {
-                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
+                PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
+                ResultSet fleetSet = fleetPreparedStatement.executeQuery();
+
+               if (!fleetSet.next()) {
+                   //there were no fleets with uploads needing an import
+                   //sleep 3 seconds and try again
+                   System.err.println("Did not find any fleets with uploads waiting for import, sleeping 3 seconds.");
+
+                   try {
+                       Thread.sleep(3000);
+                   } catch (Exception e) {
+                       System.err.println(e);
+                       e.printStackTrace();
+                   }
+
+                   continue;
+               }
+
+               int targetFleetId = fleetSet.getInt(1);
+               System.err.println("Importing an upload from fleet: " + targetFleetId);
+
+                PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id = ?");
+                //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
+                //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
                 uploadsPreparedStatement.setString(1, "UPLOADED");
+                uploadsPreparedStatement.setInt(2, targetFleetId);
+
                 ResultSet resultSet = uploadsPreparedStatement.executeQuery();
 
                 while (resultSet.next()) {
@@ -128,17 +153,14 @@ public class ProcessFlights {
                         } catch (IOException e) {
                             System.err.println("IOException: " + e );
                             e.printStackTrace();
+
+                            UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
                             status = "ERROR";
-                            uploadException = e;
-                            System.exit(1);
                         }
 
                     } else {
                         //insert an upload error for this upload
                         status = "ERROR";
-                    }
-
-                    if (status == "ERROR") {
                         UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
                     }
 

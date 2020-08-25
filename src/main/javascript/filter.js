@@ -92,7 +92,9 @@ class Filter extends React.Component {
     }
 
     getQuery() {
+        console.log("getting filter query!");
         let query = this.getQueryHelper(this.state.filters);
+        console.log(query);
 
         return query;
     }
@@ -478,7 +480,7 @@ class Filter extends React.Component {
         console.log(externalSubmit);
 
         return (
-            <div className="card-body p-2" hidden={this.props.hidden} style={{padding:0}}>
+            <div className="card-body" hidden={!this.props.filterVisible} style={{padding:0, margin:0}}>
                 <div className="card mb-1 m-1 border-secondary" style={{background : "rgba(248,259,250,0.8)", margin:0}}>
                     { this.getFilterHeader(this.state.filters, false, null, 0) }
 
@@ -490,7 +492,7 @@ class Filter extends React.Component {
                         </div>
 
                         <div className="p-2">
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter()} hidden={externalSubmit} >{this.props.submitButtonName}</button>
+                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={externalSubmit} >{this.props.submitButtonName}</button>
                         </div>
                     </div>
 

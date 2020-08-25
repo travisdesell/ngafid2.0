@@ -28,6 +28,7 @@ module.exports = {
         uploads: __dirname + "/src/main/javascript/uploads.js",
         imports: __dirname + "/src/main/javascript/imports.js",
         flights: __dirname + "/src/main/javascript/flights.js",
+        flight: __dirname + "/src/main/javascript/flight.js",
         dashboard: __dirname + "/src/main/javascript/dashboard.js",
         system_ids: __dirname + "/src/main/javascript/system_ids.js",
         welcome: __dirname + "/src/main/javascript/welcome.js",

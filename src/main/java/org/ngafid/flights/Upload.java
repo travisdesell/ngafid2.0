@@ -41,6 +41,25 @@ public class Upload {
         return id;
     }
 
+    /**
+     * This is used for getting uploads for the GetUpload route. If an upload was incomplete it will
+     * be stored as "UPLOADING" in the database, but this needs to be updated to "UPLOAD INCOMPLETE" for
+     * the webpage to make it work correctly to distinguish between current uploads and those that need
+     * to be restarted.
+     *
+     * @param newStatus the new status for this upload
+     */
+    public void setStatus(String newStatus) {
+        status = newStatus;
+    }
+
+    /**
+     * @return the status of this upload
+     */
+    public String getStatus() {
+        return status;
+    }
+
     private static void deleteDirectory(File folder) {
         File[] files = folder.listFiles();
         if (files != null) { //some JVMs return null for empty dirs
@@ -130,10 +149,17 @@ public class Upload {
         }
     }
 
-
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId) throws SQLException {
+        return getUploads(connection, fleetId, "");
+    }
+
+
+    public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         //PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
-        PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time");
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time DESC";
+        if (condition != null) query += " " + condition;
+
+        PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
         ResultSet resultSet = uploadQuery.executeQuery();
 
@@ -171,7 +197,7 @@ public class Upload {
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
         //String query = "SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?";
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
 
         if (types.length > 0) {
             query += " AND (";
@@ -182,12 +208,15 @@ public class Upload {
             }
             query += ")";
         }
+        query += " ORDER BY start_time DESC";
+
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
 
         for (int i = 0; i < types.length; i++) {
             uploadQuery.setString(i + 2, types[i]);
         }
+
         ResultSet resultSet = uploadQuery.executeQuery();
 
         ArrayList<Upload> uploads = new ArrayList<Upload>();
@@ -203,7 +232,7 @@ public class Upload {
     }
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String [] types, String sqlLimit) throws SQLException{
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
 
         if (types.length > 0) {
             query += " AND (";
@@ -214,6 +243,7 @@ public class Upload {
             }
             query += ")";
         }
+        query += " ORDER BY start_time DESC";
 
         if(!sqlLimit.isEmpty())
             query += sqlLimit;

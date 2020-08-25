@@ -307,16 +307,19 @@ class WelcomeCard extends React.Component {
         };
 
         return (
-            <div className="container-fluid">
-                <div className="row">
-                    <div className="col-lg-6" style={{paddingRight:"0"}}>
-                        <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Your Fleet</h4>
-                            <div className="card-body">
-                                <div className="row">
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(flightHours / (60 * 60)).toLocaleString('en', numberOptions)}</h3> Flight Hours <br></br>
-                                    </div>
+            <div>
+                <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="container-fluid">
+                    <div className="row">
+                        <div className="col-lg-6" style={{paddingRight:"0"}}>
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Your Fleet</h4>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(flightHours / (60 * 60)).toLocaleString('en', numberOptions)}</h3> Flight Hours <br></br>
+                                        </div>
 
                                     <div className = "col-sm-4">
                                         <h3>{Number(numberFlights).toLocaleString('en')}</h3> Flights <br></br>
@@ -352,24 +355,24 @@ class WelcomeCard extends React.Component {
                    </div>
                 </div>
 
-                <div className="row">
-                    <div className="col-lg-12">
-                        <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                            <TimeHeader
-                                name="Events"
-                                airframes={airframes}
-                                airframe={this.state.airframe}
-                                startYear={this.state.startYear} 
-                                startMonth={this.state.startMonth} 
-                                endYear={this.state.endYear} 
-                                endMonth={this.state.endMonth} 
-                                datesChanged={this.state.datesChanged}
-                                dateChange={() => this.dateChange()}
-                                airframeChange={(airframe) => this.airframeChange(airframe)}
-                                updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                    <div className="row">
+                        <div className="col-lg-12">
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <TimeHeader
+                                    name="Events"
+                                    airframes={airframes}
+                                    airframe={this.state.airframe}
+                                    startYear={this.state.startYear}
+                                    startMonth={this.state.startMonth}
+                                    endYear={this.state.endYear}
+                                    endMonth={this.state.endMonth}
+                                    datesChanged={this.state.datesChanged}
+                                    dateChange={() => this.dateChange()}
+                                    airframeChange={(airframe) => this.airframeChange(airframe)}
+                                    updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
+                                    updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
+                                    updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
+                                    updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                 airports={[]}
                                 airportChange={(airport) => airport}
                                 runways={[]}
