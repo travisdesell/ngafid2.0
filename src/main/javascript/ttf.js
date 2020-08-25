@@ -4,9 +4,11 @@ import ReactDOM from "react-dom";
 import Form from "react-bootstrap/Form";
 
 import { errorModal } from "./error_modal.js";
-import { navbar } from "./signed_in_navbar.js";
-import { map, styles, layers, Colors } from "./map.js";
+import { map, styles, layers, Colors, overlay } from "./map.js";
+import  TimeHeader from "./time_header.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 
+import Overlay from 'ol/Overlay';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
@@ -25,6 +27,7 @@ class TTFCard extends React.Component {
     constructor(props) {
         super(props);
 
+        var date = new Date();
         this.state = {
             mapVisible : false,
 
@@ -44,17 +47,24 @@ class TTFCard extends React.Component {
             // The turn to final objects are defined in the org.ngafid.flights.TurnToFinal::jsonify method.
             data: null,
 
+            datesChanged: true,
+
+            startYear: 2000,
+            startMonth: 1,
+            endYear: date.getFullYear(),
+            endMonth: date.getMonth() + 1,
             startDate: "2000-01-01",
-            endDate: "2020-01-01",
+            endDate: new String(date.getFullYear()) + "-" + (date.getMonth() + 1) + "-01",
 
             selectedAirport: airports[0],
+            selectedRunway: "Any Runway",
 
             // Style object for ttf lines. This is just a thin green line style.
             ttfStyle:
                 new Style({
                     stroke: new Stroke({
                         color: "#00ff00",
-                        width: 1.5
+                        width: 2.5
                     }),
                     image: new Circle({
                         radius: 5,
@@ -84,12 +94,29 @@ class TTFCard extends React.Component {
 
         // https://embed.plnkr.co/plunk/hhEAWk
         map.on('click', function(event) {
-            var f = map.forEachFeatureAtPixel(event.pixel, function(feature, layer) { return feature; });
+            // https://openlayers.org/en/latest/examples/popup.html
+            var container = document.getElementById('popup');
+            var content = document.getElementById('popup-content');
+            var closer = document.getElementById('popup-closer');
 
+            closer.onclick = function() {
+                overlay.setPosition(undefined);
+                closer.blur();
+                return false;
+            };
+
+            var coordinate = event.coordinate;
+            var f = map.forEachFeatureAtPixel(event.pixel, function(feature, layer) { return feature; });
+            console.log(f);
             if (f && f.get('type') == 'ttf') {
                 var geometry = f.getGeometry();
                 var coord = geometry.getCoordinates();
                 console.log("selected feature " + f.get('name'));
+                content.innerHTML = '<p>Flight ' + f.get('ttf').flightId + '</p>, <a href="#" class="btn btn-info">Open Flight Page</a>';
+                overlay.setPosition(coordinate);
+                container.style.display = "block";
+            } else {
+                container.style.display = 'none';
             }
         });
     }
@@ -233,7 +260,8 @@ class TTFCard extends React.Component {
             new Feature({
                 geometry: new LineString(points),
                 name: ttf.flightId,
-                type: 'ttf'
+                type: 'ttf',
+                ttf: ttf
             }),
             trackingPoint
         ];
@@ -252,7 +280,7 @@ class TTFCard extends React.Component {
 
         // Create a layer of the optimalDescentExceedences
 
-        let odeFeatures = this.rangesToFeatures(points, this.rangeExtraction(ttf.centerLineExceedences));
+        let odeFeatures = this.rangesToFeatures(points, this.rangeExtraction(ttf.locExceedences));
         let optimalDescentExceedencesLayer = new VectorLayer({
             style: this.state.optimalDescentExceedencesStyle,
             source: new VectorSource({ features: odeFeatures }),
@@ -271,7 +299,7 @@ class TTFCard extends React.Component {
         layer.setVisible(true);
 
         let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
-        // optimalDescentExceedencesLayer.setVisible(true);
+        optimalDescentExceedencesLayer.setVisible(true);
 
         // let extent = layer.getSource().getExtent();
         // console.log(extent);
@@ -283,12 +311,12 @@ class TTFCard extends React.Component {
         let layer = ttf.layer;
         layer.setVisible(false);
 
-        let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
+        let optimalDescentExceedencesLayer = ttf.optimaldescentexceedenceslayer;
         optimalDescentExceedencesLayer.setVisible(false);
     }
 
     getRunwayValue() {
-        let runwayElement = document.getElementById("runway");
+        let runwayElement = this.state.selectedRunway;
         if (runwayElement == null)
             return null;
         else if (this.state.dataAirport != this.getAirportValue())
@@ -298,14 +326,14 @@ class TTFCard extends React.Component {
     }
 
     getAirportValue() {
-        return document.getElementById("airport").value;
+        return this.state.selectedAirport;
     }
 
     onFetchClicked() {
-        var startDateString = document.getElementById("start").value;
-        var endDateString = document.getElementById("end").value;
-        var airport = this.getAirportValue();
-        var runway = this.getRunwayValue();
+        var startDateString = this.state.startDate;
+        var endDateString = this.state.endDate;
+        var airport = this.state.selectedAirport;
+        var runway = this.state.selectedRunway;
 
         var submissionData = {
             startDate: startDateString,
@@ -386,6 +414,7 @@ class TTFCard extends React.Component {
                 console.log("Removing old layers");
                 for (var ttf of this.state.data.ttfs) {
                     map.removeLayer(ttf.layer);
+                    map.removeLayer(ttf.optimalDescentExceedencesLayer);
                     console.log(ttf.layer);
                 }
             }
@@ -433,34 +462,70 @@ class TTFCard extends React.Component {
         return airports;
     }
 
-    onAirportFilterChanged() {
-        let iataCode = document.getElementById("airport").value;
+    onAirportFilterChanged(airport) {
+        let iataCode = airport;
 
         this.state.selectedAirport = iataCode;
+        this.state.selectedRunway = "Any Runway";
+
+        this.forceUpdate();
     }
 
-    onStartDateChanged() {
-        let date = document.getElementById("start");
-        this.state.startDate = date;
+    onUpdateStartYear(year) {
+        this.state.startYear = year;
+        this.setDates();
+        this.forceUpdate();
     }
 
-    onEndDateChanged() {
-        let date = document.getElementById("end");
-        this.state.endDate = date;
+    onUpdateStartMonth(month) {
+        this.state.startMonth = month;
+        this.setDates();
+        this.forceUpdate();
     }
 
-    onRunwayFilterChanged() {
-        let runway = this.getRunwayValue();
+    onUpdateEndYear(year) {
+        this.state.endYear = year;
+        this.setDates();
+        this.forceUpdate();
+    }
+
+    onUpdateEndMonth(month) {
+        this.state.endMonth = month;
+        this.setDates();
+        this.forceUpdate();
+    }
+
+    setDates() {
+        this.state.datesChanged = true;
+        if (this.startMonth < 10) {
+            this.startDate = "" + this.startYear + "-0" + this.startMonth + "-01";
+        } else {
+            this.startDate = "" + this.startYear + "-" + this.startMonth + "-01";
+        }
+
+        if (this.endMonth < 10) {
+            this.endDate = "" + this.endYear + "-0" + this.endMonth + "-01";
+        } else {
+            this.endDate = "" + this.endYear + "-" + this.endMonth + "-01";
+        }
+    }
+
+    onRunwayFilterChanged(runway) {
         if (runway == null) {
             throw "getRunwayValue returned null even though the onRunwayFilterChanged event handler was called."
         }
 
-        for (const ttf of this.state.data.ttfs) {
-            if (runway == "Any Runway" || runway == ttf.runway.name)
-                this.plotTTF(ttf);
-            else
-                this.hideTTF(ttf);
+        this.state.selectedRunway = runway;
+
+        if (this.state.data != null)
+            for (const ttf of this.state.data.ttfs) {
+                if (runway == "Any Runway" || runway == ttf.runway.name)
+                    this.plotTTF(ttf);
+                else
+                    this.hideTTF(ttf);
         }
+
+        this.forceUpdate();
     }
 
     render() {
@@ -485,30 +550,30 @@ class TTFCard extends React.Component {
             );
         }
 
+        let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
+
         let form = (
             <div>
-                <label htmlFor="start">Start date:</label>
-                <input type="date" id="start" name="date-start"
-                       defaultValue={this.state.startDate}
-                       onChange={(e)=>this.onStartDateChanged()}
-                       min="2000-01-01" max="3000-12-31" />
-
-                <label htmlFor="end">End date:</label>
-                <input type="date" id="end" name="date-end"
-                       defaultValue={this.state.endDate}
-                       onChange={(e)=>this.onEndDateChanged()}
-                       min="2000-01-01" max="3000-12-31" />
-
-                <label htmlFor="airport">Filter by Airport:</label>
-                <Form.Control as="select" id="airport" selected={this.state.selectedAirport} onChange={()=>this.onAirportFilterChanged()}>
-                    {
-                        airports.map(ap => ( <option key={ap}>{ap}</option> ) )
-                    }
-                </Form.Control>
-
-                <button onClick={()=>this.onFetchClicked()}>Fetch</button>
-
-                {runwaySelect}
+                <TimeHeader
+                    name="Flight Filters"
+                    airframes={[]}
+                    startYear={this.state.startYear}
+                    startMonth={this.state.startMonth}
+                    endYear={this.state.endYear}
+                    endMonth={this.state.endMonth}
+                    datesChanged={this.state.datesChanged}
+                    dateChange={() => this.onFetchClicked()}
+                    updateStartYear={(newStartYear) => this.onUpdateStartYear(newStartYear)}
+                    updateStartMonth={(newStartMonth) => this.onUpdateStartMonth(newStartMonth)}
+                    updateEndYear={(newEndYear) => this.onUpdateEndYear(newEndYear)}
+                    updateEndMonth={(newEndMonth) => this.onUpdateEndMonth(newEndMonth)}
+                    airport={this.state.selectedAirport}
+                    airports={airports}
+                    airportChange={(airport) => this.onAirportFilterChanged(airport)}
+                    runway={this.state.selectedRunway}
+                    runways={runwayList}
+                    runwayChange={(runway) => this.onRunwayFilterChanged(runway)}
+                />
                 <br/>
             </div>
         );
@@ -524,6 +589,10 @@ let ttfCard = null;
 ttfCard = ReactDOM.render(
     <TTFCard />,
     document.querySelector('#ttf-card')
+);
+var navbar = ReactDOM.render(
+    <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    document.querySelector('#navbar')
 );
 navbar.setFlightsCard(ttfCard);
 

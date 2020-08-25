@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Overlay from 'ol/Overlay';
 import {Map, View} from 'ol';
 import BingMaps from 'ol/source/BingMaps.js';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
@@ -89,10 +90,29 @@ var center = fromLonLat([-97.0329, 47.9253]);
 
 layers[2].setVisible(true);
 
+var container = document.getElementById('popup');
+var content = document.getElementById('popup-content');
+var closer = document.getElementById('popup-closer');
+let overlays;
+var overlay;
+if (container == null)
+    overlays = [];
+else {
+    overlay = new Overlay({
+        element: container,
+        autoPan: true,
+        autoPanAnimation: {
+          duration: 250
+        }
+    });
+    overlays = [overlay];
+}
+
 var map = new Map({
     target: 'map',
     layers: layers,
     loadTilesWhileInteracting: true,
+    overlays: overlays,
     view: new View({
         center: center,
         zoom: 9
@@ -184,4 +204,4 @@ Colors.randomValue = function() {
 };
 
 
-export { map, styles, layers, Colors };
+export { map, styles, layers, Colors, overlay };

@@ -25,19 +25,19 @@ public class Itinerary {
 
     int minAltitudeIndex = -1;
     double minAltitude = Double.MAX_VALUE;
-    private int startOfApproach = -1;
-    private int endOfApproach = -1;
-    private int startOfTakeoff = -1;
-    private int endOfTakeoff = -1;
-    private int finalIndex;
-    private int takeoffCounter = 0;
+    public int startOfApproach = -1;
+    public int endOfApproach = -1;
+    public int startOfTakeoff = -1;
+    public int endOfTakeoff = -1;
+    public int finalIndex;
+    public int takeoffCounter = 0;
 
 
-    final String GOAROUND = "go_around";
-    final String TOUCHANDGO = "touch_and_go";
-    final String TAKEOFF = "takeoff";
-    final String LANDING = "landing";
-    private String type = GOAROUND;                              // go_around is the default -> will be updated or set if otherwise
+    public static final String GO_AROUND = "go_around";
+    public static final String TOUCH_AND_GO = "touch_and_go";
+    public static final String TAKEOFF = "takeoff";
+    public static final String LANDING = "landing";
+    private String type = GO_AROUND;                              // go_around is the default -> will be updated or set if otherwise
     double minAirportDistance = Double.MAX_VALUE;
     double minRunwayDistance = Double.MAX_VALUE;
 
@@ -301,9 +301,9 @@ public class Itinerary {
         } else if (endOfTakeoff == -1 && (endOfApproach != -1 || startOfTakeoff > endOfTakeoff)) {
             type = LANDING;
         } else if (runwayTime >= 5) {
-            type = TOUCHANDGO;
+            type = TOUCH_AND_GO;
         } else {
-            type = GOAROUND;
+            type = GO_AROUND;
             endOfApproach = finalIndex;
         }
     }
