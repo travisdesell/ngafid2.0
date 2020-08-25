@@ -12,7 +12,7 @@ import org.ngafid.filters.*;
 import org.ngafid.Database;
 import java.sql.SQLException;
 
-public abstract class Paginator{
+public abstract class Paginator {
 
     //useful for SQL queries
     private static final String LIMIT = "LIMIT";

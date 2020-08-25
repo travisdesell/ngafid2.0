@@ -7,10 +7,6 @@ import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="dashboard" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
 
 /*
 var eventStats = [
@@ -194,6 +190,8 @@ class DashboardCard extends React.Component {
 
         return (
             <div>
+                <SignedInNavbar activePage="dashboard" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
                 {
                     this.state.eventStats.map((airframeStats, airframeIndex) => {
                         let marginTop = 4;
@@ -318,7 +316,7 @@ class DashboardCard extends React.Component {
     }
 }
 
-var profileCard = ReactDOM.render(
+var profilePage = ReactDOM.render(
     <DashboardCard />,
-    document.querySelector('#dashboard-card')
+    document.querySelector('#dashboard-page')
 );
