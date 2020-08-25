@@ -21,18 +21,14 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.ngafid.Database;
-
 import org.ngafid.filters.Filter;
+
+import static org.ngafid.flights.LossOfControlParameters.*;
 
 public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 
 	//Standard atmospheric pressure in in. mercury
-	static final double STD_PRESS_INHG = 29.92;
-	static final double COMP_CONV = Math.PI / 180; 
-	static final double AOACrit = 15;
-	static final double proSpinLim = 4;
-
 	private int flightId;
 	private File file;
 	private PrintWriter pw;
@@ -65,17 +61,22 @@ public class LossOfControlCalculation{
 	static Map<String, DoubleTimeSeries> getParameters(int flightId){
 		Map<String, DoubleTimeSeries> params = new HashMap<>();
 		try{
-			params.put("Heading", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG"));
-			params.put("IAS", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS"));
-			params.put("VSPD", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "VSpd"));	
-			params.put("OAT", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "OAT"));	
-			params.put("BaroA", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "BaroA"));
-			params.put("Pitch", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Pitch"));
-			params.put("Roll", DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Roll"));
+			for(String param : dtsParamStrings) {
+				DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, param);
+				if(series == null){
+					return null;
+				} else {
+					params.put(param, series);
+				}
+			}
 		}catch(SQLException e){
 			e.printStackTrace();
 		}
 		return params;		
+	}
+
+	public boolean notCalcuatable(){
+		return this.parameters == null;
 	}
 
 	private double lag(DoubleTimeSeries series, int index){
@@ -142,7 +143,7 @@ public class LossOfControlCalculation{
 	}
 
 	private double getYawRate(int index){
-		DoubleTimeSeries hdg = this.parameters.get("Heading"); 
+		DoubleTimeSeries hdg = this.parameters.get("HDG"); 
 		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index)) % 360);
 		//double yawRate = lag(hdg, index);
 		return yawRate;
@@ -194,9 +195,9 @@ public class LossOfControlCalculation{
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
-		DoubleTimeSeries heading = this.parameters.get("Heading");
+		DoubleTimeSeries altAGL = this.parameters.get("AltAGL");
 
-		for(int i = 0; i<heading.size(); i++){
+		for(int i = 0; i<altAGL.size(); i++){
 			stallProbability.add(this.calculateStallProbability(i));
 			loci.add(this.calculateProbability(i));
 		}
@@ -303,30 +304,42 @@ public class LossOfControlCalculation{
 			}
 		}
 
+
 		if(flightNums.isPresent()) {
 			int [] nums = flightNums.get();
+			long start = System.currentTimeMillis();
 
 			for(int i = 0; i < nums.length; i++){
 				LossOfControlCalculation loc = path.isPresent() ?
 					new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
-				loc.calculate();
+				if(!loc.notCalcuatable()){
+					loc.calculate();
+				}
 			}
+			long time = System.currentTimeMillis() - start;
+			long secondsTime = time / 1000;
+			System.out.println("calculations took: "+secondsTime+"s");
 		} else {
 			try{
+				//Find the C172 flights only!
 				ArrayList<String> inputs = new ArrayList<>();
 				inputs.add("Airframe");
-				inputs.add("=");
+				inputs.add("is");
 				inputs.add("Cessna 172S");
 
 				int [] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId, new Filter(inputs));
+				long start = System.currentTimeMillis();
 				for(int i = 0; i < nums.length; i++){
-					//LossOfControlCalculation loc = path.isPresent() ?
-						//new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
-					//loc.calculate();
-					System.out.println(nums[i]);
+					LossOfControlCalculation loc = path.isPresent() ?
+						new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
+					if(!loc.notCalcuatable()) {
+						loc.calculate();
+					}
 				}
+				long time = System.currentTimeMillis() - start;
+				long secondsTime = time / 1000;
+				System.out.println("calculations took: "+secondsTime+"s");
 				//here assume we will calcaulate for all flights for the given fleet
-				//
 			}catch (SQLException e) {
 				e.printStackTrace();
 			}
