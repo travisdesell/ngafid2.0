@@ -340,10 +340,33 @@ public class Flight {
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int limit) throws SQLException {
         String lim = new String();
-        if (limit > 0)
+        if (limit > 0) {
             lim = " LIMIT 100";
+		}
         return getFlights(connection, fleetId, filter, lim);
     }
+
+	public static int[] getFlightNumbers(Connection connection, int fleetId) throws SQLException{
+		String queryString = "SELECT id FROM flights WHERE fleet_id = "+fleetId+" AND airframe_id=1";
+
+		int [] nums = new int[getNumFlights(connection, fleetId, new Filter("Aircraft is C172"))];
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+		ResultSet resultSet = query.executeQuery();
+
+		int i = 0;
+		while(resultSet.next()){
+			nums[i] = resultSet.getInt(1);
+			i++;
+		}
+
+        resultSet.close();
+        query.close();
+
+		return nums;
+	}
+
+
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition) throws SQLException {
         return getFlights(connection, extraCondition, 0);
