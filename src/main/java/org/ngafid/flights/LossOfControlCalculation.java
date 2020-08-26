@@ -88,22 +88,22 @@ public class LossOfControlCalculation{
 	}
 
 	private double getVspd(int index){
-		DoubleTimeSeries vspd = this.parameters.get("VSPD");
+		DoubleTimeSeries vspd = this.parameters.get(VSPD);
 		return vspd.get(index);
 	}
 
 	private double getIAS(int index){
-		DoubleTimeSeries ias = this.parameters.get("IAS");
+		DoubleTimeSeries ias = this.parameters.get(IAS);
 		return ias.get(index);
 	}
 
 	private double getOAT(int index){
-		DoubleTimeSeries oat = this.parameters.get("OAT");
+		DoubleTimeSeries oat = this.parameters.get(OAT);
 		return oat.get(index);
 	}
 
 	private double getBaroPress(int index){
-		DoubleTimeSeries press = this.parameters.get("BaroA");
+		DoubleTimeSeries press = this.parameters.get(BARO_A);
 		return press.get(index);
 	}
 
@@ -138,19 +138,19 @@ public class LossOfControlCalculation{
 	}
 
 	private double getAOASimple(int index){
-		DoubleTimeSeries pitch = this.parameters.get("Pitch");
+		DoubleTimeSeries pitch = this.parameters.get(PITCH);
 		return pitch.get(index) - this.getFlightPathAngle(index);
 	}
 
 	private double getYawRate(int index){
-		DoubleTimeSeries hdg = this.parameters.get("HDG"); 
+		DoubleTimeSeries hdg = this.parameters.get(HDG); 
 		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index)) % 360);
 		//double yawRate = lag(hdg, index);
 		return yawRate;
 	}
 
 	private double getRollComp(int index){
-		DoubleTimeSeries roll = this.parameters.get("Roll");
+		DoubleTimeSeries roll = this.parameters.get(ROLL);
 		return roll.get(index) * COMP_CONV;
 	}
 
@@ -195,7 +195,7 @@ public class LossOfControlCalculation{
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
-		DoubleTimeSeries altAGL = this.parameters.get("AltAGL");
+		DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
 
 		for(int i = 0; i<altAGL.size(); i++){
 			stallProbability.add(this.calculateStallProbability(i));
