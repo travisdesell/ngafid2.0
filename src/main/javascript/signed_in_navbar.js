@@ -128,7 +128,7 @@ class SignedInNavbar extends React.Component {
                     <ul className="navbar-nav mr-auto">
 
                         <ul className="navbar-nav mr-auto" hidden={this.props.plotMapHidden}>
-                            { 
+                            {
                                 //only display the filter icon on the navbar if it's being used
                                 this.props.filterVisible ? (
                                     <button id="filter-toggle-button" className={filterButtonClasses} data-toggle="button" title="Toggle the filter." aria-pressed={this.props.filterSelected} style={buttonStyle} onClick={() => this.props.toggleFilter()}>
@@ -147,7 +147,7 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}}
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
@@ -206,3 +206,4 @@ class SignedInNavbar extends React.Component {
 }
 
 export default SignedInNavbar;
+

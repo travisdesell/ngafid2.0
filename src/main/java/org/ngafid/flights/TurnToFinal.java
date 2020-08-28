@@ -45,7 +45,7 @@ public class TurnToFinal {
 
     private ArrayList<Integer> locExceedences;
     private ArrayList<Integer> centerLineExceedences;
-    private double selfDefinedGlideAngle;
+    private ArrayList<Double> selfDefinedGlideAngle;
     private ArrayList<Integer> optimalDescentSlopeWarnings;
     private ArrayList<Integer> optimalDescentSlopeExceedences;
     private ArrayList<Integer> optimalDescentSpeedExceedences;
@@ -94,7 +94,7 @@ public class TurnToFinal {
 
         // This is the angle from the ground between the aircrafts position at 400ft and the touchdown point
         // There should be one entry here per itinerary object
-        this.selfDefinedGlideAngle = -1000;
+        this.selfDefinedGlideAngle = new ArrayList<>();
         calculateSelfDefinedGlideAngle();
 
         // "Optimal descent exceedence"
@@ -166,22 +166,24 @@ public class TurnToFinal {
         //      thus:   arcsin(b / c) = angle_bc
 
 
-        int firstIndex = 0; // This is constant for now but just in case it isnt in the future
-        double a = this.altitude[firstIndex] - runwayAltitude;
 
-        double startLat = this.latitude[firstIndex];
-        double startLon = this.longitude[firstIndex];
-        int lastIndex = this.latitude.length - 1;
-        double touchdownLat = this.latitude[lastIndex];
-        double touchdownLon = this.longitude[lastIndex];
-        double b = Airports.calculateDistanceInFeet(startLat, startLon, touchdownLat, touchdownLon);
+        for (int i = 0; i < this.altitude.length - 2; i++) {
+            double a = this.altitude[i] - runwayAltitude;
 
-        double c = Math.sqrt(a * a + b * b);
+            double startLat = this.latitude[i];
+            double startLon = this.longitude[i];
+            int lastIndex = this.latitude.length - 1;
+            double touchdownLat = this.latitude[lastIndex];
+            double touchdownLon = this.longitude[lastIndex];
+            double b = Airports.calculateDistanceInFeet(startLat, startLon, touchdownLat, touchdownLon);
 
-        this.selfDefinedGlideAngle = Math.asin(b / c);
-        if (Double.isNaN(this.selfDefinedGlideAngle))
-            this.selfDefinedGlideAngle = -100000;
-        ;
+            double c = Math.sqrt(a * a + b * b);
+
+            double angle = Math.asin(b / c);
+            if (Double.isNaN(angle))
+                LOG.info("Calculated NAN self defined glide angle");
+            this.selfDefinedGlideAngle.add(angle);
+        }
     }
 
     private void calculateOptimalDescentExceedences() {
