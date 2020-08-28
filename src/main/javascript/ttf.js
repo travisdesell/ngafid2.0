@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 import Form from "react-bootstrap/Form";
 
 import { errorModal } from "./error_modal.js";
-import { map, styles, layers, Colors, overlay } from "./map.js";
+import { map, styles, layers, Colors, overlay, initializeMap } from "./map.js";
 import  TimeHeader from "./time_header.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
@@ -20,17 +20,18 @@ import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
 import { Filter } from './filter.js';
 
+import Plotly from 'plotly.js';
 
 var moment = require('moment');
+
+initializeMap();
 
 class TTFCard extends React.Component {
     constructor(props) {
         super(props);
-
+        console.log(airports);
         var date = new Date();
         this.state = {
-            mapVisible : false,
-
             // The start of the date range that this.state.data corresponds to.
             // This will be null if and only if this.state.data is null
             dataStartDate: null,
@@ -58,6 +59,9 @@ class TTFCard extends React.Component {
 
             selectedAirport: airports[0],
             selectedRunway: "Any Runway",
+            mapVisible: true,
+            plotVisible: true,
+            mapStyle: "Road",
 
             // Style object for ttf lines. This is just a thin green line style.
             ttfStyle:
@@ -90,7 +94,36 @@ class TTFCard extends React.Component {
                          })
                      })
                 }),
+            plotlyLayout: {
+                title: 'Self Defined Glide Angles',
+                autosize: true,
+                margin: {
+                    pad: 10
+                }
+            },
+
+            plotlyConfig: {responsive: true}
         };
+
+        var navbar = ReactDOM.render(
+            <SignedInNavbar
+                                 filterVisible={false}
+                                 plotVisible={this.state.plotVisible}
+                                 mapVisible={this.state.mapVisible}
+                                 filterSelected={false}
+                                 plotSelected={false}
+                                 mapSelected={false}
+                                 mapStyle={this.state.mapStyle}
+                                 togglePlot={() => this.togglePlot()}
+                                 toggleFilter={() => this.toggleFilter()}
+                                 toggleMap={() => this.toggleMap()}
+                                 mapSelectChanged={(style) => this.mapSelectChanged(style)}
+                                 waitingUserCount={waitingUserCount}
+                                 fleetManager={fleetManager}
+                                 unconfirmedTailsCount={unconfirmedTailsCount}
+                                 modifyTailsAccess={modifyTailsAccess}/>,
+            document.querySelector('#navbar')
+        );
 
         // https://embed.plnkr.co/plunk/hhEAWk
         map.on('click', function(event) {
@@ -119,12 +152,16 @@ class TTFCard extends React.Component {
                 container.style.display = 'none';
             }
         });
+
+        Plotly.newPlot('glide-angle-plot', {}, this.state.plotlyLayout, this.state.plotlyConfig);
     }
 
     mapSelectChanged(style) {
         for (var i = 0, ii = layers.length; i < ii; ++i) {
             layers[i].setVisible(styles[i] === style);
         }
+
+        this.setState({mapStyle: style});
     }
 
     showMap() {
@@ -311,8 +348,19 @@ class TTFCard extends React.Component {
         let layer = ttf.layer;
         layer.setVisible(false);
 
-        let optimalDescentExceedencesLayer = ttf.optimaldescentexceedenceslayer;
+        let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
         optimalDescentExceedencesLayer.setVisible(false);
+    }
+
+    plotSelfDefinedGlideAngles(ttfs) {
+        let curves = ttfs.map(ttf => {
+            let y = ttf.selfDefinedGlideAngle;
+            return { x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
+        });
+
+        console.log(curves.length);
+
+        Plotly.newPlot('glide-angle-plot', curves, this.state.plotlyLayout, this.state.plotlyConfig);
     }
 
     getRunwayValue() {
@@ -384,20 +432,22 @@ class TTFCard extends React.Component {
         // If the TTFs have already been plotted it will use the previous layer.
         function responseFunction(response) {
             console.log("Executing response function");
-            thisTTF.state.data = response;
-
+            var ttfs = [];
             for (var i = 0; i < response.ttfs.length; i++) {
                 let date = parseDate(response.ttfs[i].flightStartDate);
                 let ttf = response.ttfs[i];
 
                 if ((runway == null || ["Any Runway", ttf.runway].includes(runway)) && dateWithinRange(date, startDate, endDate)) {
+                    ttfs.push(ttf);
                     thisTTF.plotTTF(ttf);
                 } else {
                     thisTTF.hideTTF(ttf);
                 }
             }
 
-            thisTTF.forceUpdate();
+            thisTTF.plotSelfDefinedGlideAngles(ttfs);
+            thisTTF.setState({data: response})
+
         }
 
         // If we already have some data, and the date range of that data contains the new date range,
@@ -549,7 +599,7 @@ class TTFCard extends React.Component {
                 </div>
             );
         }
-
+        console.log(this.state);
         let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
 
         let form = (
@@ -590,11 +640,6 @@ ttfCard = ReactDOM.render(
     <TTFCard />,
     document.querySelector('#ttf-card')
 );
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
-navbar.setFlightsCard(ttfCard);
 
 console.log("rendered ttfCard!");
 

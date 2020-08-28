@@ -37,7 +37,7 @@ function displayPlots(selectedAirframe) {
 
 
     var ngafidPercents = {
-        name : 'NGAFID Aggregate',
+        name : 'All Other Fleets',
         type : 'bar',
         orientation : 'h',
         hoverinfo : 'y+text',
@@ -205,7 +205,7 @@ class Notifications extends React.Component {
 }
 
 
-class WelcomeCard extends React.Component {
+class WelcomePage extends React.Component {
     constructor(props) {
         super(props);
 
@@ -245,7 +245,7 @@ class WelcomeCard extends React.Component {
     }
 
     dateChange() {
-        console.log("[welcomecard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'"); 
+        console.log("[welcomecard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'");
 
         let startDate = this.state.startYear + "-";
         let endDate = this.state.endYear + "-";
@@ -264,7 +264,7 @@ class WelcomeCard extends React.Component {
         $('#loading').show();
         console.log("showing loading spinner!");
 
-        let welcomeCard = this;
+        let welcomePage = this;
 
         $.ajax({
             type: 'POST',
@@ -280,17 +280,17 @@ class WelcomeCard extends React.Component {
                 if (response.err_msg) {
                     errorModal.show(response.err_title, response.err_msg);
                     return;
-                }   
+                }
 
                 eventCounts = response;
-                displayPlots(welcomeCard.state.airframe);
-                welcomeCard.setState({datesChanged : false});
-            },   
+                displayPlots(welcomePage.state.airframe);
+                welcomePage.setState({datesChanged : false});
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     airframeChange(airframe) {
@@ -301,9 +301,9 @@ class WelcomeCard extends React.Component {
     render() {
         //console.log(systemIds);
 
-        const numberOptions = { 
+        const numberOptions = {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2 
+            maximumFractionDigits: 2
         };
 
         return (
@@ -321,39 +321,39 @@ class WelcomeCard extends React.Component {
                                             <h3>{Number(flightHours / (60 * 60)).toLocaleString('en', numberOptions)}</h3> Flight Hours <br></br>
                                         </div>
 
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(numberFlights).toLocaleString('en')}</h3> Flights <br></br>
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(numberFlights).toLocaleString('en')}</h3> Flights <br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(numberAircraft).toLocaleString('en')}</h3> Aircraft <br></br>
+                                        </div>
                                     </div>
 
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(numberAircraft).toLocaleString('en')}</h3> Aircraft <br></br>
+                                    <hr></hr>
+
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(yearEvents).toLocaleString('en')}</h3> Events This Year<br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(monthEvents).toLocaleString('en')}</h3> Events This Month<br></br>
+                                        </div>
+
                                     </div>
-                                </div>
-
-                                <hr></hr>
-
-                                <div className="row">
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
-                                    </div>
-
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(yearEvents).toLocaleString('en')}</h3> Events This Year<br></br>
-                                    </div>
-
-                                    <div className = "col-sm-4">
-                                        <h3>{Number(monthEvents).toLocaleString('en')}</h3> Events This Month<br></br>
-                                    </div>
-
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                        <Notifications />
-                   </div>
-                </div>
+                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
+                            <Notifications />
+                        </div>
+                    </div>
 
                     <div className="row">
                         <div className="col-lg-12">
@@ -362,6 +362,8 @@ class WelcomeCard extends React.Component {
                                     name="Events"
                                     airframes={airframes}
                                     airframe={this.state.airframe}
+                                    airports={[]}
+                                    runways={[]}
                                     startYear={this.state.startYear}
                                     startMonth={this.state.startMonth}
                                     endYear={this.state.endYear}
@@ -373,11 +375,7 @@ class WelcomeCard extends React.Component {
                                     updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
-                                airports={[]}
-                                airportChange={(airport) => airport}
-                                runways={[]}
-                                runwayChange={(runway) => runway}
-                            />
+                                />
 
                             <div className="card-body" style={{padding:"0"}}>
                                 <div className="row" style={{margin:"0"}}>
@@ -393,20 +391,16 @@ class WelcomeCard extends React.Component {
                     </div>
                 </div>
             </div>
+        </div>
         );
     }
 }
 
 
-var welcomeCard = ReactDOM.render(
-    <WelcomeCard />,
-    document.querySelector('#welcome-card')
+var welcomePage= ReactDOM.render(
+    <WelcomePage/>,
+    document.querySelector('#welcome-page')
 );
 
 displayPlots("All Airframes");
-
-var navbar = ReactDOM.render(
-    <SignedInNavbar activePage={"welcome"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
-    document.querySelector('#navbar')
-);
 
