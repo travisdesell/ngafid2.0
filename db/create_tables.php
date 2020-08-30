@@ -449,7 +449,7 @@ $query = "CREATE TABLE `saved_queries` (
 
     PRIMARY KEY(`id`),
     FOREIGN KEY(`user_id`) REFERENCES user(`id`)
-    ) ENGINE InnoDB DEFAULT CHARSET=latin1;"   
+    ) ENGINE InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
 

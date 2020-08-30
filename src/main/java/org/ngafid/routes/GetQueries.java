@@ -2,6 +2,7 @@ package org.ngafid.routes;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
 import java.util.logging.Logger;
 
 import java.sql.Connection;
@@ -58,9 +59,23 @@ public class GetQueries implements Route {
                 query.setInt(1, fleetID);
             }
             ResultSet results = query.executeQuery();
-            results.next();
 
-            return results;
+            // process results
+            String resultsString = "";
+
+            while (results.next()) {
+                if (resultsString != ""){
+                    resultsString += "--";
+                }
+
+                String queryName = results.getString(5);
+                String queryText = results.getString(6);
+                String queryInfo = results.getString(4);
+
+                resultsString += queryName + "++" + queryText + "++" + queryInfo;
+            }
+
+            return resultsString;
 
         } catch (SQLException e) {
             LOG.severe(e.toString());
