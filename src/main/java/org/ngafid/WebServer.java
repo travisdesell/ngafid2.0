@@ -220,6 +220,8 @@ public final class WebServer {
         Spark.get("/protected/sim_acft", new GetSimAircraft(gson));
         Spark.post("/protected/sim_acft", new PostSimAircraft(gson));
 
+        Spark.get("/protected/get_upsetprob", new GetUpsetProbabilites(gson));
+
         //Flight-Tagging routes
         Spark.post("/protected/flight_tags", new PostTags(gson));
         Spark.post("/protected/create_tag", new PostCreateTag(gson));
