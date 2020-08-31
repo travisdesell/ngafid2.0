@@ -99,4 +99,4 @@ Flight_Data_Limited <- Flight_Data[!notvars]
 ##Save a couple of files.
 
 write.csv(Flight_Data_Limited, file = "output_filepath_and_name.csv", col.names = TRUE)
-write.csv(Flight_Data$Stall_Prob, file = "output_filepath_and_name.csv", col.names = TRUE)
+write.csv(Flight_Data$LOCI, file = "output_filepath_and_name.csv", col.names = TRUE)

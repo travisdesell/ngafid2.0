@@ -190,7 +190,6 @@ public class LossOfControlCalculation{
 	 * @return a floating-point percentage of the probability of loss of control
 	 */
 	public void calculate(){
-		System.out.println("LOCI_CALCULATOR: Now calculating Loss of Control probability for: flight "+flightId);
 		this.printDetails();
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
@@ -244,9 +243,10 @@ public class LossOfControlCalculation{
 
 	public void printDetails(){
 		System.err.println("\n\n");
-		System.err.println("+------------ LOCI/Stall Probability CALCULATION INFO ------------+");
-		System.err.println("| flight_id: "+flightId);
-		System.err.println("| logfile: "+(file != null ? file.toString() : "None specified."));
+		System.err.println("------------ LOCI/Stall Probability CALCULATION INFO ------------");
+		System.err.println("flight_id: "+flightId);
+		System.err.println("logfile: "+(file != null ? file.toString() : "None specified."));
+		System.err.println("-----------------------------------------------------------------");
 		System.err.println("\n\n");
 	}
 	
@@ -265,7 +265,12 @@ public class LossOfControlCalculation{
 		if(args.length < 1){
 			displayHelp();
 		}else{
-			fleetId = Integer.parseInt(args[0]);
+			try{
+				fleetId = Integer.parseInt(args[0]);
+			}catch(NumberFormatException e){
+				System.err.println("FATAL ERROR: Make sure your first argument is the fleet id!");
+				System.exit(1);
+			}
 		}
 
 		for(int i = 1; i < args.length; i++) {
