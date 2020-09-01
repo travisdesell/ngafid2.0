@@ -211,9 +211,9 @@ public class LossOfControlCalculation{
 
 	public void writeFile(DoubleTimeSeries loci, DoubleTimeSeries sProb){
 		try{
-			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:");
+			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:"+"\t\t\tAirspeed:");
 			for(int i = 0; i<loci.size(); i++){
-				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i));
+				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i)+"\t\t\t"+this.getIAS(i));
 			}
 			pw.println("\n\nMaximum Values: ");
 			pw.println("Stall Probability: "+sProb.getMax()+" LOC-I: "+loci.getMax());
