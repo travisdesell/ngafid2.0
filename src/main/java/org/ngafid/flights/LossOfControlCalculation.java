@@ -19,6 +19,8 @@ import java.lang.Math;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 
 import org.ngafid.Database;
 import org.ngafid.filters.Filter;
@@ -29,18 +31,18 @@ public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 
 	//Standard atmospheric pressure in in. mercury
-	private int flightId;
+	private int fleetId, flightId;
 	private File file;
 	private PrintWriter pw;
 	private Map<String, DoubleTimeSeries> parameters;
 
-	public LossOfControlCalculation(int flightId){ 
+	public LossOfControlCalculation(int fleetId, int flightId){ 
+		this.fleetId = fleetId;
 		this.flightId = flightId;
-		this.parameters = getParameters(flightId);
 	}
 
-	public LossOfControlCalculation(int flightId, Path path){ 
-		this(flightId);
+	public LossOfControlCalculation(int fleetId, int flightId, Path path){ 
+		this(fleetId, flightId);
 		this.createFileOut(path);
 	}
 
@@ -184,6 +186,37 @@ public class LossOfControlCalculation{
 		return prob;
 	}
 
+	public boolean alreadyCalculated(){
+		String queryString = "SELECT EXISTS(SELECT * FROM loci_processed WHERE fleet_id = ? and flight_id = ?)";
+		try{
+			PreparedStatement query = connection.prepareStatement(queryString);
+			query.setInt(1, this.fleetId);
+			query.setInt(2, this.flightId);
+
+			ResultSet resultSet = query.executeQuery();
+
+			if(resultSet.next()){
+				return resultSet.getBoolean(1);
+			}
+		}catch (SQLException se) {
+			se.printStackTrace();
+		}
+		return false;
+	}
+
+
+	private void updateDatabase(){
+		String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
+		try{
+			PreparedStatement query = connection.prepareStatement(queryString);
+			query.setInt(1, this.fleetId);
+			query.setInt(2, this.flightId);
+
+			query.executeUpdate();
+		}catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
 
 	/**
 	 * Calculates the loss of control probability
@@ -191,6 +224,7 @@ public class LossOfControlCalculation{
 	 */
 	public void calculate(){
 		this.printDetails();
+		this.parameters = getParameters(this.flightId);
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
@@ -203,6 +237,7 @@ public class LossOfControlCalculation{
 
 		loci.updateDatabase(connection, this.flightId);  
 		stallProbability.updateDatabase(connection, this.flightId);
+		this.updateDatabase();
 
 		if(this.pw != null){
 			this.writeFile(loci, stallProbability);
@@ -315,8 +350,8 @@ public class LossOfControlCalculation{
 
 			for(int i = 0; i < nums.length; i++){
 				LossOfControlCalculation loc = path.isPresent() ?
-					new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
-				if(!loc.notCalcuatable()){
+					new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
+				if(!loc.notCalcuatable() && !loc.alreadyCalculated()){
 					loc.calculate();
 				}
 			}
@@ -336,8 +371,8 @@ public class LossOfControlCalculation{
 				long start = System.currentTimeMillis();
 				for(int i = 0; i < nums.length; i++){
 					LossOfControlCalculation loc = path.isPresent() ?
-						new LossOfControlCalculation(nums[i], path.get()) : new LossOfControlCalculation(nums[i]);
-					if(!loc.notCalcuatable()) {
+						new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
+					if(!loc.notCalcuatable() && !loc.alreadyCalculated()) {
 						loc.calculate();
 					}
 				}
