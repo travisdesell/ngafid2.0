@@ -482,6 +482,21 @@ class Flight extends React.Component {
                 flightId : this.props.flightInfo.id,
             };
 
+			//TODO: get upset probability data here
+
+			$.ajax({
+				type: 'GET',
+				url: '/protected/get_upset_probs?flight_id='+this.props.flightInfo.id,
+				dataType : 'json',
+				success : function(response) {
+					console.log("received upset prob response: ");
+					console.log(response);
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+				},   
+				async: true 
+			});  
+
             $.ajax({
                 type: 'POST',
                 url: '/protected/coordinates',
