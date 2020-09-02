@@ -27,7 +27,9 @@ class LoadQueriesModal extends React.Component {
             selectedQuery : null,
             user_id : null,
             queryText : "",
-            groups : new Groups(this)                       // hashtable of groupIDs to available queries* (Queries should be an object)
+            groups : new Groups(this),                       // Groups component responsible for displaying available query Groups
+            queries : new Map(),                            // queryName keys to list values [name, text, info]
+            queryNamesDisplay : null
         };
     }
 
@@ -36,18 +38,55 @@ class LoadQueriesModal extends React.Component {
     }
 
     getQueryNames() {
-        // method to construct query name section of modal (load associated query names)
-        // load up the query names associated with the selected fleet / user (load all if nothing selected?)
+        // method to construct query name section of modal (load associated query names and info)
 
+        // ajax call to retrieve queries belonging to selected Group
+        var submissionData = {
+            fleetID: $("#" + this.state.groups.state.id).val()
+        };
 
-        var names = this.state.groups.getQueries();
+        var thisModal = this;
 
-        if (names.size) {
+        if (submissionData.fleetID) {
+            $.ajax({
+                type: 'GET',
+                url: '/protected/get_queries',
+                data: submissionData,
+                success : function(response) {
+                    // Parse response string and populate 'this.state.queries' with queries for one group at a time
+
+                    thisModal.state.queries.clear();
+                    if (response != "") {
+                        let queries = response.split("--");
+                        for (let index = 0; index < queries.length; index++) {
+                            let fields = queries[index].split("++");
+
+                            // add query to queries map
+                            thisModal.state.queries.set(fields[0], new Query(fields[0], fields[1], fields[2]));
+
+                            // if init set queryText
+                            if (thisModal.state.selectedQuery == null) {
+                                thisModal.state.selectedQuery = fields[0];
+                            }
+                        }
+                    }
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error retrieving user fleet info", "unsuccessful AJAX call");
+                },
+                async: false
+            });
+        } else {
+            // handles initialization error, where SelectGroups element not formed - JQuery returns undefined
+            thisModal.state.queries.clear();
+        }
+
+        if (thisModal.state.queries.size) {
             return (
                 <select name="querySelect" id="querySelect" type={"select"} className="form-control" placeholder="Please Select Query" onChange={(event) => { this.state.selectedQuery = querySelect.value; this.setState(this.state);}} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
                     {
-                        Array.from(names, ([queryName, query]) => {
-                            return (<option key={queryName} value={query}>{queryName}</option>)
+                        Array.from(this.state.queries, ([queryName, query]) => {
+                            return (<option key={queryName} value={queryName}>{queryName}</option>)
                         })
                     }
                 </select>
@@ -59,6 +98,15 @@ class LoadQueriesModal extends React.Component {
                 </select>
             )
         }
+    }
+
+    getQueryText() {
+        let query = this.state.selectedQuery;
+        if (query && this.state.queries.get(query)) {
+            return this.state.queries.get(query).state.queryText;
+        }
+
+        return "Select a query to be displayed";
     }
 
     isValidLoad() {
@@ -101,15 +149,14 @@ class LoadQueriesModal extends React.Component {
         };
 
         // generate header message
-        //let groups = this.state.groups;
-        let names = this.getQueryNames();
+        this.state.queryNamesDisplay = this.getQueryNames();
+        let names = this.state.queryNamesDisplay;
         let headerMessage = "Where would you like to load from?";
         let dropdownLabel = "Source:";
         let submitLabel = "Load";
+        this.state.selectedGroup = this.state.groups.state.selectedGroup;
         let submitDisabled = !this.isValidLoad();
-
-
-        //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
+        let queryText = this.getQueryText();
 
         return (
             <div className='modal-content'>
@@ -150,7 +197,7 @@ class LoadQueriesModal extends React.Component {
                             <label htmlFor="queryText" style={labelStyle}>Full Query:</label>
                         </div>
                         <div className="p-2 flex-fill" style={formHeaderStyle}>
-                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={"Oh Lookie at all the Query Details. Fancy Fancy. Oh, I wonder if the text is gonna wrap. It'd be such a tragedy if the text left the textarea"} readOnly>
+                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={queryText} readOnly>
                             </textarea>
                         </div>
                     </div>
@@ -159,7 +206,7 @@ class LoadQueriesModal extends React.Component {
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
-                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {}} disabled={submitDisabled}>{submitLabel}</button>
+                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {/*CALL TO LOAD QUERY TO FILTERS HERE*/}} disabled={submitDisabled}>{submitLabel}</button>
                 </div>
             </div>
         );
@@ -382,7 +429,7 @@ class SaveQueriesModal extends React.Component {
 }
 
 class Query {
-    constructor(name, info, text) {
+    constructor(name, text, info) {
         this.state = {
             queryName : name,
             queryInfo : info,
@@ -410,7 +457,8 @@ class Groups extends React.Component {
             id : id,
             groupsDisplay : grps,
             queries : new Map(),                   //selectedGroup's Queries
-            user_id : null
+            //user_id : null
+            selectedGroup : -1                      // default: "my queries"
         }
 
         this.getFleet();
@@ -419,46 +467,8 @@ class Groups extends React.Component {
             this.state.groupsDisplay.push([0, "NGAFID"]);
 
             // specify groupSelect dropdown id
-            id = "loadGroupSelect";
-
-            // get queries associated with selected group
-            this.getQueries();
+            this.state.id = "loadGroupSelect";
         }
-    }
-
-    getQueries() {
-        var thisGroups = this;
-        var submissionData = {
-            fleetID: $("#" + this.state.id).val()
-        };
-
-        var queries;
-        $.ajax({
-            type: 'GET',
-            url: '/protected/get_queries',
-            data: submissionData,
-            success : function(response) {
-                // TODO: populate 'this.state.queries' with queries for one group at a time
-                // Read ResultSet
-                console.log(response);
-
-                thisGroups.state.queries.clear();
-                let queries = response.split("--");
-                for (let index = 0; index < queries.length; index++) {
-                    let fields = queries[index].split("++");
-
-                    // add query to queries map
-                    let query = new Query();
-                    thisGroups.state.queries.set(fields[0], new Query(fields[0], fields[1], fields[2]));
-                }
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error retrieving user fleet info", "unsuccessful AJAX call");
-            },
-            async: true
-        });
-
-        return this.state.queries;
     }
 
     getFleet() {
@@ -469,7 +479,7 @@ class Groups extends React.Component {
             success : function(response) {
                 if($.type(response) === "string"){
                     let fields = response.split(",");
-                    thisGroups.state.user_id = parseInt(fields[0]);
+                    //thisGroups.state.user_id = parseInt(fields[0]);
 
                     // add fleet to list if user has appropriate access (or if loading)
                     if (fields[3] == "MANAGER" || fields[3] == "UPLOAD" || this.state.parentModal instanceof LoadQueriesModal) {
@@ -487,9 +497,17 @@ class Groups extends React.Component {
         });
     }
 
+    // call getQueryNames() in parent Modal to update w/ selected query & refresh MODAL render
+    handleGroupSelectChange() {
+        this.state.parentModal.props.state.selectedGroup = $(this.state.id).val();
+        this.state.selectedGroup = $(this.state.id).val();
+        this.state.parentModal.props.getQueryNames();
+        this.state.parentModal.props.setState(this.state.parentModal.props.state);
+    }
+
     render(){
         return (
-            <select name="groupSelect" id={this.state.id} type={"select"} key={0} className="form-control" onChange={(event) => { this.state.parentModal.props.state.selectedGroup = $(this.state.id).val(); this.state.parentModal.props.setState(this.state.parentModal.props.state); }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
+            <select name="groupSelect" id={this.state.id} type={"select"} key={0} className="form-control" onChange={(event) => { this.handleGroupSelectChange();}} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
                 {
                     this.state.groupsDisplay.map( (groupInfo, index) =>
                         <option key={index} value={groupInfo[0]}>{groupInfo[1]}</option>
