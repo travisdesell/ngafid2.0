@@ -2,7 +2,6 @@ package org.ngafid.routes;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.HashMap;
 import java.util.logging.Logger;
 
 import java.sql.Connection;
@@ -10,7 +9,6 @@ import java.sql.SQLException;
 
 import com.google.gson.Gson;
 
-import org.ngafid.accounts.Fleet;
 import spark.Route;
 import spark.Request;
 import spark.Response;
@@ -41,13 +39,6 @@ public class GetQueries implements Route {
             int fleetID = Integer.parseInt(request.queryParams("fleetID"));                    // get fleet ID from submissionData
             Connection connection = Database.getConnection();
             // prepare query
-            //String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
-
-
-            //PreparedStatement query = connection.prepareStatement(queryString);
-            //query.setInt(1, fleetID);
-            //ResultSet resultSet = query.executeQuery();
-
             // check if querying by userID
             PreparedStatement query;
             if (fleetID == -1) {
