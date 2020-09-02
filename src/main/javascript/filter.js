@@ -2,8 +2,8 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-import { saveQueriesModal } from "./save_query_modal.js"
-import { loadQueriesModal } from "./load_query_modal.js"
+//import { saveQueriesModal } from "./save_query_modal.js"
+import { loadQueriesModal, saveQueriesModal } from "./load_query_modal.js"
 
 class Filter extends React.Component {
     constructor(props) {
@@ -499,7 +499,7 @@ class Filter extends React.Component {
                         </div>
 
                         <div className="p-2">
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter()} hidden={externalSubmit} >{this.props.submitButtonName}</button>
+                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={externalSubmit} >{this.props.submitButtonName}</button>
                             <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => {saveQueriesModal.updateQuery(this.getQuery()); saveQueriesModal.show();}} hidden={externalSubmit} >Save</button>
                         </div>
                     </div>

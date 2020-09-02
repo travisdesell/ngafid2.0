@@ -1307,7 +1307,7 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
                 calculateVariance(egtNames, "E1 EGT Variance", "deg F");
 
-            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG") || airframeType.equals("Piper PA-46-500TP Meridian") || airframeType.equals("Unknown Aircraft")) {
+            } else if (airframeType.equals("Garmin Flight Display") || airframeType.equals("Diamond DA40NG") || airframeType.equals("Diamond DA42NG") || airframeType.equals("Piper PA-46-500TP Meridian") || airframeType.equals("Unknown Aircraft")) {
                 LOG.warning("Cannot calculate engine variances because airframe data recorder does not track CHT and/or EGT: '" + airframeType + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeType +" does not track CHT and/or EGT"));
 
