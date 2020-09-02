@@ -49,6 +49,8 @@ class Flight extends React.Component {
             layer : null,
             parent : props.parent,
             color : color,
+			lociData : [],
+			spData : [],
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -473,6 +475,55 @@ class Flight extends React.Component {
 
             var thisFlight = this;
 
+            var lociSubmissionData = {
+				seriesName : "LOCI",
+                flightId : this.props.flightInfo.id
+            };
+
+			//TODO: get upset probability data here
+
+			console.log("getting upset probabilities");
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : lociSubmissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got loci dts response");
+					thisFlight.state.lociData = response;
+					console.log(thisFlight.state.lociData);
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var spSubmissionData = {
+				seriesName : "StallProbability",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : spSubmissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.spData = response;
+					console.log(thisFlight.state.spData);
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+
             var submissionData = {
                 request : "GET_COORDINATES",
                 id_token : "TEST_ID_TOKEN",
@@ -481,21 +532,6 @@ class Flight extends React.Component {
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
             };
-
-			//TODO: get upset probability data here
-
-			$.ajax({
-				type: 'GET',
-				url: '/protected/get_upset_probs?flight_id='+this.props.flightInfo.id,
-				dataType : 'json',
-				success : function(response) {
-					console.log("received upset prob response: ");
-					console.log(response);
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-				},   
-				async: true 
-			});  
 
             $.ajax({
                 type: 'POST',

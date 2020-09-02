@@ -1,6 +1,7 @@
 package org.ngafid;
 
 
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -220,8 +221,6 @@ public final class WebServer {
         Spark.get("/protected/sim_acft", new GetSimAircraft(gson));
         Spark.post("/protected/sim_acft", new PostSimAircraft(gson));
 
-        Spark.get("/protected/get_upset_probs", new GetUpsetProbabilities(gson));
-
         //Flight-Tagging routes
         Spark.post("/protected/flight_tags", new PostTags(gson));
         Spark.post("/protected/create_tag", new PostCreateTag(gson));
@@ -231,11 +230,6 @@ public final class WebServer {
         Spark.post("/protected/edit_tag", new PostEditTag(gson));
         
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
-
-        // Saving queries routes
-        Spark.get("/protected/get_query_groups", new GetQueryGroups(gson));     //get fleets?
-        Spark.get("/protected/get_queries", new GetQueries(gson));
-        Spark.post("/protected/save_query", new PostSaveQuery(gson));
 
         // Cesium related routes
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
