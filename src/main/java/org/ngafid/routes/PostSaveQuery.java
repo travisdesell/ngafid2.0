@@ -1,9 +1,7 @@
 package org.ngafid.routes;
 
 import com.google.gson.Gson;
-import com.mysql.jdbc.Statement;
 import org.ngafid.Database;
-import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 import spark.Request;
 import spark.Response;
@@ -11,7 +9,6 @@ import spark.Route;
 import spark.Session;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 // A route to save a user's query to the saved_queries table in the database

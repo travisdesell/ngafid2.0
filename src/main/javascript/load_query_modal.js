@@ -8,12 +8,9 @@ import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
 
-// need validation checking to ensure all fields selected
-// disable submit button based on val
 
-// validate user has appropriate access
-// load query from database and populate filter
-// load queryString from db and populate textarea
+
+// TODO: load query from database and populate filter
 // TODO: add button to delete selected query (if user has permissions)
 
 // The LoadQueriesModal component defines a modal interface for the loading of queries
@@ -25,10 +22,9 @@ class LoadQueriesModal extends React.Component {
             noEntriesMessage : "Sorry, No Entries Found",
             selectedGroup : null,
             selectedQuery : null,
-            user_id : null,
             queryText : "",
-            groups : new Groups(this),                       // Groups component responsible for displaying available query Groups
-            queries : new Map(),                            // queryName keys to list values [name, text, info]
+            queryGroups : new QueryGroups(this),                       // Groups component responsible for displaying available query Groups
+            queries : new Map(),                                        // queryName keys to list values [name, text, info]
             queryNamesDisplay : null
         };
     }
@@ -37,12 +33,11 @@ class LoadQueriesModal extends React.Component {
         this.setState(this.state, () => { $("#load-query-modal").modal('show')});
     }
 
+    // method to construct query name section of modal (load associated query names and info)
     getQueryNames() {
-        // method to construct query name section of modal (load associated query names and info)
-
         // ajax call to retrieve queries belonging to selected Group
         var submissionData = {
-            fleetID: $("#" + this.state.groups.state.id).val()
+            fleetID: $("#" + this.state.queryGroups.state.id).val()
         };
 
         var thisModal = this;
@@ -53,8 +48,7 @@ class LoadQueriesModal extends React.Component {
                 url: '/protected/get_queries',
                 data: submissionData,
                 success : function(response) {
-                    // Parse response string and populate 'this.state.queries' with queries for one group at a time
-
+                    // Parse response string and populate 'this.state.queries' map with queries for one group at a time
                     thisModal.state.queries.clear();
                     if (response != "") {
                         let queries = response.split("--");
@@ -74,10 +68,11 @@ class LoadQueriesModal extends React.Component {
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error retrieving user fleet info", "unsuccessful AJAX call");
                 },
-                async: false
+                async: false        // has to make sync for render timings to work...
             });
-        } else {
-            // handles initialization error, where SelectGroups element not formed - JQuery returns undefined
+        }
+        // handles initialization error, where selectGroups element not formed - JQuery returns undefined
+        else {
             thisModal.state.queries.clear();
         }
 
@@ -100,6 +95,7 @@ class LoadQueriesModal extends React.Component {
         }
     }
 
+    // a method to fetch proper queryText for selected query
     getQueryText() {
         let query = this.state.selectedQuery;
         if (query && this.state.queries.get(query)) {
@@ -109,6 +105,7 @@ class LoadQueriesModal extends React.Component {
         return "Select a query to be displayed";
     }
 
+    // a method to ensure proper fields selected before initiating a load
     isValidLoad() {
         // method to validate fields before enabling save button
         let valid = false;
@@ -148,13 +145,13 @@ class LoadQueriesModal extends React.Component {
             color: 'red'
         };
 
-        // generate header message
+        // generate headers and menu items for display
         this.state.queryNamesDisplay = this.getQueryNames();
         let names = this.state.queryNamesDisplay;
         let headerMessage = "Where would you like to load from?";
         let dropdownLabel = "Source:";
         let submitLabel = "Load";
-        this.state.selectedGroup = this.state.groups.state.selectedGroup;
+        this.state.selectedGroup = this.state.queryGroups.state.selectedGroup;
         let submitDisabled = !this.isValidLoad();
         let queryText = this.getQueryText();
 
@@ -176,7 +173,7 @@ class LoadQueriesModal extends React.Component {
                                 <label htmlFor="scope" style={labelStyle}>{dropdownLabel}</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <Groups id='groups' props={this}/>
+                                <QueryGroups id='groups' props={this}/>
                             </div>
                         </div>
                     </div>
@@ -206,35 +203,27 @@ class LoadQueriesModal extends React.Component {
 
                 <div className='modal-footer'>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
-                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {/*CALL TO LOAD QUERY TO FILTERS HERE*/}} disabled={submitDisabled}>{submitLabel}</button>
+                    <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {/*TODO: CALL TO LOAD QUERY TO FILTERS HERE*/}} disabled={submitDisabled}>{submitLabel}</button>
                 </div>
             </div>
         );
     }
 }
-// for each query in selected Group, display option w/ queryName
-// textarea value change depending on name selected*
 
-
-// need validation that name is not taken*
-// load groups user has upload / owner access levels*
-
-// TODO: groups => QueryGroups across DB and code
 
 // The SaveQueriesModal component defines a modal interface for the loading and saving of queries
 class SaveQueriesModal extends React.Component {
     constructor(props) {
         super(props);
 
-        let x = new Groups(this);
+        let x = new QueryGroups(this);
 
         this.state = {
             noEntriesMessage : "Sorry, No Entries Found",
             selectedGroup : "user",
             query : null,
             queryText : "",
-            user_id : null,             // needed?
-            groups : null,
+            queryGroups : null,
             nameTakenMsg : null
         };
     }
@@ -248,8 +237,8 @@ class SaveQueriesModal extends React.Component {
         this.setState(this.state, () => {$("#save-query-modal").modal('show')});
     }
 
+    // method to validate fields before enabling save button
     isValidSave() {
-        // method to validate fields before enabling save button
         let valid = false;
 
         // ensure fields not blank
@@ -263,6 +252,7 @@ class SaveQueriesModal extends React.Component {
         return valid;
     }
 
+    // A method to convert JSON query info into readable text for display
     getHumanReadable(queryJSON){
         if (queryJSON.type == "RULE") {
             let string = "";
@@ -291,6 +281,7 @@ class SaveQueriesModal extends React.Component {
         }
     }
 
+    // A method to insert current query info into the saved_queries table
     save(){
         // ajax call to insert query into database
         var submissionData = {
@@ -356,15 +347,13 @@ class SaveQueriesModal extends React.Component {
         };
 
         // generate header messages
-        let groups = this.state.groups;
+        let queryGroups = this.state.queryGroups;
         let queryText = this.state.queryText;
         let headerMessage = "Where would you like to save to?";
         let dropdownLabel = "Destination:";
         let submitLabel = "Save";
         let saveDisabled = !this.isValidSave();
 
-
-        //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
 
         return (
             <div className='modal-content'>
@@ -384,7 +373,7 @@ class SaveQueriesModal extends React.Component {
                                 <label htmlFor="scope" style={labelStyle}>{dropdownLabel}</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <Groups id='groups' props={this}/>
+                                <QueryGroups id='groups' props={this}/>
                             </div>
                         </div>
                     </div>
@@ -428,6 +417,7 @@ class SaveQueriesModal extends React.Component {
     }
 }
 
+// A class to capture relevant Query information
 class Query {
     constructor(name, text, info) {
         this.state = {
@@ -444,8 +434,8 @@ class Query {
     }
 }
 
-// class to maintain and organize query "groups" (fleets', user's, and website's queries)
-class Groups extends React.Component {
+// class to maintain and organize Query Groups (fleets', user's, and website's queries)
+class QueryGroups extends React.Component {
     constructor(props) {
         super(props);
 
@@ -457,7 +447,6 @@ class Groups extends React.Component {
             id : id,
             groupsDisplay : grps,
             queries : new Map(),                   //selectedGroup's Queries
-            //user_id : null
             selectedGroup : -1                      // default: "my queries"
         }
 
@@ -471,6 +460,7 @@ class Groups extends React.Component {
         }
     }
 
+    // a method to retrieve the fleetID and name of the fleet the user belongs to
     getFleet() {
         let thisGroups = this;
         $.ajax({
@@ -479,7 +469,6 @@ class Groups extends React.Component {
             success : function(response) {
                 if($.type(response) === "string"){
                     let fields = response.split(",");
-                    //thisGroups.state.user_id = parseInt(fields[0]);
 
                     // add fleet to list if user has appropriate access (or if loading)
                     if (fields[3] == "MANAGER" || fields[3] == "UPLOAD" || this.state.parentModal instanceof LoadQueriesModal) {
@@ -497,7 +486,7 @@ class Groups extends React.Component {
         });
     }
 
-    // call getQueryNames() in parent Modal to update w/ selected query & refresh MODAL render
+    // a method to handle necessary state changes and rerenderings after selection of a new group
     handleGroupSelectChange() {
         this.state.parentModal.props.state.selectedGroup = $(this.state.id).val();
         this.state.selectedGroup = $(this.state.id).val();
@@ -518,7 +507,7 @@ class Groups extends React.Component {
     }
 }
 
-
+// export modals
 var saveQueriesModal = ReactDOM.render(
     <SaveQueriesModal />,
     document.querySelector("#save-query-modal-content")
