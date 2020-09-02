@@ -45,6 +45,9 @@ class Paginator extends React.Component {
      **/
     jumpPage(page) {
         if (page < this.props.numberPages && page >= 0){
+            this.setState({
+                goto_active : false
+            });
             this.props.updateCurrentPage(page);
             this.props.submitFilter();
         }
@@ -70,9 +73,12 @@ class Paginator extends React.Component {
      ** Repaginates the page configuration when the numPerPage field has been changed by the user
      **/
     repaginate(pageSize) {
+        this.setState({
+            goto_active : false
+        });
         console.log("Re-Paginating");
         this.props.updateItemsPerPage(pageSize);
-        this.props.submitFilter();
+        this.props.submitFilter(true /*reset current page*/);
     }
 
     render() {
