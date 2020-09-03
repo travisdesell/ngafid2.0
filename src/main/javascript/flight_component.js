@@ -594,6 +594,21 @@ class Flight extends React.Component {
                     thisFlight.state.coordinates = response.coordinates;
                     thisFlight.state.points = points;
 
+					var lprobs = [];
+
+					if(thisFlight.state.lociData != null){
+						console.log("loci data is not null");
+						for(let i = 0; i < thisFlight.state.lociData.y.length; i++){
+							let val = thisFlight.state.lociData.y[i];
+							if(val != null){
+								lprobs[i] = val;
+							}
+						}
+					}
+					
+					console.log("created lprobs:");
+					console.log(lprobs);
+
                     map.addLayer(thisFlight.state.layer);
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
@@ -648,6 +663,59 @@ class Flight extends React.Component {
                         }
                     }
 
+					var lociPhases = [];
+
+					var good_style = new Style({
+						stroke: new Stroke({
+							color : "#00ff00",
+							width : 3
+						})
+					});
+
+					var bad_style = new Style({
+						stroke: new Stroke({
+							color : "#ffff00",
+							width : 3
+						})
+					});
+
+					var danger_style = new Style({
+						stroke: new Stroke({
+							color : "#ff0000",
+							width : 3
+						})
+					});
+
+					console.log("generating line strs");
+					for(let i = 0; i < lprobs.length; i++){
+						let val = lprobs[i];
+						var feat;
+						if(val > 0 && val < 45) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'good',
+							});
+							feat.setStyle(good_style);
+						} else if (val > 45 && val < 75) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'bad',
+							});
+							feat.setStyle(bad_style);
+						} else {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'danger',
+							});
+							feat.setStyle(danger_style);
+						}
+						lociPhases.push(feat);
+					}
+
+					for(let i = 0; i < flight_phases.length; i++){
+						console.log(flight_phases[i]);
+					}
+
                     // create itineraryLayer
                     thisFlight.state.itineraryLayer = new VectorLayer({
                         style: new Style({
@@ -669,23 +737,18 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
-                                width: 1
+                                width: 5
                             })
                         }),
 
                         source : new VectorSource({
-                            features: [
-                                new Feature({
-                                    geometry: new LineString(points),
-                                    name: 'Line'
-                                }),
-                                thisFlight.state.trackingPoint
-                            ]
-                        })
+                            features: lociPhases                        
+						})
                     });
 
                     map.addLayer(thisFlight.state.lociLayer);
 					thisFlight.state.lociLayer.setVisible(true);
+					thisFlight.state.layer.setVisible(false);
 
                     // adding coordinates to events, if needed //
                     var events = [];
