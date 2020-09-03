@@ -665,6 +665,28 @@ class Flight extends React.Component {
                     // add itineraryLayer to map
                     map.addLayer(thisFlight.state.itineraryLayer);
 
+					thisFlight.state.lociLayer = new VectorLayer({
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [2,2,2,2],
+                                width: 1
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: [
+                                new Feature({
+                                    geometry: new LineString(points),
+                                    name: 'Line'
+                                }),
+                                thisFlight.state.trackingPoint
+                            ]
+                        })
+                    });
+
+                    map.addLayer(thisFlight.state.lociLayer);
+					thisFlight.state.lociLayer.setVisible(true);
+
                     // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
