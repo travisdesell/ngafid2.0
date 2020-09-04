@@ -665,49 +665,152 @@ class Flight extends React.Component {
 
 					var lociPhases = [];
 
-					var good_style = new Style({
+					var stages = [];
+
+					//stage 0
+					stages.push(new Style({
 						stroke: new Stroke({
 							color : "#00ff00",
 							width : 3
 						})
-					});
+					}));
 
-					var bad_style = new Style({
+					//stage 1
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#80ff00",
+							width : 3
+						})
+					}));
+
+					//stage 2
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#baff00",
+							width : 3
+						})
+					}));
+
+					//stage 3
+					stages.push(new Style({
 						stroke: new Stroke({
 							color : "#ffff00",
 							width : 3
 						})
-					});
+					}));
 
-					var danger_style = new Style({
+					//stage 4
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#ffcf00",
+							width : 3
+						})
+					}));
+
+					//stage 5
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#ffbf00",
+							width : 3
+						})
+					}));
+
+					//stage 6
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#ff9100",
+							width : 3
+						})
+					}));
+
+					//stage 7
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#ff6f00",
+							width : 3
+						})
+					}));
+
+					//stage 8
+					stages.push(new Style({
+						stroke: new Stroke({
+							color : "#ff5500",
+							width : 3
+						})
+					}));
+
+					//stage 9
+					stages.push(new Style({
 						stroke: new Stroke({
 							color : "#ff0000",
 							width : 3
 						})
-					});
+					}));
 
 					console.log("generating line strs");
 					for(let i = 0; i < lprobs.length; i++){
 						let val = lprobs[i];
 						var feat;
-						if(val > 0 && val < 45) {
+						if(val > 0 && val < 10) {
 							feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
-								name : 'good',
+								name : 'stage0',
 							});
-							feat.setStyle(good_style);
-						} else if (val > 45 && val < 75) {
+							feat.setStyle(stages[0]);
+						} else if (val >= 10 && val < 20) {
 							feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
-								name : 'bad',
+								name : 'stage1',
 							});
-							feat.setStyle(bad_style);
+							feat.setStyle(stages[1]);
+						} else if (val >= 20 && val < 30) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage2',
+							});
+							feat.setStyle(stages[2]);
+						} else if (val >= 30 && val < 40) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage3',
+							});
+							feat.setStyle(stages[3]);
+						} else if (val >= 40 && val < 50) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage4',
+							});
+							feat.setStyle(stages[4]);
+						} else if (val >= 50 && val < 60) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage5',
+							});
+							feat.setStyle(stages[5]);
+						} else if (val >= 60 && val < 70) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage6',
+							});
+							feat.setStyle(stages[6]);
+						} else if (val >= 70 && val < 80) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage7',
+							});
+							feat.setStyle(stages[7]);
+						} else if (val >= 80 && val < 90) {
+							feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : 'stage8',
+							});
+							feat.setStyle(stages[8]);
 						} else {
 							feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
-								name : 'danger',
+								name : 'stage9',
 							});
-							feat.setStyle(danger_style);
+							feat.setStyle(stages[9]);
 						}
 						lociPhases.push(feat);
 					}
