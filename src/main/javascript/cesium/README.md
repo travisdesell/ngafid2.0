@@ -23,7 +23,9 @@ Just refer to CesiumJs webite at cesium.com and download the asset files.
 NGAFID 2.0 now running Cesium 1.73. Thanks Cesium with following updates:
 
 -Viewer now allows 3D Tiles features to be selected.
+
 -Fixed two terrain-related bugs that could cause expected terrain detail to be missing.
+
 -Controller button in browser viewer fixed.
 
 Refrences: https://cesium.com/cesiumjs/
