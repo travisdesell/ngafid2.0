@@ -33,19 +33,37 @@ public class LossOfControlCalculation{
 	//Standard atmospheric pressure in in. mercury
 	private int fleetId, flightId;
 	private File file;
-	private PrintWriter pw;
+	private Optional<PrintWriter> pw;
 	private Map<String, DoubleTimeSeries> parameters;
 
+	/**
+	 * Constructor 
+	 *
+	 * @param fleetId the id of the fleet being calculated
+	 * @param flightID the flightId of the flight being processed
+	 */
 	public LossOfControlCalculation(int fleetId, int flightId){ 
 		this.fleetId = fleetId;
 		this.flightId = flightId;
+		this.pw = Optional.empty();
 	}
 
+	/**
+	 * Constructor 
+	 *
+	 * @param fleetId the id of the fleet being calculated
+	 * @param flightID the flightId of the flight being processed
+	 * @param path the filepath ROOT directory to print logfiles too
+	 * */
 	public LossOfControlCalculation(int fleetId, int flightId, Path path){ 
 		this(fleetId, flightId);
 		this.createFileOut(path);
 	}
 
+	/**
+	 * Creates an output filestream
+	 * @param path the path of the file to write
+	 */
 	private void createFileOut(Path path){
 		String filename = "/flight_"+flightId+".out";
 
@@ -60,6 +78,13 @@ public class LossOfControlCalculation{
 		}
 	}
 
+	/**
+	 * Gets references to {@link DoubleTimeSeries} objects and places them in a Map
+	 *
+	 * @param flightId the flightId to get data for
+	 *
+	 * @return a map with the {@link DoubleTimeSeries} references
+	 */
 	static Map<String, DoubleTimeSeries> getParameters(int flightId){
 		Map<String, DoubleTimeSeries> params = new HashMap<>();
 		try{
@@ -77,10 +102,22 @@ public class LossOfControlCalculation{
 		return params;		
 	}
 
+	/**
+	 * Determines if a dataset is calculatable
+	 *
+	 * @return true if it is calculatable, false otherwise
+	 */
 	public boolean notCalcuatable(){
 		return this.parameters == null;
 	}
 
+	/**
+	 * Gets the lagged difference of two points in a {@link DoubleTimeSeries}
+	 * The difference is between the current index and the one prior
+	 * 
+	 * @param series the {@link DoubleTimeSeries} to lag
+	 * @param index the start index
+	 */
 	private double lag(DoubleTimeSeries series, int index){
 		double currIndex = series.get(index);
 		if(index < series.size() - 1){
@@ -89,56 +126,140 @@ public class LossOfControlCalculation{
 		return currIndex;
 	}
 
+	/**
+	 * Gets the vertical speed at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getVspd(int index){
 		DoubleTimeSeries vspd = this.parameters.get(VSPD);
 		return vspd.get(index);
 	}
 
+	/**
+	 * Gets the indicated airspeed at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getIAS(int index){
 		DoubleTimeSeries ias = this.parameters.get(IAS);
 		return ias.get(index);
 	}
 
+	/**
+	 * Gets the outside air temp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getOAT(int index){
 		DoubleTimeSeries oat = this.parameters.get(OAT);
 		return oat.get(index);
 	}
 
+	/**
+	 * Gets the barometric pressure at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getBaroPress(int index){
 		DoubleTimeSeries press = this.parameters.get(BARO_A);
 		return press.get(index);
 	}
 
+	/**
+	 * Calculates the temperature ratio at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getTempRatio(int index){
 		return (273 + getOAT(index)) / 288;
 	}
 
+	/**
+	 * Calculates the pressure ratio at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getPressureRatio(int index){
 		return this.getBaroPress(index) / STD_PRESS_INHG;
 	}
 
+	/**
+	 * Calculates the density ratio at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getDensityRatio(int index){
 		return this.getPressureRatio(index) / this.getTempRatio(index);
 	}
 
+	/**
+	 * Calculates the true airspeed at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
     private double getTrueAirspeed(int index){
         return this.getIAS(index) * Math.pow(this.getDensityRatio(index), -0.5);
     }
 
+	/**
+	 * Calculates the true airspeed (in ft/min) at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getTrueAirspeedFtMin(int index){
 		return this.getTrueAirspeed(index) * (6076 / 60);
 	}
 
+	/**
+	 * Calculates the geometric vertical speed at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getVspdGeometric(int index){
 		return this.getVspd(index) * Math.pow(this.getDensityRatio(index), -0.5);
 	}
 
+	/**
+	 * Calculates the flight path angle at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getFlightPathAngle(int index){
 		double fltPthAngle = Math.asin(this.getVspdGeometric(index) / this.getTrueAirspeedFtMin(index));
 		fltPthAngle = fltPthAngle * (180 / Math.PI);
 		return fltPthAngle;
 	}
 
+	/**
+	 * Calculates the simple angle of attack at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the value at the given index
+	 */
 	private double getAOASimple(int index){
 		DoubleTimeSeries pitch = this.parameters.get(PITCH);
 		return pitch.get(index) - this.getFlightPathAngle(index);
@@ -239,12 +360,13 @@ public class LossOfControlCalculation{
 		stallProbability.updateDatabase(connection, this.flightId);
 		this.updateDatabase();
 
-		if(this.pw != null){
+		if(this.pw.isPresent()){
 			this.writeFile(loci, stallProbability);
 		}
 	}
 
 	public void writeFile(DoubleTimeSeries loci, DoubleTimeSeries sProb){
+		PrintWriter pw = this.pw.get();
 		try{
 			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:"+"\t\t\tAirspeed:");
 			for(int i = 0; i<loci.size(); i++){
