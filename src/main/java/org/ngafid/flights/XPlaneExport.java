@@ -28,6 +28,7 @@ import static org.ngafid.flights.XPlaneParameters.*;
 
 public abstract class XPlaneExport{
 	protected static Connection connection = Database.getConnection();
+	private String startTime;
 	protected String aircraftPath;
 	protected StringWriter dataOut;
 	protected Flight flight;
@@ -42,6 +43,7 @@ public abstract class XPlaneExport{
 			this.aircraftPath = aircraftPath+",";
 			this.flight = Flight.getFlight(connection, flightId);
 			this.parameters = getSeriesData(connection, flightId);
+			this.startTime = this.getTime();
 			this.dataOut = this.export();
 		}catch (SQLException e){
 			this.dataOut = new StringWriter();
@@ -72,6 +74,19 @@ public abstract class XPlaneExport{
 		return seriesData;
 	}
 
+	private String getTime(){
+		String startTime = flight.getStartDateTime(); 
+		System.out.println("FOUND TIME:");
+		System.out.println(startTime);
+
+		String [] timeStrings = startTime.split(" ");
+
+		String zuluTime = (timeStrings[1].split("\\."))[0];
+
+		System.out.println(zuluTime);
+		return zuluTime;
+	}
+
 	/**
 	 * Creates an export using MustacheFactory
 	 * @return an instance of a StringWriter that contains the export in the respective *.fdr format
@@ -83,10 +98,8 @@ public abstract class XPlaneExport{
 		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
 		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
 
-		String startTime = flight.getStartDateTime(); 
-		System.out.println(startTime);
 		//TODO: have to figure out how to convert to zulu time somehow
-		scopes.put(TIME, TIME.toUpperCase()+","+ "");
+		scopes.put(TIME, TIME.toUpperCase()+","+ this.startTime+",");
 
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
