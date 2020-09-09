@@ -210,7 +210,8 @@ public class Filter {
                 return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND double_series.name = ? AND double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
 
             case "Airport":
-                String iataCode1 = inputs.get(1).substring(0, 3);
+                //int spaceIndex = inputs.get(1).indexOf(' ');
+                String iataCode1 = inputs.get(1);
                 parameters.add(iataCode1);
 
                 if (inputs.get(2).equals("visited")) {
@@ -221,8 +222,9 @@ public class Filter {
 
             case "Runway":
                 String iataRunway = inputs.get(1);
-                String iataCode2 = iataRunway.substring(0, 3);
-                String runway = iataRunway.substring(6, iataRunway.length());
+                int spaceIndex = inputs.get(1).indexOf(' ');
+                String iataCode2 = iataRunway.substring(0, spaceIndex);
+                String runway = iataRunway.substring(spaceIndex + 3, iataRunway.length());
                 parameters.add(iataCode2);
                 parameters.add(runway);
 
