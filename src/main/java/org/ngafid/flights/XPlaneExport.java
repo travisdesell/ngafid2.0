@@ -83,6 +83,11 @@ public abstract class XPlaneExport{
 		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
 		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
 
+		String startTime = flight.getStartDateTime(); 
+		System.out.println(startTime);
+		//TODO: have to figure out how to convert to zulu time somehow
+		scopes.put(TIME, TIME.toUpperCase()+","+ "");
+
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
 
