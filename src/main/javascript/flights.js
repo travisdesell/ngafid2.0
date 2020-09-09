@@ -481,7 +481,7 @@ class FlightsPage extends React.Component {
         });
     }
 
-    submitFilter() {
+    submitFilter(resetCurrentPage = false) {
         console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize);
 
         let query = this.filterRef.getQuery();
@@ -491,9 +491,16 @@ class FlightsPage extends React.Component {
 
         $("#loading").show();
 
+        //reset the current page to 0 if the page size or filter
+        //have changed
+        let currentPage = this.state.currentPage;
+        if (resetCurrentPage === true) {
+            currentPage = 0;
+        }
+
         var submissionData = {
             filterQuery : JSON.stringify(query),
-            currentPage : this.state.currentPage,
+            currentPage : currentPage,
             pageSize : this.state.pageSize
         };
 
@@ -527,6 +534,7 @@ class FlightsPage extends React.Component {
  				} else {
                     flightsPage.setState({
                         flights : response.flights,
+                        currentPage : currentPage,
                         numberPages : response.numberPages  
                     });
 				}
@@ -584,7 +592,7 @@ class FlightsPage extends React.Component {
                 <div style={style}>
                     <Filter
                         ref={elem => this.filterRef = elem}
-                        submitFilter={() => {this.submitFilter();}}
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         filterVisible={this.state.filterVisible}
                         depth={0}
                         baseIndex="[0-0]"
@@ -596,7 +604,7 @@ class FlightsPage extends React.Component {
                     />
 
                     <Paginator
-                        submitFilter={() => {this.submitFilter();}}
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         items={this.state.flights}
                         itemName="flights"
                         currentPage={this.state.currentPage}
@@ -630,7 +638,7 @@ class FlightsPage extends React.Component {
                     />
 
                     <Paginator
-                        submitFilter={() => {this.submitFilter();}}
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         items={this.state.flights}
                         itemName="flights"
                         currentPage={this.state.currentPage}
