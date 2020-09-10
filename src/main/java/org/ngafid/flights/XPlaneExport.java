@@ -118,6 +118,11 @@ public abstract class XPlaneExport{
 
 	}
 
+	/**
+	 * Creates a GPS calibration string
+	 *
+	 * @return a string in the appropriate X-Plane format
+	 */
 	private String getGPSCalibration() {
 		DoubleTimeSeries latitude = parameters.get(LATITUDE);
 		DoubleTimeSeries longitude = parameters.get(LONGITUDE);
@@ -137,11 +142,13 @@ public abstract class XPlaneExport{
 		return "";
 	}
 
+	//TODO: fix this so that all events over 1s get included
 	private void writeEvents(Map<String, Object> scopes) {
 		try{
 			ArrayList<Event> events = Event.getAll(connection, this.flight.getId());
 
 			for(Event e : events) {
+				System.out.println(e.toString());
 				for(int i = e.getStartLine(); i <= e.getEndLine(); i++) {
 					scopes.put(EVNT, EVNT.toUpperCase() + "," + i + ",");
 				}

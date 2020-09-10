@@ -29,11 +29,12 @@ public class XPlane10Export extends XPlaneExport{
 			//cause X-Plane to crash
 			if(!Double.isNaN(parameters.get(LONGITUDE).get(i))
 			&& !Double.isNaN(parameters.get(LATITUDE).get(i))){
+				double e1EGT = parameters.get(E1_EGT).get(i);
 				buffer.append("DATA, " + i + "," + NULL_DATA + parameters.get(LONGITUDE).get(i) + "," +
 					parameters.get(LATITUDE).get(i) +	"," + parameters.get(ALT).get(i) + "," +
 					getZeros(4) + parameters.get(PITCH).get(i) + "," + parameters.get(ROLL).get(i) + "," +
 					parameters.get(HEADING).get(i) + "," + parameters.get(IAS).get(i) + getZeros(70) +
-					parameters.get(E1_EGT).get(i) + getZeros(19) + "\n");
+					(Double.isNaN(e1EGT) ? "0" : e1EGT) + getZeros(19) + "\n");
 			}
 		}
 	}
