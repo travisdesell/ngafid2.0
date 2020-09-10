@@ -12,12 +12,14 @@ import java.sql.SQLException;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 
 import org.ngafid.WebServer;
+import org.ngafid.events.Event;
 
 import static org.ngafid.flights.XPlaneParameters.*;
 
@@ -75,8 +77,8 @@ public abstract class XPlaneExport{
 	}
 
 	/**
-	 * Converts the time in the database to a format X-Plane will recognize
-	 * i.e. HH:MM:SS.MS -> HH:MM:SS
+	 * Converts the time in the database to a time X-Plane will recognize
+	 * i.e. HH:MM:SS.MS --> HH:MM:SS
 	 *
 	 * @return a String with the new formatted time
 	 */
@@ -113,6 +115,25 @@ public abstract class XPlaneExport{
 
 	}
 
+	private String getGPSCalibration() {
+		DoubleTimeSeries latitude = parameters.get(LATITUDE);
+		DoubleTimeSeries longitude = parameters.get(LONGITUDE);
+		DoubleTimeSeries altMSL = parameters.get(ALT_MSL);
+
+		for(int i = 0; i < altMSL.size(); i++){
+			double lat = latitude.get(i);
+			double lon = longitude.get(i);
+			double alt = altMSL.get(i);
+
+			if(!Double.isNaN(lat) && !Double.isNaN(lon) && !Double.isNaN(alt)) {
+				return lon + "," + lat + "," + alt;
+			}
+		}
+
+		System.err.println("couldn't place a calibration header in the export for fiight "+this.flight.toString()+"!");
+		return "";
+	}
+
 	/**
 	 * Creates an export using MustacheFactory
 	 * @return an instance of a StringWriter that contains the export in the respective *.fdr format
@@ -121,10 +142,11 @@ public abstract class XPlaneExport{
 		HashMap<String, Object> scopes = new HashMap<String, Object>();
 
 		scopes.put(ENDL, POSIX_ENDL);
-		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
-		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
-		scopes.put(TIME, TIME.toUpperCase()+","+ this.getTime()+",");
-		scopes.put(DATE, DATE.toUpperCase()+","+ this.getDate()+",");
+		scopes.put(TAIL, TAIL.toUpperCase() + "," + flight.getTailNumber() + ",");
+		scopes.put(ACFT, ACFT.toUpperCase() + "," + this.aircraftPath);
+		scopes.put(TIME, TIME.toUpperCase() + "," + this.getTime() + ",");
+		scopes.put(DATE, DATE.toUpperCase() + "," + this.getDate() + ",");
+		scopes.put(CALI, DATE.toUpperCase() + "," + this.getGPSCalibration() + ",");
 
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
