@@ -38,6 +38,8 @@ public interface XPlaneParameters {
     static String DATA = "data";
 
 	//Data segment parameters
+	//generic altitude col
+	static String ALT = "altitude";
 	static String ALT_MSL = "altMSL";
 	static String LATITUDE = "latitude";
 	static String LONGITUDE = "longitude";
@@ -49,18 +51,4 @@ public interface XPlaneParameters {
 	static String E1_EGT = "e1EGT";
 
     static String NULL_DATA = "0,";
-
-    //The current number of empty/untracked parameters in the format
-    //NOTE: change this if we incorporate more params
-    //static int NUM_NULL_PARAMS = 66;
-
-    //The following are the aircraft specifications within X-Plane
-    //
-	static String C172_10 = "Cessna 172SXP10";
-    static String C172_11 = "Cessna 172SXP11";
-    static String PA_28_181_10 = "PA-28-181XP10";
-    static String PA_28_181_11 = "PA-28-181XP11";
-    static String PA_44_180_10 = "PA-44-180XP10";
-    static String PA_44_180_11 = "PA-44-180XP11";
-
 }
