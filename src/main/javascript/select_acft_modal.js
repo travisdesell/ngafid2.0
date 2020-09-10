@@ -45,6 +45,8 @@ class SelectAircraftModal extends React.Component {
 
     modalClicked() {
 		var selectedPath = this.state.paths[this.state.activeId - 1];
+		var useMSL = $('#altCheck').is(':checked');
+		console.log("will use msl: "+useMSL);
 
 		if(this.state.activeId == 0){
 			selectedPath = $('#cust_path').val();
@@ -52,7 +54,7 @@ class SelectAircraftModal extends React.Component {
 		}
 			
         console.log("modal submit clicked!");
-        this.state.submitMethod(this.state.version, selectedPath, this.state.flightId);
+        this.state.submitMethod(this.state.version, selectedPath, useMSL);
     }
 
 	selectPathId(pathId){
@@ -209,6 +211,12 @@ class SelectAircraftModal extends React.Component {
 				</div>
 
                 <div className='modal-footer'>
+					 <div class="form-check">
+						<input class="form-check-input" type="checkbox" id="altCheck"></input>
+						  <label class="form-check-label" for="defaultCheck1">
+							  Use altMSL
+		                </label>
+					</div>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
                     <button type='button' className='btn btn-success' data-dismiss='modal' onClick={() => this.helpClicked()}>Help</button>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
