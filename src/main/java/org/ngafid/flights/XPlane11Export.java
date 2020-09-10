@@ -30,11 +30,12 @@ public class XPlane11Export extends XPlaneExport{
 			if(!Double.isNaN(parameters.get(LONGITUDE).get(i))
 			&& !Double.isNaN(parameters.get(LATITUDE).get(i))){
 				double rpmVal = parameters.get(E1_RPM).get(i);
+				double e1EGT = parameters.get(E1_EGT).get(i);
 				buffer.append("DATA, " + i + "," + NULL_DATA + parameters.get(LONGITUDE).get(i) + "," +
 					parameters.get(LATITUDE).get(i) +	"," + parameters.get(ALT).get(i) + "," +
 					getZeros(4) + parameters.get(PITCH).get(i) + "," + parameters.get(ROLL).get(i) + "," +
 					parameters.get(HEADING).get(i) + "," + parameters.get(IAS).get(i) + getZeros(55) +
-					(Double.isNaN(rpmVal) ? NULL_DATA : rpmVal) + getZeros(7) + parameters.get(E1_EGT).get(i)
+					(Double.isNaN(rpmVal) ? "0" : rpmVal) + getZeros(7) + (Double.isNaN(e1EGT) ? "0" : e1EGT)
 					+ getZeros(2) + "\n");
 			}
 		}
