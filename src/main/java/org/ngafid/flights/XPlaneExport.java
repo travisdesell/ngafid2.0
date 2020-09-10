@@ -28,8 +28,8 @@ import static org.ngafid.flights.XPlaneParameters.*;
 
 public abstract class XPlaneExport{
 	protected static Connection connection = Database.getConnection();
-	private String startTime;
 	protected String aircraftPath;
+	private String startDateTime;
 	protected StringWriter dataOut;
 	protected Flight flight;
 	protected Map<String, DoubleTimeSeries> parameters;
@@ -43,7 +43,7 @@ public abstract class XPlaneExport{
 			this.aircraftPath = aircraftPath+",";
 			this.flight = Flight.getFlight(connection, flightId);
 			this.parameters = getSeriesData(connection, flightId);
-			this.startTime = this.getTime();
+			this.startDateTime = flight.getStartDateTime();
 			this.dataOut = this.export();
 		}catch (SQLException e){
 			this.dataOut = new StringWriter();
@@ -74,17 +74,43 @@ public abstract class XPlaneExport{
 		return seriesData;
 	}
 
+	/**
+	 * Converts the time in the database to a format X-Plane will recognize
+	 * i.e. HH:MM:SS.MS -> HH:MM:SS
+	 *
+	 * @return a String with the new formatted time
+	 */
 	private String getTime(){
-		String startTime = flight.getStartDateTime(); 
 		System.out.println("FOUND TIME:");
-		System.out.println(startTime);
+		System.out.println(this.startDateTime);
 
-		String [] timeStrings = startTime.split(" ");
+		String [] timeStrings = this.startDateTime.split(" ");
 
 		String zuluTime = (timeStrings[1].split("\\."))[0];
 
 		System.out.println(zuluTime);
 		return zuluTime;
+	}
+
+	/**
+	 * Converts the date in the database to a date X-Plane will recognize
+	 * i.e. YYYY-MM-DD --> MM/DD/YY
+	 *
+	 * @return a String with the new formatted date
+	 */
+	private String getDate(){
+		String [] timeStrings = this.startDateTime.split(" ");
+
+		String [] dateParts = timeStrings[0].split("-");
+
+		String year = dateParts[0].substring(2,4);
+		String month = dateParts[1];
+		String day = dateParts[2];
+
+		String date = month+"/"+day+"/"+year;
+
+		return date;
+
 	}
 
 	/**
@@ -97,9 +123,8 @@ public abstract class XPlaneExport{
 		scopes.put(ENDL, POSIX_ENDL);
 		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
 		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
-
-		//TODO: have to figure out how to convert to zulu time somehow
-		scopes.put(TIME, TIME.toUpperCase()+","+ this.startTime+",");
+		scopes.put(TIME, TIME.toUpperCase()+","+ this.getTime()+",");
+		scopes.put(DATE, DATE.toUpperCase()+","+ this.getDate()+",");
 
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
