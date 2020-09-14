@@ -2,6 +2,7 @@ import 'bootstrap';
 
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import { errorModal } from "./error_modal.js";
 
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
@@ -50,6 +51,13 @@ class SelectAircraftModal extends React.Component {
 
 		if(this.state.activeId == 0){
 			selectedPath = $('#cust_path').val();
+			if(selectedPath == null || selectedPath.match(/^ *$/) !== null){
+				console.log("selected path is not formatted correctly!");
+				let title = "Format Error";
+				let message = "Please make sure there is a path selected or there is a correctly formatted path in the custom path box. Press help for more information";
+				helpModal.show(title, message, this.reOpen);
+				return;
+			}
 			this.addFile(selectedPath); //cache the filepath in the server
 		}
 			
@@ -210,13 +218,18 @@ class SelectAircraftModal extends React.Component {
 					</div>
 				</div>
 
-                <div className='modal-footer'>
-					 <div class="form-check">
-						<input class="form-check-input" type="checkbox" id="altCheck"></input>
-						  <label class="form-check-label" for="defaultCheck1">
-							  Use altMSL
-		                </label>
+				<div className="row p-3">
+					<div className="col">
+						 <div class="form-check">
+							<input class="form-check-input" type="checkbox" id="altCheck"></input>
+							  <label class="form-check-label" for="defaultCheck1">
+								  Use altMSL instead of altAGL
+							</label>
+						</div>
 					</div>
+				</div>
+
+                <div className='modal-footer'>
                     <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
                     <button type='button' className='btn btn-success' data-dismiss='modal' onClick={() => this.helpClicked()}>Help</button>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
