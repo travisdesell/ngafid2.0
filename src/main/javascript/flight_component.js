@@ -24,6 +24,52 @@ import Plotly from 'plotly.js';
 
 var moment = require('moment');
 
+// So the weights w0 and w1 are for the weighted average
+// They should add to 1.0 so if one of them is 0, the resulting color
+// will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
+function interpolateColors(c0, w0, c1, w1) {
+	var new_color = [0.0, 0.0, 0.0];
+	// red = 0, green = 1, blue = 2
+	for (var i = 0; i < 3; i++) {
+		new_color[i] = w0 * c0[i] + c1 * c1[i];
+	}
+	return new_color;
+}
+
+// loc_percentage should be between 0 and 1.0
+// This will get the color for a given p(LOC)
+// This can probably be made cleaner / not use if statements and just use lists but im lazy
+function paletteAt(loc_probability) {
+	if (loc_probability < 0.8) {
+		var c0 = [0, 255, 0]; // green
+		var c1 = [255, 255, 0]; // yellow
+
+		// This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
+		var weight = loc_probability / 0.8;
+		var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else if (loc_probability <= 1.0) {
+		// Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
+		var c0 = [255, 255, 0];
+		var c1 = [255, 0, 0];
+
+		// The minimum value of this will be 0.0 and max is 0.2
+		var numerator = loc_p - 0.8;
+
+		// value range is 0.0 to 1.0
+		var weight = numerator / 0.2;
+		var w0 = 1.0 - weight;
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else {
+		// red
+		return [255, 0, 0];
+	}
+}
+
 class Flight extends React.Component {
     constructor(props) {
         super(props);
@@ -63,6 +109,7 @@ class Flight extends React.Component {
 
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
     }
+	
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -463,6 +510,7 @@ class Flight extends React.Component {
         }
     }
 
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -662,153 +710,17 @@ class Flight extends React.Component {
 
 					var lociPhases = [];
 
-					var stages = [];
-
-					//stage 0
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#00ff00",
-							width : 3
-						})
-					}));
-
-					//stage 1
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#80ff00",
-							width : 3
-						})
-					}));
-
-					//stage 2
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#baff00",
-							width : 3
-						})
-					}));
-
-					//stage 3
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ffff00",
-							width : 3
-						})
-					}));
-
-					//stage 4
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ffcf00",
-							width : 3
-						})
-					}));
-
-					//stage 5
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ffbf00",
-							width : 3
-						})
-					}));
-
-					//stage 6
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ff9100",
-							width : 3
-						})
-					}));
-
-					//stage 7
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ff6f00",
-							width : 3
-						})
-					}));
-
-					//stage 8
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ff5500",
-							width : 3
-						})
-					}));
-
-					//stage 9
-					stages.push(new Style({
-						stroke: new Stroke({
-							color : "#ff0000",
-							width : 3
-						})
-					}));
-
 					console.log("generating line strs");
 					for(let i = 0; i < lprobs.length; i++){
 						let val = lprobs[i];
-						var feat;
-						if(val > 0 && val < 10) {
-							feat = new Feature({
+						var feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage0',
-							});
-							feat.setStyle(stages[0]);
-						} else if (val >= 10 && val < 20) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage1',
-							});
-							feat.setStyle(stages[1]);
-						} else if (val >= 20 && val < 30) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage2',
-							});
-							feat.setStyle(stages[2]);
-						} else if (val >= 30 && val < 40) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage3',
-							});
-							feat.setStyle(stages[3]);
-						} else if (val >= 40 && val < 50) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage4',
-							});
-							feat.setStyle(stages[4]);
-						} else if (val >= 50 && val < 60) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage5',
-							});
-							feat.setStyle(stages[5]);
-						} else if (val >= 60 && val < 70) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage6',
-							});
-							feat.setStyle(stages[6]);
-						} else if (val >= 70 && val < 80) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage7',
-							});
-							feat.setStyle(stages[7]);
-						} else if (val >= 80 && val < 90) {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage8',
-							});
-							feat.setStyle(stages[8]);
-						} else {
-							feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : 'stage9',
-							});
-							feat.setStyle(stages[9]);
-						}
+						});
+						let sval = val / 100.0;
+						console.log(sval);
+						var color = paletteAt(sval);
+						console.log(color);
+						feat.setStyle(color);
 						lociPhases.push(feat);
 					}
 
