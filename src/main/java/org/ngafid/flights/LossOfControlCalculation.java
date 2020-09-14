@@ -71,7 +71,7 @@ public class LossOfControlCalculation{
 		System.out.println("LOCI_CALCULATOR: printing to file "+file.toString()+" for flight #"+this.flightId);
 
 		try{
-			this.pw = new PrintWriter(file);
+			this.pw = Optional.of(new PrintWriter(file));
 		}catch(FileNotFoundException e) {
 			System.err.println("File not writable!");
 			System.exit(1);
