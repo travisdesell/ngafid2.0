@@ -75,12 +75,13 @@ public class GetNgafidCesium implements Route {
             DoubleTimeSeries altMSL = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
             DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
+            DoubleTimeSeries AltAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
 
-            ArrayList<String> geoFlightInfo = new ArrayList<>();
+            ArrayList<String> flightGeoInfoAGL = new ArrayList<>();
             // I am avoiding NaN here!
-            for (int i = 0; i < altMSL.size(); i++) {
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i))) {
-                    geoFlightInfo.add(longitude.get(i) + "," + latitude.get(i) + "," + altMSL.get(i));
+            for (int i = 0; i < AltAgl.size(); i++) {
+                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(AltAgl.get(i))) {
+                    flightGeoInfoAGL.add(longitude.get(i) + "," + latitude.get(i) + "," + AltAgl.get(i));
                 }
             }
 
@@ -95,7 +96,7 @@ public class GetNgafidCesium implements Route {
             HashMap<String, Object> scopes = new HashMap<String, Object>();
             // scopes.put("description", "Flight " + flightId);
             scopes.put("flightId", flightId);
-            scopes.put("geoFlightInfo", geoFlightInfo);
+            scopes.put("flightGeoInfoAGL", flightGeoInfoAGL);
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
@@ -110,5 +111,4 @@ public class GetNgafidCesium implements Route {
         return "";
     }
 }
-
 
