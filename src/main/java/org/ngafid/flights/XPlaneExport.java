@@ -170,7 +170,8 @@ public abstract class XPlaneExport{
 		scopes.put(ACFT, ACFT.toUpperCase() + "," + this.aircraftPath);
 		scopes.put(TIME, TIME.toUpperCase() + "," + this.getTime() + ",");
 		scopes.put(DATE, DATE.toUpperCase() + "," + this.getDate() + ",");
-		scopes.put(CALI, CALI.toUpperCase() + "," + this.getGPSCalibration() + ",");
+		//This causes more problems
+		//scopes.put(CALI, CALI.toUpperCase() + "," + this.getGPSCalibration() + ",");
 
 		this.writeEvents(scopes);
 
@@ -223,6 +224,15 @@ public abstract class XPlaneExport{
 	 */
 	public String toFdrFile(){
 		return dataOut.toString();
+	}
+
+	/**
+	 * Determines if this export uses MSL instead of AGL
+	 *
+	 * @return true if MSL is used, false if AGL is used
+	 */
+	protected boolean usesMSL(){
+		return this.useMSL;
 	}
 }
 
