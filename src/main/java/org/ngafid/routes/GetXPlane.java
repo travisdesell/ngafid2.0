@@ -45,7 +45,9 @@ public class GetXPlane implements Route {
         String flightIdStr = request.queryParams("flight_id");
 		String aircraftPath = request.queryParams("acft_path");
         int version = Integer.parseInt(request.queryParams("version"));
+		boolean useMSL = Boolean.parseBoolean(request.queryParams("use_msl"));
 
+		LOG.info("MSL will be used: "+useMSL);
 
 		LOG.info("Generating an X-Plane "+version+" FDR file for flight #"+flightIdStr+" with path for .acf: "+aircraftPath);
 
@@ -70,7 +72,7 @@ public class GetXPlane implements Route {
 		response.type("application/force-download");
 
 
-		export = (version == 10) ? new XPlane10Export(flightId, aircraftPath) : new XPlane11Export(flightId, aircraftPath);
+		export = (version == 10) ? new XPlane10Export(flightId, aircraftPath, useMSL) : new XPlane11Export(flightId, aircraftPath, useMSL);
 
         return export.toFdrFile();
     }
