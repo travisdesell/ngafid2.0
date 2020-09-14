@@ -38,8 +38,8 @@
     </style>
 
     <!-- Cesium css file -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 </head>
 
 <body>
@@ -52,24 +52,55 @@
 
         // Creates the Viewer 
         var viewer = new Cesium.Viewer('cesiumContainer', {
-            terrainProvider: Cesium.createWorldTerrain(),
             scene3DOnly: true,
             selectionIndicator: false,
             baseLayerPicker: false
         });
 
-        var arrCoord = {{ geoFlightInfo }};
-        var flightLoad = viewer.entities.add({
-            name: 'NGAFID-CESIUM 3D Flight Reanimation',
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        var arrCoordAGL = {{ flightGeoInfoAGL }};
+        
+        var geoFlightLoadAGL = viewer.entities.add({
+            name: 'Flight Phase-NGAFID-CESIUM',
             wall: {
-                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoord),
-                material: Cesium.Color.YELLOW.withAlpha(0.8),
-                outline: true,
-                outlineColor: Cesium.Color.BLACK.withAlpha(0.3),
-                outlineWidth: 0.4,
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAGL),
+                material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                 cornerType: Cesium.CornerType.BEVELED,
             }
         });
+
+        var geoFlightline = viewer.entities.add({
+                name: "Flight Phase-NGAFID-CESIUM",
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAGL),
+                width: 3,
+                material: new Cesium.PolylineOutlineMaterialProperty({
+                    color: Cesium.Color.YELLOW,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.BLACK,
+                }),
+            },
+        });
+
+        var geoFlightKeepGround = viewer.entities.add({
+                name: "Flight Phase-NGAFID-CESIUM",
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAGL),
+                width: 3,
+                material: new Cesium.PolylineOutlineMaterialProperty({
+                    color: Cesium.Color.YELLOW,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.BLACK,
+                }),
+                clampToGround: true,
+            },
+        });
+
+        var kmlOptions = {
+            camera : viewer.scene.camera,
+            canvas : viewer.scene.canvas
+        };
 
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
