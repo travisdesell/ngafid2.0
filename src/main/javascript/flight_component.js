@@ -31,7 +31,7 @@ function interpolateColors(c0, w0, c1, w1) {
 	var new_color = [0.0, 0.0, 0.0];
 	// red = 0, green = 1, blue = 2
 	for (var i = 0; i < 3; i++) {
-		new_color[i] = w0 * c0[i] + c1 * c1[i];
+		new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
 	}
 	return new_color;
 }
@@ -50,13 +50,13 @@ function paletteAt(loc_probability) {
 		var w1 = weight;
 
 		return interpolateColors(c0, w0, c1, w1);
-	} else if (loc_probability <= 1.0) {
+	} else if (loc_probability >= 0.8 && loc_probability < 1.0) {
 		// Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
-		var c0 = [255, 255, 0];
-		var c1 = [255, 0, 0];
+		var c0 = [255, 255, 0];//yellow
+		var c1 = [255, 0, 0];//red
 
 		// The minimum value of this will be 0.0 and max is 0.2
-		var numerator = loc_p - 0.8;
+		var numerator = loc_probability - 0.8;
 
 		// value range is 0.0 to 1.0
 		var weight = numerator / 0.2;
@@ -596,7 +596,7 @@ class Flight extends React.Component {
                     }
 
                     var color = thisFlight.state.color;
-                    console.log(color);
+                    //console.log(color);
 
                     thisFlight.state.trackingPoint = new Feature({
                                     geometry : new Point(points[0]),
@@ -717,10 +717,12 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 						});
 						let sval = val / 100.0;
-						console.log(sval);
-						var color = paletteAt(sval);
-						console.log(color);
-						feat.setStyle(color);
+						feat.setStyle(new Style({
+						stroke: new Stroke({
+								color : paletteAt(sval),
+								width : 3
+							})
+						}));
 						lociPhases.push(feat);
 					}
 
@@ -743,7 +745,7 @@ class Flight extends React.Component {
                     });
 
                     // add itineraryLayer to map
-                    map.addLayer(thisFlight.state.itineraryLayer);
+                    //map.addLayer(thisFlight.state.itineraryLayer);
 
 					thisFlight.state.lociLayer = new VectorLayer({
                         style: new Style({
