@@ -5,11 +5,15 @@
 
 package org.ngafid.flights;
 
-import java.util.*;
-
 import java.io.PrintWriter;
 import java.io.File;
 import java.io.FileNotFoundException;
+
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.HashMap;
+import java.util.Optional;
 
 import java.nio.file.FileSystems;
 import java.nio.file.Path;
