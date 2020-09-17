@@ -93,7 +93,6 @@ class Flight extends React.Component {
             tagsVisible : false,
             itineraryVisible : false,
             tags : props.tags,
-            layer : null,
             parent : props.parent,
             color : color,
 			lociData : [],
@@ -731,7 +730,8 @@ class Flight extends React.Component {
 					}
 
                     // create itineraryLayer
-                    thisFlight.state.itineraryLayer = new VectorLayer({
+                    thisFlight.props.layers.set("Itinerary", new VectorLayer({
+						name : 'Itinerary' ,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [1,1,1,1],
@@ -742,12 +742,13 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: flight_phases
                         })
-                    });
+                    }));
 
                     // add itineraryLayer to map
-                    //map.addLayer(thisFlight.state.itineraryLayer);
+                    map.addLayer(thisFlight.state.itineraryLayer);
 
-					thisFlight.state.lociLayer = new VectorLayer({
+					thisFlight.props.layers.set("PLOCI", new VectorLayer({
+						name : 'PLOCI' ,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
@@ -758,16 +759,17 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: lociPhases                        
 						})
-                    });
+                    }));
 
-                    map.addLayer(thisFlight.state.lociLayer);
-					var ls = new LayerSwitcher();
-					console.log(ls);
-					ls.setMap(map);
-					map.addControl(ls);
-					ls.showPanel();
-					thisFlight.state.lociLayer.setVisible(true);
-					thisFlight.state.layer.setVisible(false);
+					for(const layer in thisFlight.state.layers){
+						if(layer.name = 'PLOCI') {
+							layer.setVisible(true);
+						}
+						map.addLayer(layer);
+					}
+
+					console.log("added layers");
+					console.log(map.getLayers());
 
                     // adding coordinates to events, if needed //
                     var events = [];
@@ -778,7 +780,7 @@ class Flight extends React.Component {
                         eventPoints = thisFlight.state.eventPoints;
                         eventOutlines = thisFlight.state.eventOutlines;
                         for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
+                            let line = new LineString(points.slice(events[i].startLine -1, events[i].endLine + 1));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
                             eventOutlines[i].setGeometry(line);
                         }
