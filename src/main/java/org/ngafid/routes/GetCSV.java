@@ -41,6 +41,7 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.common.CSVWriter;
 
 import org.ngafid.filters.Filter;
 
@@ -53,49 +54,6 @@ public class GetCSV implements Route {
 
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
-
-	/**
-	 * Finds the zip file with the filght requested
-	 * @param directoryRoot the root directory of the zipped files
-	 * @param uploadId the id of the upload
-	 * @return a File pointing to the zip containing the entry
-	 */
-	private File getZipFile(String directoryRoot, int uploadId){
-		File root = new File(directoryRoot);
-		File[] dirs = root.listFiles();
-
-		System.out.println("target id: "+uploadId);
-		for (File archive : dirs) {
-			String archPath = archive.toString();
-			String [] archDirs = archPath.split("/");
-			String archName = archDirs[archDirs.length - 1];
-			if(archName.contains(Integer.toString(uploadId))){
-				return archive;
-			}
-		}
-		
-		return null;
-
-	}
-
-	/**
-	 * Writes data to a file output stream
-	 * @param inputStream the input stream to copy data from
-	 * @return a String with all the data for the CSV file
-	 * @throws IOException if there is an IOException when parsing the inputStream
-	 */
-	private String writeToFile(InputStream inputStream) throws IOException{
-		StringWriter strOut = new StringWriter();
-		byte [] buffer = new byte[1024];
-
-		while(inputStream.available() > 0){
-			inputStream.read(buffer);
-			strOut.append(new String(buffer, "UTF-8"));
-		}
-
-		inputStream.close();
-		return strOut.toString();
-	}
 
 
 	/**
@@ -135,28 +93,11 @@ public class GetCSV implements Route {
 
 			String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
 				uploaderId + "/";
+			
+			CSVWriter csvWriter = new CSVWriter(zipRoot, flight, uploadId);
 
-			ZipFile zipArchive = new ZipFile(getZipFile(zipRoot, uploadId));
-
-			LOG.info("Got file path for flight #"+flightId+": "+zipArchive.toString());
-
-			String filename = flight.getFilename();
-
-			System.out.println("filename: "+filename);
-
-			Enumeration<? extends ZipEntry> entries = zipArchive.entries();
-			String fileOut = "";
-
-			while (entries.hasMoreElements()) {
-				ZipEntry entry = entries.nextElement();
-
-				if (entry.getName().equals(filename)) {
-					LOG.info("found file: "+entry.toString());	
-					fileOut = writeToFile(zipArchive.getInputStream(entry));
-				} 
-			} 
-			zipArchive.close();
-			return fileOut;
+			LOG.info("Got file path for flight #"+flightId);
+			return csvWriter.write();
 
 		} catch (SQLException e) {
 			return gson.toJson(new ErrorResponse(e));
