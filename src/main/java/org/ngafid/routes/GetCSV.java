@@ -88,13 +88,12 @@ public class GetCSV implements Route {
 
 			Flight flight = Flight.getFlight(Database.getConnection(), flightId);
 
-			int uploadId = flight.getUploadId();
 			int uploaderId = flight.getUploaderId(); 
 
 			String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
 				uploaderId + "/";
 			
-			CSVWriter csvWriter = new CSVWriter(zipRoot, flight, uploadId);
+			CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
 
 			LOG.info("Got file path for flight #"+flightId);
 			return csvWriter.write();

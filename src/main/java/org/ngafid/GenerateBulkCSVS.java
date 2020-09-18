@@ -1,11 +1,22 @@
 package org.ngafid;
 
+import org.ngafid.common.CSVWriter;
+import org.ngafid.flights.Flight;
+
+import java.io.FileWriter;
+import java.io.File;
+
+import java.sql.Connection;
+import java.sql.SQLException;
+
 public class GenerateBulkCSVS {
-	private String directoryRoot;
+	private String outDirectoryRoot, uploadDirectoryRoot;
 	private int flightLower, flightUpper;
 
-	public GenerateBulkCSVS(String directoryRoot, int flightLower, int flightUpper) {
-		this.directoryRoot = directoryRoot;
+	static final Connection connection = Database.getConnection();
+
+	public GenerateBulkCSVS(String outDirectoryRoot, boolean useZip, int flightLower, int flightUpper) {
+		this.outDirectoryRoot = outDirectoryRoot;
 		this.flightLower = flightLower;
 		this.flightUpper = flightUpper;
 		this.displayInfo();
@@ -14,20 +25,47 @@ public class GenerateBulkCSVS {
 	private void displayInfo() {
 		System.out.println("Generating bulk csvs info:");
 		System.out.println("Flight range: " + this.flightLower + " to " + this.flightUpper);
-		System.out.println("Output Directory: " + this.directoryRoot);
+		System.out.println("Output Directory: " + this.outDirectoryRoot);
 	}
 
 	public static void usage() {
 		System.err.println("Generate Bulk CSVS");
 	}
+   
+	public void generate() {
+		for (int i = flightLower; i <= flightUpper; i++) {
+			try{
+				Flight flight = Flight.getFlight(connection, i);
+				int uploaderId = flight.getUploaderId(); 
+				this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" +
+					uploaderId + "/";
+
+				CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
+				File file = new File(this.outDirectoryRoot+"flight_"+i+".csv");
+				FileWriter fw = new FileWriter(file);
+				
+				fw.write(csvWriter.write());
+				fw.close();
+			} catch (Exception e) {
+				e.printStackTrace();
+				System.exit(1);
+			}
+		}
+	}
+	
+	@Override
+	public String toString() {
+		return "CSV Generator for flights: " + flightLower + " to " + flightUpper;
+	}
 
 	public static void main(String[] args) {
-		if (args.length != 5) {
+		if (args.length < 5 || args.length > 6) {
 			usage();
 			System.exit(1);
 		}
 		String dir = null;
 		int lwr = -1, upr = -1;
+		boolean zip = false;
 		for (int i = 0; i < args.length; i++) {
 			switch (args[i]) {
 				case "-o":
@@ -44,6 +82,9 @@ public class GenerateBulkCSVS {
 					}
 					lwr = Integer.parseInt(args[i + 1]);
 					upr = Integer.parseInt(args[i + 2]);
+				case "-z":
+					zip = true;
+					break;
 				default:
 					break;
 			}
@@ -51,6 +92,9 @@ public class GenerateBulkCSVS {
 
 		assert dir != null && upr != -1 && lwr != -1;
 
-		GenerateBulkCSVS gb = new GenerateBulkCSVS(dir, lwr, upr);
+		GenerateBulkCSVS gb = new GenerateBulkCSVS(dir, zip, lwr, upr);
+		gb.generate();
+		System.out.println("done!");
+		System.exit(0);
 	}
 }
