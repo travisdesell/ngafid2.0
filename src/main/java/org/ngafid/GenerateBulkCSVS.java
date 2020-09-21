@@ -15,6 +15,14 @@ public class GenerateBulkCSVS {
 
 	static final Connection connection = Database.getConnection();
 
+	/**
+	 * Constructor
+	 *
+	 * @param outDirectoryRoot the root directory of the output file(s)
+	 * @param useZip indicated if all files will be exported in a zip file
+	 * @param flightLower the lower bound of the flightid 
+	 * @param flightUpper the upper bound of the flightid
+	 */
 	public GenerateBulkCSVS(String outDirectoryRoot, boolean useZip, int flightLower, int flightUpper) {
 		this.outDirectoryRoot = outDirectoryRoot;
 		this.flightLower = flightLower;
@@ -22,16 +30,25 @@ public class GenerateBulkCSVS {
 		this.displayInfo();
 	}
 
+	/**
+	 * Dispays info to stdout about the csv generation
+	 */
 	private void displayInfo() {
 		System.out.println("Generating bulk csvs info:");
 		System.out.println("Flight range: " + this.flightLower + " to " + this.flightUpper);
 		System.out.println("Output Directory: " + this.outDirectoryRoot);
 	}
 
+	/**
+	 * Info function for command line usage
+	 */
 	public static void usage() {
 		System.err.println("Generate Bulk CSVS");
 	}
    
+	/**
+	 * Generates the csvs
+	 */
 	public void generate() {
 		for (int i = flightLower; i <= flightUpper; i++) {
 			try{
@@ -53,11 +70,19 @@ public class GenerateBulkCSVS {
 		}
 	}
 	
+	/**
+	 * {@inheritDoc}
+	 */
 	@Override
 	public String toString() {
 		return "CSV Generator for flights: " + flightLower + " to " + flightUpper;
 	}
 
+	/**
+	 * Main method
+	 *
+	 * @param args cmdline args
+	 */
 	public static void main(String[] args) {
 		if (args.length < 5 || args.length > 6) {
 			usage();
