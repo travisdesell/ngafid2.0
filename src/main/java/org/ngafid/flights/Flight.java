@@ -346,6 +346,25 @@ public class Flight {
         return getFlights(connection, fleetId, filter, lim);
     }
 
+	public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId) throws SQLException {
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = "+fleetId+" LIMIT "+lowerId+", "+(upperId - lowerId);
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return flights;
+	}
+
 	public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException{
 		String queryString = "SELECT id FROM flights WHERE fleet_id = "+fleetId+" AND airframe_id=1";
 
