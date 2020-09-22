@@ -125,10 +125,6 @@ public class GenerateBulkCSVS {
 	 * @param args cmdline args
 	 */
 	public static void main(String[] args) {
-		if (args.length < 5 || args.length > 6) {
-			usage();
-			System.exit(1);
-		}
 		String dir = null;
 		int lwr = -1, upr = -1;
 		int fleetId = -1;
@@ -180,6 +176,11 @@ public class GenerateBulkCSVS {
 					break;
 			}
 		}
+
+		if (!dir.substring(dir.length() - 1, dir.length()).equals("/")) {
+			dir += "/";
+		}
+
 
 		GenerateBulkCSVS gb;
 		if(lDate.isPresent() && uDate.isPresent()){
