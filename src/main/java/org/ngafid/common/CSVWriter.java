@@ -12,6 +12,8 @@ import java.util.Enumeration;
 
 import org.ngafid.flights.Flight;
 
+import jdk.incubator.jpackage.internal.IOUtils;
+
 public class CSVWriter{
     private File file;
     private String directoryRoot;
@@ -55,16 +57,10 @@ public class CSVWriter{
 	 * @throws IOException if there is an IOException when parsing the inputStream
 	 */
 	private String writeToFile(InputStream inputStream) throws IOException {
-		StringWriter strOut = new StringWriter();
-		byte [] buffer = new byte[1024];
-
-		while(inputStream.available() > 0){
-			inputStream.read(buffer);
-			strOut.append(new String(buffer, "UTF-8"));
-		}
+		String strOut = new String(spark.utils.IOUtils.toByteArray(inputStream));
 
 		inputStream.close();
-		return strOut.toString();
+		return strOut;
 	}
 
 	/**
@@ -77,6 +73,7 @@ public class CSVWriter{
 	public String write() throws IOException {
 		ZipFile zipArchive = new ZipFile(this.file);
 		String filename = flight.getFilename();
+		System.out.println("filename: "+filename);
 		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
 		String fileOut = "";
 		while (entries.hasMoreElements()) {
