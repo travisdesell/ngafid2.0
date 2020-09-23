@@ -340,6 +340,7 @@ class FlightsPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
+			layers : new Map(),
             flights : undefined, //start out with no specified flights
 
             //needed for paginator
@@ -362,6 +363,16 @@ class FlightsPage extends React.Component {
         });
     }
 
+    mapLayerChanged(style) {
+		console.log("changing path to: "+style);
+		console.log(this.state.layers);
+		let layer = this.state.layers.get(style);
+		if(layers != null){
+			layer.setVisible(true);
+		}
+
+        console.log("map style changed to: '" +  style + "'!");
+    }
 
     showMap() {
         if (this.state.mapVisible) return;
@@ -578,6 +589,7 @@ class FlightsPage extends React.Component {
                     toggleFilter={() => this.toggleFilter()}
                     toggleMap={() => this.toggleMap()}
                     mapSelectChanged={(style) => this.mapSelectChanged(style)}
+                    mapLayerChanged={(style) => this.mapLayerChanged(style)}
                     waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
                     unconfirmedTailsCount={unconfirmedTailsCount}
@@ -620,6 +632,7 @@ class FlightsPage extends React.Component {
 
                     <FlightsCard
                         parent={this}
+						layers={this.state.layers}
                         flights={this.state.flights} 
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}

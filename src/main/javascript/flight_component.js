@@ -12,6 +12,7 @@ import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
+import LayerSwitcher from 'ol-layerswitcher/dist/ol-layerswitcher.js';
 
 import { Itinerary } from './itinerary_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
@@ -22,6 +23,52 @@ import { selectAircraftModal } from './select_acft_modal';
 import Plotly from 'plotly.js';
 
 var moment = require('moment');
+
+// So the weights w0 and w1 are for the weighted average
+// They should add to 1.0 so if one of them is 0, the resulting color
+// will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
+function interpolateColors(c0, w0, c1, w1) {
+	var new_color = [0.0, 0.0, 0.0];
+	// red = 0, green = 1, blue = 2
+	for (var i = 0; i < 3; i++) {
+		new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
+	}
+	return new_color;
+}
+
+// loc_percentage should be between 0 and 1.0
+// This will get the color for a given p(LOC)
+// This can probably be made cleaner / not use if statements and just use lists but im lazy
+function paletteAt(loc_probability) {
+	if (loc_probability < 0.8) {
+		var c0 = [0, 255, 0]; // green
+		var c1 = [255, 255, 0]; // yellow
+
+		// This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
+		var weight = loc_probability / 0.8;
+		var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else if (loc_probability >= 0.8 && loc_probability < 1.0) {
+		// Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
+		var c0 = [255, 255, 0];//yellow
+		var c1 = [255, 0, 0];//red
+
+		// The minimum value of this will be 0.0 and max is 0.2
+		var numerator = loc_probability - 0.8;
+
+		// value range is 0.0 to 1.0
+		var weight = numerator / 0.2;
+		var w0 = 1.0 - weight;
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else {
+		// red
+		return [255, 0, 0];
+	}
+}
 
 class Flight extends React.Component {
     constructor(props) {
@@ -46,9 +93,10 @@ class Flight extends React.Component {
             tagsVisible : false,
             itineraryVisible : false,
             tags : props.tags,
-            layer : null,
             parent : props.parent,
             color : color,
+			lociData : [],
+			spData : [],
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -60,6 +108,7 @@ class Flight extends React.Component {
 
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
     }
+	
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -460,6 +509,7 @@ class Flight extends React.Component {
         }
     }
 
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -468,6 +518,55 @@ class Flight extends React.Component {
             this.state.mapLoaded = true;
 
             var thisFlight = this;
+
+            var lociSubmissionData = {
+				seriesName : "LOCI",
+                flightId : this.props.flightInfo.id
+            };
+
+			//TODO: get upset probability data here
+
+			console.log("getting upset probabilities");
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : lociSubmissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got loci dts response");
+					thisFlight.state.lociData = response;
+					console.log(thisFlight.state.lociData);
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var spSubmissionData = {
+				seriesName : "StallProbability",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : spSubmissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.spData = response;
+					console.log(thisFlight.state.spData);
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
 
             var submissionData = {
                 request : "GET_COORDINATES",
@@ -496,7 +595,7 @@ class Flight extends React.Component {
                     }
 
                     var color = thisFlight.state.color;
-                    console.log(color);
+                    //console.log(color);
 
                     thisFlight.state.trackingPoint = new Feature({
                                     geometry : new Point(points[0]),
@@ -538,6 +637,21 @@ class Flight extends React.Component {
                     thisFlight.state.nanOffset = response.nanOffset;
                     thisFlight.state.coordinates = response.coordinates;
                     thisFlight.state.points = points;
+
+					var lprobs = [];
+
+					if(thisFlight.state.lociData != null){
+						console.log("loci data is not null");
+						for(let i = 0; i < thisFlight.state.lociData.y.length; i++){
+							let val = thisFlight.state.lociData.y[i];
+							if(val != null){
+								lprobs[i] = val;
+							}
+						}
+					}
+					
+					console.log("created lprobs:");
+					console.log(lprobs);
 
                     map.addLayer(thisFlight.state.layer);
 
@@ -593,8 +707,31 @@ class Flight extends React.Component {
                         }
                     }
 
+					var lociPhases = [];
+
+					console.log("generating line strs");
+					for(let i = 0; i < lprobs.length; i++){
+						let val = lprobs[i];
+						var feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+						});
+						let sval = val / 100.0;
+						feat.setStyle(new Style({
+						stroke: new Stroke({
+								color : paletteAt(sval),
+								width : 3
+							})
+						}));
+						lociPhases.push(feat);
+					}
+
+					for(let i = 0; i < flight_phases.length; i++){
+						console.log(flight_phases[i]);
+					}
+
                     // create itineraryLayer
-                    thisFlight.state.itineraryLayer = new VectorLayer({
+                    thisFlight.props.layers.set("Itinerary", new VectorLayer({
+						name : 'Itinerary' ,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [1,1,1,1],
@@ -605,10 +742,34 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: flight_phases
                         })
-                    });
+                    }));
 
                     // add itineraryLayer to map
                     map.addLayer(thisFlight.state.itineraryLayer);
+
+					thisFlight.props.layers.set("PLOCI", new VectorLayer({
+						name : 'PLOCI' ,
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [2,2,2,2],
+                                width: 5
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: lociPhases                        
+						})
+                    }));
+
+					for(const layer in thisFlight.state.layers){
+						if(layer.name = 'PLOCI') {
+							layer.setVisible(true);
+						}
+						map.addLayer(layer);
+					}
+
+					console.log("added layers");
+					console.log(map.getLayers());
 
                     // adding coordinates to events, if needed //
                     var events = [];
@@ -619,7 +780,7 @@ class Flight extends React.Component {
                         eventPoints = thisFlight.state.eventPoints;
                         eventOutlines = thisFlight.state.eventOutlines;
                         for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
+                            let line = new LineString(points.slice(events[i].startLine -1, events[i].endLine + 1));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
                             eventOutlines[i].setGeometry(line);
                         }
