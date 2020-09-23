@@ -438,6 +438,20 @@ $query = "CREATE TABLE `event_statistics` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `saved_queries` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `user_id` INT(11) NOT NULL,
+    `query_group_id` INT(11) NOT NULL,
+    `query_name` VARCHAR(128),
+    `query` VARCHAR(2048),
+    `query_text` VARCHAR(2048),
+
+    PRIMARY KEY(`id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
+    ) ENGINE InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 $query = "CREATE TABLE `sim_aircraft` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
@@ -449,5 +463,14 @@ $query = "CREATE TABLE `sim_aircraft` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `loci_processed` (
+    `fleet_id` INT(11) NOT NULL,
+	`flight_id` INT(11) NOT NULL,
+
+	PRIMARY KEY(`flight_id`),
+	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 ?>
