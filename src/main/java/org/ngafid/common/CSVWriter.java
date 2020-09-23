@@ -1,23 +1,29 @@
+/**
+ * Generates/Copies CSV files for flights in the ngafid
+ *
+ * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella</a>
+ */
+
 package org.ngafid.common;
 
 import java.io.File;
 import java.io.InputStream;
-import java.io.StringWriter;
 import java.io.IOException;
 
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
+import java.util.zip.*;
+
 import java.util.Enumeration;
 
-import org.ngafid.flights.Flight;
+import spark.utils.IOUtils;
 
-import jdk.incubator.jpackage.internal.IOUtils;
+import org.ngafid.flights.Flight;
 
 public class CSVWriter{
     private File file;
     private String directoryRoot;
 	private Flight flight;
+	private ZipEntry entry;
+	private ZipFile zipArchive;
 
 	/**
 	 * Constructor
@@ -25,8 +31,6 @@ public class CSVWriter{
 	 *
 	 * @param directoryRoot the root directory of the zipped files
 	 * @param uploadId the id of the upload
-	 *
-	 * @return a File pointing to the zip containing the entry
 	 */
     public CSVWriter(String directoryRoot, Flight flight){
 		File root = new File(directoryRoot);
@@ -43,8 +47,33 @@ public class CSVWriter{
 			String archName = archDirs[archDirs.length - 1];
 			if(archName.contains(Integer.toString(uploadId))){
 				 this.file = archive;
+				 try{
+					 this.zipArchive = new ZipFile(this.file);
+				 } catch (IOException e) {
+					 e.printStackTrace();
+				 }
 			}
 		}
+
+		String filename = flight.getFilename();
+		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry entry = entries.nextElement();
+
+			if (entry.getName().equals(filename)) {
+				this.entry = entry;
+			} 
+		} 
+	}
+
+	/**
+	 * Gets the CSV file as primitive (binary) data
+	 *
+	 * @return a primitive array of bytes 
+	 */
+	public byte[] toBinaryData() throws IOException {
+		InputStream inputStream = zipArchive.getInputStream(this.entry);
+		return IOUtils.toByteArray(inputStream);
 	}
 		
 	/**
@@ -56,11 +85,18 @@ public class CSVWriter{
 	 *
 	 * @throws IOException if there is an IOException when parsing the inputStream
 	 */
-	private String writeToFile(InputStream inputStream) throws IOException {
-		String strOut = new String(spark.utils.IOUtils.toByteArray(inputStream));
-
-		inputStream.close();
+	private String writeToFile() throws IOException {
+		String strOut = new String(toBinaryData());
 		return strOut;
+	}
+
+	/**
+	 * Accessor method for the {@link ZipEntry} associated with this flight
+	 *
+	 * @return and instance of {@link ZipEntry}
+	 */
+	public ZipEntry getFlightEntry(){
+		return this.entry;
 	}
 
 	/**
@@ -71,18 +107,8 @@ public class CSVWriter{
 	 * @throws IOException if there is a problem with file i/o
 	 */
 	public String write() throws IOException {
-		ZipFile zipArchive = new ZipFile(this.file);
-		String filename = flight.getFilename();
-		System.out.println("filename: "+filename);
-		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
 		String fileOut = "";
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
-
-			if (entry.getName().equals(filename)) {
-				fileOut = this.writeToFile(zipArchive.getInputStream(entry));
-			} 
-		} 
+		fileOut = this.writeToFile();
 		zipArchive.close();
 		return fileOut;
 	}
