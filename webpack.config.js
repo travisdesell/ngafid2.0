@@ -5,6 +5,10 @@ var path = require('path');
 module.exports = {
     watch: true,
 
+    node: {
+          fs: 'empty'
+    },
+
     watchOptions: {
         aggregateTimeout: 300,
         poll: 1000,
