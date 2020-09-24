@@ -135,4 +135,14 @@ public class CSVWriter{
 		zipArchive.close();
 		return null;
 	}
+
+	/**
+	 * Gets a string representation of a CSV Writer object
+	 *
+	 * @return a {@link String} with the zip file and archive paths
+	 */
+	@Override
+	public String toString(){
+		return this.zipArchive.toString()+" "+this.entry.toString();
+	}
 }
