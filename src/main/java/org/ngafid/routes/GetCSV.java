@@ -46,7 +46,7 @@ import org.ngafid.common.CSVWriter;
 import org.ngafid.filters.Filter;
 
 public class GetCSV implements Route {
-    private static final Logger LOG = Logger.getLogger(GetKML.class.getName());
+    private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
     private Gson gson;
 
     public GetCSV(Gson gson) {
@@ -96,6 +96,8 @@ public class GetCSV implements Route {
 			CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
 
 			LOG.info("Got file path for flight #"+flightId);
+			LOG.info(csvWriter.toString());
+
 			return csvWriter.write();
 
 		} catch (SQLException e) {
