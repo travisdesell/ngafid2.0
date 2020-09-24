@@ -130,6 +130,33 @@ public class Upload {
         }
     }
 
+    /**
+     * This gets an upload only by it's id. Used by {@link CSVWriter} to get archival
+     * files usually.
+     *
+     * @param connection a connection to the database
+     * @param uploadId the id of the upload entry in the database
+     * @throws SQLException on a database error
+     */
+    public static Upload getUploadById(Connection connection, int uploadId) throws SQLException {
+        PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE id = ?");
+        uploadQuery.setInt(1, uploadId);
+        ResultSet resultSet = uploadQuery.executeQuery();
+
+        if (resultSet.next()) {
+            Upload upload = new Upload(resultSet);
+            resultSet.close();
+            uploadQuery.close();
+            return upload;
+        } else {
+            //TODO: maybe need to throw an exception
+            resultSet.close();
+            uploadQuery.close();
+            return null;
+        }
+    }
+
+
     public static Upload getUploadById(Connection connection, int uploadId, String md5Hash) throws SQLException {
         PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE id = ? AND md5_hash = ?");
         uploadQuery.setInt(1, uploadId);

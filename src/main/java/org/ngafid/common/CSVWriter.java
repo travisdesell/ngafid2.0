@@ -10,13 +10,19 @@ import java.io.File;
 import java.io.InputStream;
 import java.io.IOException;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 import java.util.zip.*;
 
 import java.util.Enumeration;
 
 import spark.utils.IOUtils;
 
+import org.ngafid.Database;
+
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.Upload;
 
 public class CSVWriter{
     private File file;
@@ -32,28 +38,50 @@ public class CSVWriter{
 	 * @param directoryRoot the root directory of the zipped files
 	 * @param uploadId the id of the upload
 	 */
-    public CSVWriter(String directoryRoot, Flight flight){
+    public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
+        System.out.println("creating file from: '" + directoryRoot + "'");
+
 		File root = new File(directoryRoot);
 		File[] dirs = root.listFiles();
 
 		this.flight = flight;
 
 		int uploadId = flight.getUploadId();
+		System.out.println("target upload id is: " + uploadId);
 
-		System.out.println("target id: "+uploadId);
-		for (File archive : dirs) {
-			String archPath = archive.toString();
-			String [] archDirs = archPath.split("/");
-			String archName = archDirs[archDirs.length - 1];
-			if(archName.contains(Integer.toString(uploadId))){
-				 this.file = archive;
-				 try{
-					 this.zipArchive = new ZipFile(this.file);
-				 } catch (IOException e) {
-					 e.printStackTrace();
-				 }
-			}
-		}
+        //TODO: Probably better to pass the connection in as an argument to the constructor
+        Connection connection = Database.getConnection();
+        Upload upload = Upload.getUploadById(connection, uploadId);
+
+        System.out.println("got an upload with filename: '" + upload.getFilename() + "'");
+
+        String archiveFilename = directoryRoot + uploadId + "__" + upload. getFilename();
+        System.out.println("archive filename will be: '" + archiveFilename + "'");
+
+        this.file = new File(archiveFilename);
+
+        if (!this.file.exists()) {
+            //TODO: reconstruct from database instead of existing on error
+            System.err.println("ERROR: archive file did not exist!");
+            System.exit(1);
+        } else {
+            System.out.println("file exists!");
+        }
+
+        if (!this.file.canRead()) {
+            System.err.println("ERROR: do not have read access to this file!");
+            System.exit(1);
+        } else {
+            System.out.println("file is readable!");
+        }
+
+        try {
+            //this.zipArchive = new ZipFile(this.file);
+            this.zipArchive = new ZipFile(archiveFilename);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
 		String filename = flight.getFilename();
 		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
@@ -112,5 +140,37 @@ public class CSVWriter{
 		zipArchive.close();
 		return fileOut;
 	}
-}
 
+	/**
+	 * Writes to a file and gets the zip archive first
+	 *
+	 * @return a String with the file contents
+	 *
+	 * @throws IOException if there is a problem with file i/o
+	 */
+	public ZipEntry getZipEntry() throws IOException {
+		ZipFile zipArchive = new ZipFile(this.file);
+		String filename = flight.getFilename();
+		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+		while (entries.hasMoreElements()) {
+			ZipEntry entry = entries.nextElement();
+
+			if (entry.getName().equals(filename)) {
+				zipArchive.close();
+				return entry;
+			} 
+		} 
+		zipArchive.close();
+		return null;
+	}
+
+	/**
+	 * Gets a string representation of a CSV Writer object
+	 *
+	 * @return a {@link String} with the zip file and archive paths
+	 */
+	@Override
+	public String toString(){
+		return this.zipArchive.toString()+" "+this.entry.toString();
+	}
+}

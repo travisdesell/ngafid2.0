@@ -16,6 +16,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.List;
 
@@ -25,6 +26,8 @@ public class GenerateBulkCSVS {
 	private String outDirectoryRoot, uploadDirectoryRoot;
 	private int fleetId;
 	private List<Flight> flights;
+	private Optional<String> aircraftName;
+	private boolean useZip;
 
 	static final Connection connection = Database.getConnection();
 
@@ -32,15 +35,30 @@ public class GenerateBulkCSVS {
 	 * Constructor
 	 *
 	 * @param outDirectoryRoot the root directory of the output file(s)
+	 * @param fleetId the fleet id
 	 * @param useZip indicated if all files will be exported in a zip file
 	 * @param flightLower the lower bound of the flightid 
 	 * @param flightUpper the upper bound of the flightid
 	 */
-	public GenerateBulkCSVS(String outDirectoryRoot, int fleetId, boolean useZip, int flightLower, int flightUpper) {
+	public GenerateBulkCSVS(String outDirectoryRoot, Optional<String> aircraftName, int fleetId, boolean useZip, int flightLower, int flightUpper) {
 		this.outDirectoryRoot = outDirectoryRoot;
+		this.aircraftName = aircraftName;
 		this.fleetId = fleetId;
-		try{
-			this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower, flightUpper);
+		this.useZip = useZip;
+
+		try {
+			if (aircraftName.isPresent()) {
+				Filter root = new Filter("AND");
+				ArrayList<String> aircraftFilter = new ArrayList<>();
+				aircraftFilter.add("Airframe");
+				aircraftFilter.add("is");
+				aircraftFilter.add(aircraftName.get());
+
+				root.addFilter(new Filter(aircraftFilter));
+				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower, flightUpper);
+			} else {
+				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower, flightUpper);
+			}
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.exit(1);
@@ -56,18 +74,20 @@ public class GenerateBulkCSVS {
 	 * @param startDate the start date to use
 	 * @param endDate the end tdate to use
 	 */
-	public GenerateBulkCSVS(String outDirectoryRoot, int fleetId, boolean useZip, String startDate, String endDate) {
+	public GenerateBulkCSVS(String outDirectoryRoot, Optional<String> aircraftName, int fleetId, boolean useZip, String startDate, String endDate) {
 		this.outDirectoryRoot = outDirectoryRoot;
 		this.fleetId = fleetId;
+		this.useZip = useZip;
+		this.aircraftName = aircraftName;
 		this.getIdsByDate(startDate, endDate);
 		this.displayInfo();
 	}
 
 	/**
-	 * Querys the database and gets ids by date
+	 * Gets flight ids by date using {@link Filter}
 	 *
-	 * @param startDate the start date to use
-	 * @param endDate the end tdate to use
+	 * @param startDate the date of the beginning of the range
+	 * @param endDate the date of the end of the range
 	 */
 	private void getIdsByDate(String startDate, String endDate) {
 		//"inputs":["Start Date",">=","2020-09-07"]},{"type":"RULE","inputs":["End Date","<=","2020-09-28"]
@@ -86,13 +106,24 @@ public class GenerateBulkCSVS {
 		root.addFilter(new Filter(endInputs));
 
 		try{
-			this.flights = Flight.getFlights(connection, fleetId, root);
+			if(this.aircraftName.isPresent()){
+				ArrayList<String> aircraftFilter = new ArrayList<>();
+				aircraftFilter.add("Airframe");
+				aircraftFilter.add("is");
+				aircraftFilter.add(aircraftName.get());
+
+				root.addFilter(new Filter(aircraftFilter));
+
+				this.flights = Flight.getFlights(connection, fleetId, root);
+			} else {
+				this.flights = Flight.getFlights(connection, fleetId, root);
+			}
+
 		} catch (SQLException e) {
 			e.printStackTrace();
 			System.exit(1);
 		}
 	}
-
 
 	/**
 	 * Dispays info to stdout about the csv generation
@@ -102,41 +133,66 @@ public class GenerateBulkCSVS {
 		System.out.println("Output Directory: " + this.outDirectoryRoot);
 	}
 
-	/**
-	 * Info function for command line usage
-	 */
-	public static void usage() {
-		System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) [-d date range YYYY-MM-DD to YYYY-MM-DD]\n" +
-							"[-z (enable zip arciving)] [-r range lwr upr (flight numbers)]");
-	}
-   
-	/**
-	 * Generates the csvs
-	 */
-	public void generate() {
-		for (Flight flight : flights) {
-			try{
-				int uploaderId = flight.getUploaderId(); 
-				this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" +
-					uploaderId + "/";
+    /**
+     * Info function for command line usage
+     */
+    public static void usage() {
+        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) [-d date range YYYY-MM-DD to YYYY-MM-DD]\n" +
+                "[-z (enable zip arciving)] [-r range lwr upr (flight numbers)] [-a Aircraft Name]");
+    }
 
-				CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
-				File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
-				FileWriter fw = new FileWriter(file);
-				
-				fw.write(csvWriter.write());
-				fw.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
-	}
+    /**
+     * Generates the csvs
+     */
+    public void generate() {
+        if (flights == null || flights.isEmpty()) {
+            System.err.println("no flights found!");
+            System.exit(1);
+        }
+
+        ZipOutputStream zipOut = null;
+        if (this.useZip) {
+            try{
+                FileOutputStream fos = new FileOutputStream(this.outDirectoryRoot+"/flights_"+this.flights.get(0).getId()+"_"+this.flights.get(this.flights.size() - 1).getId());
+                zipOut = new ZipOutputStream(fos);
+            } catch (IOException ie) {
+                ie.printStackTrace();
+                System.exit(1);
+            }
+
+        }
+        for (Flight flight : flights) {
+            try{
+                int uploaderId = flight.getUploaderId(); 
+                this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" +
+                    uploaderId + "/";
+
+                CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
+                if(!this.useZip){
+                    File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
+                    FileWriter fw = new FileWriter(file);
+
+                    fw.write(csvWriter.write());
+                    fw.close();
+                } else {
+                    zipOut.putNextEntry(csvWriter.getZipEntry());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+    }
 
 	/**
 	 * Generates files but places them in a ZIP archive
 	 */
 	public void generateToZip() {
+		if(flights == null || flights.isEmpty()) {
+			System.err.println("no flights found!");
+			System.exit(1);
+		}
+
 		File file = new File(this.outDirectoryRoot+"flights_" + flights.get(0).getId()
 				+ "_" + flights.get(flights.size() - 1).getId() + ".zip");
 
@@ -193,12 +249,14 @@ public class GenerateBulkCSVS {
 			usage();
 			System.exit(0);
 		}
+		System.err.println("cmd args: "+Arrays.toString(args));
 
 		String dir = null;
 		int lwr = -1, upr = -1;
 		int fleetId = -1;
 		Optional<String> lDate = Optional.empty(),
-						 uDate = Optional.empty();
+						 uDate = Optional.empty(),
+						 aircraftName = Optional.empty();
 
 		boolean zip = false;
 		for (int i = 0; i < args.length; i++) {
@@ -241,24 +299,49 @@ public class GenerateBulkCSVS {
 					uDate = Optional.of(args[i + 2]);
 					break;
 
+				case "-a":
+					if (i > args.length - 1) {
+						System.err.println("Error: no aircraftId!");
+						break;
+					}
+
+					int j = i + 1;
+					StringBuilder sb = new StringBuilder();
+					boolean notEnd = false;
+					while(j < args.length && (notEnd = !args[j].startsWith("-"))) {
+						sb.append(args[j]);
+						if (notEnd) sb.append(" ");
+						++j;
+					}
+					aircraftName = Optional.of(sb.toString());
+					System.err.println(sb);
+					
+					break;
+
 				default:
 					break;
 			}
 		}
 
-		if (!dir.substring(dir.length() - 1, dir.length()).equals("/")) {
-			dir += "/";
+		if (dir == null) {
+			System.err.println("no directory specified! exiting!");
+			System.exit(1);
 		}
 
+		if (!dir.substring(dir.length() - 1, dir.length()).equals("/")) {
+			System.out.println(dir);
+			dir += "/";
+			System.out.println("corrected unix path to: "+dir);
+		}
 
 		GenerateBulkCSVS gb;
-		if(lDate.isPresent() && uDate.isPresent()){
-			gb = new GenerateBulkCSVS(dir, fleetId, zip, lDate.get(), uDate.get());
+		if (lDate.isPresent() && uDate.isPresent()) {
+			gb = new GenerateBulkCSVS(dir, aircraftName, fleetId, zip, lDate.get(), uDate.get());
 		} else {
-			gb = new GenerateBulkCSVS(dir, fleetId, zip, lwr, upr);
+			gb = new GenerateBulkCSVS(dir, aircraftName, fleetId, zip, lwr, upr);
 		}
 
-		if(zip){
+		if (zip) {
 			gb.generateToZip();
 		} else {
 			gb.generate();
