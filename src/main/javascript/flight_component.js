@@ -12,7 +12,6 @@ import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
 import Point from 'ol/geom/Point.js';
-import LayerSwitcher from 'ol-layerswitcher/dist/ol-layerswitcher.js';
 
 import { Itinerary } from './itinerary_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
