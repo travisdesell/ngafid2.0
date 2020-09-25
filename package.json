@@ -38,7 +38,6 @@
         "jQuery-QueryBuilder": "^2.5.2",
         "moment": "^2.29.0",
         "ol": "^5.3.3",
-        "ol-layerswitcher": "^3.6.0",
         "plotly": "^1.0.6",
         "plotly.js": "^1.55.2",
         "popper": "^1.0.1",
