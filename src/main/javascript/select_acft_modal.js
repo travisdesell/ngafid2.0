@@ -220,9 +220,9 @@ class SelectAircraftModal extends React.Component {
 
 				<div className="row p-3">
 					<div className="col">
-						 <div class="form-check">
-							<input class="form-check-input" type="checkbox" id="altCheck"></input>
-							  <label class="form-check-label" for="defaultCheck1">
+						 <div className="form-check">
+							<input className="form-check-input" type="checkbox" id="altCheck"></input>
+							  <label className="form-check-label" htmlFor="defaultCheck1">
 								  Use altMSL instead of altAGL
 							</label>
 						</div>
