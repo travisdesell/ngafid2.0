@@ -170,9 +170,9 @@ class SignedInNavbar extends React.Component {
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapLayerChanged(event.target.value)}>
 
-                                    <option value="PStall">Stall Probability</option>
-                                    <option value="PLOCI">Loss of Control Probability (LOC-I)</option>
                                     <option value="Itinerary">Itinerary with Phases</option>
+                                    <option value="PStall">Stall Probability</option>
+                                    <option value="PLOCI">Loss of Control Probability</option>
                                 </select>
 
                             </div>
@@ -187,7 +187,7 @@ class SignedInNavbar extends React.Component {
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
+                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/dashboard"/>
                             </div>

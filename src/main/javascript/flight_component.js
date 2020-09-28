@@ -601,7 +601,10 @@ class Flight extends React.Component {
                                     name: 'TrackingPoint'
                                 });
 
-                    thisFlight.state.layer = new VectorLayer({
+					let layers = thisFlight.props.layers;
+
+					var baseLayer = new VectorLayer({
+						name : 'Itinerary' ,
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
@@ -628,14 +631,16 @@ class Flight extends React.Component {
                         })
                     });
 
-                    thisFlight.state.layer.flightState = thisFlight;
 
-                    thisFlight.state.layer.setVisible(true);
+                    baseLayer.flightState = thisFlight;
+
                     thisFlight.state.pathVisible = true;
                     thisFlight.state.itineraryVisible = true;
                     thisFlight.state.nanOffset = response.nanOffset;
                     thisFlight.state.coordinates = response.coordinates;
                     thisFlight.state.points = points;
+
+					layers.push(baseLayer);
 
 					var lprobs = [];
 
@@ -652,7 +657,21 @@ class Flight extends React.Component {
 					console.log("created lprobs:");
 					console.log(lprobs);
 
-                    map.addLayer(thisFlight.state.layer);
+					var sprobs = [];
+
+					if(thisFlight.state.spData != null){
+						console.log("stall prob data is not null");
+						for(let i = 0; i < thisFlight.state.spData.y.length; i++){
+							let val = thisFlight.state.spData.y[i];
+							if(val != null){
+								sprobs[i] = val;
+							}
+						}
+					}
+
+					console.log("created sprobs:");
+					console.log(lprobs);
+
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
@@ -708,7 +727,6 @@ class Flight extends React.Component {
 
 					var lociPhases = [];
 
-					console.log("generating line strs");
 					for(let i = 0; i < lprobs.length; i++){
 						let val = lprobs[i];
 						var feat = new Feature({
@@ -724,11 +742,24 @@ class Flight extends React.Component {
 						lociPhases.push(feat);
 					}
 
-					for(let i = 0; i < flight_phases.length; i++){
-						console.log(flight_phases[i]);
+					var spPhases = [];
+
+					console.log("filtering stall probabilities");
+					for(let i = 0; i < sprobs.length; i++){
+						let val = sprobs[i];
+						var feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+						});
+						let sval = val / 100.0;
+						feat.setStyle(new Style({
+						stroke: new Stroke({
+								color : paletteAt(sval),
+								width : 3
+							})
+						}));
+						spPhases.push(feat);
 					}
 
-					let layers = thisFlight.props.layers;
 
                     // create itineraryLayer
                     layers.push(new VectorLayer({
@@ -745,10 +776,6 @@ class Flight extends React.Component {
                         })
                     }));
 
-                    // add itineraryLayer to map
-                    //map.addLayer(thisFlight.state.itineraryLayer);
-					console.log("done with that generation stuff");
-
 					layers.push(new VectorLayer({
 						name : 'PLOCI' ,
                         style: new Style({
@@ -763,13 +790,30 @@ class Flight extends React.Component {
 						})
                     }));
 
+					layers.push(new VectorLayer({
+						name : 'PStall' ,
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [2,2,2,2],
+                                width: 5
+                            })
+                        }),
+
+                        source : new VectorSource({
+							features: spPhases                        
+						})
+                    }));
+
 					console.log("adding layers!");
 					console.log(thisFlight.props.layers);
 					for(let i = 0; i < layers.length; i++){
 						let layer = layers[i];
 						console.log(layer);
-						if(layer.name == 'PLOCI') {
+						if(layer.values_.name == 'Itinerary') {
+							//Itinerary will be the default layer
 							layer.setVisible(true);
+						} else {
+							layer.setVisible(false);
 						}
 						map.addLayer(layer);
 					}
