@@ -728,8 +728,10 @@ class Flight extends React.Component {
 						console.log(flight_phases[i]);
 					}
 
+					let layers = thisFlight.props.layers;
+
                     // create itineraryLayer
-                    thisFlight.props.layers.set("Itinerary", new VectorLayer({
+                    layers.push(new VectorLayer({
 						name : 'Itinerary' ,
                         style: new Style({
                             stroke: new Stroke({
@@ -744,9 +746,10 @@ class Flight extends React.Component {
                     }));
 
                     // add itineraryLayer to map
-                    map.addLayer(thisFlight.state.itineraryLayer);
+                    //map.addLayer(thisFlight.state.itineraryLayer);
+					console.log("done with that generation stuff");
 
-					thisFlight.props.layers.set("PLOCI", new VectorLayer({
+					layers.push(new VectorLayer({
 						name : 'PLOCI' ,
                         style: new Style({
                             stroke: new Stroke({
@@ -760,8 +763,12 @@ class Flight extends React.Component {
 						})
                     }));
 
-					for(const layer in thisFlight.state.layers){
-						if(layer.name = 'PLOCI') {
+					console.log("adding layers!");
+					console.log(thisFlight.props.layers);
+					for(let i = 0; i < layers.length; i++){
+						let layer = layers[i];
+						console.log(layer);
+						if(layer.name == 'PLOCI') {
 							layer.setVisible(true);
 						}
 						map.addLayer(layer);
