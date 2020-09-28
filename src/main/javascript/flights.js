@@ -340,7 +340,7 @@ class FlightsPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
-			layers : new Map(),
+			layers : [],
             flights : undefined, //start out with no specified flights
 
             //needed for paginator
@@ -366,12 +366,25 @@ class FlightsPage extends React.Component {
     mapLayerChanged(style) {
 		console.log("changing path to: "+style);
 		console.log(this.state.layers);
-		let layer = this.state.layers.get(style);
-		if(layers != null){
-			layer.setVisible(true);
+
+		for(let i = 0; i < this.state.layers.length; i++){
+			let layer = this.state.layers[i];
+			let name = layer.values_.name;
+			
+			if(name == style) {
+				layer.setVisible(true);
+				console.log("setting layer " + name + " to visible");
+			} else {
+				layer.setVisible(false);
+				console.log("setting layer " + name + " to not visible");
+			}
 		}
 
-        console.log("map style changed to: '" +  style + "'!");
+        console.log("map layer changed to: '" +  style + "'!");
+		
+        this.setState({
+            mapStyle : style
+        });
     }
 
     showMap() {
