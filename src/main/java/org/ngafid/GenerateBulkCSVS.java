@@ -45,7 +45,8 @@ public class GenerateBulkCSVS {
 		this.aircraftName = aircraftName;
 		this.fleetId = fleetId;
 		this.useZip = useZip;
-		try{
+
+		try {
 			if (aircraftName.isPresent()) {
 				Filter root = new Filter("AND");
 				ArrayList<String> aircraftFilter = new ArrayList<>();
@@ -54,9 +55,9 @@ public class GenerateBulkCSVS {
 				aircraftFilter.add(aircraftName.get());
 
 				root.addFilter(new Filter(aircraftFilter));
-				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower - 1, flightUpper);
+				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower, flightUpper);
 			} else {
-				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower - 1, flightUpper);
+				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower, flightUpper);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -132,56 +133,56 @@ public class GenerateBulkCSVS {
 		System.out.println("Output Directory: " + this.outDirectoryRoot);
 	}
 
-	/**
-	 * Info function for command line usage
-	 */
-	public static void usage() {
-		System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) [-d date range YYYY-MM-DD to YYYY-MM-DD]\n" +
-							"[-z (enable zip arciving)] [-r range lwr upr (flight numbers)] [-a Aircraft Name]");
-	}
-   
-	/**
-	 * Generates the csvs
-	 */
-	public void generate() {
-		if(flights == null || flights.isEmpty()) {
-			System.err.println("no flights found!");
-			System.exit(1);
-		}
+    /**
+     * Info function for command line usage
+     */
+    public static void usage() {
+        System.err.println("Usage: generate_csvs -f (fleet id) -o (output directory root) [-d date range YYYY-MM-DD to YYYY-MM-DD]\n" +
+                "[-z (enable zip arciving)] [-r range lwr upr (flight numbers)] [-a Aircraft Name]");
+    }
 
-		ZipOutputStream zipOut = null;
-		if (this.useZip) {
-			try{
-				FileOutputStream fos = new FileOutputStream(this.outDirectoryRoot+"/flights_"+this.flights.get(0).getId()+"_"+this.flights.get(this.flights.size() - 1).getId());
-				zipOut = new ZipOutputStream(fos);
-			} catch (IOException ie) {
-				ie.printStackTrace();
-				System.exit(1);
-			}
+    /**
+     * Generates the csvs
+     */
+    public void generate() {
+        if (flights == null || flights.isEmpty()) {
+            System.err.println("no flights found!");
+            System.exit(1);
+        }
 
-		}
-		for (Flight flight : flights) {
-			try{
-				int uploaderId = flight.getUploaderId(); 
-				this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" +
-					uploaderId + "/";
+        ZipOutputStream zipOut = null;
+        if (this.useZip) {
+            try{
+                FileOutputStream fos = new FileOutputStream(this.outDirectoryRoot+"/flights_"+this.flights.get(0).getId()+"_"+this.flights.get(this.flights.size() - 1).getId());
+                zipOut = new ZipOutputStream(fos);
+            } catch (IOException ie) {
+                ie.printStackTrace();
+                System.exit(1);
+            }
 
-				CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
-				if(!this.useZip){
-					File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
-					FileWriter fw = new FileWriter(file);
-					
-					fw.write(csvWriter.write());
-					fw.close();
-				} else {
-					zipOut.putNextEntry(csvWriter.getZipEntry());
-				}
-			} catch (Exception e) {
-				e.printStackTrace();
-				System.exit(1);
-			}
-		}
-	}
+        }
+        for (Flight flight : flights) {
+            try{
+                int uploaderId = flight.getUploaderId(); 
+                this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" +
+                    uploaderId + "/";
+
+                CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
+                if(!this.useZip){
+                    File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
+                    FileWriter fw = new FileWriter(file);
+
+                    fw.write(csvWriter.write());
+                    fw.close();
+                } else {
+                    zipOut.putNextEntry(csvWriter.getZipEntry());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.exit(1);
+            }
+        }
+    }
 
 	/**
 	 * Generates files but places them in a ZIP archive
