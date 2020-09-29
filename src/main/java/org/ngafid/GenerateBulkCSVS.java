@@ -6,7 +6,7 @@
 
 package org.ngafid;
 
-import org.ngafid.common.CSVWriter;
+import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.Flight;
 import org.ngafid.filters.Filter;
 
