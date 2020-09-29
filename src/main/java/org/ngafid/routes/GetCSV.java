@@ -1,34 +1,12 @@
 package org.ngafid.routes;
 
 import java.io.IOException;
-import java.io.BufferedOutputStream;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.io.FileFilter;
-import java.io.FileWriter;
-import java.io.File;
-
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
-import java.util.zip.ZipOutputStream;
-
-import java.util.ArrayList;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.HashMap;
-import java.util.Enumeration;
 
 import java.util.logging.Logger;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
-
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
 
 import spark.Route;
 import spark.Request;
@@ -40,10 +18,7 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.common.CSVWriter;
-
-import org.ngafid.filters.Filter;
+import org.ngafid.flights.CSVWriter;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
