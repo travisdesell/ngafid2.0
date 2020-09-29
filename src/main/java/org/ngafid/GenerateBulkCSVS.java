@@ -54,9 +54,9 @@ public class GenerateBulkCSVS {
 				aircraftFilter.add(aircraftName.get());
 
 				root.addFilter(new Filter(aircraftFilter));
-				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower, flightUpper);
+				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower - 1, flightUpper);
 			} else {
-				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower, flightUpper);
+				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower - 1, flightUpper);
 			}
 		} catch (SQLException e) {
 			e.printStackTrace();
