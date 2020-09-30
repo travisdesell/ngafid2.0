@@ -736,7 +736,7 @@ class Flight extends React.Component {
 						feat.setStyle(new Style({
 						stroke: new Stroke({
 								color : paletteAt(sval),
-								width : 3
+								width : 5
 							})
 						}));
 						lociPhases.push(feat);
@@ -754,7 +754,7 @@ class Flight extends React.Component {
 						feat.setStyle(new Style({
 						stroke: new Stroke({
 								color : paletteAt(sval),
-								width : 3
+								width : 5
 							})
 						}));
 						spPhases.push(feat);
@@ -781,7 +781,7 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
-                                width: 5
+                                width: 3
                             })
                         }),
 
@@ -795,7 +795,7 @@ class Flight extends React.Component {
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
-                                width: 5
+                                width: 3
                             })
                         }),
 
