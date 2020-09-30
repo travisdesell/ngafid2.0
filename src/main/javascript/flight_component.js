@@ -106,6 +106,7 @@ class Flight extends React.Component {
         }
 
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
+		this.displayParameters = this.displayParameters.bind(this);
     }
 	
 
@@ -461,6 +462,27 @@ class Flight extends React.Component {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
 
+	displayParameters(event){
+		var pixel = event.pixel;
+		var features = [];
+
+		map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+			features.push(feature)
+		});
+
+		console.log(features);
+		console.log(pixel);
+		var target = features[0];
+		if (target != null) {
+			if (target.parent === "PStall") {
+				console.log(this.state.sProbs[target.getId()]);
+			} else if (target.parent = "PLOCI") {
+				console.log(this.state.lProbs[target.getId()]);
+			}
+		}
+	}
+
+
     tagClicked() {
         console.log("tag clicked!");
 
@@ -527,6 +549,9 @@ class Flight extends React.Component {
 
 			console.log("getting upset probabilities");
 
+			let lociData = [], 
+				spData = [];
+
 			$.ajax({
 				type: 'POST',
 				url: '/protected/double_series',
@@ -534,8 +559,7 @@ class Flight extends React.Component {
 				dataType : 'json',
 				success : function(response) {
 					console.log("got loci dts response");
-					thisFlight.state.lociData = response;
-					console.log(thisFlight.state.lociData);
+					lociData = response;
 				},   
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
@@ -556,8 +580,7 @@ class Flight extends React.Component {
 				dataType : 'json',
 				success : function(response) {
 					console.log("got stall prob. dts response");
-					thisFlight.state.spData = response;
-					console.log(thisFlight.state.spData);
+					spData = response;
 				},   
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
@@ -642,35 +665,35 @@ class Flight extends React.Component {
 
 					layers.push(baseLayer);
 
-					var lprobs = [];
+					thisFlight.state.lProbs = [];
 
-					if(thisFlight.state.lociData != null){
+					if(lociData != null){
 						console.log("loci data is not null");
-						for(let i = 0; i < thisFlight.state.lociData.y.length; i++){
-							let val = thisFlight.state.lociData.y[i];
+						for(let i = 0; i < lociData.y.length; i++){
+							let val = lociData.y[i];
 							if(val != null){
-								lprobs[i] = val;
+								thisFlight.state.lProbs[i] = val;
 							}
 						}
 					}
 					
-					console.log("created lprobs:");
-					console.log(lprobs);
+					console.log("created thisFlight.state.lProbs:");
+					console.log(thisFlight.state.lProbs);
 
-					var sprobs = [];
+					thisFlight.state.sProbs = [];
 
-					if(thisFlight.state.spData != null){
+					if(spData != null){
 						console.log("stall prob data is not null");
-						for(let i = 0; i < thisFlight.state.spData.y.length; i++){
-							let val = thisFlight.state.spData.y[i];
+						for(let i = 0; i < spData.y.length; i++){
+							let val = spData.y[i];
 							if(val != null){
-								sprobs[i] = val;
+								thisFlight.state.sProbs[i] = val;
 							}
 						}
 					}
 
-					console.log("created sprobs:");
-					console.log(lprobs);
+					console.log("created thisFlight.state.sProbs:");
+					console.log(thisFlight.state.lProbs);
 
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
@@ -727,12 +750,14 @@ class Flight extends React.Component {
 
 					var lociPhases = [];
 
-					for(let i = 0; i < lprobs.length; i++){
-						let val = lprobs[i];
+					for(let i = 0; i < thisFlight.state.lProbs.length; i++){
+						let val = thisFlight.state.lProbs[i];
 						var feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
 						});
 						let sval = val / 100.0;
+						feat.setId(i);
+						feat.parent = 'lociPhases';
 						feat.setStyle(new Style({
 						stroke: new Stroke({
 								color : paletteAt(sval),
@@ -745,12 +770,14 @@ class Flight extends React.Component {
 					var spPhases = [];
 
 					console.log("filtering stall probabilities");
-					for(let i = 0; i < sprobs.length; i++){
-						let val = sprobs[i];
+					for(let i = 0; i < thisFlight.state.sProbs.length; i++){
+						let val = thisFlight.state.sProbs[i];
 						var feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
 						});
 						let sval = val / 100.0;
+						feat.setId(i);
+						feat.parent = 'PStall';
 						feat.setStyle(new Style({
 						stroke: new Stroke({
 								color : paletteAt(sval),
@@ -820,6 +847,7 @@ class Flight extends React.Component {
 
 					console.log("added layers");
 					console.log(map.getLayers());
+					map.on('click', thisFlight.displayParameters); 
 
                     // adding coordinates to events, if needed //
                     var events = [];
