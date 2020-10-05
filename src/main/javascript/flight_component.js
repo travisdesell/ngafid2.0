@@ -6,6 +6,7 @@ import { errorModal } from "./error_modal.js";
 import { map, styles, layers, Colors } from "./map.js";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
+import Overlay from 'ol/Overlay';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
@@ -470,13 +471,21 @@ class Flight extends React.Component {
 			features.push(feature)
 		});
 
+		//TODO: fix this jquery
+		var textElement = $('<p class="overlay">Text</p>');
+		var overlay = new Overlay({
+			position: pixel,
+			element: textElement
+		});
+		map.addOverlay(overlay);
+
 		console.log(features);
 		console.log(pixel);
 		var target = features[0];
 		if (target != null) {
 			if (target.parent === "PStall") {
 				console.log(this.state.sProbs[target.getId()]);
-			} else if (target.parent = "PLOCI") {
+			} else if (target.parent === "PLOCI") {
 				console.log(this.state.lProbs[target.getId()]);
 			}
 		}
