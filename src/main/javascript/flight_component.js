@@ -96,8 +96,6 @@ class Flight extends React.Component {
             tags : props.tags,
             parent : props.parent,
             color : color,
-			lociData : [],
-			spData : [],
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -477,22 +475,17 @@ class Flight extends React.Component {
 
 		var info = new Array();
 
-		//TODO: put the new modal here
-
 		if (target != null) {
-			if (target.parent === "PStall") {
-				info.push("PStall");
-				let sProb = this.state.sProbs[target.getId()];
-				info.push(sProb);
-				console.log(sProb);
-				mapPopup.show(info, pixel);
-			} else if (target.parent === "PLOCI") {
-				info.push("PLOCI");
-				let lProb = this.state.lProbs[target.getId()];
-				info.push(lProb);
-				console.log(lProb);
-				mapPopup.show(info, pixel);
-			}
+			let index = target.getId();
+			let sProb = this.state.sProbs[index];
+			let lProb = this.state.lProbs[index];
+			let roll = this.state.rollData[index];
+
+			info.push(index);
+			info.push(sProb);
+			info.push(lProb);
+			info.push(roll);
+			mapPopup.show(info, pixel);
 		}
 	}
 
@@ -603,6 +596,26 @@ class Flight extends React.Component {
 				async: true 
 			});  
 
+			var submissionData = {
+				seriesName : "Roll",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.rollData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
 
             var submissionData = {
                 request : "GET_COORDINATES",
