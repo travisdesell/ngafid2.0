@@ -472,10 +472,12 @@ class Flight extends React.Component {
 		});
 
 		//TODO: fix this jquery
-		var textElement = $('<p class="overlay">Text</p>');
+
+		let textElement = $("#popup").get(0);
+		console.log(textElement);
 		var overlay = new Overlay({
 			position: pixel,
-			element: textElement
+			element: textElement,
 		});
 		map.addOverlay(overlay);
 
