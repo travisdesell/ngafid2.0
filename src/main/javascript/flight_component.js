@@ -477,14 +477,14 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
-			let sProb = this.state.sProbs[index];
-			let lProb = this.state.lProbs[index];
-			let roll = this.state.rollData[index];
-
+			
 			info.push(index);
-			info.push(sProb);
-			info.push(lProb);
-			info.push(roll);
+			info.push(this.state.sProbs[index]);
+			info.push(this.state.lProbs[index]);
+			info.push(this.state.rollData[index]);
+			info.push(this.state.pitchData[index]);
+			info.push(this.state.iasData[index]);
+
 			mapPopup.show(info, pixel);
 		}
 	}
@@ -609,6 +609,48 @@ class Flight extends React.Component {
 				success : function(response) {
 					console.log("got stall prob. dts response");
 					thisFlight.state.rollData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var submissionData = {
+				seriesName : "IAS",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.iasData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var submissionData = {
+				seriesName : "Pitch",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.pitchData = response.y;
 				},   
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
