@@ -2,6 +2,7 @@ import 'bootstrap';
 
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import Popover from 'react-bootstrap/Popover';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -13,44 +14,60 @@ class MapPopup extends React.Component {
         super(props);
 
         this.state = {
-			on : false,
-			info : ""
+			navbarWidth : 40,
+			on : 'none',
+			info : "",
+			placement : []
         };
     }
 
-    show(info) {
-		this.state.on = true;
-		this.state.info = info;
+    show(info, pixel) {
+		let title = "";
+
+		if(info[0] === "PLOCI"){
+			title = "Loss of Control Probability Details";
+		} else {
+			title = "Stall Probability Details";
+		}
+
+		this.state = {
+			pixel : pixel,
+			on : '',
+			info : info,
+			placement : pixel,
+			title : title
+		}
+
 		this.setState(this.state);
     }
 
     render() {
 
-		let ol_popup = {
-			position: 'absolute',
-			backgroundColor: 'white',
-			boxShadow: '0 1px 4px rgba(0,0,0,0.2)',
-			padding: '15px',
-			borderRadius: '10px',
-			border: '1px solid #cccccc',
-			bottom: '12px',
-			left: '-50px',
-			minWidth: '280px'
-		}
-
-		let ol_popup_closer = {
-			textDecoration: 'none',
-			position: 'absolute',
-			top: '2px',
-			right: '8px'
-		}
-
 		console.log("rendering a map popup");
 
+		var style = {
+			top : this.state.placement[1] + this.state.navbarWidth,
+			left : this.state.placement[0],
+			display : this.state.on
+		}
 
-        return (
-			<p> {this.state.info} </p>
-        );
+		if(this.state.on !== "none"){
+			return (
+				<div style={{ height: 120 }}>
+					<Popover
+						id="popover-basic"
+						style={style}
+					>
+						<Popover.Title as="h3"> {this.state.title} </Popover.Title>
+						<Popover.Content> 
+							Probability: {this.state.info[1].toFixed(2)}%
+						</Popover.Content>
+				  </Popover>
+				</div>
+			);
+		} else {
+			return null;
+		}
     }
 }
 

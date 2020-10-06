@@ -473,18 +473,25 @@ class Flight extends React.Component {
 		});
 
 		let target = features[0];
+		console.log(pixel);
+
+		var info = new Array();
 
 		//TODO: put the new modal here
 
 		if (target != null) {
 			if (target.parent === "PStall") {
-				let prob = this.state.sProbs[target.getId()];
-				console.log(prob);
-				mapPopup.show(prob);
+				info.push("PStall");
+				let sProb = this.state.sProbs[target.getId()];
+				info.push(sProb);
+				console.log(sProb);
+				mapPopup.show(info, pixel);
 			} else if (target.parent === "PLOCI") {
-				let prob = this.state.lProbs[target.getId()];
-				console.log(prob);
-				mapPopup.show(prob);
+				info.push("PLOCI");
+				let lProb = this.state.lProbs[target.getId()];
+				info.push(lProb);
+				console.log(lProb);
+				mapPopup.show(info, pixel);
 			}
 		}
 	}
