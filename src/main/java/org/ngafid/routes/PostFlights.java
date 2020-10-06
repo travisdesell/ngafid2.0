@@ -81,15 +81,11 @@ public class PostFlights implements Route {
             int currentPage = Integer.parseInt(request.queryParams("currentPage"));
             int pageSize = Integer.parseInt(request.queryParams("pageSize"));
 
-
             Connection connection = Database.getConnection();
 
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
-            int numberPages = (int)Math.ceil((double)totalFlights / (double)pageSize);
-
-            LOG.info("current page: " + currentPage + ", pageSize: " + pageSize + ", numberPages: " + numberPages);
-
-            ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+            int numberPages = totalFlights / pageSize;
+            ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");
