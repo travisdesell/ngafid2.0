@@ -1,7 +1,6 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import { Filter } from "./filter.js"
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -14,18 +13,11 @@ class SaveQueriesModal extends React.Component {
 
         this.state = {
             noEntriesMessage : "Sorry, No Entries Found",
-            selectedGroup : "user",
-            queryText : "placeholder"
+            selectedGroup : "user"
         };
     }
 
-    updateQuery(queryObject) {
-        this.state.queryText = JSON.stringify(queryObject);
-        this.setState(this.state);
-    }
-
     show() {
-        this.forceUpdate();
         $("#save-query-modal").modal('show');
     }
 
@@ -35,8 +27,8 @@ class SaveQueriesModal extends React.Component {
         return (
             <select name="groupSelect" id="groupSelect" type={"select"} key={0} className="form-control" onChange={(event) => { this.state.selectedGroup = groupSelect.value }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
                 <option value="user">user</option>
-                <option value="fleetA">fleetA</option>
-                <option value="fleetB">fleetB</option>
+                <option value="saab">fleetA</option>
+                <option value="opel">fleetB</option>
             </select>
         )
     }
@@ -44,7 +36,7 @@ class SaveQueriesModal extends React.Component {
     getNames() {
         // method to construct query name section of modal (load associated query names or create input field for 'naming' query)
         return (
-            <input type="name" className="form-control" id="name" placeholder="Name your query!" required={true} />
+            <input type="name" className="form-control" id="name" placeholder="Name your query!" required={true} onChange={() => {}} />
         )
     }
 
@@ -78,7 +70,6 @@ class SaveQueriesModal extends React.Component {
         // generate header message
         let groups = this.getGroups();
         let names = this.getNames();
-        //let queryText = this.state.queryText;
         let headerMessage = "Where would you like to save to?";
         let dropdownLabel = "Destination:";
         let submitLabel = "Save";
@@ -120,16 +111,10 @@ class SaveQueriesModal extends React.Component {
                         </div>
                     </div>
 
-                    <div className="d-flex" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="queryText" style={labelStyle}>Your Query Text:</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" readOnly>
-                                    {this.state.queryText}
-                                </textarea>
-                            </div>
+                    <div className="d-flex">
+                        <div className="p-2" style={formHeaderStyle}>
+                        </div>
+                        <div className="p-2 flex-fill">
                         </div>
                     </div>
 
@@ -155,5 +140,3 @@ export { saveQueriesModal };
 
 // need validation checking to ensure all fields selected & appropriate access
 // disable Select button based on val
-// need validation that name is not taken*
-// need current query to show on modal
