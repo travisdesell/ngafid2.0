@@ -148,9 +148,7 @@ class LoadQueriesModal extends React.Component {
                             <label htmlFor="queryText" style={labelStyle}>Full Query:</label>
                         </div>
                         <div className="p-2 flex-fill" style={formHeaderStyle}>
-                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" readOnly>
-                                {"Oh Lookie at all the Query Details. Fancy Fancy. Oh, I wonder if the text is gonna wrap. It'd be such a tragedy if the text left the textarea"}
-                            </textarea>
+                            <input type="text" id="country" name="country" value="Norway" readonly></input>
                         </div>
                     </div>
 
