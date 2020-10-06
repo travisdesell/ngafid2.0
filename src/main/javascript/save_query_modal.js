@@ -1,76 +1,61 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import { Filter } from "./filter.js"
 
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
 
 // The SaveQueriesModal component defines a modal interface for the loading and saving of queries
-class LoadQueriesModal extends React.Component {
+class SaveQueriesModal extends React.Component {
     constructor(props) {
         super(props);
 
         this.state = {
             noEntriesMessage : "Sorry, No Entries Found",
-            selectedGroup : null,
-            selectedQuery : null,
-            user_id : null
+            selectedGroup : "user",
+            query : null,
+            queryText : null
         };
     }
 
+    updateQuery(queryObject) {
+        this.state.queryText = JSON.stringify(queryObject);
+    }
+
     show() {
-        $("#load-query-modal").modal('show');
+        this.setState(this.state, () => {$("#save-query-modal").modal('show')});
     }
 
     getGroups(){
         // method to retrieve groups (fleets) associated with user
         // call to GetSavedQueries Route to retrieve user's associated queries (by fleet_id, user_id, ngafid -> based on if loading or not)
         return (
-            <select name="groupSelect" id="groupSelect" type={"select"} className="form-control" onChange={(event) => {this.state.selectedGroup = event.target.value; this.setState(this.state);} } style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
-                <option key="0">Please Select</option>
-                <option key="1" value="user">user</option>
-                <option key="2" value="fleetA">fleetA</option>
-                <option key="3" value="fleetB">fleetB</option>
-                <option key="4" value="ngafid">NGAFID</option>
+            <select name="groupSelect" id="groupSelect" type={"select"} key={0} className="form-control" onChange={(event) => { this.state.selectedGroup = groupSelect.value }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
+                <option value="user">user</option>
+                <option value="fleetA">fleetA</option>
+                <option value="fleetB">fleetB</option>
             </select>
         )
     }
 
     getNames() {
         // method to construct query name section of modal (load associated query names or create input field for 'naming' query)
-        // load up the query names associated with the selected fleet / user (load all if nothing selected?)
-        // ajax call to retrieve JSON object / hashmap of groups - names
-        let groups = {
-            fleetA : ["query1", "query2", "query3"],
-            fleetB : ["queryA", "queryB", "queryC"],
-            user : ["queryI", "queryII", "queryIII"],
-            ngafid : ["query1", "query2", "query3"]
-        };
-
-        // display names from selected group
-        var names = groups[this.state.selectedGroup];
-
-        if (names) {
-            return (
-                <select name="querySelect" id="querySelect" type={"select"} className="form-control" onChange={(event) => { this.state.selectedQuery = querySelect.value; }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
-                    <option>Please Select</option>
-                    {
-                        names.map( (queryName, index) =>
-                            <option key={index} value={queryName}>{queryName}</option>
-                        )
-                    }
-                </select>
-            )
-        } else {
-            return (
-                <select name="querySelect" id="querySelect" type={"select"} className="form-control" onChange={(event) => { this.state.selectedQuery = querySelect.value; }} style={{flexBasis:"150px", flexShrink:0, marginRight:5}}>
-                     <option>Please Select Group</option>
-                 </select>
-            )
-        }
+        return (
+            <input type="name" className="form-control" id="name" placeholder="Name your query!" required={true} />
+        )
     }
 
+    validateSave() {
+        // method to validate fields before enabling save button
+        valid = false;
+        if (this.state.query && this.state.selectedGroup) {     // ensure fields not blank (TODO: namefield)
+            valid = true;
+        }
+
+        //if (valid && $())                                       // ensure name not taken
+    }
 
     render() {
         const hidden = this.props.hidden;
@@ -78,6 +63,7 @@ class LoadQueriesModal extends React.Component {
         let formGroupStyle = {
             marginBottom: '8px'
         };
+
 
         let formHeaderStyle = {
             width: '150px',
@@ -102,9 +88,11 @@ class LoadQueriesModal extends React.Component {
         // generate header message
         let groups = this.getGroups();
         let names = this.getNames();
-        let headerMessage = "Where would you like to load from?";
-        let dropdownLabel = "Source:";
-        let submitLabel = "Load";
+        let queryText = this.state.queryText;
+        let headerMessage = "Where would you like to save to?";
+        let dropdownLabel = "Destination:";
+        let submitLabel = "Save";
+        let saveDisabled = this.validateSave();
 
 
         //console.log("rendering login modal with validation message: '" + validationMessage + "' and validation visible: " + validationHidden);
@@ -144,12 +132,14 @@ class LoadQueriesModal extends React.Component {
                     </div>
 
                     <div className="d-flex" style={formGroupStyle}>
-                        <div className="p-2" style={formHeaderStyle}>
-                            <label htmlFor="queryText" style={labelStyle}>Full Query:</label>
-                        </div>
-                        <div className="p-2 flex-fill" style={formHeaderStyle}>
-                            <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={"Oh Lookie at all the Query Details. Fancy Fancy. Oh, I wonder if the text is gonna wrap. It'd be such a tragedy if the text left the textarea"} readOnly>
-                            </textarea>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label htmlFor="queryText" style={labelStyle}>Your Query Text:</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+                                <textarea id="country" className="form-control" name="queryText" rows="5" cols="200" wrap="soft" value={queryText} readOnly>
+                                </textarea>
+                            </div>
                         </div>
                     </div>
 
@@ -159,20 +149,20 @@ class LoadQueriesModal extends React.Component {
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
                     <button id='submitButton' type='submit' className='btn btn-primary' onClick={() => {}} disabled={true}>{submitLabel}</button>
                 </div>
+
             </div>
         );
     }
 }
 
-var loadQueriesModal = ReactDOM.render(
-    <LoadQueriesModal />,
-    document.querySelector("#load-query-modal-content")
+var saveQueriesModal = ReactDOM.render(
+    <SaveQueriesModal />,
+    document.querySelector("#save-query-modal-content")
 );
 
-export { loadQueriesModal };
+export { saveQueriesModal };
 
 
 // need validation checking to ensure all fields selected & appropriate access
-// disable submit button based on val
-// load query from database and populate filter
-// load queryString from db and populate textarea
+// disable Select button based on val
+// need validation that name is not taken*

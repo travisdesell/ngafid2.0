@@ -464,17 +464,12 @@ class UploadsPage extends React.Component {
         xhr.send(formData);
     }
 
-    submitFilter(resetCurrentPage = false) {
+    submitFilter() {
         //prep data
         var uploadsPage = this;
 
-        let currentPage = this.state.currentPage;
-        if (resetCurrentPage === true) {
-            currentPage = 0;
-        }
-
         var submissionData = {
-            currentPage : currentPage,
+            currentPage : this.state.currentPage,
             pageSize : this.state.pageSize
         };
 
@@ -501,7 +496,6 @@ class UploadsPage extends React.Component {
 
                 uploadsPage.setState({
                     uploads : response.uploads,
-                    currentPage : currentPage,
                     numberPages : response.numberPages
                 });
             },
@@ -579,7 +573,7 @@ class UploadsPage extends React.Component {
                     }
 
                     <Paginator
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        submitFilter={() => {this.submitFilter();}}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -603,7 +597,7 @@ class UploadsPage extends React.Component {
                     }
 
                     <Paginator
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        submitFilter={() => {this.submitFilter();}}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
