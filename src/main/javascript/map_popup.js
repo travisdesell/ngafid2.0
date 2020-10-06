@@ -3,6 +3,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Popover from 'react-bootstrap/Popover';
+import Table from 'react-bootstrap/Table';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -60,9 +61,26 @@ class MapPopup extends React.Component {
 					>
 						<Popover.Title as="h3"> {this.state.title} </Popover.Title>
 						<Popover.Content> 
-							Probability: {this.state.info[1].toFixed(2)}%
+							<Table striped bordered hover size="sm">
+								<thead>
+									<tr>
+										<th>Metric Name</th>
+										<th>Data</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>Stall Probability:</td>
+										<td>{this.state.info[1].toFixed(2)}</td>
+									</tr>
+									<tr>
+										<td>Roll</td>
+										<td>Something</td>
+									</tr>
+								</tbody>
+							</Table>
 						</Popover.Content>
-				  </Popover>
+					</Popover>
 				</div>
 			);
 		} else {
