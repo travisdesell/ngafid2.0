@@ -43,8 +43,8 @@ class MapPopup extends React.Component {
     }
 
     render() {
-
-		console.log("rendering a map popup");
+		console.log("rendering a map popup with info:");
+		console.log(this.state.info);
 
 		var style = {
 			top : this.state.placement[1] + this.state.navbarWidth,
@@ -59,7 +59,7 @@ class MapPopup extends React.Component {
 						id="popover-basic"
 						style={style}
 					>
-						<Popover.Title as="h3"> {this.state.title} </Popover.Title>
+						<Popover.Title as="h3"> Flight Metric Details </Popover.Title>
 						<Popover.Content> 
 							<Table striped bordered hover size="sm">
 								<thead>
@@ -70,12 +70,20 @@ class MapPopup extends React.Component {
 								</thead>
 								<tbody>
 									<tr>
+										<td>Time Index (s):</td>
+										<td>{this.state.info[0]}</td>
+									</tr>
+									<tr>
 										<td>Stall Probability:</td>
 										<td>{this.state.info[1].toFixed(2)}</td>
 									</tr>
 									<tr>
+										<td>LOC-I Probability:</td>
+										<td>{this.state.info[2].toFixed(2)}</td>
+									</tr>
+									<tr>
 										<td>Roll</td>
-										<td>Something</td>
+										<td>{this.state.info[3].toFixed(3)}</td>
 									</tr>
 								</tbody>
 							</Table>
