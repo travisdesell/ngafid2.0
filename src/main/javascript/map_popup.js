@@ -31,15 +31,13 @@ class MapPopup extends React.Component {
 			title = "Stall Probability Details";
 		}
 
-		this.state = {
+		this.setState({
 			pixel : pixel,
 			on : '',
 			info : info,
 			placement : pixel,
 			title : title
-		}
-
-		this.setState(this.state);
+		});
     }
 
     render() {
@@ -84,6 +82,14 @@ class MapPopup extends React.Component {
 									<tr>
 										<td>Roll</td>
 										<td>{this.state.info[3].toFixed(3)}</td>
+									</tr>
+									<tr>
+										<td>Pitch</td>
+										<td>{this.state.info[4].toFixed(3)}</td>
+									</tr>
+									<tr>
+										<td>IAS</td>
+										<td>{this.state.info[5].toFixed(3)} kts</td>
 									</tr>
 								</tbody>
 							</Table>
