@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
+import { mapPopup } from "./map_popup.js";
 
 import { map, styles, layers, Colors } from "./map.js";
 
@@ -471,24 +472,19 @@ class Flight extends React.Component {
 			features.push(feature)
 		});
 
-		//TODO: fix this jquery
+		let target = features[0];
 
-		let textElement = $("#popup").get(0);
-		console.log(textElement);
-		var overlay = new Overlay({
-			position: pixel,
-			element: textElement,
-		});
-		map.addOverlay(overlay);
+		//TODO: put the new modal here
 
-		console.log(features);
-		console.log(pixel);
-		var target = features[0];
 		if (target != null) {
 			if (target.parent === "PStall") {
-				console.log(this.state.sProbs[target.getId()]);
+				let prob = this.state.sProbs[target.getId()];
+				console.log(prob);
+				mapPopup.show(prob);
 			} else if (target.parent === "PLOCI") {
-				console.log(this.state.lProbs[target.getId()]);
+				let prob = this.state.lProbs[target.getId()];
+				console.log(prob);
+				mapPopup.show(prob);
 			}
 		}
 	}
