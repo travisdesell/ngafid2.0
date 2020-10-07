@@ -91,6 +91,10 @@ class MapPopup extends React.Component {
 										<td>IAS</td>
 										<td>{this.state.info[5].toFixed(3)} kts</td>
 									</tr>
+									<tr>
+										<td>Altitude (MSL)</td>
+										<td>{this.state.info[6].toFixed(3)} ft</td>
+									</tr>
 								</tbody>
 							</Table>
 						</Popover.Content>
