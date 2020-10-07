@@ -65,6 +65,7 @@ public class LossOfControlCalculation{
 
 	/**
 	 * Creates an output filestream
+	 *
 	 * @param path the path of the file to write
 	 */
 	private void createFileOut(Path path){
@@ -134,7 +135,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getVspd(int index){
 		DoubleTimeSeries vspd = this.parameters.get(VSPD);
@@ -146,7 +147,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getIAS(int index){
 		DoubleTimeSeries ias = this.parameters.get(IAS);
@@ -158,7 +159,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getOAT(int index){
 		DoubleTimeSeries oat = this.parameters.get(OAT);
@@ -170,7 +171,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getBaroPress(int index){
 		DoubleTimeSeries press = this.parameters.get(BARO_A);
@@ -182,7 +183,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getTempRatio(int index){
 		return (273 + getOAT(index)) / 288;
@@ -193,7 +194,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getPressureRatio(int index){
 		return this.getBaroPress(index) / STD_PRESS_INHG;
@@ -204,7 +205,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getDensityRatio(int index){
 		return this.getPressureRatio(index) / this.getTempRatio(index);
@@ -215,7 +216,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
     private double getTrueAirspeed(int index){
         return this.getIAS(index) * Math.pow(this.getDensityRatio(index), -0.5);
@@ -226,7 +227,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getTrueAirspeedFtMin(int index){
 		return this.getTrueAirspeed(index) * (6076 / 60);
@@ -237,7 +238,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getVspdGeometric(int index){
 		return this.getVspd(index) * Math.pow(this.getDensityRatio(index), -0.5);
@@ -248,7 +249,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getFlightPathAngle(int index){
 		double fltPthAngle = Math.asin(this.getVspdGeometric(index) / this.getTrueAirspeedFtMin(index));
@@ -261,13 +262,20 @@ public class LossOfControlCalculation{
 	 *
 	 * @param index the index of the {@link DoubleTimeSeries} to access
 	 *
-	 * @return a double with the value at the given index
+	 * @return a double with the calculated value at the given index
 	 */
 	private double getAOASimple(int index){
 		DoubleTimeSeries pitch = this.parameters.get(PITCH);
 		return pitch.get(index) - this.getFlightPathAngle(index);
 	}
 
+	/**
+	 * Calculates the yaw rate at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getYawRate(int index){
 		DoubleTimeSeries hdg = this.parameters.get(HDG); 
 		double yawRate = 180 - Math.abs(180 - Math.abs(lag(hdg, index)) % 360);
@@ -275,41 +283,102 @@ public class LossOfControlCalculation{
 		return yawRate;
 	}
 
+	/**
+	 * Gets the roll comp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getRollComp(int index){
 		DoubleTimeSeries roll = this.parameters.get(ROLL);
 		return roll.get(index) * COMP_CONV;
 	}
 
+	/**
+	 * Gets the yaw comp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getYawComp(int index){
 		return this.getYawRate(index) * COMP_CONV;
 	}
 	
+	/**
+	 * Gets the VR comp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getVRComp(int index){
 		return ((this.getTrueAirspeedFtMin(index) / 60) * this.getYawComp(index));
 	}
 
+	/**
+	 * Gets the CT comp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getCTComp(int index){
 		return Math.sin(this.getRollComp(index)) * 32.2;
 	}
 
+	/**
+	 * Gets the cord comp at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getCordComp(int index){
 	  	return Math.abs(this.getCTComp(index) - this.getVRComp(index)) * 100;
 	}
 
+	/**
+	 * Gets the pro spin force at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double getProSpin(int index){
 	  	return Math.min((this.getCordComp(index) / proSpinLim), 100);
 	}
 
+	/**
+	 * Calculates the stall probability at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double calculateStallProbability(int index){
 	    double prob = Math.min(((Math.abs(this.getAOASimple(index) / AOACrit)) * 100), 100);
 	    return prob;
 	}
 
+	/**
+	 * Calculates the LOC-I probability at a given index
+	 *
+	 * @param index the index of the {@link DoubleTimeSeries} to access
+	 *
+	 * @return a double with the calculated value at the given index
+	 */
 	private double calculateProbability(int i){
 		double prob = (this.calculateStallProbability(i) * this.getProSpin(i)) / 100;
 		return prob;
 	}
 
+	/** 
+	 * Checks to see if the probabiliites for this flight have alreday been calculates
+	 *
+	 * @return a boolean representing the existence of the calculated values in the database
+	 */
 	public boolean alreadyCalculated(){
 		String queryString = "SELECT EXISTS(SELECT * FROM loci_processed WHERE fleet_id = ? and flight_id = ?)";
 		try{
@@ -329,6 +398,9 @@ public class LossOfControlCalculation{
 	}
 
 
+	/**
+	 * Updates the database table that keeps track of LOCI-Processed flights
+	 */
 	private void updateDatabase(){
 		String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
 		try{
@@ -344,6 +416,7 @@ public class LossOfControlCalculation{
 
 	/**
 	 * Calculates the loss of control probability
+	 *
 	 * @return a floating-point percentage of the probability of loss of control
 	 */
 	public void calculate(){
@@ -352,15 +425,19 @@ public class LossOfControlCalculation{
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
+		DoubleTimeSeries aoaSimp = new DoubleTimeSeries("AOASimple", "double");
 		DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
 
 		for(int i = 0; i<altAGL.size(); i++){
 			stallProbability.add(this.calculateStallProbability(i));
 			loci.add(this.calculateProbability(i));
+			aoaSimp.add(this.getAOASimple(i));
 		}
 
 		loci.updateDatabase(connection, this.flightId);  
 		stallProbability.updateDatabase(connection, this.flightId);
+		aoaSimp.updateDatabase(connection, this.flightId);
+
 		this.updateDatabase();
 
 		if(this.pw.isPresent()){
@@ -368,6 +445,12 @@ public class LossOfControlCalculation{
 		}
 	}
 
+	/**
+	 * Writes the data to a file for analysis purposes
+	 *
+	 * @param loci the loss of contorl {@link DoubleTimeSeries}
+	 * @param sProb the stall probability {@link DoubleTimeSeries}
+	 */
 	public void writeFile(DoubleTimeSeries loci, DoubleTimeSeries sProb){
 		PrintWriter pw = this.pw.get();
 		try{
@@ -388,6 +471,9 @@ public class LossOfControlCalculation{
 	}
 
 
+	/**
+	 * Writes usage information to standard error
+	 */
 	public static void displayHelp(){
 		System.err.println("USAGE: loci-calculator [fleet id] [OPTION]");
 		System.err.println("fleet_id: the id of the fleet to calculate flights for");
@@ -401,6 +487,9 @@ public class LossOfControlCalculation{
 		System.exit(0);
 	}
 
+	/**
+	 * Writes details about the calcualtion to standard error
+	 */
 	public void printDetails(){
 		System.err.println("\n\n");
 		System.err.println("------------ LOCI/Stall Probability CALCULATION INFO ------------");
@@ -412,6 +501,7 @@ public class LossOfControlCalculation{
 	
 	/**
 	 * Main method for running calculations
+	 *
 	 * @param args args from the command line, with the first being a filename for output
 	 */
 	public static void main(String [] args){
@@ -422,12 +512,12 @@ public class LossOfControlCalculation{
 
 		int fleetId = 1;
 
-		if(args.length < 1){
+		if (args.length < 1) {
 			displayHelp();
-		}else{
-			try{
+		} else {
+			try {
 				fleetId = Integer.parseInt(args[0]);
-			}catch(NumberFormatException e){
+			} catch(NumberFormatException e) {
 				System.err.println("FATAL ERROR: Make sure your first argument is the fleet id!");
 				System.exit(1);
 			}
@@ -437,7 +527,7 @@ public class LossOfControlCalculation{
 			if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")){
 				displayHelp();
 				System.exit(0);
-			}else if(args[i].equals("-f")) {
+			} else if(args[i].equals("-f")) {
 				if(i == args.length - 1) {
 					System.err.println("No arguments specified for -f option! Exiting!");
 					System.exit(1);
@@ -446,11 +536,11 @@ public class LossOfControlCalculation{
 				if(!Files.exists(path.get())) {
 					System.err.println("Non-existent filepath: "+path.get().toString()+", exiting!");
 					System.exit(1);
-				}else if(!new File(path.get().toUri()).isDirectory()){
+				} else if(!new File(path.get().toUri()).isDirectory()){
 					System.err.println("Filepath: "+path.get().toString()+" is not a directory, exiting!");
 					System.exit(1);
 				}
-			}else if(args[i].equals("-n")) {
+			} else if(args[i].equals("-n")) {
 				if(i == args.length - 1) {
 					System.err.println("No arguments specified for -n option! Exiting!");
 					System.exit(1);
@@ -460,7 +550,7 @@ public class LossOfControlCalculation{
 				String [] numsAsStrings = numbers.split(",");
 				int [] nums = new int[numsAsStrings.length];
 
-				for(int j = 0; j < nums.length; j++){
+				for(int j = 0; j < nums.length; j++) {
 					nums[j] = Integer.parseInt(numsAsStrings[j]);
 				}
 
