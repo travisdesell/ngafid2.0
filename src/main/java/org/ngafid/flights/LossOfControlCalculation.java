@@ -48,6 +48,7 @@ public class LossOfControlCalculation{
 	public LossOfControlCalculation(int fleetId, int flightId){ 
 		this.fleetId = fleetId;
 		this.flightId = flightId;
+		this.parameters = getParameters(flightId);
 		this.pw = Optional.empty();
 	}
 
@@ -60,6 +61,7 @@ public class LossOfControlCalculation{
 	 * */
 	public LossOfControlCalculation(int fleetId, int flightId, Path path){ 
 		this(fleetId, flightId);
+		//try to create a file output 
 		this.createFileOut(path);
 	}
 
@@ -124,8 +126,8 @@ public class LossOfControlCalculation{
 	 */
 	private double lag(DoubleTimeSeries series, int index){
 		double currIndex = series.get(index);
-		if(index < series.size() - 1){
-			return currIndex - series.get(index + 1);
+		if(index >= 1) {
+			return currIndex - series.get(index - 1);
 		}
 		return currIndex;
 	}
@@ -230,7 +232,7 @@ public class LossOfControlCalculation{
 	 * @return a double with the calculated value at the given index
 	 */
 	private double getTrueAirspeedFtMin(int index){
-		return this.getTrueAirspeed(index) * (6076 / 60);
+		return this.getTrueAirspeed(index) * ((double) 6076 / 60);
 	}
 
 	/**
@@ -347,7 +349,7 @@ public class LossOfControlCalculation{
 	 * @return a double with the calculated value at the given index
 	 */
 	private double getProSpin(int index){
-	  	return Math.min((this.getCordComp(index) / proSpinLim), 100);
+		return Math.min((this.getCordComp(index) / proSpinLim), 100);
 	}
 
 	/**
@@ -369,8 +371,8 @@ public class LossOfControlCalculation{
 	 *
 	 * @return a double with the calculated value at the given index
 	 */
-	private double calculateProbability(int i){
-		double prob = (this.calculateStallProbability(i) * this.getProSpin(i)) / 100;
+	private double calculateProbability(int index){
+		double prob = (this.calculateStallProbability(index) * this.getProSpin(index)) / 100;
 		return prob;
 	}
 
@@ -420,6 +422,7 @@ public class LossOfControlCalculation{
 	 * @return a floating-point percentage of the probability of loss of control
 	 */
 	public void calculate(){
+		System.out.println("calculating");
 		this.printDetails();
 		this.parameters = getParameters(this.flightId);
 
@@ -434,9 +437,9 @@ public class LossOfControlCalculation{
 			aoaSimp.add(this.getAOASimple(i));
 		}
 
-		loci.updateDatabase(connection, this.flightId);  
-		stallProbability.updateDatabase(connection, this.flightId);
-		aoaSimp.updateDatabase(connection, this.flightId);
+		//loci.updateDatabase(connection, this.flightId);  
+		//stallProbability.updateDatabase(connection, this.flightId);
+		//aoaSimp.updateDatabase(connection, this.flightId);
 
 		this.updateDatabase();
 
@@ -453,10 +456,11 @@ public class LossOfControlCalculation{
 	 */
 	public void writeFile(DoubleTimeSeries loci, DoubleTimeSeries sProb){
 		PrintWriter pw = this.pw.get();
+		System.out.println("printing to file");
 		try{
-			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:"+"\t\t\tAirspeed:");
+			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:"+"\t\t\tCord Comp:");
 			for(int i = 0; i<loci.size(); i++){
-				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i)+"\t\t\t"+this.getIAS(i));
+				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i)+"\t\t\t"+this.getYawComp(i));
 			}
 			pw.println("\n\nMaximum Values: ");
 			pw.println("Stall Probability: "+sProb.getMax()+" LOC-I: "+loci.getMax());
@@ -587,7 +591,9 @@ public class LossOfControlCalculation{
 				for(int i = 0; i < nums.length; i++){
 					LossOfControlCalculation loc = path.isPresent() ?
 						new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
-					if(!loc.notCalcuatable() && !loc.alreadyCalculated()) {
+					if(!loc.notCalcuatable() 
+							//&& !loc.alreadyCalculated()
+					){
 						loc.calculate();
 					}
 				}
