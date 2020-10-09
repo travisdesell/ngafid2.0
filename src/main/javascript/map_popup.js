@@ -95,6 +95,10 @@ class MapPopup extends React.Component {
 										<td>Altitude (MSL)</td>
 										<td>{this.state.info[6].toFixed(3)} ft</td>
 									</tr>
+									<tr>
+										<td>Angle of Attack (simple)</td>
+										<td>{this.state.info[7].toFixed(3)} ft</td>
+									</tr>
 								</tbody>
 							</Table>
 						</Popover.Content>
