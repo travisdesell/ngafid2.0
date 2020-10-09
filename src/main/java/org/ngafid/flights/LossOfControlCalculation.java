@@ -437,9 +437,9 @@ public class LossOfControlCalculation{
 			aoaSimp.add(this.getAOASimple(i));
 		}
 
-		//loci.updateDatabase(connection, this.flightId);  
-		//stallProbability.updateDatabase(connection, this.flightId);
-		//aoaSimp.updateDatabase(connection, this.flightId);
+		loci.updateDatabase(connection, this.flightId);  
+		stallProbability.updateDatabase(connection, this.flightId);
+		aoaSimp.updateDatabase(connection, this.flightId);
 
 		this.updateDatabase();
 
@@ -458,9 +458,9 @@ public class LossOfControlCalculation{
 		PrintWriter pw = this.pw.get();
 		System.out.println("printing to file");
 		try{
-			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:"+"\t\t\tCord Comp:");
+			pw.println("Index:\t\t\tStall Probability:\t\t\t\tLOC-I Probability:");
 			for(int i = 0; i<loci.size(); i++){
-				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i)+"\t\t\t"+this.getYawComp(i));
+				pw.println(i+"\t\t\t"+sProb.get(i)+"\t\t\t\t"+loci.get(i));
 			}
 			pw.println("\n\nMaximum Values: ");
 			pw.println("Stall Probability: "+sProb.getMax()+" LOC-I: "+loci.getMax());
@@ -520,7 +520,12 @@ public class LossOfControlCalculation{
 			displayHelp();
 		} else {
 			try {
-				fleetId = Integer.parseInt(args[0]);
+				String first = args[0];
+				if(first.equals("-h") || first.equals("--help")) {
+					displayHelp();
+				}
+
+				fleetId = Integer.parseInt(first);
 			} catch(NumberFormatException e) {
 				System.err.println("FATAL ERROR: Make sure your first argument is the fleet id!");
 				System.exit(1);
@@ -591,9 +596,7 @@ public class LossOfControlCalculation{
 				for(int i = 0; i < nums.length; i++){
 					LossOfControlCalculation loc = path.isPresent() ?
 						new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
-					if(!loc.notCalcuatable() 
-							//&& !loc.alreadyCalculated()
-					){
+					if(!loc.notCalcuatable() && !loc.alreadyCalculated()) {
 						loc.calculate();
 					}
 				}

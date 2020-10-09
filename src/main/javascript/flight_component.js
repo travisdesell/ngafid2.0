@@ -485,6 +485,7 @@ class Flight extends React.Component {
 			info.push(this.state.pitchData[index]);
 			info.push(this.state.iasData[index]);
 			info.push(this.state.mslData[index]);
+			info.push(this.state.aoaData[index]);
 
 			mapPopup.show(info, pixel);
 		}
@@ -673,6 +674,27 @@ class Flight extends React.Component {
 				success : function(response) {
 					console.log("got stall prob. dts response");
 					thisFlight.state.mslData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var submissionData = {
+				seriesName : "AOASimple",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.aoaData = response.y;
 				},   
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
