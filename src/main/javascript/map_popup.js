@@ -97,7 +97,7 @@ class MapPopup extends React.Component {
 									</tr>
 									<tr>
 										<td>Angle of Attack (simple)</td>
-										<td>{this.state.info[7].toFixed(3)} ft</td>
+										<td>{this.state.info[7].toFixed(3)}</td>
 									</tr>
 								</tbody>
 							</Table>
