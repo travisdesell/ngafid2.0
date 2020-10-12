@@ -436,13 +436,13 @@ class Flight extends React.Component {
 	 * @param type which type of download (xplane, csv etc)
 	 */
     downloadClicked(type) {
-        if(type === 'KML'){
+        if (type === 'KML') {
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
-        }else if (type === 'XPL10'){
-			selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
-        }else if (type === 'XPL11'){
-			selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
-        }else if(type === 'CSV'){
+        } else if (type === 'XPL10') {
+		    selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
+        } else if (type === 'XPL11') {
+		    selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
+        } else if(type === 'CSV') {
             window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
 		}
     }
