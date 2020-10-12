@@ -4,6 +4,10 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Popover from 'react-bootstrap/Popover';
 import Table from 'react-bootstrap/Table';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import Button from 'react-bootstrap/Button';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -22,7 +26,7 @@ class MapPopup extends React.Component {
         };
     }
 
-    show(info, pixel) {
+    show(info, pixel, target, closeMethod) {
 		let title = "";
 
 		if(info[0] === "PLOCI"){
@@ -36,9 +40,20 @@ class MapPopup extends React.Component {
 			on : '',
 			info : info,
 			placement : pixel,
+			lineSeg : target,
+			closePopup : closeMethod,
 			title : title
 		});
     }
+
+	close() {
+		console.log("closing the popup!");
+		this.state.closePopup();
+	}
+
+	pin() {
+		console.log("pinning the popup!");
+	}
 
     render() {
 		console.log("rendering a map popup with info:");
@@ -57,7 +72,23 @@ class MapPopup extends React.Component {
 						id="popover-basic"
 						style={style}
 					>
-						<Popover.Title as="h3"> Flight Metric Details </Popover.Title>
+						<Popover.Title as="h3"> 
+							<Container>
+								<Row>
+									<Col sm={7}>Filght Metrics</Col>
+									<Col sm={2}>
+										<Button variant="outline-secondary" size="sm">
+											<i className="fa fa-thumb-tack p-1"></i>
+										</Button>
+									</Col>
+									<Col sm={2}>
+										<Button data-dismiss='modal' onClick={() => this.close()} variant="outline-secondary" size="sm">
+											<i className="fa fa-times p-1"></i>
+										</Button>
+									</Col>
+								</Row>
+							</Container>
+						</Popover.Title>
 						<Popover.Content> 
 							<Table striped bordered hover size="sm">
 								<thead>

@@ -107,6 +107,7 @@ class Flight extends React.Component {
 
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
 		this.displayParameters = this.displayParameters.bind(this);
+		this.closeParamDisplay = this.closeParamDisplay.bind(this);
     }
 	
 
@@ -462,6 +463,10 @@ class Flight extends React.Component {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
 
+	closeParamDisplay() {
+		console.log("popup closed!");
+	}
+
 	displayParameters(event){
 		var pixel = event.pixel;
 		var features = [];
@@ -477,7 +482,7 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
-			
+
 			info.push(index);
 			info.push(this.state.sProbs[index]);
 			info.push(this.state.lProbs[index]);
@@ -487,7 +492,7 @@ class Flight extends React.Component {
 			info.push(this.state.mslData[index]);
 			info.push(this.state.aoaData[index]);
 
-			mapPopup.show(info, pixel);
+			mapPopup.show(info, pixel, target, this.closeParamDisplay);
 		}
 	}
 
