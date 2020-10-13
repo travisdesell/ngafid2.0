@@ -4,7 +4,7 @@
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella</a>
  */
 
-package org.ngafid.common;
+package org.ngafid.flights;
 
 import java.io.File;
 import java.io.InputStream;
@@ -21,12 +21,8 @@ import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.Upload;
-
 public class CSVWriter{
     private File file;
-    private String directoryRoot;
 	private Flight flight;
 	private ZipEntry entry;
 	private ZipFile zipArchive;
@@ -41,8 +37,8 @@ public class CSVWriter{
     public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
         System.out.println("creating file from: '" + directoryRoot + "'");
 
-		File root = new File(directoryRoot);
-		File[] dirs = root.listFiles();
+		//File root = new File(directoryRoot);
+		//File[] dirs = root.listFiles();
 
 		this.flight = flight;
 
