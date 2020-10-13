@@ -97,6 +97,7 @@ public class LossOfControlCalculation{
 			for(String param : dtsParamStrings) {
 				DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, param);
 				if(series == null){
+					System.err.println("WARNING: " + series + " data was not defined for flight #" + flightId);
 					return null;
 				} else {
 					params.put(param, series);
@@ -114,7 +115,11 @@ public class LossOfControlCalculation{
 	 * @return true if it is calculatable, false otherwise
 	 */
 	public boolean notCalcuatable(){
-		return this.parameters == null;
+		if (this.parameters == null) {
+			System.err.println("ERROR: flight #" + this.flightId + " is not calculatable for loss of control/stall prob, skipping!");
+			return true;
+		}
+		return false;
 	}
 
 	/**
