@@ -112,23 +112,31 @@ class MapPopup extends React.Component {
 									</tr>
 									<tr>
 										<td>Roll</td>
-										<td>{this.state.info[3].toFixed(3)}</td>
+										<td>{this.state.info[3].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>Pitch</td>
-										<td>{this.state.info[4].toFixed(3)}</td>
+										<td>{this.state.info[4].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>IAS</td>
-										<td>{this.state.info[5].toFixed(3)} kts</td>
+										<td>{this.state.info[5].toFixed(1)} kts</td>
 									</tr>
 									<tr>
 										<td>Altitude (MSL)</td>
-										<td>{this.state.info[6].toFixed(3)} ft</td>
+										<td>{this.state.info[6].toFixed(1)} ft</td>
+									</tr>
+									<tr>
+										<td>Altitude (AGL)</td>
+										<td>{this.state.info[7].toFixed(1)} ft</td>
 									</tr>
 									<tr>
 										<td>Angle of Attack (simple)</td>
-										<td>{this.state.info[7].toFixed(3)}</td>
+										<td>{this.state.info[8].toFixed(1)}</td>
+									</tr>
+									<tr>
+										<td>Engine 1 RPM</td>
+										<td>{this.state.info[9].toFixed(1)}</td>
 									</tr>
 								</tbody>
 							</Table>

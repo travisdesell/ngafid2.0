@@ -490,7 +490,9 @@ class Flight extends React.Component {
 			info.push(this.state.pitchData[index]);
 			info.push(this.state.iasData[index]);
 			info.push(this.state.mslData[index]);
+			info.push(this.state.aglData[index]);
 			info.push(this.state.aoaData[index]);
+			info.push(this.state.rpmData[index]);
 
 			mapPopup.show(info, pixel, target, this.closeParamDisplay);
 		}
@@ -700,6 +702,48 @@ class Flight extends React.Component {
 				success : function(response) {
 					console.log("got stall prob. dts response");
 					thisFlight.state.aoaData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var submissionData = {
+				seriesName : "E1 RPM",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.rpmData = response.y;
+				},   
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: true 
+			});  
+
+			var submissionData = {
+				seriesName : "AltAGL",
+                flightId : this.props.flightInfo.id
+            };
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/double_series',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got stall prob. dts response");
+					thisFlight.state.aglData = response.y;
 				},   
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
