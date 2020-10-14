@@ -786,7 +786,8 @@ class Flight extends React.Component {
                                     name: 'TrackingPoint'
                                 });
 
-					let layers = new Array();
+					thisFlight.state.layers = new Array();
+					let layers = thisFlight.state.layers;
 
 					var baseLayer = new VectorLayer({
 						name : 'Itinerary' ,
@@ -1058,10 +1059,10 @@ class Flight extends React.Component {
             this.state.itineraryVisible = !this.state.itineraryVisible;
 
 			console.log("already rendered");
-			console.log(this.props.layers);
+			console.log(this.state.layers);
 
-			for (let i = 0; i < this.props.layers.length; i++) {
-				let layer = this.props.layers[i];
+			for (let i = 0; i < this.state.layers.length; i++) {
+				let layer = this.state.layers[i];
 				console.log(layer);
 				if (layer.values_.visible) {
 					layer.setVisible(this.state.pathVisible);
