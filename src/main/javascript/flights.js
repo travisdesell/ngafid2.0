@@ -365,10 +365,10 @@ class FlightsPage extends React.Component {
 
     mapLayerChanged(style) {
 		console.log("changing path to: "+style);
-		console.log(this.state.layers);
+		console.log(this.state.selectableLayers);
 
-		for(let i = 0; i < this.state.layers.length; i++){
-			let layer = this.state.layers[i];
+		for(let i = 0; i < this.state.selectableLayers.length; i++){
+			let layer = this.state.selectableLayers[i];
 			let name = layer.values_.name;
 			
 			if(name == style) {
@@ -570,6 +570,14 @@ class FlightsPage extends React.Component {
         });  
     }
 
+	setAvailableLayers(plotLayers) {
+		console.log("changing selectable layers on navbar");
+		console.log(plotLayers);
+
+		this.state.selectableLayers = plotLayers;
+		this.setState(this.state);
+	}
+
     render() {
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -591,6 +599,7 @@ class FlightsPage extends React.Component {
             <div>
                 <SignedInNavbar 
                     activePage="flights"
+					selectableLayers={this.state.selectableLayers}
                     filterVisible={this.state.filterVisible}
                     plotVisible={this.state.plotVisible}
                     mapVisible={this.state.mapVisible}
@@ -651,6 +660,7 @@ class FlightsPage extends React.Component {
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}
                         flights={this.state.flights}
+						setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {
                             this.setState({
                                 flights : flights

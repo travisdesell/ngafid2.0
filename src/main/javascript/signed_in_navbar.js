@@ -161,19 +161,19 @@ class SignedInNavbar extends React.Component {
                                     <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
                                 </select>
 
-                                <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Select data type" aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled>
-                                        <i className="fa fa-database p-1"></i>
-                                    </button>
-                                </div>
-                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
-                                    value={this.props.mapStyle}
-                                    onChange={event => this.props.mapLayerChanged(event.target.value)}>
-
-                                    <option value="Itinerary">Itinerary with Phases</option>
-                                    <option value="PStall">Stall Probability</option>
-                                    <option value="PLOCI">Loss of Control Probability</option>
-                                </select>
+									{this.props.selectableLayers != null &&
+										<select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+											value={this.props.mapStyle}
+											onChange={event => this.props.mapLayerChanged(event.target.value)}>
+											{
+												this.props.selectableLayers.map((layer, index) => {
+													return (
+														<option value={layer.values_.name}>{layer.values_.description}</option>
+													);
+												})
+											}
+										</select>
+									}
 
                             </div>
                         </ul>

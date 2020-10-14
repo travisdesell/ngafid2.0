@@ -67,7 +67,7 @@ class FlightsCard extends React.Component {
                             if(flightInfo != null) {
                                 return (
                                     <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} flightInfo={flightInfo} pageIndex={index}
-                                        updateParentState={(newFlights) => this.props.setFlights(newFlights)}
+                                        updateParentState={(newFlights) => this.props.setFlights(newFlights)} setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
                                         parent={this} layers={this.props.layers} tags={flightInfo.tags.value} key={flightInfo.id}/>
                                 );
                             }

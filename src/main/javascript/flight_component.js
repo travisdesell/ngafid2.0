@@ -19,7 +19,7 @@ import { Itinerary } from './itinerary_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
 import { Tags } from './tags_component.js';
 import { Events } from './events_component.js';
-import { selectAircraftModal } from './select_acft_modal';
+import { selectAircraftModal } from './select_acft_modal.js';
 
 import Plotly from 'plotly.js';
 
@@ -786,10 +786,11 @@ class Flight extends React.Component {
                                     name: 'TrackingPoint'
                                 });
 
-					let layers = thisFlight.props.layers;
+					let layers = new Array();
 
 					var baseLayer = new VectorLayer({
 						name : 'Itinerary' ,
+						description : 'Itinerary with Phases',
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
@@ -951,22 +952,24 @@ class Flight extends React.Component {
 
 
                     // create itineraryLayer
-                    layers.push(new VectorLayer({
-						name : 'Itinerary' ,
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [1,1,1,1],
-                                width: 3
-                            })
-                        }),
+                    //layers.push(new VectorLayer({
+						//name : 'Itinerary' ,
+						//description : 'Itinerary with Phases' ,
+                        //style: new Style({
+                            //stroke: new Stroke({
+                                //color: [1,1,1,1],
+                                //width: 3
+                            //})
+                        //}),
 
-                        source : new VectorSource({
-                            features: flight_phases
-                        })
-                    }));
+                        //source : new VectorSource({
+                            //features: flight_phases
+                        //})
+                    //}));
 
 					layers.push(new VectorLayer({
 						name : 'PLOCI' ,
+						description : 'Loss of Control Probability' ,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
@@ -981,6 +984,7 @@ class Flight extends React.Component {
 
 					layers.push(new VectorLayer({
 						name : 'PStall' ,
+						description : 'Stall Probability',
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
@@ -994,7 +998,6 @@ class Flight extends React.Component {
                     }));
 
 					console.log("adding layers!");
-					console.log(thisFlight.props.layers);
 					for(let i = 0; i < layers.length; i++){
 						let layer = layers[i];
 						console.log(layer);
@@ -1006,6 +1009,9 @@ class Flight extends React.Component {
 						}
 						map.addLayer(layer);
 					}
+
+					console.log(layers);
+					thisFlight.props.setAvailableLayers(layers);
 
 					console.log("added layers");
 					console.log(map.getLayers());
@@ -1050,8 +1056,17 @@ class Flight extends React.Component {
             //toggle visibility if already loaded
             this.state.pathVisible = !this.state.pathVisible;
             this.state.itineraryVisible = !this.state.itineraryVisible;
-            this.state.layer.setVisible(this.state.pathVisible);
 
+			console.log("already rendered");
+			console.log(this.props.layers);
+
+			for (let i = 0; i < this.props.layers.length; i++) {
+				let layer = this.props.layers[i];
+				console.log(layer);
+				if (layer.values_.visible) {
+					layer.setVisible(this.state.pathVisible);
+				}
+			}
 
             // toggle visibility of events
             if (this.state.eventLayer != null) {

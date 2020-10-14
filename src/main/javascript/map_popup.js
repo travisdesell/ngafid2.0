@@ -91,12 +91,14 @@ class MapPopup extends React.Component {
 						</Popover.Title>
 						<Popover.Content> 
 							<Table striped bordered hover size="sm">
+
 								<thead>
 									<tr>
 										<th>Metric Name</th>
 										<th>Data</th>
 									</tr>
 								</thead>
+				
 								<tbody>
 									<tr>
 										<td>Time Index (s):</td>
@@ -139,6 +141,7 @@ class MapPopup extends React.Component {
 										<td>{this.state.info[9].toFixed(1)}</td>
 									</tr>
 								</tbody>
+
 							</Table>
 						</Popover.Content>
 					</Popover>
