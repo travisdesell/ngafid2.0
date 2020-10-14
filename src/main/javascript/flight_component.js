@@ -95,6 +95,7 @@ class Flight extends React.Component {
             itineraryVisible : false,
             tags : props.tags,
             parent : props.parent,
+			selectedPlot : null,
             color : color,
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
@@ -1004,6 +1005,7 @@ class Flight extends React.Component {
 						console.log(layer);
 						if(layer.values_.name == 'Itinerary') {
 							//Itinerary will be the default layer
+							thisFlight.state.selectedPlot = layer.values_.name;
 							layer.setVisible(true);
 						} else {
 							layer.setVisible(false);
@@ -1064,8 +1066,11 @@ class Flight extends React.Component {
 			for (let i = 0; i < this.state.layers.length; i++) {
 				let layer = this.state.layers[i];
 				console.log(layer);
-				if (layer.values_.visible) {
-					layer.setVisible(this.state.pathVisible);
+				if (layer.values_.visible && !this.state.pathVisible) {
+					this.state.selectedPlot = layer.values_.name;
+					layer.setVisible(false);
+				} else if (layer.values_.name === this.state.selectedPlot && this.state.pathVisible) {
+					layer.setVisible(true);
 				}
 			}
 
