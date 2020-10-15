@@ -2,7 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
-import { mapPopup } from "./map_popup.js";
+import { MapPopup } from "./map_popup.js";
 
 import { map, styles, layers, Colors } from "./map.js";
 
@@ -495,7 +495,19 @@ class Flight extends React.Component {
 			info.push(this.state.aoaData[index]);
 			info.push(this.state.rpmData[index]);
 
-			mapPopup.show(info, pixel, target, this.closeParamDisplay);
+			var popupProps = {
+				pixel : pixel,
+				on : '',
+				info : info,
+				placement : pixel,
+				lineSeg : target,
+				closePopup : this.closeParamDisplay(),
+				title : 'title'
+			};
+
+			var mapPopup = React.createElement(MapPopup, popupProps);
+			mapPopup = ReactDOM.render(mapPopup, document.querySelector('#map_popup_content'));
+			//mapPopup.show(info, pixel, target, this.closeParamDisplay);
 		}
 	}
 

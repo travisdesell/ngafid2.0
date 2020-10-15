@@ -20,7 +20,7 @@ class MapPopup extends React.Component {
 
         this.state = {
 			navbarWidth : 40,
-			on : 'none',
+			status : 'none',
 			info : "",
 			placement : []
         };
@@ -48,24 +48,30 @@ class MapPopup extends React.Component {
 
 	close() {
 		console.log("closing the popup!");
-		this.state.closePopup();
+		this.setState({status : 'none'});
+		this.props.closePopup();
+	}
+
+	isPinned() {
+		return this.state.pinned;
 	}
 
 	pin() {
 		console.log("pinning the popup!");
+		this.setState({status : 'pinned'});
 	}
 
     render() {
 		console.log("rendering a map popup with info:");
-		console.log(this.state.info);
+		console.log(this.props.info);
 
 		var style = {
-			top : this.state.placement[1] + this.state.navbarWidth,
-			left : this.state.placement[0],
-			display : this.state.on
+			top : this.props.placement[1] + this.state.navbarWidth,
+			left : this.props.placement[0],
+			display : this.props.on
 		}
 
-		if(this.state.on !== "none"){
+		if(this.props.status !== "none"){
 			return (
 				<div style={{ height: 120 }}>
 					<Popover
@@ -102,43 +108,43 @@ class MapPopup extends React.Component {
 								<tbody>
 									<tr>
 										<td>Time Index (s):</td>
-										<td>{this.state.info[0]}</td>
+										<td>{this.props.info[0]}</td>
 									</tr>
 									<tr>
 										<td>Stall Probability:</td>
-										<td>{this.state.info[1].toFixed(2)}</td>
+										<td>{(this.props.info[1] / 100).toFixed(2)}</td>
 									</tr>
 									<tr>
 										<td>LOC-I Probability:</td>
-										<td>{this.state.info[2].toFixed(2)}</td>
+										<td>{(this.props.info[2] / 100).toFixed(2)}</td>
 									</tr>
 									<tr>
 										<td>Roll</td>
-										<td>{this.state.info[3].toFixed(1)}</td>
+										<td>{this.props.info[3].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>Pitch</td>
-										<td>{this.state.info[4].toFixed(1)}</td>
+										<td>{this.props.info[4].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>IAS</td>
-										<td>{this.state.info[5].toFixed(1)} kts</td>
+										<td>{this.props.info[5].toFixed(1)} kts</td>
 									</tr>
 									<tr>
 										<td>Altitude (MSL)</td>
-										<td>{this.state.info[6].toFixed(1)} ft</td>
+										<td>{this.props.info[6].toFixed(1)} ft</td>
 									</tr>
 									<tr>
 										<td>Altitude (AGL)</td>
-										<td>{this.state.info[7].toFixed(1)} ft</td>
+										<td>{this.props.info[7].toFixed(1)} ft</td>
 									</tr>
 									<tr>
 										<td>Angle of Attack (simple)</td>
-										<td>{this.state.info[8].toFixed(1)}</td>
+										<td>{this.props.info[8].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>Engine 1 RPM</td>
-										<td>{this.state.info[9].toFixed(1)}</td>
+										<td>{this.props.info[9].toFixed(1)}</td>
 									</tr>
 								</tbody>
 
@@ -153,9 +159,4 @@ class MapPopup extends React.Component {
     }
 }
 
-var mapPopup = ReactDOM.render(
-    <MapPopup />,
-    document.querySelector("#map_popup_content")
-);
-
-export { mapPopup };
+export { MapPopup };
