@@ -20,7 +20,7 @@ class MapPopup extends React.Component {
 
         this.state = {
 			navbarWidth : 40,
-			status : 'none',
+			status : '',
 			info : "",
 			placement : []
         };
@@ -49,7 +49,6 @@ class MapPopup extends React.Component {
 	close() {
 		console.log("closing the popup!");
 		this.setState({status : 'none'});
-		this.props.closePopup();
 	}
 
 	isPinned() {
@@ -71,7 +70,7 @@ class MapPopup extends React.Component {
 			display : this.props.on
 		}
 
-		if(this.props.status !== "none"){
+		if(this.state.status !== "none"){
 			return (
 				<div style={{ height: 120 }}>
 					<Popover

@@ -484,7 +484,6 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
-			let popups = this.state.mapPopups;
 
 			info.push(index);
 			info.push(this.state.sProbs[index]);
@@ -498,7 +497,6 @@ class Flight extends React.Component {
 			info.push(this.state.rpmData[index]);
 
 			var popupProps = {
-				key : popups.length,
 				pixel : pixel,
 				on : '',
 				info : info,
@@ -508,15 +506,35 @@ class Flight extends React.Component {
 				title : 'title'
 			};
 
-			console.log("popups list:");
-			console.log(popups);
-			console.log(MapPopup);
-			var htm = document.createElement('div');
-			document.body.appendChild(htm);
-			popups.push(ReactDOM.render(React.createElement(MapPopup, popupProps), htm));
+			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
+			
+			console.log("populating popup:");
+			console.log(popup);
+
 		}
 	}
 
+	/**
+	 * Recursively find a vacant (unpinned) popup or create a new one
+	 */
+	renderNewPopup(index, props) {
+		if (index < 0 || this.state.mapPopups[index] == null) {
+			//if we reach the bottom of the stack, we must allocate memory for a new popup component
+			var htm = document.createElement('div');
+			document.body.appendChild(htm);
+			var popup = ReactDOM.render(React.createElement(MapPopup, props), htm);
+			htm.setAttribute("id", "popover" + this.state.mapPopups.length);
+			this.state.mapPopups.push(popup);
+			return popup;
+		} else if (this.state.mapPopups[index].isPinned()) {
+			return this.renderNewPopup(index - 1, props);
+		} else {
+			let element = "popover" + index;
+			var popup = ReactDOM.render(React.createElement(MapPopup, props), document.getElementById(element));
+			return popup;
+		}
+
+	}
 
     tagClicked() {
         console.log("tag clicked!");
