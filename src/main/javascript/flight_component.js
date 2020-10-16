@@ -97,6 +97,7 @@ class Flight extends React.Component {
             parent : props.parent,
 			selectedPlot : null,
             color : color,
+			mapPopups : [],
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -483,6 +484,7 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
+			let popups = this.state.mapPopups;
 
 			info.push(index);
 			info.push(this.state.sProbs[index]);
@@ -496,6 +498,7 @@ class Flight extends React.Component {
 			info.push(this.state.rpmData[index]);
 
 			var popupProps = {
+				key : popups.length,
 				pixel : pixel,
 				on : '',
 				info : info,
@@ -505,9 +508,12 @@ class Flight extends React.Component {
 				title : 'title'
 			};
 
-			var mapPopup = React.createElement(MapPopup, popupProps);
-			mapPopup = ReactDOM.render(mapPopup, document.querySelector('#map_popup_content'));
-			//mapPopup.show(info, pixel, target, this.closeParamDisplay);
+			console.log("popups list:");
+			console.log(popups);
+			console.log(MapPopup);
+			var htm = document.createElement('div');
+			document.body.appendChild(htm);
+			popups.push(ReactDOM.render(React.createElement(MapPopup, popupProps), htm));
 		}
 	}
 

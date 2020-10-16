@@ -53,7 +53,7 @@ class MapPopup extends React.Component {
 	}
 
 	isPinned() {
-		return this.state.pinned;
+		return this.state.status === 'pinned';
 	}
 
 	pin() {
@@ -83,12 +83,12 @@ class MapPopup extends React.Component {
 								<Row>
 									<Col sm={7}>Filght Metrics</Col>
 									<Col sm={2}>
-										<Button variant="outline-secondary" size="sm">
+										<Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
 											<i className="fa fa-thumb-tack p-1"></i>
 										</Button>
 									</Col>
 									<Col sm={2}>
-										<Button data-dismiss='modal' onClick={() => this.close()} variant="outline-secondary" size="sm">
+										<Button onClick={() => this.close()} variant="outline-secondary" size="sm">
 											<i className="fa fa-times p-1"></i>
 										</Button>
 									</Col>
