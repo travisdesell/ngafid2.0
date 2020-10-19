@@ -93,6 +93,7 @@ class Flight extends React.Component {
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
+			points : [],
             tags : props.tags,
             parent : props.parent,
 			selectedPlot : null,
@@ -472,8 +473,8 @@ class Flight extends React.Component {
 
 	zoomChanged(oldZoom) {
 		let currZoom = map.getView().getZoom();
-		console.log("old zoom: "+oldZoom);
-		console.log("current zoom: "+currZoom);
+		console.log("old zoom: " + oldZoom);
+		console.log("current zoom: " + currZoom);
 
 		for(let i = 0; i < this.state.mapPopups.length; i++) {
 			this.state.mapPopups[i].close();
@@ -495,6 +496,7 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
+			console.log(index);
 
 			info.push(index);
 			info.push(this.state.sProbs[index]);
@@ -507,35 +509,6 @@ class Flight extends React.Component {
 			info.push(this.state.aoaData[index]);
 			info.push(this.state.rpmData[index]);
 
-
-			var pinLayer = new VectorLayer({
-				name : 'Pin' ,
-				style: new Style({
-					image: new Circle({
-						geometry: pixel.geometry,
-						radius: 5,
-						//fill: new Fill({color: [0, 0, 0, 255]}),
-						stroke: new Stroke({
-							color: '#000000',
-							width: 6
-						})
-					})
-				}),
-
-				source : new VectorSource({
-					features: [
-						new Feature({
-							geometry: pixel.geometry,
-							name: 'Line'
-						})
-					]
-				})
-			});
-
-			console.log(pinLayer);
-
-			map.addLayer(pinLayer);
-			pinLayer.setVisible(true);
 
 			var popupProps = {
 				pixel : pixel,
@@ -550,6 +523,37 @@ class Flight extends React.Component {
 
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
 			
+			let ls = new LineString(this.state.points.slice(index, index+2));
+			console.log(ls);
+			var pinLayer = new VectorLayer({
+				name : 'Pin' ,
+				id : pixel,
+				style: new Style({
+					stroke: new Stroke({
+						color: '#347deb',
+						width: 15,
+						image: new Circle({
+							radius: 6,
+							fill: new Fill({color: [0, 0, 0, 255]}),
+						})
+					}),
+				}),
+
+				source : new VectorSource({
+					features: [
+						new Feature({
+							geometry: ls,
+							name: 'Circle'
+						})
+					]
+				})
+			});
+
+			console.log("pin layer:");
+			console.log(pinLayer);
+
+			map.addLayer(pinLayer);
+			pinLayer.setVisible(true);
 			console.log("populating popup:");
 			console.log(popup);
 
@@ -854,7 +858,7 @@ class Flight extends React.Component {
 
                     var coordinates = response.coordinates;
 
-                    var points = [];
+					let points = thisFlight.state.points;
                     for (var i = 0; i < coordinates.length; i++) {
                         var point = fromLonLat(coordinates[i]);
                         points.push(point);
