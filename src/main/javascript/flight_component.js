@@ -8,8 +8,8 @@ import { map, styles, layers, Colors } from "./map.js";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import Overlay from 'ol/Overlay';
-import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
+import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
@@ -496,15 +496,46 @@ class Flight extends React.Component {
 			info.push(this.state.aoaData[index]);
 			info.push(this.state.rpmData[index]);
 
+
+			var pinLayer = new VectorLayer({
+				name : 'Pin' ,
+				style: new Style({
+					image: new Circle({
+						geometry: pixel.geometry,
+						radius: 5,
+						//fill: new Fill({color: [0, 0, 0, 255]}),
+						stroke: new Stroke({
+							color: '#000000',
+							width: 6
+						})
+					})
+				}),
+
+				source : new VectorSource({
+					features: [
+						new Feature({
+							geometry: pixel.geometry,
+							name: 'Line'
+						})
+					]
+				})
+			});
+
+			console.log(pinLayer);
+
+			map.addLayer(pinLayer);
+			pinLayer.setVisible(true);
+
 			var popupProps = {
 				pixel : pixel,
-				on : '',
+				status : '',
 				info : info,
 				placement : pixel,
 				lineSeg : target,
 				closePopup : this.closeParamDisplay(),
 				title : 'title'
 			};
+
 
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
 			
@@ -519,18 +550,21 @@ class Flight extends React.Component {
 	 */
 	renderNewPopup(index, props) {
 		if (index < 0 || this.state.mapPopups[index] == null) {
-			//if we reach the bottom of the stack, we must allocate memory for a new popup component
-			var htm = document.createElement('div');
-			document.body.appendChild(htm);
-			var popup = ReactDOM.render(React.createElement(MapPopup, props), htm);
-			htm.setAttribute("id", "popover" + this.state.mapPopups.length);
+			// if we reach the bottom of the stack, we must allocate memory for a new popup component
+			var outterHTM = document.createElement('div');
+			document.body.appendChild(outterHTM);
+			var popup = ReactDOM.render(React.createElement(MapPopup, props), outterHTM);
+			outterHTM.setAttribute("id", "popover" + this.state.mapPopups.length);
 			this.state.mapPopups.push(popup);
 			return popup;
 		} else if (this.state.mapPopups[index].isPinned()) {
+			// skip reallocating an existing popup if it is pinned
 			return this.renderNewPopup(index - 1, props);
 		} else {
+			console.log("using existing popup to render!");
 			let element = "popover" + index;
 			var popup = ReactDOM.render(React.createElement(MapPopup, props), document.getElementById(element));
+			popup.show(); // we must call show in case the popup was closed before
 			return popup;
 		}
 
