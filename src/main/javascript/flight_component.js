@@ -110,6 +110,7 @@ class Flight extends React.Component {
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
 		this.displayParameters = this.displayParameters.bind(this);
 		this.closeParamDisplay = this.closeParamDisplay.bind(this);
+		this.zoomChanged = this.zoomChanged.bind(this);
     }
 	
 
@@ -467,6 +468,16 @@ class Flight extends React.Component {
 
 	closeParamDisplay() {
 		console.log("popup closed!");
+	}
+
+	zoomChanged(oldZoom) {
+		let currZoom = map.getView().getZoom();
+		console.log("old zoom: "+oldZoom);
+		console.log("current zoom: "+currZoom);
+
+		for(let i = 0; i < this.state.mapPopups.length; i++) {
+			this.state.mapPopups[i].close();
+		}
 	}
 
 	displayParameters(event){
@@ -1090,6 +1101,8 @@ class Flight extends React.Component {
 					console.log(map.getLayers());
 					map.on('click', thisFlight.displayParameters); 
 
+					var currZoom = map.getView().getZoom();
+					map.on('moveend', () => thisFlight.zoomChanged(currZoom));
                     // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
