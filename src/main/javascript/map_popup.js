@@ -26,24 +26,8 @@ class MapPopup extends React.Component {
         };
     }
 
-    show(info, pixel, target, closeMethod) {
-		let title = "";
-
-		if(info[0] === "PLOCI"){
-			title = "Loss of Control Probability Details";
-		} else {
-			title = "Stall Probability Details";
-		}
-
-		this.setState({
-			pixel : pixel,
-			on : '',
-			info : info,
-			placement : pixel,
-			lineSeg : target,
-			closePopup : closeMethod,
-			title : title
-		});
+    show() {
+		this.setState({status : ""});
     }
 
 	close() {
@@ -56,8 +40,13 @@ class MapPopup extends React.Component {
 	}
 
 	pin() {
-		console.log("pinning the popup!");
-		this.setState({status : 'pinned'});
+		if (this.state.status == 'pinned') {
+			console.log("unpinning the popup!")
+			this.setState({status : 'none'});
+		} else {
+			console.log("pinning the popup!");
+			this.setState({status : 'pinned'});
+		}
 	}
 
     render() {
