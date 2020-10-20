@@ -207,7 +207,7 @@ class Flight extends React.Component {
                      * Roll
                      * Vertical Speed
                      */
-                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd"];
+                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOCI", "StallProbability"];
                     var commonTraceNames = [];
                     var uncommonTraceNames = [];
 
@@ -496,7 +496,9 @@ class Flight extends React.Component {
 
 		if (target != null) {
 			let index = target.getId();
+			console.log("target info:");
 			console.log(index);
+			console.log(target);	
 
 			info.push(index);
 			info.push(this.state.sProbs[index]);
@@ -522,41 +524,56 @@ class Flight extends React.Component {
 
 
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
-			
-			let ls = new LineString(this.state.points.slice(index, index+2));
-			console.log(ls);
-			var pinLayer = new VectorLayer({
-				name : 'Pin' ,
-				id : pixel,
-				style: new Style({
-					stroke: new Stroke({
-						color: '#347deb',
-						width: 15,
-						image: new Circle({
-							radius: 6,
-							fill: new Fill({color: [0, 0, 0, 255]}),
-						})
+			if (target.values_.name !== 'Pin') {
+				let ls = new LineString(this.state.points.slice(index, index+2));
+				console.log(ls);
+
+				let feat = new Feature({
+					geometry: ls,
+					name: 'Pin',
+				});
+
+				let stroke =  new Stroke({
+					color: '#347deb',
+					width: 15,
+					image: new Circle({
+						radius: 6,
+					})
+				});
+
+				feat.setId(index);
+
+				var pinLayer = new VectorLayer({
+					name : 'Pin' ,
+					style: new Style({
+						stroke : stroke
 					}),
-				}),
 
-				source : new VectorSource({
-					features: [
-						new Feature({
-							geometry: ls,
-							name: 'Circle'
-						})
-					]
-				})
-			});
+					source : new VectorSource({
+						features: [
+							feat
+						]
+					})
+				});
+			} else {
+				console.log("pin already rendered");
+				//target.setStyle({
+					//stroke : new Stroke({
+						//color: '#756fff',
+						//width: 15,
+						//image: new Circle({
+							//radius: 6,
+						//})
+					//})
+				//});
 
-			console.log("pin layer:");
-			console.log(pinLayer);
+				console.log(target);
+			}
+
+			//pinLayer.setId(index);
 
 			map.addLayer(pinLayer);
 			pinLayer.setVisible(true);
-			console.log("populating popup:");
-			console.log(popup);
-
 		}
 	}
 
