@@ -15,6 +15,8 @@ public interface LossOfControlParameters{
 	public static final String ROLL = "Roll";
 	public static final String ALT_AGL = "AltAGL";
 
+	public static final int C172SP_ID = 1;
+
 	/**
 	 * Strings that represent the parameters used in this calculation
 	 */
