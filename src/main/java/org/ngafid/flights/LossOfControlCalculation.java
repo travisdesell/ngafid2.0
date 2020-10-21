@@ -10,8 +10,11 @@ import java.io.File;
 import java.io.FileNotFoundException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Optional;
 
 import java.nio.file.FileSystems;
@@ -34,7 +37,7 @@ public class LossOfControlCalculation{
 	static Connection connection = Database.getConnection();
 
 	//Standard atmospheric pressure in in. mercury
-	private int fleetId, flightId;
+	private Flight flight;
 	private File file;
 	private Optional<PrintWriter> pw;
 	private Map<String, DoubleTimeSeries> parameters;
@@ -45,11 +48,14 @@ public class LossOfControlCalculation{
 	 * @param fleetId the id of the fleet being calculated
 	 * @param flightID the flightId of the flight being processed
 	 */
-	public LossOfControlCalculation(int fleetId, int flightId){ 
-		this.fleetId = fleetId;
-		this.flightId = flightId;
-		this.parameters = getParameters(flightId);
-		this.pw = Optional.empty();
+	public LossOfControlCalculation(int flightId){ 
+		try {
+			this.flight = Flight.getFlight(connection, flightId);
+			this.parameters = getParameters(flightId);
+			this.pw = Optional.empty();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
 	}
 
 	/**
@@ -59,8 +65,8 @@ public class LossOfControlCalculation{
 	 * @param flightID the flightId of the flight being processed
 	 * @param path the filepath ROOT directory to print logfiles too
 	 * */
-	public LossOfControlCalculation(int fleetId, int flightId, Path path){ 
-		this(fleetId, flightId);
+	public LossOfControlCalculation(int flightId, Path path){ 
+		this(flightId);
 		//try to create a file output 
 		this.createFileOut(path);
 	}
@@ -71,10 +77,10 @@ public class LossOfControlCalculation{
 	 * @param path the path of the file to write
 	 */
 	private void createFileOut(Path path){
-		String filename = "/flight_"+flightId+".out";
+		String filename = "/flight_"+ this.flight.getId() +".out";
 
 		file = new File(path.toString()+filename);
-		System.out.println("LOCI_CALCULATOR: printing to file "+file.toString()+" for flight #"+this.flightId);
+		System.out.println("LOCI_CALCULATOR: printing to file "+file.toString()+" for flight #"+this.flight.getId());
 
 		try{
 			this.pw = Optional.of(new PrintWriter(file));
@@ -116,7 +122,8 @@ public class LossOfControlCalculation{
 	 */
 	public boolean notCalcuatable(){
 		if (this.parameters == null) {
-			System.err.println("ERROR: flight #" + this.flightId + " is not calculatable for loss of control/stall prob, skipping!");
+			System.err.println("ERROR: flight #" + this.flight.getId() + " is not calculatable for loss of control/stall prob, skipping!");
+			this.updateDatabase();
 			return true;
 		}
 		return false;
@@ -381,30 +388,6 @@ public class LossOfControlCalculation{
 		return prob;
 	}
 
-	/** 
-	 * Checks to see if the probabiliites for this flight have alreday been calculates
-	 *
-	 * @return a boolean representing the existence of the calculated values in the database
-	 */
-	public boolean alreadyCalculated(){
-		String queryString = "SELECT EXISTS(SELECT * FROM loci_processed WHERE fleet_id = ? and flight_id = ?)";
-		try{
-			PreparedStatement query = connection.prepareStatement(queryString);
-			query.setInt(1, this.fleetId);
-			query.setInt(2, this.flightId);
-
-			ResultSet resultSet = query.executeQuery();
-
-			if(resultSet.next()){
-				return resultSet.getBoolean(1);
-			}
-		}catch (SQLException se) {
-			se.printStackTrace();
-		}
-		return false;
-	}
-
-
 	/**
 	 * Updates the database table that keeps track of LOCI-Processed flights
 	 */
@@ -412,8 +395,8 @@ public class LossOfControlCalculation{
 		String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
 		try{
 			PreparedStatement query = connection.prepareStatement(queryString);
-			query.setInt(1, this.fleetId);
-			query.setInt(2, this.flightId);
+			query.setInt(1, this.flight.getFleetId());
+			query.setInt(2, this.flight.getId());
 
 			query.executeUpdate();
 		}catch (SQLException se) {
@@ -429,7 +412,7 @@ public class LossOfControlCalculation{
 	public void calculate(){
 		System.out.println("calculating");
 		this.printDetails();
-		this.parameters = getParameters(this.flightId);
+		//this.parameters = getParameters(this.flight.getId());
 
 		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
 		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
@@ -442,9 +425,9 @@ public class LossOfControlCalculation{
 			aoaSimp.add(this.getAOASimple(i));
 		}
 
-		loci.updateDatabase(connection, this.flightId);  
-		stallProbability.updateDatabase(connection, this.flightId);
-		aoaSimp.updateDatabase(connection, this.flightId);
+		loci.updateDatabase(connection, this.flight.getId());  
+		stallProbability.updateDatabase(connection, this.flight.getId());
+		aoaSimp.updateDatabase(connection, this.flight.getId());
 
 		this.updateDatabase();
 
@@ -479,6 +462,32 @@ public class LossOfControlCalculation{
 		}
 	}
 
+	public static Iterator<Integer> getUncalculatedFlightIds() {
+		String sqlQuery = "SELECT id FROM flights WHERE id NOT IN (SELECT flight_id FROM loci_processed) AND airframe_id = ?" +
+			" AND fleet_id = (SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'IMPORTED'))";
+		List<Integer> nums = null;
+
+		try {
+			PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+			preparedStatement.setInt(1, C172SP_ID);
+			ResultSet resultSet = preparedStatement.executeQuery();
+	
+			nums = new ArrayList<>();
+			while (resultSet.next()) {
+				nums.add(resultSet.getInt(1));
+			}
+
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+
+		if (nums != null && !nums.isEmpty()) {
+			return nums.iterator();
+		} else {
+			return null;
+		}
+	}
+
 
 	/**
 	 * Writes usage information to standard error
@@ -502,41 +511,13 @@ public class LossOfControlCalculation{
 	public void printDetails(){
 		System.err.println("\n\n");
 		System.err.println("------------ LOCI/Stall Probability CALCULATION INFO ------------");
-		System.err.println("flight_id: "+flightId);
+		System.err.println("flight_id: "+flight.getId());
 		System.err.println("logfile: "+(file != null ? file.toString() : "None specified."));
 		System.err.println("-----------------------------------------------------------------");
 		System.err.println("\n\n");
 	}
-	
-	/**
-	 * Main method for running calculations
-	 *
-	 * @param args args from the command line, with the first being a filename for output
-	 */
-	public static void main(String [] args){
-		System.out.println("Loss of control calculator");
 
-		Optional<Path> path = Optional.empty();	
-		Optional<int[]> flightNums = Optional.empty();
-
-		int fleetId = 1;
-
-		if (args.length < 1) {
-			displayHelp();
-		} else {
-			try {
-				String first = args[0];
-				if(first.equals("-h") || first.equals("--help")) {
-					displayHelp();
-				}
-
-				fleetId = Integer.parseInt(first);
-			} catch(NumberFormatException e) {
-				System.err.println("FATAL ERROR: Make sure your first argument is the fleet id!");
-				System.exit(1);
-			}
-		}
-
+	public static void processArgs(String [] args, Optional<Path> path, Optional<Iterator<Integer>> flightNums) {
 		for(int i = 1; i < args.length; i++) {
 			if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")){
 				displayHelp();
@@ -568,28 +549,82 @@ public class LossOfControlCalculation{
 					nums[j] = Integer.parseInt(numsAsStrings[j]);
 				}
 
-				flightNums = Optional.of(nums);
+				Iterator<Integer> it = Arrays.stream(nums).iterator();
+				flightNums = Optional.of(it);
+			}
+		}
+	}
+
+	public static void calculateAll(Iterator<Integer> it, Optional<Path> path) {
+		long start = System.currentTimeMillis();
+
+		while (it.hasNext()) {
+			int id = it.next();
+			LossOfControlCalculation loc = path.isPresent() ?
+				new LossOfControlCalculation(id, path.get()) : new LossOfControlCalculation(id);
+			if (!loc.notCalcuatable()) {
+				loc.calculate();
+			}
+		}
+		long time = System.currentTimeMillis() - start;
+		long secondsTime = time / 1000;
+		System.out.println("calculations took: "+secondsTime+"s");
+	}
+
+/**
+	 * Main method for running calculations
+	 *
+	 * @param args args from the command line, with the first being a filename for output
+	 */
+	public static void main(String [] args){
+		System.out.println("Loss of control calculator");
+
+		Optional<Path> path = Optional.empty();	
+		Optional<Iterator<Integer>> flightNums = Optional.empty();
+
+		int fleetId = -1;
+
+		if (args.length < 1) {
+			displayHelp();
+		} else {
+			try {
+				String first = args[0];
+
+				if (first.equalsIgnoreCase("-h") || first.equalsIgnoreCase("--help")) {
+					displayHelp();
+				}
+
+				if (first.equalsIgnoreCase("auto")) {
+					while (true) {
+						System.out.println("automatically selecting fleets with uncalculated LOCI/SP");
+						Iterator<Integer> it = getUncalculatedFlightIds();
+						if (it != null) {
+							calculateAll(it, path);
+						} else {
+							System.err.println("No flights found waiting for a LOCI calculation, sleeping 10s");
+							try {
+								Thread.sleep(10000);
+							} catch (InterruptedException ie) {
+								ie.printStackTrace();
+							}
+						}
+					}
+				} else {
+					processArgs(args, path, flightNums);
+				}
+
+				fleetId = Integer.parseInt(first);
+			} catch(NumberFormatException e) {
+				System.err.println("FATAL ERROR: Make sure your first argument is the fleet id!");
+				System.exit(1);
 			}
 		}
 
 
-		if(flightNums.isPresent()) {
-			int [] nums = flightNums.get();
-			long start = System.currentTimeMillis();
 
-			for(int i = 0; i < nums.length; i++){
-				LossOfControlCalculation loc = path.isPresent() ?
-					new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
-				if(!loc.notCalcuatable() && !loc.alreadyCalculated()){
-					loc.calculate();
-				}
-			}
-			long time = System.currentTimeMillis() - start;
-			long secondsTime = time / 1000;
-			System.out.println("calculations took: "+secondsTime+"s");
-			System.exit(0);
+		if(flightNums.isPresent()) {
 		} else {
-			try{
+			try {
 				//Find the C172 flights only!
 				ArrayList<String> inputs = new ArrayList<>();
 				inputs.add("Airframe");
@@ -597,20 +632,10 @@ public class LossOfControlCalculation{
 				inputs.add("Cessna 172S");
 
 				int [] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId, new Filter(inputs));
-				long start = System.currentTimeMillis();
-				for(int i = 0; i < nums.length; i++){
-					LossOfControlCalculation loc = path.isPresent() ?
-						new LossOfControlCalculation(fleetId, nums[i], path.get()) : new LossOfControlCalculation(fleetId, nums[i]);
-					if(!loc.notCalcuatable() && !loc.alreadyCalculated()) {
-						loc.calculate();
-					}
-				}
-				long time = System.currentTimeMillis() - start;
-				long secondsTime = time / 1000;
-				System.out.println("calculations took: "+secondsTime+"s");
+				calculateAll(Arrays.stream(nums).iterator(), path);
 				System.exit(0);
 				//here assume we will calcaulate for all flights for the given fleet
-			}catch (SQLException e) {
+			} catch (SQLException e) {
 				e.printStackTrace();
 			}
 
