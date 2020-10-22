@@ -526,54 +526,6 @@ class Flight extends React.Component {
 
 
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
-			//if (target.values_.name !== 'Pin') {
-				//let ls = new LineString(this.state.points.slice(index, index+2));
-				//console.log(ls);
-
-				//let feat = new Feature({
-					//geometry: ls,
-					//name: 'Pin',
-				//});
-
-				//let stroke =  new Stroke({
-					//color: '#347deb',
-					//width: 15,
-					//image: new Circle({
-						//radius: 6,
-					//})
-				//});
-
-				//feat.setId(index);
-
-				//var pinLayer = new VectorLayer({
-					//name : 'Pin' ,
-					//style: new Style({
-						//stroke : stroke
-					//}),
-
-					//source : new VectorSource({
-						//features: [
-							//feat
-						//]
-					//})
-				//});
-			//} else {
-				//console.log("pin already rendered");
-				////target.setStyle({
-					////stroke : new Stroke({
-						////color: '#756fff',
-						////width: 15,
-						////image: new Circle({
-							////radius: 6,
-						////})
-					////})
-				////});
-
-				//console.log(target);
-			//}
-
-			//pinLayer.setId(index);
-
 			map.addLayer(pinLayer);
 			pinLayer.setVisible(true);
 		}
