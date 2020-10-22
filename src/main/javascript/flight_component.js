@@ -206,6 +206,8 @@ class Flight extends React.Component {
                      * Pitch
                      * Roll
                      * Vertical Speed
+					 * LOCI
+					 * StallProbability
                      */
                     var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOCI", "StallProbability"];
                     var commonTraceNames = [];
@@ -524,51 +526,51 @@ class Flight extends React.Component {
 
 
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
-			if (target.values_.name !== 'Pin') {
-				let ls = new LineString(this.state.points.slice(index, index+2));
-				console.log(ls);
+			//if (target.values_.name !== 'Pin') {
+				//let ls = new LineString(this.state.points.slice(index, index+2));
+				//console.log(ls);
 
-				let feat = new Feature({
-					geometry: ls,
-					name: 'Pin',
-				});
+				//let feat = new Feature({
+					//geometry: ls,
+					//name: 'Pin',
+				//});
 
-				let stroke =  new Stroke({
-					color: '#347deb',
-					width: 15,
-					image: new Circle({
-						radius: 6,
-					})
-				});
-
-				feat.setId(index);
-
-				var pinLayer = new VectorLayer({
-					name : 'Pin' ,
-					style: new Style({
-						stroke : stroke
-					}),
-
-					source : new VectorSource({
-						features: [
-							feat
-						]
-					})
-				});
-			} else {
-				console.log("pin already rendered");
-				//target.setStyle({
-					//stroke : new Stroke({
-						//color: '#756fff',
-						//width: 15,
-						//image: new Circle({
-							//radius: 6,
-						//})
+				//let stroke =  new Stroke({
+					//color: '#347deb',
+					//width: 15,
+					//image: new Circle({
+						//radius: 6,
 					//})
 				//});
 
-				console.log(target);
-			}
+				//feat.setId(index);
+
+				//var pinLayer = new VectorLayer({
+					//name : 'Pin' ,
+					//style: new Style({
+						//stroke : stroke
+					//}),
+
+					//source : new VectorSource({
+						//features: [
+							//feat
+						//]
+					//})
+				//});
+			//} else {
+				//console.log("pin already rendered");
+				////target.setStyle({
+					////stroke : new Stroke({
+						////color: '#756fff',
+						////width: 15,
+						////image: new Circle({
+							////radius: 6,
+						////})
+					////})
+				////});
+
+				//console.log(target);
+			//}
 
 			//pinLayer.setId(index);
 
@@ -668,192 +670,57 @@ class Flight extends React.Component {
 
 			console.log("getting upset probabilities");
 
-			let lociData = [], 
-				spData = [];
+			var lociData, spData;
 
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : lociSubmissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got loci dts response");
-					lociData = response;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var spSubmissionData = {
-				seriesName : "StallProbability",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : spSubmissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					spData = response;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
+			var names = [
+				"StallProbability",
+				"LOCI",
+				"Roll",
+				"IAS",
+				"Pitch", 
+				"AltMSL",
+				"AOASimple",
+				"E1 RPM",
+				"AltAGL",
+			];
 
 			var submissionData = {
-				seriesName : "Roll",
-                flightId : this.props.flightInfo.id
-            };
-
+				seriesNames : JSON.stringify(names),
+				flightId : this.props.flightInfo.id
+			};
+			
 			$.ajax({
 				type: 'POST',
-				url: '/protected/double_series',
+				url: '/protected/double_series_multiple',
 				data : submissionData,
 				dataType : 'json',
 				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.rollData = response.y;
-				},   
+					console.log("got multiple double_series response");
+
+					lociData = JSON.parse(response["LOCI"]);
+					spData = JSON.parse(response["StallProbability"]);
+					console.log("data:");
+					console.log(lociData);
+					
+					thisFlight.setState({
+						rollData : JSON.parse(response["Roll"]).y,
+						iasData : JSON.parse(response["IAS"]).y,
+						pitchData : JSON.parse(response["Pitch"]).y,
+						mslData : JSON.parse(response["AltMSL"]).y,
+						aoaData : JSON.parse(response["AOASimple"]).y,
+						rpmData : JSON.parse(response["E1 RPM"]).y,
+						aglData : JSON.parse(response["AltAGL"]).y
+					});
+					
+				},
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
 					console.log(errorThrown);
 				},   
-				async: true 
+				async: false 
 			});  
 
-			var submissionData = {
-				seriesName : "IAS",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.iasData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var submissionData = {
-				seriesName : "Pitch",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.pitchData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var submissionData = {
-				seriesName : "AltMSL",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.mslData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var submissionData = {
-				seriesName : "AOASimple",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.aoaData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var submissionData = {
-				seriesName : "E1 RPM",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.rpmData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
-
-			var submissionData = {
-				seriesName : "AltAGL",
-                flightId : this.props.flightInfo.id
-            };
-
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got stall prob. dts response");
-					thisFlight.state.aglData = response.y;
-				},   
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: true 
-			});  
+			console.log("call completed");
 
             var submissionData = {
                 request : "GET_COORDINATES",
@@ -936,6 +803,7 @@ class Flight extends React.Component {
 
 					if(lociData != null){
 						console.log("loci data is not null");
+						console.log(lociData);
 						for(let i = 0; i < lociData.y.length; i++){
 							let val = lociData.y[i];
 							if(val != null){
@@ -1145,7 +1013,7 @@ class Flight extends React.Component {
                         map.addLayer(eventLayer);
                     }
 
-                    let extent = thisFlight.state.layer.getSource().getExtent();
+                    let extent = baseLayer.getSource().getExtent();
                     console.log(extent);
                     map.getView().fit(extent, map.getSize());
 
