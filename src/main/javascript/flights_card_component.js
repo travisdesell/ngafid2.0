@@ -25,8 +25,6 @@ import Plotly from 'plotly.js';
 class FlightsCard extends React.Component {
     constructor(props) {
         super(props);
-		console.log("got refssss:");
-		console.log(props.navBar);
 
         this.state = {
             mapVisible : false,
@@ -51,6 +49,8 @@ class FlightsCard extends React.Component {
             flights : flights
         });
     }
+
+
 
 
     /**

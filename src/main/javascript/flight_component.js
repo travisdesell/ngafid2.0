@@ -496,7 +496,7 @@ class Flight extends React.Component {
 
 		var info = new Array();
 
-		if (target != null) {
+		if (target != null && (target.parent === "lociPhases" || target.parent === "PStall")) {
 			let index = target.getId();
 			console.log("target info:");
 			console.log(index);
@@ -524,10 +524,9 @@ class Flight extends React.Component {
 				title : 'title'
 			};
 
-
 			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
-			map.addLayer(pinLayer);
-			pinLayer.setVisible(true);
+		} else {
+			console.log("wont render popup");
 		}
 	}
 
@@ -603,6 +602,14 @@ class Flight extends React.Component {
         }
     }
 
+	clearHeatmaps() {
+		for(var layer in this.state.layers) {
+			let name = layer.values_.name;
+			if (name == "PLOCI" || name == "PStall") {
+				layer.setVisible(false);
+			}
+		}
+	}
 
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
