@@ -60,11 +60,18 @@ class MapPopup extends React.Component {
 		}
 
 		if(this.state.status !== "none"){
-			let info = this.props.info;
+			let info = new Array();
 
-			for (let i = 0; i < this.state.info.length; i++) {
-				if (info[i] == null) {
+			info[0] = this.props.info[0];
+			for (let i = 1; i < this.props.info.length; i++) {
+				if (this.props.info[i] == null) {
 					info[i] = "Not Available";
+				} else if (i < 3) {
+					//show 2 S.Fs for probabilities and display as a decimal value
+					info[i] = (this.props.info[i] / 100).toFixed(2);
+				} else {
+					//only show 1 S.F. for all other params
+					info[i] = this.props.info[i].toFixed(1);
 				}
 			}
 
@@ -104,43 +111,43 @@ class MapPopup extends React.Component {
 								<tbody>
 									<tr>
 										<td>Time Index (s):</td>
-										<td>{this.props.info[0]}</td>
+										<td>{info[0]}</td>
 									</tr>
 									<tr>
 										<td>Stall Probability:</td>
-										<td>{(info[1] / 100).toFixed(2)}</td>
+										<td>{info[1]}</td>
 									</tr>
 									<tr>
 										<td>LOC-I Probability:</td>
-										<td>{(info[2] / 100).toFixed(2)}</td>
+										<td>{info[2]}</td>
 									</tr>
 									<tr>
 										<td>Roll</td>
-										<td>{info[3].toFixed(1)}</td>
+										<td>{info[3]}</td>
 									</tr>
 									<tr>
 										<td>Pitch</td>
-										<td>{info[4].toFixed(1)}</td>
+										<td>{info[4]}</td>
 									</tr>
 									<tr>
 										<td>IAS</td>
-										<td>{info[5].toFixed(1)} kts</td>
+										<td>{info[5]} kts</td>
 									</tr>
 									<tr>
 										<td>Altitude (MSL)</td>
-										<td>{info[6].toFixed(1)} ft</td>
+										<td>{info[6]} ft</td>
 									</tr>
 									<tr>
 										<td>Altitude (AGL)</td>
-										<td>{info[7].toFixed(1)} ft</td>
+										<td>{info[7]} ft</td>
 									</tr>
 									<tr>
 										<td>Angle of Attack (simple)</td>
-										<td>{info[8].toFixed(1)}</td>
+										<td>{info[8]}</td>
 									</tr>
 									<tr>
 										<td>Engine 1 RPM</td>
-										<td>{info[9].toFixed(1)}</td>
+										<td>{info[9]}</td>
 									</tr>
 								</tbody>
 

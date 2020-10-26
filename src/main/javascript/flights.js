@@ -382,11 +382,17 @@ class FlightsPage extends React.Component {
 		}
 
         console.log("map layer changed to: '" +  style + "'!");
+
+		this.setMapStyle(style);
 		
-        this.setState({
-            mapStyle : style
-        });
-    }
+   }
+
+	setMapStyle(style) {
+		 this.setState({
+			mapStyle : style
+		});
+	}
+
 
     showMap() {
         if (this.state.mapVisible) return;
@@ -562,6 +568,17 @@ class FlightsPage extends React.Component {
                         currentPage : currentPage,
                         numberPages : response.numberPages  
                     });
+
+					console.log("removing old overlays from map");
+					map.getLayers().getArray().forEach(function(layer) {
+						console.log(layer);
+						let name = layer.get('name');
+						if (name === 'PLOCI' || name === 'PStall') {
+							console.log("removing layer: " + name + " from map for new query");
+							layer.setVisible(false);
+							map.removeLayer(layer);
+						}
+					});
 				}
             },
             error : function(jqXHR, textStatus, errorThrown) {

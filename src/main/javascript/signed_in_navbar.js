@@ -132,7 +132,7 @@ class SignedInNavbar extends React.Component {
 		//const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
-		console.log(this.props.selectableLayers);
+		console.log(this.props.mapStyle);
 
 		let lociSelector = "";
 		if (this.props.selectableLayers != null) {
