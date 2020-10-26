@@ -349,6 +349,7 @@ class FlightsPage extends React.Component {
             pageSize : 10
         };
 
+		this.navRef = React.createRef();
     }
 
     mapSelectChanged(style) {
@@ -574,8 +575,7 @@ class FlightsPage extends React.Component {
 		console.log("changing selectable layers on navbar");
 		console.log(plotLayers);
 
-		this.state.selectableLayers = plotLayers;
-		this.setState(this.state);
+		this.setState({selectableLayers : plotLayers});
 	}
 
     render() {
@@ -614,6 +614,7 @@ class FlightsPage extends React.Component {
                     mapLayerChanged={(style) => this.mapLayerChanged(style)}
                     waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
+					ref={this.navRef}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
                 />
@@ -656,6 +657,7 @@ class FlightsPage extends React.Component {
                         parent={this}
 						layers={this.state.layers}
                         flights={this.state.flights} 
+						navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}

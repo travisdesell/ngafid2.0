@@ -60,6 +60,14 @@ class MapPopup extends React.Component {
 		}
 
 		if(this.state.status !== "none"){
+			let info = this.props.info;
+
+			for (let i = 0; i < this.state.info.length; i++) {
+				if (info[i] == null) {
+					info[i] = "Not Available";
+				}
+			}
+
 			return (
 				<div style={{ height: 120 }}>
 					<Popover
@@ -100,39 +108,39 @@ class MapPopup extends React.Component {
 									</tr>
 									<tr>
 										<td>Stall Probability:</td>
-										<td>{(this.props.info[1] / 100).toFixed(2)}</td>
+										<td>{(info[1] / 100).toFixed(2)}</td>
 									</tr>
 									<tr>
 										<td>LOC-I Probability:</td>
-										<td>{(this.props.info[2] / 100).toFixed(2)}</td>
+										<td>{(info[2] / 100).toFixed(2)}</td>
 									</tr>
 									<tr>
 										<td>Roll</td>
-										<td>{this.props.info[3].toFixed(1)}</td>
+										<td>{info[3].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>Pitch</td>
-										<td>{this.props.info[4].toFixed(1)}</td>
+										<td>{info[4].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>IAS</td>
-										<td>{this.props.info[5].toFixed(1)} kts</td>
+										<td>{info[5].toFixed(1)} kts</td>
 									</tr>
 									<tr>
 										<td>Altitude (MSL)</td>
-										<td>{this.props.info[6].toFixed(1)} ft</td>
+										<td>{info[6].toFixed(1)} ft</td>
 									</tr>
 									<tr>
 										<td>Altitude (AGL)</td>
-										<td>{this.props.info[7].toFixed(1)} ft</td>
+										<td>{info[7].toFixed(1)} ft</td>
 									</tr>
 									<tr>
 										<td>Angle of Attack (simple)</td>
-										<td>{this.props.info[8].toFixed(1)}</td>
+										<td>{info[8].toFixed(1)}</td>
 									</tr>
 									<tr>
 										<td>Engine 1 RPM</td>
-										<td>{this.props.info[9].toFixed(1)}</td>
+										<td>{info[9].toFixed(1)}</td>
 									</tr>
 								</tbody>
 
