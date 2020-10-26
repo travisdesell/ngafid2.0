@@ -25,6 +25,8 @@ import Plotly from 'plotly.js';
 class FlightsCard extends React.Component {
     constructor(props) {
         super(props);
+		console.log("got refssss:");
+		console.log(props.navBar);
 
         this.state = {
             mapVisible : false,
@@ -66,7 +68,7 @@ class FlightsCard extends React.Component {
                         flights.map((flightInfo, index) => {
                             if(flightInfo != null) {
                                 return (
-                                    <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} flightInfo={flightInfo} pageIndex={index}
+                                    <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} flightInfo={flightInfo} navBar={this.props.navBar} pageIndex={index}
                                         updateParentState={(newFlights) => this.props.setFlights(newFlights)} setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
                                         parent={this} layers={this.props.layers} tags={flightInfo.tags.value} key={flightInfo.id}/>
                                 );

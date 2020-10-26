@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Overlay from 'react-bootstrap/Overlay';
 import { errorModal } from "./error_modal.js";
 
 var activePage = "";
@@ -57,12 +58,28 @@ class DropdownLink extends React.Component {
 class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
+
+		this.infoTarget = React.createRef();
     }
 
     attemptLogIn() {
         console.log("showing login modal!");
         loginModal.show();
     }
+
+	/*displayLOCIDataUnavailable() {*/
+		//console.log("LOCI data is not available!");
+
+		//this.props.selectableLayers = null;
+		//this.setState(this.state);
+	//}
+
+	//displaySPDataUnavailable() {
+		//console.log("SP data is not available!");
+
+		//this.props.selectableLayers = null;
+		//this.setState(this.state);
+	/*}*/
 
     attemptLogOut() {
         console.log("attempting log out!");
@@ -112,8 +129,29 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
+		//const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
+		console.log(this.props.selectableLayers);
+
+		let lociSelector = "";
+		if (this.props.selectableLayers != null) {
+			lociSelector = (
+				<select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+					value={this.props.mapStyle}
+					onChange={event => this.props.mapLayerChanged(event.target.value)}>
+					{
+						this.props.selectableLayers.map((layer, index) => {
+							return (
+								<option value={layer.values_.name} disabled={layer.values_.disabled}>{layer.values_.description}</option>
+							);
+						})
+					}
+				</select>
+			)
+		} else {
+			console.log("no selectable layers");
+		}
 
         let eventsActive = this.props.activePage === "trends" || this.props.activePage === "dashboard";
 
@@ -147,7 +185,7 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{backgroundColor:selectBgColor}} 
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
@@ -161,19 +199,7 @@ class SignedInNavbar extends React.Component {
                                     <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
                                 </select>
 
-									{this.props.selectableLayers != null &&
-										<select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
-											value={this.props.mapStyle}
-											onChange={event => this.props.mapLayerChanged(event.target.value)}>
-											{
-												this.props.selectableLayers.map((layer, index) => {
-													return (
-														<option value={layer.values_.name}>{layer.values_.description}</option>
-													);
-												})
-											}
-										</select>
-									}
+								{lociSelector}
 
                             </div>
                         </ul>

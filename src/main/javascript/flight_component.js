@@ -753,6 +753,8 @@ class Flight extends React.Component {
 
 					thisFlight.state.lProbs = [];
 
+					console.log(thisFlight.props.navBar.current);
+
 					if(lociData != null){
 						console.log("loci data is not null");
 						console.log(lociData);
@@ -762,6 +764,9 @@ class Flight extends React.Component {
 								thisFlight.state.lProbs[i] = val;
 							}
 						}
+					} else {
+						//thisFlight.props.navBar.current.displayLOCIDataUnavailable();
+						//render a popover to indicate it is unavailable
 					}
 					
 					console.log("created thisFlight.state.lProbs:");
@@ -777,7 +782,11 @@ class Flight extends React.Component {
 								thisFlight.state.sProbs[i] = val;
 							}
 						}
+					} else {
+						//thisFlight.props.navBar.current.displaySPDataUnavailable();
+						//render a popover to indicate it is unavailable
 					}
+
 
 					console.log("created thisFlight.state.sProbs:");
 					console.log(thisFlight.state.lProbs);
@@ -891,9 +900,10 @@ class Flight extends React.Component {
                         //})
                     //}));
 
-					layers.push(new VectorLayer({
+					let lociLayer = new VectorLayer({
 						name : 'PLOCI' ,
 						description : 'Loss of Control Probability' ,
+						disabled : (lociData == null),
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
@@ -904,11 +914,16 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: lociPhases                        
 						})
-                    }));
+                    })
+
+					lociLayer.flightState = thisFlight;
+					layers.push(lociLayer);
 
 					layers.push(new VectorLayer({
 						name : 'PStall' ,
 						description : 'Stall Probability',
+						disabled : (spData == null),
+						flightState : thisFlight,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
