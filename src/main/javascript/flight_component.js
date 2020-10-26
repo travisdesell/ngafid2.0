@@ -99,6 +99,7 @@ class Flight extends React.Component {
 			selectedPlot : null,
             color : color,
 			mapPopups : [],
+			seriesData : new Map(),
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -503,16 +504,15 @@ class Flight extends React.Component {
 			console.log(target);	
 
 			info.push(index);
-			info.push(this.state.sProbs[index]);
-			info.push(this.state.lProbs[index]);
-			info.push(this.state.rollData[index]);
-			info.push(this.state.pitchData[index]);
-			info.push(this.state.iasData[index]);
-			info.push(this.state.mslData[index]);
-			info.push(this.state.aglData[index]);
-			info.push(this.state.aoaData[index]);
-			info.push(this.state.rpmData[index]);
-
+			info.push(this.state.seriesData.get('StallProbability')[index]);
+			info.push(this.state.seriesData.get('LOCI')[index]);
+			info.push(this.state.seriesData.get('Roll')[index]);
+			info.push(this.state.seriesData.get('Pitch')[index]);
+			info.push(this.state.seriesData.get('IAS')[index]);
+			info.push(this.state.seriesData.get('AltMSL')[index]);
+			info.push(this.state.seriesData.get('AltAGL')[index]);
+			info.push(this.state.seriesData.get('AOASimple')[index]);
+			info.push(this.state.seriesData.get('E1 RPM')[index]);
 
 			var popupProps = {
 				pixel : pixel,
@@ -602,15 +602,6 @@ class Flight extends React.Component {
         }
     }
 
-	clearHeatmaps() {
-		for(var layer in this.state.layers) {
-			let name = layer.values_.name;
-			if (name == "PLOCI" || name == "PStall") {
-				layer.setVisible(false);
-			}
-		}
-	}
-
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -643,43 +634,32 @@ class Flight extends React.Component {
 				"AltAGL",
 			];
 
-			var submissionData = {
-				seriesNames : JSON.stringify(names),
-				flightId : this.props.flightInfo.id
-			};
-			
-			$.ajax({
-				type: 'POST',
-				url: '/protected/double_series_multiple',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got multiple double_series response");
+			for (let i = 0; i < names.length; i++) {
+				const name = names[i];
+				console.log(name);
 
-					lociData = JSON.parse(response["LOCI"]);
-					spData = JSON.parse(response["StallProbability"]);
-					console.log("data:");
-					console.log(lociData);
-					
-					thisFlight.setState({
-						rollData : JSON.parse(response["Roll"]).y,
-						iasData : JSON.parse(response["IAS"]).y,
-						pitchData : JSON.parse(response["Pitch"]).y,
-						mslData : JSON.parse(response["AltMSL"]).y,
-						aoaData : JSON.parse(response["AOASimple"]).y,
-						rpmData : JSON.parse(response["E1 RPM"]).y,
-						aglData : JSON.parse(response["AltAGL"]).y
-					});
-					
-				},
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: false 
-			});  
+				var submissionData = {
+					seriesName : name,
+					flightId : this.props.flightInfo.id
+				};
 
-			console.log("call completed");
+				$.ajax({
+					type: 'POST',
+					url: '/protected/double_series',
+					data : submissionData,
+					dataType : 'json',
+					success : function(response) {
+						console.log("got double_series response");
+						console.log(thisFlight.state.seriesData);
+						thisFlight.state.seriesData.set(name, response.y);
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						console.log("Error getting upset data:");
+						console.log(errorThrown);
+					},   
+					async: true 
+				});  
+			}
 
             var submissionData = {
                 request : "GET_COORDINATES",
@@ -758,46 +738,6 @@ class Flight extends React.Component {
 
 					layers.push(baseLayer);
 
-					thisFlight.state.lProbs = [];
-
-					console.log(thisFlight.props.navBar.current);
-
-					if(lociData != null){
-						console.log("loci data is not null");
-						console.log(lociData);
-						for(let i = 0; i < lociData.y.length; i++){
-							let val = lociData.y[i];
-							if(val != null){
-								thisFlight.state.lProbs[i] = val;
-							}
-						}
-					} else {
-						//thisFlight.props.navBar.current.displayLOCIDataUnavailable();
-						//render a popover to indicate it is unavailable
-					}
-					
-					console.log("created thisFlight.state.lProbs:");
-					console.log(thisFlight.state.lProbs);
-
-					thisFlight.state.sProbs = [];
-
-					if(spData != null){
-						console.log("stall prob data is not null");
-						for(let i = 0; i < spData.y.length; i++){
-							let val = spData.y[i];
-							if(val != null){
-								thisFlight.state.sProbs[i] = val;
-							}
-						}
-					} else {
-						//thisFlight.props.navBar.current.displaySPDataUnavailable();
-						//render a popover to indicate it is unavailable
-					}
-
-
-					console.log("created thisFlight.state.sProbs:");
-					console.log(thisFlight.state.lProbs);
-
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
@@ -850,44 +790,48 @@ class Flight extends React.Component {
                             flight_phases.push( phase );
                         }
                     }
+					
+					const lociData = thisFlight.state.seriesData.get('LOCI');
+					const spData = thisFlight.state.seriesData.get('StallProbability');
 
 					var lociPhases = [];
-
-					for(let i = 0; i < thisFlight.state.lProbs.length; i++){
-						let val = thisFlight.state.lProbs[i];
-						var feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-						});
-						let sval = val / 100.0;
-						feat.setId(i);
-						feat.parent = 'lociPhases';
-						feat.setStyle(new Style({
-						stroke: new Stroke({
-								color : paletteAt(sval),
-								width : 5
-							})
-						}));
-						lociPhases.push(feat);
+					if (lociData != null) {
+						for(let i = 0; i < lociData.length; i++){
+							let val = lociData[i];
+							var feat = new Feature({
+									geometry : new LineString(points.slice(i, i+2)),
+							});
+							let sval = val / 100.0;
+							feat.setId(i);
+							feat.parent = 'lociPhases';
+							feat.setStyle(new Style({
+							stroke: new Stroke({
+									color : paletteAt(sval),
+									width : 5
+								})
+							}));
+							lociPhases.push(feat);
+						}
 					}
 
 					var spPhases = [];
-
-					console.log("filtering stall probabilities");
-					for(let i = 0; i < thisFlight.state.sProbs.length; i++){
-						let val = thisFlight.state.sProbs[i];
-						var feat = new Feature({
+					if (spData != null) {
+						for(let i = 0; i < spData.length; i++){
+							let val = spData[i];
+							var feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
-						});
-						let sval = val / 100.0;
-						feat.setId(i);
-						feat.parent = 'PStall';
-						feat.setStyle(new Style({
-						stroke: new Stroke({
-								color : paletteAt(sval),
-								width : 5
-							})
-						}));
-						spPhases.push(feat);
+							});
+							let sval = val / 100.0;
+							feat.setId(i);
+							feat.parent = 'PStall';
+							feat.setStyle(new Style({
+							stroke: new Stroke({
+									color : paletteAt(sval),
+									width : 5
+								})
+							}));
+							spPhases.push(feat);
+						}
 					}
 
 
@@ -921,16 +865,12 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: lociPhases                        
 						})
-                    })
+                    });
 
-					lociLayer.flightState = thisFlight;
-					layers.push(lociLayer);
-
-					layers.push(new VectorLayer({
+					let spLayer = new VectorLayer({
 						name : 'PStall' ,
 						description : 'Stall Probability',
 						disabled : (spData == null),
-						flightState : thisFlight,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [2,2,2,2],
@@ -941,7 +881,12 @@ class Flight extends React.Component {
                         source : new VectorSource({
 							features: spPhases                        
 						})
-                    }));
+                    });
+
+					lociLayer.flightState = thisFlight;
+					spLayer.flightState = thisFlight;
+
+					layers.push(lociLayer, spLayer);
 
 					console.log("adding layers!");
 					for(let i = 0; i < layers.length; i++){
