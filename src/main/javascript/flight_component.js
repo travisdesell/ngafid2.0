@@ -277,18 +277,14 @@ class Flight extends React.Component {
         console.log(event.target);
         console.log(event.target.value);
 
-        let color = event.target.value;
-        target.state.color = color;
-
-        console.log(target);
-        console.log(target.state);
-
-        target.state.layer.setStyle(new Style({
+        target.state.baseLayer.setStyle(new Style({
             stroke: new Stroke({
-                color: color,
+                color: event.target.value,
                 width: 1.5
             })
         }));
+
+        target.setState({color : event.target.value}); 
     }
 
     downloadClicked() {
@@ -696,7 +692,7 @@ class Flight extends React.Component {
 					thisFlight.state.layers = new Array();
 					let layers = thisFlight.state.layers;
 
-					var baseLayer = new VectorLayer({
+					thisFlight.state.baseLayer = new VectorLayer({
 						name : 'Itinerary' ,
 						description : 'Itinerary with Phases',
                         style: new Style({
@@ -724,6 +720,8 @@ class Flight extends React.Component {
                             ]
                         })
                     });
+
+					let baseLayer = thisFlight.state.baseLayer;
 
 
                     baseLayer.flightState = thisFlight;
@@ -802,12 +800,20 @@ class Flight extends React.Component {
 							let sval = val / 100.0;
 							feat.setId(i);
 							feat.parent = 'lociPhases';
-							feat.setStyle(new Style({
-							stroke: new Stroke({
-									color : paletteAt(sval),
-									width : 5
+							feat.setStyle([
+							  new Style({
+								stroke: new Stroke({
+								  color: thisFlight.state.color,
+								  width: 15
 								})
-							}));
+							  }),
+							  new Style({
+								stroke: new Stroke({
+								  color: paletteAt(sval),
+								  width: 14
+								})
+							  })
+							]);
 							lociPhases.push(feat);
 						}
 					}
@@ -822,12 +828,20 @@ class Flight extends React.Component {
 							let sval = val / 100.0;
 							feat.setId(i);
 							feat.parent = 'PStall';
-							feat.setStyle(new Style({
-							stroke: new Stroke({
-									color : paletteAt(sval),
-									width : 5
+							feat.setStyle([
+							  new Style({
+								stroke: new Stroke({
+								  color: thisFlight.state.color,
+								  width: 15
 								})
-							}));
+							  }),
+							  new Style({
+								stroke: new Stroke({
+								  color: paletteAt(sval),
+								  width: 14
+								})
+							  })
+							]);
 							spPhases.push(feat);
 						}
 					}
@@ -975,7 +989,7 @@ class Flight extends React.Component {
                 this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
             }
             // toggle visibility of itinerary
-            this.state.itineraryLayer.setVisible(this.state.pathVisible);
+            this.state.baseLayer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
                 this.props.showMap();
