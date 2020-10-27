@@ -620,8 +620,6 @@ class Flight extends React.Component {
 
 			console.log("getting upset probabilities");
 
-			var lociData, spData;
-
 			var names = [
 				"StallProbability",
 				"LOCI",
@@ -850,6 +848,12 @@ class Flight extends React.Component {
                             //features: flight_phases
                         //})
                     //}));
+					var outlineStyle = new Style({                                                   // create style getter methods**
+						stroke: new Stroke({
+							color: "#000000",
+							width: 5
+						})
+					});
 
 					let lociLayer = new VectorLayer({
 						name : 'PLOCI' ,
@@ -1055,7 +1059,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
+                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
