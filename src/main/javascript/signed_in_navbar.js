@@ -67,20 +67,6 @@ class SignedInNavbar extends React.Component {
         loginModal.show();
     }
 
-	/*displayLOCIDataUnavailable() {*/
-		//console.log("LOCI data is not available!");
-
-		//this.props.selectableLayers = null;
-		//this.setState(this.state);
-	//}
-
-	//displaySPDataUnavailable() {
-		//console.log("SP data is not available!");
-
-		//this.props.selectableLayers = null;
-		//this.setState(this.state);
-	/*}*/
-
     attemptLogOut() {
         console.log("attempting log out!");
 
@@ -132,26 +118,6 @@ class SignedInNavbar extends React.Component {
 		//const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
-		console.log(this.props.mapStyle);
-
-		let lociSelector = "";
-		if (this.props.selectableLayers != null) {
-			lociSelector = (
-				<select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
-					value={this.props.mapStyle}
-					onChange={event => this.props.mapLayerChanged(event.target.value)}>
-					{
-						this.props.selectableLayers.map((layer, index) => {
-							return (
-								<option value={layer.values_.name} disabled={layer.values_.disabled}>{layer.values_.description}</option>
-							);
-						})
-					}
-				</select>
-			)
-		} else {
-			console.log("no selectable layers");
-		}
 
         let eventsActive = this.props.activePage === "trends" || this.props.activePage === "dashboard";
 
@@ -198,9 +164,6 @@ class SignedInNavbar extends React.Component {
                                     <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
                                     <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
                                 </select>
-
-								{lociSelector}
-
                             </div>
                         </ul>
 
