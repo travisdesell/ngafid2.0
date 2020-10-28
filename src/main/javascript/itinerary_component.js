@@ -38,7 +38,9 @@ class Itinerary extends React.Component {
 		console.log("setting selected layer");
 		for (let i = 0; i < this.props.layers.length; i++) {
 			let layer = this.props.layers[i];
-			layer.setVisible(layer.get('name') == selectedLayer);
+			layer.setVisible(layer.get('name').includes(selectedLayer));
+			console.log("setting layer: ");
+			console.log(layer);
 		}
 		this.setState(this.state);
 	}
@@ -89,9 +91,11 @@ class Itinerary extends React.Component {
 					<div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
 					{
 						this.props.layers.map((layer, index) => {
-							return (
-								<button className="dropdown-item" type="button" key={index} onClick={() => this.selectLayer(layer.get('name'))} disabled={layer.get('disabled')}>{layer.get('description')}</button>
-							);
+							if (!layer.get('nMap')){
+								return (
+									<button className="dropdown-item" type="button" key={index} onClick={() => this.selectLayer(layer.get('name'))} disabled={layer.get('disabled')}>{layer.get('description')}</button>
+								);
+							}
 						})
 					}
 					</div>
