@@ -284,6 +284,20 @@ class Flight extends React.Component {
             })
         }));
 
+		for (let i = 0; i < target.state.layers.length; i++) {
+			let layer = target.state.layers[i];
+			if (layer.get('nMap')) {
+				layer.setStyle(new Style({
+						stroke: new Stroke({
+							color: event.target.value,
+							width: 12,
+						})
+					})
+				);
+			}
+		}
+
+
         target.setState({color : event.target.value}); 
     }
 
@@ -806,7 +820,7 @@ class Flight extends React.Component {
 							  new Style({
 								stroke: new Stroke({
 								  color: paletteAt(sval),
-								  width: 5 + parseInt((val / 10.0).toFixed(0)),
+								  width: 8
 								})
 							  })
 							]);
@@ -815,13 +829,6 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "LOCI Outline"
 							});
-							outFeat.setStyle(new Style({
-									stroke: new Stroke({
-										color: thisFlight.state.color,
-										width: 9 + parseInt((val / 10.0).toFixed(0)),
-									})
-								})
-							);
 							outFeat.parent = 'PLOCI';
 
 							lociPhases.push(feat);
@@ -844,7 +851,7 @@ class Flight extends React.Component {
 							  new Style({
 								stroke: new Stroke({
 								  color: paletteAt(sval),
-								  width: 5 + parseInt((val / 10.0).toFixed(0)),
+								  width: 8
 								})
 							  })
 							]);
@@ -853,13 +860,6 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "SP Outline"
 							});
-							outFeat.setStyle(new Style({
-									stroke: new Stroke({
-										color: thisFlight.state.color,
-										width: 9 + parseInt((val / 10.0).toFixed(0)),
-									})
-								})
-							);
 							outFeat.parent = 'PStall';
 
 							spOutlinePhases.push(outFeat);
@@ -873,6 +873,7 @@ class Flight extends React.Component {
 						description : 'Loss of Control Probability' ,
 						nMap : false,
 						disabled : (lociData == null),
+
                         source : new VectorSource({
                             features: lociPhases                        
 						})
@@ -883,6 +884,12 @@ class Flight extends React.Component {
 						description : 'Loss of Control Probability' ,
 						nMap : true,
 						disabled : (lociData == null),
+						style : new Style({
+							stroke: new Stroke({
+								color: thisFlight.state.color,
+								width : 12
+							})
+						}),
                         source : new VectorSource({
                             features: lociOutlinePhases                        
 						})
@@ -903,6 +910,13 @@ class Flight extends React.Component {
 						description : 'Stall Probability',
 						nMap : true,
 						disabled : (spData == null),
+						style : new Style({
+							stroke: new Stroke({
+								color: thisFlight.state.color,
+								width : 12
+
+							})
+						}),
                         source : new VectorSource({
 							features: spOutlinePhases                        
 						})
