@@ -493,7 +493,7 @@ class Flight extends React.Component {
 
 		var info = new Array();
 
-		if (target != null && (target.parent === "lociPhases" || target.parent === "PStall")) {
+		if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
 			let index = target.getId();
 			console.log("target info:");
 			console.log(index);
@@ -695,6 +695,7 @@ class Flight extends React.Component {
 					thisFlight.state.baseLayer = new VectorLayer({
 						name : 'Itinerary' ,
 						description : 'Itinerary with Phases',
+						nMap : false,
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
@@ -790,40 +791,51 @@ class Flight extends React.Component {
 					const lociData = thisFlight.state.seriesData.get('LOCI');
 					const spData = thisFlight.state.seriesData.get('StallProbability');
 
-					var lociPhases = [];
+					var lociPhases = [], lociOutlinePhases = [];
 					if (lociData != null) {
 						for(let i = 0; i < lociData.length; i++){
 							let val = lociData[i];
 							var feat = new Feature({
-									geometry : new LineString(points.slice(i, i+2)),
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "LOCI"
 							});
 							let sval = val / 100.0;
 							feat.setId(i);
-							feat.parent = 'lociPhases';
+							feat.parent = 'PLOCI';
 							feat.setStyle([
 							  new Style({
 								stroke: new Stroke({
-								  color: thisFlight.state.color,
-								  width: 15
-								})
-							  }),
-							  new Style({
-								stroke: new Stroke({
 								  color: paletteAt(sval),
-								  width: 14
+								  width: 5 + parseInt((val / 10.0).toFixed(0)),
 								})
 							  })
 							]);
+
+							let outFeat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "LOCI Outline"
+							});
+							outFeat.setStyle(new Style({
+									stroke: new Stroke({
+										color: thisFlight.state.color,
+										width: 9 + parseInt((val / 10.0).toFixed(0)),
+									})
+								})
+							);
+							outFeat.parent = 'PLOCI';
+
 							lociPhases.push(feat);
+							lociOutlinePhases.push(outFeat);
 						}
 					}
 
-					var spPhases = [];
+					var spPhases = [], spOutlinePhases = [];
 					if (spData != null) {
 						for(let i = 0; i < spData.length; i++){
 							let val = spData[i];
 							var feat = new Feature({
 								geometry : new LineString(points.slice(i, i+2)),
+								name : "SP"
 							});
 							let sval = val / 100.0;
 							feat.setId(i);
@@ -831,80 +843,75 @@ class Flight extends React.Component {
 							feat.setStyle([
 							  new Style({
 								stroke: new Stroke({
-								  color: thisFlight.state.color,
-								  width: 15
-								})
-							  }),
-							  new Style({
-								stroke: new Stroke({
 								  color: paletteAt(sval),
-								  width: 14
+								  width: 5 + parseInt((val / 10.0).toFixed(0)),
 								})
 							  })
 							]);
+
+							let outFeat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "SP Outline"
+							});
+							outFeat.setStyle(new Style({
+									stroke: new Stroke({
+										color: thisFlight.state.color,
+										width: 9 + parseInt((val / 10.0).toFixed(0)),
+									})
+								})
+							);
+							outFeat.parent = 'PStall';
+
+							spOutlinePhases.push(outFeat);
 							spPhases.push(feat);
 						}
 					}
 
 
-                    // create itineraryLayer
-                    //layers.push(new VectorLayer({
-						//name : 'Itinerary' ,
-						//description : 'Itinerary with Phases' ,
-                        //style: new Style({
-                            //stroke: new Stroke({
-                                //color: [1,1,1,1],
-                                //width: 3
-                            //})
-                        //}),
-
-                        //source : new VectorSource({
-                            //features: flight_phases
-                        //})
-                    //}));
-					var outlineStyle = new Style({                                                   // create style getter methods**
-						stroke: new Stroke({
-							color: "#000000",
-							width: 5
-						})
-					});
-
 					let lociLayer = new VectorLayer({
 						name : 'PLOCI' ,
 						description : 'Loss of Control Probability' ,
+						nMap : false,
 						disabled : (lociData == null),
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [2,2,2,2],
-                                width: 3
-                            })
-                        }),
-
                         source : new VectorSource({
                             features: lociPhases                        
+						})
+                    });
+
+					let lociLayerOutline = new VectorLayer({
+						name : 'PLOCI Outline' ,
+						description : 'Loss of Control Probability' ,
+						nMap : true,
+						disabled : (lociData == null),
+                        source : new VectorSource({
+                            features: lociOutlinePhases                        
 						})
                     });
 
 					let spLayer = new VectorLayer({
 						name : 'PStall' ,
 						description : 'Stall Probability',
+						nMap : false,
 						disabled : (spData == null),
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [2,2,2,2],
-                                width: 3
-                            })
-                        }),
-
-                        source : new VectorSource({
+						source : new VectorSource({
 							features: spPhases                        
+						})
+                    });
+
+					let spLayerOutline = new VectorLayer({
+						name : 'PStall Outline' ,
+						description : 'Stall Probability',
+						nMap : true,
+						disabled : (spData == null),
+                        source : new VectorSource({
+							features: spOutlinePhases                        
 						})
                     });
 
 					lociLayer.flightState = thisFlight;
 					spLayer.flightState = thisFlight;
 
-					layers.push(lociLayer, spLayer);
+					layers.push(lociLayerOutline, lociLayer, spLayerOutline, spLayer);
 
 					console.log("adding layers!");
 					for(let i = 0; i < layers.length; i++){
