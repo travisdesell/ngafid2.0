@@ -122,27 +122,27 @@ class MapPopup extends React.Component {
 										<td>{info[2]}</td>
 									</tr>
 									<tr>
-										<td>Roll</td>
+										<td>Roll (degrees)</td>
 										<td>{info[3]}</td>
 									</tr>
 									<tr>
-										<td>Pitch</td>
+										<td>Pitch (degrees)</td>
 										<td>{info[4]}</td>
 									</tr>
 									<tr>
-										<td>IAS</td>
-										<td>{info[5]} kts</td>
+										<td>IAS (knots)</td>
+										<td>{info[5]}</td>
 									</tr>
 									<tr>
-										<td>Altitude (MSL)</td>
-										<td>{info[6]} ft</td>
+										<td>Altitude (MSL) [ft]</td>
+										<td>{info[6]}</td>
 									</tr>
 									<tr>
-										<td>Altitude (AGL)</td>
-										<td>{info[7]} ft</td>
+										<td>Altitude (AGL) [ft]</td>
+										<td>{info[7]}</td>
 									</tr>
 									<tr>
-										<td>Angle of Attack (simple)</td>
+										<td>Angle of Attack (simple) [degrees]</td>
 										<td>{info[8]}</td>
 									</tr>
 									<tr>
