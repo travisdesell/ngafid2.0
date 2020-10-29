@@ -114,6 +114,16 @@ class Flight extends React.Component {
 		this.closeParamDisplay = this.closeParamDisplay.bind(this);
 		this.zoomChanged = this.zoomChanged.bind(this);
     }
+
+	getActiveLayers() {
+		let activeLayers = [];
+		for (var i = 0; i < this.state.layers.length; i++) {
+			let layer = this.state.layers[i];
+			if (layer.getVisible()) {
+				activeLayers.push(layer);
+			}
+		}
+	}
 	
 
     componentWillUnmount() {
@@ -125,8 +135,10 @@ class Flight extends React.Component {
         console.log("hiding flight path");
         this.state.pathVisible = false;
         this.state.itineraryVisible = false;
-        if (this.state.layer) {
-            this.state.layer.setVisible(false);
+        if (this.getActiveLayers()) {
+			for (var layer in this.getActiveLayers()) {
+				layer.setVisible(false);
+			}
         }
 
         // hiding events
@@ -708,49 +720,6 @@ class Flight extends React.Component {
 					thisFlight.state.layers = new Array();
 					let layers = thisFlight.state.layers;
 
-					thisFlight.state.baseLayer = new VectorLayer({
-						name : 'Itinerary' ,
-						description : 'Itinerary with Phases',
-						nMap : false,
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: color,
-                                width: 3
-                            }),
-                            image: new Circle({
-                                radius: 5,
-                                //fill: new Fill({color: [0, 0, 0, 255]}),
-                                stroke: new Stroke({
-                                    color: [0, 0, 0, 0],
-                                    width: 2
-                                })
-                            })
-                        }),
-
-                        source : new VectorSource({
-                            features: [
-                                new Feature({
-                                    geometry: new LineString(points),
-                                    name: 'Line'
-                                }),
-                                thisFlight.state.trackingPoint
-                            ]
-                        })
-                    });
-
-					let baseLayer = thisFlight.state.baseLayer;
-
-
-                    baseLayer.flightState = thisFlight;
-
-                    thisFlight.state.pathVisible = true;
-                    thisFlight.state.itineraryVisible = true;
-                    thisFlight.state.nanOffset = response.nanOffset;
-                    thisFlight.state.coordinates = response.coordinates;
-                    thisFlight.state.points = points;
-
-					layers.push(baseLayer);
-
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
@@ -803,6 +772,64 @@ class Flight extends React.Component {
                             flight_phases.push( phase );
                         }
                     }
+
+					thisFlight.state.baseLayer = new VectorLayer({
+						name : 'Itinerary' ,
+						description : 'Itinerary with Phases',
+						nMap : false,
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: color,
+                                width: 3
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                //fill: new Fill({color: [0, 0, 0, 255]}),
+                                stroke: new Stroke({
+                                    color: [0, 0, 0, 0],
+                                    width: 2
+                                })
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: [
+                                new Feature({
+                                    geometry: new LineString(points),
+                                    name: 'Line'
+                                }),
+                                thisFlight.state.trackingPoint,
+                            ]
+                        })
+                    });
+
+					let phaseLayer = new VectorLayer({
+						name : 'Itinerary Phases',
+						nMap : true,
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: [1,1,1,1],
+                                width: 3
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: flight_phases
+                        })
+                    }); 
+
+					let baseLayer = thisFlight.state.baseLayer;
+
+                    baseLayer.flightState = thisFlight;
+
+                    thisFlight.state.pathVisible = true;
+                    thisFlight.state.itineraryVisible = true;
+                    thisFlight.state.nanOffset = response.nanOffset;
+                    thisFlight.state.coordinates = response.coordinates;
+                    thisFlight.state.points = points;
+
+					// toggle visibility of itinerary
+					layers.push(baseLayer, phaseLayer);
 					
 					const lociData = thisFlight.state.seriesData.get('LOCI');
 					const spData = thisFlight.state.seriesData.get('StallProbability');
@@ -831,6 +858,8 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "LOCI Outline"
 							});
+
+							outFeat.setId(i);
 							outFeat.parent = 'PLOCI';
 
 							lociPhases.push(feat);
@@ -862,6 +891,8 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "SP Outline"
 							});
+
+							outFeat.setId(i);
 							outFeat.parent = 'PStall';
 
 							spOutlinePhases.push(outFeat);
@@ -935,7 +966,7 @@ class Flight extends React.Component {
 					for(let i = 0; i < layers.length; i++){
 						let layer = layers[i];
 						console.log(layer);
-						if(layer.values_.name == 'Itinerary') {
+						if(layer.get('name').includes('Itinerary')) {
 							//Itinerary will be the default layer
 							thisFlight.state.selectedPlot = layer.values_.name;
 							layer.setVisible(true);
@@ -1013,8 +1044,6 @@ class Flight extends React.Component {
                 this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
                 this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
             }
-            // toggle visibility of itinerary
-            this.state.baseLayer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
                 this.props.showMap();
@@ -1023,7 +1052,7 @@ class Flight extends React.Component {
             this.setState(this.state);
 
             if (this.state.pathVisible) {
-                let extent = this.state.layer.getSource().getExtent();
+                let extent = this.state.baseLayer.getSource().getExtent();
                 console.log(extent);
                 map.getView().fit(extent, map.getSize());
             }
