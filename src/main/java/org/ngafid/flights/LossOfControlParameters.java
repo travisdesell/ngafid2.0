@@ -14,12 +14,19 @@ public interface LossOfControlParameters{
 	public static final String PITCH = "Pitch";
 	public static final String ROLL = "Roll";
 	public static final String ALT_AGL = "AltAGL";
+	public static final String ALT_MSL = "AltMSL";
+	public static final String AOA_SIMPLE = "AOASimple"; 
+	public static final String E1_RPM = "E1 RPM";
 
 	public static final int C172SP_ID = 1;
 
 	/**
 	 * Strings that represent the parameters used in this calculation
 	 */
-	public static final String [] dtsParamStrings = {HDG, IAS, VSPD, OAT, BARO_A,
-														PITCH, ROLL, ALT_AGL};
+	public static final String [] dtsParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
+
+	/**
+	 * Strings that represent the supplementary metrics displayed in the UI
+	 */
+	public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
 }

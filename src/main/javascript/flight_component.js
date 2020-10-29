@@ -525,16 +525,40 @@ class Flight extends React.Component {
 			console.log(index);
 			console.log(target);	
 
+			let submissionData = {
+				flight_id : this.props.flightInfo.id,
+				time_index : index
+			}
+
 			info.push(index);
 			info.push(this.state.seriesData.get('StallProbability')[index]);
 			info.push(this.state.seriesData.get('LOCI')[index]);
-			info.push(this.state.seriesData.get('Roll')[index]);
-			info.push(this.state.seriesData.get('Pitch')[index]);
-			info.push(this.state.seriesData.get('IAS')[index]);
-			info.push(this.state.seriesData.get('AltMSL')[index]);
-			info.push(this.state.seriesData.get('AltAGL')[index]);
-			info.push(this.state.seriesData.get('AOASimple')[index]);
-			info.push(this.state.seriesData.get('E1 RPM')[index]);
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/loci_metrics',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got loci_metrics response");
+					console.log(response);
+					console.log(response['Pitch']);
+
+					info.push(response['Roll']);
+					info.push(response['Pitch']);
+					info.push(response['IAS']);
+					info.push(response['AltMSL']);
+					info.push(response['AltAGL']);
+					info.push(response['AOASimple']);
+					info.push(response['E1 RPM']);
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: false 
+			});  
+
 
 			var popupProps = {
 				pixel : pixel,
@@ -645,13 +669,6 @@ class Flight extends React.Component {
 			var names = [
 				"StallProbability",
 				"LOCI",
-				"Roll",
-				"IAS",
-				"Pitch", 
-				"AltMSL",
-				"AOASimple",
-				"E1 RPM",
-				"AltAGL",
 			];
 
 			for (let i = 0; i < names.length; i++) {
