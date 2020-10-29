@@ -234,7 +234,7 @@ class Flight extends React.Component {
                 error : function(jqXHR, textStatus, errorThrown) {
                     this.state.commonTraceNames = null;
                     this.state.uncommonTraceNames = null;
-                    errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
+                    errorModal.show("Error Getting Potential Plot Parameters", errorThrown);
                 },
                 async: true
             });
@@ -703,6 +703,8 @@ class Flight extends React.Component {
                                     name: 'TrackingPoint'
                                 });
 
+					thisFlight.state.trackingPoint.setId(points[0]);
+
 					thisFlight.state.layers = new Array();
 					let layers = thisFlight.state.layers;
 
@@ -867,6 +869,8 @@ class Flight extends React.Component {
 						}
 					}
 
+					lociPhases.push(thisFlight.state.trackingPoint);
+					spPhases.push(thisFlight.state.trackingPoint);
 
 					let lociLayer = new VectorLayer({
 						name : 'PLOCI' ,
@@ -875,7 +879,7 @@ class Flight extends React.Component {
 						disabled : (lociData == null),
 
                         source : new VectorSource({
-                            features: lociPhases                        
+                            features: lociPhases
 						})
                     });
 
