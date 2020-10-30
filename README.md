@@ -133,6 +133,8 @@ source ~/ngafid2.0/init_env.sh
 ```
 
 ## 4. Running the webserver
+For java 14:
+http://download.opensuse.org/repositories/Java:/Factory/openSUSE_Factory/x86_64/
 
 First we need maven to fetch all of the java dependencies:
 ```
