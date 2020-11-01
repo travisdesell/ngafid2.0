@@ -1,6 +1,6 @@
 [Unit]
 Description=NGAFID Web Server Service
-After=network-online.target
+After=multi-user.target
 
 [Service]
 Type=simple

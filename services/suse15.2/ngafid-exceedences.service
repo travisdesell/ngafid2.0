@@ -1,6 +1,6 @@
 [Unit]
 Description=NGAFID Run Exceedences Service
-After=network-online.target
+After=multi-user.target
 
 [Service]
 Type=simple
