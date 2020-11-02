@@ -117,10 +117,12 @@ class Flight extends React.Component {
 
 	getActiveLayers() {
 		let activeLayers = [];
-		for (var i = 0; i < this.state.layers.length; i++) {
-			let layer = this.state.layers[i];
-			if (layer.getVisible()) {
-				activeLayers.push(layer);
+		if (this.state.layers != null) {
+			for (var i = 0; i < this.state.layers.length; i++) {
+				let layer = this.state.layers[i];
+				if (layer.getVisible()) {
+					activeLayers.push(layer);
+				}
 			}
 		}
 	}
