@@ -859,13 +859,12 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "LOCI"
 							});
-							let sval = val / 100.0;
 							feat.setId(i);
 							feat.parent = 'PLOCI';
 							feat.setStyle([
 							  new Style({
 								stroke: new Stroke({
-								  color: paletteAt(sval),
+								  color: paletteAt(val),
 								  width: 8
 								})
 							  })
@@ -892,13 +891,12 @@ class Flight extends React.Component {
 								geometry : new LineString(points.slice(i, i+2)),
 								name : "SP"
 							});
-							let sval = val / 100.0;
 							feat.setId(i);
 							feat.parent = 'PStall';
 							feat.setStyle([
 							  new Style({
 								stroke: new Stroke({
-								  color: paletteAt(sval),
+								  color: paletteAt(val),
 								  width: 8
 								})
 							  })
