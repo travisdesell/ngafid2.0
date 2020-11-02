@@ -40,6 +40,8 @@ public class LossOfControlCalculation{
 	private Flight flight;
 	private File file;
 	private Optional<PrintWriter> pw;
+	private boolean stallProbabilityOnly;
+	private DoubleTimeSeries spCached;
 	private Map<String, DoubleTimeSeries> parameters;
 
 	/**
@@ -48,11 +50,12 @@ public class LossOfControlCalculation{
 	 * @param fleetId the id of the fleet being calculated
 	 * @param flightID the flightId of the flight being processed
 	 */
-	public LossOfControlCalculation(int flightId){ 
+	public LossOfControlCalculation(int flightId) { 
 		try {
 			this.flight = Flight.getFlight(connection, flightId);
 			this.parameters = getParameters(flightId);
 			this.pw = Optional.empty();
+			this.stallProbabilityOnly = (this.flight.getAirframeId() != C172SP_ID);
 		} catch (SQLException se) {
 			se.printStackTrace();
 		}
@@ -65,7 +68,7 @@ public class LossOfControlCalculation{
 	 * @param flightID the flightId of the flight being processed
 	 * @param path the filepath ROOT directory to print logfiles too
 	 * */
-	public LossOfControlCalculation(int flightId, Path path){ 
+	public LossOfControlCalculation(int flightId, Path path) { 
 		this(flightId);
 		//try to create a file output 
 		this.createFileOut(path);
@@ -76,7 +79,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @param path the path of the file to write
 	 */
-	private void createFileOut(Path path){
+	private void createFileOut(Path path) {
 		String filename = "/flight_"+ this.flight.getId() +".out";
 
 		file = new File(path.toString()+filename);
@@ -97,7 +100,7 @@ public class LossOfControlCalculation{
 	 *
 	 * @return a map with the {@link DoubleTimeSeries} references
 	 */
-	static Map<String, DoubleTimeSeries> getParameters(int flightId){
+	static Map<String, DoubleTimeSeries> getParameters(int flightId) {
 		Map<String, DoubleTimeSeries> params = new HashMap<>();
 		try{
 			for(String param : dtsParamStrings) {
@@ -123,6 +126,9 @@ public class LossOfControlCalculation{
 	public boolean notCalcuatable(){
 		if (this.parameters == null) {
 			System.err.println("ERROR: flight #" + this.flight.getId() + " is not calculatable for loss of control/stall prob, skipping!");
+
+			//update the database to mark as done EVEN IF it us uncalculatable
+			//this prevents infinite looping
 			this.updateDatabase();
 			return true;
 		}
@@ -384,7 +390,7 @@ public class LossOfControlCalculation{
 	 * @return a double with the calculated value at the given index
 	 */
 	private double calculateProbability(int index){
-		double prob = (this.calculateStallProbability(index) * this.getProSpin(index)) / 100;
+		double prob = (this.spCached.get(index) * this.getProSpin(index)) / 100;
 		return prob;
 	}
 
@@ -414,30 +420,39 @@ public class LossOfControlCalculation{
 		this.printDetails();
 		//this.parameters = getParameters(this.flight.getId());
 
-		DoubleTimeSeries loci = new DoubleTimeSeries("LOCI", "double");
-		DoubleTimeSeries stallProbability = new DoubleTimeSeries("StallProbability", "double");
+		Optional<DoubleTimeSeries> loci = Optional.empty();
+		
+		if(!this.stallProbabilityOnly) { 
+			loci = Optional.of(new DoubleTimeSeries("LOCI", "double"));
+		}
+
+		this.spCached = new DoubleTimeSeries("StallProbability", "double");
 		DoubleTimeSeries aoaSimp = new DoubleTimeSeries("AOASimple", "double");
 		DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
 
-		for(int i = 0; i<altAGL.size(); i++){
-			stallProbability.add(this.calculateStallProbability(i));
-			loci.add(this.calculateProbability(i));
+		for(int i = 0; i<altAGL.size(); i++) {
+			this.spCached.add(this.calculateStallProbability(i) / 100);
 			aoaSimp.add(this.getAOASimple(i));
+			if(loci.isPresent()) { 
+				loci.get().add(this.calculateProbability(i));
+			}
 		}
 
-		loci.updateDatabase(connection, this.flight.getId());  
-		stallProbability.updateDatabase(connection, this.flight.getId());
+		this.spCached.updateDatabase(connection, this.flight.getId());
+		if (loci.isPresent()) loci.get().updateDatabase(connection, this.flight.getId());  
 		aoaSimp.updateDatabase(connection, this.flight.getId());
 
 		this.updateDatabase();
 
-		if(this.pw.isPresent()){
-			this.writeFile(loci, stallProbability);
+		if(this.pw.isPresent()) {
+			this.writeFile(loci.get(), this.spCached);
 		}
 	}
 
 	/**
 	 * Writes the data to a file for analysis purposes
+	 *
+	 * @pre {@link Optional} pw has a wrapped instance of {@link PrintWriter}
 	 *
 	 * @param loci the loss of contorl {@link DoubleTimeSeries}
 	 * @param sProb the stall probability {@link DoubleTimeSeries}
@@ -455,21 +470,26 @@ public class LossOfControlCalculation{
 
 			pw.println("Average Values: ");
 			pw.println("Stall Probability: "+sProb.getAvg()+" LOC-I: "+loci.getAvg());
-		}catch (Exception e) { 
+		} catch (Exception e) { 
 			e.printStackTrace();
-		}finally{
+		} finally {
 			pw.close();
 		}
 	}
 
+	/**
+	 * Gets an {@link Iterator} of flight ids that have not been calculated yet
+	 *
+	 * @return an {@link Iterator} with the flight ids that need to be calculated
+	 */
 	public static Iterator<Integer> getUncalculatedFlightIds() {
-		String sqlQuery = "SELECT id FROM flights WHERE id NOT IN (SELECT flight_id FROM loci_processed) AND airframe_id = ?" +
+		String sqlQuery = "SELECT id FROM flights WHERE id NOT IN (SELECT flight_id FROM loci_processed) " +
 			" AND fleet_id = (SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'IMPORTED'))";
 		List<Integer> nums = null;
 
 		try {
 			PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-			preparedStatement.setInt(1, C172SP_ID);
+			//preparedStatement.setInt(1, C172SP_ID);
 			ResultSet resultSet = preparedStatement.executeQuery();
 	
 			nums = new ArrayList<>();
@@ -571,7 +591,7 @@ public class LossOfControlCalculation{
 		System.out.println("calculations took: "+secondsTime+"s");
 	}
 
-/**
+	/**
 	 * Main method for running calculations
 	 *
 	 * @param args args from the command line, with the first being a filename for output

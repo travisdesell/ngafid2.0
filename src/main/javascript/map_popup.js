@@ -68,7 +68,7 @@ class MapPopup extends React.Component {
 					info[i] = "Not Available";
 				} else if (i < 3) {
 					//show 2 S.Fs for probabilities and display as a decimal value
-					info[i] = (this.props.info[i] / 100).toFixed(2);
+					info[i] = this.props.info[i].toFixed(2);
 				} else {
 					//only show 1 S.F. for all other params
 					info[i] = this.props.info[i].toFixed(1);
