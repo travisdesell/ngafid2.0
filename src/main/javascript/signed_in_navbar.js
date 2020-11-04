@@ -197,6 +197,8 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
                                 <div className="dropdown-divider"></div>
+                                <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
+                                <div className="dropdown-divider"></div>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
                         </li>
