@@ -519,7 +519,7 @@ class Flight extends React.Component {
 		let target = features[0];
 		console.log(pixel);
 
-		var info = new Array();
+		var lociInfo = new Array(), info = null;
 
 		if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
 			let index = target.getId();
@@ -532,9 +532,9 @@ class Flight extends React.Component {
 				time_index : index
 			}
 
-			info.push(index);
-			info.push(this.state.seriesData.get('StallProbability')[index]);
-			info.push(this.state.seriesData.get('LOCI')[index]);
+			lociInfo.push(index);
+			lociInfo.push(this.state.seriesData.get('StallProbability')[index]);
+			lociInfo.push(this.state.seriesData.get('LOCI')[index]);
 
 			$.ajax({
 				type: 'POST',
@@ -544,15 +544,7 @@ class Flight extends React.Component {
 				success : function(response) {
 					console.log("got loci_metrics response");
 					console.log(response);
-					console.log(response['Pitch']);
-
-					info.push(response['Roll']);
-					info.push(response['Pitch']);
-					info.push(response['IAS']);
-					info.push(response['AltMSL']);
-					info.push(response['AltAGL']);
-					info.push(response['AOASimple']);
-					info.push(response['E1 RPM']);
+					info = response;
 				},
 				error : function(jqXHR, textStatus, errorThrown) {
 					console.log("Error getting upset data:");
@@ -566,6 +558,7 @@ class Flight extends React.Component {
 				pixel : pixel,
 				status : '',
 				info : info,
+				lociData : lociInfo,
 				placement : pixel,
 				lineSeg : target,
 				closePopup : this.closeParamDisplay(),
