@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import java.util.Map;
+
 public interface LossOfControlParameters{
 	public static final double STD_PRESS_INHG = 29.92;
 	public static final double COMP_CONV = (double) (Math.PI / 180); 
@@ -29,4 +31,12 @@ public interface LossOfControlParameters{
 	 * Strings that represent the supplementary metrics displayed in the UI
 	 */
 	public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
+
+	public static final Map<String, String> metricNames = Map.of(ROLL, "Roll (degrees)",
+																 IAS, "IAS (knots)",
+																 PITCH, "Pitch (degrees)",
+																 ALT_MSL, "Altitiude (MSL) [ft]",
+																 AOA_SIMPLE, "Angle of Attack (simple) [degrees]",
+																 E1_RPM, "Engine 1 RPM",
+																 ALT_AGL, "Altitiude (AGL) [ft]");
 }

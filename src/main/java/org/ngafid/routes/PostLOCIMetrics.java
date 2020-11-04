@@ -3,6 +3,7 @@ package org.ngafid.routes;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
 
@@ -36,6 +37,17 @@ public class PostLOCIMetrics implements Route {
         LOG.info("post loci metrics route initialized.");
     }
 
+	protected class FlightMetric {
+		double value;
+		String doubleSeriesId, name;
+
+		public FlightMetric(double value, String doubleSeriesId) {
+			this.value = value;
+			this.doubleSeriesId = doubleSeriesId;
+			this.name = metricNames.get(doubleSeriesId);
+		}
+	}
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling supplementary loci metrics route!");
@@ -54,13 +66,14 @@ public class PostLOCIMetrics implements Route {
 
 			LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
 
-			Map<String, Double> metrics = new HashMap<>();
+			List<FlightMetric> metrics = new ArrayList<>();
 
 			for (String seriesName : uiMetrics) {
 				System.out.println(seriesName);
 				DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
 
-				metrics.put(seriesName, series.get(timeIndex));
+				FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
+				metrics.add(flightMetric);
 			}
 
             //System.out.println(gson.toJson(uploadDetails));
