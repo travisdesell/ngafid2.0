@@ -428,11 +428,13 @@ public class LossOfControlCalculation{
 
 		this.spCached = new DoubleTimeSeries("StallProbability", "double");
 		DoubleTimeSeries aoaSimp = new DoubleTimeSeries("AOASimple", "double");
+		DoubleTimeSeries proSpinForce = new DoubleTimeSeries("ProSpin Force", "double");
 		DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
 
 		for(int i = 0; i<altAGL.size(); i++) {
 			this.spCached.add(this.calculateStallProbability(i) / 100);
 			aoaSimp.add(this.getAOASimple(i));
+			proSpinForce.add(this.getProSpin(i));
 			if(loci.isPresent()) { 
 				loci.get().add(this.calculateProbability(i));
 			}
@@ -441,6 +443,7 @@ public class LossOfControlCalculation{
 		this.spCached.updateDatabase(connection, this.flight.getId());
 		if (loci.isPresent()) loci.get().updateDatabase(connection, this.flight.getId());  
 		aoaSimp.updateDatabase(connection, this.flight.getId());
+		proSpinForce.updateDatabase(connection, this.flight.getId());
 
 		this.updateDatabase();
 

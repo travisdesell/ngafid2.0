@@ -183,6 +183,29 @@ public class User {
         return user;
     }
 
+	/**
+	 * Queries ths users preferences from the database
+	 *
+	 * @param connection A connection to the mysql database
+	 * @param userId the userId to query for
+	 *
+	 * @return an instane of {@link UserPreferences} with all the user's preferences and settings
+	 */
+	public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
+		PreparedStatement query = connection.prepareStatement("SELECT decimal_precision, metrics FROM user_preferences WHERE user_id = ?");
+		query.setInt(1, userId);
+
+		ResultSet resultSet = query.executeQuery();
+
+		UserPreferences userPreferences = null;
+
+		if (resultSet.next()) {
+			userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
+		}
+
+		return userPreferences;
+	}
+
 
     /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user
