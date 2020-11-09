@@ -3,6 +3,10 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Form from 'react-bootstrap/Form';
+import FormControl from 'react-bootstrap/FormControl';
+import ListGroup from 'react-bootstrap/ListGroup';
+
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
@@ -10,46 +14,18 @@ import SignedInNavbar from "./signed_in_navbar.js";
 class PreferencesPage extends React.Component {
     constructor(props) {
         super(props);
-
-        systemIds.forEach(systemId => {
-            if (systemId.confirmed === true) {
-                systemId.modified = false;
-            } else {
-                systemId.modified = true;
-            }
-            systemId.originalTail = systemId.tail;
-        });
-
+       
         this.state = {
-            systemIds : systemIds,
+            preferences : userPreferences,
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
-    }
 
-    validateTail(systemId) {
-        console.log("original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "'");
+		console.log("this users prefs:");
+		console.log(this.state.preferences);
+	}
 
-        let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
-
-        if (systemId.confirmed === 1) {
-            if (newTail === "") {
-                systemId.modified = false;
-            } else if (systemId.originalTail !== newTail) {
-                systemId.modified = true;
-            } else {
-                systemId.modified = false;
-            }
-        } else {
-            systemId.modified = true;
-        }
-        systemId.tail = newTail;
-
-        console.log(systemId);
-        this.setState(this.state);
-    }
-
-    updateSystemId(systemId) {
+    updatePreference(systemId) {
         let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
         console.log("updating system id on server -- original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "', newTail: '" + newTail + "'");
         if (systemId.tail === "") systemId.tail = systemId.originalTail;
@@ -84,70 +60,8 @@ class PreferencesPage extends React.Component {
         });  
     }
 
-    getSystemIdsPage(name, type) {
-        return (
-            <div style={{marginTop:"4", padding:"0 0 0 0"}}>
-                <div className="col-sm-12" style={{padding:"0 0 0 0"}}>
-                    <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
-                        <h5 className="card-header">
-                            {name}
-                        </h5>
-
-                        <div className="card-body">
-                            <div className="form-row align-items-center justify-content-center">
-                                <div className="col-sm-5 my-1" style={{margin:"0"}}>
-                                    <label style={{marginBottom:"0"}}>System Id</label>
-                                </div>
-                                <div className="col-sm-6 my-1" style={{margin:"0"}}>
-                                    <label style={{marginBottom:"0"}}>Tail Number</label>
-                                </div>
-                                <div className="col-sm-1 my-1" style={{margin:"0"}}>
-                                    <label style={{marginBottom:"0"}}>Submit </label>
-                                </div>
-                            </div>
-
-                            <hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
-
-                            {
-                                systemIds.map((systemId, systemIdIndex) => {
-                                    if (systemId.confirmed == type) {
-                                        return (
-                                            <form key={systemIdIndex} style={{marginBottom:"0px"}}>
-                                                <div className="form-row align-items-center justify-content-center">
-                                                    <div className="col-sm-5 my-1">
-                                                        <label className="sr-only" htmlFor={systemId.systemId + "-system-id-form"}>Name</label>
-                                                        <input type="text" className="form-control" id={systemId.systemId + "-system-id-form"} placeholder={systemId.systemId} readOnly></input>
-                                                    </div>
-                                                    <div className="col-sm-6 my-1">
-                                                        <label className="sr-only" htmlFor={systemId.systemId + "-tail-number-form"}>Tail Number</label>
-                                                        <input type="text" className="form-control" id={systemId.systemId + "-tail-number-form"} placeholder={systemId.originalTail} onChange={() => this.validateTail(systemId)}></input>
-                                                    </div>
-                                                    <div className="col-sm-1 my-1">
-                                                        <button type="button" className={"btn " + (systemId.modified ? "btn-outline-primary" : "btn-outline-secondary")} style={{height:"36", padding:"3 8 3 8", marginRight:"5"}} disabled={!systemId.modified} onClick={() => {this.updateSystemId(systemId)}}>
-                                                            <i className='fa fa-check'></i>
-                                                        </button>
-                                                    </div>
-                                                </div>
-                                            </form>
-                                        );
-                                    } else {
-                                        return ("");
-                                    }
-                                })
-                            }
-                        </div>
-                    </div>
-                </div>
-            </div>
-        );
-
-    }
-
     render() {
-        //console.log(systemIds);
-
-        let unconfirmedHtml = this.getSystemIdsPage("Unconfirmed System Ids", false);
-        let confirmedHtml = this.getSystemIdsPage("Confirmed System Ids", true);
+		let selectedMetrics = this.state.preferences.flightMetrics;
 
         return (
             <div>
@@ -155,11 +69,48 @@ class PreferencesPage extends React.Component {
 
                 <div className="container-fluid">
                     <div className="row">
-                        <div className="col-lg-6" style={{paddingRight:"0"}}>
-                            {unconfirmedHtml}
-                        </div>
-                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                            {confirmedHtml}
+                        <div className="col" style={{paddingRight:"16"}}>
+							 <div style={{marginTop:"4", padding:"0 0 0 0"}}>
+									<div className="col" style={{padding:"0 0 0 0"}}>
+										<div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
+											<h5 className="card-header">
+												Your Preferences:
+											</h5>
+											<div className="card-body">
+												<div className="form-row align-items-left justify-content-left">
+													<Form.Group controlId="exampleForm.ControlInput1">
+														<Form.Label>Decimal Precision:</Form.Label>
+														<Form.Control as="select">
+															<option>1</option>
+															<option>2</option>
+															<option>3</option>
+															<option>4</option>
+															<option>5</option>
+														</Form.Control>	
+													</Form.Group>
+												</div>
+												<div className="form-row justify-content-left">
+													<ListGroup style={{flexDirection:'row'}} horizontal>
+													{
+														selectedMetrics.map((metric, key) => {
+															return (
+																<ListGroup.Item action onClick={this.updatePreference(1)}>{metric}</ListGroup.Item>
+															);
+														})
+													}
+													</ListGroup>
+												</div>
+												<div className="form-row align-items-left justify-content-left">
+													available metrics
+												</div>
+											<hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
+										</div>
+									</div>
+								</div>
+							</div>
+
+
+
                         </div>
                     </div>
                 </div>
@@ -168,9 +119,9 @@ class PreferencesPage extends React.Component {
     }
 }
 
-console.log("setting system ids page with react!");
+console.log("setting preferences page with react!");
 
-var systemIdsPage = ReactDOM.render(
+var preferencesPage = ReactDOM.render(
     <PreferencesPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
    document.querySelector('#preferences-page')
 )
