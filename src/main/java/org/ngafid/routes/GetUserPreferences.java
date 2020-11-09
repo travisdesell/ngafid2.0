@@ -61,7 +61,21 @@ public class GetUserPreferences implements Route {
 
 		try {
 			UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
-		} catch (SQLException se) {
+
+            MustacheFactory mf = new DefaultMustacheFactory();
+            Mustache mustache = mf.compile(templateFile);
+
+            HashMap<String, Object> scopes = new HashMap<String, Object>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(request));
+			scopes.put("user_prefs_json",
+						"var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+
+			StringWriter stringOut = new StringWriter();
+            mustache.execute(new PrintWriter(stringOut), scopes).flush();
+            resultString = stringOut.toString();
+
+		} catch (Exception se) {
 			se.printStackTrace();
 		}
 
