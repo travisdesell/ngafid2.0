@@ -6,17 +6,80 @@ import ReactDOM from "react-dom";
 import Form from 'react-bootstrap/Form';
 import FormControl from 'react-bootstrap/FormControl';
 import ListGroup from 'react-bootstrap/ListGroup';
+import Button from 'react-bootstrap/Button';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
 
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
+let defSeriesNames = ["TAS",
+						"TRK",
+						"E1 CHT4",
+						"E1 CHT3",
+						"VSpdG",
+						"E1 EGT4",
+						"MagVar",
+						"E1 CHT2",
+						"E1 EGT2",
+						"E1 CHT1",
+						"E1 EGT3",
+						"VPLwas",
+						"E1 EGT1",
+						"HPLfd",
+						"WndSpd",
+						"WptBrg",
+						"BaroA",
+						"NAV1",
+						"NAV2",
+						"AltMSL",
+						"AltAGL",
+						"Pitch",
+						"IAS",
+						"Roll",
+						"E1 RPM",
+						"FQtyL",
+						"amp1",
+						"OAT",
+						"amp2",
+						"FQtyR",
+						"AltMSL Lag Diff",
+						"CRS",
+						"AltB",
+						"WndDr",
+						"HDG",
+						"HPLwas",
+						"GndSpd",
+						"E1 CHT Variance",
+						"VSpd",
+						"E1 FFlow",
+						"LatAc",
+						"E1 EGT Variance",
+						"E1 OilP",
+						"HCDI",
+						"volt1",
+						"volt2",
+						"E1 OilT",
+						"AirportDistance",
+						"Total Fuel",
+						"COM2",
+						"COM1",
+						"RunwayDistance",
+						"HAL",
+						"AltGPS",
+						"NormAc",
+						"WptDst",
+						"AOASimple",
+						"ProSpin Force"]
 
 class PreferencesPage extends React.Component {
     constructor(props) {
         super(props);
-       
+
         this.state = {
             preferences : userPreferences,
+			fullName : userName,
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
@@ -62,6 +125,13 @@ class PreferencesPage extends React.Component {
 
     render() {
 		let selectedMetrics = this.state.preferences.flightMetrics;
+		let serverMetrics = defSeriesNames.filter((e) => !selectedMetrics.includes(e));
+
+		let listStyle = {
+			//maxHeight: "400px",
+			//overflowX: "scroll",
+			//flexDirection: "row"
+		}
 
         return (
             <div>
@@ -74,7 +144,7 @@ class PreferencesPage extends React.Component {
 									<div className="col" style={{padding:"0 0 0 0"}}>
 										<div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
 											<h5 className="card-header">
-												Your Preferences:
+												{this.state.fullName}'s Preferences:
 											</h5>
 											<div className="card-body">
 												<div className="form-row align-items-left justify-content-left">
@@ -89,28 +159,39 @@ class PreferencesPage extends React.Component {
 														</Form.Control>	
 													</Form.Group>
 												</div>
-												<div className="form-row justify-content-left">
-													<ListGroup style={{flexDirection:'row'}} horizontal>
-													{
-														selectedMetrics.map((metric, key) => {
-															return (
-																<ListGroup.Item action onClick={this.updatePreference(1)}>{metric}</ListGroup.Item>
-															);
-														})
-													}
-													</ListGroup>
-												</div>
 												<div className="form-row align-items-left justify-content-left">
-													available metrics
+													<Row>
+														<Col>
+															<Form.Group>
+																<ListGroup style={listStyle} label="Your Selected Metrics">
+																{
+																	selectedMetrics.map((metric, key) => {
+																		return (
+																			<ListGroup.Item action onClick={this.updatePreference(1)}>{metric}</ListGroup.Item>
+																		);
+																	})
+																}
+																</ListGroup>
+															</Form.Group>
+														</Col>
+														<Col>
+															<Form.Control as="select">
+															{
+																serverMetrics.map((name, key) => {
+																	return (
+																		<option>{name}</option>
+																	);
+																})
+															}
+															</Form.Control>	
+														</Col>
+													</Row>
 												</div>
 											<hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
 										</div>
 									</div>
 								</div>
 							</div>
-
-
-
                         </div>
                     </div>
                 </div>
