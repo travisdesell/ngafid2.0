@@ -68,6 +68,7 @@ public class GetUserPreferences implements Route {
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
+			scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
 			scopes.put("user_prefs_json",
 						"var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
