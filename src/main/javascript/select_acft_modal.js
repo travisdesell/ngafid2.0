@@ -2,6 +2,7 @@ import 'bootstrap';
 
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import { errorModal } from "./error_modal.js";
 
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
@@ -45,14 +46,23 @@ class SelectAircraftModal extends React.Component {
 
     modalClicked() {
 		var selectedPath = this.state.paths[this.state.activeId - 1];
+		var useMSL = $('#altCheck').is(':checked');
+		console.log("will use msl: "+useMSL);
 
 		if(this.state.activeId == 0){
 			selectedPath = $('#cust_path').val();
+			if(selectedPath == null || selectedPath.match(/^ *$/) !== null){
+				console.log("selected path is not formatted correctly!");
+				let title = "Format Error";
+				let message = "Please make sure there is a path selected or there is a correctly formatted path in the custom path box. Press help for more information";
+				helpModal.show(title, message, this.reOpen);
+				return;
+			}
 			this.addFile(selectedPath); //cache the filepath in the server
 		}
 			
         console.log("modal submit clicked!");
-        this.state.submitMethod(this.state.version, selectedPath, this.state.flightId);
+        this.state.submitMethod(this.state.version, selectedPath, useMSL);
     }
 
 	selectPathId(pathId){
@@ -204,6 +214,17 @@ class SelectAircraftModal extends React.Component {
 					<div className="row p-2">
 						<div className="col">
 							{selectRow}
+						</div>
+					</div>
+				</div>
+
+				<div className="row p-3">
+					<div className="col">
+						 <div className="form-check">
+							<input className="form-check-input" type="checkbox" id="altCheck"></input>
+							  <label className="form-check-label" htmlFor="defaultCheck1">
+								  Use altMSL instead of altAGL
+							</label>
 						</div>
 					</div>
 				</div>

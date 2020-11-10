@@ -12,12 +12,14 @@ import java.sql.SQLException;
 
 import java.util.Map;
 import java.util.HashMap;
+import java.util.ArrayList;
 
 import java.io.StringWriter;
 import java.io.PrintWriter;
 import java.io.IOException;
 
 import org.ngafid.WebServer;
+import org.ngafid.events.Event;
 
 import static org.ngafid.flights.XPlaneParameters.*;
 
@@ -33,15 +35,20 @@ public abstract class XPlaneExport{
 	protected Flight flight;
 	protected Map<String, DoubleTimeSeries> parameters;
 
+	private boolean useMSL;	
+	private String startDateTime;
+
 	/**
 	 * Defualt constructor for X-Plane exports
 	 * @param flightId the flightId to create the export for
 	 */
-	public XPlaneExport(int flightId, String aircraftPath){
+	public XPlaneExport(int flightId, String aircraftPath, boolean useMSL){
 		try{
 			this.aircraftPath = aircraftPath+",";
+			this.useMSL = useMSL;
 			this.flight = Flight.getFlight(connection, flightId);
-			this.parameters = getSeriesData(connection, flightId);
+			this.parameters = getSeriesData(connection, flightId, useMSL);
+			this.startDateTime = flight.getStartDateTime();
 			this.dataOut = this.export();
 		}catch (SQLException e){
 			this.dataOut = new StringWriter();
@@ -56,10 +63,10 @@ public abstract class XPlaneExport{
 	 * @param flightId the flight for which to retrieve data for
 	 * @return a Map with the pertinent data
 	 */
-	public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId) throws SQLException{
+	public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId, boolean useMSL) throws SQLException{
 		Map<String, DoubleTimeSeries> seriesData = new HashMap<>();
 
-		seriesData.put(ALT_MSL, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL"));
+		seriesData.put(ALT, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, (useMSL ? "AltMSL" : "AltAGL")));
 		seriesData.put(LATITUDE, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude"));
 		seriesData.put(LONGITUDE, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude"));
 		seriesData.put(HEADING, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "HDG"));
@@ -73,6 +80,85 @@ public abstract class XPlaneExport{
 	}
 
 	/**
+	 * Converts the time in the database to a time X-Plane will recognize
+	 * i.e. HH:MM:SS.MS --> HH:MM:SS
+	 *
+	 * @return a String with the new formatted time
+	 */
+	private String getTime(){
+		System.out.println("FOUND TIME:");
+		System.out.println(this.startDateTime);
+
+		String [] timeStrings = this.startDateTime.split(" ");
+
+		String zuluTime = (timeStrings[1].split("\\."))[0];
+
+		System.out.println(zuluTime);
+		return zuluTime;
+	}
+
+	/**
+	 * Converts the date in the database to a date X-Plane will recognize
+	 * i.e. YYYY-MM-DD --> MM/DD/YY
+	 *
+	 * @return a String with the new formatted date
+	 */
+	private String getDate(){
+		String [] timeStrings = this.startDateTime.split(" ");
+
+		String [] dateParts = timeStrings[0].split("-");
+
+		String year = dateParts[0].substring(2,4);
+		String month = dateParts[1];
+		String day = dateParts[2];
+
+		String date = month+"/"+day+"/"+year;
+
+		return date;
+
+	}
+
+	/**
+	 * Creates a GPS calibration string
+	 *
+	 * @return a string in the appropriate X-Plane format
+	 */
+	private String getGPSCalibration() {
+		DoubleTimeSeries latitude = parameters.get(LATITUDE);
+		DoubleTimeSeries longitude = parameters.get(LONGITUDE);
+		DoubleTimeSeries altDTS = parameters.get(ALT);
+
+		for(int i = 0; i < altDTS.size(); i++){
+			double lat = latitude.get(i);
+			double lon = longitude.get(i);
+			double alt = altDTS.get(i);
+
+			if(!Double.isNaN(lat) && !Double.isNaN(lon) && !Double.isNaN(alt)) {
+				return lon + "," + lat + "," + alt;
+			}
+		}
+
+		System.err.println("couldn't place a calibration header in the export for fiight "+this.flight.toString()+"!");
+		return "";
+	}
+
+	//TODO: fix this so that all events over 1s get included
+	private void writeEvents(Map<String, Object> scopes) {
+		try{
+			ArrayList<Event> events = Event.getAll(connection, this.flight.getId());
+
+			for(Event e : events) {
+				System.out.println(e.toString());
+				for(int i = e.getStartLine(); i <= e.getEndLine(); i++) {
+					scopes.put(EVNT, EVNT.toUpperCase() + "," + i + ",");
+				}
+			}
+		}catch (Exception se) {
+			se.printStackTrace();
+		}
+	}
+
+	/**
 	 * Creates an export using MustacheFactory
 	 * @return an instance of a StringWriter that contains the export in the respective *.fdr format
 	 */
@@ -80,8 +166,14 @@ public abstract class XPlaneExport{
 		HashMap<String, Object> scopes = new HashMap<String, Object>();
 
 		scopes.put(ENDL, POSIX_ENDL);
-		scopes.put(TAIL, TAIL.toUpperCase()+","+flight.getTailNumber()+",");
-		scopes.put(ACFT, ACFT.toUpperCase()+","+this.aircraftPath);
+		scopes.put(TAIL, TAIL.toUpperCase() + "," + flight.getTailNumber() + ",");
+		scopes.put(ACFT, ACFT.toUpperCase() + "," + this.aircraftPath);
+		scopes.put(TIME, TIME.toUpperCase() + "," + this.getTime() + ",");
+		scopes.put(DATE, DATE.toUpperCase() + "," + this.getDate() + ",");
+		//This causes more problems
+		//scopes.put(CALI, CALI.toUpperCase() + "," + this.getGPSCalibration() + ",");
+
+		this.writeEvents(scopes);
 
 		StringBuffer sb = new StringBuffer();
 		this.writeFlightData(sb, scopes);
@@ -132,6 +224,15 @@ public abstract class XPlaneExport{
 	 */
 	public String toFdrFile(){
 		return dataOut.toString();
+	}
+
+	/**
+	 * Determines if this export uses MSL instead of AGL
+	 *
+	 * @return true if MSL is used, false if AGL is used
+	 */
+	protected boolean usesMSL(){
+		return this.useMSL;
 	}
 }
 
