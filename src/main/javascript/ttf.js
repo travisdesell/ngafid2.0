@@ -50,6 +50,8 @@ class TTFCard extends React.Component {
 
             datesChanged: true,
 
+            minRoll: 0.0,
+
             startYear: 2000,
             startMonth: 1,
             endYear: date.getFullYear(),
@@ -95,10 +97,30 @@ class TTFCard extends React.Component {
                      })
                 }),
             plotlyLayout: {
-                title: 'Self Defined Glide Angles',
+                title: 'Self Defined Glide Angles vs. Time',
                 autosize: true,
                 margin: {
                     pad: 10
+                },
+                xaxis: {
+                    title: {
+                        text: 'Time (Seconds)',
+                        font: {
+                            family: 'Courier New, monospace',
+                            size: 18,
+                            color: '#7f7f7f'
+                        }
+                    },
+                },
+                yaxis: {
+                    title: {
+                        text: 'Self Defined Glide Angle',
+                        font: {
+                            family: 'Courier New, monospace',
+                            size: 18,
+                            color: '#7f7f7f'
+                        }
+                    }
                 }
             },
 
@@ -355,12 +377,44 @@ class TTFCard extends React.Component {
     plotSelfDefinedGlideAngles(ttfs) {
         let curves = ttfs.map(ttf => {
             let y = ttf.selfDefinedGlideAngle;
-            return { x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
+            return { name: ttf.flightId, x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
+        });
+        let alts = ttfs.map(ttf => {
+            let y = ttf.AltMSL;
+            return { name: ttf.flightId, x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
         });
 
         console.log(curves.length);
+        var altLayout = {
+            title: 'Altitudes vs. Time',
+            autosize: true,
+            margin: {
+                pad: 10
+            },
+            xaxis: {
+                title: {
+                    text: 'Time (Seconds)',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                },
+            },
+            yaxis: {
+                title: {
+                    text: 'Altitude',
+                    font: {
+                        family: 'Courier New, monospace',
+                        size: 18,
+                        color: '#7f7f7f'
+                    }
+                }
+            }
+        };
 
         Plotly.newPlot('glide-angle-plot', curves, this.state.plotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('alt-plot', alts, altLayout, this.state.plotlyConfig);
     }
 
     getRunwayValue() {
@@ -578,6 +632,22 @@ class TTFCard extends React.Component {
         this.forceUpdate();
     }
 
+    onRollSliderChanged() {
+        let slider = document.getElementById('rollSlider')
+        this.state.minRoll = slider.value;
+
+        if (this.state.data != null) {
+            console.log(this.state.data);
+            for (const ttf of this.state.data.ttfs) {
+                if (ttf.maxRoll >= slider.value)
+                    this.plotTTF(ttf);
+                else
+                    this.hideTTF(ttf);
+            }
+        }
+        this.forceUpdate();
+    }
+
     render() {
         console.log("re-rendering");
 
@@ -599,7 +669,7 @@ class TTFCard extends React.Component {
                 </div>
             );
         }
-        console.log(this.state);
+        // console.log(this.state);
         let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
 
         let form = (
@@ -624,6 +694,7 @@ class TTFCard extends React.Component {
                     runways={runwayList}
                     runwayChange={(runway) => this.onRunwayFilterChanged(runway)}
                 />
+                Minimum Roll Value: {this.state.minRoll} <input id="rollSlider" type="range" min="0" max="90" value={this.state.minRoll} class="slider" id="rollSlider" onInput={(val) => this.onRollSliderChanged(val)}/>
                 <br/>
             </div>
         );
