@@ -34,6 +34,7 @@ public class TurnToFinal {
     // List of (lat, long) coords (in that order) representing a turn to final
     private final double[] latitude, longitude, altitude, roll, velocity;
     private double runwayAltitude;
+    private double maxRoll;
     private final Runway runway;
     private final String flightId;
     private final String airframe;
@@ -106,6 +107,7 @@ public class TurnToFinal {
         this.optimalDescentSpeedExceedences = new ArrayList<>();
         calculateOptimalDescentExceedences();
 
+        this.maxRoll = Arrays.stream(roll).map(Math::abs).max().getAsDouble();
 
         // TODO: write methods to populate these lists
     }
@@ -179,9 +181,10 @@ public class TurnToFinal {
 
             double c = Math.sqrt(a * a + b * b);
 
-            double angle = Math.asin(b / c);
+            double angle = Math.acos(b / c);
             if (Double.isNaN(angle))
                 LOG.info("Calculated NAN self defined glide angle");
+            angle = Math.toDegrees(angle);
             this.selfDefinedGlideAngle.add(angle);
         }
     }
@@ -267,7 +270,7 @@ public class TurnToFinal {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         // TODO: Verify that these are the correct names
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
 
@@ -302,7 +305,6 @@ public class TurnToFinal {
                 continue;
 
             Runway runway = airport.getRunway(it.getRunway());
-
             double runwayAltitude = altitude[to];
 
             for (;;) {
@@ -311,7 +313,7 @@ public class TurnToFinal {
                     break;
                 }
 
-                if (altitude[to] - runwayAltitude > 30)
+                if (altitude[to] > 15) // - runwayAltitude > 30)
                     break;
 
                 to -= 1;
@@ -326,13 +328,27 @@ public class TurnToFinal {
                     break;
                 }
 
-                if (altitude[from] - runwayAltitude > 400)
+                if (altitude[from] > 400) // - runwayAltitude > 400)
                     break;
 
                 from -= 1;
             }
 
             if (to == from)
+                continue;
+
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            for (int i = from; i < to; i++) {
+                min = Math.min(min, altitude[i]);
+                max = Math.max(max, altitude[i]);
+            }
+
+            System.out.println("min = " + min + " runwayAlt = " + runwayAltitude);
+            System.out.println("MaxMin = " + (max - min));
+            if (max - min < 60 || Double.isNaN(max - min))
+                continue;
+            if (min > 100 || Double.isNaN(min))
                 continue;
 
             TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
@@ -368,10 +384,12 @@ public class TurnToFinal {
                     Map.entry(PARAM_JSON_OPTIMAL_DESCENT_EXC, this.optimalDescentSlopeExceedences),
                     Map.entry(PARAM_JSON_LATITUDE, this.latitude),
                     Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
+                    Map.entry(PARAM_ALTITUDE_ABOVE_SEA_LEVEL, this.altitude),
                     Map.entry("flightId", this.flightId),
                     Map.entry("runway", this.runway),
                     Map.entry("airportIataCode", this.airportIataCode),
-                    Map.entry("flightStartDate", this.flightStartDate))
+                    Map.entry("flightStartDate", this.flightStartDate),
+                    Map.entry("maxRoll", this.maxRoll))
             );
         }
         catch (IllegalArgumentException _iae) {
