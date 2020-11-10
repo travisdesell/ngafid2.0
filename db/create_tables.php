@@ -449,5 +449,25 @@ $query = "CREATE TABLE `sim_aircraft` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `loci_processed` (
+    `fleet_id` INT(11) NOT NULL,
+	`flight_id` INT(11) NOT NULL,
+
+	PRIMARY KEY(`flight_id`),
+	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `user_preferences` (
+    `user_id` INT(11) NOT NULL,
+	`decimal_precision` INT(11) NOT NULL,
+	`metrics` VARCHAR(4096) NOT NULL,
+
+	PRIMARY KEY(`user_id`),
+	FOREIGN KEY(`user_id`) REFERENCES user(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 ?>
