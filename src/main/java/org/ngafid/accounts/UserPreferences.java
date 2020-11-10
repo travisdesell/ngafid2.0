@@ -17,11 +17,29 @@ public class UserPreferences {
 	public UserPreferences(int userId, int decimalPrecision, String metrics) {
 		this.userId = userId;
 		this.decimalPrecision = decimalPrecision;
-		this.flightMetrics = new ArrayList<>();
+		this.flightMetrics = csvToList(metrics);
+	}
 
-		for (String metric : metrics.split(",")) {
-			flightMetrics.add(metric.trim());
+	private List<String> csvToList(String stringValues) {
+		List<String> values = new ArrayList<>();
+
+		for (String value : stringValues.split(",")) {
+			values.add(value.trim());
 		}
+
+		return values;
+	}
+
+	public void update(int decimalPrecision, String metrics) {
+		if (decimalPrecision != this.decimalPrecision) {
+			this.decimalPrecision = decimalPrecision;
+		}
+
+		List<String> newMetrics;
+		if (!(newMetrics = csvToList(metrics)).equals(this.flightMetrics)) {
+			this.flightMetrics = newMetrics;
+		}
+		//implement sql query here
 	}
 
 	/**

@@ -78,7 +78,8 @@ class PreferencesPage extends React.Component {
         super(props);
 
         this.state = {
-            preferences : userPreferences,
+			decimalPrecision : userPreferences.decimalPrecision,
+			selectedMetrics : userPreferences.flightMetrics,
 			fullName : userName,
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount
@@ -123,15 +124,36 @@ class PreferencesPage extends React.Component {
         });  
     }
 
+	addMetric() {
+		let name = event.target.value;
+
+		console.log("adding " + name + " to the users metrics");
+		this.state.selectedMetrics.push(name);
+
+		this.setState(this.state);
+	}
+
     render() {
-		let selectedMetrics = this.state.preferences.flightMetrics;
+		let selectedMetrics = this.state.selectedMetrics;
+
+		//serverMetrics = (All Series) - (User Selected Series)
 		let serverMetrics = defSeriesNames.filter((e) => !selectedMetrics.includes(e));
 
+		let styleButtonSq = {
+            flex : "right",
+			float : "auto"
+        };
+
 		let listStyle = {
+			maxHeight: "400px",
+			overflowY: "scroll"
+		};
+
+		//let listStyle = {
 			//maxHeight: "400px",
 			//overflowX: "scroll",
 			//flexDirection: "row"
-		}
+		//}
 
         return (
             <div>
@@ -147,47 +169,72 @@ class PreferencesPage extends React.Component {
 												{this.state.fullName}'s Preferences:
 											</h5>
 											<div className="card-body">
-												<div className="form-row align-items-left justify-content-left">
-													<Form.Group controlId="exampleForm.ControlInput1">
-														<Form.Label>Decimal Precision:</Form.Label>
-														<Form.Control as="select">
-															<option>1</option>
-															<option>2</option>
-															<option>3</option>
-															<option>4</option>
-															<option>5</option>
-														</Form.Control>	
-													</Form.Group>
+												<div className="col" style={{padding:"0 0 0 0"}}>
+													<div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
+														<h6 className="card-header">
+															Your Flight Metric Preferences:
+														</h6>
+														<div className="card-body">
+															<div className="form-row align-items-left justify-content-left">
+																<Form.Group controlId="exampleForm.ControlInput1">
+																	<Form.Label>Decimal Precision:</Form.Label>
+																	<Form.Control as="select" defaultValue={this.state.decimalPrecision}>
+																		<option>1</option>
+																		<option>2</option>
+																		<option>3</option>
+																		<option>4</option>
+																		<option>5</option>
+																	</Form.Control>	
+																</Form.Group>
+															</div>
+															<div className="form-row align-items-left justify-content-left">
+																<Row>
+																	<Col xs md="auto">
+																		<Form.Group>
+																			<Form.Label>Your Selected Metrics:</Form.Label>
+																			<ListGroup style={listStyle} label="Your Selected Metrics">
+																			{
+																				selectedMetrics.map((metric, key) => {
+																					return (
+																						<ListGroup.Item key={key} size="sm">
+																							<Container>
+																								<Row className="justify-content-md-center">
+																									<Col xs>
+																										{metric}
+																									</Col>
+																									<Col xs>
+																										<button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeFile(index)} title="Permanently delete this cached aircraft">
+																											<i className="fa fa-times" aria-hidden="true"></i>
+																										</button>
+																									</Col>
+																								  </Row>
+																							</Container>
+																						</ListGroup.Item>
+																					);
+																				})
+																			}
+																			</ListGroup>
+																		</Form.Group>
+																	</Col>
+																	<Col>
+																		<Form.Label>Available Metrics:</Form.Label>
+																		<Form.Control as="select" onChange={this.addMetric.bind(this)} value="Select a metric">
+																		<option value="Select a metric" key='0' disabled>Select a metric</option>
+																		{
+																			serverMetrics.map((name, key) => {
+																				return (
+																					<option value={name} key={key+1}>{name}</option>
+																				);
+																			})
+																		}
+																		</Form.Control>	
+																	</Col>
+																</Row>
+															</div>
+														<hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
+													</div>
 												</div>
-												<div className="form-row align-items-left justify-content-left">
-													<Row>
-														<Col>
-															<Form.Group>
-																<ListGroup style={listStyle} label="Your Selected Metrics">
-																{
-																	selectedMetrics.map((metric, key) => {
-																		return (
-																			<ListGroup.Item action onClick={this.updatePreference(1)}>{metric}</ListGroup.Item>
-																		);
-																	})
-																}
-																</ListGroup>
-															</Form.Group>
-														</Col>
-														<Col>
-															<Form.Control as="select">
-															{
-																serverMetrics.map((name, key) => {
-																	return (
-																		<option>{name}</option>
-																	);
-																})
-															}
-															</Form.Control>	
-														</Col>
-													</Row>
-												</div>
-											<hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
+											</div>
 										</div>
 									</div>
 								</div>
