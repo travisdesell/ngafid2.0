@@ -1,0 +1,25 @@
+[Unit]
+Description=NGAFID LOCI/Stall Probability Calculation Service
+After=multi-user.target
+
+[Service]
+Type=simple
+User=ngafid
+Environment="NGAFID_PORT=8181"
+Environment="NGAFID_UPLOAD_DIR=/mnt/ngafid/ngafid_data/uploads"
+Environment="NGAFID_ARCHIVE_DIR=/mnt/ngafid/ngafid_data/archive"
+Environment="NGAFID_DB_INFO=/mnt/ngafid/ngafid2.0/db/db_info.php"
+Environment="TERRAIN_DIRECTORY=/mnt/ngafid/ngafid_data/terrain/"
+Environment="AIRPORTS_FILE=/mnt/ngafid/ngafid_data/airports/airports_parsed.csv"
+Environment="RUNWAYS_FILE=/mnt/ngafid/ngafid_data/runways/runways_parsed.csv"
+Environment="MUSTACHE_TEMPLATE_DIR=/mnt/ngafid/ngafid2.0/src/main/resources/public/templates/"
+Environment="SPARK_STATIC_FILES=/mnt/ngafid/ngafid2.0/src/main/resources/public/"
+Environment="MAVEN_OPTS=-Denv.JAVA_HOME=/usr/java/dk-14.0.2"
+Environment=JAVA_HOME=/usr/java/jdk-14.0.2
+Environment=PATH=/usr/bin
+
+WorkingDirectory=/mnt/ngafid/ngafid2.0
+ExecStart=/bin/sh run_loc.sh auto
+
+[Install]
+WantedBy=multi-user.target

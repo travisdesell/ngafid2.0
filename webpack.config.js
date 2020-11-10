@@ -5,7 +5,7 @@ var path = require('path');
 module.exports = {
     watch: true,
 
-   node: {
+    node: {
           fs: 'empty'
     },
 
@@ -39,6 +39,7 @@ module.exports = {
         trends: __dirname + "/src/main/javascript/trends.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
+		user_preferences : __dirname + "/src/main/javascript/preferences_page.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
         ttf: __dirname + "/src/main/javascript/ttf.js"

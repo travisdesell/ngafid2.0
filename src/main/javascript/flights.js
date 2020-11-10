@@ -340,6 +340,7 @@ class FlightsPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
+			layers : [],
             flights : undefined, //start out with no specified flights
 
             //needed for paginator
@@ -348,6 +349,7 @@ class FlightsPage extends React.Component {
             pageSize : 10
         };
 
+		this.navRef = React.createRef();
     }
 
     mapSelectChanged(style) {
@@ -361,6 +363,35 @@ class FlightsPage extends React.Component {
             mapStyle : style
         });
     }
+
+    mapLayerChanged(style) {
+		console.log("changing path to: "+style);
+		console.log(this.state.selectableLayers);
+
+		for(let i = 0; i < this.state.selectableLayers.length; i++){
+			let layer = this.state.selectableLayers[i];
+			let name = layer.values_.name;
+			
+			if(name == style) {
+				layer.setVisible(true);
+				console.log("setting layer " + name + " to visible");
+			} else {
+				layer.setVisible(false);
+				console.log("setting layer " + name + " to not visible");
+			}
+		}
+
+        console.log("map layer changed to: '" +  style + "'!");
+
+		this.setMapStyle(style);
+		
+   }
+
+	setMapStyle(style) {
+		 this.setState({
+			mapStyle : style
+		});
+	}
 
 
     showMap() {
@@ -537,6 +568,7 @@ class FlightsPage extends React.Component {
                         currentPage : currentPage,
                         numberPages : response.numberPages  
                     });
+
 				}
             },
             error : function(jqXHR, textStatus, errorThrown) {
@@ -545,6 +577,13 @@ class FlightsPage extends React.Component {
             async: true 
         });  
     }
+
+	setAvailableLayers(plotLayers) {
+		console.log("changing selectable layers on navbar");
+		console.log(plotLayers);
+
+		this.setState({selectableLayers : plotLayers});
+	}
 
     render() {
         let style = null;
@@ -567,6 +606,7 @@ class FlightsPage extends React.Component {
             <div>
                 <SignedInNavbar 
                     activePage="flights"
+					selectableLayers={this.state.selectableLayers}
                     filterVisible={this.state.filterVisible}
                     plotVisible={this.state.plotVisible}
                     mapVisible={this.state.mapVisible}
@@ -578,8 +618,10 @@ class FlightsPage extends React.Component {
                     toggleFilter={() => this.toggleFilter()}
                     toggleMap={() => this.toggleMap()}
                     mapSelectChanged={(style) => this.mapSelectChanged(style)}
+                    mapLayerChanged={(style) => this.mapLayerChanged(style)}
                     waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
+					ref={this.navRef}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
                 />
@@ -620,11 +662,14 @@ class FlightsPage extends React.Component {
 
                     <FlightsCard
                         parent={this}
+						layers={this.state.layers}
                         flights={this.state.flights} 
+						navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}
                         flights={this.state.flights}
+						setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {
                             this.setState({
                                 flights : flights

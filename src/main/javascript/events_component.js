@@ -14,7 +14,7 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 // populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
-for (let d = 0; d < 45; d++){
+for (let d = 0; d < 57; d++){
     // iterate through RGB permutations (up to 64)
     let green = d % 4;
     let blue = Math.trunc(d/4) % 4;

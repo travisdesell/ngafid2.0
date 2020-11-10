@@ -2,12 +2,14 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
+import { MapPopup } from "./map_popup.js";
 
 import { map, styles, layers, Colors } from "./map.js";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
-import {Group, Vector as VectorLayer} from 'ol/layer.js';
+import Overlay from 'ol/Overlay';
 import {Vector as VectorSource} from 'ol/source.js';
+import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
@@ -17,11 +19,57 @@ import { Itinerary } from './itinerary_component.js';
 import { TraceButtons } from './trace_buttons_component.js';
 import { Tags } from './tags_component.js';
 import { Events } from './events_component.js';
-import { selectAircraftModal } from './select_acft_modal';
+import { selectAircraftModal } from './select_acft_modal.js';
 
 import Plotly from 'plotly.js';
 
 var moment = require('moment');
+
+// So the weights w0 and w1 are for the weighted average
+// They should add to 1.0 so if one of them is 0, the resulting color
+// will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
+function interpolateColors(c0, w0, c1, w1) {
+	var new_color = [0.0, 0.0, 0.0];
+	// red = 0, green = 1, blue = 2
+	for (var i = 0; i < 3; i++) {
+		new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
+	}
+	return new_color;
+}
+
+// loc_percentage should be between 0 and 1.0
+// This will get the color for a given p(LOC)
+// This can probably be made cleaner / not use if statements and just use lists but im lazy
+function paletteAt(loc_probability) {
+	if (loc_probability < 0.8) {
+		var c0 = [0, 255, 0]; // green
+		var c1 = [255, 255, 0]; // yellow
+
+		// This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
+		var weight = loc_probability / 0.8;
+		var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else if (loc_probability >= 0.8 && loc_probability < 1.0) {
+		// Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
+		var c0 = [255, 255, 0];//yellow
+		var c1 = [255, 0, 0];//red
+
+		// The minimum value of this will be 0.0 and max is 0.2
+		var numerator = loc_probability - 0.8;
+
+		// value range is 0.0 to 1.0
+		var weight = numerator / 0.2;
+		var w0 = 1.0 - weight;
+		var w1 = weight;
+
+		return interpolateColors(c0, w0, c1, w1);
+	} else {
+		// red
+		return [255, 0, 0];
+	}
+}
 
 class Flight extends React.Component {
     constructor(props) {
@@ -45,10 +93,13 @@ class Flight extends React.Component {
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
+			points : [],
             tags : props.tags,
-            layer : null,
             parent : props.parent,
+			selectedPlot : null,
             color : color,
+			mapPopups : [],
+			seriesData : new Map(),
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -59,7 +110,23 @@ class Flight extends React.Component {
         }
 
 		this.submitXPlanePath = this.submitXPlanePath.bind(this);
+		this.displayParameters = this.displayParameters.bind(this);
+		this.closeParamDisplay = this.closeParamDisplay.bind(this);
+		this.zoomChanged = this.zoomChanged.bind(this);
     }
+
+	getActiveLayers() {
+		let activeLayers = [];
+		if (this.state.layers != null) {
+			for (var i = 0; i < this.state.layers.length; i++) {
+				let layer = this.state.layers[i];
+				if (layer.getVisible()) {
+					activeLayers.push(layer);
+				}
+			}
+		}
+	}
+	
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -70,8 +137,10 @@ class Flight extends React.Component {
         console.log("hiding flight path");
         this.state.pathVisible = false;
         this.state.itineraryVisible = false;
-        if (this.state.layer) {
-            this.state.layer.setVisible(false);
+        if (this.getActiveLayers()) {
+			for (var layer in this.getActiveLayers()) {
+				layer.setVisible(false);
+			}
         }
 
         // hiding events
@@ -152,8 +221,10 @@ class Flight extends React.Component {
                      * Pitch
                      * Roll
                      * Vertical Speed
+					 * LOCI
+					 * StallProbability
                      */
-                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd"];
+                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOCI", "StallProbability"];
                     var commonTraceNames = [];
                     var uncommonTraceNames = [];
 
@@ -177,7 +248,7 @@ class Flight extends React.Component {
                 error : function(jqXHR, textStatus, errorThrown) {
                     this.state.commonTraceNames = null;
                     this.state.uncommonTraceNames = null;
-                    errorModal.show("Error Getting Potentail Plot Parameters", errorThrown);
+                    errorModal.show("Error Getting Potential Plot Parameters", errorThrown);
                 },
                 async: true
             });
@@ -220,18 +291,28 @@ class Flight extends React.Component {
         console.log(event.target);
         console.log(event.target.value);
 
-        let color = event.target.value;
-        target.state.color = color;
-
-        console.log(target);
-        console.log(target.state);
-
-        target.state.layer.setStyle(new Style({
+        target.state.baseLayer.setStyle(new Style({
             stroke: new Stroke({
-                color: color,
+                color: event.target.value,
                 width: 1.5
             })
         }));
+
+		for (let i = 0; i < target.state.layers.length; i++) {
+			let layer = target.state.layers[i];
+			if (layer.get('nMap')) {
+				layer.setStyle(new Style({
+						stroke: new Stroke({
+							color: event.target.value,
+							width: 12,
+						})
+					})
+				);
+			}
+		}
+
+
+        target.setState({color : event.target.value}); 
     }
 
     downloadClicked() {
@@ -386,13 +467,13 @@ class Flight extends React.Component {
 	 * @param type which type of download (xplane, csv etc)
 	 */
     downloadClicked(type) {
-        if(type === 'KML'){
+        if (type === 'KML') {
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
-        }else if (type === 'XPL10'){
-			selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
-        }else if (type === 'XPL11'){
-			selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
-        }else if(type === 'CSV'){
+        } else if (type === 'XPL10') {
+		    selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
+        } else if (type === 'XPL11') {
+		    selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
+        } else if(type === 'CSV') {
             window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
 		}
     }
@@ -412,6 +493,108 @@ class Flight extends React.Component {
     cesiumClicked() {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
+
+	closeParamDisplay() {
+		console.log("popup closed!");
+	}
+
+	zoomChanged(oldZoom) {
+		let currZoom = map.getView().getZoom();
+		console.log("old zoom: " + oldZoom);
+		console.log("current zoom: " + currZoom);
+
+		for(let i = 0; i < this.state.mapPopups.length; i++) {
+			this.state.mapPopups[i].close();
+		}
+	}
+
+	displayParameters(event){
+		var pixel = event.pixel;
+		var features = [];
+
+		map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+			features.push(feature)
+		});
+
+		let target = features[0];
+		console.log(pixel);
+
+		var lociInfo = new Array(), info = null;
+
+		if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
+			let index = target.getId();
+			console.log("target info:");
+			console.log(index);
+			console.log(target);	
+
+			let submissionData = {
+				flight_id : this.props.flightInfo.id,
+				time_index : index
+			}
+
+			lociInfo.push(index);
+			lociInfo.push(this.state.seriesData.get('StallProbability')[index]);
+			lociInfo.push(this.state.seriesData.get('LOCI')[index]);
+
+			$.ajax({
+				type: 'POST',
+				url: '/protected/loci_metrics',
+				data : submissionData,
+				dataType : 'json',
+				success : function(response) {
+					console.log("got loci_metrics response");
+					console.log(response);
+					info = response;
+				},
+				error : function(jqXHR, textStatus, errorThrown) {
+					console.log("Error getting upset data:");
+					console.log(errorThrown);
+				},   
+				async: false 
+			});  
+
+
+			var popupProps = {
+				pixel : pixel,
+				status : '',
+				info : info,
+				lociData : lociInfo,
+				placement : pixel,
+				lineSeg : target,
+				closePopup : this.closeParamDisplay(),
+				title : 'title'
+			};
+
+			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
+		} else {
+			console.log("wont render popup");
+		}
+	}
+
+	/**
+	 * Recursively find a vacant (unpinned) popup or create a new one
+	 */
+	renderNewPopup(index, props) {
+		if (index < 0 || this.state.mapPopups[index] == null) {
+			// if we reach the bottom of the stack, we must allocate memory for a new popup component
+			var outterHTM = document.createElement('div');
+			document.body.appendChild(outterHTM);
+			var popup = ReactDOM.render(React.createElement(MapPopup, props), outterHTM);
+			outterHTM.setAttribute("id", "popover" + this.state.mapPopups.length);
+			this.state.mapPopups.push(popup);
+			return popup;
+		} else if (this.state.mapPopups[index].isPinned()) {
+			// skip reallocating an existing popup if it is pinned
+			return this.renderNewPopup(index - 1, props);
+		} else {
+			console.log("using existing popup to render!");
+			let element = "popover" + index;
+			var popup = ReactDOM.render(React.createElement(MapPopup, props), document.getElementById(element));
+			popup.show(); // we must call show in case the popup was closed before
+			return popup;
+		}
+
+	}
 
     tagClicked() {
         console.log("tag clicked!");
@@ -469,6 +652,47 @@ class Flight extends React.Component {
 
             var thisFlight = this;
 
+            var lociSubmissionData = {
+				seriesName : "LOCI",
+                flightId : this.props.flightInfo.id
+            };
+
+			//TODO: get upset probability data here
+
+			console.log("getting upset probabilities");
+
+			var names = [
+				"StallProbability",
+				"LOCI",
+			];
+
+			for (let i = 0; i < names.length; i++) {
+				const name = names[i];
+				console.log(name);
+
+				var submissionData = {
+					seriesName : name,
+					flightId : this.props.flightInfo.id
+				};
+
+				$.ajax({
+					type: 'POST',
+					url: '/protected/double_series',
+					data : submissionData,
+					dataType : 'json',
+					success : function(response) {
+						console.log("got double_series response");
+						console.log(thisFlight.state.seriesData);
+						thisFlight.state.seriesData.set(name, response.y);
+					},
+					error : function(jqXHR, textStatus, errorThrown) {
+						console.log("Error getting upset data:");
+						console.log(errorThrown);
+					},   
+					async: true 
+				});  
+			}
+
             var submissionData = {
                 request : "GET_COORDINATES",
                 id_token : "TEST_ID_TOKEN",
@@ -489,57 +713,25 @@ class Flight extends React.Component {
 
                     var coordinates = response.coordinates;
 
-                    var points = [];
+					let points = thisFlight.state.points;
                     for (var i = 0; i < coordinates.length; i++) {
                         var point = fromLonLat(coordinates[i]);
                         points.push(point);
                     }
 
                     var color = thisFlight.state.color;
-                    console.log(color);
+                    //console.log(color);
 
                     thisFlight.state.trackingPoint = new Feature({
                                     geometry : new Point(points[0]),
                                     name: 'TrackingPoint'
                                 });
 
-                    thisFlight.state.layer = new VectorLayer({
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: color,
-                                width: 3
-                            }),
-                            image: new Circle({
-                                radius: 5,
-                                //fill: new Fill({color: [0, 0, 0, 255]}),
-                                stroke: new Stroke({
-                                    color: [0, 0, 0, 0],
-                                    width: 2
-                                })
-                            })
-                        }),
+					thisFlight.state.trackingPoint.setId(points[0]);
 
-                        source : new VectorSource({
-                            features: [
-                                new Feature({
-                                    geometry: new LineString(points),
-                                    name: 'Line'
-                                }),
-                                thisFlight.state.trackingPoint
-                            ]
-                        })
-                    });
+					thisFlight.state.layers = new Array();
+					let layers = thisFlight.state.layers;
 
-                    thisFlight.state.layer.flightState = thisFlight;
-
-                    thisFlight.state.layer.setVisible(true);
-                    thisFlight.state.pathVisible = true;
-                    thisFlight.state.itineraryVisible = true;
-                    thisFlight.state.nanOffset = response.nanOffset;
-                    thisFlight.state.coordinates = response.coordinates;
-                    thisFlight.state.points = points;
-
-                    map.addLayer(thisFlight.state.layer);
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
@@ -593,8 +785,39 @@ class Flight extends React.Component {
                         }
                     }
 
-                    // create itineraryLayer
-                    thisFlight.state.itineraryLayer = new VectorLayer({
+					thisFlight.state.baseLayer = new VectorLayer({
+						name : 'Itinerary' ,
+						description : 'Itinerary with Phases',
+						nMap : false,
+                        style: new Style({
+                            stroke: new Stroke({
+                                color: color,
+                                width: 3
+                            }),
+                            image: new Circle({
+                                radius: 5,
+                                //fill: new Fill({color: [0, 0, 0, 255]}),
+                                stroke: new Stroke({
+                                    color: [0, 0, 0, 0],
+                                    width: 2
+                                })
+                            })
+                        }),
+
+                        source : new VectorSource({
+                            features: [
+                                new Feature({
+                                    geometry: new LineString(points),
+                                    name: 'Line'
+                                }),
+                                thisFlight.state.trackingPoint,
+                            ]
+                        })
+                    });
+
+					let phaseLayer = new VectorLayer({
+						name : 'Itinerary Phases',
+						nMap : true,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [1,1,1,1],
@@ -605,11 +828,173 @@ class Flight extends React.Component {
                         source : new VectorSource({
                             features: flight_phases
                         })
+                    }); 
+
+					let baseLayer = thisFlight.state.baseLayer;
+
+                    baseLayer.flightState = thisFlight;
+
+                    thisFlight.state.pathVisible = true;
+                    thisFlight.state.itineraryVisible = true;
+                    thisFlight.state.nanOffset = response.nanOffset;
+                    thisFlight.state.coordinates = response.coordinates;
+                    thisFlight.state.points = points;
+
+					// toggle visibility of itinerary
+					layers.push(baseLayer, phaseLayer);
+					
+					const lociData = thisFlight.state.seriesData.get('LOCI');
+					const spData = thisFlight.state.seriesData.get('StallProbability');
+
+					var lociPhases = [], lociOutlinePhases = [];
+					if (lociData != null) {
+						for(let i = 0; i < lociData.length; i++){
+							let val = lociData[i];
+							var feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "LOCI"
+							});
+							feat.setId(i);
+							feat.parent = 'PLOCI';
+							feat.setStyle([
+							  new Style({
+								stroke: new Stroke({
+								  color: paletteAt(val),
+								  width: 8
+								})
+							  })
+							]);
+
+							let outFeat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "LOCI Outline"
+							});
+
+							outFeat.setId(i);
+							outFeat.parent = 'PLOCI';
+
+							lociPhases.push(feat);
+							lociOutlinePhases.push(outFeat);
+						}
+					}
+
+					var spPhases = [], spOutlinePhases = [];
+					if (spData != null) {
+						for(let i = 0; i < spData.length; i++){
+							let val = spData[i];
+							var feat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "SP"
+							});
+							feat.setId(i);
+							feat.parent = 'PStall';
+							feat.setStyle([
+							  new Style({
+								stroke: new Stroke({
+								  color: paletteAt(val),
+								  width: 8
+								})
+							  })
+							]);
+
+							let outFeat = new Feature({
+								geometry : new LineString(points.slice(i, i+2)),
+								name : "SP Outline"
+							});
+
+							outFeat.setId(i);
+							outFeat.parent = 'PStall';
+
+							spOutlinePhases.push(outFeat);
+							spPhases.push(feat);
+						}
+					}
+
+					lociPhases.push(thisFlight.state.trackingPoint);
+					spPhases.push(thisFlight.state.trackingPoint);
+
+					let lociLayer = new VectorLayer({
+						name : 'PLOCI' ,
+						description : 'Loss of Control Probability' ,
+						nMap : false,
+						disabled : (lociData == null),
+
+                        source : new VectorSource({
+                            features: lociPhases
+						})
                     });
 
-                    // add itineraryLayer to map
-                    map.addLayer(thisFlight.state.itineraryLayer);
+					let lociLayerOutline = new VectorLayer({
+						name : 'PLOCI Outline' ,
+						description : 'Loss of Control Probability' ,
+						nMap : true,
+						disabled : (lociData == null),
+						style : new Style({
+							stroke: new Stroke({
+								color: thisFlight.state.color,
+								width : 12
+							})
+						}),
+                        source : new VectorSource({
+                            features: lociOutlinePhases                        
+						})
+                    });
 
+					let spLayer = new VectorLayer({
+						name : 'PStall' ,
+						description : 'Stall Probability',
+						nMap : false,
+						disabled : (spData == null),
+						source : new VectorSource({
+							features: spPhases                        
+						})
+                    });
+
+					let spLayerOutline = new VectorLayer({
+						name : 'PStall Outline' ,
+						description : 'Stall Probability',
+						nMap : true,
+						disabled : (spData == null),
+						style : new Style({
+							stroke: new Stroke({
+								color: thisFlight.state.color,
+								width : 12
+
+							})
+						}),
+                        source : new VectorSource({
+							features: spOutlinePhases                        
+						})
+                    });
+
+					lociLayer.flightState = thisFlight;
+					spLayer.flightState = thisFlight;
+
+					layers.push(lociLayerOutline, lociLayer, spLayerOutline, spLayer);
+
+					console.log("adding layers!");
+					for(let i = 0; i < layers.length; i++){
+						let layer = layers[i];
+						console.log(layer);
+						if(layer.get('name').includes('Itinerary')) {
+							//Itinerary will be the default layer
+							thisFlight.state.selectedPlot = layer.values_.name;
+							layer.setVisible(true);
+						} else {
+							layer.setVisible(false);
+						}
+						map.addLayer(layer);
+					}
+
+					console.log(layers);
+					thisFlight.props.setAvailableLayers(layers);
+
+					console.log("added layers");
+					console.log(map.getLayers());
+					map.on('click', thisFlight.displayParameters); 
+
+					var currZoom = map.getView().getZoom();
+					map.on('moveend', () => thisFlight.zoomChanged(currZoom));
                     // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
@@ -619,7 +1004,7 @@ class Flight extends React.Component {
                         eventPoints = thisFlight.state.eventPoints;
                         eventOutlines = thisFlight.state.eventOutlines;
                         for (let i = 0; i < events.length; i++){
-                            let line = new LineString(points.slice(events[i].startLine, events[i].endLine + 2));
+                            let line = new LineString(points.slice(events[i].startLine -1, events[i].endLine + 1));
                             eventPoints[i].setGeometry(line);                   // set geometry of eventPoint Features
                             eventOutlines[i].setGeometry(line);
                         }
@@ -631,7 +1016,7 @@ class Flight extends React.Component {
                         map.addLayer(eventLayer);
                     }
 
-                    let extent = thisFlight.state.layer.getSource().getExtent();
+                    let extent = baseLayer.getSource().getExtent();
                     console.log(extent);
                     map.getView().fit(extent, map.getSize());
 
@@ -649,16 +1034,26 @@ class Flight extends React.Component {
             //toggle visibility if already loaded
             this.state.pathVisible = !this.state.pathVisible;
             this.state.itineraryVisible = !this.state.itineraryVisible;
-            this.state.layer.setVisible(this.state.pathVisible);
 
+			console.log("already rendered");
+			console.log(this.state.layers);
+
+			for (let i = 0; i < this.state.layers.length; i++) {
+				let layer = this.state.layers[i];
+				console.log(layer);
+				if (layer.values_.visible && !this.state.pathVisible) {
+					this.state.selectedPlot = layer.values_.name;
+					layer.setVisible(false);
+				} else if (layer.values_.name === this.state.selectedPlot && this.state.pathVisible) {
+					layer.setVisible(true);
+				}
+			}
 
             // toggle visibility of events
             if (this.state.eventLayer != null) {
                 this.state.eventLayer.setVisible(!this.state.eventLayer.getVisible());
                 this.state.eventOutlineLayer.setVisible(!this.state.eventOutlineLayer.getVisible());
             }
-            // toggle visibility of itinerary
-            this.state.itineraryLayer.setVisible(this.state.pathVisible);
 
             if (this.state.pathVisibile) {
                 this.props.showMap();
@@ -667,7 +1062,7 @@ class Flight extends React.Component {
             this.setState(this.state);
 
             if (this.state.pathVisible) {
-                let extent = this.state.layer.getSource().getExtent();
+                let extent = this.state.baseLayer.getSource().getExtent();
                 console.log(extent);
                 map.getView().fit(extent, map.getSize());
             }
@@ -742,7 +1137,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
+                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
