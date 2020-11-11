@@ -164,23 +164,23 @@ public class Flight {
         preparedStatement.close();
     }
 
-	/**
-	 * Tells the database that this flight has had its LOCI/SP data processed
-	 *
-	 * @param connection the SQL database connection
-	 */
-	public void updateLOCIProcessed(Connection connection) {
-		String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
-		try{
-			PreparedStatement query = connection.prepareStatement(queryString);
-			query.setInt(1, this.getFleetId());
-			query.setInt(2, this.getId());
+    /**
+     * Tells the database that this flight has had its LOCI/SP data processed
+     *
+     * @param connection the SQL database connection
+     */
+    public void updateLOCIProcessed(Connection connection) {
+        String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
+        try{
+            PreparedStatement query = connection.prepareStatement(queryString);
+            query.setInt(1, this.getFleetId());
+            query.setInt(2, this.getId());
 
-			query.executeUpdate();
-		} catch (SQLException se) {
-			se.printStackTrace();
-		}
-	}
+            query.executeUpdate();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+    }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
@@ -358,11 +358,11 @@ public class Flight {
         String lim = new String();
         if (limit > 0) {
             lim = " LIMIT 100";
-		}
+        }
         return getFlights(connection, fleetId, filter, lim);
     }
 
-	public static List<Flight> getFlightsByRange(Connection connection, Filter filter, int fleetId, int lowerId, int upperId) throws SQLException {
+    public static List<Flight> getFlightsByRange(Connection connection, Filter filter, int fleetId, int lowerId, int upperId) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?" + " AND (" + filter.toQueryString(fleetId, parameters) + ") LIMIT " + lowerId + ", " + (upperId - lowerId);
@@ -389,15 +389,15 @@ public class Flight {
         while (resultSet.next()) {
             flights.add(new Flight(connection, resultSet));
         }
-		System.out.println(flights);
+        System.out.println(flights);
 
         resultSet.close();
         query.close();
 
         return flights;
-	}
+    }
 
-	public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId) throws SQLException {
+    public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = "+fleetId+" LIMIT "+lowerId+", "+(upperId - lowerId);
 
         LOG.info(queryString);
@@ -414,27 +414,27 @@ public class Flight {
         query.close();
 
         return flights;
-	}
+    }
 
-	public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException{
-		String queryString = "SELECT id FROM flights WHERE fleet_id = "+fleetId+" AND airframe_id=1";
+    public static int[] getFlightNumbers(Connection connection, int fleetId, Filter filter) throws SQLException{
+        String queryString = "SELECT id FROM flights WHERE fleet_id = "+fleetId+" AND airframe_id=1";
 
-		int [] nums = new int[getNumFlights(connection, fleetId, filter)];
+        int [] nums = new int[getNumFlights(connection, fleetId, filter)];
 
         PreparedStatement query = connection.prepareStatement(queryString);
-		ResultSet resultSet = query.executeQuery();
+        ResultSet resultSet = query.executeQuery();
 
-		int i = 0;
-		while(resultSet.next()){
-			nums[i] = resultSet.getInt(1);
-			i++;
-		}
+        int i = 0;
+        while(resultSet.next()){
+            nums[i] = resultSet.getInt(1);
+            i++;
+        }
 
         resultSet.close();
         query.close();
 
-		return nums;
-	}
+        return nums;
+    }
 
 
 
@@ -502,34 +502,34 @@ public class Flight {
         }
     }
 
-	/**
-	 * Gets the CSV filepath from the database for a flight
-	 * @param connection the database connection
-	 * @param flightId the id of the flight which we want the CSV file for
-	 * @return a String with the filepath in unix-format
-	 * @throws SQLException if there is an error with the database query
-	 */
-	public static String getFilename(Connection connection, int flightId) throws SQLException{
+    /**
+     * Gets the CSV filepath from the database for a flight
+     * @param connection the database connection
+     * @param flightId the id of the flight which we want the CSV file for
+     * @return a String with the filepath in unix-format
+     * @throws SQLException if there is an error with the database query
+     */
+    public static String getFilename(Connection connection, int flightId) throws SQLException{
         String queryString = "SELECT filename FROM flights WHERE id = "+flightId; 
         PreparedStatement query = connection.prepareStatement(queryString);
 
-		ResultSet resultSet = query.executeQuery();
-		String filename = "";
-		if(resultSet.next()){
-			filename = resultSet.getString(1);
-		}	
-		
-		return filename;
-	}
+        ResultSet resultSet = query.executeQuery();
+        String filename = "";
+        if(resultSet.next()){
+            filename = resultSet.getString(1);
+        }    
+        
+        return filename;
+    }
 
-	/**
-	 * Generates a unique set of tagIds whose cardinality is not greater than the total number of tags in
-	 * the database
-	 * @param connection the database connection
-	 * @param flightId the flightId to get tag ids for
-	 * @return a Set of Integers with the tag ids
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Generates a unique set of tagIds whose cardinality is not greater than the total number of tags in
+     * the database
+     * @param connection the database connection
+     * @param flightId the flightId to get tag ids for
+     * @return a Set of Integers with the tag ids
+     * @throws SQLException if there is an error with the database query
+     */
     private static Set<Integer> getTagIds(Connection connection, int flightId) throws SQLException{
         String queryString = "SELECT tag_id FROM flight_tag_map WHERE flight_id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -595,7 +595,7 @@ public class Flight {
      * @param connection the database connection
      * @param flightId the id of the flight that the tags are retrieved for
      * @return a List of tags
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
@@ -620,13 +620,13 @@ public class Flight {
         return tags;
     }
 
-	/**
-	 * Gets all the tags for a given fleet
-	 * @param connection the database connection
-	 * @param fleetId the fleet to query
-	 * @return a List with all the tags
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Gets all the tags for a given fleet
+     * @param connection the database connection
+     * @param fleetId the fleet to query
+     * @return a List with all the tags
+     * @throws SQLException if there is an error with the database query
+     */
     public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException{
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = "+fleetId;
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -647,7 +647,7 @@ public class Flight {
      * Returns a list of all the tag names in the database
      * @param connection the connection to the database
      * @return a List with strings containing the tag names
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static List<String> getAllTagNames(Connection connection) throws SQLException{
         String queryString = "SELECT name FROM flight_tags ";
@@ -665,13 +665,13 @@ public class Flight {
         return tagNames;
     }
 
-	/**
-	 * Gets the tag id associated with a name
-	 * @param connection the database connection
-	 * @param name the name that we want to get the id for
-	 * @return the id as an integer
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Gets the tag id associated with a name
+     * @param connection the database connection
+     * @param name the name that we want to get the id for
+     * @return the id as an integer
+     * @throws SQLException if there is an error with the database query
+     */
     public static int getTagId(Connection connection, String name) throws SQLException{
         String queryString = "SELECT id FROM flight_tags WHERE name = "+name;
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -685,15 +685,15 @@ public class Flight {
         return id;
     }
 
-	/**
-	 * Gets a specific tag from the database
-	 * @param connection the database connection
-	 * @param tagId the tag id to query
-	 * @return the FlightTag instance associated with the id
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Gets a specific tag from the database
+     * @param connection the database connection
+     * @param tagId the tag id to query
+     * @return the FlightTag instance associated with the id
+     * @throws SQLException if there is an error with the database query
+     */
     public static FlightTag getTag(Connection connection, int tagId) throws SQLException{
-		String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, tagId);
 
@@ -711,14 +711,14 @@ public class Flight {
         return ft;
     }
 
-	/**
-	 * Provides a collection of all the tags not yet associated with a given flight
-	 * @param connection the db connection
-	 * @param flightId the flightId used to find th unassociated tags
-	 * @param fleetId the id of the fleet
-	 * @return a List of FlightTags
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Provides a collection of all the tags not yet associated with a given flight
+     * @param connection the db connection
+     * @param flightId the flightId used to find th unassociated tags
+     * @param fleetId the id of the fleet
+     * @return a List of FlightTags
+     * @throws SQLException if there is an error with the database query
+     */
     public static List<FlightTag> getUnassociatedTags(Connection connection, int flightId, int fleetId) throws SQLException{
         Set<Integer> tagIds = getTagIds(connection, flightId);
         if(tagIds.isEmpty()){
@@ -742,33 +742,33 @@ public class Flight {
         return tags;
     }
 
-	/**
-	 * Checks to see if a tag already exists in the database
-	 * Tags are considered unique if they have different names
-	 * @param connection the connection to the database
-	 * @param fleetId the fleetId for the fleet
-	 * @param name the name to check for
-	 * @return true if the tag already exists, false otherwise
-	 * @throws SQLException if there is an error with the database query
-	 */
-	public static boolean tagExists(Connection connection, int fleetId, String name) throws SQLException{
-		String queryString = "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = '"+name+"' AND fleet_id = "+fleetId+")";
+    /**
+     * Checks to see if a tag already exists in the database
+     * Tags are considered unique if they have different names
+     * @param connection the connection to the database
+     * @param fleetId the fleetId for the fleet
+     * @param name the name to check for
+     * @return true if the tag already exists, false otherwise
+     * @throws SQLException if there is an error with the database query
+     */
+    public static boolean tagExists(Connection connection, int fleetId, String name) throws SQLException{
+        String queryString = "SELECT EXISTS (SELECT * FROM flight_tags WHERE name = '"+name+"' AND fleet_id = "+fleetId+")";
         PreparedStatement query = connection.prepareStatement(queryString);
-		ResultSet resultSet = query.executeQuery();
+        ResultSet resultSet = query.executeQuery();
 
-		if(resultSet.next()){
-			return resultSet.getBoolean(1);
-		}
+        if(resultSet.next()){
+            return resultSet.getBoolean(1);
+        }
 
-		return false;
-	}
+        return false;
+    }
 
     /**
      * Associates a tag with a given flight ID
      * @param flightId the flightId that the tag will be associated with
      * @param tagId the tagId being associated
      * @param connection the database connection
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static void associateTag(int flightId, int tagId, Connection connection) throws SQLException{
         String queryString = "INSERT INTO flight_tag_map (flight_id, tag_id) VALUES(?,?)";
@@ -786,7 +786,7 @@ public class Flight {
      * @param tagId the tag to dissociate
      * @param connection the database connection
      * @param flightId (vararg) the flightId to dissociate from
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static void unassociateTags(int tagId, Connection connection, int ... flightId) throws SQLException{
         String queryString = "DELETE FROM flight_tag_map " + idLimStr(flightId, "flight_id", false) + " AND tag_id = "+tagId;
@@ -800,7 +800,7 @@ public class Flight {
      * dissociates all tags from a given flight
      * @param flightId the flight to remove tags from
      * @param connection the connection to the database
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static void unassociateAllTags(int flightId, Connection connection) throws SQLException{
         String queryString = "DELETE FROM flight_tag_map WHERE flight_id = "+flightId;
@@ -812,7 +812,7 @@ public class Flight {
      * permanently deletes a tag from the database
      * @param tagId the tag to dissociate
      * @param connection the database connection
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static void deleteTag(int tagId, Connection connection) throws SQLException{
         String queryString = "DELETE FROM flight_tag_map WHERE tag_id = "+tagId;
@@ -830,7 +830,7 @@ public class Flight {
      * @param connection the database connection
      * @param flightTag the edited flightTag
      * @return the new instance of the flightTag in the database
-	 * @throws SQLException if there is an error with the database query
+     * @throws SQLException if there is an error with the database query
      */
     public static FlightTag editTag(Connection connection, FlightTag flightTag) throws SQLException{
         FlightTag current = getTag(connection, flightTag.hashCode());
@@ -871,17 +871,17 @@ public class Flight {
         return null; //this should never happen, it violates the precondition!
     }
 
-	/**
-	 * Creates a tag in the database tables
-	 * @param fleetId the fleetId to use
-	 * @param flightId the flightId to use 
-	 * @param name the name of the new tag (has to be unique!)
-	 * @param description the description of the new tag
-	 * @param color the color of the new tag
-	 * @param connection the database connection
-	 * @return the new FlightTag instance
-	 * @throws SQLException if there is an error with the database query
-	 */
+    /**
+     * Creates a tag in the database tables
+     * @param fleetId the fleetId to use
+     * @param flightId the flightId to use 
+     * @param name the name of the new tag (has to be unique!)
+     * @param description the description of the new tag
+     * @param color the color of the new tag
+     * @param connection the database connection
+     * @return the new FlightTag instance
+     * @throws SQLException if there is an error with the database query
+     */
     public static FlightTag createTag(int fleetId, int flightId, String name, String description, String color, Connection connection) throws SQLException{
         String queryString = "INSERT INTO flight_tags (fleet_id, name, description, color) VALUES(?,?,?,?)";
 
@@ -908,7 +908,7 @@ public class Flight {
         return new FlightTag(index, fleetId, name, description, color);
     }
 
-	public static void addSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+    public static void addSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
         String queryString = "INSERT INTO sim_aircraft (fleet_id, path) VALUES(?,?)";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -916,9 +916,9 @@ public class Flight {
         query.setString(2, path);
 
         query.executeUpdate();
-	}
+    }
 
-	public static void removeSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
+    public static void removeSimAircraft(Connection connection, int fleetId, String path) throws SQLException{
         String queryString = "DELETE FROM sim_aircraft WHERE fleet_id = ? AND path = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -926,25 +926,25 @@ public class Flight {
         query.setString(2, path);
 
         query.executeUpdate();
-	}
+    }
 
-	public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException{
+    public static List<String> getSimAircraft(Connection connection, int fleetId) throws SQLException{
         String queryString = "SELECT path FROM sim_aircraft WHERE fleet_id = "+fleetId;
 
         PreparedStatement query = connection.prepareStatement(queryString);
 
-		ResultSet resultSet = query.executeQuery();
+        ResultSet resultSet = query.executeQuery();
 
-		List<String> paths = new ArrayList<>();
+        List<String> paths = new ArrayList<>();
         while(resultSet.next()){
-			paths.add(resultSet.getString(1));
+            paths.add(resultSet.getString(1));
         }
 
         resultSet.close();
         query.close();
 
         return paths;
-	}
+    }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
@@ -993,7 +993,7 @@ public class Flight {
 
     public String getTailNumber(){
         return this.tailNumber;
-	}
+    }
 
     /**
      * @return the airframe id for this flight
@@ -1013,21 +1013,21 @@ public class Flight {
         return filename;
     }
 
-	/**
-	 * Gets the upload id for this flight
-	 * @return the upload id as an int
-	 */
-	public int getUploadId(){
-		return uploadId;
-	}
+    /**
+     * Gets the upload id for this flight
+     * @return the upload id as an int
+     */
+    public int getUploadId(){
+        return uploadId;
+    }
 
-	/**
-	 * Gets the uploader id for this flight
-	 * @return the uploader id as an int
-	 */
-	public int getUploaderId(){
-		return uploaderId;
-	}
+    /**
+     * Gets the uploader id for this flight
+     * @return the uploader id as an int
+     */
+    public int getUploaderId(){
+        return uploaderId;
+    }
 
     public int getNumberRows() {
         return numberRows;

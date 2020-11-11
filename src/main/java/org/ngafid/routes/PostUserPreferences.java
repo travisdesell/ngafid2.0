@@ -29,7 +29,7 @@ import static org.ngafid.flights.LossOfControlParameters.*;
 public class PostUserPreferences implements Route {
     private static final Logger LOG = Logger.getLogger(PostUserPreferences.class.getName());
     private Gson gson;
-	private static Connection connection = Database.getConnection();
+    private static Connection connection = Database.getConnection();
 
     public PostUserPreferences(Gson gson) {
         this.gson = gson;
@@ -44,12 +44,12 @@ public class PostUserPreferences implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-		String metrics = request.queryParams("flight_metrics");
-		int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
+        String metrics = request.queryParams("flight_metrics");
+        int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
 
         try {
-			UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
-			currentPreferences.update(decimalPrecision, metrics);
+            UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
+            currentPreferences.update(decimalPrecision, metrics);
 
             return gson.toJson(currentPreferences);
         } catch (SQLException e) {

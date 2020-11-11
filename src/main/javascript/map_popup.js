@@ -19,130 +19,130 @@ class MapPopup extends React.Component {
         super(props);
 
         this.state = {
-			navbarWidth : 40,
-			status : '',
-			info : "",
-			placement : []
+            navbarWidth : 40,
+            status : '',
+            info : "",
+            placement : []
         };
     }
 
     show() {
-		this.setState({status : ""});
+        this.setState({status : ""});
     }
 
-	close() {
-		console.log("closing the popup!");
-		this.setState({status : 'none'});
-	}
+    close() {
+        console.log("closing the popup!");
+        this.setState({status : 'none'});
+    }
 
-	isPinned() {
-		return this.state.status === 'pinned';
-	}
+    isPinned() {
+        return this.state.status === 'pinned';
+    }
 
-	pin() {
-		if (this.state.status == 'pinned') {
-			console.log("unpinning the popup!")
-			this.setState({status : 'none'});
-		} else {
-			console.log("pinning the popup!");
-			this.setState({status : 'pinned'});
-		}
-	}
+    pin() {
+        if (this.state.status == 'pinned') {
+            console.log("unpinning the popup!")
+            this.setState({status : 'none'});
+        } else {
+            console.log("pinning the popup!");
+            this.setState({status : 'pinned'});
+        }
+    }
 
     render() {
-		console.log("rendering a map popup with info:");
-		console.log(this.props.info);
+        console.log("rendering a map popup with info:");
+        console.log(this.props.info);
 
-		var style = {
-			top : this.props.placement[1] + this.state.navbarWidth,
-			left : this.props.placement[0],
-			display : this.props.on
-		}
+        var style = {
+            top : this.props.placement[1] + this.state.navbarWidth,
+            left : this.props.placement[0],
+            display : this.props.on
+        }
 
-		if(this.state.status !== "none"){
-			let lociInfo = new Array();
+        if(this.state.status !== "none"){
+            let lociInfo = new Array();
 
-			lociInfo[0] = this.props.lociData[0];
-			for (let i = 1; i < this.props.lociData.length; i++) {
-				if (this.props.lociData[i] == null) {
-					lociInfo[i] = "Not Available";
-				} else if (i < 3) {
-					//show 2 S.Fs for probabilities and display as a decimal value
-					lociInfo[i] = this.props.lociData[i].toFixed(2);
-				} else {
-					//only show 1 S.F. for all other params
-					lociInfo[i] = this.props.lociData[i].toFixed(1);
-				}
-			}
+            lociInfo[0] = this.props.lociData[0];
+            for (let i = 1; i < this.props.lociData.length; i++) {
+                if (this.props.lociData[i] == null) {
+                    lociInfo[i] = "Not Available";
+                } else if (i < 3) {
+                    //show 2 S.Fs for probabilities and display as a decimal value
+                    lociInfo[i] = this.props.lociData[i].toFixed(2);
+                } else {
+                    //only show 1 S.F. for all other params
+                    lociInfo[i] = this.props.lociData[i].toFixed(1);
+                }
+            }
 
-			let info = this.props.info;
+            let info = this.props.info;
 
-			return (
-				<div style={{ height: 120 }}>
-					<Popover
-						id="popover-basic"
-						style={style}
-					>
-						<Popover.Title as="h3"> 
-							<Container>
-								<Row>
-									<Col sm={7}>Filght Metrics</Col>
-									<Col sm={2}>
-										<Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
-											<i className="fa fa-thumb-tack p-1"></i>
-										</Button>
-									</Col>
-									<Col sm={2}>
-										<Button onClick={() => this.close()} variant="outline-secondary" size="sm">
-											<i className="fa fa-times p-1"></i>
-										</Button>
-									</Col>
-								</Row>
-							</Container>
-						</Popover.Title>
-						<Popover.Content> 
-							<Table striped bordered hover size="sm">
+            return (
+                <div style={{ height: 120 }}>
+                    <Popover
+                        id="popover-basic"
+                        style={style}
+                    >
+                        <Popover.Title as="h3"> 
+                            <Container>
+                                <Row>
+                                    <Col sm={7}>Filght Metrics</Col>
+                                    <Col sm={2}>
+                                        <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <i className="fa fa-thumb-tack p-1"></i>
+                                        </Button>
+                                    </Col>
+                                    <Col sm={2}>
+                                        <Button onClick={() => this.close()} variant="outline-secondary" size="sm">
+                                            <i className="fa fa-times p-1"></i>
+                                        </Button>
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </Popover.Title>
+                        <Popover.Content> 
+                            <Table striped bordered hover size="sm">
 
-								<thead>
-									<tr>
-										<th>Metric Name</th>
-										<th>Data</th>
-									</tr>
-								</thead>
-				
-								<tbody>
-									<tr>
-										<td>Time Index (s):</td>
-										<td>{lociInfo[0]}</td>
-									</tr>
-									<tr>
-										<td>Stall Probability:</td>
-										<td>{lociInfo[1]}</td>
-									</tr>
-									<tr>
-										<td>LOC-I Probability:</td>
-										<td>{lociInfo[2]}</td>
-									</tr>
-									{
-										info.map((metric, key) => {
-											return(
-												<tr>
-													<td>{metric.name}</td>
-													<td>{(metric.value).toFixed(2)}</td>
-												</tr>
-											);
-										})
-									}
-								</tbody>
+                                <thead>
+                                    <tr>
+                                        <th>Metric Name</th>
+                                        <th>Data</th>
+                                    </tr>
+                                </thead>
+                
+                                <tbody>
+                                    <tr>
+                                        <td>Time Index (s):</td>
+                                        <td>{lociInfo[0]}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Stall Probability:</td>
+                                        <td>{lociInfo[1]}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>LOC-I Probability:</td>
+                                        <td>{lociInfo[2]}</td>
+                                    </tr>
+                                    {
+                                        info.map((metric, key) => {
+                                            return(
+                                                <tr>
+                                                    <td>{metric.name}</td>
+                                                    <td>{(metric.value).toFixed(2)}</td>
+                                                </tr>
+                                            );
+                                        })
+                                    }
+                                </tbody>
 
-							</Table>
-						</Popover.Content>
-					</Popover>
-				</div>
-			);
-		} else {
-			return null;
-		}
+                            </Table>
+                        </Popover.Content>
+                    </Popover>
+                </div>
+            );
+        } else {
+            return null;
+        }
     }
 }
 

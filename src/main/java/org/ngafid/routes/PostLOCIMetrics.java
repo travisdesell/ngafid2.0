@@ -29,7 +29,7 @@ import static org.ngafid.flights.LossOfControlParameters.*;
 public class PostLOCIMetrics implements Route {
     private static final Logger LOG = Logger.getLogger(PostLOCIMetrics.class.getName());
     private Gson gson;
-	private static Connection connection = Database.getConnection();
+    private static Connection connection = Database.getConnection();
 
     public PostLOCIMetrics(Gson gson) {
         this.gson = gson;
@@ -37,16 +37,16 @@ public class PostLOCIMetrics implements Route {
         LOG.info("post loci metrics route initialized.");
     }
 
-	protected class FlightMetric {
-		double value;
-		String doubleSeriesId, name;
+    protected class FlightMetric {
+        double value;
+        String doubleSeriesId, name;
 
-		public FlightMetric(double value, String doubleSeriesId) {
-			this.value = value;
-			this.doubleSeriesId = doubleSeriesId;
-			this.name = metricNames.get(doubleSeriesId);
-		}
-	}
+        public FlightMetric(double value, String doubleSeriesId) {
+            this.value = value;
+            this.doubleSeriesId = doubleSeriesId;
+            this.name = metricNames.get(doubleSeriesId);
+        }
+    }
 
     @Override
     public Object handle(Request request, Response response) {
@@ -55,7 +55,7 @@ public class PostLOCIMetrics implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
-		int timeIndex = Integer.parseInt(request.queryParams("time_index"));
+        int timeIndex = Integer.parseInt(request.queryParams("time_index"));
 
         try {
             //check to see if the user has access to this data
@@ -64,17 +64,17 @@ public class PostLOCIMetrics implements Route {
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-			LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
+            LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
 
-			List<FlightMetric> metrics = new ArrayList<>();
+            List<FlightMetric> metrics = new ArrayList<>();
 
-			for (String seriesName : uiMetrics) {
-				System.out.println(seriesName);
-				DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
+            for (String seriesName : uiMetrics) {
+                System.out.println(seriesName);
+                DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
 
-				FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
-				metrics.add(flightMetric);
-			}
+                FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
+                metrics.add(flightMetric);
+            }
 
             //System.out.println(gson.toJson(uploadDetails));
             //need to convert NaNs to null so they can be parsed by JSON
