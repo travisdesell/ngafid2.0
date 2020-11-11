@@ -164,7 +164,23 @@ public class Flight {
         preparedStatement.close();
     }
 
+	/**
+	 * Tells the database that this flight has had its LOCI/SP data processed
+	 *
+	 * @param connection the SQL database connection
+	 */
+	public void updateLOCIProcessed(Connection connection) {
+		String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
+		try{
+			PreparedStatement query = connection.prepareStatement(queryString);
+			query.setInt(1, this.getFleetId());
+			query.setInt(2, this.getId());
 
+			query.executeUpdate();
+		} catch (SQLException se) {
+			se.printStackTrace();
+		}
+	}
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
