@@ -29,46 +29,46 @@ var moment = require('moment');
 // They should add to 1.0 so if one of them is 0, the resulting color
 // will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
 function interpolateColors(c0, w0, c1, w1) {
-	var new_color = [0.0, 0.0, 0.0];
-	// red = 0, green = 1, blue = 2
-	for (var i = 0; i < 3; i++) {
-		new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
-	}
-	return new_color;
+    var new_color = [0.0, 0.0, 0.0];
+    // red = 0, green = 1, blue = 2
+    for (var i = 0; i < 3; i++) {
+        new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
+    }
+    return new_color;
 }
 
 // loc_percentage should be between 0 and 1.0
 // This will get the color for a given p(LOC)
 // This can probably be made cleaner / not use if statements and just use lists but im lazy
 function paletteAt(loc_probability) {
-	if (loc_probability < 0.8) {
-		var c0 = [0, 255, 0]; // green
-		var c1 = [255, 255, 0]; // yellow
+    if (loc_probability < 0.8) {
+        var c0 = [0, 255, 0]; // green
+        var c1 = [255, 255, 0]; // yellow
 
-		// This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
-		var weight = loc_probability / 0.8;
-		var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
-		var w1 = weight;
+        // This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
+        var weight = loc_probability / 0.8;
+        var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
+        var w1 = weight;
 
-		return interpolateColors(c0, w0, c1, w1);
-	} else if (loc_probability >= 0.8 && loc_probability < 1.0) {
-		// Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
-		var c0 = [255, 255, 0];//yellow
-		var c1 = [255, 0, 0];//red
+        return interpolateColors(c0, w0, c1, w1);
+    } else if (loc_probability >= 0.8 && loc_probability < 1.0) {
+        // Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
+        var c0 = [255, 255, 0];//yellow
+        var c1 = [255, 0, 0];//red
 
-		// The minimum value of this will be 0.0 and max is 0.2
-		var numerator = loc_probability - 0.8;
+        // The minimum value of this will be 0.0 and max is 0.2
+        var numerator = loc_probability - 0.8;
 
-		// value range is 0.0 to 1.0
-		var weight = numerator / 0.2;
-		var w0 = 1.0 - weight;
-		var w1 = weight;
+        // value range is 0.0 to 1.0
+        var weight = numerator / 0.2;
+        var w0 = 1.0 - weight;
+        var w1 = weight;
 
-		return interpolateColors(c0, w0, c1, w1);
-	} else {
-		// red
-		return [255, 0, 0];
-	}
+        return interpolateColors(c0, w0, c1, w1);
+    } else {
+        // red
+        return [255, 0, 0];
+    }
 }
 
 class Flight extends React.Component {
@@ -81,7 +81,7 @@ class Flight extends React.Component {
 
         this.state = {
             pathVisible : false,
-			pageIndex : props.pageIndex,
+            pageIndex : props.pageIndex,
             mapLoaded : false,
             eventsLoaded : false,
             tagsLoaded : false,
@@ -93,13 +93,13 @@ class Flight extends React.Component {
             eventsVisible : false,
             tagsVisible : false,
             itineraryVisible : false,
-			points : [],
+            points : [],
             tags : props.tags,
             parent : props.parent,
-			selectedPlot : null,
+            selectedPlot : null,
             color : color,
-			mapPopups : [],
-			seriesData : new Map(),
+            mapPopups : [],
+            seriesData : new Map(),
 
             eventsMapped : [],                              // Bool list to toggle event icons on map flightpath
             eventPoints : [],                               // list of event Features
@@ -109,24 +109,24 @@ class Flight extends React.Component {
             eventOutlineLayer : null
         }
 
-		this.submitXPlanePath = this.submitXPlanePath.bind(this);
-		this.displayParameters = this.displayParameters.bind(this);
-		this.closeParamDisplay = this.closeParamDisplay.bind(this);
-		this.zoomChanged = this.zoomChanged.bind(this);
+        this.submitXPlanePath = this.submitXPlanePath.bind(this);
+        this.displayParameters = this.displayParameters.bind(this);
+        this.closeParamDisplay = this.closeParamDisplay.bind(this);
+        this.zoomChanged = this.zoomChanged.bind(this);
     }
 
-	getActiveLayers() {
-		let activeLayers = [];
-		if (this.state.layers != null) {
-			for (var i = 0; i < this.state.layers.length; i++) {
-				let layer = this.state.layers[i];
-				if (layer.getVisible()) {
-					activeLayers.push(layer);
-				}
-			}
-		}
-	}
-	
+    getActiveLayers() {
+        let activeLayers = [];
+        if (this.state.layers != null) {
+            for (var i = 0; i < this.state.layers.length; i++) {
+                let layer = this.state.layers[i];
+                if (layer.getVisible()) {
+                    activeLayers.push(layer);
+                }
+            }
+        }
+    }
+    
 
     componentWillUnmount() {
         console.log("unmounting:");
@@ -138,9 +138,9 @@ class Flight extends React.Component {
         this.state.pathVisible = false;
         this.state.itineraryVisible = false;
         if (this.getActiveLayers()) {
-			for (var layer in this.getActiveLayers()) {
-				layer.setVisible(false);
-			}
+            for (var layer in this.getActiveLayers()) {
+                layer.setVisible(false);
+            }
         }
 
         // hiding events
@@ -221,8 +221,8 @@ class Flight extends React.Component {
                      * Pitch
                      * Roll
                      * Vertical Speed
-					 * LOCI
-					 * StallProbability
+                     * LOCI
+                     * StallProbability
                      */
                     var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOCI", "StallProbability"];
                     var commonTraceNames = [];
@@ -298,18 +298,18 @@ class Flight extends React.Component {
             })
         }));
 
-		for (let i = 0; i < target.state.layers.length; i++) {
-			let layer = target.state.layers[i];
-			if (layer.get('nMap')) {
-				layer.setStyle(new Style({
-						stroke: new Stroke({
-							color: event.target.value,
-							width: 12,
-						})
-					})
-				);
-			}
-		}
+        for (let i = 0; i < target.state.layers.length; i++) {
+            let layer = target.state.layers[i];
+            if (layer.get('nMap')) {
+                layer.setStyle(new Style({
+                        stroke: new Stroke({
+                            color: event.target.value,
+                            width: 12,
+                        })
+                    })
+                );
+            }
+        }
 
 
         target.setState({color : event.target.value}); 
@@ -462,139 +462,139 @@ class Flight extends React.Component {
         }
     }
 
-	/**
-	 * Handles when the download button was clicked
-	 * @param type which type of download (xplane, csv etc)
-	 */
+    /**
+     * Handles when the download button was clicked
+     * @param type which type of download (xplane, csv etc)
+     */
     downloadClicked(type) {
         if (type === 'KML') {
             window.open("/protected/get_kml?flight_id=" + this.props.flightInfo.id);
         } else if (type === 'XPL10') {
-		    selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);	
+            selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);    
         } else if (type === 'XPL11') {
-		    selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);	
+            selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);    
         } else if(type === 'CSV') {
             window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
-		}
+        }
     }
 
-	/**
-	 * Gets the aircraft path from the submit aircraft modal
-	 * @param type the xplane version
-	 * @param path the selected path
-	 * @param flightId the flightId
-	 **/
-	submitXPlanePath(type, path, useMSL){
-		console.log("submitting the xplane path to server"+type+" "+path+" "+useMSL);
-		console.log(this.props);
-		window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=" + type + "&acft_path=" + path + "&use_msl=" + useMSL);
-	}
+    /**
+     * Gets the aircraft path from the submit aircraft modal
+     * @param type the xplane version
+     * @param path the selected path
+     * @param flightId the flightId
+     **/
+    submitXPlanePath(type, path, useMSL){
+        console.log("submitting the xplane path to server"+type+" "+path+" "+useMSL);
+        console.log(this.props);
+        window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=" + type + "&acft_path=" + path + "&use_msl=" + useMSL);
+    }
 
     cesiumClicked() {
         window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
     }
 
-	closeParamDisplay() {
-		console.log("popup closed!");
-	}
+    closeParamDisplay() {
+        console.log("popup closed!");
+    }
 
-	zoomChanged(oldZoom) {
-		let currZoom = map.getView().getZoom();
-		console.log("old zoom: " + oldZoom);
-		console.log("current zoom: " + currZoom);
+    zoomChanged(oldZoom) {
+        let currZoom = map.getView().getZoom();
+        console.log("old zoom: " + oldZoom);
+        console.log("current zoom: " + currZoom);
 
-		for(let i = 0; i < this.state.mapPopups.length; i++) {
-			this.state.mapPopups[i].close();
-		}
-	}
+        for(let i = 0; i < this.state.mapPopups.length; i++) {
+            this.state.mapPopups[i].close();
+        }
+    }
 
-	displayParameters(event){
-		var pixel = event.pixel;
-		var features = [];
+    displayParameters(event){
+        var pixel = event.pixel;
+        var features = [];
 
-		map.forEachFeatureAtPixel(pixel, function(feature, layer) {
-			features.push(feature)
-		});
+        map.forEachFeatureAtPixel(pixel, function(feature, layer) {
+            features.push(feature)
+        });
 
-		let target = features[0];
-		console.log(pixel);
+        let target = features[0];
+        console.log(pixel);
 
-		var lociInfo = new Array(), info = null;
+        var lociInfo = new Array(), info = null;
 
-		if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
-			let index = target.getId();
-			console.log("target info:");
-			console.log(index);
-			console.log(target);	
+        if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
+            let index = target.getId();
+            console.log("target info:");
+            console.log(index);
+            console.log(target);    
 
-			let submissionData = {
-				flight_id : this.props.flightInfo.id,
-				time_index : index
-			}
+            let submissionData = {
+                flight_id : this.props.flightInfo.id,
+                time_index : index
+            }
 
-			lociInfo.push(index);
-			lociInfo.push(this.state.seriesData.get('StallProbability')[index]);
-			lociInfo.push(this.state.seriesData.get('LOCI')[index]);
+            lociInfo.push(index);
+            lociInfo.push(this.state.seriesData.get('StallProbability')[index]);
+            lociInfo.push(this.state.seriesData.get('LOCI')[index]);
 
-			$.ajax({
-				type: 'POST',
-				url: '/protected/loci_metrics',
-				data : submissionData,
-				dataType : 'json',
-				success : function(response) {
-					console.log("got loci_metrics response");
-					console.log(response);
-					info = response;
-				},
-				error : function(jqXHR, textStatus, errorThrown) {
-					console.log("Error getting upset data:");
-					console.log(errorThrown);
-				},   
-				async: false 
-			});  
+            $.ajax({
+                type: 'POST',
+                url: '/protected/loci_metrics',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("got loci_metrics response");
+                    console.log(response);
+                    info = response;
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    console.log("Error getting upset data:");
+                    console.log(errorThrown);
+                },   
+                async: false 
+            });  
 
 
-			var popupProps = {
-				pixel : pixel,
-				status : '',
-				info : info,
-				lociData : lociInfo,
-				placement : pixel,
-				lineSeg : target,
-				closePopup : this.closeParamDisplay(),
-				title : 'title'
-			};
+            var popupProps = {
+                pixel : pixel,
+                status : '',
+                info : info,
+                lociData : lociInfo,
+                placement : pixel,
+                lineSeg : target,
+                closePopup : this.closeParamDisplay(),
+                title : 'title'
+            };
 
-			var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
-		} else {
-			console.log("wont render popup");
-		}
-	}
+            var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
+        } else {
+            console.log("wont render popup");
+        }
+    }
 
-	/**
-	 * Recursively find a vacant (unpinned) popup or create a new one
-	 */
-	renderNewPopup(index, props) {
-		if (index < 0 || this.state.mapPopups[index] == null) {
-			// if we reach the bottom of the stack, we must allocate memory for a new popup component
-			var outterHTM = document.createElement('div');
-			document.body.appendChild(outterHTM);
-			var popup = ReactDOM.render(React.createElement(MapPopup, props), outterHTM);
-			outterHTM.setAttribute("id", "popover" + this.state.mapPopups.length);
-			this.state.mapPopups.push(popup);
-			return popup;
-		} else if (this.state.mapPopups[index].isPinned()) {
-			// skip reallocating an existing popup if it is pinned
-			return this.renderNewPopup(index - 1, props);
-		} else {
-			console.log("using existing popup to render!");
-			let element = "popover" + index;
-			var popup = ReactDOM.render(React.createElement(MapPopup, props), document.getElementById(element));
-			popup.show(); // we must call show in case the popup was closed before
-			return popup;
-		}
+    /**
+     * Recursively find a vacant (unpinned) popup or create a new one
+     */
+    renderNewPopup(index, props) {
+        if (index < 0 || this.state.mapPopups[index] == null) {
+            // if we reach the bottom of the stack, we must allocate memory for a new popup component
+            var outterHTM = document.createElement('div');
+            document.body.appendChild(outterHTM);
+            var popup = ReactDOM.render(React.createElement(MapPopup, props), outterHTM);
+            outterHTM.setAttribute("id", "popover" + this.state.mapPopups.length);
+            this.state.mapPopups.push(popup);
+            return popup;
+        } else if (this.state.mapPopups[index].isPinned()) {
+            // skip reallocating an existing popup if it is pinned
+            return this.renderNewPopup(index - 1, props);
+        } else {
+            console.log("using existing popup to render!");
+            let element = "popover" + index;
+            var popup = ReactDOM.render(React.createElement(MapPopup, props), document.getElementById(element));
+            popup.show(); // we must call show in case the popup was closed before
+            return popup;
+        }
 
-	}
+    }
 
     tagClicked() {
         console.log("tag clicked!");
@@ -653,45 +653,45 @@ class Flight extends React.Component {
             var thisFlight = this;
 
             var lociSubmissionData = {
-				seriesName : "LOCI",
+                seriesName : "LOCI",
                 flightId : this.props.flightInfo.id
             };
 
-			//TODO: get upset probability data here
+            //TODO: get upset probability data here
 
-			console.log("getting upset probabilities");
+            console.log("getting upset probabilities");
 
-			var names = [
-				"StallProbability",
-				"LOCI",
-			];
+            var names = [
+                "StallProbability",
+                "LOCI",
+            ];
 
-			for (let i = 0; i < names.length; i++) {
-				const name = names[i];
-				console.log(name);
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i];
+                console.log(name);
 
-				var submissionData = {
-					seriesName : name,
-					flightId : this.props.flightInfo.id
-				};
+                var submissionData = {
+                    seriesName : name,
+                    flightId : this.props.flightInfo.id
+                };
 
-				$.ajax({
-					type: 'POST',
-					url: '/protected/double_series',
-					data : submissionData,
-					dataType : 'json',
-					success : function(response) {
-						console.log("got double_series response");
-						console.log(thisFlight.state.seriesData);
-						thisFlight.state.seriesData.set(name, response.y);
-					},
-					error : function(jqXHR, textStatus, errorThrown) {
-						console.log("Error getting upset data:");
-						console.log(errorThrown);
-					},   
-					async: true 
-				});  
-			}
+                $.ajax({
+                    type: 'POST',
+                    url: '/protected/double_series',
+                    data : submissionData,
+                    dataType : 'json',
+                    success : function(response) {
+                        console.log("got double_series response");
+                        console.log(thisFlight.state.seriesData);
+                        thisFlight.state.seriesData.set(name, response.y);
+                    },
+                    error : function(jqXHR, textStatus, errorThrown) {
+                        console.log("Error getting upset data:");
+                        console.log(errorThrown);
+                    },   
+                    async: true 
+                });  
+            }
 
             var submissionData = {
                 request : "GET_COORDINATES",
@@ -713,7 +713,7 @@ class Flight extends React.Component {
 
                     var coordinates = response.coordinates;
 
-					let points = thisFlight.state.points;
+                    let points = thisFlight.state.points;
                     for (var i = 0; i < coordinates.length; i++) {
                         var point = fromLonLat(coordinates[i]);
                         points.push(point);
@@ -727,10 +727,10 @@ class Flight extends React.Component {
                                     name: 'TrackingPoint'
                                 });
 
-					thisFlight.state.trackingPoint.setId(points[0]);
+                    thisFlight.state.trackingPoint.setId(points[0]);
 
-					thisFlight.state.layers = new Array();
-					let layers = thisFlight.state.layers;
+                    thisFlight.state.layers = new Array();
+                    let layers = thisFlight.state.layers;
 
 
                     // adding itinerary (approaches and takeoffs) to flightpath 
@@ -785,10 +785,10 @@ class Flight extends React.Component {
                         }
                     }
 
-					thisFlight.state.baseLayer = new VectorLayer({
-						name : 'Itinerary' ,
-						description : 'Itinerary with Phases',
-						nMap : false,
+                    thisFlight.state.baseLayer = new VectorLayer({
+                        name : 'Itinerary' ,
+                        description : 'Itinerary with Phases',
+                        nMap : false,
                         style: new Style({
                             stroke: new Stroke({
                                 color: color,
@@ -815,9 +815,9 @@ class Flight extends React.Component {
                         })
                     });
 
-					let phaseLayer = new VectorLayer({
-						name : 'Itinerary Phases',
-						nMap : true,
+                    let phaseLayer = new VectorLayer({
+                        name : 'Itinerary Phases',
+                        nMap : true,
                         style: new Style({
                             stroke: new Stroke({
                                 color: [1,1,1,1],
@@ -830,7 +830,7 @@ class Flight extends React.Component {
                         })
                     }); 
 
-					let baseLayer = thisFlight.state.baseLayer;
+                    let baseLayer = thisFlight.state.baseLayer;
 
                     baseLayer.flightState = thisFlight;
 
@@ -840,161 +840,161 @@ class Flight extends React.Component {
                     thisFlight.state.coordinates = response.coordinates;
                     thisFlight.state.points = points;
 
-					// toggle visibility of itinerary
-					layers.push(baseLayer, phaseLayer);
-					
-					const lociData = thisFlight.state.seriesData.get('LOCI');
-					const spData = thisFlight.state.seriesData.get('StallProbability');
+                    // toggle visibility of itinerary
+                    layers.push(baseLayer, phaseLayer);
+                    
+                    const lociData = thisFlight.state.seriesData.get('LOCI');
+                    const spData = thisFlight.state.seriesData.get('StallProbability');
 
-					var lociPhases = [], lociOutlinePhases = [];
-					if (lociData != null) {
-						for(let i = 0; i < lociData.length; i++){
-							let val = lociData[i];
-							var feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : "LOCI"
-							});
-							feat.setId(i);
-							feat.parent = 'PLOCI';
-							feat.setStyle([
-							  new Style({
-								stroke: new Stroke({
-								  color: paletteAt(val),
-								  width: 8
-								})
-							  })
-							]);
+                    var lociPhases = [], lociOutlinePhases = [];
+                    if (lociData != null) {
+                        for(let i = 0; i < lociData.length; i++){
+                            let val = lociData[i];
+                            var feat = new Feature({
+                                geometry : new LineString(points.slice(i, i+2)),
+                                name : "LOCI"
+                            });
+                            feat.setId(i);
+                            feat.parent = 'PLOCI';
+                            feat.setStyle([
+                              new Style({
+                                stroke: new Stroke({
+                                  color: paletteAt(val),
+                                  width: 8
+                                })
+                              })
+                            ]);
 
-							let outFeat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : "LOCI Outline"
-							});
+                            let outFeat = new Feature({
+                                geometry : new LineString(points.slice(i, i+2)),
+                                name : "LOCI Outline"
+                            });
 
-							outFeat.setId(i);
-							outFeat.parent = 'PLOCI';
+                            outFeat.setId(i);
+                            outFeat.parent = 'PLOCI';
 
-							lociPhases.push(feat);
-							lociOutlinePhases.push(outFeat);
-						}
-					}
+                            lociPhases.push(feat);
+                            lociOutlinePhases.push(outFeat);
+                        }
+                    }
 
-					var spPhases = [], spOutlinePhases = [];
-					if (spData != null) {
-						for(let i = 0; i < spData.length; i++){
-							let val = spData[i];
-							var feat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : "SP"
-							});
-							feat.setId(i);
-							feat.parent = 'PStall';
-							feat.setStyle([
-							  new Style({
-								stroke: new Stroke({
-								  color: paletteAt(val),
-								  width: 8
-								})
-							  })
-							]);
+                    var spPhases = [], spOutlinePhases = [];
+                    if (spData != null) {
+                        for(let i = 0; i < spData.length; i++){
+                            let val = spData[i];
+                            var feat = new Feature({
+                                geometry : new LineString(points.slice(i, i+2)),
+                                name : "SP"
+                            });
+                            feat.setId(i);
+                            feat.parent = 'PStall';
+                            feat.setStyle([
+                              new Style({
+                                stroke: new Stroke({
+                                  color: paletteAt(val),
+                                  width: 8
+                                })
+                              })
+                            ]);
 
-							let outFeat = new Feature({
-								geometry : new LineString(points.slice(i, i+2)),
-								name : "SP Outline"
-							});
+                            let outFeat = new Feature({
+                                geometry : new LineString(points.slice(i, i+2)),
+                                name : "SP Outline"
+                            });
 
-							outFeat.setId(i);
-							outFeat.parent = 'PStall';
+                            outFeat.setId(i);
+                            outFeat.parent = 'PStall';
 
-							spOutlinePhases.push(outFeat);
-							spPhases.push(feat);
-						}
-					}
+                            spOutlinePhases.push(outFeat);
+                            spPhases.push(feat);
+                        }
+                    }
 
-					lociPhases.push(thisFlight.state.trackingPoint);
-					spPhases.push(thisFlight.state.trackingPoint);
+                    lociPhases.push(thisFlight.state.trackingPoint);
+                    spPhases.push(thisFlight.state.trackingPoint);
 
-					let lociLayer = new VectorLayer({
-						name : 'PLOCI' ,
-						description : 'Loss of Control Probability' ,
-						nMap : false,
-						disabled : (lociData == null),
+                    let lociLayer = new VectorLayer({
+                        name : 'PLOCI' ,
+                        description : 'Loss of Control Probability' ,
+                        nMap : false,
+                        disabled : (lociData == null),
 
                         source : new VectorSource({
                             features: lociPhases
-						})
+                        })
                     });
 
-					let lociLayerOutline = new VectorLayer({
-						name : 'PLOCI Outline' ,
-						description : 'Loss of Control Probability' ,
-						nMap : true,
-						disabled : (lociData == null),
-						style : new Style({
-							stroke: new Stroke({
-								color: thisFlight.state.color,
-								width : 12
-							})
-						}),
+                    let lociLayerOutline = new VectorLayer({
+                        name : 'PLOCI Outline' ,
+                        description : 'Loss of Control Probability' ,
+                        nMap : true,
+                        disabled : (lociData == null),
+                        style : new Style({
+                            stroke: new Stroke({
+                                color: thisFlight.state.color,
+                                width : 12
+                            })
+                        }),
                         source : new VectorSource({
                             features: lociOutlinePhases                        
-						})
+                        })
                     });
 
-					let spLayer = new VectorLayer({
-						name : 'PStall' ,
-						description : 'Stall Probability',
-						nMap : false,
-						disabled : (spData == null),
-						source : new VectorSource({
-							features: spPhases                        
-						})
-                    });
-
-					let spLayerOutline = new VectorLayer({
-						name : 'PStall Outline' ,
-						description : 'Stall Probability',
-						nMap : true,
-						disabled : (spData == null),
-						style : new Style({
-							stroke: new Stroke({
-								color: thisFlight.state.color,
-								width : 12
-
-							})
-						}),
+                    let spLayer = new VectorLayer({
+                        name : 'PStall' ,
+                        description : 'Stall Probability',
+                        nMap : false,
+                        disabled : (spData == null),
                         source : new VectorSource({
-							features: spOutlinePhases                        
-						})
+                            features: spPhases                        
+                        })
                     });
 
-					lociLayer.flightState = thisFlight;
-					spLayer.flightState = thisFlight;
+                    let spLayerOutline = new VectorLayer({
+                        name : 'PStall Outline' ,
+                        description : 'Stall Probability',
+                        nMap : true,
+                        disabled : (spData == null),
+                        style : new Style({
+                            stroke: new Stroke({
+                                color: thisFlight.state.color,
+                                width : 12
 
-					layers.push(lociLayerOutline, lociLayer, spLayerOutline, spLayer);
+                            })
+                        }),
+                        source : new VectorSource({
+                            features: spOutlinePhases                        
+                        })
+                    });
 
-					console.log("adding layers!");
-					for(let i = 0; i < layers.length; i++){
-						let layer = layers[i];
-						console.log(layer);
-						if(layer.get('name').includes('Itinerary')) {
-							//Itinerary will be the default layer
-							thisFlight.state.selectedPlot = layer.values_.name;
-							layer.setVisible(true);
-						} else {
-							layer.setVisible(false);
-						}
-						map.addLayer(layer);
-					}
+                    lociLayer.flightState = thisFlight;
+                    spLayer.flightState = thisFlight;
 
-					console.log(layers);
-					thisFlight.props.setAvailableLayers(layers);
+                    layers.push(lociLayerOutline, lociLayer, spLayerOutline, spLayer);
 
-					console.log("added layers");
-					console.log(map.getLayers());
-					map.on('click', thisFlight.displayParameters); 
+                    console.log("adding layers!");
+                    for(let i = 0; i < layers.length; i++){
+                        let layer = layers[i];
+                        console.log(layer);
+                        if(layer.get('name').includes('Itinerary')) {
+                            //Itinerary will be the default layer
+                            thisFlight.state.selectedPlot = layer.values_.name;
+                            layer.setVisible(true);
+                        } else {
+                            layer.setVisible(false);
+                        }
+                        map.addLayer(layer);
+                    }
 
-					var currZoom = map.getView().getZoom();
-					map.on('moveend', () => thisFlight.zoomChanged(currZoom));
+                    console.log(layers);
+                    thisFlight.props.setAvailableLayers(layers);
+
+                    console.log("added layers");
+                    console.log(map.getLayers());
+                    map.on('click', thisFlight.displayParameters); 
+
+                    var currZoom = map.getView().getZoom();
+                    map.on('moveend', () => thisFlight.zoomChanged(currZoom));
                     // adding coordinates to events, if needed //
                     var events = [];
                     var eventPoints = [];
@@ -1035,19 +1035,19 @@ class Flight extends React.Component {
             this.state.pathVisible = !this.state.pathVisible;
             this.state.itineraryVisible = !this.state.itineraryVisible;
 
-			console.log("already rendered");
-			console.log(this.state.layers);
+            console.log("already rendered");
+            console.log(this.state.layers);
 
-			for (let i = 0; i < this.state.layers.length; i++) {
-				let layer = this.state.layers[i];
-				console.log(layer);
-				if (layer.values_.visible && !this.state.pathVisible) {
-					this.state.selectedPlot = layer.values_.name;
-					layer.setVisible(false);
-				} else if (layer.values_.name === this.state.selectedPlot && this.state.pathVisible) {
-					layer.setVisible(true);
-				}
-			}
+            for (let i = 0; i < this.state.layers.length; i++) {
+                let layer = this.state.layers[i];
+                console.log(layer);
+                if (layer.values_.visible && !this.state.pathVisible) {
+                    this.state.selectedPlot = layer.values_.name;
+                    layer.setVisible(false);
+                } else if (layer.values_.name === this.state.selectedPlot && this.state.pathVisible) {
+                    layer.setVisible(true);
+                }
+            }
 
             // toggle visibility of events
             if (this.state.eventLayer != null) {
@@ -1069,34 +1069,34 @@ class Flight extends React.Component {
         }
     }
 
-	/**
-	 * Changes all the flights on a given page by calling the parent function
-	 */
-	updateFlights(flights){
-		this.props.updateParentState(flights);
-	}
+    /**
+     * Changes all the flights on a given page by calling the parent function
+     */
+    updateFlights(flights){
+        this.props.updateParentState(flights);
+    }
 
-	/**
-	 * Changes the tags associated with this flight
-	 */
-	invokeUpdate(tags){
-		this.state.tags = tags;
-		this.setState(this.state);
-	}
+    /**
+     * Changes the tags associated with this flight
+     */
+    invokeUpdate(tags){
+        this.state.tags = tags;
+        this.setState(this.state);
+    }
 
-	/**
-	 * Called when props are updated
-	 * changes state if props have in fact changed
-	 * @param oldProps the old props before the update
-	 */
-	componentDidUpdate(oldProps) {
-		console.log("props updated");
-		const newProps = this.props;
-	  	if(oldProps.tags !== newProps.tags) {
-			this.state.tags = this.props.tags;
-			this.setState(this.state);
-	  	}
-	}
+    /**
+     * Called when props are updated
+     * changes state if props have in fact changed
+     * @param oldProps the old props before the update
+     */
+    componentDidUpdate(oldProps) {
+        console.log("props updated");
+        const newProps = this.props;
+          if(oldProps.tags !== newProps.tags) {
+            this.state.tags = this.props.tags;
+            this.setState(this.state);
+          }
+    }
 
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
@@ -1171,14 +1171,14 @@ class Flight extends React.Component {
                     backgroundColor : tag.color,
                     marginRight : '4px',
                     lineHeight : '2',
-					opacity : '75%'
+                    opacity : '75%'
                 }
                 return(
-					<span key={index} className="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
+                    <span key={index} className="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
                         <span className="badge badge-pill badge-primary" style={style} page={this.state.page}>
-							<i className="fa fa-tag" aria-hidden="true"></i>
-						</span>   {tag.name}
-					</span>
+                            <i className="fa fa-tag" aria-hidden="true"></i>
+                        </span>   {tag.name}
+                    </span>
                 );
             });
         }
@@ -1225,9 +1225,9 @@ class Flight extends React.Component {
                         </div>
 
                         <div className={cellClasses} style={{
-							flexGrow:1,
-							//textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
-						}}>
+                            flexGrow:1,
+                            //textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
+                        }}>
 
                             <div>
                                 {tagPills}
@@ -1259,16 +1259,16 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-						    <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                   <i className="fa fa-download p-1"></i>
-						    </button>
+                            </button>
 
-							<div className="dropdown-menu" aria-labelledby="dropdownMenu2">
-								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
-								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
-								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
-								<button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
-						   </div>
+                            <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
+                           </div>
 
                         </div>
                     </div>

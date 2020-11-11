@@ -156,7 +156,7 @@ class Events extends React.Component {
         });
         this.updateEventDisplay(index, false);
     }
-	
+    
 
     eventClicked(index) {
         this.updateEventDisplay(index, true);

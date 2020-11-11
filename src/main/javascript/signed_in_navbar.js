@@ -59,7 +59,7 @@ class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
 
-		this.infoTarget = React.createRef();
+        this.infoTarget = React.createRef();
     }
 
     attemptLogIn() {
@@ -115,7 +115,7 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
-		//const [show, setShow] = React.useState(false);
+        //const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 

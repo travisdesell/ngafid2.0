@@ -324,20 +324,20 @@ $(document).ready(function() {
         document.querySelector('#main')
     );
 
-	/*
+    /*
     $(window).scroll(function() {
 
-		var end = $("#MainCards").offset().top + $("#MainCards").height();
-		var viewEnd = $(window).scrollTop() + $(window).height(); 
-		var distance = end - viewEnd; 
+        var end = $("#MainCards").offset().top + $("#MainCards").height();
+        var viewEnd = $(window).scrollTop() + $(window).height(); 
+        var distance = end - viewEnd; 
 
         console.log("scrolling, top: " + $(window).scrollTop() + ", document height: " + $(document).height() + ", window height: " + $(window).height());
-		console.log("end: " + end + ", viewEnd: " + viewEnd);
+        console.log("end: " + end + ", viewEnd: " + viewEnd);
 
-		if (distance < 300) {
+        if (distance < 300) {
             $("#load-more").html("Load More");
             console.log("loading more!");
-		}
+        }
 
         if ($(window).scrollTop() == $(document).height() - $(window).height()) {
             // ajax call get data from server and append to the div
@@ -345,6 +345,6 @@ $(document).ready(function() {
             console.log("loading more!");
         }
     });
-	*/
+    */
 
 });

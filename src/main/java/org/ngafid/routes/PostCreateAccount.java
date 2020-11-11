@@ -55,7 +55,7 @@ public class PostCreateAccount implements Route {
         String accountType = request.queryParams("accountType");
 
         LOG.info("email: '" + email + "'");
-		// We should probably not show this for privacy reasons :)
+        // We should probably not show this for privacy reasons :)
         //LOG.info("password: '" + password + "'");
         LOG.info("firstName: '" + firstName + "'");
         LOG.info("lastName: '" + lastName + "'");

@@ -38,7 +38,7 @@ import org.ngafid.events.EventStatistics;
 
 public class GetUserPreferences implements Route {
     private static final Logger LOG = Logger.getLogger(GetSystemIds.class.getName());
-	private static Connection connection = Database.getConnection();
+    private static Connection connection = Database.getConnection();
     private Gson gson;
 
     public GetUserPreferences(Gson gson) {
@@ -59,8 +59,8 @@ public class GetUserPreferences implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-		try {
-			UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
+        try {
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
@@ -68,17 +68,17 @@ public class GetUserPreferences implements Route {
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
-			scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
-			scopes.put("user_prefs_json",
-						"var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+            scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("user_prefs_json",
+                        "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
-			StringWriter stringOut = new StringWriter();
+            StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
 
-		} catch (Exception se) {
-			se.printStackTrace();
-		}
+        } catch (Exception se) {
+            se.printStackTrace();
+        }
 
         return resultString;
     }
