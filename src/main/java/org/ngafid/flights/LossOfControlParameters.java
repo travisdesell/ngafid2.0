@@ -2,11 +2,11 @@ package org.ngafid.flights;
 
 import java.util.Map;
 
-public interface LossOfControlParameters{
+public interface LossOfControlParameters {
 	public static final double STD_PRESS_INHG = 29.92;
 	public static final double COMP_CONV = (double) (Math.PI / 180); 
-	public static final double AOACrit = 15;
-	public static final double proSpinLim = 4;
+	public static final double AOA_CRIT = 15;
+	public static final double PROSPIN_LIM = 4;
 
 	public static final String HDG = "HDG";
 	public static final String IAS = "IAS";
@@ -19,13 +19,21 @@ public interface LossOfControlParameters{
 	public static final String ALT_MSL = "AltMSL";
 	public static final String AOA_SIMPLE = "AOASimple"; 
 	public static final String E1_RPM = "E1 RPM";
+	public static final String TAS_FTMIN = "True Airspeed(ft/min)";
+	public static final String STALL_PROB = "StallProbability";
+	public static final String LOCI = "LOCI";
+	public static final String PRO_SPIN_FORCE = "ProSpin Force";
+	public static final String YAW_RATE = "Yaw Rate";
 
 	public static final int C172SP_ID = 1;
 
 	/**
 	 * Strings that represent the parameters used in this calculation
+	 *
+	 * @param ALT_AGL is used as the time reference 
 	 */
-	public static final String [] dtsParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
+	public static final String [] lociParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
+	public static final String [] spParamStrings = {PITCH, VSPD, IAS, BARO_A, OAT, ALT_AGL};
 
 	/**
 	 * Strings that represent the supplementary metrics displayed in the UI
