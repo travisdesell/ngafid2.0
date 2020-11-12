@@ -64,11 +64,13 @@ class MapPopup extends React.Component {
 
             lociInfo[0] = this.props.lociData[0];
             for (let i = 1; i < this.props.lociData.length; i++) {
+                let lPrecision = (this.props.precision < 2) ? 2 : this.props.precision;
+                console.log(lPrecision);
                 if (this.props.lociData[i] == null) {
                     lociInfo[i] = "Not Available";
                 } else if (i < 3) {
                     //show 2 S.Fs for probabilities and display as a decimal value
-                    lociInfo[i] = this.props.lociData[i].toFixed(2);
+                    lociInfo[i] = this.props.lociData[i].toFixed(lPrecision);
                 } else {
                     //only show 1 S.F. for all other params
                     lociInfo[i] = this.props.lociData[i].toFixed(1);
@@ -76,6 +78,8 @@ class MapPopup extends React.Component {
             }
 
             let info = this.props.info;
+            let precision = this.props.precision;
+            console.log("users precision: "+precision);
 
             return (
                 <div style={{ height: 120 }}>
@@ -125,10 +129,20 @@ class MapPopup extends React.Component {
                                     </tr>
                                     {
                                         info.map((metric, key) => {
+                                            console.log(metric.value);
+                                            let displayValue = "";
+                                            if (metric.value === "null") {
+                                                console.log("a metric isnt available");
+                                                displayValue = "Not Available";
+                                            } else {
+                                                let val = parseFloat(metric.value);
+                                                displayValue = val.toFixed(precision);
+                                            }
+
                                             return(
-                                                <tr>
+                                                <tr key={key}>
                                                     <td>{metric.name}</td>
-                                                    <td>{(metric.value).toFixed(2)}</td>
+                                                    <td>{displayValue}</td>
                                                 </tr>
                                             );
                                         })
