@@ -3,9 +3,7 @@ package org.ngafid.accounts;
 import java.util.List;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-
-import java.lang.reflect.Type;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import static org.ngafid.flights.LossOfControlParameters.*;
 
@@ -27,8 +25,13 @@ public class UserPreferences {
         this.gson = new Gson();
 
         //we must convert from json since the metrics will be stored in the db as such
-        Type strType = new TypeToken<List<String>>() {}.getType();
-        this.flightMetrics = this.gson.fromJson(metrics, strType);
+        ObjectMapper objectMapper = new ObjectMapper();
+
+        try {
+            this.flightMetrics = objectMapper.readValue(metrics, List.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     public UserPreferences(int userId, int decimalPrecision, String [] metrics) {

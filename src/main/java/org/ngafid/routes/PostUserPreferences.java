@@ -13,6 +13,7 @@ import java.sql.SQLException;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import spark.Route;
 import spark.Request;
@@ -46,14 +47,15 @@ public class PostUserPreferences implements Route {
         User user = session.attribute("user");
 
         String metrics = request.queryParams("flight_metrics");
-        Type strType = new TypeToken<List<String>>() {}.getType();
-        List<String> metricList = this.gson.fromJson(metrics, strType);
 
         int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
 
-        LOG.info("got metrics: " + metricList);
 
         try {
+            ObjectMapper mapper = new ObjectMapper();
+            List<String> metricList = mapper.readValue(metrics, List.class);
+            LOG.info("got metrics: " + metricList);
+
             UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
 
             if (currentPreferences.update(decimalPrecision, metricList)) {
@@ -61,7 +63,7 @@ public class PostUserPreferences implements Route {
             }
 
             return gson.toJson(currentPreferences);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
