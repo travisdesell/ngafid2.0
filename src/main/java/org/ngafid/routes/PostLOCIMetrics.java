@@ -6,13 +6,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import spark.Route;
 import spark.Request;
@@ -22,6 +23,7 @@ import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
 
 import static org.ngafid.flights.LossOfControlParameters.*;
@@ -38,13 +40,18 @@ public class PostLOCIMetrics implements Route {
     }
 
     protected class FlightMetric {
-        double value;
-        String doubleSeriesId, name;
+        String value;
+        String name;
 
-        public FlightMetric(double value, String doubleSeriesId) {
-            this.value = value;
-            this.doubleSeriesId = doubleSeriesId;
-            this.name = metricNames.get(doubleSeriesId);
+        public FlightMetric(double value, String name) {
+            //json does not like NaN so we must make it a null string
+            this.value = Double.isNaN(value) ? "null" : String.valueOf(value);
+            this.name = name;
+        }
+
+        @Override
+        public String toString() {
+            return name + ": " + value;
         }
     }
 
@@ -54,8 +61,13 @@ public class PostLOCIMetrics implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
+        String rawMetrics = request.queryParams("flight_metrics");
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int timeIndex = Integer.parseInt(request.queryParams("time_index"));
+
+        Type strType = new TypeToken<List<String>>() {}.getType();
+        List<String> metrics = this.gson.fromJson(rawMetrics, strType);
+
 
         try {
             //check to see if the user has access to this data
@@ -66,22 +78,25 @@ public class PostLOCIMetrics implements Route {
 
             LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
 
-            List<FlightMetric> metrics = new ArrayList<>();
+            List<FlightMetric> flightMetrics = new ArrayList<>();
 
-            for (String seriesName : uiMetrics) {
+            for (String seriesName : metrics) {
                 System.out.println(seriesName);
                 DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
 
                 FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
-                metrics.add(flightMetric);
+                flightMetrics.add(flightMetric);
             }
 
             //System.out.println(gson.toJson(uploadDetails));
             //need to convert NaNs to null so they can be parsed by JSON
 
             //LOG.info(output);
+            for (FlightMetric fm : flightMetrics) {
+                System.out.println(fm.toString());
+            }
 
-            return gson.toJson(metrics);
+            return gson.toJson(flightMetrics);
         } catch (SQLException e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

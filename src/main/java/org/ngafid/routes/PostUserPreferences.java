@@ -5,13 +5,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Logger;
-
+import java.lang.reflect.Type;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 
 import spark.Route;
 import spark.Request;
@@ -39,17 +40,25 @@ public class PostUserPreferences implements Route {
 
     @Override
     public Object handle(Request request, Response response) {
-        LOG.info("handling supplementary loci metrics route!");
+        LOG.info("handling post user prefs route!");
 
         final Session session = request.session();
         User user = session.attribute("user");
 
         String metrics = request.queryParams("flight_metrics");
+        Type strType = new TypeToken<List<String>>() {}.getType();
+        List<String> metricList = this.gson.fromJson(metrics, strType);
+
         int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
+
+        LOG.info("got metrics: " + metricList);
 
         try {
             UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
-            currentPreferences.update(decimalPrecision, metrics);
+
+            if (currentPreferences.update(decimalPrecision, metricList)) {
+                User.storeUserPreferences(connection, user.getId(), currentPreferences);
+            }
 
             return gson.toJson(currentPreferences);
         } catch (SQLException e) {
