@@ -89,36 +89,32 @@ class PreferencesPage extends React.Component {
         console.log(this.state.preferences);
     }
 
-    updatePreference(systemId) {
-        let newTail = $("#" + systemId.systemId + "-tail-number-form").val();
-        console.log("updating system id on server -- original tail: '" + systemId.originalTail + "', current value: '" + systemId.tail + "', newTail: '" + newTail + "'");
-        if (systemId.tail === "") systemId.tail = systemId.originalTail;
-
+    updatePreferences() {
+        console.log("updating preferences");
+        console.log(this.state.selectedMetrics);
         var submissionData = {
-            systemId : systemId.systemId,
-            tail : systemId.tail
+            flight_metrics : JSON.stringify(this.state.selectedMetrics),
+            decimal_precision : this.state.decimalPrecision
         };
 
-        let systemIdsPage = this;
+        let prefsPage = this;
 
         $.ajax({
             type: 'POST',
-            url: '/protected/update_tail',
+            url: '/protected/preferences',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
 
-                systemId.confirmed = true;
-                systemId.modified = false;
-
-                systemIdsPage.setState({
-                    unconfirmedTailsCount : (systemIdsPage.state.unconfirmedTailsCount - 1)
+                prefsPage.setState({
+                    selectedMetrics : response.flightMetrics,
+                    decimalPrecision : response.decimalPrecision
                 });
             },   
             error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Updating Tail Number", errorThrown);
+                errorModal.show("Error Updating User Preferences", errorThrown);
             },   
             async: true 
         });  
@@ -130,7 +126,30 @@ class PreferencesPage extends React.Component {
         console.log("adding " + name + " to the users metrics");
         this.state.selectedMetrics.push(name);
 
-        this.setState(this.state);
+        this.updatePreferences();
+    }
+
+    removeMetric(index) {
+        console.log("removing " + this.state.selectedMetrics[index] + " from metric list.");
+
+        var newSelectedMetrics = new Array();
+
+        for (let i = 0; i < this.state.selectedMetrics.length; i++) {
+            if (i != index) {
+                newSelectedMetrics.push(this.state.selectedMetrics[i]);
+            }
+        }
+
+        console.log("sel metrics:");
+        console.log(newSelectedMetrics);
+        this.state.selectedMetrics = newSelectedMetrics;
+        this.updatePreferences();
+    }
+    
+    changePrecision(precision) {
+        this.state.decimalPrecision = event.target.value;
+
+        this.updatePreferences();
     }
 
     render() {
@@ -155,6 +174,41 @@ class PreferencesPage extends React.Component {
             //flexDirection: "row"
         //}
 
+        var selectedMetricsHTML;
+
+        if (this.state.selectedMetrics != null && this.state.selectedMetrics.length > 0) {
+            selectedMetricsHTML = (
+                selectedMetrics.map((metric, key) => {
+                    return (
+                        <ListGroup.Item key={key} size="sm">
+                            <Container>
+                                <Row className="justify-content-md-center">
+                                    <Col xs>
+                                        {metric}
+                                    </Col>
+                                    <Col xs>
+                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeMetric(key)} title="Permanently delete this cached aircraft">
+                                            <i className="fa fa-times" aria-hidden="true"></i>
+                                        </button>
+                                    </Col>
+                                  </Row>
+                            </Container>
+                        </ListGroup.Item>
+                    );
+                })
+            );
+        } else {
+            selectedMetricsHTML = (
+                <ListGroup.Item size="sm">
+                    <Container>
+                        No metrics here yet! Use the dropdown to add some.
+                    </Container>
+                </ListGroup.Item>
+            );
+        }
+
+ 
+
         return (
             <div>
                 <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
@@ -178,12 +232,14 @@ class PreferencesPage extends React.Component {
                                                             <div className="form-row align-items-left justify-content-left">
                                                                 <Form.Group controlId="exampleForm.ControlInput1">
                                                                     <Form.Label>Decimal Precision:</Form.Label>
-                                                                    <Form.Control as="select" defaultValue={this.state.decimalPrecision}>
-                                                                        <option>1</option>
-                                                                        <option>2</option>
-                                                                        <option>3</option>
-                                                                        <option>4</option>
-                                                                        <option>5</option>
+                                                                    <Form.Control as="select" defaultValue={this.state.decimalPrecision} onChange={this.changePrecision.bind(this)}>
+                                                                        <option key='0'>0</option>
+                                                                        <option key='1'>1</option>
+                                                                        <option key='2'>2</option>
+                                                                        <option key='3'>3</option>
+                                                                        <option key='4'>4</option>
+                                                                        <option key='5'>5</option>
+                                                                        <option key='6'>6</option>
                                                                     </Form.Control>    
                                                                 </Form.Group>
                                                             </div>
@@ -193,26 +249,7 @@ class PreferencesPage extends React.Component {
                                                                         <Form.Group>
                                                                             <Form.Label>Your Selected Metrics:</Form.Label>
                                                                             <ListGroup style={listStyle} label="Your Selected Metrics">
-                                                                            {
-                                                                                selectedMetrics.map((metric, key) => {
-                                                                                    return (
-                                                                                        <ListGroup.Item key={key} size="sm">
-                                                                                            <Container>
-                                                                                                <Row className="justify-content-md-center">
-                                                                                                    <Col xs>
-                                                                                                        {metric}
-                                                                                                    </Col>
-                                                                                                    <Col xs>
-                                                                                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeFile(index)} title="Permanently delete this cached aircraft">
-                                                                                                            <i className="fa fa-times" aria-hidden="true"></i>
-                                                                                                        </button>
-                                                                                                    </Col>
-                                                                                                  </Row>
-                                                                                            </Container>
-                                                                                        </ListGroup.Item>
-                                                                                    );
-                                                                                })
-                                                                            }
+                                                                                {selectedMetricsHTML}
                                                                             </ListGroup>
                                                                         </Form.Group>
                                                                     </Col>
