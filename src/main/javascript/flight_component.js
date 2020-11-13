@@ -126,6 +126,30 @@ class Flight extends React.Component {
             }
         }
     }
+
+    getUserPreferences() {
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/user_preference',
+            dataType : 'json',
+            success : function(response) {
+                console.log("got user pref response");
+                console.log(response);
+
+                thisFlight.setState({
+                    decimalPrecision : response.decimalPrecision,
+                    flightMetrics : response.flightMetrics
+                });
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log("Error getting upset data:");
+                console.log(errorThrown);
+            },   
+            async: true 
+        });  
+    }
     
 
     componentWillUnmount() {
@@ -527,8 +551,10 @@ class Flight extends React.Component {
             console.log(index);
             console.log(target);    
 
+            console.log(this.state.flightMetrics);
             let submissionData = {
                 flight_id : this.props.flightInfo.id,
+                flight_metrics : JSON.stringify(this.state.flightMetrics),
                 time_index : index
             }
 
@@ -553,13 +579,13 @@ class Flight extends React.Component {
                 async: false 
             });  
 
-
             var popupProps = {
                 pixel : pixel,
                 status : '',
                 info : info,
                 lociData : lociInfo,
                 placement : pixel,
+                precision : this.state.decimalPrecision,
                 lineSeg : target,
                 closePopup : this.closeParamDisplay(),
                 title : 'title'
@@ -645,6 +671,8 @@ class Flight extends React.Component {
 
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
+
+        this.getUserPreferences();
 
         if (!this.state.mapLoaded) {
             this.props.showMap();

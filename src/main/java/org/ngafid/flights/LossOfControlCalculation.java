@@ -390,10 +390,10 @@ public class LossOfControlCalculation extends Calculation {
 
                 if (!sc.isNotCalculatable()) { 
                     Map<String, DoubleTimeSeries> parameters = sc.calculate();
-                    LossOfControlCalculation loc = path.isPresent() ?
-                        new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
-                    if(!loc.isNotCalculatable() && flight.getAirframeId() == 1) { //cessnas only!
-                        loc.calculate();
+                    if(flight.getAirframeId() == 1) { //cessnas only!
+                        LossOfControlCalculation loc = path.isPresent() ?
+                            new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
+                        if (!loc.isNotCalculatable()) loc.calculate();
                     }
                 }
 

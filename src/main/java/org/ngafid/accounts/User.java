@@ -184,7 +184,7 @@ public class User {
     }
 
     /**
-     * Queries ths users preferences from the database
+     * Queries the users preferences from the database
      *
      * @param connection A connection to the mysql database
      * @param userId the userId to query for
@@ -199,13 +199,36 @@ public class User {
 
         UserPreferences userPreferences = null;
 
+
         if (resultSet.next()) {
             userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
+        } else {
+            userPreferences = UserPreferences.defaultPreferences(userId);
+            storeUserPreferences(connection, userId, userPreferences);
         }
 
         return userPreferences;
     }
 
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void storeUserPreferences(Connection connection, int userId, UserPreferences userPreferences) throws SQLException {
+        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision, metrics) VALUES (?, ?, ?) " +
+            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision), metrics = VALUES(metrics)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setInt(2, userPreferences.getDecimalPrecision());
+        query.setString(3, userPreferences.getFlightMetrics());
+
+        query.executeUpdate();
+    }
 
     /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user
