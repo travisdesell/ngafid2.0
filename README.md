@@ -10,6 +10,9 @@ Install mysql on your system. For ubuntu:
 ```
 ~/ $ sudo apt install mysql-server
 ```
+For mySQL on SUSE
+https://software.opensuse.org/package/mysql-community-server
+
 ### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
 Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
 i.e.
@@ -133,6 +136,8 @@ source ~/ngafid2.0/init_env.sh
 ```
 
 ## 4. Running the webserver
+For java 14:
+http://download.opensuse.org/repositories/Java:/Factory/openSUSE_Factory/x86_64/
 
 First we need maven to fetch all of the java dependencies:
 ```
