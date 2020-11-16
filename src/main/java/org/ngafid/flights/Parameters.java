@@ -23,6 +23,10 @@ public interface Parameters {//this can be an interface since its static
     public final static String PARAM_PITCH = "Pitch";
     public final static String PARAM_ROLL = "Roll";
 
+    // Synthetic parameters
+    public final static String PARAM_STALL_PROBABILITY = "PStall";
+    public final static String PARAM_LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
+
     /*
      * How fast the aircraft is moving vertically.
      * This is called velocity instead of speed because the number actually has a direction associated with it,

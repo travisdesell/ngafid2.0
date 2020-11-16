@@ -32,7 +32,7 @@ public class TurnToFinal {
                     "PA-28-181", 66.0);
 
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll, velocity;
+    private final double[] latitude, longitude, altitude, roll, velocity, stallProbability, locProbability;
     private double runwayAltitude;
     private double maxRoll;
     private final Runway runway;
@@ -63,7 +63,7 @@ public class TurnToFinal {
      * @param lon
      */
     public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate, double runwayAltitude, double[] altitude, double[] roll,
-                       double[] lat, double[] lon, double[] velocity) {
+                       double[] lat, double[] lon, double[] velocity, double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
@@ -75,6 +75,8 @@ public class TurnToFinal {
         this.velocity = velocity;
         this.airportIataCode = airportIataCode;
         this.flightStartDate = flightStartDate;
+        this.stallProbability = stallProbability;
+        this.locProbability = locProbability;
 
         assert this.latitude.length == this.longitude.length;
         assert this.latitude.length == this.altitude.length;
@@ -273,6 +275,8 @@ public class TurnToFinal {
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
+        DoubleTimeSeries stallProbability = flight.getDoubleTimeSeries(PARAM_STALL_PROBABILITY);
+        DoubleTimeSeries locProbability = flight.getDoubleTimeSeries(PARAM_LOSS_OF_CONTROL_PROBABILITY);
 
         int flightId = flight.getId();
 
@@ -351,13 +355,20 @@ public class TurnToFinal {
             if (min > 100 || Double.isNaN(min))
                 continue;
 
+            double[] stallProbabilityArray = null, locProbabilityArray = null;
+            if (stallProbability != null)
+                stallProbabilityArray = stallProbability.sliceCopy(from, to);
+            if (locProbability != null)
+                locProbabilityArray = locProbability.sliceCopy(from, to);
+
             TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
                     flight.getAirframeType(), runway, airport.iataCode, flight.getStartDateTime(), runwayAltitude,
-                         altTimeSeries.sliceCopy(from, to),
-                        rollTimeSeries.sliceCopy(from, to),
-                         latTimeSeries.sliceCopy(from, to),
-                         lonTimeSeries.sliceCopy(from, to),
-                    velocityTimeSeries.sliceCopy(from, to));
+                    altTimeSeries.sliceCopy(from, to),
+                    rollTimeSeries.sliceCopy(from, to),
+                    latTimeSeries.sliceCopy(from, to),
+                    lonTimeSeries.sliceCopy(from, to),
+                    velocityTimeSeries.sliceCopy(from, to),
+                    stallProbabilityArray, locProbabilityArray);
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
@@ -389,7 +400,9 @@ public class TurnToFinal {
                     Map.entry("runway", this.runway),
                     Map.entry("airportIataCode", this.airportIataCode),
                     Map.entry("flightStartDate", this.flightStartDate),
-                    Map.entry("maxRoll", this.maxRoll))
+                    Map.entry("maxRoll", this.maxRoll),
+                    Map.entry(PARAM_LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : new double[0]),
+                    Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : new double[0]))
             );
         }
         catch (IllegalArgumentException _iae) {

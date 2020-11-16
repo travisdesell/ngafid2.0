@@ -5,7 +5,7 @@ import Form from "react-bootstrap/Form";
 
 import { errorModal } from "./error_modal.js";
 import { map, styles, layers, Colors, overlay, initializeMap } from "./map.js";
-import  TimeHeader from "./time_header.js";
+import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
 import Overlay from 'ol/Overlay';
@@ -25,6 +25,26 @@ import Plotly from 'plotly.js';
 var moment = require('moment');
 
 initializeMap();
+
+class RollSlider extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    makeRollSlider(min, max, onChange, getValue) {
+        return (
+            <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}>
+                Minimum Roll Value = {getValue()}&deg;  <br/>
+                {min}&deg; <input  id="rollSlider" type="range" min={min} max={max} value={getValue()} className="slider" id="rollSlider" onInput={(val) => onChange(val)} onChange={console.log('AAAA asdjalskjdklasjldk')}
+                        style={{margin: 'auto', verticalAlign: 'middle'}}/> {max}&deg;
+            </div>
+        );
+    }
+
+    render() {
+        return this.makeRollSlider(this.props.rollSliderMin, this.props.rollSliderMax, this.props.rollSliderChanged, this.props.rollSliderValue)
+    }
+}
 
 class TTFCard extends React.Component {
     constructor(props) {
@@ -50,21 +70,23 @@ class TTFCard extends React.Component {
 
             datesChanged: true,
 
-            minRoll: 0.0,
+            minRoll: 25.0,
 
             startYear: 2000,
             startMonth: 1,
             endYear: date.getFullYear(),
             endMonth: date.getMonth() + 1,
             startDate: "2000-01-01",
+            startDateObject: this.parseDate("2000-01-01"),
             endDate: new String(date.getFullYear()) + "-" + (date.getMonth() + 1) + "-01",
+            endDateObject: this.parseDate(new String(date.getFullYear()) + "-" + (date.getMonth() + 1) + "-01"),
 
             selectedAirport: airports[0],
             selectedRunway: "Any Runway",
             mapVisible: true,
             plotVisible: true,
             mapStyle: "Road",
-
+            disableFetching: false,
             // Style object for ttf lines. This is just a thin green line style.
             ttfStyle:
                 new Style({
@@ -98,9 +120,10 @@ class TTFCard extends React.Component {
                 }),
             plotlyLayout: {
                 title: 'Self Defined Glide Angles vs. Time',
+                showlegend: true,
                 autosize: true,
                 margin: {
-                    pad: 10
+                    pad: 2
                 },
                 xaxis: {
                     title: {
@@ -176,6 +199,8 @@ class TTFCard extends React.Component {
         });
 
         Plotly.newPlot('glide-angle-plot', {}, this.state.plotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('alt-plot', {}, this.state.plotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('glide-angle-hist', {}, this.state.plotlyLayout, this.state.plotlyConfig);
     }
 
     mapSelectChanged(style) {
@@ -374,24 +399,60 @@ class TTFCard extends React.Component {
         optimalDescentExceedencesLayer.setVisible(false);
     }
 
-    plotSelfDefinedGlideAngles(ttfs) {
-        let curves = ttfs.map(ttf => {
-            let y = ttf.selfDefinedGlideAngle;
-            return { name: ttf.flightId, x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
-        });
-        let alts = ttfs.map(ttf => {
-            let y = ttf.AltMSL;
-            return { name: ttf.flightId, x: [...Array(y.length).keys()], y: y, type: 'scatter', mode: 'lines' };
-        });
+    plotCharts(ttfs) {
+        let max = Math.max(...ttfs.map(ttf => ttf.AltMSL.length));
+        console.log(max)
+        let curves = ttfs
+            .map(ttf => {
+                let glideAngle = ttf.selfDefinedGlideAngle;
+                let alt = ttf.AltMSL;
+                let start = max - alt.length;
+                if (this.shouldDisplay(ttf)) {
+                    let x = Array.from({length: alt.length}, (v, k) => k + start);
+                    return { glideAngle: { name: ttf.flightId, x: x, y: glideAngle, type: 'scatter', mode: 'lines' },
+                             alt: { name: ttf.flightId, x: x, y: alt, type: 'scatter', mode: 'lines' },
+                             maxGlideAngle: Math.max(...ttf.selfDefinedGlideAngle)};
+                } else
+                    return null;
+            })
+            .filter(curve => curve != null);
+        let glideAngleCurves = curves.map(x => x.glideAngle);
 
-        console.log(curves.length);
-        var altLayout = {
-            title: 'Altitudes vs. Time',
+        Plotly.newPlot('glide-angle-plot', glideAngleCurves, this.state.plotlyLayout, this.state.plotlyConfig);
+
+        var glideAngleHistLayout = {
+            title: 'Glide Angle Frequencies',
+            bargap: 0.05,
+            showlegend: true,
             autosize: true,
             margin: {
                 pad: 10
             },
-            xaxis: {
+            xaxis: {title: 'Glide Angle'},
+            yaxis: {title: 'Count'}
+        };
+        let maxGlideAngles = curves.map(x => x.maxGlideAngle);
+        var glideAngleTrace = {
+            type: 'histogram',
+            y: maxGlideAngles,
+            ybins: {
+                end: 30, // Math.ceil(Math.max(...maxGlideAngles)),
+                size: 1.0,
+                start: 0, // Math.floor(Math.min(...maxGlideAngles)),
+            }
+        };
+
+        Plotly.newPlot('glide-angle-hist', [glideAngleTrace], glideAngleHistLayout)
+
+        let altCurves = curves.map(x => x.alt);
+        var altLayout = {
+            title: 'Altitudes vs. Time',
+            showlegend: true,
+            autosize: true,
+            margin: {
+                pad: 10
+            },
+            yaxis: {
                 title: {
                     text: 'Time (Seconds)',
                     font: {
@@ -401,7 +462,7 @@ class TTFCard extends React.Component {
                     }
                 },
             },
-            yaxis: {
+            xaxis: {
                 title: {
                     text: 'Altitude',
                     font: {
@@ -413,8 +474,7 @@ class TTFCard extends React.Component {
             }
         };
 
-        Plotly.newPlot('glide-angle-plot', curves, this.state.plotlyLayout, this.state.plotlyConfig);
-        Plotly.newPlot('alt-plot', alts, altLayout, this.state.plotlyConfig);
+        Plotly.newPlot('alt-plot', altCurves, altLayout, this.state.plotlyConfig);
     }
 
     getRunwayValue() {
@@ -431,6 +491,42 @@ class TTFCard extends React.Component {
         return this.state.selectedAirport;
     }
 
+    shouldDisplay(ttf) {
+        let runway = this.state.selectedRunway
+        let should = (this.state.selectedRunway == null || ['Any Runway', ttf.runway].includes(runway))
+                && this.dateWithinRange(this.parseDate(ttf.flightStartDate), this.state.startDateObject, this.state.endDateObject)
+                && ttf.maxRoll >= this.state.minRoll;
+
+        return should;
+    }
+
+    // For parsing dates in the format "yyyy-mm-dd hh:mm:ss" where the hh:mm:ss is optional
+    parseDate(dateString) {
+        if (dateString == null) return null;
+        var pieces = dateString.split(" ");
+        var yyyymmdd = pieces[0].split("-");
+        var year = yyyymmdd[0];
+        // Minus 1 because dates are zero indexed in javascript
+        var month = parseInt(yyyymmdd[1]) - 1;
+        var day = yyyymmdd[2];
+
+        if (pieces.length > 1) {
+            var hhmmss = pieces[1].split(":");
+            var hour = hhmmss[0];
+            var minutes = hhmmss[1];
+            var seconds = hhmmss[2];
+
+            return new Date(year, month, day, hour, minutes, seconds);
+        } else
+            return new Date(year, month, day);
+
+        return new Date(year, month, day);
+    }
+    // These should all be date objects
+    dateWithinRange(date, startDate, endDate) {
+        return startDate <= date && date <= endDate;
+    }
+
     onFetchClicked() {
         var startDateString = this.state.startDate;
         var endDateString = this.state.endDate;
@@ -444,43 +540,19 @@ class TTFCard extends React.Component {
         };
         var thisTTF = this;
 
-        // For parsing dates in the format "yyyy-mm-dd hh:mm:ss" where the hh:mm:ss is optional
-        function parseDate(dateString) {
-            if (dateString == null) return null;
-            var pieces = dateString.split(" ");
-            var yyyymmdd = pieces[0].split("-");
-            var year = yyyymmdd[0];
-            // Minus 1 because dates are zero indexed in javascript
-            var month = parseInt(yyyymmdd[1]) - 1;
-            var day = yyyymmdd[2];
 
-            if (pieces.length > 1) {
-                var hhmmss = pieces[1].split(":");
-                var hour = hhmmss[0];
-                var minutes = hhmmss[1];
-                var seconds = hhmmss[2];
 
-                return new Date(year, month, day, hour, minutes, seconds);
-            } else
-                return new Date(year, month, day);
-
-            return new Date(year, month, day);
-        }
-
-        var startDate = parseDate(startDateString);
-        var endDate = parseDate(endDateString);
+        var startDate = this.parseDate(startDateString);
+        var endDate = this.parseDate(endDateString);
 
         // start and end dates for the data we already have
         // This won't encounter an error even if either of dataStartDate or dataEndDate is null.
         // If they're null then they won't get used because this.state.data is also null.
         // This feels like bad practice though.
-        var dataStartDate = parseDate(this.state.dataStartDate);
-        var dataEndDate = parseDate(this.state.dataEndDate);
+        var dataStartDate = this.parseDate(this.state.dataStartDate);
+        var dataEndDate = this.parseDate(this.state.dataEndDate);
 
-        // These should all be date objects
-        function dateWithinRange(date, startDate, endDate) {
-            return startDate <= date && date <= endDate;
-        }
+
 
         // This will show TTFs in the specified date range and hide every other TTF.
         // If the TTFs have already been plotted it will use the previous layer.
@@ -488,10 +560,9 @@ class TTFCard extends React.Component {
             console.log("Executing response function");
             var ttfs = [];
             for (var i = 0; i < response.ttfs.length; i++) {
-                let date = parseDate(response.ttfs[i].flightStartDate);
                 let ttf = response.ttfs[i];
 
-                if ((runway == null || ["Any Runway", ttf.runway].includes(runway)) && dateWithinRange(date, startDate, endDate)) {
+                if (thisTTF.shouldDisplay(ttf)) {
                     ttfs.push(ttf);
                     thisTTF.plotTTF(ttf);
                 } else {
@@ -499,17 +570,18 @@ class TTFCard extends React.Component {
                 }
             }
 
-            thisTTF.plotSelfDefinedGlideAngles(ttfs);
+            thisTTF.plotCharts(ttfs);
             thisTTF.setState({data: response})
-
         }
+
+        this.setState({ datesChanged: false })
 
         // If we already have some data, and the date range of that data contains the new date range,
         // then we don't need to fetch any more data - just turn off layers for data that not within the new range.
         // We should keep the old dataStartDate and dataEndDate though to preserve the entire range.
         if (this.state.data != null &&
-            dateWithinRange(startDate, dataStartDate, dataEndDate) &&
-            dateWithinRange(endDate,   dataStartDate, dataEndDate) &&
+            this.dateWithinRange(startDate, dataStartDate, dataEndDate) &&
+            this.dateWithinRange(endDate,   dataStartDate, dataEndDate) &&
             airport == this.state.dataAirport) {
             responseFunction(this.state.data);
         } else {
@@ -522,6 +594,7 @@ class TTFCard extends React.Component {
                     console.log(ttf.layer);
                 }
             }
+            this.setState({disableFetching: true})
 
             // Fetch the data.
             $.ajax({
@@ -537,11 +610,13 @@ class TTFCard extends React.Component {
                     thisTTF.state.dataStartDate = submissionData.startDate;
                     thisTTF.state.dataEndDate = submissionData.endDate;
 
+                    thisTTF.setState({disableFetching: false})
                     responseFunction(response);
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
                     console.log(textStatus);
                     console.log(errorThrown);
+                    thisTTF.setState({disableFetching: false, datesChanged: false,})
                 },
                 async: true
             });
@@ -568,11 +643,7 @@ class TTFCard extends React.Component {
 
     onAirportFilterChanged(airport) {
         let iataCode = airport;
-
-        this.state.selectedAirport = iataCode;
-        this.state.selectedRunway = "Any Runway";
-
-        this.forceUpdate();
+        this.setState({selectedAirport: iataCode, selectedRunway: "Any Runway", datesChanged: true,});
     }
 
     onUpdateStartYear(year) {
@@ -600,18 +671,37 @@ class TTFCard extends React.Component {
     }
 
     setDates() {
-        this.state.datesChanged = true;
-        if (this.startMonth < 10) {
-            this.startDate = "" + this.startYear + "-0" + this.startMonth + "-01";
-        } else {
-            this.startDate = "" + this.startYear + "-" + this.startMonth + "-01";
+        function getDaysInMonth(year, month) {
+            return new Date(year, month, 0).getDate()
         }
+        let endDate;
+        let startDate;
 
-        if (this.endMonth < 10) {
-            this.endDate = "" + this.endYear + "-0" + this.endMonth + "-01";
+        this.state.datesChanged = true;
+        if (this.state.startMonth < 10) {
+            startDate = "" + this.state.startYear + "-0" + this.state.startMonth + "-01";
         } else {
-            this.endDate = "" + this.endYear + "-" + this.endMonth + "-01";
+            startDate = "" + this.state.startYear + "-" + this.state.startMonth + "-01";
         }
+        let startDateObject = this.parseDate(this.state.startDate)
+
+        let finalDayOfMonth = getDaysInMonth(this.state.endYear, this.state.endMonth)
+        if (this.state.endMonth < 10) {
+            endDate = "" + this.state.endYear + "-0" + this.state.endMonth + "-" + finalDayOfMonth;
+        } else {
+            endDate = "" + this.state.endYear + "-" + this.state.endMonth + "-" + finalDayOfMonth;
+        }
+        let endDateObject = this.parseDate(this.state.endDate);
+
+        this.setState({
+            dateChanged: true,
+            endDate: endDate,
+            startDate: startDate,
+            endDateObject: endDateObject,
+            startDateObject: startDateObject
+        });
+
+        console.log(this.state);
     }
 
     onRunwayFilterChanged(runway) {
@@ -623,7 +713,7 @@ class TTFCard extends React.Component {
 
         if (this.state.data != null)
             for (const ttf of this.state.data.ttfs) {
-                if (runway == "Any Runway" || runway == ttf.runway.name)
+                if (this.shouldDisplay(ttf))
                     this.plotTTF(ttf);
                 else
                     this.hideTTF(ttf);
@@ -632,26 +722,25 @@ class TTFCard extends React.Component {
         this.forceUpdate();
     }
 
-    onRollSliderChanged() {
+    onRollSliderChanged(value) {
         let slider = document.getElementById('rollSlider')
-        this.state.minRoll = slider.value;
-
+        this.setState({minRoll: slider.value});
+        console.log(slider.value)
         if (this.state.data != null) {
             console.log(this.state.data);
             for (const ttf of this.state.data.ttfs) {
-                if (ttf.maxRoll >= slider.value)
+                if (this.shouldDisplay(ttf))
                     this.plotTTF(ttf);
                 else
                     this.hideTTF(ttf);
             }
+            this.plotCharts(this.state.data.ttfs);
         }
-        this.forceUpdate();
     }
 
     render() {
-        console.log("re-rendering");
-
         let runwaySelect;
+        console.log(this.state);
 
         if (this.state.data == null) {
             runwaySelect = ( <div> </div> );
@@ -671,12 +760,31 @@ class TTFCard extends React.Component {
         }
         // console.log(this.state);
         let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
+        let rollSlider =
+            <RollSlider
+                 rollSliderMin={0}
+                 rollSliderMax={90}
+                 rollSliderChanged={(val) => this.onRollSliderChanged(val)}
+                 rollSliderValue={() => this.state.minRoll}
+                />
+        let turnToFinalHeaderComponents =
+            <TurnToFinalHeaderComponents
+                 airframes={[]}
+                 airport={this.state.selectedAirport}
+                 airports={airports}
+                 airportChange={(airport) => this.onAirportFilterChanged(airport)}
+                 runway={this.state.selectedRunway}
+                 runways={runwayList}
+                 runwayChange={(runway) => this.onRunwayFilterChanged(runway)}/>
 
         let form = (
             <div>
                 <TimeHeader
                     name="Flight Filters"
-                    airframes={[]}
+                    disabled={this.state.disableFetching}
+                    buttonContent={'Fetch'}
+                    extraHeaderComponents={turnToFinalHeaderComponents}
+                    extraRowComponents={rollSlider}
                     startYear={this.state.startYear}
                     startMonth={this.state.startMonth}
                     endYear={this.state.endYear}
@@ -686,15 +794,7 @@ class TTFCard extends React.Component {
                     updateStartYear={(newStartYear) => this.onUpdateStartYear(newStartYear)}
                     updateStartMonth={(newStartMonth) => this.onUpdateStartMonth(newStartMonth)}
                     updateEndYear={(newEndYear) => this.onUpdateEndYear(newEndYear)}
-                    updateEndMonth={(newEndMonth) => this.onUpdateEndMonth(newEndMonth)}
-                    airport={this.state.selectedAirport}
-                    airports={airports}
-                    airportChange={(airport) => this.onAirportFilterChanged(airport)}
-                    runway={this.state.selectedRunway}
-                    runways={runwayList}
-                    runwayChange={(runway) => this.onRunwayFilterChanged(runway)}
-                />
-                Minimum Roll Value: {this.state.minRoll} <input id="rollSlider" type="range" min="0" max="90" value={this.state.minRoll} class="slider" id="rollSlider" onInput={(val) => this.onRollSliderChanged(val)}/>
+                    updateEndMonth={(newEndMonth) => this.onUpdateEndMonth(newEndMonth)}/>
                 <br/>
             </div>
         );
