@@ -46,15 +46,15 @@ public class PostTurnToFinal implements Route {
 
         List<JsonElement> _ttfs = new ArrayList<>();
 
+        // TODO: Update this limit when caching of TTF objects is implemented.
         List<Flight> flights =
-                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 0);
+                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 1000);
         Set<String> iataCodes = new HashSet<>();
 
         for (Flight flight : flights) {
-            int flightId = flight.getId();
 
             try {
-                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flightId, airportIataCode)) {
+                for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flight, airportIataCode)) {
                     JsonElement jsonElement = ttf.jsonify();
                     if (jsonElement != null) {
                         _ttfs.add(jsonElement);
@@ -68,7 +68,6 @@ public class PostTurnToFinal implements Route {
             // break;
         }
 
-        System.out.println("hiii");
 
         List<String> iataCodesList = new ArrayList<>(iataCodes.size());
         iataCodesList.addAll(iataCodes);
@@ -83,11 +82,9 @@ public class PostTurnToFinal implements Route {
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().jsonify(gson)));
 
-        String json = gson.toJson(Map.of(
+        return gson.toJson(Map.of(
             "airports", airports,
             "ttfs", _ttfs
         ));
-        System.out.println("What the fu");
-        return json;
     }
 }

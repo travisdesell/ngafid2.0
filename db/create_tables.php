@@ -42,10 +42,17 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE upload_errors");
     query_ngafid_db("DROP TABLE flight_messages");
 
+    query_ngafid_db("DROP TABLE flight_tag_map");
     query_ngafid_db("DROP TABLE flights");
     query_ngafid_db("DROP TABLE tails");
     query_ngafid_db("DROP TABLE airframes");
     query_ngafid_db("DROP TABLE fleet_airframes");
+    query_ngafid_db("DROP TABLE visited_airports");
+    query_ngafid_db("DROP TABLE visited_runways");
+    query_ngafid_db("DROP TABLE user_preferences");
+    query_ngafid_db("DROP TABLE flight_tags");
+    query_ngafid_db("DROP TABLE loci_processed");
+
 
     query_ngafid_db("DROP TABLE uploads");
 
