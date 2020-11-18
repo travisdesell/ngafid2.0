@@ -70,8 +70,10 @@ let defSeriesNames = ["TAS",
                         "AltGPS",
                         "NormAc",
                         "WptDst",
+                        "Yaw Rate",
+                        "True Airspeed(ft/min)",
                         "AOASimple",
-                        "ProSpin Force"]
+                        "Coordination Index"]
 
 class PreferencesPage extends React.Component {
     constructor(props) {

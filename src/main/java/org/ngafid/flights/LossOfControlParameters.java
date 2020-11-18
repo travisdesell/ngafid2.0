@@ -18,9 +18,9 @@ public interface LossOfControlParameters {
     public static final String AOA_SIMPLE = "AOASimple"; 
     public static final String E1_RPM = "E1 RPM";
     public static final String TAS_FTMIN = "True Airspeed(ft/min)";
-    public static final String STALL_PROB = "StallProbability";
-    public static final String LOCI = "LOCI";
-    public static final String PRO_SPIN_FORCE = "ProSpin Force";
+    public static final String STALL_PROB = "Stall Index";
+    public static final String LOCI = "LOC-I Index";
+    public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
 
     public static final int C172SP_ID = 1;
