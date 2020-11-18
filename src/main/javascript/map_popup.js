@@ -90,7 +90,7 @@ class MapPopup extends React.Component {
                         <Popover.Title as="h3"> 
                             <Container>
                                 <Row>
-                                    <Col sm={7}>Filght Metrics</Col>
+                                    <Col sm={7}>Flight Metrics</Col>
                                     <Col sm={2}>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa-thumb-tack p-1"></i>
@@ -120,11 +120,11 @@ class MapPopup extends React.Component {
                                         <td>{lociInfo[0]}</td>
                                     </tr>
                                     <tr>
-                                        <td>Stall Probability:</td>
+                                        <td>Stall Index:</td>
                                         <td>{lociInfo[1]}</td>
                                     </tr>
                                     <tr>
-                                        <td>LOC-I Probability:</td>
+                                        <td>LOC-I Index:</td>
                                         <td>{lociInfo[2]}</td>
                                     </tr>
                                     {

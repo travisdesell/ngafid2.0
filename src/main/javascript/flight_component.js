@@ -20,56 +20,11 @@ import { TraceButtons } from './trace_buttons_component.js';
 import { Tags } from './tags_component.js';
 import { Events } from './events_component.js';
 import { selectAircraftModal } from './select_acft_modal.js';
+import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
 
 var moment = require('moment');
-
-// So the weights w0 and w1 are for the weighted average
-// They should add to 1.0 so if one of them is 0, the resulting color
-// will just be the other color (e.g. w0 is 0 then the resulting color will be the same as c1)
-function interpolateColors(c0, w0, c1, w1) {
-    var new_color = [0.0, 0.0, 0.0];
-    // red = 0, green = 1, blue = 2
-    for (var i = 0; i < 3; i++) {
-        new_color[i] = Math.round(w0 * c0[i] + w1 * c1[i]);
-    }
-    return new_color;
-}
-
-// loc_percentage should be between 0 and 1.0
-// This will get the color for a given p(LOC)
-// This can probably be made cleaner / not use if statements and just use lists but im lazy
-function paletteAt(loc_probability) {
-    if (loc_probability < 0.8) {
-        var c0 = [0, 255, 0]; // green
-        var c1 = [255, 255, 0]; // yellow
-
-        // This will be a proportion between 0 and 1 since the max value for loc_p = 0.8 and min is 0
-        var weight = loc_probability / 0.8;
-        var w0 = 1.0 - weight; // if weight is 1, we want there to be no green and all yellow
-        var w1 = weight;
-
-        return interpolateColors(c0, w0, c1, w1);
-    } else if (loc_probability >= 0.8 && loc_probability < 1.0) {
-        // Our range of loc_p values is 0.8 to 1.0, so a distance of 0.2
-        var c0 = [255, 255, 0];//yellow
-        var c1 = [255, 0, 0];//red
-
-        // The minimum value of this will be 0.0 and max is 0.2
-        var numerator = loc_probability - 0.8;
-
-        // value range is 0.0 to 1.0
-        var weight = numerator / 0.2;
-        var w0 = 1.0 - weight;
-        var w1 = weight;
-
-        return interpolateColors(c0, w0, c1, w1);
-    } else {
-        // red
-        return [255, 0, 0];
-    }
-}
 
 class Flight extends React.Component {
     constructor(props) {
@@ -245,10 +200,10 @@ class Flight extends React.Component {
                      * Pitch
                      * Roll
                      * Vertical Speed
-                     * LOCI
-                     * StallProbability
+                     * LOC-I Index
+                     * Stall Index
                      */
-                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOCI", "StallProbability"];
+                    var preferredNames = ["AltAGL", "AltMSL", "E1 MAP", "E2 MAP", "E1 RPM", "E2 RPM", "IAS", "NormAc", "Pitch", "Roll", "VSpd", "LOC-I Index", "Stall Index"];
                     var commonTraceNames = [];
                     var uncommonTraceNames = [];
 
@@ -545,7 +500,7 @@ class Flight extends React.Component {
 
         var lociInfo = new Array(), info = null;
 
-        if (target != null && (target.parent === "PLOCI" || target.parent === "PStall")) {
+        if (target != null && (target.parent === "LOC-I Index" || target.parent === "Stall Index")) {
             let index = target.getId();
             console.log("target info:");
             console.log(index);
@@ -559,8 +514,8 @@ class Flight extends React.Component {
             }
 
             lociInfo.push(index);
-            lociInfo.push(this.state.seriesData.get('StallProbability')[index]);
-            lociInfo.push(this.state.seriesData.get('LOCI')[index]);
+            lociInfo.push(this.state.seriesData.get('Stall Index')[index]);
+            lociInfo.push(this.state.seriesData.get('LOC-I Index')[index]);
 
             $.ajax({
                 type: 'POST',
@@ -592,6 +547,26 @@ class Flight extends React.Component {
             };
 
             var popup = this.renderNewPopup(this.state.mapPopups.length - 1, popupProps);
+            var visibleStyle = new Style({
+                stroke: new Stroke({
+                        color: this.state.color,
+                        width: 1.5
+                    }),
+                    image: new Circle({
+                        radius: 5,
+                        stroke: new Stroke({
+                            color: this.state.color,
+                            width: 2
+                        })
+                    })
+                });
+
+            if (target != null) {
+                console.log("need to draw point at: " + this.state.points[index]);
+                this.state.trackingPoint.setStyle(visibleStyle);
+                this.state.trackingPoint.getGeometry().setCoordinates(index);
+            }
+
         } else {
             console.log("wont render popup");
         }
@@ -681,7 +656,7 @@ class Flight extends React.Component {
             var thisFlight = this;
 
             var lociSubmissionData = {
-                seriesName : "LOCI",
+                seriesName : "LOC-I Index",
                 flightId : this.props.flightInfo.id
             };
 
@@ -690,8 +665,8 @@ class Flight extends React.Component {
             console.log("getting upset probabilities");
 
             var names = [
-                "StallProbability",
-                "LOCI",
+                "Stall Index",
+                "LOC-I Index",
             ];
 
             for (let i = 0; i < names.length; i++) {
@@ -871,135 +846,12 @@ class Flight extends React.Component {
                     // toggle visibility of itinerary
                     layers.push(baseLayer, phaseLayer);
                     
-                    const lociData = thisFlight.state.seriesData.get('LOCI');
-                    const spData = thisFlight.state.seriesData.get('StallProbability');
+                    const lociData = thisFlight.state.seriesData.get('LOC-I Index');
+                    const spData = thisFlight.state.seriesData.get('Stall Index');
 
-                    var lociPhases = [], lociOutlinePhases = [];
-                    if (lociData != null) {
-                        for(let i = 0; i < lociData.length; i++){
-                            let val = lociData[i];
-                            var feat = new Feature({
-                                geometry : new LineString(points.slice(i, i+2)),
-                                name : "LOCI"
-                            });
-                            feat.setId(i);
-                            feat.parent = 'PLOCI';
-                            feat.setStyle([
-                              new Style({
-                                stroke: new Stroke({
-                                  color: paletteAt(val),
-                                  width: 8
-                                })
-                              })
-                            ]);
-
-                            let outFeat = new Feature({
-                                geometry : new LineString(points.slice(i, i+2)),
-                                name : "LOCI Outline"
-                            });
-
-                            outFeat.setId(i);
-                            outFeat.parent = 'PLOCI';
-
-                            lociPhases.push(feat);
-                            lociOutlinePhases.push(outFeat);
-                        }
-                    }
-
-                    var spPhases = [], spOutlinePhases = [];
-                    if (spData != null) {
-                        for(let i = 0; i < spData.length; i++){
-                            let val = spData[i];
-                            var feat = new Feature({
-                                geometry : new LineString(points.slice(i, i+2)),
-                                name : "SP"
-                            });
-                            feat.setId(i);
-                            feat.parent = 'PStall';
-                            feat.setStyle([
-                              new Style({
-                                stroke: new Stroke({
-                                  color: paletteAt(val),
-                                  width: 8
-                                })
-                              })
-                            ]);
-
-                            let outFeat = new Feature({
-                                geometry : new LineString(points.slice(i, i+2)),
-                                name : "SP Outline"
-                            });
-
-                            outFeat.setId(i);
-                            outFeat.parent = 'PStall';
-
-                            spOutlinePhases.push(outFeat);
-                            spPhases.push(feat);
-                        }
-                    }
-
-                    lociPhases.push(thisFlight.state.trackingPoint);
-                    spPhases.push(thisFlight.state.trackingPoint);
-
-                    let lociLayer = new VectorLayer({
-                        name : 'PLOCI' ,
-                        description : 'Loss of Control Probability' ,
-                        nMap : false,
-                        disabled : (lociData == null),
-
-                        source : new VectorSource({
-                            features: lociPhases
-                        })
-                    });
-
-                    let lociLayerOutline = new VectorLayer({
-                        name : 'PLOCI Outline' ,
-                        description : 'Loss of Control Probability' ,
-                        nMap : true,
-                        disabled : (lociData == null),
-                        style : new Style({
-                            stroke: new Stroke({
-                                color: thisFlight.state.color,
-                                width : 12
-                            })
-                        }),
-                        source : new VectorSource({
-                            features: lociOutlinePhases                        
-                        })
-                    });
-
-                    let spLayer = new VectorLayer({
-                        name : 'PStall' ,
-                        description : 'Stall Probability',
-                        nMap : false,
-                        disabled : (spData == null),
-                        source : new VectorSource({
-                            features: spPhases                        
-                        })
-                    });
-
-                    let spLayerOutline = new VectorLayer({
-                        name : 'PStall Outline' ,
-                        description : 'Stall Probability',
-                        nMap : true,
-                        disabled : (spData == null),
-                        style : new Style({
-                            stroke: new Stroke({
-                                color: thisFlight.state.color,
-                                width : 12
-
-                            })
-                        }),
-                        source : new VectorSource({
-                            features: spOutlinePhases                        
-                        })
-                    });
-
-                    lociLayer.flightState = thisFlight;
-                    spLayer.flightState = thisFlight;
-
-                    layers.push(lociLayerOutline, lociLayer, spLayerOutline, spLayer);
-
+                    generateStallLayer(spData, layers, thisFlight);
+                    generateLOCILayer(lociData, layers, thisFlight);
+                    
                     console.log("adding layers!");
                     for(let i = 0; i < layers.length; i++){
                         let layer = layers[i];

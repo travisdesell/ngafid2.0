@@ -12,6 +12,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -65,9 +66,7 @@ public class PostLOCIMetrics implements Route {
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int timeIndex = Integer.parseInt(request.queryParams("time_index"));
 
-        Type strType = new TypeToken<List<String>>() {}.getType();
-        List<String> metrics = this.gson.fromJson(rawMetrics, strType);
-
+        ObjectMapper om = new ObjectMapper();
 
         try {
             //check to see if the user has access to this data
@@ -78,6 +77,7 @@ public class PostLOCIMetrics implements Route {
 
             LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
 
+            List<String> metrics = om.readValue(rawMetrics, List.class);
             List<FlightMetric> flightMetrics = new ArrayList<>();
 
             for (String seriesName : metrics) {
@@ -97,7 +97,7 @@ public class PostLOCIMetrics implements Route {
             }
 
             return gson.toJson(flightMetrics);
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
