@@ -8,6 +8,8 @@
 package org.ngafid.flights;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 
@@ -21,13 +23,43 @@ public abstract class Calculation {
     protected Map<String, DoubleTimeSeries> parameters;
 
     /**
+     * Indicates the type of calculation to identify as in the processed table of the database
+     */
+    protected String dbType;
+
+    /**
      * Initializes the set of parameters
      */
-    public Calculation(Flight flight, String [] parameterNameSet, Map<String, DoubleTimeSeries> parameters) {
+    public Calculation(Flight flight, String [] parameterNameSet, Map<String, DoubleTimeSeries> parameters, String dbType) {
         this.flight = flight;
         this.parameterNameSet = parameterNameSet;
         this.parameters = parameters;
+        this.dbType = dbType;
         this.getParameters(this.parameters);
+    }
+
+    /**
+     * Determines if a calculation has already been performed
+     *
+     * @return true if there has been a calculation with the same parameters performed prior, false otherwise
+     */
+    public boolean alreadyCalculated() {
+        String sqlQuery = "SELECT EXISTS(SELECT * FROM loci_processed WHERE type = '" + this.dbType + "' AND flight_id = ?)";
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+            preparedStatement.setInt(1, this.flight.getId());
+            ResultSet resultSet = preparedStatement.executeQuery();
+    
+            if (resultSet.next()) {
+                return resultSet.getBoolean(1);
+            }
+
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return false;
     }
 
     /**
@@ -65,7 +97,33 @@ public abstract class Calculation {
      *
      * @return a {@link Map} with the newly calculated {@link DoubleTimeSeries}
      */
-    public abstract Map<String, DoubleTimeSeries> calculate();
+    protected abstract void calculate(); 
+
+    /**
+     * Runs the calculation
+     *
+     * @return a {@link Map} of parameters plus those just calculated
+     */
+    public final Map<String, DoubleTimeSeries> runCalculation() {
+        int flightId = this.flight.getId();
+        if (!this.isNotCalculatable()) {
+            if (!this.alreadyCalculated()) {
+                System.out.println("Performing " + this.dbType + " calculation on flight #" + flightId);
+                this.calculate();
+            } else {
+                System.err.println("flight #" + flightId + " already calculated, ignoring");
+                return this.parameters;
+            }
+        } else {
+            System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + this.dbType + "!");
+            return this.parameters;
+        }
+
+        this.flight.updateLOCIProcessed(connection, this.dbType);
+        this.updateDatabase();
+
+        return this.parameters;
+    }
 
     /**
      * Updates the database with the new data

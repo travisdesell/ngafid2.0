@@ -37,6 +37,5 @@ public interface LossOfControlParameters {
      * Strings that represent the supplementary metrics displayed in the UI
      */
     public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
-
     public static final String [] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
 }

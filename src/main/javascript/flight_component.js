@@ -514,8 +514,16 @@ class Flight extends React.Component {
             }
 
             lociInfo.push(index);
-            lociInfo.push(this.state.seriesData.get('Stall Index')[index]);
-            lociInfo.push(this.state.seriesData.get('LOC-I Index')[index]);
+
+            let spData = this.state.seriesData.get('Stall Index');
+            let lociData = this.state.seriesData.get('LOC-I Index');
+
+            lociInfo.push(spData[index]); //All flights should have SI data
+            if (lociData == null) {
+                lociInfo.push(null);
+            } else {
+                lociInfo.push(lociData[index]);
+            }
 
             $.ajax({
                 type: 'POST',
