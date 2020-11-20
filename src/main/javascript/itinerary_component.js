@@ -49,7 +49,7 @@ class Itinerary extends React.Component {
         for (let i = 0; i < this.props.layers.length; i++) {
             let layer = this.props.layers[i];
             console.log(layer);
-            if (layer.get('visible')) {
+            if (layer.get('visible') && !layer.get('nMap')) {
                 return layer.get('description');
             }
         }
