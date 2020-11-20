@@ -452,6 +452,7 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `loci_processed` (
     `fleet_id` INT(11) NOT NULL,
     `flight_id` INT(11) NOT NULL,
+    `type` VARCHAR(2048) NOT NULL,
 
     PRIMARY KEY(`flight_id`),
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)

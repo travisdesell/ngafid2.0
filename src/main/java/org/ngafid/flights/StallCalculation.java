@@ -14,7 +14,7 @@ import static org.ngafid.flights.LossOfControlParameters.*;
 public class StallCalculation extends Calculation {
 
     public StallCalculation(Flight flight) {
-        super(flight, spParamStrings, new HashMap<>());
+        super(flight, spParamStrings, new HashMap<>(), STALL_PROB);
         this.parameters.put(AOA_SIMPLE, new DoubleTimeSeries(AOA_SIMPLE, "double"));
         this.parameters.put(TAS_FTMIN, new DoubleTimeSeries(TAS_FTMIN, "double"));
     }
@@ -145,9 +145,7 @@ public class StallCalculation extends Calculation {
      * {@inheritDoc}
      */
     @Override
-    public Map<String, DoubleTimeSeries> calculate() {
-        System.out.println("calculating stall probability for flight #" + this.flight.getId());
-
+    protected void calculate() {
         DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
         DoubleTimeSeries stallProbability; 
         this.parameters.put(STALL_PROB, 
@@ -158,9 +156,5 @@ public class StallCalculation extends Calculation {
             double prob = Math.min(((Math.abs(this.getAOASimple(i) / AOA_CRIT)) * 100), 100);
             stallProbability.add(prob / 100);
         }
-
-        this.updateDatabase();
-
-        return this.parameters;
     }
 }

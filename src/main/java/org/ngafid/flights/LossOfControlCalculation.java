@@ -43,7 +43,7 @@ public class LossOfControlCalculation extends Calculation {
      * and stall probability
      */
     public LossOfControlCalculation(Flight flight, Map<String, DoubleTimeSeries> cachedParameters) { 
-        super(flight, lociParamStrings, cachedParameters);
+        super(flight, lociParamStrings, cachedParameters, LOCI);
 
         cachedParameters.put(PRO_SPIN_FORCE, new DoubleTimeSeries(PRO_SPIN_FORCE, "double"));
         cachedParameters.put(YAW_RATE, new DoubleTimeSeries(YAW_RATE, "double"));
@@ -63,6 +63,7 @@ public class LossOfControlCalculation extends Calculation {
         //try to create a file output 
         this.createFileOut(path);
     }
+
 
     /**
      * Creates an output filestream
@@ -219,7 +220,7 @@ public class LossOfControlCalculation extends Calculation {
      *
      * @return a floating-point percentage of the probability of loss of control
      */
-    public Map<String, DoubleTimeSeries> calculate() {
+    public void calculate() {
         System.out.println("calculating");
         this.printDetails();
         
@@ -237,8 +238,6 @@ public class LossOfControlCalculation extends Calculation {
         if(this.pw.isPresent()) {
             this.writeFile(loci, this.parameters.get(STALL_PROB));
         }
-
-        return this.parameters;
     }
 
     /**
@@ -336,7 +335,7 @@ public class LossOfControlCalculation extends Calculation {
      * @param path the instance of the {@link Optional} where the path of the file out will reside
      * @param flightNums the instance of the {@link Optional} where the set of flight numbers will reside
      */
-    public static void processArgs(String [] args, Optional<Path> path, Optional<Iterator<Integer>> flightNums) {
+    public static Optional<Iterator<Integer>> processArgs(String [] args, Optional<Path> path, Optional<Iterator<Integer>> flightNums) {
         for(int i = 1; i < args.length; i++) {
             if(args[i].equals("-h") || args[i].equals("--help") || args[i].equals("-help")){
                 displayHelp();
@@ -367,11 +366,13 @@ public class LossOfControlCalculation extends Calculation {
                 for(int j = 0; j < nums.length; j++) {
                     nums[j] = Integer.parseInt(numsAsStrings[j]);
                 }
-
+               
+                System.out.println(Arrays.toString(nums));
                 Iterator<Integer> it = Arrays.stream(nums).iterator();
                 flightNums = Optional.of(it);
             }
         }
+        return flightNums;
     }
 
     /**
@@ -386,18 +387,14 @@ public class LossOfControlCalculation extends Calculation {
         while (it.hasNext()) {
             try {
                 Flight flight = Flight.getFlight(connection, it.next());    
-                StallCalculation sc = new StallCalculation(flight);
+                Calculation sc = new StallCalculation(flight);
 
-                if (!sc.isNotCalculatable()) { 
-                    Map<String, DoubleTimeSeries> parameters = sc.calculate();
-                    if(flight.getAirframeId() == 1) { //cessnas only!
-                        LossOfControlCalculation loc = path.isPresent() ?
-                            new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
-                        if (!loc.isNotCalculatable()) loc.calculate();
-                    }
+                Map<String, DoubleTimeSeries> parameters = sc.runCalculation();
+                if(flight.getAirframeId() == 1) { //cessnas only!
+                    Calculation loc = path.isPresent() ?
+                        new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
+                    loc.runCalculation();
                 }
-
-                flight.updateLOCIProcessed(connection); //update EVEN IF it isnt calculatable
 
             } catch (SQLException se) {
                 se.printStackTrace();
@@ -439,16 +436,16 @@ public class LossOfControlCalculation extends Calculation {
                         if (it != null) {
                             calculateAll(it, path);
                         } else {
-                            System.err.println("No flights found waiting for a LOCI calculation, sleeping 10s");
+                            System.err.println("No flights found waiting for a LOCI calculation, sleeping 3s");
                             try {
-                                Thread.sleep(10000);
+                                Thread.sleep(3000);
                             } catch (InterruptedException ie) {
                                 ie.printStackTrace();
                             }
                         }
                     }
                 } else {
-                    processArgs(args, path, flightNums);
+                    flightNums = processArgs(args, path, flightNums);
                 }
 
                 fleetId = Integer.parseInt(first);
@@ -457,7 +454,6 @@ public class LossOfControlCalculation extends Calculation {
                 System.exit(1);
             }
         }
-
 
         if (flightNums.isPresent()) {
             calculateAll(flightNums.get(), path);

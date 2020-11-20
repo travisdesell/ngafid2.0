@@ -169,12 +169,13 @@ public class Flight {
      *
      * @param connection the SQL database connection
      */
-    public void updateLOCIProcessed(Connection connection) {
-        String queryString = "INSERT INTO loci_processed (fleet_id, flight_id) VALUES(?,?)";
+    public void updateLOCIProcessed(Connection connection, String dbType) {
+        String queryString = "INSERT INTO loci_processed (fleet_id, flight_id, type) VALUES(?,?,?)";
         try{
             PreparedStatement query = connection.prepareStatement(queryString);
             query.setInt(1, this.getFleetId());
             query.setInt(2, this.getId());
+            query.setString(3, dbType);
 
             query.executeUpdate();
         } catch (SQLException se) {
