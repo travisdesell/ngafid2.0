@@ -116,6 +116,7 @@ public abstract class Calculation {
             }
         } else {
             System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + this.dbType + "!");
+            this.flight.updateLOCIProcessed(connection, this.dbType);
             return this.parameters;
         }
 
