@@ -221,7 +221,6 @@ public class LossOfControlCalculation extends Calculation {
      * @return a floating-point percentage of the probability of loss of control
      */
     public void calculate() {
-        System.out.println("calculating");
         this.printDetails();
         
         DoubleTimeSeries loci;
@@ -390,7 +389,7 @@ public class LossOfControlCalculation extends Calculation {
                 Calculation sc = new StallCalculation(flight);
 
                 Map<String, DoubleTimeSeries> parameters = sc.runCalculation();
-                if(flight.getAirframeId() == 1) { //cessnas only!
+                if(flight.getAirframeId() == 1 && !sc.isNotCalculatable()) { //cessnas only!
                     Calculation loc = path.isPresent() ?
                         new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
                     loc.runCalculation();
