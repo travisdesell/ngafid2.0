@@ -1148,7 +1148,7 @@ class Flight extends React.Component {
                             </button>
 
                             <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                  <i className="fa fa-download p-1"></i>
+                                <i className="fa fa-download p-1"></i>
                             </button>
 
                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
