@@ -23,6 +23,8 @@ import java.nio.file.Files;
 import java.lang.Math;
 
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.Instant;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 
@@ -381,7 +383,7 @@ public class LossOfControlCalculation extends Calculation {
      * @param path the {@link Optional} path of the file output
      */
     public static void calculateAll(Iterator<Integer> it, Optional<Path> path) {
-        long start = System.currentTimeMillis();
+        Instant start = Instant.now();
 
         while (it.hasNext()) {
             try {
@@ -400,9 +402,10 @@ public class LossOfControlCalculation extends Calculation {
             }
         }
 
-        long time = System.currentTimeMillis() - start;
-        long secondsTime = time / 1000;
-        System.out.println("calculations took: " + secondsTime + "s");
+        Instant end = Instant.now();
+        long elapsed_millis = Duration.between(start, end).toMillis();
+        double elapsed_seconds = ((double) elapsed_millis) / 1000;
+        System.out.println("calculations took: " + elapsed_seconds);
     }
 
     /**

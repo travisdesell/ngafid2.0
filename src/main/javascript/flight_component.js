@@ -700,7 +700,7 @@ class Flight extends React.Component {
                         console.log("Error getting upset data:");
                         console.log(errorThrown);
                     },   
-                    async: true 
+                    async: false 
                 });  
             }
 
