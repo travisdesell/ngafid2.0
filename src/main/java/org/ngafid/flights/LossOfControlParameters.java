@@ -16,7 +16,7 @@ public interface LossOfControlParameters {
      * @param AOA_CRIT this is the critical angle of attack that can be changes based on the FDM's guidelines
      * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on certain guidelines
      */
-    public static final double AOA_CRIT = 17;
+    public static final double AOA_CRIT = 15;
     public static final double PROSPIN_LIM = 4;
 
     /**
