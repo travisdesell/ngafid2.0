@@ -18,6 +18,7 @@ import org.ngafid.Database;
 public abstract class Calculation {
     private boolean notCalcuatable;
     private String [] parameterNameSet;
+
     protected Flight flight;
     protected static Connection connection = Database.getConnection();
     protected Map<String, DoubleTimeSeries> parameters;
@@ -92,14 +93,6 @@ public abstract class Calculation {
     }
 
     /**
-     * Performs the calculation and returns the original set of parameters plus those added with the
-     * new analysis
-     *
-     * @return a {@link Map} with the newly calculated {@link DoubleTimeSeries}
-     */
-    protected abstract void calculate(); 
-
-    /**
      * Runs the calculation
      *
      * @return a {@link Map} of parameters plus those just calculated
@@ -125,6 +118,14 @@ public abstract class Calculation {
 
         return this.parameters;
     }
+
+    /**
+     * Performs the calculation and returns the original set of parameters plus those added with the
+     * new analysis
+     *
+     * @return a {@link Map} with the newly calculated {@link DoubleTimeSeries}
+     */
+    protected abstract void calculate(); 
 
     /**
      * Updates the database with the new data

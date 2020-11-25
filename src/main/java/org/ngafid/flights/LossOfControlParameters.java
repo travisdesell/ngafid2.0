@@ -1,11 +1,27 @@
+/**
+ * This interface contains useful constants and values for the {@link LossOfControlCalculation} and {@link StallCalculation}
+ *
+ * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
+ */
+
 package org.ngafid.flights;
 
 public interface LossOfControlParameters {
     public static final double STD_PRESS_INHG = 29.92;
     public static final double COMP_CONV = (double) (Math.PI / 180); 
+
+    /**
+     * Critical Values
+     *
+     * @param AOA_CRIT this is the critical angle of attack that can be changes based on the FDM's guidelines
+     * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on certain guidelines
+     */
     public static final double AOA_CRIT = 15;
     public static final double PROSPIN_LIM = 4;
 
+    /**
+     * {@link DoubleTimeSeries} constants
+     */
     public static final String HDG = "HDG";
     public static final String IAS = "IAS";
     public static final String VSPD = "VSPD";
@@ -23,6 +39,9 @@ public interface LossOfControlParameters {
     public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
 
+    /**
+     * {@link Airframes} id's
+     */
     public static final int C172SP_ID = 1;
 
     /**
