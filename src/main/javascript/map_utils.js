@@ -93,6 +93,8 @@ function generateStallLayer(spData, layers, flight) {
         }
     }
 
+    spPhases.push(flight.state.trackingPoint);
+
     let spLayer = new VectorLayer({
         name : 'Stall Index' ,
         description : 'Stall Index',
@@ -121,7 +123,7 @@ function generateStallLayer(spData, layers, flight) {
     });
 
     spLayer.flightState = flight;
-    spPhases.push(flight.state.trackingPoint);
+    console.log(flight.state.trackingPoint);
     layers.push(spLayerOutline, spLayer);
 }
 
@@ -164,6 +166,8 @@ function generateLOCILayer(lociData, layers, flight) {
             lociOutlinePhases.push(outFeat);
         }
     }
+    
+    lociPhases.push(flight.state.trackingPoint);
 
 
     let lociLayer = new VectorLayer({
@@ -195,7 +199,6 @@ function generateLOCILayer(lociData, layers, flight) {
 
 
     lociLayer.flightState = flight;
-    lociPhases.push(flight.state.trackingPoint);
     layers.push(lociLayerOutline, lociLayer);
 }
 

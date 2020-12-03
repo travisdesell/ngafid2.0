@@ -81,7 +81,7 @@ public class PostEvents implements Route {
             //LOG.info(output);
 
             return output;
-        } catch (SQLException e) {
+        } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }

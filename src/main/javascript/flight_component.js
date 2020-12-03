@@ -570,9 +570,9 @@ class Flight extends React.Component {
                 });
 
             if (target != null) {
-                console.log("need to draw point at: " + this.state.points[index]);
-                this.state.trackingPoint.setStyle(visibleStyle);
-                this.state.trackingPoint.getGeometry().setCoordinates(index);
+                //console.log("need to draw point at: " + this.state.points[index]);
+                //this.state.trackingPoint.setStyle(visibleStyle);
+                //this.state.trackingPoint.getGeometry().setCoordinates(index);
             }
 
         } else {
