@@ -1488,6 +1488,13 @@ public class Flight {
         }
 
         checkExceptions();
+
+        //TODO: add calculations here
+        //this.runCalculations();
+    }
+
+    public void runCalculations() {
+        //TODO: move the logic from Calcaulation.java to here
     }
 
     public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
