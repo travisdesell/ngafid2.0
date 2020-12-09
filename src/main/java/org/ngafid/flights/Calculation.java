@@ -89,13 +89,8 @@ public abstract class Calculation {
     public final Map<String, DoubleTimeSeries> runCalculation() {
         int flightId = this.flight.getId();
         if (!this.isNotCalculatable()) {
-            if (!this.alreadyCalculated()) {
-                System.out.println("Performing " + this.dbType + " calculation on flight #" + flightId);
-                this.calculate();
-            } else {
-                System.err.println("flight #" + flightId + " already calculated, ignoring");
-                return this.parameters;
-            }
+            System.out.println("Performing " + this.dbType + " calculation on flight #" + flightId);
+            this.calculate();
         } else {
             System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + this.dbType + "!");
             //this.flight.updateLOCIProcessed(connection, this.dbType);
