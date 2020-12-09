@@ -18,7 +18,6 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.common.*;
 
@@ -87,16 +86,6 @@ public class PostFlights implements Route {
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             int numberPages = totalFlights / pageSize;
             ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
-
-            //List<String> fltNums = new ArrayList<>();
-            //for (Flight flight : flights) {
-                //DoubleTimeSeries aoa = DoubleTimeSeries.getDoubleTimeSeries(connection, flight.getId(), "AOASimple");
-                //fltNums.add(flight.getId() + "\t\t\t" + aoa.getMax() + "\n");
-            //}
-
-            //for (String s : fltNums) {
-                //System.out.print(s);
-            //}
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");

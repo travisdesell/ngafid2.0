@@ -9,14 +9,14 @@ require_once($cwd[__FILE__] . "/my_query.php");
 $drop_tables = false;
 
 //delete and reset events
-query_ngafid_db("DELETE FROM event_statistics");
+query_ngafid_db("DELETE FROM event_statistics WHERE event_definition_id >= 50 AND event_definition_id <= 61");
 echo "deleted event statistics!\n";
-query_ngafid_db("DELETE FROM events");
+query_ngafid_db("DELETE FROM events WHERE event_definition_id >= 50 AND event_definition_id <= 61");
 echo "deleted events!\n";
-query_ngafid_db("DELETE FROM flight_processed");
+query_ngafid_db("DELETE FROM flight_processed WHERE event_definition_id >= 50 AND event_definition_id <= 61");
 echo "deleted flight_processed!\n";
-query_ngafid_db("DELETE FROM loci_processed");
-echo "deleted loci_processed!\n";
+query_ngafid_db("DELETE FROM calculations");
+echo "deleted calculations!\n";
 
 
 //delete and reset loci dts data

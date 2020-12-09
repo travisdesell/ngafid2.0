@@ -29,6 +29,7 @@ import java.sql.SQLException;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
@@ -38,7 +39,10 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.ngafid.common.*;
+import org.ngafid.Database;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -64,6 +68,7 @@ public class Flight {
 
     private String tailNumber;
     private String suggestedTailNumber;
+    private String calculationEndpoint;
     private boolean tailConfirmed;
 
     private String md5Hash;
@@ -91,6 +96,8 @@ public class Flight {
 
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
+
+    private HashMap<String, Double> calculationCriticalValues;
 
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
@@ -156,7 +163,7 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
-        query = "DELETE FROM loci_processed WHERE flight_id = ?";
+        query = "DELETE FROM calculations WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
@@ -176,19 +183,56 @@ public class Flight {
      *
      * @param connection the SQL database connection
      */
-    public void updateLOCIProcessed(Connection connection, String dbType) {
-        String queryString = "INSERT INTO loci_processed (fleet_id, flight_id, type) VALUES(?,?,?)";
-        try{
-            PreparedStatement query = connection.prepareStatement(queryString);
-            query.setInt(1, this.getFleetId());
-            query.setInt(2, this.getId());
-            query.setString(3, dbType);
+    //public void updateLOCIProcessed(Connection connection, String dbType) {
+        //String queryString = "INSERT INTO calculations (fleet_id, flight_id, type) VALUES(?,?,?)";
+        //try{
+            //PreparedStatement query = connection.prepareStatement(queryString);
+            //query.setInt(1, this.getFleetId());
+            //query.setInt(2, this.getId());
+            //query.setString(3, dbType);
 
-            query.executeUpdate();
-        } catch (SQLException se) {
-            se.printStackTrace();
-        }
-    }
+            //query.executeUpdate();
+        //} catch (SQLException se) {
+            //se.printStackTrace();
+        //}
+    //}
+
+    /**
+     * Determines calculations have already been performed
+     *
+     * @param connection the database connection
+     * @param calculationTypes (VARARGS) the names of the calculations to look for
+     *
+     * @return true if there has been a calculation with the same parameters performed prior, false otherwise
+     */
+    //public boolean calculationsCompleted(Connection connection, String ... calculationTypes) {
+        //StringBuilder sqlQuery = new StringBuilder("SELECT COUNT(DISTINCT ID) FROM calculations WHERE (type IN(");
+        //int len = calculationTypes.length;
+
+        //for (int i = 0; i < len; i++) {
+            //sqlQuery.append("'");
+            //sqlQuery.append(calculationTypes[i]);
+            //sqlQuery.append((i == len - 1) ? "'" : "', ");
+        //}
+
+        //sqlQuery.append(")) AND flight_id = ?");
+
+        //try {
+            //PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery.toString());
+            //preparedStatement.setInt(1, this.id);
+            //ResultSet resultSet = preparedStatement.executeQuery();
+    
+            //if (resultSet.next()) {
+                //return (resultSet.getInt(1) == len);
+            //}
+
+        //} catch (SQLException se) {
+            //se.printStackTrace();
+        //}
+
+        //return false;
+    //}
+
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
@@ -610,8 +654,6 @@ public class Flight {
         if(tagIds.isEmpty()){
             return null;
         }
-
-        System.out.println("TAG NUMS: "+tagIds.toString());
 
         String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags " + idLimStr(tagIds, false);
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -1065,6 +1107,10 @@ public class Flight {
         return stringTimeSeries.get(name);
     }
 
+    public Map<String, Double> getCriticalValues() {
+        return this.calculationCriticalValues;
+    }
+
     private void setMD5Hash(InputStream inputStream) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -1488,13 +1534,17 @@ public class Flight {
         }
 
         checkExceptions();
-
-        //TODO: add calculations here
-        //this.runCalculations();
     }
 
     public void runCalculations() {
-        //TODO: move the logic from Calcaulation.java to here
+        Calculation stallCalculation = new StallCalculation(this);
+        Map<String, DoubleTimeSeries> params = stallCalculation.runCalculation();
+
+        if (this.getAirframeId() == 1 && !stallCalculation.isNotCalculatable()) {
+            // We still can only perform a LOC-I calculation on the Skyhawks
+            // This can be changed down the road
+            new LossOfControlCalculation(this, params).runCalculation();
+        }
     }
 
     public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {

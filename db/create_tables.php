@@ -360,6 +360,7 @@ $query = "CREATE TABLE `event_definitions` (
     `severity_column_names` VARCHAR(128),
     `severity_type` VARCHAR(3),
     `color` VARCHAR(6) DEFAULT NULL,
+    `calculation_deps` VARCHAR(4096) DEFAULT NULL
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`, `airframe_id`, `fleet_id`)
@@ -448,7 +449,8 @@ $query = "CREATE TABLE `sim_aircraft` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `loci_processed` (
+//Records all calculations performed
+$query = "CREATE TABLE `calculations` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
     `flight_id` INT(11) NOT NULL,
