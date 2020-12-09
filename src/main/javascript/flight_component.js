@@ -497,6 +497,12 @@ class Flight extends React.Component {
 
         let target = features[0];
         console.log(pixel);
+        console.log(features);
+
+        if (target.get('name') === 'Event' && features[2] != null) {
+            target = features[2];
+        }
+            
 
         var lociInfo = new Array(), info = null;
 

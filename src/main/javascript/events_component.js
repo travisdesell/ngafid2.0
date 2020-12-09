@@ -104,14 +104,14 @@ class Events extends React.Component {
         var eventStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
-                width: 3
+                width: 7
             })
         });
 
         var outlineStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: "#000000",
-                width: 5
+                width: 8
             })
         });
 

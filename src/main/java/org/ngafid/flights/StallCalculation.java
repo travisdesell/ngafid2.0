@@ -14,7 +14,7 @@ import static org.ngafid.flights.LossOfControlParameters.*;
 public class StallCalculation extends Calculation {
 
     public StallCalculation(Flight flight) {
-        super(flight, spParamStrings, new HashMap<>(), STALL_PROB);
+        super(flight, spParamStrings, new HashMap<>());
         this.parameters.put(AOA_SIMPLE, new DoubleTimeSeries(AOA_SIMPLE, "double"));
         this.parameters.put(TAS_FTMIN, new DoubleTimeSeries(TAS_FTMIN, "double"));
     }
