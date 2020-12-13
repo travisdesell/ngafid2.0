@@ -254,4 +254,4 @@ class Events extends React.Component {
     }
 }
 
-export { Events };
+export { Events, eventColorScheme };
