@@ -70,6 +70,52 @@ class Flight extends React.Component {
         this.zoomChanged = this.zoomChanged.bind(this);
     }
 
+    fetchEvents() {
+        var thisFlight = this;
+
+        var submissionData = {
+            flightId : this.props.flightInfo.id,
+            eventDefinitionsLoaded : global.eventDefinitionsLoaded
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/events',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                if (!global.eventDefinitionsLoaded) {
+                    global.eventDefinitions = response.definitions;
+                    global.eventDefinitionsLoaded = true;
+                }
+
+                var events = response.events;
+                for (let i = 0; i < events.length; i++) {
+                    for (let j = 0; j < global.eventDefinitions.length; j++) {
+
+                        if (events[i].eventDefinitionId == global.eventDefinitions[j].id) {
+                            events[i].eventDefinition = global.eventDefinitions[j];
+                            console.log("set events[" + i + "].eventDefinition to:");
+                            console.log(events[i].eventDefinition);
+                        }
+                    }
+                }
+
+                thisFlight.state.events = events;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                thisFlight.state.mapLoaded = false;
+                thisFlight.setState(thisFlight.state);
+
+                errorModal.show("Error Loading Flight Events", errorThrown);
+            },
+            async: false
+        });
+    }
+
     getActiveLayers() {
         let activeLayers = [];
         if (this.state.layers != null) {
@@ -307,130 +353,93 @@ class Flight extends React.Component {
             this.state.eventsLoaded = true;
             this.state.eventsVisible = true;
 
-            var thisFlight = this;
+            this.fetchEvents();
 
-            var submissionData = {
-                flightId : this.props.flightInfo.id,
-                eventDefinitionsLoaded : global.eventDefinitionsLoaded
-            };
 
-            $.ajax({
-                type: 'POST',
-                url: '/protected/events',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
+            console.log("got events");
+            console.log(this.state.events);
 
-                    if (!global.eventDefinitionsLoaded) {
-                        global.eventDefinitions = response.definitions;
-                        global.eventDefinitionsLoaded = true;
-                    }
+            // create list of event Features to display on map //
+            for (let i = 0; i < events.length; i++) {
+                var points;
+                var eventPoint;
+                var eventOutline;
+                let event = events[i];
 
-                    var events = response.events;
-                    for (let i = 0; i < events.length; i++) {
-                        for (let j = 0; j < global.eventDefinitions.length; j++) {
-
-                            if (events[i].eventDefinitionId == global.eventDefinitions[j].id) {
-                                events[i].eventDefinition = global.eventDefinitions[j];
-                                console.log("set events[" + i + "].eventDefinition to:");
-                                console.log(events[i].eventDefinition);
-                            }
-                        }
-                    }
-                    thisFlight.state.events = events;
-
-                    // create list of event Features to display on map //
-                    for (let i = 0; i < events.length; i++) {
-                        var points;
-                        var eventPoint;
-                        var eventOutline;
-                        let event = events[i];
-
-                        // Create Feature for event
-                        if (!thisFlight.state.mapLoaded){              // if points (coordinates) have not been fetched
-                            // create eventPoint with placeholder coordinates
-                            eventPoint = new Feature({
-                                geometry : new LineString( [0,0] ),
-                                name: 'Event'
-                            });
-
-                            // create outlines
-                            eventOutline = new Feature({
-                                geometry : new LineString( [0,0] ),
-                                name: 'EventOutline'
-                            });
-
-                        } else {
-                            // create eventPoint with preloaded coordinates
-                            points = thisFlight.state.points;
-                            eventPoint = new Feature({
-                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
-                                 name: 'Event'
-                            });
-
-                            // create outlines
-                            eventOutline = new Feature({
-                                 geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
-                                 name: 'EventOutline'
-                            });
-                        }
-
-                        // add eventPoint to flight
-                        thisFlight.state.eventsMapped.push(false);
-                        thisFlight.state.eventPoints.push(eventPoint);
-                        thisFlight.state.eventOutlines.push(eventOutline);
-                    }
-
-                    // create eventLayer & add eventPoints
-                    thisFlight.state.eventLayer = new VectorLayer({
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [0,0,0,0],
-                                width: 3
-                            })
-                        }),
-
-                        source : new VectorSource({
-                            features: thisFlight.state.eventPoints
-                        })
+                // Create Feature for event
+                if (!this.state.mapLoaded){              // if points (coordinates) have not been fetched
+                    // create eventPoint with placeholder coordinates
+                    eventPoint = new Feature({
+                        geometry : new LineString( [0,0] ),
+                        name: 'Event'
                     });
 
-                    // create eventLayer & add eventPoints
-                    thisFlight.state.eventOutlineLayer = new VectorLayer({
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [0,0,0,0],
-                                width: 4
-                            })
-                        }),
-
-                        source : new VectorSource({
-                            features: thisFlight.state.eventOutlines
-                        })
+                    // create outlines
+                    eventOutline = new Feature({
+                        geometry : new LineString( [0,0] ),
+                        name: 'EventOutline'
                     });
 
-                    //thisFlight.state.eventLayer.flightState = thisFlight;
-                    thisFlight.state.eventOutlineLayer.setVisible(true);
-                    thisFlight.state.eventLayer.setVisible(true);
+                } else {
+                    // create eventPoint with preloaded coordinates
+                    points = this.state.points;
+                    eventPoint = new Feature({
+                         geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
+                         name: 'Event'
+                    });
 
-                    // add to map only if flightPath loaded
-                    if (thisFlight.state.mapLoaded){
-                        map.addLayer(thisFlight.state.eventOutlineLayer);
-                        map.addLayer(thisFlight.state.eventLayer);
-                    }
+                    // create outlines
+                    eventOutline = new Feature({
+                         geometry: new LineString(points.slice(event.startLine, event.endLine + 2)),
+                         name: 'EventOutline'
+                    });
+                }
 
-                    thisFlight.setState(thisFlight.state);
-                },
-                error : function(jqXHR, textStatus, errorThrown) {
-                    thisFlight.state.mapLoaded = false;
-                    thisFlight.setState(thisFlight.state);
+                // add eventPoint to flight
+                this.state.eventsMapped.push(false);
+                this.state.eventPoints.push(eventPoint);
+                this.state.eventOutlines.push(eventOutline);
+            }
 
-                    errorModal.show("Error Loading Flight Events", errorThrown);
-                },
-                async: true
+            // create eventLayer & add eventPoints
+            this.state.eventLayer = new VectorLayer({
+                style: new Style({
+                    stroke: new Stroke({
+                        color: [0,0,0,0],
+                        width: 3
+                    })
+                }),
+
+                source : new VectorSource({
+                    features: this.state.eventPoints
+                })
             });
+
+            // create eventLayer & add eventPoints
+            this.state.eventOutlineLayer = new VectorLayer({
+                style: new Style({
+                    stroke: new Stroke({
+                        color: [0,0,0,0],
+                        width: 4
+                    })
+                }),
+
+                source : new VectorSource({
+                    features: this.state.eventOutlines
+                })
+            });
+
+            //this.state.eventLayer.flightState = this;
+            this.state.eventOutlineLayer.setVisible(true);
+            this.state.eventLayer.setVisible(true);
+
+            // add to map only if flightPath loaded
+            if (this.state.mapLoaded){
+                map.addLayer(this.state.eventOutlineLayer);
+                map.addLayer(this.state.eventLayer);
+            }
+
+            this.setState(this.state);
 
         } else {
             console.log("events already loaded!");
@@ -496,12 +505,13 @@ class Flight extends React.Component {
         });
 
         let target = features[0];
-        console.log(pixel);
-        console.log(features);
+        console.log("populating new popup for metrics");
 
         if (target.get('name') === 'Event' && features[2] != null) {
             target = features[2];
         }
+
+        console.log(this.state.events);
             
 
         var lociInfo = new Array(), info = null;
@@ -551,6 +561,7 @@ class Flight extends React.Component {
             var popupProps = {
                 pixel : pixel,
                 status : '',
+                events : this.state.events,
                 info : info,
                 lociData : lociInfo,
                 placement : pixel,
@@ -668,6 +679,10 @@ class Flight extends React.Component {
             this.state.mapLoaded = true;
 
             var thisFlight = this;
+            
+            this.fetchEvents();
+            console.log("events fetched");
+            console.log(this.state.events);
 
             var lociSubmissionData = {
                 seriesName : "LOC-I Index",

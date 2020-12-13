@@ -3,11 +3,16 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Popover from 'react-bootstrap/Popover';
+import Accordion from 'react-bootstrap/Accordion';
+import Card from 'react-bootstrap/Card';
 import Table from 'react-bootstrap/Table';
+import Badge from 'react-bootstrap/Badge';
 import Container from 'react-bootstrap/Container';
+import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
+import {eventColorScheme} from './events_component.js';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -22,8 +27,10 @@ class MapPopup extends React.Component {
             navbarWidth : 40,
             status : '',
             info : "",
+            eventRowHidden : false,
             placement : []
         };
+
     }
 
     show() {
@@ -39,6 +46,12 @@ class MapPopup extends React.Component {
         return this.state.status === 'pinned';
     }
 
+    toggleEventRow() {
+        this.setState({
+            eventRowHidden : !this.state.eventRowHidden
+        });
+    }
+
     pin() {
         if (this.state.status == 'pinned') {
             console.log("unpinning the popup!")
@@ -49,9 +62,34 @@ class MapPopup extends React.Component {
         }
     }
 
+    getRelevantEvents() {
+        let timeIndex = this.props.lociData[0];
+
+        var events = new Array();
+        console.log("events props");
+        console.log(events);
+
+        for (let i = 0; i < this.props.events.length; i++) {
+            let event = this.props.events[i];
+
+            if (timeIndex >= event.startLine && timeIndex <= event.endLine) {
+                console.log("event pushed!!");
+                events.push(event);
+            }
+        }
+
+        if (events.length > 0) {
+            this.state.events = events;
+        } else { 
+            this.state.events = null;
+        }
+
+    }
+
     render() {
         console.log("rendering a map popup with info:");
         console.log(this.props.info);
+        this.getRelevantEvents();
 
         var style = {
             top : this.props.placement[1] + this.state.navbarWidth,
@@ -81,6 +119,53 @@ class MapPopup extends React.Component {
             let precision = this.props.precision;
             console.log("users precision: "+precision);
 
+            let eventRow = (
+                <Alert variant='dark'>
+                    <Container>
+                        <Row>
+                            <Col sm={8}>
+                            {this.state.events != null &&
+                                this.state.events.map((event, index) => {
+                                    let eventColor = eventColorScheme[event.eventDefinitionId];
+
+                                    let badgeStyle = {
+                                        backgroundColor : eventColor
+                                    };
+
+                                    return (
+                                        <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
+                                    );
+                                })
+                            }
+                            </Col>
+                            <Col sm={4}>
+                                <Button onClick={() => this.toggleEventRow()} variant="outline-secondary" size="sm">
+                                    Hide
+                                </Button>
+                            </Col>
+                        </Row>
+                    </Container>
+                </Alert>
+            );
+
+            if (this.state.eventRowHidden) {
+                eventRow = (
+                    <Container>
+                        <Row>
+                            <Col>
+                                <Button onClick={() => this.toggleEventRow()} variant="outline-secondary" size="sm">
+                                    Show Events
+                                </Button>
+                            </Col>
+                        </Row>
+                    </Container>
+                );
+            }
+
+            if (this.state.events == null) {
+                eventRow = "";
+            }
+
             return (
                 <div style={{ height: 120 }}>
                     <Popover
@@ -105,6 +190,9 @@ class MapPopup extends React.Component {
                             </Container>
                         </Popover.Title>
                         <Popover.Content> 
+
+                            {eventRow}
+                      
                             <Table striped bordered hover size="sm">
 
                                 <thead>
