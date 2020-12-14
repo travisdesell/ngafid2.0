@@ -359,6 +359,8 @@ class Flight extends React.Component {
             console.log("got events");
             console.log(this.state.events);
 
+            let events = this.state.events;
+
             // create list of event Features to display on map //
             for (let i = 0; i < events.length; i++) {
                 var points;

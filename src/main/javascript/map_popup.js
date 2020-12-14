@@ -27,7 +27,7 @@ class MapPopup extends React.Component {
             navbarWidth : 40,
             status : '',
             info : "",
-            eventRowHidden : false,
+            eventRowHidden : true,
             placement : []
         };
 
@@ -119,51 +119,34 @@ class MapPopup extends React.Component {
             let precision = this.props.precision;
             console.log("users precision: "+precision);
 
-            let eventRow = (
-                <Alert variant='dark'>
-                    <Container>
-                        <Row>
-                            <Col sm={8}>
-                            {this.state.events != null &&
-                                this.state.events.map((event, index) => {
-                                    let eventColor = eventColorScheme[event.eventDefinitionId];
+            let eventRow = "";
 
-                                    let badgeStyle = {
-                                        backgroundColor : eventColor
-                                    };
+            if (this.state.events != null) {
+                if (this.state.eventRowHidden) {
+                    eventRow = "";
+                } else {
+                    eventRow = (
+                        <Alert variant='dark'>
+                            <Container style={{'max-height': 'calc(100vh - 210px)', 'overflow-y': 'auto'}}>
+                                <Row>
+                                {
+                                    this.state.events.map((event, index) => {
+                                        let eventColor = eventColorScheme[event.eventDefinitionId];
 
-                                    return (
-                                        <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
-                                    );
-                                })
-                            }
-                            </Col>
-                            <Col sm={4}>
-                                <Button onClick={() => this.toggleEventRow()} variant="outline-secondary" size="sm">
-                                    Hide
-                                </Button>
-                            </Col>
-                        </Row>
-                    </Container>
-                </Alert>
-            );
+                                        let badgeStyle = {
+                                            backgroundColor : eventColor
+                                        };
 
-            if (this.state.eventRowHidden) {
-                eventRow = (
-                    <Container>
-                        <Row>
-                            <Col>
-                                <Button onClick={() => this.toggleEventRow()} variant="outline-secondary" size="sm">
-                                    Show Events
-                                </Button>
-                            </Col>
-                        </Row>
-                    </Container>
-                );
-            }
-
-            if (this.state.events == null) {
-                eventRow = "";
+                                        return (
+                                            <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
+                                        );
+                                    })
+                                }
+                                </Row>
+                            </Container>
+                        </Alert>
+                    );
+                }
             }
 
             return (
@@ -175,7 +158,14 @@ class MapPopup extends React.Component {
                         <Popover.Title as="h3"> 
                             <Container>
                                 <Row>
-                                    <Col sm={7}>Flight Metrics</Col>
+                                    <Col sm={5}>Flight Metrics</Col>
+                                    {this.state.events != null &&
+                                        <Col sm={2}>
+                                            <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
+                                                <i className="fa fa-exclamation p-1"></i>
+                                            </Button>
+                                        </Col>
+                                    }
                                     <Col sm={2}>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa-thumb-tack p-1"></i>
