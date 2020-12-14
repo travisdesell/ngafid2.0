@@ -126,9 +126,9 @@ class MapPopup extends React.Component {
                     eventRow = "";
                 } else {
                     eventRow = (
-                        <Alert variant='dark' style={{'max-height': 'calc(100vh - 210px)', 'overflow-y': 'auto'}}>
+                        <Alert variant='dark' style={{'overflowY': 'auto'}}>
                         {
-                            this.state.events.map((event, index) => {
+                            this.state.events.map((event, key) => {
                                 let eventColor = eventColorScheme[event.eventDefinitionId];
 
                                 let badgeStyle = {
@@ -136,7 +136,7 @@ class MapPopup extends React.Component {
                                 };
 
                                 return (
-                                    <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
+                                    <Badge style={badgeStyle} key={key}>{event.eventDefinition.name}</Badge>
                                 );
                             })
                         }
@@ -155,13 +155,13 @@ class MapPopup extends React.Component {
                             <Container>
                                 <Row>
                                     <Col sm={5}>Flight Metrics</Col>
+                                    <Col sm={2}>
                                     {this.state.events != null &&
-                                        <Col sm={2}>
-                                            <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
-                                                <i className="fa fa-exclamation p-1"></i>
-                                            </Button>
-                                        </Col>
+                                        <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <i className="fa fa-exclamation p-1"></i>
+                                        </Button>
                                     }
+                                    </Col>
                                     <Col sm={2}>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa-thumb-tack p-1"></i>
