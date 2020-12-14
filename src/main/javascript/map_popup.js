@@ -126,24 +126,20 @@ class MapPopup extends React.Component {
                     eventRow = "";
                 } else {
                     eventRow = (
-                        <Alert variant='dark'>
-                            <Container style={{'max-height': 'calc(100vh - 210px)', 'overflow-y': 'auto'}}>
-                                <Row>
-                                {
-                                    this.state.events.map((event, index) => {
-                                        let eventColor = eventColorScheme[event.eventDefinitionId];
+                        <Alert variant='dark' style={{'max-height': 'calc(100vh - 210px)', 'overflow-y': 'auto'}}>
+                        {
+                            this.state.events.map((event, index) => {
+                                let eventColor = eventColorScheme[event.eventDefinitionId];
 
-                                        let badgeStyle = {
-                                            backgroundColor : eventColor
-                                        };
+                                let badgeStyle = {
+                                    backgroundColor : eventColor
+                                };
 
-                                        return (
-                                            <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
-                                        );
-                                    })
-                                }
-                                </Row>
-                            </Container>
+                                return (
+                                    <Badge style={badgeStyle}>{event.eventDefinition.name}</Badge>
+                                );
+                            })
+                        }
                         </Alert>
                     );
                 }
