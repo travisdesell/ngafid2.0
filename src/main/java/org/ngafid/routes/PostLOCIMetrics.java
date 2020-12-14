@@ -50,6 +50,10 @@ public class PostLOCIMetrics implements Route {
             this.name = name;
         }
 
+        public FlightMetric(String name) {
+            this(Double.NaN, name);
+        }
+
         @Override
         public String toString() {
             return name + ": " + value;
@@ -84,8 +88,12 @@ public class PostLOCIMetrics implements Route {
                 System.out.println(seriesName);
                 DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
 
-                FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
-                flightMetrics.add(flightMetric);
+                if (series == null) {
+                    flightMetrics.add(new FlightMetric(seriesName));
+                } else {
+                    FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
+                    flightMetrics.add(flightMetric);
+                }
             }
 
             //System.out.println(gson.toJson(uploadDetails));
