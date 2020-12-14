@@ -57,7 +57,7 @@ public abstract class Calculation {
      *
      * @param parameters map with the {@link DoubleTimeSeries} references
      */
-    private void getParameters(Map<String, DoubleTimeSeries> parameters) {
+    private final void getParameters(Map<String, DoubleTimeSeries> parameters) {
         try{
             for (String param : this.parameterNameSet) {
                 DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, this.flight.getId(), param);
