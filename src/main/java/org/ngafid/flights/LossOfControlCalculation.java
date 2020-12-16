@@ -17,6 +17,7 @@ import java.nio.file.Path;
 import java.lang.Math;
 
 import static org.ngafid.flights.LossOfControlParameters.*;
+import static org.ngafid.flights.DoubleTimeSeries.*;
 
 public class LossOfControlCalculation extends Calculation {
     private File file;
@@ -34,6 +35,7 @@ public class LossOfControlCalculation extends Calculation {
 
         cachedParameters.put(PRO_SPIN_FORCE, new DoubleTimeSeries(PRO_SPIN_FORCE, "double"));
         cachedParameters.put(YAW_RATE, new DoubleTimeSeries(YAW_RATE, "double"));
+        cachedParameters.put(HDG + LAG_SUFFIX + YAW_RATE_LAG, cachedParameters.get(HDG).lag(YAW_RATE_LAG));
 
         this.pw = Optional.empty();
     }
@@ -78,13 +80,13 @@ public class LossOfControlCalculation extends Calculation {
      * @param series the {@link DoubleTimeSeries} to lag
      * @param index the start index
      */
-    private double lag(DoubleTimeSeries series, int index){
-        double currIndex = series.get(index);
-        if(index >= 1) {
-            return currIndex - series.get(index - 1);
-        }
-        return currIndex;
-    }
+    //private double lag(DoubleTimeSeries series, int index){
+        //double currIndex = series.get(index);
+        //if(index >= 1) {
+            //return currIndex - series.get(index - 1);
+        //}
+        //return currIndex;
+    //}
 
     /**
      * Calculates the yaw rate at a given index
@@ -96,7 +98,11 @@ public class LossOfControlCalculation extends Calculation {
     private double getYawRate(int index){
         DoubleTimeSeries hdg = this.parameters.get(HDG); 
         DoubleTimeSeries yawRate = this.parameters.get(YAW_RATE);
-        double value = 180 - Math.abs(180 - Math.abs(lag(hdg, index)) % 360);
+        DoubleTimeSeries hdgLagged = this.parameters.get(HDG + LAG_SUFFIX + YAW_RATE_LAG);
+
+        double laggedValue = hdgLagged.get(index);
+        double value = Double.isNaN(laggedValue) ? 0 : 
+            180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedValue) % 360);
 
         if (yawRate.size() == index) {
             yawRate.add(value);
@@ -218,8 +224,6 @@ public class LossOfControlCalculation extends Calculation {
         for(int i = 0; i < altAGL.size(); i++) {
             loci.add(this.calculateProbability(i) / 100);
         }
-
-        updateDatabase();
 
         if(this.pw.isPresent()) {
             this.writeFile(loci, this.parameters.get(STALL_PROB));
