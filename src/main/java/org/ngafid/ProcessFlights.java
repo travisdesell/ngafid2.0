@@ -118,6 +118,7 @@ public class ProcessFlights {
 
                                         if (connection != null) {
                                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                            flight.runCalculations();
                                         }
 
                                         if (flight.getStatus().equals("WARNING")) warningFlights++;

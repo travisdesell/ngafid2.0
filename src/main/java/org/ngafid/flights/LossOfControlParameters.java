@@ -19,6 +19,8 @@ public interface LossOfControlParameters {
     public static final double AOA_CRIT = 15;
     public static final double PROSPIN_LIM = 4;
 
+    public static final int YAW_RATE_LAG = 1;
+
     /**
      * {@link DoubleTimeSeries} constants
      */
