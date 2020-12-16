@@ -15,11 +15,13 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import org.ngafid.Database;
 import org.ngafid.filters.Pair;
 
 import javax.sql.rowset.serial.SerialBlob;
@@ -27,6 +29,8 @@ import javax.sql.rowset.serial.SerialBlob;
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
+
+    static final String LAG_SUFFIX = "_lag";
 
     private int id = -1;
     private int flightId = -1;
@@ -401,5 +405,38 @@ public class DoubleTimeSeries {
             System.exit(1);
         }
     }
+
+    public static Optional<DoubleTimeSeries> getExistingLaggedSeries(Connection connection, int flightId, String seriesName, int n) {
+        String laggedName = seriesName + LAG_SUFFIX + n;
+
+        try {
+            DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+            if (laggedSeries != null) return Optional.of(laggedSeries);
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Lags a timeseries N indicies
+     */
+    public DoubleTimeSeries lag(int n) {
+        Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(Database.getConnection(), this.flightId, this.name, n);
+
+        if (existingSeries.isPresent()) {
+            return existingSeries.get();
+        }
+
+        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
+
+        for (int i = 0; i < data.length; i++) {
+            laggedSeries.add((i >= n) ? data[i-n] : Double.NaN);
+        }
+
+        return laggedSeries;
+    }
+
 }
 
