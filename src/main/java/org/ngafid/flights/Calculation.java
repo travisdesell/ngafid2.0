@@ -97,7 +97,6 @@ public abstract class Calculation {
             return this.parameters;
         }
 
-        //this.flight.updateLOCIProcessed(connection, this.dbType);
         this.updateDatabase();
 
         return this.parameters;
