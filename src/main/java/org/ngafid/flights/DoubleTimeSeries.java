@@ -32,7 +32,6 @@ public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
-
     private int id = -1;
     private int flightId = -1;
     private String name;
