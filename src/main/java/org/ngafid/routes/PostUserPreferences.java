@@ -26,7 +26,7 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import static org.ngafid.flights.LossOfControlParameters.*;
+import static org.ngafid.flights.CalculationParameters.*;
 
 public class PostUserPreferences implements Route {
     private static final Logger LOG = Logger.getLogger(PostUserPreferences.class.getName());

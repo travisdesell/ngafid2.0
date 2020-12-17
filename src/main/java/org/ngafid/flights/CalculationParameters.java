@@ -6,7 +6,7 @@
 
 package org.ngafid.flights;
 
-public interface LossOfControlParameters {
+public interface CalculationParameters {
     public static final double STD_PRESS_INHG = 29.92;
     public static final double COMP_CONV = (double) (Math.PI / 180); 
 
@@ -24,6 +24,7 @@ public interface LossOfControlParameters {
     /**
      * {@link DoubleTimeSeries} constants
      */
+    public static final String LAG_SUFFIX = "_lag";
     public static final String HDG = "HDG";
     public static final String IAS = "IAS";
     public static final String VSPD = "VSPD";
@@ -40,6 +41,7 @@ public interface LossOfControlParameters {
     public static final String LOCI = "LOC-I Index";
     public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
+    public static final String VSPD_CALCULATED = "VSpd Calculated";
 
     /**
      * {@link Airframes} id's
@@ -53,6 +55,7 @@ public interface LossOfControlParameters {
      */
     public static final String [] lociParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
     public static final String [] spParamStrings = {PITCH, VSPD, IAS, BARO_A, OAT, ALT_AGL};
+    public static final String [] vsiParamStrings = {ALT_MSL};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI

@@ -19,6 +19,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -83,10 +84,8 @@ public abstract class Calculation {
 
     /**
      * Runs the calculation
-     *
-     * @return a {@link Map} of parameters plus those just calculated
      */
-    public final Map<String, DoubleTimeSeries> runCalculation() {
+    public void runCalculation() {
         int flightId = this.flight.getId();
         if (!this.isNotCalculatable()) {
             System.out.println("Performing " + this.dbType + " calculation on flight #" + flightId);
@@ -94,12 +93,9 @@ public abstract class Calculation {
         } else {
             System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + this.dbType + "!");
             //this.flight.updateLOCIProcessed(connection, this.dbType);
-            return this.parameters;
         }
 
         this.updateDatabase();
-
-        return this.parameters;
     }
 
     /**
@@ -221,12 +217,16 @@ public abstract class Calculation {
         while (it.hasNext()) {
             try {
                 Flight flight = Flight.getFlight(connection, it.next());    
-                Calculation sc = new StallCalculation(flight);
+                Map<String, DoubleTimeSeries> params = new HashMap<>();
 
-                Map<String, DoubleTimeSeries> parameters = sc.runCalculation();
+                new VSPDCalculation(flight, params).runCalculation();
+
+                Calculation sc = new StallCalculation(flight, params);
+                sc.runCalculation();
+
                 if(flight.getAirframeId() == 1 && !sc.isNotCalculatable()) { //cessnas only!
                     Calculation loc = path.isPresent() ?
-                        new LossOfControlCalculation(flight, parameters, path.get()) : new LossOfControlCalculation(flight, parameters);
+                        new LossOfControlCalculation(flight, params, path.get()) : new LossOfControlCalculation(flight, params);
                     loc.runCalculation();
                 }
 

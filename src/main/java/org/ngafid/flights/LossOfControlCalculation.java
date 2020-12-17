@@ -16,8 +16,7 @@ import java.nio.file.Path;
 
 import java.lang.Math;
 
-import static org.ngafid.flights.LossOfControlParameters.*;
-import static org.ngafid.flights.DoubleTimeSeries.*;
+import static org.ngafid.flights.CalculationParameters.*;
 
 public class LossOfControlCalculation extends Calculation {
     private File file;
