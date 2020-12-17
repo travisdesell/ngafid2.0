@@ -9,12 +9,12 @@ package org.ngafid.flights;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.ngafid.flights.LossOfControlParameters.*;
+import static org.ngafid.flights.CalculationParameters.*;
 
 public class StallCalculation extends Calculation {
 
-    public StallCalculation(Flight flight) {
-        super(flight, spParamStrings, new HashMap<>());
+    public StallCalculation(Flight flight, Map<String, DoubleTimeSeries> parameters) {
+        super(flight, spParamStrings, parameters);
         this.parameters.put(AOA_SIMPLE, new DoubleTimeSeries(AOA_SIMPLE, "double"));
         this.parameters.put(TAS_FTMIN, new DoubleTimeSeries(TAS_FTMIN, "double"));
     }
@@ -61,6 +61,7 @@ public class StallCalculation extends Calculation {
      * @return a double with the calculated value at the given index
      */
     private double getVspdGeometric(int index){
+        //DoubleTimeSeries vSpd = this.parameters.get(VSPD_CALCULATED);
         DoubleTimeSeries vSpd = this.parameters.get(VSPD);
         return vSpd.get(index) * Math.pow(this.getDensityRatio(index), -0.5);
     }

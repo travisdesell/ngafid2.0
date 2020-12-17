@@ -1537,13 +1537,22 @@ public class Flight {
     }
 
     public void runCalculations() {
-        Calculation stallCalculation = new StallCalculation(this);
-        Map<String, DoubleTimeSeries> params = stallCalculation.runCalculation();
+        Map<String, DoubleTimeSeries> params = new HashMap<>();
 
-        if (this.getAirframeId() == 1 && !stallCalculation.isNotCalculatable()) {
-            // We still can only perform a LOC-I calculation on the Skyhawks
-            // This can be changed down the road
-            new LossOfControlCalculation(this, params).runCalculation();
+        Calculation vSpdCalculation = new VSPDCalculation(this, params);
+
+        //for now we will skip flights with no AltMSL data
+        if (!vSpdCalculation.isNotCalculatable()) {
+            vSpdCalculation.runCalculation();
+
+            Calculation stallCalculation = new StallCalculation(this, params);
+            stallCalculation.runCalculation();
+
+            if (this.getAirframeId() == 1 && !stallCalculation.isNotCalculatable()) {
+                // We still can only perform a LOC-I calculation on the Skyhawks
+                // This can be changed down the road
+                new LossOfControlCalculation(this, params).runCalculation();
+            }
         }
     }
 

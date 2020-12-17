@@ -5,7 +5,7 @@ import java.util.List;
 import com.google.gson.Gson;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import static org.ngafid.flights.LossOfControlParameters.*;
+import static org.ngafid.flights.CalculationParameters.*;
 
 public class UserPreferences {
     private int userId, decimalPrecision;

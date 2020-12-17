@@ -24,13 +24,14 @@ import java.util.zip.Inflater;
 import org.ngafid.Database;
 import org.ngafid.filters.Pair;
 
+import static org.ngafid.flights.CalculationParameters.*;
+
 import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
-    static final String LAG_SUFFIX = "_lag";
 
     private int id = -1;
     private int flightId = -1;
