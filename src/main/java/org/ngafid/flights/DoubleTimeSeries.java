@@ -419,6 +419,19 @@ public class DoubleTimeSeries {
         return Optional.empty();
     }
 
+    public static Optional<DoubleTimeSeries> getExistingLeadingSeries(Connection connection, int flightId, String seriesName, int n) {
+        String laggedName = seriesName + LEAD_SUFFIX + n;
+
+        try {
+            DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+            if (leadingSeries != null) return Optional.of(leadingSeries);
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
     /**
      * Lags a timeseries N indicies
      */
@@ -432,10 +445,27 @@ public class DoubleTimeSeries {
         DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
 
         for (int i = 0; i < data.length; i++) {
-            laggedSeries.add((i >= n) ? data[i-n] : Double.NaN);
+            laggedSeries.add((i >= n) ? data[i - n] : Double.NaN);
         }
 
         return laggedSeries;
+    }
+
+    public DoubleTimeSeries lead(int n) {
+        Optional<DoubleTimeSeries> existingSeries = getExistingLeadingSeries(Database.getConnection(), this.flightId, this.name, n);
+
+        if (existingSeries.isPresent()) {
+            return existingSeries.get();
+        }
+
+        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(this.name + LEAD_SUFFIX + n, "double");
+
+        int len = data.length;
+        for (int i = 0; i < len; i++) {
+            leadingSeries.add((i < len - n) ? data[i + n] : Double.NaN);
+        }
+
+        return leadingSeries;
     }
 
 }

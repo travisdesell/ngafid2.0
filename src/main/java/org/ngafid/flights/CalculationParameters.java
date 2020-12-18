@@ -25,6 +25,7 @@ public interface CalculationParameters {
      * {@link DoubleTimeSeries} constants
      */
     public static final String LAG_SUFFIX = "_lag";
+    public static final String LEAD_SUFFIX = "_lead";
     public static final String HDG = "HDG";
     public static final String IAS = "IAS";
     public static final String VSPD = "VSPD";
