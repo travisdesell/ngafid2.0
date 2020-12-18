@@ -360,7 +360,6 @@ $query = "CREATE TABLE `event_definitions` (
     `severity_column_names` VARCHAR(128),
     `severity_type` VARCHAR(3),
     `color` VARCHAR(6) DEFAULT NULL,
-    `calculation_deps` VARCHAR(4096) DEFAULT NULL
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`name`, `airframe_id`, `fleet_id`)

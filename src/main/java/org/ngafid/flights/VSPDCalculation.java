@@ -7,7 +7,7 @@ import java.util.Map;
 import org.ngafid.Database;
 
 public class VSPDCalculation extends Calculation {
-    private final int LAG = 1;
+    private final int DIFF = 1;
     
     static final double FPM_CONV = 60.f;
 
@@ -22,21 +22,24 @@ public class VSPDCalculation extends Calculation {
         System.out.println("Calcuating VSPD from MSL data");
 
         DoubleTimeSeries msl = this.parameters.get(ALT_MSL);
-        DoubleTimeSeries mslLagged = msl.lag(LAG);
-        this.parameters.put(mslLagged.getName(), mslLagged);
+        DoubleTimeSeries mslLead = msl.lead(DIFF);
+        this.parameters.put(mslLead.getName(), mslLead);
 
         DoubleTimeSeries vsiCalculated = new DoubleTimeSeries(VSPD_CALCULATED, "double");
         
-        for (int i = 0; i < LAG; i++) vsiCalculated.add(Double.NaN);
+        //for (int i = 0; i < DIFF; i++) vsiCalculated.add(Double.NaN);
 
-        for (int i = LAG; i < msl.size(); i++) {
-            double m = msl.get(i) - mslLagged.get(i);
-            double vsi = m / LAG;
+        for (int i = DIFF; i < msl.size(); i++) {
+            //double m = msl.get(i) - mslLead.get(i);
+            double m = mslLead.get(i) - msl.get(i);
+            double vsi = m / DIFF;
 
             vsi *= FPM_CONV;
 
             vsiCalculated.add(vsi);
         }
+
+        vsiCalculated.add(Double.NaN);
 
         this.parameters.put(VSPD_CALCULATED, vsiCalculated);
     }
