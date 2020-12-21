@@ -44,8 +44,11 @@ public class VSPDCalculation extends Calculation {
                 yValues[2] = mslLead.get(i);
 
                 //TODO: filter out bad readings here
+                //
+                double yA = average(yValues);
+                double xA = average(xValues);
 
-                double m = vsiLinearRegression(xValues, yValues);
+                double m = vsiLinearRegression(xValues, yValues, yA, xA);
                 double vsi = m / DIFF;
 
                 vsi *= FPM_CONV;
@@ -57,6 +60,34 @@ public class VSPDCalculation extends Calculation {
         this.parameters.put(VSPD_CALCULATED, vsiCalculated);
     }
 
+    public static void normalizeAltitudes(double [] yValues, double yA) {
+        double stdDev = stdDev(yValues, yA);
+
+        for (int i = 1; i < yValues.length; i++) {
+            if (Math.abs(yValues[i] - yValues[i - 1]) > (5 * stdDev)) {
+
+            }
+
+        }
+    }
+            
+    public void updateDatabase() {
+        DoubleTimeSeries vsi = this.parameters.get(VSPD_CALCULATED);
+        vsi.updateDatabase(Database.getConnection(), this.flight.getId());
+    }
+
+    public static double stdDev(double [] yValues, double yA) {
+        double n = 0.f;
+        int k = yValues.length;
+
+        for (int i = 0; i < k; i++) {
+            n += Math.pow((yValues[i] - yA), 2);
+        }
+
+        return Math.sqrt(n / k);
+    }
+
+
     public static double average(double ... yValues) {
         double sum = 0.f;
 
@@ -67,11 +98,9 @@ public class VSPDCalculation extends Calculation {
         return sum / yValues.length;
     }
 
-    public static double vsiLinearRegression(double [] xValues, double [] yValues) {
+    public static double vsiLinearRegression(double [] xValues, double [] yValues, double yA, double xA) {
         double n = 0.f;
         double d = 0.f;
-        double xA = average(xValues);
-        double yA = average(yValues);
 
         assert yValues.length == xValues.length;
 
@@ -82,10 +111,5 @@ public class VSPDCalculation extends Calculation {
         }
 
         return n / d;
-    }
-            
-    public void updateDatabase() {
-        DoubleTimeSeries vsi = this.parameters.get(VSPD_CALCULATED);
-        vsi.updateDatabase(Database.getConnection(), this.flight.getId());
     }
 }
