@@ -87,7 +87,6 @@ public class VSPDCalculation extends Calculation {
         return Math.sqrt(n / k);
     }
 
-
     public static double average(double ... yValues) {
         double sum = 0.f;
 
@@ -111,5 +110,13 @@ public class VSPDCalculation extends Calculation {
         }
 
         return n / d;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getCalculationName() {
+        return VSPD_CALCULATED;
     }
 }

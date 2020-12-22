@@ -61,8 +61,8 @@ public class StallCalculation extends Calculation {
      * @return a double with the calculated value at the given index
      */
     private double getVspdGeometric(int index){
-        //DoubleTimeSeries vSpd = this.parameters.get(VSPD_CALCULATED);
-        DoubleTimeSeries vSpd = this.parameters.get(VSPD);
+        DoubleTimeSeries vSpd = this.parameters.get(VSPD_CALCULATED);
+        //DoubleTimeSeries vSpd = this.parameters.get(VSPD);
         return vSpd.get(index) * Math.pow(this.getDensityRatio(index), -0.5);
     }
 
@@ -140,6 +140,13 @@ public class StallCalculation extends Calculation {
         this.parameters.get(STALL_PROB).updateDatabase(connection, super.flight.getId());
         this.parameters.get(AOA_SIMPLE).updateDatabase(connection, super.flight.getId());
         this.parameters.get(TAS_FTMIN).updateDatabase(connection, super.flight.getId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    public String getCalculationName() {
+        return STALL_PROB;
     }
 
     /**

@@ -268,4 +268,12 @@ public class LossOfControlCalculation extends Calculation {
         System.err.println("-----------------------------------------------------------------");
         System.err.println("\n\n");
     }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public String getCalculationName() {
+        return LOCI;
+    }
 }
