@@ -37,11 +37,6 @@ public abstract class Calculation {
     protected Map<String, DoubleTimeSeries> parameters;
 
     /**
-     * Indicates the type of calculation to identify as in the processed table of the database
-     */
-    protected String dbType;
-
-    /**
      * Initializes the set of parameters
      */
     public Calculation(Flight flight, String [] parameterNameSet, Map<String, DoubleTimeSeries> parameters) {
@@ -88,11 +83,12 @@ public abstract class Calculation {
     public void runCalculation() {
         int flightId = this.flight.getId();
         if (!this.isNotCalculatable()) {
-            System.out.println("Performing " + this.dbType + " calculation on flight #" + flightId);
+            System.out.println("Performing " + getCalculationName() + " calculation on flight #" + flightId);
             this.calculate();
         } else {
-            System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + this.dbType + "!");
+            System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + getCalculationName() + "!");
             //this.flight.updateLOCIProcessed(connection, this.dbType);
+            return;
         }
 
         this.updateDatabase();
@@ -110,6 +106,11 @@ public abstract class Calculation {
      * Updates the database with the new data
      */
     public abstract void updateDatabase();
+
+    /**
+     * Gets the name of this calculation
+     */
+    public abstract String getCalculationName();
 
     /**
      * Gets an {@link Iterator} of flight ids that have not been calculated yet
