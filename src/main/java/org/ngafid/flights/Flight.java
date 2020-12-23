@@ -163,6 +163,13 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
+        query = "DELETE FROM flight_tag_map WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
         query = "DELETE FROM flights WHERE id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
