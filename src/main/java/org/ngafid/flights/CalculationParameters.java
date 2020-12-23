@@ -35,6 +35,7 @@ public interface CalculationParameters {
     public static final String ROLL = "Roll";
     public static final String ALT_AGL = "AltAGL";
     public static final String ALT_MSL = "AltMSL";
+    public static final String ALT_B = "AltB";
     public static final String AOA_SIMPLE = "AOASimple"; 
     public static final String E1_RPM = "E1 RPM";
     public static final String TAS_FTMIN = "True Airspeed(ft/min)";
@@ -56,7 +57,7 @@ public interface CalculationParameters {
      */
     public static final String [] lociParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
     public static final String [] spParamStrings = {PITCH, VSPD, IAS, BARO_A, OAT, ALT_AGL};
-    public static final String [] vsiParamStrings = {ALT_MSL};
+    public static final String [] vsiParamStrings = {ALT_B};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI

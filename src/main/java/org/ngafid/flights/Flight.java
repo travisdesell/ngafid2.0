@@ -163,13 +163,6 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
-        query = "DELETE FROM calculations WHERE flight_id = ?";
-        preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, this.id);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-
         query = "DELETE FROM flights WHERE id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
@@ -1107,10 +1100,6 @@ public class Flight {
         return stringTimeSeries.get(name);
     }
 
-    public Map<String, Double> getCriticalValues() {
-        return this.calculationCriticalValues;
-    }
-
     private void setMD5Hash(InputStream inputStream) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -1539,19 +1528,17 @@ public class Flight {
     public void runCalculations() {
         Map<String, DoubleTimeSeries> params = new HashMap<>();
 
-        Calculation vSpdCalculation = new VSPDCalculation(this, params);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(new VSPDCalculation(this, params));
 
-        //for now we will skip flights with no AltMSL data
-        if (!vSpdCalculation.isNotCalculatable()) {
-            vSpdCalculation.runCalculation();
+        //for now we will skip flights with no AltB data
+        if (!vspdCalculated.notCalculated()) {
+            CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(new StallCalculation(this, params));
 
-            Calculation stallCalculation = new StallCalculation(this, params);
-            stallCalculation.runCalculation();
-
-            if (this.getAirframeId() == 1 && !stallCalculation.isNotCalculatable()) {
+            if (this.getAirframeId() == 1 && !stallIndex.notCalculated()) {
                 // We still can only perform a LOC-I calculation on the Skyhawks
                 // This can be changed down the road
-                new LossOfControlCalculation(this, params).runCalculation();
+                
+                new CalculatedDoubleTimeSeries(new LossOfControlCalculation(this, params));
             }
         }
     }

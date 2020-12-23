@@ -153,16 +153,14 @@ public class StallCalculation extends Calculation {
      * {@inheritDoc}
      */
     @Override
-    protected void calculate() {
+    protected void calculate(DoubleTimeSeries doubleSeries) {
         DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
-        DoubleTimeSeries stallProbability; 
-        this.parameters.put(STALL_PROB, 
-                (stallProbability = new DoubleTimeSeries(STALL_PROB, "double")));
+        this.parameters.put(STALL_PROB, doubleSeries);
 
         for (int i = 0; i < altAGL.size(); i++) {
             //invoke the equation "tree"
             double prob = Math.min(((Math.abs(this.getAOASimple(i) / AOA_CRIT)) * 100), 100);
-            stallProbability.add(prob / 100);
+            doubleSeries.add(prob / 100);
         }
     }
 }

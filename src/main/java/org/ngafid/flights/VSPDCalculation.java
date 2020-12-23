@@ -7,7 +7,7 @@ import java.util.Map;
 import org.ngafid.Database;
 
 public class VSPDCalculation extends Calculation {
-    private final int DIFF = 1;
+    private static final int DIFF = 1;
     
     static final double FPM_CONV = 60.f;
 
@@ -18,19 +18,17 @@ public class VSPDCalculation extends Calculation {
     /**
      * This is a linear regression calculation to get a more instantaneous VSI
      */
-    public void calculate() {
-        System.out.println("Calcuating VSPD from MSL data");
+    public void calculate(DoubleTimeSeries doubleSeries) {
+        System.out.println("Calcuating VSPD from altB data");
 
-        DoubleTimeSeries msl = this.parameters.get(ALT_MSL);
-        DoubleTimeSeries mslLagged = msl.lag(DIFF);
-        DoubleTimeSeries mslLead = msl.lead(DIFF);
-        this.parameters.put(mslLead.getName(), mslLead);
+        DoubleTimeSeries alt = this.parameters.get(ALT_B);
+        DoubleTimeSeries altLagged = alt.lag(DIFF);
+        DoubleTimeSeries altLead = alt.lead(DIFF);
+        this.parameters.put(altLead.getName(), altLead);
 
-        DoubleTimeSeries vsiCalculated = new DoubleTimeSeries(VSPD_CALCULATED, "double");
-        
-        for (int i = DIFF; i < msl.size(); i++) {
-            if (i < 1 || i >= msl.size() - 1) {
-                vsiCalculated.add(Double.NaN);
+        for (int i = DIFF; i < alt.size(); i++) {
+            if (i < 1 || i >= alt.size() - 1) {
+                doubleSeries.add(Double.NaN);
             } else {
                 double [] yValues = new double[3];
                 double [] xValues = new double[3];
@@ -39,9 +37,9 @@ public class VSPDCalculation extends Calculation {
                 xValues[1] = i;
                 xValues[2] = i + 1;
 
-                yValues[0] = mslLagged.get(i);
-                yValues[1] = msl.get(i);
-                yValues[2] = mslLead.get(i);
+                yValues[0] = altLagged.get(i);
+                yValues[1] = alt.get(i);
+                yValues[2] = altLead.get(i);
 
                 //TODO: filter out bad readings here
                 //
@@ -53,11 +51,11 @@ public class VSPDCalculation extends Calculation {
 
                 vsi *= FPM_CONV;
 
-                vsiCalculated.add(vsi);
+                doubleSeries.add(vsi);
             }
         }
 
-        this.parameters.put(VSPD_CALCULATED, vsiCalculated);
+        this.parameters.put(VSPD_CALCULATED, doubleSeries);
     }
 
     public static void normalizeAltitudes(double [] yValues, double yA) {
