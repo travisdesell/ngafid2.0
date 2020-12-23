@@ -87,17 +87,21 @@ public abstract class Calculation {
     }
 
     /**
+     * Accesses the set of parameters
+     *
+     * @return a {@link Map} with the set of parameters
+     */
+    public Map<String, DoubleTimeSeries> getParameters() {
+        return this.parameters;
+    }
+
+    /**
      * Performs the calculation and returns the original set of parameters plus those added with the
      * new analysis
      *
      * @return a {@link Map} with the newly calculated {@link DoubleTimeSeries}
      */
     protected abstract void calculate(DoubleTimeSeries doubleSeries); 
-
-    /**
-     * Updates the database with the new data
-     */
-    public abstract void updateDatabase();
 
     /**
      * Gets the name of this calculation

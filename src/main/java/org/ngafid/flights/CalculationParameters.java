@@ -6,6 +6,8 @@
 
 package org.ngafid.flights;
 
+import java.util.Map;
+
 public interface CalculationParameters {
     public static final double STD_PRESS_INHG = 29.92;
     public static final double COMP_CONV = (double) (Math.PI / 180); 
@@ -56,12 +58,18 @@ public interface CalculationParameters {
      * @param ALT_AGL is used as the time reference 
      */
     public static final String [] lociParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
+    public static final String [] lociDeps = {YAW_RATE, PRO_SPIN_FORCE};
+
     public static final String [] spParamStrings = {PITCH, VSPD, IAS, BARO_A, OAT, ALT_AGL};
+    public static final String [] spDeps = {AOA_SIMPLE, TAS_FTMIN};
+
     public static final String [] vsiParamStrings = {ALT_B};
+    public static final String [] vsiDeps = {};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
     public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
     public static final String [] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
+
 }

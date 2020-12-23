@@ -198,16 +198,6 @@ public class LossOfControlCalculation extends Calculation {
     }
 
     /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void updateDatabase(){
-        this.parameters.get(LOCI).updateDatabase(connection, super.flight.getId());
-        this.parameters.get(PRO_SPIN_FORCE).updateDatabase(connection, super.flight.getId());
-        this.parameters.get(YAW_RATE).updateDatabase(connection, super.flight.getId());
-    }
-
-    /**
      * Calculates the loss of control probability
      *
      * @return a floating-point percentage of the probability of loss of control

@@ -135,16 +135,6 @@ public class StallCalculation extends Calculation {
     /**
      * {@inheritDoc}
      */
-    @Override
-    public void updateDatabase() {
-        this.parameters.get(STALL_PROB).updateDatabase(connection, super.flight.getId());
-        this.parameters.get(AOA_SIMPLE).updateDatabase(connection, super.flight.getId());
-        this.parameters.get(TAS_FTMIN).updateDatabase(connection, super.flight.getId());
-    }
-
-    /**
-     * {@inheritDoc}
-     */
     public String getCalculationName() {
         return STALL_PROB;
     }

@@ -1535,17 +1535,17 @@ public class Flight {
     public void runCalculations() {
         Map<String, DoubleTimeSeries> params = new HashMap<>();
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(new VSPDCalculation(this, params));
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(new VSPDCalculation(this, params), CalculationParameters.vsiDeps);
 
         //for now we will skip flights with no AltB data
         if (!vspdCalculated.notCalculated()) {
-            CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(new StallCalculation(this, params));
+            CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(new StallCalculation(this, params), CalculationParameters.spDeps);
 
             if (this.getAirframeId() == 1 && !stallIndex.notCalculated()) {
                 // We still can only perform a LOC-I calculation on the Skyhawks
                 // This can be changed down the road
                 
-                new CalculatedDoubleTimeSeries(new LossOfControlCalculation(this, params));
+                new CalculatedDoubleTimeSeries(new LossOfControlCalculation(this, params), CalculationParameters.lociDeps);
             }
         }
     }
