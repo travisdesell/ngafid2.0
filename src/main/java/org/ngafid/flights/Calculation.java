@@ -78,20 +78,12 @@ public abstract class Calculation {
     }
 
     /**
-     * Runs the calculation
+     * Gets the flight ID for this calculation
+     *
+     * @return the flightId as an int
      */
-    public void runCalculation() {
-        int flightId = this.flight.getId();
-        if (!this.isNotCalculatable()) {
-            System.out.println("Performing " + getCalculationName() + " calculation on flight #" + flightId);
-            this.calculate();
-        } else {
-            System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + getCalculationName() + "!");
-            //this.flight.updateLOCIProcessed(connection, this.dbType);
-            return;
-        }
-
-        this.updateDatabase();
+    public int getFlightId() {
+        return this.flight.getId();
     }
 
     /**
@@ -100,7 +92,7 @@ public abstract class Calculation {
      *
      * @return a {@link Map} with the newly calculated {@link DoubleTimeSeries}
      */
-    protected abstract void calculate(); 
+    protected abstract void calculate(DoubleTimeSeries doubleSeries); 
 
     /**
      * Updates the database with the new data
@@ -213,33 +205,33 @@ public abstract class Calculation {
      * @param path the {@link Optional} path of the file output
      */
     public static void calculateAll(Iterator<Integer> it, Optional<Path> path) {
-        Instant start = Instant.now();
+        //Instant start = Instant.now();
 
-        while (it.hasNext()) {
-            try {
-                Flight flight = Flight.getFlight(connection, it.next());    
-                Map<String, DoubleTimeSeries> params = new HashMap<>();
+        //while (it.hasNext()) {
+            //try {
+                //Flight flight = Flight.getFlight(connection, it.next());    
+                //Map<String, DoubleTimeSeries> params = new HashMap<>();
 
-                new VSPDCalculation(flight, params).runCalculation();
+                //new VSPDCalculation(flight, params).runCalculation();
 
-                Calculation sc = new StallCalculation(flight, params);
-                sc.runCalculation();
+                //Calculation sc = new StallCalculation(flight, params);
+                //sc.calculate();
 
-                if(flight.getAirframeId() == 1 && !sc.isNotCalculatable()) { //cessnas only!
-                    Calculation loc = path.isPresent() ?
-                        new LossOfControlCalculation(flight, params, path.get()) : new LossOfControlCalculation(flight, params);
-                    loc.runCalculation();
-                }
+                //if(flight.getAirframeId() == 1 && !sc.isNotCalculatable()) { //cessnas only!
+                    //Calculation loc = path.isPresent() ?
+                        //new LossOfControlCalculation(flight, params, path.get()) : new LossOfControlCalculation(flight, params);
+                    //loc.calculate();
+                //}
 
-            } catch (SQLException se) {
-                se.printStackTrace();
-            }
-        }
+            //} catch (SQLException se) {
+                //se.printStackTrace();
+            //}
+        //}
 
-        Instant end = Instant.now();
-        long elapsed_millis = Duration.between(start, end).toMillis();
-        double elapsed_seconds = ((double) elapsed_millis) / 1000;
-        System.out.println("calculations took: " + elapsed_seconds);
+        //Instant end = Instant.now();
+        //long elapsed_millis = Duration.between(start, end).toMillis();
+        //double elapsed_seconds = ((double) elapsed_millis) / 1000;
+        //System.out.println("calculations took: " + elapsed_seconds);
     }
 
     /**

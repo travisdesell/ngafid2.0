@@ -212,20 +212,19 @@ public class LossOfControlCalculation extends Calculation {
      *
      * @return a floating-point percentage of the probability of loss of control
      */
-    public void calculate() {
+    @Override
+    public void calculate(DoubleTimeSeries doubleSeries) {
         this.printDetails();
-        
-        DoubleTimeSeries loci;
-        this.parameters.put(LOCI, 
-                (loci = new DoubleTimeSeries(LOCI, "string")));
+        this.parameters.put(LOCI, doubleSeries);
+
         DoubleTimeSeries altAGL = this.parameters.get(ALT_AGL);
 
         for(int i = 0; i < altAGL.size(); i++) {
-            loci.add(this.calculateProbability(i) / 100);
+            doubleSeries.add(this.calculateProbability(i) / 100);
         }
 
         if(this.pw.isPresent()) {
-            this.writeFile(loci, this.parameters.get(STALL_PROB));
+            this.writeFile(doubleSeries, this.parameters.get(STALL_PROB));
         }
     }
 
