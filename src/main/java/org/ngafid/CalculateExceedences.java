@@ -238,7 +238,7 @@ public class CalculateExceedences {
             double maxDuration = -Double.MAX_VALUE;
             for (i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
-                event.updateDatabase(connection, flightId, eventDefinition.getId());
+                event.updateDatabase(connection, fleetId, flightId, eventDefinition.getId());
                 if (event.getStartTime() != null) {
                     EventStatistics.updateEventStatistics(connection, fleetId, airframeId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
                 } else if (event.getEndTime() != null) {

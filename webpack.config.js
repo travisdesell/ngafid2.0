@@ -37,6 +37,7 @@ module.exports = {
         system_ids: __dirname + "/src/main/javascript/system_ids.js",
         welcome: __dirname + "/src/main/javascript/welcome.js",
         trends: __dirname + "/src/main/javascript/trends.js",
+        severities: __dirname + "/src/main/javascript/severities.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",

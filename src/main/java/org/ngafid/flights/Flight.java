@@ -255,7 +255,7 @@ public class Flight {
      *
      *  @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
-    public static int getTotalFlightHours(Connection connection, int fleetId, Filter filter) throws SQLException {
+    public static long getTotalFlightHours(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString;
@@ -287,7 +287,7 @@ public class Flight {
         ResultSet resultSet = query.executeQuery();
 
         resultSet.next();
-        int diffSeconds = resultSet.getInt(1);
+        long diffSeconds = resultSet.getLong(1);
         System.out.println("total time is: " + diffSeconds);
 
         resultSet.close();
@@ -1401,7 +1401,7 @@ public class Flight {
 
     private void checkIfExists(Connection connection) throws FlightAlreadyExistsException {
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.upload_id = uploads.id AND flights.md5_hash = ?");
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.md5_hash = ?");
             preparedStatement.setString(1, md5Hash);
             ResultSet resultSet = preparedStatement.executeQuery();
 
