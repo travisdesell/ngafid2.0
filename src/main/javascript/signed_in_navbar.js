@@ -175,6 +175,7 @@ class SignedInNavbar extends React.Component {
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
+                                <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/dashboard"/>
                             </div>
                         </li>

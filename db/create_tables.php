@@ -370,6 +370,7 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `events` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `fleet_id` INT(11) NOT NULL,
     `flight_id` INT(11) NOT NULL,
     `event_definition_id` INT(11) NOT NULL, 
 
@@ -381,6 +382,7 @@ $query = "CREATE TABLE `events` (
     `severity` DOUBLE NOT NULL,
 
     PRIMARY KEY(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleets(`id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
     INDEX(`start_time`),
     INDEX(`end_time`),
