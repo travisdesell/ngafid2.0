@@ -139,7 +139,7 @@ class SeveritiesPage extends React.Component {
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
                     severityTrace.flightIds.push( counts[i].flightId);
-                    severityTrace.hovertext.push("Flight #" + counts[i].flightId + ", start time: " + counts[i].startTime + ", end time: " + counts[i].endTime);
+                    severityTrace.hovertext.push("Flight #" + counts[i].flightId + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime);
                     //+ ", severity: " + counts[i].severity);
                 }
 
