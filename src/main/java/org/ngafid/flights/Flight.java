@@ -305,7 +305,7 @@ public class Flight {
 
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
 
-        if(!sqlLimit.isEmpty())
+        if (sqlLimit != null && !sqlLimit.isEmpty())
             queryString += sqlLimit;
 
         LOG.info(queryString);
