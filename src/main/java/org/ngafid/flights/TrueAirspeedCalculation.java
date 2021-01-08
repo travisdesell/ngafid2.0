@@ -21,7 +21,10 @@ public class TrueAirspeedCalculation extends Calculation {
         DoubleTimeSeries wndDir = this.parameters.get(WIND_DIRECTION);
 
         for (int i = 0; i < ias.size(); i++) {
-            System.out.println(i + "\t" + (ias.get(i) - gndSpd.get(i)) + "\t" + wndSpd.get(i) + "@" + wndDir.get(i));
+            double wndDirY = wndDir.get(i);
+            double angRad = Math.cos((wndDirY * 180) / Math.PI);
+            double windY = wndSpd.get(i) * angRad;
+            System.out.println(i + "\t" + (ias.get(i) - gndSpd.get(i)) + "\t" + windY + "@" + wndDirY);
         }
 
         System.out.println("calculation complete");
