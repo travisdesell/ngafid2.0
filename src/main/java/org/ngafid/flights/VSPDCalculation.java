@@ -62,7 +62,7 @@ public class VSPDCalculation extends Calculation {
         double stdDev = stdDev(yValues, yA);
 
         for (int i = 1; i < yValues.length; i++) {
-            if (Math.abs(yValues[i] - yValues[i - 1]) > (5 * stdDev)) {
+            if (Math.abs(yValues[i] - yValues[i - 1]) > (3 * stdDev)) {
 
             }
 

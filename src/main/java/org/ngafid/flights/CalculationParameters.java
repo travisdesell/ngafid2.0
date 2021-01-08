@@ -46,6 +46,10 @@ public interface CalculationParameters {
     public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
     public static final String VSPD_CALCULATED = "VSpd Calculated";
+    public static final String TASC = "TAS Calculated";
+    public static final String GND_SPD = "GndSpd";
+    public static final String WIND_SPEED = "WndSpd";
+    public static final String WIND_DIRECTION = "WndDr";
 
     /**
      * {@link Airframes} id's
@@ -65,6 +69,9 @@ public interface CalculationParameters {
 
     public static final String [] vsiParamStrings = {ALT_B};
     public static final String [] vsiDeps = {};
+
+    public static final String [] tascParamStrings = {IAS, GND_SPD, WIND_SPEED, WIND_DIRECTION};
+    public static final String [] tascDeps = {};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
