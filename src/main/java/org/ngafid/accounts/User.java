@@ -440,7 +440,7 @@ public class User {
         user.phoneNumber = phoneNumber;
         user.zipCode = zipCode;
 
-        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?", Statement.RETURN_GENERATED_KEYS);
+        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?, registration_time = NOW()", Statement.RETURN_GENERATED_KEYS);
         query.setString(1, user.email);
         query.setString(2, passwordToken);
         query.setString(3, user.firstName);
