@@ -99,6 +99,7 @@ $query = "CREATE TABLE `user` (
     `zip_code` VARCHAR(16),
     `phone_number` VARCHAR(24),
     `reset_phrase` VARCHAR(64),
+    `registration_time` DATETIME,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -352,6 +353,7 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `event_definitions` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
+    `flight_id` INT(11) NOT NULL,
     `airframe_id` INT(11) NOT NULL,
     `name` VARCHAR(64) NOT NULL,
     `start_buffer` INT(11),
