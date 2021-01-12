@@ -15,18 +15,30 @@ public class TrueAirspeedCalculation extends Calculation {
     public void calculate(DoubleTimeSeries doubleSeries) {
         System.out.println("Calculating TAS with " + this.parameters.toString());
 
-        DoubleTimeSeries gndSpd = this.parameters.get(GND_SPD);
+        //DoubleTimeSeries gndSpd = this.parameters.get(GND_SPD);
         DoubleTimeSeries ias = this.parameters.get(IAS);
-        DoubleTimeSeries wndSpd = this.parameters.get(WIND_SPEED);
-        DoubleTimeSeries wndDir = this.parameters.get(WIND_DIRECTION);
+        //DoubleTimeSeries wndSpd = this.parameters.get(WIND_SPEED);
+        //DoubleTimeSeries wndDir = this.parameters.get(WIND_DIRECTION);
+
+        //for (int i = 0; i < ias.size(); i++) {
+            //double wndDirY = wndDir.get(i);
+            //double angRad = Math.cos((wndDirY * 180) / Math.PI);
+            //double windY = wndSpd.get(i) * angRad;
+            //System.out.println(i + "\t" + (ias.get(i) - gndSpd.get(i)) + "\t" + windY + "@" + wndDirY);
+        //}
+        //
 
         for (int i = 0; i < ias.size(); i++) {
-            double wndDirY = wndDir.get(i);
-            double angRad = Math.cos((wndDirY * 180) / Math.PI);
-            double windY = wndSpd.get(i) * angRad;
-            System.out.println(i + "\t" + (ias.get(i) - gndSpd.get(i)) + "\t" + windY + "@" + wndDirY);
+            double iasValue = ias.get(i);
+            
+            if (iasValue < 70.d) {
+                iasValue = (0.7d * iasValue) + 20.667;
+            }
+
+            doubleSeries.add(iasValue);
         }
 
+        super.parameters.put(TASC, doubleSeries);
         System.out.println("calculation complete");
         
     }
