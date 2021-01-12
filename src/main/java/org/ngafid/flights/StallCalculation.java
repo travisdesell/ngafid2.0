@@ -93,7 +93,7 @@ public class StallCalculation extends Calculation {
      * @return a double with the calculated value at the given index
      */
     private double getTrueAirspeed(int index){
-        DoubleTimeSeries ias = this.parameters.get(IAS);
+        DoubleTimeSeries ias = this.parameters.get(TASC);
         return ias.get(index) * Math.pow(this.getDensityRatio(index), -0.5);
     }
 

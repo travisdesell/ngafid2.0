@@ -1535,6 +1535,7 @@ public class Flight {
     public void runCalculations() {
         Map<String, DoubleTimeSeries> params = new HashMap<>();
 
+        CalculatedDoubleTimeSeries casCalculated = new CalculatedDoubleTimeSeries(new TrueAirspeedCalculation(this, params), CalculationParameters.tascDeps);
         CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(new VSPDCalculation(this, params), CalculationParameters.vsiDeps);
 
         //for now we will skip flights with no AltB data
