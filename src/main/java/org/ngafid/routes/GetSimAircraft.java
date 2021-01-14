@@ -45,18 +45,18 @@ public class GetSimAircraft implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-		if (!user.hasViewAccess(fleetId)) {
-			LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
-			Spark.halt(401, "User did not have access to view acces for this fleet.");
-			return null;
-		}
+        if (!user.hasViewAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
+            Spark.halt(401, "User did not have access to view acces for this fleet.");
+            return null;
+        }
 
-		try{
-			List<String> paths = Flight.getSimAircraft(Database.getConnection(), fleetId);
-			System.out.println("paths: "+paths.toString());
-			return gson.toJson(paths);
-		}catch(SQLException e){
-			return gson.toJson(new ErrorResponse(e));
-		}
+        try{
+            List<String> paths = Flight.getSimAircraft(Database.getConnection(), fleetId);
+            System.out.println("paths: "+paths.toString());
+            return gson.toJson(paths);
+        }catch(SQLException e){
+            return gson.toJson(new ErrorResponse(e));
+        }
     }
 }

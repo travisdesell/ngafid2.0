@@ -62,15 +62,15 @@ public class PostEditTag implements Route {
 
             FlightTag currentTag = Flight.getTag(connection, tagId);
 
-			LOG.info("currentTag: "+currentTag+" edited tag: "+flightTag);
+            LOG.info("currentTag: "+currentTag+" edited tag: "+flightTag);
 
             if(flightTag.equals(currentTag)){
-				LOG.info("No change detected in the tag.");
+                LOG.info("No change detected in the tag.");
                 return gson.toJson(NO_CHANGE);
             }
 
             FlightTag changedTag = Flight.editTag(connection, flightTag);
-			Page<Flight> page = WebServer.flightPaginator.currentPage();
+            Page<Flight> page = WebServer.flightPaginator.currentPage();
 
             return gson.toJson(page);
         } catch (SQLException e) {

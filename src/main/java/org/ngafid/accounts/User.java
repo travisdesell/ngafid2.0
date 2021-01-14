@@ -183,29 +183,52 @@ public class User {
         return user;
     }
 
-	/**
-	 * Queries ths users preferences from the database
-	 *
-	 * @param connection A connection to the mysql database
-	 * @param userId the userId to query for
-	 *
-	 * @return an instane of {@link UserPreferences} with all the user's preferences and settings
-	 */
-	public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
-		PreparedStatement query = connection.prepareStatement("SELECT decimal_precision, metrics FROM user_preferences WHERE user_id = ?");
-		query.setInt(1, userId);
+    /**
+     * Queries the users preferences from the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to query for
+     *
+     * @return an instane of {@link UserPreferences} with all the user's preferences and settings
+     */
+    public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision, metrics FROM user_preferences WHERE user_id = ?");
+        query.setInt(1, userId);
 
-		ResultSet resultSet = query.executeQuery();
+        ResultSet resultSet = query.executeQuery();
 
-		UserPreferences userPreferences = null;
+        UserPreferences userPreferences = null;
 
-		if (resultSet.next()) {
-			userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
-		}
 
-		return userPreferences;
-	}
+        if (resultSet.next()) {
+            userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
+        } else {
+            userPreferences = UserPreferences.defaultPreferences(userId);
+            storeUserPreferences(connection, userId, userPreferences);
+        }
 
+        return userPreferences;
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void storeUserPreferences(Connection connection, int userId, UserPreferences userPreferences) throws SQLException {
+        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision, metrics) VALUES (?, ?, ?) " +
+            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision), metrics = VALUES(metrics)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setInt(2, userPreferences.getDecimalPrecision());
+        query.setString(3, userPreferences.getFlightMetrics());
+
+        query.executeUpdate();
+    }
 
     /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user

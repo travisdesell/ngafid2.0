@@ -31,7 +31,7 @@ class FlightPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
-			navRef : React.createRef(),
+            navRef : React.createRef(),
             flights : flights, //start out with the provided flight
         };
 
@@ -213,7 +213,7 @@ class FlightPage extends React.Component {
                     mapSelectChanged={(style) => this.mapSelectChanged(style)}
                     waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
-					ref={elem => this.navRef = elem}
+                    ref={elem => this.navRef = elem}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
                 />
@@ -227,7 +227,7 @@ class FlightPage extends React.Component {
                     <FlightsCard
                         parent={this}
                         flights={this.state.flights} 
-						navBar={this.navRef}
+                        navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}

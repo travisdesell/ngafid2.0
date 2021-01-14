@@ -43,13 +43,13 @@ public class GetXPlane implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String flightIdStr = request.queryParams("flight_id");
-		String aircraftPath = request.queryParams("acft_path");
+        String aircraftPath = request.queryParams("acft_path");
         int version = Integer.parseInt(request.queryParams("version"));
-		boolean useMSL = Boolean.parseBoolean(request.queryParams("use_msl"));
+        boolean useMSL = Boolean.parseBoolean(request.queryParams("use_msl"));
 
-		LOG.info("MSL will be used: "+useMSL);
+        LOG.info("MSL will be used: "+useMSL);
 
-		LOG.info("Generating an X-Plane "+version+" FDR file for flight #"+flightIdStr+" with path for .acf: "+aircraftPath);
+        LOG.info("Generating an X-Plane "+version+" FDR file for flight #"+flightIdStr+" with path for .acf: "+aircraftPath);
 
         int flightId = Integer.parseInt(flightIdStr);
 
@@ -57,7 +57,7 @@ public class GetXPlane implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-		XPlaneExport export;
+        XPlaneExport export;
 
 
         //check to see if the user has upload access for this fleet.
@@ -69,10 +69,10 @@ public class GetXPlane implements Route {
 
 
         response.header("Content-Disposition", "attachment; filename=flight_" + flightId + "_xp"+version+ FDR_FILE_EXTENSION);
-		response.type("application/force-download");
+        response.type("application/force-download");
 
 
-		export = (version == 10) ? new XPlane10Export(flightId, aircraftPath, useMSL) : new XPlane11Export(flightId, aircraftPath, useMSL);
+        export = (version == 10) ? new XPlane10Export(flightId, aircraftPath, useMSL) : new XPlane11Export(flightId, aircraftPath, useMSL);
 
         return export.toFdrFile();
     }
