@@ -14,7 +14,7 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 // populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
-for (let d = 0; d < 57; d++){
+for (let d = 0; d < 61; d++){
     // iterate through RGB permutations (up to 64)
     let green = d % 4;
     let blue = Math.trunc(d/4) % 4;
@@ -104,14 +104,14 @@ class Events extends React.Component {
         var eventStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: event.color,
-                width: 3
+                width: 7
             })
         });
 
         var outlineStyle = new Style({                                                   // create style getter methods**
             stroke: new Stroke({
                 color: "#000000",
-                width: 5
+                width: 8
             })
         });
 
@@ -156,7 +156,7 @@ class Events extends React.Component {
         });
         this.updateEventDisplay(index, false);
     }
-	
+    
 
     eventClicked(index) {
         this.updateEventDisplay(index, true);
@@ -254,4 +254,4 @@ class Events extends React.Component {
     }
 }
 
-export { Events };
+export { Events, eventColorScheme };
