@@ -35,9 +35,9 @@ import org.ngafid.filters.Pair;
 
 import org.ngafid.airports.Airports;
 
-public class CalculateAdjacency {
+public class CalculateProximity {
 
-    //Adjacency events (and potentially other complicated event calculations) will have negative IDs so they
+    //Proximity events (and potentially other complicated event calculations) will have negative IDs so they
     //can be excluded from the regular event calculation process
     public static final int adjacencyEventDefinitionId = -1;
 
@@ -163,7 +163,7 @@ public class CalculateAdjacency {
                     continue;
                 }
 
-                System.out.print("row " + i  + ": " + dateSeries.get(i) + " " + timeSeries.get(i) + " " + utcOffsetSeries.get(i));
+                //System.out.print("row " + i  + ": " + dateSeries.get(i) + " " + timeSeries.get(i) + " " + utcOffsetSeries.get(i));
 
                 // create a LocalDateTime using the date time passed as parameter
                 LocalDateTime ldt = LocalDateTime.parse(dateSeries.get(i) + " " + timeSeries.get(i), DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
@@ -181,10 +181,10 @@ public class CalculateAdjacency {
                 ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
 
                 // print the date time in UTC using the ISO ZONED DATE TIME format
-                System.out.print(" -- UTC (zoned):\t" + utcZdt.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+                //System.out.print(" -- UTC (zoned):\t" + utcZdt.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
 
                 // and then print it again using your desired format
-                System.out.println(" -- UTC:\t" + utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + " -- epoch second: " + utcZdt.toEpochSecond());
+                //System.out.println(" -- UTC:\t" + utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + " -- epoch second: " + utcZdt.toEpochSecond());
 
                 epochTime[i] = utcZdt.toEpochSecond();
             }

@@ -75,7 +75,6 @@ public class Flight {
     private String md5Hash;
     private String startDateTime;
     private String endDateTime;
-    private String timeOffset;
 
     //these will be set to true if the flight has
     //latitude/longitude coordinates and can therefore
@@ -102,7 +101,7 @@ public class Flight {
     private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE upload_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, uploadId);
@@ -178,7 +177,7 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
         if (limit > 0) queryString += " LIMIT 100";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -310,7 +309,7 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String sqlLimit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
 
         if (sqlLimit != null && !sqlLimit.isEmpty())
             queryString += sqlLimit;
@@ -356,7 +355,7 @@ public class Flight {
 	public static List<Flight> getFlightsByRange(Connection connection, Filter filter, int fleetId, int lowerId, int upperId) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?" + " AND (" + filter.toQueryString(fleetId, parameters) + ") LIMIT " + lowerId + ", " + (upperId - lowerId);
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?" + " AND (" + filter.toQueryString(fleetId, parameters) + ") LIMIT " + lowerId + ", " + (upperId - lowerId);
         PreparedStatement query = connection.prepareStatement(queryString);
 
         query.setInt(1, fleetId);
@@ -389,7 +388,7 @@ public class Flight {
 	}
 
 	public static List<Flight> getFlightsByRange(Connection connection, int fleetId, int lowerId, int upperId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = "+fleetId+" LIMIT "+lowerId+", "+(upperId - lowerId);
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = "+fleetId+" LIMIT "+lowerId+", "+(upperId - lowerId);
 
         LOG.info(queryString);
 
@@ -436,7 +435,7 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
 
@@ -472,7 +471,7 @@ public class Flight {
 
     // Added to use in pitch_db
     public static Flight getFlight(Connection connection, int flightId) throws SQLException {
-        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE id = ?";
+        String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
 
@@ -954,14 +953,13 @@ public class Flight {
 
         startDateTime = resultSet.getString(7);
         endDateTime = resultSet.getString(8);
-        timeOffset = resultSet.getString(9);
-        filename = resultSet.getString(10);
-        md5Hash = resultSet.getString(11);
-        numberRows = resultSet.getInt(12);
-        status = resultSet.getString(13);
-        hasCoords = resultSet.getBoolean(14);
-        hasAGL = resultSet.getBoolean(15);
-        insertCompleted = resultSet.getBoolean(16);
+        filename = resultSet.getString(9);
+        md5Hash = resultSet.getString(10);
+        numberRows = resultSet.getInt(11);
+        status = resultSet.getString(12);
+        hasCoords = resultSet.getBoolean(13);
+        hasAGL = resultSet.getBoolean(14);
+        insertCompleted = resultSet.getBoolean(15);
 
         itinerary = Itinerary.getItinerary(connection, id);
 
@@ -1162,20 +1160,18 @@ public class Flight {
         System.out.println("\t\t\tfirst not null  " + start + " -- " + startDate + " " + startTime + " " + startOffset);
         System.out.println("\t\t\tlast not null   " + endDate + " " + endTime + " " + endOffset);
 
-        OffsetDateTime startODT = convertToOffset(startDate + " " + startTime, startOffset, endOffset);
-        OffsetDateTime endODT = convertToOffset(endDate + " " + endTime, endOffset, endOffset);
+        OffsetDateTime startODT = convertToOffset(startDate + " " + startTime, startOffset, "+00:00");
+        OffsetDateTime endODT = convertToOffset(endDate + " " + endTime, endOffset, "+00:00");
 
         if (startODT.isAfter(endODT)) {
             startDateTime = null;
             endDateTime = null;
-            timeOffset = null;
 
             throw new MalformedFlightFileException("Corrupt time data in flight file, start time was after the end time");
         }
 
         startDateTime = startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
         endDateTime = endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        timeOffset = endOffset;
     }
 
     private void initialize(InputStream inputStream) throws FatalFlightFileException, IOException {
@@ -2006,7 +2002,7 @@ public class Flight {
             tailNumber = Tails.getTail(connection, fleetId, systemId);
             tailConfirmed = Tails.getConfirmed(connection, fleetId, systemId);
 
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, time_offset, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
             preparedStatement.setInt(3, uploadId);
@@ -2014,14 +2010,13 @@ public class Flight {
             preparedStatement.setString(5, systemId);
             preparedStatement.setString(6, startDateTime);
             preparedStatement.setString(7, endDateTime);
-            preparedStatement.setString(8, timeOffset);
-            preparedStatement.setString(9, filename);
-            preparedStatement.setString(10, md5Hash);
-            preparedStatement.setInt(11, numberRows);
-            preparedStatement.setString(12, status);
-            preparedStatement.setBoolean(13, hasCoords);
-            preparedStatement.setBoolean(14, hasAGL);
-            preparedStatement.setBoolean(15, false); //insert not yet completed
+            preparedStatement.setString(8, filename);
+            preparedStatement.setString(9, md5Hash);
+            preparedStatement.setInt(10, numberRows);
+            preparedStatement.setString(11, status);
+            preparedStatement.setBoolean(12, hasCoords);
+            preparedStatement.setBoolean(13, hasAGL);
+            preparedStatement.setBoolean(14, false); //insert not yet completed
 
             System.out.println(preparedStatement);
             preparedStatement.executeUpdate();

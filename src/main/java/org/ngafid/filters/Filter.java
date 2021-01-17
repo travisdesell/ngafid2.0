@@ -4,6 +4,12 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
+import java.time.LocalDateTime;
+import java.time.OffsetTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+
 
 public class Filter {
     private static final Logger LOG = Logger.getLogger(Filter.class.getName());
@@ -132,6 +138,47 @@ public class Filter {
 
 
     /**
+     * Converts a datetime and long form time zone offset (from the filter select) to
+     * a time in GMT.
+     *
+     * @param the date time in yyyy-MM-dd hh:mm:ss
+     * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
+     *
+     * @return the date time in yyyy-MM-dd hh:mm:ss converted to GMT
+     */
+    public static String getOffsetDateTime(String datetime, String longOffset) {
+        String offset = longOffset.substring(4,10);
+        System.out.println("datetime is: " + datetime);
+        System.out.println("time zone offset is: " + offset);
+        OffsetDateTime odt = LocalDateTime.parse(datetime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")).atOffset(ZoneOffset.of(offset));
+        String gmtTime = odt.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        System.out.println("gmt date time is: " + gmtTime);
+
+        return gmtTime;
+    }
+
+    /**
+     * Converts a time and long form time zone offset (from the filter select) to
+     * a time in GMT.
+     *
+     * @param the time in hh:mm:ss
+     * @param the time zone offset, e.g. '(GMT-05:00) Eastern Time (US & Canada)'
+     *
+     * @return the date time in hh:mm:ss converted to GMT
+     */
+    public static String getOffsetTime(String time, String longOffset) {
+        String offset = longOffset.substring(4,10);
+        System.out.println("time is: " + time);
+        System.out.println("time  zone offset is: " + offset);
+        OffsetTime ot = OffsetTime.parse(time + offset);
+        String gmtTime = ot.withOffsetSameInstant(ZoneOffset.of("+00:00")).format(DateTimeFormatter.ofPattern("HH:mm:ss"));
+        System.out.println("gmt time is: " + gmtTime);
+
+        return gmtTime;
+    }
+
+
+    /**
      * Recursively returns a mysql query represented by this rule, updates the parameters
      * argument with parameters that need to be filled in by this query.
      *
@@ -181,11 +228,11 @@ public class Filter {
                 return "TIMEDIFF(flights.end_time, flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "Start Date and Time":
-                parameters.add(inputs.get(2));
+                parameters.add(getOffsetDateTime(inputs.get(2), inputs.get(3)));
                 return "flights.start_time " + checkOperator(inputs.get(1)) + " ?";
 
             case "End Date and Time":
-                parameters.add(inputs.get(2));
+                parameters.add(getOffsetDateTime(inputs.get(2), inputs.get(3)));
                 return "flights.end_time " + checkOperator(inputs.get(1)) + " ?";
 
             case "Start Date":
@@ -197,11 +244,11 @@ public class Filter {
                 return "DATE(flights.end_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "Start Time":
-                parameters.add(inputs.get(2));
+                parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
                 return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "End Time":
-                parameters.add(inputs.get(2));
+                parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
                 return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "Parameter":

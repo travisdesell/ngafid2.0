@@ -2,6 +2,8 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import { timeZones } from "./time_zones.js";
+
 class Filter extends React.Component {
     constructor(props) {
         super(props);
@@ -17,7 +19,6 @@ class Filter extends React.Component {
     }
 
     addRule(filter) {
-        console.log("adding rule to filter:");
         let emptyRule = {
             type : "RULE",
             depth: filter.depth + 1,
@@ -209,7 +210,41 @@ class Filter extends React.Component {
         if (inputIndex == 0) {
             //reset the inputs for this filter because the rule type changed
             console.log("resetting the current filter's inputs");
-            currentFilter.inputs = [ 0 ];
+            console.log("current filter:");
+            console.log(currentFilter);
+            console.log("rules:");
+            console.log(this.props.rules[event.target.value - 1]);
+
+            if ((this.props.rules[event.target.value - 1].name == "Start Date and Time") ||
+                (this.props.rules[event.target.value - 1].name == "End Date and Time") ||
+                (this.props.rules[event.target.value - 1].name == "Start Time") ||
+                (this.props.rules[event.target.value - 1].name == "End Time")) {
+
+                var split = new Date().toString().split(" ");
+                console.log(split);
+                //var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
+                var timeZoneFormatted = split[split.length - 2];
+                timeZoneFormatted = timeZoneFormatted.slice(0, 6) + ":" + timeZoneFormatted.slice(6);
+
+                console.log("current time zone is: " + timeZoneFormatted);
+
+                let timeZoneIndex = 0;
+                for (let i = 0; i < timeZones.length; i++) {
+                    if (timeZones[i].includes(timeZoneFormatted)) {
+                        console.log("changing time zone index to " + i + ", '" + timeZones[i] + "'");
+                        timeZoneIndex = i;
+                        if (timeZones[i].includes("US")) {
+                            break;
+                        }
+                    }
+                }
+
+                //set the time zone to the current time zone
+                currentFilter.inputs = [ 0, 0, "", timeZoneIndex ];
+            } else {
+                currentFilter.inputs = [ 0 ];
+            }
+
         }
 
         currentFilter.inputs[inputIndex] = event.target.value;
@@ -265,8 +300,13 @@ class Filter extends React.Component {
                             if (conditionInfo.type == "select") {
                                 if (typeof currentFilter.inputs[index + 1] == 'undefined') currentFilter.inputs[index + 1] = 0;
 
+                                let flexBasis = "150px";
+                                if (conditionInfo.name == "timezone") {
+                                    flexBasis = "375px";
+                                }
+
                                 return (
-                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"150px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}>
+                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:flexBasis, flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}>
                                         { 
                                             conditionInfo.options.map((optionInfo, index) => {
                                                 //console.log("adding option: " + optionInfo + ", with value: " + index + ", key: " + (conditionInfo.name + "-" + index));
