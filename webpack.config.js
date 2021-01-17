@@ -40,6 +40,7 @@ module.exports = {
         severities: __dirname + "/src/main/javascript/severities.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
+        time_zones: __dirname + "/src/main/javascript/time_zones.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
     },

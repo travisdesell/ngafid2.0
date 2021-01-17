@@ -13,8 +13,4 @@ query_ngafid_db("alter table events add column `fleet_id` INT(11) after `id`");
 query_ngafid_db("alter table `user` add column `registration_time` DATETIME DEFAULT NULL");
 
 
-//need this for fixing flight times and being able to better query for proximity calculations
-query_ngafid_db("alter table `flights` add column `time_offset` VARCHAR(6) after `end_time`");
-
-
 ?>

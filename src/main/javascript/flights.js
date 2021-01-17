@@ -16,6 +16,8 @@ import { FlightsCard } from './flights_card_component.js';
 
 import Plotly from 'plotly.js';
 
+import { timeZones } from "./time_zones.js";
+
 
 /*
 var airframes = [ "PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"  ];
@@ -24,7 +26,6 @@ var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
 // var tagNames = ["Tag A", "Tag B"];
-
 var rules = [
     {
         name : "Airframe",
@@ -109,6 +110,11 @@ var rules = [
             {
                 type  : "datetime-local",
                 name : "date and time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -124,6 +130,11 @@ var rules = [
             {
                 type  : "datetime-local",
                 name : "date and time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -158,7 +169,6 @@ var rules = [
         ]
     },
 
-
     {
         name : "Start Time",
         conditions : [
@@ -170,6 +180,11 @@ var rules = [
             {
                 type  : "time",
                 name : "time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -185,6 +200,11 @@ var rules = [
             {
                 type  : "time",
                 name : "time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
