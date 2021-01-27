@@ -1,6 +1,5 @@
 /**
- * This abstract class defines the process of calcuating new {@link DoubleTimeSeries} that require more 
- * complex analysis, such as for Stall Probaility and Loss of Control Probability
+ * This file is uses for running standalone LOCI calculations in the NGAFID
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT Computer Science</a>
  */

@@ -15,59 +15,38 @@ import org.ngafid.Database;
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     static Connection connection = Database.getConnection();
 
-    private Calculation calculation;
-    private String [] depNames;
+    private Flight flight;
+    private Map<String, DoubleTimeSeries> calculationDeps;
+    private int refSize;
 
     /**
      * Default Constructor
      *
-     * By instantiating a {@link CalculatedDoubleTimeSeries} object, it performs the {@link Calculation} 
-     * supplied to it
-     *
-     * @param calculation the calculation to perform
+     * @param name the new name of the time series
+     * @param flight the flight to calculate for
+     * @param calculationDeps the dependencies for this calculation in a {@link Map}
+     * @param refSize the size that the new series should be
      */
-    public CalculatedDoubleTimeSeries(Calculation calculation, String [] depNames) {
-        super(calculation.getCalculationName(), "double");
-        this.calculation = calculation;
-        this.depNames = depNames;
-
-        runCalculation();
+    public CalculatedDoubleTimeSeries(String name, Flight flight, Map<String, DoubleTimeSeries> calculationDeps, int refSize) {
+        super(name, "double");
+        this.flight = flight;
+        this.calculationDeps = calculationDeps;
+        this.refSize = refSize;
     }
 
     /**
      * Runs the calculation
-     */
-    private void runCalculation() {
-        int flightId = calculation.getFlightId();
-        if (!calculation.isNotCalculatable()) {
-            System.out.println("Performing " + calculation.getCalculationName() + " calculation on flight #" + flightId);
-
-            calculation.calculate(this);
-
-            updateDatabase(connection, flightId);
-        } else {
-            System.err.println("WARNING: flight #" + flightId + " is not calculatable for " + calculation.getCalculationName() + "!");
-        }
-    }
-
-    /**
-     * Updates the database and its dependencies 
      *
-     * @param connection the database {@link Connection}
-     * @param flightId the flight ID
+     * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
-    @Override
-    public void updateDatabase(Connection connection, int flightId) {
-        super.updateDatabase(connection, flightId);
-        Map<String, DoubleTimeSeries> params = calculation.getParameters();
+    public void create(Calculation calculation) {
+        System.out.println("Performing " + super.getName() + " calculation on flight #" + flight.getId());
 
-        for (String name : depNames) { 
-            params.get(name).updateDatabase(connection, flightId);
+        for (int i = 0; i < refSize; i++) {
+            super.add(calculation.calculate(this.calculationDeps, i));
         }
-    }
 
-
-    public boolean notCalculated() {
-        return this.calculation.isNotCalculatable();
+        this.calculationDeps.put(super.getName(), this);
+        super.updateDatabase(connection, this.flight.getId());
     }
 }
