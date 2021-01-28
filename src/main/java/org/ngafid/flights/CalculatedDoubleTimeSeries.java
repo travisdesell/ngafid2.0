@@ -15,23 +15,22 @@ import org.ngafid.Database;
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     static Connection connection = Database.getConnection();
 
-    private Flight flight;
-    private Map<String, DoubleTimeSeries> calculationDeps;
-    private int refSize;
+    private CalculationSeries calculationSeries;
+
+    // Indicates whether or not to store this new series in the database
+    private boolean cache;
 
     /**
      * Default Constructor
      *
      * @param name the new name of the time series
-     * @param flight the flight to calculate for
-     * @param calculationDeps the dependencies for this calculation in a {@link Map}
-     * @param refSize the size that the new series should be
+     * @param cache indicates if the new series should be stored in the database after all analysis is complete
+     * @param calculationSeries is the {@link CalculationSeries} object containg information about this new series and the flight itself
      */
-    public CalculatedDoubleTimeSeries(String name, Flight flight, Map<String, DoubleTimeSeries> calculationDeps, int refSize) {
+    public CalculatedDoubleTimeSeries(String name, boolean cache, CalculationSeries calculationSeries) {
         super(name, "double");
-        this.flight = flight;
-        this.calculationDeps = calculationDeps;
-        this.refSize = refSize;
+        this.cache = cache;
+        this.calculationSeries = calculationSeries;
     }
 
     /**
@@ -40,13 +39,13 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
     public void create(Calculation calculation) {
-        System.out.println("Performing " + super.getName() + " calculation on flight #" + flight.getId());
+        System.out.println("Performing " + super.getName() + " calculation on flight #" + calculationSeries.getFlightId());
 
-        for (int i = 0; i < refSize; i++) {
-            super.add(calculation.calculate(this.calculationDeps, i));
+        for (int i = 0; i < calculationSeries.size(); i++) {
+            super.add(calculation.calculate(calculationSeries.getParameters(), i));
         }
 
-        this.calculationDeps.put(super.getName(), this);
-        super.updateDatabase(connection, this.flight.getId());
+        calculationSeries.add(super.getName(), this);
+        if (this.cache) super.updateDatabase(connection, calculationSeries.getFlightId());
     }
 }
