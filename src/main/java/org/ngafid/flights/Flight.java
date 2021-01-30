@@ -1614,7 +1614,7 @@ public class Flight {
                 
             }
         } else {
-            exceptions.add(new MalformedFlightFileException("Cannot calculate LOCI/Stall Index Data as some required parameters were missing."));
+            throw new MalformedFlightFileException("Cannot calculate LOCI/Stall Index Data as some required parameters were missing.");
         }
     }
 
