@@ -184,27 +184,17 @@ public class Flight {
      * @param parameters map with the {@link DoubleTimeSeries} references
      * @return an {@link Optional} that may contain the {@link Map} if they exist, if not it returns an empty instance
      */
-    Optional<Map<String, DoubleTimeSeries>> getCalculationParameters(Map<String, DoubleTimeSeries> parameters, String [] seriesNames) {
-        try {
-            for (String param : seriesNames) {
-                if (!parameters.keySet().contains(param)) {
-                    DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(Database.getConnection(), this.getId(), param);
-                    if(series == null) {
-                        System.err.println("WARNING: " + param + " data was not defined for flight #" + this.getId());
+    Optional<Map<String, DoubleTimeSeries>> checkCalculationParameters(String [] seriesNames) {
+        for (String param : seriesNames) {
+            if (!this.doubleTimeSeries.keySet().contains(param)) {
+                System.err.println("WARNING: " + param + " data was not defined for flight #" + this.getId());
 
-                        //HALT and return nothing as the calcuation won't be able to continue
-                        return Optional.empty();
-                    } else {
-                        parameters.put(param, series);
-                    }
-                }
+                //HALT and return nothing as the calcuation won't be able to continue
+                return Optional.empty();
             }
-            return Optional.of(parameters);
-        } catch(SQLException e) {
-            e.printStackTrace();
         }
 
-        return Optional.empty();
+        return Optional.of(this.doubleTimeSeries);
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
@@ -238,7 +228,7 @@ public class Flight {
      *  Gets the total number of flights for a given fleet and filter. If the filter is null it returns the number of flights
      *  for the fleet.
      *
-     *  @param connection is the database connection
+     u  @param connection is the database connection
      *  @param fleetId is the id of the fleet
      *  @param is the filter to select the flights, can be null.
      *
@@ -1092,7 +1082,7 @@ public class Flight {
     private void setMD5Hash(InputStream inputStream) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(inputStream.readAllBytes());
+            byte [] hash = md.digest(inputStream.readAllBytes());
             md5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
 
         } catch (NoSuchAlgorithmException e) {
@@ -1418,6 +1408,8 @@ public class Flight {
                 System.exit(1);
             }
 
+            runLOCICalculations();
+
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -1517,8 +1509,8 @@ public class Flight {
     /**
      * Runs the Loss of Control/Stall Index calculations
      */
-    public void runLOCICalculations() {
-        Optional<Map<String, DoubleTimeSeries>> optParams = getCalculationParameters(new HashMap<String, DoubleTimeSeries>(), CalculationParameters.LOCI_DEPENDENCIES);
+    public void runLOCICalculations() throws MalformedFlightFileException {
+        Optional<Map<String, DoubleTimeSeries>> optParams = checkCalculationParameters(CalculationParameters.LOCI_DEPENDENCIES);
 
         if (optParams.isPresent()) {
             Map<String, DoubleTimeSeries> params = optParams.get();

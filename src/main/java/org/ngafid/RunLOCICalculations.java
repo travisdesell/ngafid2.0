@@ -137,7 +137,7 @@ public class RunLOCICalculations {
             try {
                 Flight flight = Flight.getFlight(connection, it.next());    
                 flight.runLOCICalculations();
-            } catch (SQLException se) {
+            } catch (
                 se.printStackTrace();
             }
         }
