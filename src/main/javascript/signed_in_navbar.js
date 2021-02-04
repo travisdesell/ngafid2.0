@@ -59,7 +59,7 @@ class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
 
-		this.infoTarget = React.createRef();
+        this.infoTarget = React.createRef();
     }
 
     attemptLogIn() {
@@ -115,7 +115,7 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
-		//const [show, setShow] = React.useState(false);
+        //const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
@@ -123,7 +123,7 @@ class SignedInNavbar extends React.Component {
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
-                <a className="navbar-brand" href="../">NGAFID</a>
+                <a className="navbar-brand" href="../">NGAFID (Beta)</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>

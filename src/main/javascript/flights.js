@@ -340,7 +340,7 @@ class FlightsPage extends React.Component {
             mapStyle : "Road",
             filterRef : React.createRef(),
             flightsRef : React.createRef(),
-			layers : [],
+            layers : [],
             flights : undefined, //start out with no specified flights
 
             //needed for paginator
@@ -349,7 +349,7 @@ class FlightsPage extends React.Component {
             pageSize : 10
         };
 
-		this.navRef = React.createRef();
+        this.navRef = React.createRef();
     }
 
     mapSelectChanged(style) {
@@ -365,33 +365,33 @@ class FlightsPage extends React.Component {
     }
 
     mapLayerChanged(style) {
-		console.log("changing path to: "+style);
-		console.log(this.state.selectableLayers);
+        console.log("changing path to: "+style);
+        console.log(this.state.selectableLayers);
 
-		for(let i = 0; i < this.state.selectableLayers.length; i++){
-			let layer = this.state.selectableLayers[i];
-			let name = layer.values_.name;
-			
-			if(name == style) {
-				layer.setVisible(true);
-				console.log("setting layer " + name + " to visible");
-			} else {
-				layer.setVisible(false);
-				console.log("setting layer " + name + " to not visible");
-			}
-		}
+        for(let i = 0; i < this.state.selectableLayers.length; i++){
+            let layer = this.state.selectableLayers[i];
+            let name = layer.values_.name;
+            
+            if(name == style) {
+                layer.setVisible(true);
+                console.log("setting layer " + name + " to visible");
+            } else {
+                layer.setVisible(false);
+                console.log("setting layer " + name + " to not visible");
+            }
+        }
 
         console.log("map layer changed to: '" +  style + "'!");
 
-		this.setMapStyle(style);
-		
+        this.setMapStyle(style);
+        
    }
 
-	setMapStyle(style) {
-		 this.setState({
-			mapStyle : style
-		});
-	}
+    setMapStyle(style) {
+         this.setState({
+            mapStyle : style
+        });
+    }
 
 
     showMap() {
@@ -560,16 +560,16 @@ class FlightsPage extends React.Component {
                 console.log("got response: " + response + " " + response.size);
 
                 //get page data
-				if (response == "NO_RESULTS") {
-					errorModal.show("No flights found with the given parameters!", "Please try a different query.");
- 				} else {
+                if (response == "NO_RESULTS") {
+                    errorModal.show("No flights found with the given parameters!", "Please try a different query.");
+                 } else {
                     flightsPage.setState({
                         flights : response.flights,
                         currentPage : currentPage,
                         numberPages : response.numberPages  
                     });
 
-				}
+                }
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
@@ -578,12 +578,12 @@ class FlightsPage extends React.Component {
         });  
     }
 
-	setAvailableLayers(plotLayers) {
-		console.log("changing selectable layers on navbar");
-		console.log(plotLayers);
+    setAvailableLayers(plotLayers) {
+        console.log("changing selectable layers on navbar");
+        console.log(plotLayers);
 
-		this.setState({selectableLayers : plotLayers});
-	}
+        this.setState({selectableLayers : plotLayers});
+    }
 
     render() {
         let style = null;
@@ -606,7 +606,7 @@ class FlightsPage extends React.Component {
             <div>
                 <SignedInNavbar 
                     activePage="flights"
-					selectableLayers={this.state.selectableLayers}
+                    selectableLayers={this.state.selectableLayers}
                     filterVisible={this.state.filterVisible}
                     plotVisible={this.state.plotVisible}
                     mapVisible={this.state.mapVisible}
@@ -621,7 +621,7 @@ class FlightsPage extends React.Component {
                     mapLayerChanged={(style) => this.mapLayerChanged(style)}
                     waitingUserCount={waitingUserCount}
                     fleetManager={fleetManager}
-					ref={this.navRef}
+                    ref={this.navRef}
                     unconfirmedTailsCount={unconfirmedTailsCount}
                     modifyTailsAccess={modifyTailsAccess}
                 />
@@ -662,14 +662,14 @@ class FlightsPage extends React.Component {
 
                     <FlightsCard
                         parent={this}
-						layers={this.state.layers}
+                        layers={this.state.layers}
                         flights={this.state.flights} 
-						navBar={this.navRef}
+                        navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showPlot={() => {this.showPlot();}}
                         flights={this.state.flights}
-						setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
+                        setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {
                             this.setState({
                                 flights : flights

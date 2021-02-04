@@ -32,6 +32,10 @@ query_ngafid_db("DELETE FROM upload_errors");
 echo "deleted upload_errors!\n";
 query_ngafid_db("DELETE FROM flight_messages");
 echo "deleted flight_messages!\n";
+query_ngafid_db("DELETE FROM flight_tag_map");
+echo "deleted flight tag map!\n";
+query_ngafid_db("DELETE FROM flight_tags");
+echo "deleted flight tags!\n";
 
 query_ngafid_db("DELETE FROM turn_to_final");
 echo "deleted TTF cache!\n";
