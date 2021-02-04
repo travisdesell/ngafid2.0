@@ -1,14 +1,9 @@
 package org.ngafid;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.InputStream;
 import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -16,7 +11,6 @@ import java.sql.SQLException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.time.temporal.TemporalUnit;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
@@ -113,27 +107,16 @@ public class ProcessFlights {
 
                                         if (connection != null) {
                                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                                            TurnToFinal.getTurnToFinal(connection, flight.getId(), null);
+                                            flight.runCalculations();
+                                            TurnToFinal.calculateFlightTurnToFinals(connection, flight);
                                         }
 
                                         if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                                         validFlights++;
-                                    } catch (IOException e) {
+                                    } catch (IOException | FlightAlreadyExistsException | FatalFlightFileException e) {
                                         System.err.println(e.getMessage());
                                         flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                        errorFlights++;
-                                    } catch (FatalFlightFileException e) {
-                                        System.err.println(e.getMessage());
-                                        flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                        errorFlights++;
-                                    } catch (FlightAlreadyExistsException e) {
-                                        System.err.println(e.getMessage());
-                                        flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                        errorFlights++;
-                                    } catch (ClassNotFoundException e) {
-                                        System.err.println(e.getMessage());
-                                        e.printStackTrace();
                                         errorFlights++;
                                     }
 

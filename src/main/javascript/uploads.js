@@ -340,10 +340,10 @@ class UploadsPage extends React.Component {
         let state = this.state;
         state.pending_uploads = pending_uploads;
 
-		if (this.state.numberPages == 0) {
-			this.state.numberPages = 1;
-			this.state.currentPage = 0;
-		}
+        if (this.state.numberPages == 0) {
+            this.state.numberPages = 1;
+            this.state.currentPage = 0;
+        }
 
         this.setState(state);
         this.startUpload(file);

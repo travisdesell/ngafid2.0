@@ -11,17 +11,17 @@ public interface XPlaneParameters {
     //the file extension
     static String FDR_FILE_EXTENSION = ".fdr";
 
-	/**
-	 * The FDR format needs to know what returns to use
-	 * @param A is unix/posix endlines
-	 * @param I is MS DOS/NT endlines
-	 */
-	static String POSIX_ENDL = "A";
-	static String NT_ENDL = "I";
+    /**
+     * The FDR format needs to know what returns to use
+     * @param A is unix/posix endlines
+     * @param I is MS DOS/NT endlines
+     */
+    static String POSIX_ENDL = "A";
+    static String NT_ENDL = "I";
 
-	//String constants
-	
-	static String ENDL = "endl_type";
+    //String constants
+    
+    static String ENDL = "endl_type";
     static String COMM = "comm";
     static String ACFT = "acft";
     static String TAIL = "tail";
@@ -37,18 +37,18 @@ public interface XPlaneParameters {
     static String EVNT = "evnt";
     static String DATA = "data";
 
-	//Data segment parameters
-	//generic altitude col
-	static String ALT = "altitude";
-	static String ALT_MSL = "altMSL";
-	static String LATITUDE = "latitude";
-	static String LONGITUDE = "longitude";
-	static String HEADING = "heading";
-	static String PITCH = "pitch";
-	static String ROLL = "roll";
-	static String IAS = "ias";
-	static String E1_RPM = "e1RPM";
-	static String E1_EGT = "e1EGT";
+    //Data segment parameters
+    //generic altitude col
+    static String ALT = "altitude";
+    static String ALT_MSL = "altMSL";
+    static String LATITUDE = "latitude";
+    static String LONGITUDE = "longitude";
+    static String HEADING = "heading";
+    static String PITCH = "pitch";
+    static String ROLL = "roll";
+    static String IAS = "ias";
+    static String E1_RPM = "e1RPM";
+    static String E1_EGT = "e1EGT";
 
     static String NULL_DATA = "0,";
 }

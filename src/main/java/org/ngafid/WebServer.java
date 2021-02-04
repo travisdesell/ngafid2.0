@@ -252,7 +252,9 @@ public final class WebServer {
         Spark.post("/protected/events", new PostEvents(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
-        Spark.get("/protected/preferences", new GetUserPreferences(gson));
+        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
+        Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
         Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));

@@ -32,7 +32,7 @@ import org.ngafid.flights.Flight;
 public class PostRemoveTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostRemoveTag.class.getName());
     private Gson gson;
-	private FlightPaginator flightPaginator;
+    private FlightPaginator flightPaginator;
 
     public PostRemoveTag(Gson gson) {
         this.gson = gson;
@@ -55,10 +55,10 @@ public class PostRemoveTag implements Route {
             Connection connection = Database.getConnection();
 
             if(isPermanent){
-				LOG.info("deleting tag: "+tagId);
+                LOG.info("deleting tag: "+tagId);
                 Flight.deleteTag(tagId, connection);
-				Page<Flight> page = WebServer.flightPaginator.currentPage();
-				return gson.toJson(page);
+                Page<Flight> page = WebServer.flightPaginator.currentPage();
+                return gson.toJson(page);
             }else if(allTags){
                 LOG.info("Clearing all tags from flight "+flightId);
                 Flight.unassociateAllTags(flightId, connection);
