@@ -6,7 +6,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/my_query.php");
 
-$drop_tables = false;
+$drop_tables = !false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
@@ -475,6 +475,17 @@ $query = "CREATE TABLE `user_preferences` (
 	FOREIGN KEY(`user_id`) REFERENCES user(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `turn_to_final` (
+    `flight_id` INT(11) NOT NULL,
+    `size` INT(11) NOT NULL,
+    `version` INT(11) NOT NULL,
+    data MEDIUMBLOB,
+
+    PRIMARY KEY(`flight_id`),
+    FOREIGN KEY(`flight_id`) REFERENCES flights(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_ngafid_db($query);
 
 ?>
