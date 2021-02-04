@@ -1,7 +1,8 @@
 package org.ngafid.airports;
 
+import java.io.Serializable;
 
-public class Runway {
+public class Runway implements Serializable {
 
     public final String siteNumber;
     public final String name;

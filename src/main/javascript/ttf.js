@@ -763,7 +763,7 @@ class TTFCard extends React.Component {
         let rollSlider =
             <RollSlider
                  rollSliderMin={0}
-                 rollSliderMax={90}
+                 rollSliderMax={45}
                  rollSliderChanged={(val) => this.onRollSliderChanged(val)}
                  rollSliderValue={() => this.state.minRoll}
                 />

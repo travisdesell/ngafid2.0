@@ -6,6 +6,7 @@ import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
+import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -25,7 +26,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 public class PostTurnToFinal implements Route {
-    private static final Logger LOG = Logger.getLogger(PostCreateAccount.class.getName());
+    private static final Logger LOG = Logger.getLogger(PostTurnToFinal.class.getName());
 
     private final Gson gson;
 
@@ -52,7 +53,6 @@ public class PostTurnToFinal implements Route {
         Set<String> iataCodes = new HashSet<>();
 
         for (Flight flight : flights) {
-
             try {
                 for (TurnToFinal ttf : TurnToFinal.getTurnToFinal(Database.getConnection(), flight, airportIataCode)) {
                     JsonElement jsonElement = ttf.jsonify();
@@ -61,11 +61,13 @@ public class PostTurnToFinal implements Route {
                         iataCodes.add(ttf.airportIataCode);
                     }
                 }
+            } catch (MySQLIntegrityConstraintViolationException e) {
+                e.printStackTrace();
+                return gson.toJson(new ErrorResponse(e));
             } catch (SQLException e) {
                 LOG.severe(e.toString());
                 return gson.toJson(new ErrorResponse(e));
             }
-            // break;
         }
 
 

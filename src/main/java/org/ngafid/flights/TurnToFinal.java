@@ -6,18 +6,30 @@ import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
+import org.ngafid.common.Compression;
+import org.ngafid.filters.Conditional;
+import org.ngafid.filters.Pair;
 
-import java.sql.Connection;
-import java.sql.SQLException;
+import javax.sql.rowset.serial.SerialBlob;
+import java.io.IOException;
+import java.io.Serializable;
+import java.nio.ByteBuffer;
+import java.sql.*;
 import java.util.*;
 import java.util.Collections.*;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.zip.Inflater;
 
 import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
 
-public class TurnToFinal {
+public class TurnToFinal implements Serializable {
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
+
+    private static final int TURN_TO_FINAL_VERSION = 0;
 
     private static final double FEET_PER_MILE = 5280;
 
@@ -260,6 +272,70 @@ public class TurnToFinal {
         return new double[] { latitude[timestep], longitude[timestep] };
     }
 
+    public static void cacheTurnToFinal(Connection connection, int flight_id, ArrayList<TurnToFinal> ttfs) throws SQLException, IOException {
+        if (ttfs == null) {
+            LOG.info("CANNOT INSERT NULL TTF");
+            throw new NullPointerException();
+        }
+
+        byte[] data = Compression.compressObject(ttfs);
+        assert data != null;
+        Blob blob = new SerialBlob(data);
+
+        PreparedStatement preparedStatement =
+                connection.prepareStatement("INSERT INTO turn_to_final (flight_id, size, version, data) VALUES (?, ?, ?, ?)");
+        preparedStatement.setInt(1, flight_id);
+        preparedStatement.setInt(2, (int) data.length);
+        preparedStatement.setInt(3, TURN_TO_FINAL_VERSION);
+        preparedStatement.setBlob(4, blob);
+
+        preparedStatement.execute();
+        preparedStatement.close();
+
+        blob.free();
+    }
+
+    public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight) throws SQLException, IOException, ClassNotFoundException {
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
+        query.setInt(1, flight.getId());
+        LOG.info(query.toString());
+
+        ResultSet resultSet = query.executeQuery();
+        if (!resultSet.next()) {
+            //TODO: should probably throw an exception
+            LOG.info("TTF CACHE ERROR");
+            resultSet.close();
+            query.close();
+            return null;
+        }
+
+
+        int fid = resultSet.getInt(1);
+        int size = resultSet.getInt(2);
+        int version = resultSet.getInt(3);
+        Blob values = resultSet.getBlob(4);
+
+        query.close();
+        resultSet.close();
+
+        if (version < TURN_TO_FINAL_VERSION) {
+            LOG.info("TTF VERSION OUTDATED");
+            PreparedStatement deleteQuery = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
+            query.setInt(1, flight.getId());
+            deleteQuery.executeUpdate();
+            deleteQuery.close();
+
+            return null;
+        }
+
+        Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()), size);
+        assert o instanceof ArrayList;
+
+        LOG.info("FOUND IN TTF CACHE: " + o.toString());
+
+        return (ArrayList<TurnToFinal>) o;
+    }
+
     /**
      * Returns an array list of all of the turn to finals for the given flight that occur at the specified airport
      * @param connection database connection
@@ -268,10 +344,17 @@ public class TurnToFinal {
      * @return
      * @throws SQLException
      */
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException {
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
+        ArrayList<TurnToFinal> cachedValue = getTurnToFinalFromCache(connection, flight);
+
+        if (cachedValue != null) {
+            return cachedValue.stream()
+                    .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
+                    .collect(Collectors.toCollection(ArrayList::new));
+        }
+
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
-        // TODO: Verify that these are the correct names
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
@@ -280,8 +363,11 @@ public class TurnToFinal {
 
         int flightId = flight.getId();
 
-        if (latTimeSeries == null)
-            return new ArrayList<>();
+        if (Stream.of(latTimeSeries, lonTimeSeries, altTimeSeries, rollTimeSeries, velocityTimeSeries).anyMatch(Objects::isNull)) {
+            ArrayList<TurnToFinal> ttfs = new ArrayList<>();
+            cacheTurnToFinal(connection, flight.getId(), ttfs);
+            return ttfs;
+        }
 
         double[] lat = latTimeSeries.innerArray();
         double[] lon = lonTimeSeries.innerArray();
@@ -373,14 +459,17 @@ public class TurnToFinal {
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
 
+        cacheTurnToFinal(connection, flight.getId(), ttfs);
+
         return ttfs;
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode) throws SQLException {
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
         // For now just use the flight object to get lat and long series
         // In the future we could just get the lat and long series in isolation to speed things up
         Flight flight = Flight.getFlight(connection, flightId);
         assert flight != null;
+
         return getTurnToFinal(connection, flight, airportIataCode);
     }
 
