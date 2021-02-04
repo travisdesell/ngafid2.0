@@ -336,23 +336,7 @@ public class TurnToFinal implements Serializable {
         return (ArrayList<TurnToFinal>) o;
     }
 
-    /**
-     * Returns an array list of all of the turn to finals for the given flight that occur at the specified airport
-     * @param connection database connection
-     * @param flight the flight for which the turn to finals should be analyzed
-     * @param airportIataCode the IATA code for the airport. If this is null, all of the TTFs will be returned.
-     * @return
-     * @throws SQLException
-     */
-    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
-        ArrayList<TurnToFinal> cachedValue = getTurnToFinalFromCache(connection, flight);
-
-        if (cachedValue != null) {
-            return cachedValue.stream()
-                    .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
-                    .collect(Collectors.toCollection(ArrayList::new));
-        }
-
+    public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
@@ -391,9 +375,6 @@ public class TurnToFinal implements Serializable {
             int from = to;
 
             Airport airport = Airports.getAirport(it.getAirport());
-            if (airportIataCode != null && !airport.iataCode.equals(airportIataCode))
-                continue;
-
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[to];
 
@@ -464,6 +445,26 @@ public class TurnToFinal implements Serializable {
         return ttfs;
     }
 
+    /**
+     * Returns an array list of all of the turn to finals for the given flight that occur at the specified airport
+     * @param connection database connection
+     * @param flight the flight for which the turn to finals should be analyzed
+     * @param airportIataCode the IATA code for the airport. If this is null, all of the TTFs will be returned.
+     * @return
+     * @throws SQLException
+     */
+    public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
+        ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
+
+        if (turnToFinals == null) {
+            turnToFinals = calculateFlightTurnToFinals(connection, flight);
+        }
+
+        return turnToFinals.stream()
+                .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
+                .collect(Collectors.toCollection(ArrayList::new));
+    }
+
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, int flightId, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
         // For now just use the flight object to get lat and long series
         // In the future we could just get the lat and long series in isolation to speed things up
@@ -490,8 +491,8 @@ public class TurnToFinal implements Serializable {
                     Map.entry("airportIataCode", this.airportIataCode),
                     Map.entry("flightStartDate", this.flightStartDate),
                     Map.entry("maxRoll", this.maxRoll),
-                    Map.entry(PARAM_LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : new double[0]),
-                    Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : new double[0]))
+                    Map.entry(PARAM_LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
+                    Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
             );
         }
         catch (IllegalArgumentException _iae) {
