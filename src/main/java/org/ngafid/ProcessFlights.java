@@ -22,12 +22,7 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.flights.FlightAlreadyExistsException;
-import org.ngafid.flights.FatalFlightFileException;
-
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.UploadError;
+import org.ngafid.flights.*;
 
 public class ProcessFlights {
     private static Connection connection = Database.getConnection();
@@ -118,6 +113,7 @@ public class ProcessFlights {
 
                                         if (connection != null) {
                                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                            TurnToFinal.getTurnToFinal(connection, flight.getId(), null);
                                         }
 
                                         if (flight.getStatus().equals("WARNING")) warningFlights++;
@@ -134,6 +130,10 @@ public class ProcessFlights {
                                     } catch (FlightAlreadyExistsException e) {
                                         System.err.println(e.getMessage());
                                         flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                        errorFlights++;
+                                    } catch (ClassNotFoundException e) {
+                                        System.err.println(e.getMessage());
+                                        e.printStackTrace();
                                         errorFlights++;
                                     }
 
