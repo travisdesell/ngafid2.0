@@ -35,7 +35,6 @@ import com.github.mustachejava.MustacheFactory;
 public class GetImports implements Route {
     private static final Logger LOG = Logger.getLogger(GetImports.class.getName());
     private Gson gson;
-    private Paginator paginator;
 
     private static class Message {
         String type;
