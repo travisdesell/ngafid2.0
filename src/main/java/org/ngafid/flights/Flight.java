@@ -179,22 +179,20 @@ public class Flight {
     }
 
     /**
-     * Gets references to {@link DoubleTimeSeries} objects and places them in a Map
+     * Checks references to {@link DoubleTimeSeries} for this flight
      *
-     * @param parameters map with the {@link DoubleTimeSeries} references
-     * @return an {@link Optional} that may contain the {@link Map} if they exist, if not it returns an empty instance
+     * @return an {@link Map} that contains all of rhe 
+     * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    Optional<Map<String, DoubleTimeSeries>> checkCalculationParameters(String [] seriesNames) {
+    Map<String, DoubleTimeSeries> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.keySet().contains(param)) {
-                System.err.println("WARNING: " + param + " data was not defined for flight #" + this.getId());
-
-                //HALT and return nothing as the calcuation won't be able to continue
-                return Optional.empty();
+                LOG.severe("WARNING: " + param + " data was not defined for flight #" + this.getId() + ", LOCI calculation not performed!");
+                throw new MalformedFlightFileException("LOCI/Stall Index data cannot be calculated since " + param + "was missing");
             }
         }
 
-        return Optional.of(this.doubleTimeSeries);
+        return this.doubleTimeSeries;
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
@@ -1510,103 +1508,96 @@ public class Flight {
      * Runs the Loss of Control/Stall Index calculations
      */
     public void runLOCICalculations() throws MalformedFlightFileException {
-        Optional<Map<String, DoubleTimeSeries>> optParams = checkCalculationParameters(CalculationParameters.LOCI_DEPENDENCIES);
+        Map<String, DoubleTimeSeries> params = checkCalculationParameters(CalculationParameters.LOCI_DEPENDENCIES);
+        int refSize = params.get(CalculationParameters.ALT_B).size();
 
-        if (optParams.isPresent()) {
-            Map<String, DoubleTimeSeries> params = optParams.get();
-            int refSize = params.get(CalculationParameters.ALT_B).size();
+        CalculationSeries lociCalculation = new CalculationSeries(this, params, refSize);
 
-            CalculationSeries lociCalculation = new CalculationSeries(this, params, refSize);
-
-            if (this.isC172()) {
-                CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(CalculationParameters.CAS, true, lociCalculation);
-                cas.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                    DoubleTimeSeries ias = parameters.get(CalculationParameters.IAS);
-                    double iasValue = ias.get(index);
-                    
-                    if (iasValue < 70.d) {
-                        iasValue = (0.7d * iasValue) + 20.667;
-                    }
-
-                    return iasValue;
-                });
-                
-                //Overwrite the reference for IAS so that it is used in the Stall Calcs 
-                params.put(CalculationParameters.IAS, cas);
-
-            }
-
-            CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(CalculationParameters.VSPD_CALCULATED, true, lociCalculation);
-            vspdCalculated.create(new VSPDRegression(params));
-
-            CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(CalculationParameters.DENSITY_RATIO, false, lociCalculation);
-            densityRatio.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                DoubleTimeSeries baroA = parameters.get(CalculationParameters.BARO_A);
-                DoubleTimeSeries oat = parameters.get(CalculationParameters.OAT);
-
-                double pressRatio = baroA.get(index) / CalculationParameters.STD_PRESS_INHG;
-                double tempRatio = (273 + oat.get(index)) / 288;
-                return pressRatio / tempRatio;
-            });
-
-            CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(CalculationParameters.TAS_FTMIN, false, lociCalculation);
-            tasFtMin.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+        if (this.isC172()) {
+            CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(CalculationParameters.CAS, true, lociCalculation);
+            cas.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
                 DoubleTimeSeries ias = parameters.get(CalculationParameters.IAS);
-
-                return (ias.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
-            });
-
-            CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(CalculationParameters.AOA_SIMPLE, true, lociCalculation);
-            aoaSimple.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                DoubleTimeSeries pitch = parameters.get(CalculationParameters.PITCH);
-
-                double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
-                double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
-                fltPthAngle = fltPthAngle * (180 / Math.PI);
-                double value = pitch.get(index) - fltPthAngle;
-
-                return value; 
-            });
-
-            CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(CalculationParameters.STALL_PROB, true, lociCalculation);
-            stallIndex.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                return (Math.min(((Math.abs(aoaSimple.get(index) / CalculationParameters.AOA_CRIT)) * 100), 100)) / 100;
-            });
-
-            if (this.isC172()) {
-                // We still can only perform a LOC-I calculation on the Skyhawks
-                // This can be changed down the road
-                DoubleTimeSeries hdg = params.get(CalculationParameters.HDG); 
-                DoubleTimeSeries hdgLagged = hdg.lag(CalculationParameters.YAW_RATE_LAG);
-
-                CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(CalculationParameters.PRO_SPIN_FORCE, true, lociCalculation);
-                coordIndex.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                    DoubleTimeSeries roll = parameters.get(CalculationParameters.ROLL);
-                    DoubleTimeSeries tas = parameters.get(CalculationParameters.TAS_FTMIN);
-
-                    double laggedHdg = hdgLagged.get(index);
-                    double yawRate = Double.isNaN(laggedHdg) ? 0 : 
-                        180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
-
-                    double yawComp = yawRate * CalculationParameters.COMP_CONV; 
-                    double vrComp = ((tas.get(index) / 60) * yawComp);
-                    double rollComp = roll.get(index) * CalculationParameters.COMP_CONV;
-                    double ctComp = Math.sin(rollComp) * 32.2;
-                    double value = Math.min(((Math.abs(ctComp - vrComp) * 100) / CalculationParameters.PROSPIN_LIM), 100);
-
-                    return value;
-                });
+                double iasValue = ias.get(index);
                 
-                
-                CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(CalculationParameters.LOCI, true, lociCalculation);
-                loci.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
-                    double prob = (stallIndex.get(index) * parameters.get(CalculationParameters.PRO_SPIN_FORCE).get(index));
-                    return prob / 100;
-                });
-                
-            }
-        } else {
-            throw new MalformedFlightFileException("Cannot calculate LOCI/Stall Index Data as some required parameters were missing.");
+                if (iasValue < 70.d) {
+                    iasValue = (0.7d * iasValue) + 20.667;
+                }
+
+                return iasValue;
+            });
+            
+            //Overwrite the reference for IAS so that it is used in the Stall Calcs 
+            params.put(CalculationParameters.IAS, cas);
+
+        }
+
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(CalculationParameters.VSPD_CALCULATED, true, lociCalculation);
+        vspdCalculated.create(new VSPDRegression(params));
+
+        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(CalculationParameters.DENSITY_RATIO, false, lociCalculation);
+        densityRatio.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+            DoubleTimeSeries baroA = parameters.get(CalculationParameters.BARO_A);
+            DoubleTimeSeries oat = parameters.get(CalculationParameters.OAT);
+
+            double pressRatio = baroA.get(index) / CalculationParameters.STD_PRESS_INHG;
+            double tempRatio = (273 + oat.get(index)) / 288;
+            return pressRatio / tempRatio;
+        });
+
+        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(CalculationParameters.TAS_FTMIN, false, lociCalculation);
+        tasFtMin.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+            DoubleTimeSeries ias = parameters.get(CalculationParameters.IAS);
+
+            return (ias.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
+        });
+
+        CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(CalculationParameters.AOA_SIMPLE, true, lociCalculation);
+        aoaSimple.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+            DoubleTimeSeries pitch = parameters.get(CalculationParameters.PITCH);
+
+            double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
+            double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
+            fltPthAngle = fltPthAngle * (180 / Math.PI);
+            double value = pitch.get(index) - fltPthAngle;
+
+            return value; 
+        });
+
+        CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(CalculationParameters.STALL_PROB, true, lociCalculation);
+        stallIndex.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+            return (Math.min(((Math.abs(aoaSimple.get(index) / CalculationParameters.AOA_CRIT)) * 100), 100)) / 100;
+        });
+
+        if (this.isC172()) {
+            // We still can only perform a LOC-I calculation on the Skyhawks
+            // This can be changed down the road
+            DoubleTimeSeries hdg = params.get(CalculationParameters.HDG); 
+            DoubleTimeSeries hdgLagged = hdg.lag(CalculationParameters.YAW_RATE_LAG);
+
+            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(CalculationParameters.PRO_SPIN_FORCE, true, lociCalculation);
+            coordIndex.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+                DoubleTimeSeries roll = parameters.get(CalculationParameters.ROLL);
+                DoubleTimeSeries tas = parameters.get(CalculationParameters.TAS_FTMIN);
+
+                double laggedHdg = hdgLagged.get(index);
+                double yawRate = Double.isNaN(laggedHdg) ? 0 : 
+                    180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
+
+                double yawComp = yawRate * CalculationParameters.COMP_CONV; 
+                double vrComp = ((tas.get(index) / 60) * yawComp);
+                double rollComp = roll.get(index) * CalculationParameters.COMP_CONV;
+                double ctComp = Math.sin(rollComp) * 32.2;
+                double value = Math.min(((Math.abs(ctComp - vrComp) * 100) / CalculationParameters.PROSPIN_LIM), 100);
+
+                return value;
+            });
+            
+            
+            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(CalculationParameters.LOCI, true, lociCalculation);
+            loci.create((Map<String, DoubleTimeSeries> parameters, int index) -> {
+                double prob = (stallIndex.get(index) * parameters.get(CalculationParameters.PRO_SPIN_FORCE).get(index));
+                return prob / 100;
+            });
         }
     }
 
