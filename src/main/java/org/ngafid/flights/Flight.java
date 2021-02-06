@@ -188,7 +188,7 @@ public class Flight {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.keySet().contains(param)) {
                 LOG.severe("WARNING: " + param + " data was not defined for flight #" + this.getId() + ", LOCI calculation not performed!");
-                throw new MalformedFlightFileException("LOCI/Stall Index data cannot be calculated since " + param + "was missing");
+                throw new MalformedFlightFileException("LOCI/Stall Index data cannot be calculated since " + param + " was missing");
             }
         }
 
