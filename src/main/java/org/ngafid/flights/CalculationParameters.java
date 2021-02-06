@@ -62,9 +62,11 @@ public interface CalculationParameters {
      * Strings that represent the parameters used in this calculation
      *
      * @param ALT_B is used as the time reference 
+     * @param VSPD not needed for cases where VSpd is drived from AltB
      */
-    public static final String [] LOCI_DEPENDENCIES = {HDG, IAS, ROLL, PITCH, VSPD, IAS, BARO_A, OAT, ALT_B};
-        /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
+    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL, PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
+    //
+    // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
