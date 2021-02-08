@@ -59,12 +59,17 @@ public interface CalculationParameters {
     public static final int C172SP_ID = 1;
 
     /**
-     * Strings that represent the parameters used in this calculation
+     * Strings that represent the parameters used in the Stall Index calculation
      *
      * @param ALT_B is used as the time reference 
      * @param VSPD not needed for cases where VSpd is drived from AltB
      */
-    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL, PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
+    public static final String [] STALL_DEPENDENCIES = {PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
+    
+    /**
+     * Strings that represent the parameters used in the Stall Index calculation
+     */
+    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL};
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
 
