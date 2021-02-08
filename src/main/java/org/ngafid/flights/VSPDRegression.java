@@ -2,8 +2,6 @@ package org.ngafid.flights;
 
 import static org.ngafid.flights.CalculationParameters.*;
 
-import java.util.Map;
-
 public class VSPDRegression implements Calculation {
     private final DoubleTimeSeries altB;
     private final DoubleTimeSeries altBLag;
@@ -11,20 +9,20 @@ public class VSPDRegression implements Calculation {
 
     static final double FPM_CONV = 60.d;
 
-    public VSPDRegression(Map<String, DoubleTimeSeries> parameters) {
-        this.altB = parameters.get(ALT_B);
-
-        this.altBLag = altB.lag(VSI_LAG_DIFF);
-        this.altBLead = altB.lead(VSI_LAG_DIFF);
-
-        parameters.put(ALT_B + LAG_SUFFIX + VSI_LAG_DIFF, altBLag);
-        parameters.put(ALT_B + LEAD_SUFFIX + VSI_LAG_DIFF, altBLead);
-    }
-
     /**
      * This is a linear regression calculation to get a more instantaneous VSI
      */
-    public double calculate(Map<String, DoubleTimeSeries> parameters, int index) {
+    public VSPDRegression(Flight flight) {
+        this.altB = flight.getDoubleTimeSeries(ALT_B);
+        this.altBLag = altB.lag(VSI_LAG_DIFF);
+        this.altBLead = altB.lead(VSI_LAG_DIFF);
+    }
+
+    /**
+     * @{inheritDoc}
+     */
+    @Override
+    public double calculate(int index) {
         if (index < 1 || index >= altB.size() - 1) {
             return Double.NaN;
         } else {
