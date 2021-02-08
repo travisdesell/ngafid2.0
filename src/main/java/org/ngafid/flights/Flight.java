@@ -1031,7 +1031,7 @@ public class Flight {
      * @return true if the aircraft is a Cessna 172SP
      */
     public boolean isC172() {
-        return (this.airframeId == 1);
+        return this.airframeType.equals("Cessna 172S");
     }
 
     public String getFilename() {
@@ -1520,7 +1520,6 @@ public class Flight {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
         if (this.isC172()) {
-            checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
             CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(CAS, "knots", true, this);
             cas.create(index -> {
                 DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
@@ -1575,7 +1574,8 @@ public class Flight {
         if (this.isC172()) {
             // We still can only perform a LOC-I calculation on the Skyhawks
             // This can be changed down the road
-            DoubleTimeSeries hdg = this.getDoubleTimeSeries(HDG); 
+            checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
+            DoubleTimeSeries hdg = getDoubleTimeSeries(HDG); 
             DoubleTimeSeries hdgLagged = hdg.lag(YAW_RATE_LAG);
 
             CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(PRO_SPIN_FORCE, "index", true, this);
@@ -1595,7 +1595,6 @@ public class Flight {
 
                 return value;
             });
-            
             
             CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(LOCI, "index", true, this);
             loci.create(index -> {
