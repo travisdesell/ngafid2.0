@@ -46,13 +46,13 @@ public class Compression {
         return inflateDoubleArray(bytes, size);
     }
 
-    public static byte[] compressDoubleArray(double[] data, int size) throws IOException {
+    public static byte[] compressDoubleArray(double[] data) throws IOException {
         ByteBuffer bytes = ByteBuffer.allocate(data.length * Double.BYTES);
         bytes.asDoubleBuffer().put(data);
         return compress(bytes.array());
     }
 
-    public static Object inflateObject(byte[] bytes, int size) throws IOException, ClassNotFoundException {
+    public static Object inflateObject(byte[] bytes) throws IOException, ClassNotFoundException {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
@@ -66,15 +66,9 @@ public class Compression {
     public static byte[] compressObject(Object o) throws SQLException, IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
-        final ObjectOutputStream oos;
-        try {
-            oos = new ObjectOutputStream(bout);
-            oos.writeObject(o);
-            oos.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
+        final ObjectOutputStream oos = new ObjectOutputStream(bout);
+        oos.writeObject(o);
+        oos.close();
 
         byte[] bytes = bout.toByteArray();
         bout.close();

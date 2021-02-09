@@ -22,6 +22,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.ngafid.Database;
+import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
 
 import static org.ngafid.flights.CalculationParameters.*;
@@ -184,7 +185,7 @@ public class DoubleTimeSeries {
      * @param flightId is the id of the flight.
      * @return An ArrayList of all the DoubleTimeSeries for his flight.
      */
-    public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException {
+    public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException, IOException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? ORDER BY name");
         query.setInt(1, flightId);
         LOG.info(query.toString());
@@ -209,7 +210,7 @@ public class DoubleTimeSeries {
      * @param name is the column name of the double time series
      * @return a DoubleTimeSeries for his flight and column name, null if it does not exist.
      */
-    public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
+    public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
         query.setString(2, name);
@@ -229,7 +230,7 @@ public class DoubleTimeSeries {
         }
     }
 
-    public DoubleTimeSeries(ResultSet resultSet) throws SQLException {
+    public DoubleTimeSeries(ResultSet resultSet) throws SQLException, IOException {
         id = resultSet.getInt(1);
         flightId = resultSet.getInt(2);
         name = resultSet.getString(3);
@@ -244,19 +245,7 @@ public class DoubleTimeSeries {
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
 
-        System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
-
-        try {
-            Inflater inflater = new Inflater();
-            inflater.setInput(bytes, 0, bytes.length);
-            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-            int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
-            double[] timeSeriesArray = new double[size];
-            timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
-            this.data = timeSeriesArray;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        this.data = Compression.inflateDoubleArray(bytes, size);
     }
 
     public String toString() {
@@ -361,46 +350,16 @@ public class DoubleTimeSeries {
             // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
             // is a list of objects rather than a list of primitives - it consumes much more memory.
             // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
-            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-            for (int i = 0; i < size; i++)
-                timeSeriesBytes.putDouble(data[i]);
-
-            // Hopefully this is enough memory. It should be enough.
-            int bufferSize = timeSeriesBytes.capacity() + 256;
-            ByteBuffer compressedTimeSeries;
-
-            // This is probably super overkill but it won't hurt?
-            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
-            // allocate more memory.
-            // I don't think it should happen unless the time series unless the compressed data is larger than the
-            // raw data, which should never happen.
-            int compressedDataLength;
-
-            for (;;) {
-                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
-                try {
-                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
-                    deflater.setInput(timeSeriesBytes.array());
-                    deflater.finish();
-                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
-                    deflater.end();
-                    break;
-                } catch (BufferOverflowException _boe) {
-                    bufferSize *= 2;
-                }
-            }
-
-            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
-            // we don't know what the compressed data size until after it is done being compressed
-            byte[] blobBytes = new byte[compressedDataLength];
-            compressedTimeSeries.get(blobBytes);
-            Blob seriesBlob = new SerialBlob(blobBytes);
+            byte[] compressed = Compression.compressDoubleArray(this.data);
+            Blob seriesBlob = new SerialBlob(compressed);
 
             preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();
             preparedStatement.close();
 
-        } catch (SQLException e) {
+            seriesBlob.free();
+
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
@@ -412,7 +371,7 @@ public class DoubleTimeSeries {
         try {
             DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
             if (laggedSeries != null) return Optional.of(laggedSeries);
-        } catch (SQLException se) {
+        } catch (SQLException | IOException se) {
             se.printStackTrace();
         }
 
@@ -425,7 +384,7 @@ public class DoubleTimeSeries {
         try {
             DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
             if (leadingSeries != null) return Optional.of(leadingSeries);
-        } catch (SQLException se) {
+        } catch (SQLException | IOException se) {
             se.printStackTrace();
         }
 

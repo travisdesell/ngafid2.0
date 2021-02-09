@@ -1,5 +1,7 @@
 package org.ngafid.flights;
 
+import org.ngafid.common.Compression;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataInputStream;
@@ -59,7 +61,7 @@ public class StringTimeSeries {
 
 
     // Added to get StringTimeSeries
-    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
+    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
         query.setString(2, name);
@@ -80,7 +82,7 @@ public class StringTimeSeries {
     }
 
     // Added to get results for StringTimeSeries
-    public StringTimeSeries(ResultSet resultSet) throws SQLException {
+    public StringTimeSeries(ResultSet resultSet) throws SQLException, IOException, ClassNotFoundException {
 
         name = resultSet.getString(3);
         System.out.println("name: " + name);
@@ -96,37 +98,7 @@ public class StringTimeSeries {
         System.out.println("values.length: " + (int)values.length());
         values.free();
 
-        //timeSeries = new ArrayList<String>();
-        try {
-            int memoryPerString = 64;
-            for (;;) {
-                try {
-                    // Decompress
-                    Inflater inflater = new Inflater();
-                    inflater.setInput(bytes, 0, bytes.length);
-                    byte[] timeSeriesBytes = new byte[length * memoryPerString];
-
-                    // This is the line that might throw BufferOverflowException
-                    int inflatedSize = inflater.inflate(timeSeriesBytes);
-
-                    System.out.println("Inflated file size = " + inflatedSize);
-
-                    // Deserialize
-                    ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(timeSeriesBytes));
-                    Object o = inputStream.readObject();
-                    assert o instanceof ArrayList;
-                    timeSeries = (ArrayList<String>) o;
-                    inputStream.close();
-
-                    break;
-                } catch (BufferOverflowException _boe) {
-                    memoryPerString *= 2;
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return;
+        this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
     }
 
     public String toString() {
@@ -188,44 +160,14 @@ public class StringTimeSeries {
             preparedStatement.setInt(4, timeSeries.size());
             preparedStatement.setInt(5, validCount);
 
-            ByteArrayOutputStream bout = new ByteArrayOutputStream();
-
-            final ObjectOutputStream oos = new ObjectOutputStream(bout);
-            oos.writeObject(timeSeries);
-            oos.close();
-
-            System.err.println(preparedStatement);
-
-            byte[] serializedBytes = bout.toByteArray();
-
-            // Hopefully this is enough memory. It should be enough.
-            int bufferSize = serializedBytes.length + 256;
-            ByteBuffer compressedStringSeries;
-
-            int compressedDataLength;
-            // The reasoning behind this loop can be found in DoubleTimeSeries.updateDatabase
-            for (;;) {
-                compressedStringSeries = ByteBuffer.allocate(bufferSize);
-                try {
-                    Deflater deflater = new Deflater(StringTimeSeries.COMPRESSION_LEVEL);
-                    deflater.setInput(serializedBytes);
-                    deflater.finish();
-                    compressedDataLength = deflater.deflate(compressedStringSeries.array());
-                    deflater.end();
-                    break;
-                } catch (BufferOverflowException _boe) {
-                    bufferSize *= 2;
-                }
-            }
-
             // To get rid of extra bytes at the end of the buffer
-            byte[] blobBytes = new byte[compressedDataLength];
-            compressedStringSeries.get(blobBytes);
-            Blob seriesBlob = new SerialBlob(blobBytes);
+            byte[] compressed = Compression.compressObject(this.timeSeries);
+            Blob seriesBlob = new SerialBlob(compressed);
 
             preparedStatement.setBlob(6, seriesBlob);
             preparedStatement.executeUpdate();
             preparedStatement.close();
+            seriesBlob.free();
 
         } catch (SQLException | IOException e) {
             e.printStackTrace();

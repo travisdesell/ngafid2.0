@@ -219,6 +219,13 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
+        query = "DELETE FROM turn_to_final WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
         query = "DELETE FROM flight_warnings WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
@@ -1177,7 +1184,7 @@ public class Flight {
         return endDateTime;
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
+    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException, IOException {
         // TODO: Figure out why the doubleTimeSeries field is never properly filled
         // Previous impl was
         // return this.doubleTimeSeries.get(name)
