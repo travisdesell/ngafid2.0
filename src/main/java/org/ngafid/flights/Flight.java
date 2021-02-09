@@ -203,6 +203,91 @@ public class Flight {
         return getFlights(connection, fleetId, 0);
     }
 
+    /**
+     * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
+     * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
+     * @param connection
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
+        System.out.println("Start date = " + startDate);
+        System.out.println("End date = " + endDate);
+        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
+                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
+        List<Flight> flights = getFlights(connection, extraCondition);
+        System.out.println("Number flights = " + flights.size());
+        return flights;
+    }
+    /**
+     * Like Flights.getFlightsWithinDateRange, but also only grabs flights that visit a certain airport.
+     * @param connection connection to the database
+     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
+     * @param endDate formatted the same as the start date.
+     * @param airportIataCode
+     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
+     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
+     *          full control over this parameter on the frontend? We'll see.
+     * @throws SQLException
+     */
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate, String endDate,
+                                                                    String airportIataCode, int limit) throws SQLException {
+        String queryString =
+                "SELECT         " +
+                "  flights.id,  " +
+                "  fleet_id,    " +
+                "  uploader_id, " +
+                "  upload_id,   " +
+                "  system_id,     " +
+                "  airframe_id, " +
+                "  start_time,  " +
+                "  end_time,    " +
+                "  filename,    " +
+                "  md5_hash,    " +
+                "  number_rows, " +
+                "  status,      " +
+                "  has_coords,  " +
+                "  has_agl,     " +
+                "  insert_completed   " +
+                "FROM flights         " +
+                "WHERE                " +
+                "    (                " +
+                "    EXISTS(          " +
+                "        SELECT       " +
+                "          id         " +
+                "        FROM         " +
+                "          itinerary  " +
+                "        WHERE        " +
+                "          airport = '" + airportIataCode + "' " +
+                "    ) " +
+                "AND   " +
+                "    ( " +
+                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
+                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
+                "    )" +
+                " ) ";
+
+        if (limit > 0) queryString += " LIMIT " + limit;
+
+        LOG.info(queryString);
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        List<Flight> flights = new ArrayList<>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return flights;
+    }
+
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ?";
         if (limit > 0) queryString += " LIMIT 100";
@@ -1063,7 +1148,7 @@ public class Flight {
         this.doubleTimeSeries.put(name, doubleTimeSeries);
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) {
+    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException, IOException {
         if (this.doubleTimeSeries.containsKey(name)) {
             return this.doubleTimeSeries.get(name);
         } else {
@@ -1492,10 +1577,7 @@ public class Flight {
             inputStream.reset();
             process(inputStream);
 
-        } catch (FatalFlightFileException e) {
-            status = "WARNING";
-            throw e;
-        } catch (IOException e) {
+        } catch (FatalFlightFileException | IOException e) {
             status = "WARNING";
             throw e;
         }
@@ -1506,7 +1588,7 @@ public class Flight {
     /**
      * Runs the Loss of Control/Stall Index calculations
      */
-    public void runLOCICalculations() throws MalformedFlightFileException {
+    public void runLOCICalculations() throws MalformedFlightFileException, SQLException, IOException {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
         if (this.isC172()) {
@@ -1619,10 +1701,7 @@ public class Flight {
        //} catch (FileNotFoundException e) {
        //   System.err.println("ERROR: could not find flight file '" + filename + "'");
        //   exceptions.add(e);
-        } catch (FatalFlightFileException e) {
-            status = "WARNING";
-            throw e;
-        } catch (IOException e) {
+        } catch (FatalFlightFileException | IOException e) {
             status = "WARNING";
             throw e;
         }

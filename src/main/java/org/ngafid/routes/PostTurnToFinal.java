@@ -49,7 +49,7 @@ public class PostTurnToFinal implements Route {
 
         // TODO: Update this limit when caching of TTF objects is implemented.
         List<Flight> flights =
-                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 1000);
+                Flight.getFlightsWithinDateRangeFromAirport(Database.getConnection(), startDate, endDate, airportIataCode, 10000);
         Set<String> iataCodes = new HashSet<>();
 
         for (Flight flight : flights) {

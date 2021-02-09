@@ -1,5 +1,8 @@
 package org.ngafid.flights;
 
+import java.io.IOException;
+import java.sql.SQLException;
+
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class VSPDRegression implements Calculation {
@@ -12,7 +15,7 @@ public class VSPDRegression implements Calculation {
     /**
      * This is a linear regression calculation to get a more instantaneous VSI
      */
-    public VSPDRegression(Flight flight) {
+    public VSPDRegression(Flight flight) throws IOException, SQLException {
         this.altB = flight.getDoubleTimeSeries(ALT_B);
         this.altBLag = altB.lag(VSI_LAG_DIFF);
         this.altBLead = altB.lead(VSI_LAG_DIFF);
