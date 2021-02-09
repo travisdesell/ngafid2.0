@@ -12,6 +12,7 @@ import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
+import ListGroup from 'react-bootstrap/ListGroup'
 import {eventColorScheme} from './events_component.js';
 
 import $ from 'jquery';
@@ -119,6 +120,15 @@ class MapPopup extends React.Component {
             let precision = this.props.precision;
             console.log("users precision: "+precision);
 
+            let lgStyle = {
+                backgroundColor : '#dee2e6'
+            };
+
+            let lgiStyle = {
+                backgroundColor : '#dee2e6',
+                overflowX : 'auto'
+            }
+
             let eventRow = "";
 
             if (this.state.events != null) {
@@ -126,7 +136,7 @@ class MapPopup extends React.Component {
                     eventRow = "";
                 } else {
                     eventRow = (
-                        <Alert variant='dark' style={{'overflowY': 'auto'}}>
+                        <ListGroup style={lgiStyle} className="my-2" horizontal='sm'>
                         {
                             this.state.events.map((event, key) => {
                                 let eventColor = eventColorScheme[event.eventDefinitionId];
@@ -136,11 +146,15 @@ class MapPopup extends React.Component {
                                 };
 
                                 return (
-                                    <Badge style={badgeStyle} key={key}>{event.eventDefinition.name}</Badge>
+                                    <ListGroup.Item style={lgStyle} key={key}>
+                                        <h6>
+                                            <Badge style={badgeStyle} key={key}>{event.eventDefinition.name}</Badge>
+                                        </h6>
+                                    </ListGroup.Item>
                                 );
                             })
                         }
-                        </Alert>
+                        </ListGroup>
                     );
                 }
             }

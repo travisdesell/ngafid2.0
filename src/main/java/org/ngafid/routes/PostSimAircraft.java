@@ -21,8 +21,6 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.FlightPaginator;
-import org.ngafid.common.Page;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
