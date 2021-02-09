@@ -32,16 +32,16 @@ import java.util.List;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
+import org.ngafid.common.*;
 import org.ngafid.Database;
-
 import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
@@ -49,6 +49,8 @@ import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
+
+import static org.ngafid.flights.CalculationParameters.*;
 
 public class Flight {
     private static final Logger LOG = Logger.getLogger(Flight.class.getName());
@@ -89,7 +91,7 @@ public class Flight {
     private int numberRows;
     private String fileInformation;
     private ArrayList<String> dataTypes;
-    public ArrayList<String> headers;
+    private ArrayList<String> headers;
 
     //the tags associated with this flight
     private Optional<List<FlightTag>> tags = Optional.empty();
@@ -120,107 +122,9 @@ public class Flight {
         return flights;
     }
 
-    /**
-     * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
-     * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
-     * @param connection connection to the database
-     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
-     * @param endDate formatted the same as the start date.
-     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
-     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
-     *          full control over this parameter on the frontend? We'll see.
-     * @throws SQLException
-     */
-    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate,
-                                                         String extraCondition) throws SQLException {
-        System.out.println("Start date = " + startDate);
-        System.out.println("End date = " + endDate);
-        String condition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
-                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "')) AND " + extraCondition;
-        List<Flight> flights = getFlights(connection, condition);
-        System.out.println("Number flights = " + flights.size());
-        return flights;
-    }
-
-    /**
-     * Like Flights.getFlightsWithinDateRange, but also only grabs flights that visit a certain airport.
-     * @param connection connection to the database
-     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
-     * @param endDate formatted the same as the start date.
-     * @param airportIataCode
-     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
-     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
-     *          full control over this parameter on the frontend? We'll see.
-     * @throws SQLException
-     */
-
-    public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate,
-                                                                    String endDate, String airportIataCode, int limit) throws SQLException {
-        String queryString =
-                "SELECT         " +
-                "  flights.id,  " +
-                "  fleet_id,    " +
-                "  uploader_id, " +
-                "  upload_id,   " +
-                "  system_id,     " +
-                "  airframe_id, " +
-                "  start_time,  " +
-                "  end_time,    " +
-                "  filename,    " +
-                "  md5_hash,    " +
-                "  number_rows, " +
-                "  status,      " +
-                "  has_coords,  " +
-                "  has_agl,     " +
-                "  insert_completed   " +
-                "FROM flights         " +
-                "WHERE                " +
-                "    (                " +
-                "    EXISTS(          " +
-                "        SELECT       " +
-                "          id         " +
-                "        FROM         " +
-                "          itinerary  " +
-                "        WHERE        " +
-                "          airport = '" + airportIataCode + "' " +
-                "    ) " +
-                "AND   " +
-                "    ( " +
-                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
-                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
-                "    )" +
-                " ) ";
-
-        if (limit > 0) queryString += " LIMIT 100";
-
-        LOG.info(queryString);
-
-        PreparedStatement query = connection.prepareStatement(queryString);
-
-        LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
-
-        List<Flight> flights = new ArrayList<>();
-        while (resultSet.next()) {
-            flights.add(new Flight(connection, resultSet));
-        }
-
-        resultSet.close();
-    query.close();
-
-        return flights;
-    }
-
     public void remove(Connection connection) throws SQLException {
         String query = "DELETE FROM events WHERE flight_id = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, this.id);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-
-        query = "DELETE FROM turn_to_final WHERE flight_id = ?";
-        preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
@@ -277,60 +181,23 @@ public class Flight {
     }
 
     /**
-     * Tells the database that this flight has had its LOCI/SP data processed
+     * Checks references to {@link DoubleTimeSeries} for this flight and if there is not a required referenece present, throws an exception
+     * detailing which parameter is missing and for what calculation
      *
-     * @param connection the SQL database connection
+     * @param calculationName is the name of the calculation for which the method is checking for parameters
+     * @param seriesNames is the names of the series to check for
+     *
+     * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    //public void updateLOCIProcessed(Connection connection, String dbType) {
-        //String queryString = "INSERT INTO calculations (fleet_id, flight_id, type) VALUES(?,?,?)";
-        //try{
-            //PreparedStatement query = connection.prepareStatement(queryString);
-            //query.setInt(1, this.getFleetId());
-            //query.setInt(2, this.getId());
-            //query.setString(3, dbType);
-
-            //query.executeUpdate();
-        //} catch (SQLException se) {
-            //se.printStackTrace();
-        //}
-    //}
-
-    // /**
-    //  * Determines calculations have already been performed
-    //  *
-    //  * @param connection the database connection
-    //  * @param calculationTypes (VARARGS) the names of the calculations to look for
-    //  *
-    //  * @return true if there has been a calculation with the same parameters performed prior, false otherwise
-    //  */
-    //public boolean calculationsCompleted(Connection connection, String ... calculationTypes) {
-        //StringBuilder sqlQuery = new StringBuilder("SELECT COUNT(DISTINCT ID) FROM calculations WHERE (type IN(");
-        //int len = calculationTypes.length;
-
-        //for (int i = 0; i < len; i++) {
-            //sqlQuery.append("'");
-            //sqlQuery.append(calculationTypes[i]);
-            //sqlQuery.append((i == len - 1) ? "'" : "', ");
-        //}
-
-        //sqlQuery.append(")) AND flight_id = ?");
-
-        //try {
-            //PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery.toString());
-            //preparedStatement.setInt(1, this.id);
-            //ResultSet resultSet = preparedStatement.executeQuery();
-    
-            //if (resultSet.next()) {
-                //return (resultSet.getInt(1) == len);
-            //}
-
-        //} catch (SQLException se) {
-            //se.printStackTrace();
-        //}
-
-        //return false;
-    //}
-
+    private void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException {
+        for (String param : seriesNames) {
+            if (!this.doubleTimeSeries.keySet().contains(param)) {
+                String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
+                LOG.severe("WARNING: " + errMsg);
+                throw new MalformedFlightFileException(errMsg);
+            }
+        }
+    }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
@@ -365,7 +232,7 @@ public class Flight {
      *
      *  @param connection is the database connection
      *  @param fleetId is the id of the fleet
-     *  @param filter the filter to select the flights, can be null.
+     *  @param is the filter to select the flights, can be null.
      *
      *  @return the number of flights for the fleet, given the specified filter (or no filter if the filter is null).
      */
@@ -417,7 +284,7 @@ public class Flight {
      *
      *  @param connection is the database connection
      *  @param fleetId is the id of the fleet
-     *  @param filter the filter to select the flights, can be null.
+     *  @param is the filter to select the flights, can be null.
      *
      *  @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
@@ -600,11 +467,10 @@ public class Flight {
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
-        ArrayList<Flight> flights = new ArrayList<>();
+        ArrayList<Flight> flights = new ArrayList<Flight>();
         while (resultSet.next()) {
             flights.add(new Flight(connection, resultSet));
         }
@@ -1144,6 +1010,15 @@ public class Flight {
         return airframeType;
     }
 
+    /**
+     * Used for LOCI calcuations to determine if this Aircraft is applicable for a LOC-I index
+     *
+     * @return true if the aircraft is a Cessna 172SP
+     */
+    public boolean isC172() {
+        return this.airframeType.equals("Cessna 172S");
+    }
+
     public String getFilename() {
         return filename;
     }
@@ -1184,14 +1059,11 @@ public class Flight {
         return endDateTime;
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException, IOException {
-        // TODO: Figure out why the doubleTimeSeries field is never properly filled
-        // Previous impl was
-        // return this.doubleTimeSeries.get(name)
-        // But it didn't work because doubleTimeSeries had no entries in it.
+    public void addDoubleTimeSeries(String name, DoubleTimeSeries doubleTimeSeries) {
+        this.doubleTimeSeries.put(name, doubleTimeSeries);
+    }
 
-        // Cache it just in case? Probably won't be that helpful since Flight objects don't stick around for very long
-        // anyways.
+    public DoubleTimeSeries getDoubleTimeSeries(String name) {
         if (this.doubleTimeSeries.containsKey(name)) {
             return this.doubleTimeSeries.get(name);
         } else {
@@ -1631,25 +1503,94 @@ public class Flight {
         checkExceptions();
     }
 
-    public void runCalculations() {
-        Map<String, DoubleTimeSeries> params = new HashMap<>();
+    /**
+     * Runs the Loss of Control/Stall Index calculations
+     */
+    public void runLOCICalculations() throws MalformedFlightFileException {
+        checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
-        Calculation tasc = new TrueAirspeedCalculation(this, params);
-        if (!tasc.isNotCalculatable()) {
-            CalculatedDoubleTimeSeries casCalculated = new CalculatedDoubleTimeSeries(tasc, CalculationParameters.tascDeps);
-            CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(new VSPDCalculation(this, params), CalculationParameters.vsiDeps);
+        if (this.isC172()) {
+            CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(CAS, "knots", true, this);
+            cas.create(index -> {
+                DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
+                double iasValue = ias.get(index);
 
-            //for now we will skip flights with no AltB data
-            if (!vspdCalculated.notCalculated()) {
-                CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(new StallCalculation(this, params), CalculationParameters.spDeps);
-
-                if (this.getAirframeId() == 1 && !stallIndex.notCalculated()) {
-                    // We still can only perform a LOC-I calculation on the Skyhawks
-                    // This can be changed down the road
-                    
-                    new CalculatedDoubleTimeSeries(new LossOfControlCalculation(this, params), CalculationParameters.lociDeps);
+                if (iasValue < 70.d) {
+                    iasValue = (0.7d * iasValue) + 20.667;
                 }
-            }
+
+                return iasValue;
+            });
+        }
+
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(VSPD_CALCULATED, "ft/min", false, this);
+        vspdCalculated.create(new VSPDRegression(this));
+
+        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(DENSITY_RATIO, "ratio", false, this);
+        densityRatio.create(index -> {
+            DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
+            DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
+
+            double pressRatio = baroA.get(index) / STD_PRESS_INHG;
+            double tempRatio = (273 + oat.get(index)) / 288;
+
+            return pressRatio / tempRatio;
+        });
+
+        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(TAS_FTMIN, "ft/min", false, this);
+        tasFtMin.create(index -> {
+            DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
+
+            return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
+        });
+
+        CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(AOA_SIMPLE, "degrees", true, this);
+        aoaSimple.create(index -> {
+            DoubleTimeSeries pitch = getDoubleTimeSeries(PITCH);
+
+            double vspdGeo = vspdCalculated.get(index) * Math.pow(densityRatio.get(index), -0.5);
+            double fltPthAngle = Math.asin(vspdGeo / tasFtMin.get(index));
+            fltPthAngle = fltPthAngle * (180 / Math.PI);
+            double value = pitch.get(index) - fltPthAngle;
+
+            return value;
+        });
+
+        CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(STALL_PROB, "index", true, this);
+        stallIndex.create(index -> {
+            return (Math.min(((Math.abs(aoaSimple.get(index) / AOA_CRIT)) * 100), 100)) / 100;
+        });
+
+        if (this.isC172()) {
+            // We still can only perform a LOC-I calculation on the Skyhawks
+            // This can be changed down the road
+            checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
+            DoubleTimeSeries hdg = getDoubleTimeSeries(HDG);
+            DoubleTimeSeries hdgLagged = hdg.lag(YAW_RATE_LAG);
+
+            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(PRO_SPIN_FORCE, "index", true, this);
+            coordIndex.create(index -> {
+                DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
+                DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
+
+                double laggedHdg = hdgLagged.get(index);
+                double yawRate = Double.isNaN(laggedHdg) ? 0 :
+                    180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
+
+                double yawComp = yawRate * COMP_CONV;
+                double vrComp = ((tas.get(index) / 60) * yawComp);
+                double rollComp = roll.get(index) * COMP_CONV;
+                double ctComp = Math.sin(rollComp) * 32.2;
+                double value = Math.min(((Math.abs(ctComp - vrComp) * 100) / PROSPIN_LIM), 100);
+
+                return value;
+            });
+
+            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(LOCI, "index", true, this);
+            loci.create(index -> {
+                double prob = (stallIndex.get(index) * getDoubleTimeSeries(PRO_SPIN_FORCE).get(index));
+                return prob / 100;
+            });
         }
     }
 

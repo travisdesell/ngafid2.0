@@ -22,6 +22,7 @@ public interface CalculationParameters {
     public static final double PROSPIN_LIM = 4;
 
     public static final int YAW_RATE_LAG = 1;
+    public static final int VSI_LAG_DIFF = 1;
 
     /**
      * {@link DoubleTimeSeries} constants
@@ -31,6 +32,7 @@ public interface CalculationParameters {
     public static final String HDG = "HDG";
     public static final String IAS = "IAS";
     public static final String VSPD = "VSPD";
+    public static final String DENSITY_RATIO = "DensityRatio";
     public static final String OAT = "OAT";
     public static final String BARO_A = "BaroA";
     public static final String PITCH = "Pitch";
@@ -46,7 +48,7 @@ public interface CalculationParameters {
     public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
     public static final String VSPD_CALCULATED = "VSpd Calculated";
-    public static final String TASC = "TAS Calculated";
+    public static final String CAS = "CAS";
     public static final String GND_SPD = "GndSpd";
     public static final String WIND_SPEED = "WndSpd";
     public static final String WIND_DIRECTION = "WndDr";
@@ -57,21 +59,19 @@ public interface CalculationParameters {
     public static final int C172SP_ID = 1;
 
     /**
-     * Strings that represent the parameters used in this calculation
+     * Strings that represent the parameters used in the Stall Index calculation
      *
-     * @param ALT_AGL is used as the time reference 
+     * @param ALT_B is used as the time reference 
+     * @param VSPD not needed for cases where VSpd is drived from AltB
      */
-    public static final String [] lociParamStrings = {HDG, IAS, VSPD, OAT, BARO_A, PITCH, ROLL, ALT_AGL};
-    public static final String [] lociDeps = {YAW_RATE, PRO_SPIN_FORCE};
-
-    public static final String [] spParamStrings = {PITCH, VSPD, IAS, BARO_A, OAT, ALT_AGL};
-    public static final String [] spDeps = {AOA_SIMPLE, TAS_FTMIN};
-
-    public static final String [] vsiParamStrings = {ALT_B};
-    public static final String [] vsiDeps = {};
-
-    public static final String [] tascParamStrings = {IAS, GND_SPD, WIND_SPEED, WIND_DIRECTION};
-    public static final String [] tascDeps = {};
+    public static final String [] STALL_DEPENDENCIES = {PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
+    
+    /**
+     * Strings that represent the parameters used in the Stall Index calculation
+     */
+    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL};
+    //
+    // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI

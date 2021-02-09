@@ -43,6 +43,8 @@ echo "deleted TTF cache!\n";
 query_ngafid_db("DELETE FROM flights");
 echo "deleted flights!\n";
 
+query_ngafid_db("ALTER TABLE flights AUTO_INCREMENT = 1");
+echo "reset flights counter\n";
 
 //reset upload status
 query_ngafid_db("UPDATE uploads SET status = 'UPLOADED', n_valid_flights = 0, n_warning_flights = 0, n_error_flights = 0 WHERE status = 'IMPORTED' OR status = 'ERROR'");

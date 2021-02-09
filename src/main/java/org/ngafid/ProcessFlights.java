@@ -107,7 +107,6 @@ public class ProcessFlights {
 
                                         if (connection != null) {
                                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                                            flight.runCalculations();
                                             TurnToFinal.calculateFlightTurnToFinals(connection, flight);
                                         }
 

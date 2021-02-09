@@ -15,12 +15,10 @@ query_ngafid_db("DELETE FROM events WHERE event_definition_id >= 50 AND event_de
 echo "deleted events!\n";
 query_ngafid_db("DELETE FROM flight_processed WHERE event_definition_id >= 50 AND event_definition_id <= 61");
 echo "deleted flight_processed!\n";
-query_ngafid_db("DELETE FROM calculations");
-echo "deleted calculations!\n";
 
 
 //delete and reset loci dts data
-query_ngafid_db("DELETE FROM double_series WHERE name = 'True Airspeed(ft/min)' OR name = 'Stall Index' OR name = 'LOC-I Index' OR name = 'Coordination Index' OR name = 'Yaw Rate'");
+query_ngafid_db("DELETE FROM double_series WHERE name = 'True Airspeed(ft/min)' OR name = 'Stall Index' OR name = 'LOC-I Index' OR name = 'Coordination Index' OR name = 'Yaw Rate' OR name = 'TAS Calculated' OR name = 'VSpd Calculated' OR name = 'AOASimple'");
 echo "deleted double_series - loci data only!\n";
 
 ?>
