@@ -7,6 +7,9 @@
 
 package org.ngafid.flights;
 
+import java.io.IOException;
+import java.sql.SQLException;
+
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     private final Flight flight;
 
@@ -27,7 +30,7 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      *
      * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
-    public void create(Calculation calculation) {
+    public void create(Calculation calculation) throws IOException, SQLException {
         System.out.println("Performing " + super.getName() + " calculation");
 
         for (int i = 0; i < this.flight.getNumberRows(); i++) {
