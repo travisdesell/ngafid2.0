@@ -1,5 +1,6 @@
 package org.ngafid.routes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -34,7 +35,7 @@ public class PostCoordinates implements Route {
         int nanOffset = -1;
         ArrayList<double[]> coordinates = new ArrayList<double[]>();
 
-        public Coordinates(int flightId, String name) throws SQLException {
+        public Coordinates(int flightId, String name) throws SQLException, IOException {
             Connection connection = Database.getConnection();
             DoubleTimeSeries latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
@@ -80,7 +81,7 @@ public class PostCoordinates implements Route {
             //LOG.info(output);
 
             return output;
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }

@@ -328,7 +328,7 @@ public class TurnToFinal implements Serializable {
             return null;
         }
 
-        Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()), size);
+        Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
         assert o instanceof ArrayList;
 
         LOG.info("FOUND IN TTF CACHE: " + o.toString());

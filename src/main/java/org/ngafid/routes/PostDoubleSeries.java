@@ -1,5 +1,6 @@
 package org.ngafid.routes;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -35,7 +36,7 @@ public class PostDoubleSeries implements Route {
         int[] x;
         double[] y;
 
-        public DoubleSeries(int flightId, String name) throws SQLException {
+        public DoubleSeries(int flightId, String name) throws SQLException, IOException {
             Connection connection = Database.getConnection();
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
 
@@ -75,7 +76,7 @@ public class PostDoubleSeries implements Route {
             //LOG.info(output);
 
             return output;
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }

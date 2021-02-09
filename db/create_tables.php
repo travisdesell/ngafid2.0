@@ -6,7 +6,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/my_query.php");
 
-$drop_tables = !false;
+$drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 

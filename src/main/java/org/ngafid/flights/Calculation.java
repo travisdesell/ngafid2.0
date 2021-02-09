@@ -8,6 +8,7 @@
 package org.ngafid.flights;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -65,7 +66,7 @@ public abstract class Calculation {
                     parameters.put(param, series);
                 }
             }
-        } catch(SQLException e) {
+        } catch(SQLException | IOException e) {
             e.printStackTrace();
         }
     }
