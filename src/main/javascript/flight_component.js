@@ -319,7 +319,7 @@ class Flight extends React.Component {
         target.state.baseLayer.setStyle(new Style({
             stroke: new Stroke({
                 color: event.target.value,
-                width: 1.5
+                width: 3
             })
         }));
 
