@@ -182,7 +182,7 @@ public class CalculateExceedences {
                                 //the event
                             } else {
                                 //we had enough triggers to reach the start count so create the event
-                                Event event = new Event (startTime, endTime, startLine, endLine, severity);
+                                Event event = new Event(startTime, endTime, startLine, endLine, severity);
                                 eventList.add(event);
                             }
 
@@ -302,7 +302,7 @@ public class CalculateExceedences {
 
             while (true) {
                 Instant start = Instant.now();
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection);
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 System.out.println("n events = " + allEvents.size());
                 for (int i = 0; i < allEvents.size(); i++) {
                     //process events for this event type

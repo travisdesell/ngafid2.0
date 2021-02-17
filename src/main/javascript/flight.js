@@ -272,9 +272,10 @@ $(document).ready(function() {
             });
             */
 
-        //console.log("in hover!");
-        //console.log(data);
+        console.log("in hover!");
+        console.log(data);
         let x = data.points[0].x;
+        //let x = data.points[0].pointIndex;
 
         //console.log("x: " + x);
 
