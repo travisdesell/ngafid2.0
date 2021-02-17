@@ -98,19 +98,30 @@ public class GetFlight implements Route {
             Connection connection = Database.getConnection();
 
             String flightId = request.queryParams("flight_id");
+            String otherFlightId = request.queryParams("other_flight_id");
             LOG.info("URL flight id is: " + flightId);
+            LOG.info("URL other flight id is: " + otherFlightId);
 
             long startTime, endTime;
 
             Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
+            Flight otherFlight = null;
+            if (otherFlightId != null) {
+                otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
 
-            if (flight.getFleetId() != fleetId) {
+            }
+
+            if (flight.getFleetId() != fleetId || (otherFlight != null && otherFlight.getFleetId() != fleetId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
 
             } else {
                 StringBuilder sb = new StringBuilder();
-                sb.append("var flights = [" + gson.toJson(flight) + "];");
+                if (otherFlightId == null) {
+                    sb.append("var flights = [" + gson.toJson(flight) + "];");
+                } else {
+                    sb.append("var flights = [" + gson.toJson(flight) + ", " + gson.toJson(otherFlight) + "];");
+                }
 
                 scopes.put("flight_js", sb.toString());
 

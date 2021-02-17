@@ -135,11 +135,22 @@ class SeveritiesPage extends React.Component {
                     flightIds : [],
                 };
 
+                //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
+                    console.log(counts[i]);
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
-                    severityTrace.flightIds.push( counts[i].flightId);
-                    severityTrace.hovertext.push("Flight #" + counts[i].flightId + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime);
+
+                    if (counts[i].eventDefinitionId == -1) {
+                        severityTrace.flightIds.push( counts[i].flightId + " " + counts[i].otherFlightId);
+                    } else {
+                        severityTrace.flightIds.push( counts[i].flightId);
+                    }
+
+                    let hovertext = "Flight #" + counts[i].flightId + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
+
+                    severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
                 }
 
@@ -175,9 +186,19 @@ class SeveritiesPage extends React.Component {
             for (var i = 0; i < data.points.length; i++) {
                 let index = data.points[i].pointIndex;
                 let flightId = data.points[i].data.flightIds[index];
+                let otherFlightId = null;
+                if (flightId.indexOf(' ') >= 0) {
+                    let parts = flightId.split(' ');
+                    flightId = parts[0];
+                    otherFlightId = parts[1];
+                }
 
                 console.log("point index of clicked point is: " + index + " with a flight id of: " + flightId);
-                window.open("/protected/flight?flight_id=" + flightId);
+                if (otherFlightId == null) {
+                    window.open("/protected/flight?flight_id=" + flightId);
+                } else {
+                    window.open("/protected/flight?flight_id=" + otherFlightId + "&other_flight_id=" + flightId);
+                }
 
                 //might want to only open one tab if for some reason multiple points overlap (which shouldn't but might happen)
                 //break;

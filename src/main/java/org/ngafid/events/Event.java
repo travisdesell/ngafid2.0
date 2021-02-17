@@ -33,13 +33,26 @@ public class Event {
 
     public double severity;
 
+    private Integer otherFlightId;
+
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
         this.startLine = startLine;
         this.endLine = endLine;
         this.severity = severity;
+        this.otherFlightId = null;
     }
+
+    public Event(String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.severity = severity;
+        this.otherFlightId = otherFlightId;
+    }
+
 
     /**
      * Creates an event from a mysql query result
@@ -56,6 +69,10 @@ public class Event {
         this.startTime = resultSet.getString(7);
         this.endTime = resultSet.getString(8);
         this.severity = resultSet.getDouble(9);
+        this.otherFlightId = resultSet.getInt(10);
+        if (resultSet.wasNull()) {
+            this.otherFlightId = null;
+        }
     }
 
     /**
@@ -69,8 +86,9 @@ public class Event {
      * @param startTime is the time the event starts in the data file of the flight
      * @param endTime is the time the event ends in the data file of the flight
      * @param severity is the severity rating for the event
+     * @param otherFlightId is the other flight id (for proximity events)
      */
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity) {
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
@@ -80,6 +98,7 @@ public class Event {
         this.startTime = startTime;
         this.endTime = endTime;
         this.severity = severity;
+        this.otherFlightId = otherFlightId;
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
@@ -96,7 +115,11 @@ public class Event {
     }
 
     public String toString() {
-        return  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", severity: " + severity + "]";
+        String readable =  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", severity: " + severity;
+        if (otherFlightId != null) readable += ", other flight: " + otherFlightId;
+        readable += "]";
+
+        return readable;
     }
 
     public void setStartTime(String startTime) {
@@ -140,7 +163,7 @@ public class Event {
         this.eventDefinitionId = eventDefinitionId;
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity) VALUES (?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, flightId);
             preparedStatement.setInt(3, eventDefinitionId);
@@ -160,6 +183,12 @@ public class Event {
             }
 
             preparedStatement.setDouble(8, severity);
+
+            if (otherFlightId == null) {
+                preparedStatement.setNull(9, java.sql.Types.INTEGER);
+            } else {
+                preparedStatement.setInt(9, otherFlightId);
+            }
 
             System.err.println(preparedStatement);
 
@@ -190,7 +219,7 @@ public class Event {
      * @return an array list of all events in the database for the given flight id.
      */
     public static ArrayList<Event> getAll(Connection connection, int flightId) throws SQLException {
-        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity FROM events WHERE flight_id = ? ORDER BY start_time";
+        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE flight_id = ? ORDER BY start_time";
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, flightId);
@@ -250,7 +279,7 @@ public class Event {
             //doing it the longer way below is quicker
             //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
-            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, flights.airframe_id FROM events, flights WHERE events.flight_id = flights.id AND events.event_definition_id = ? AND events.fleet_id = ?";
+            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id FROM events, flights WHERE events.flight_id = flights.id AND events.event_definition_id = ? AND events.fleet_id = ?";
 
             if (startTime != null) {
                 eventsQuery += " AND events.end_time >= ?";
@@ -293,10 +322,15 @@ public class Event {
                 String eventStartTime = eventSet.getString(5);
                 String eventEndTime = eventSet.getString(6);
                 double severity = eventSet.getDouble(7);
+                Integer otherFlightId = eventSet.getInt(8);
+                if (eventSet.wasNull()) {
+                    otherFlightId = null;
+                }
 
-                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity);
+                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId);
+                System.out.println("event: " + event.toString());
 
-                int airframeId = eventSet.getInt(8);
+                int airframeId = eventSet.getInt(9);
                 String airframe = airframeIds.get(airframeId);
 
                 //add the airframe to 
@@ -312,7 +346,5 @@ public class Event {
 
         return eventsByAirframe;
     }
-
-
 }
 

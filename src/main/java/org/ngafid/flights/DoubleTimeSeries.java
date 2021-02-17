@@ -240,7 +240,7 @@ public class DoubleTimeSeries {
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
 
-        System.out.println("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+        LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
 
         try {
             Inflater inflater = new Inflater();

@@ -1064,35 +1064,6 @@ public class Flight {
         //System.err.println("MD5 HASH: '" + md5Hash + "'");
     }
 
-
-
-    public static OffsetDateTime convertToOffset(String originalTime, String originalOffset, String newOffset) {
-        //System.out.println("original:   \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
-
-        // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-
-        // parse the offset
-        ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
-
-        // create an OffsetDateTime using the parsed offset
-        OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
-
-        // print the date time with the parsed offset
-        //System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        //System.out.println("with offset:               \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-
-        ZoneOffset offset2 = ZoneOffset.of(newOffset);
-        OffsetDateTime odt3 = odt.withOffsetSameInstant(offset2);
-
-        //String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        //String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        //System.out.println("with offset (same instant):\t" + newTime);
-
-        return odt3;
-    }
-
-
     public void calculateStartEndTime(String dateColumnName, String timeColumnName, String offsetColumnName) throws MalformedFlightFileException {
         StringTimeSeries dates = stringTimeSeries.get(dateColumnName);
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
@@ -1160,8 +1131,8 @@ public class Flight {
         System.out.println("\t\t\tfirst not null  " + start + " -- " + startDate + " " + startTime + " " + startOffset);
         System.out.println("\t\t\tlast not null   " + endDate + " " + endTime + " " + endOffset);
 
-        OffsetDateTime startODT = convertToOffset(startDate + " " + startTime, startOffset, "+00:00");
-        OffsetDateTime endODT = convertToOffset(endDate + " " + endTime, endOffset, "+00:00");
+        OffsetDateTime startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
+        OffsetDateTime endODT = TimeUtils.convertToOffset(endDate, endTime, endOffset, "+00:00");
 
         if (startODT.isAfter(endODT)) {
             startDateTime = null;
@@ -2002,7 +1973,7 @@ public class Flight {
             tailNumber = Tails.getTail(connection, fleetId, systemId);
             tailConfirmed = Tails.getConfirmed(connection, fleetId, systemId);
 
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, start_timestamp, end_timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, UNIX_TIMESTAMP(?), UNIX_TIMESTAMP(?))", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, uploaderId);
             preparedStatement.setInt(3, uploadId);
@@ -2017,6 +1988,8 @@ public class Flight {
             preparedStatement.setBoolean(12, hasCoords);
             preparedStatement.setBoolean(13, hasAGL);
             preparedStatement.setBoolean(14, false); //insert not yet completed
+            preparedStatement.setString(15, startDateTime);
+            preparedStatement.setString(16, endDateTime);
 
             System.out.println(preparedStatement);
             preparedStatement.executeUpdate();
