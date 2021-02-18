@@ -1409,7 +1409,7 @@ public class Flight {
         }
     }
 
-    private void process(InputStream inputStream) throws IOException, FatalFlightFileException {
+    private void process(InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
         initialize(inputStream);
 
         //TODO: these may be different for different airframes/flight
@@ -1492,6 +1492,8 @@ public class Flight {
                 System.exit(1);
             }
 
+            runLOCICalculations();
+
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -1546,7 +1548,7 @@ public class Flight {
         }
     }
 
-    public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.filename = zipEntryName;
         this.tailConfirmed = false;
 
@@ -1676,7 +1678,7 @@ public class Flight {
         }
     }
 
-    public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.filename = filename;
         String[] parts = filename.split("/");
         this.suggestedTailNumber = parts[0];
@@ -1701,7 +1703,7 @@ public class Flight {
        //} catch (FileNotFoundException e) {
        //   System.err.println("ERROR: could not find flight file '" + filename + "'");
        //   exceptions.add(e);
-        } catch (FatalFlightFileException | IOException e) {
+        } catch (FatalFlightFileException | IOException | SQLException e) {
             status = "WARNING";
             throw e;
         }
