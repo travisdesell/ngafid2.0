@@ -13,24 +13,40 @@ public class Compression {
     private static Logger LOG = Logger.getLogger(Compression.class.getName());
 
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
+    private static final boolean NOWRAP = false;
 
     private static byte[] inflate(byte[] data) throws IOException {
+        for (int i = 0; i < 4; i++) {
+            System.out.printf("0x%02x\n", data[i]);
+        }
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        InflaterOutputStream outputStream = new InflaterOutputStream(baos);
+        Inflater inflater = new Inflater(NOWRAP);
+        InflaterOutputStream outputStream = new InflaterOutputStream(baos, inflater);
         outputStream.write(data);
         outputStream.finish();
 
-        return baos.toByteArray();
+        byte[] out = baos.toByteArray();
+
+        outputStream.close();
+
+        return out;
     }
 
     public static byte[] compress(byte[] data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Deflater deflater = new Deflater(Compression.COMPRESSION_LEVEL, NOWRAP);
         DeflaterOutputStream deflaterOutputStream =
-                new DeflaterOutputStream(baos, new Deflater(Compression.COMPRESSION_LEVEL));
+                new DeflaterOutputStream(baos, deflater);
         deflaterOutputStream.write(data);
         deflaterOutputStream.finish();
 
-        return baos.toByteArray();
+        byte[] out = baos.toByteArray();
+
+        deflaterOutputStream.close();
+
+
+        return out;
     }
 
     public static double[] inflateDoubleArray(byte[] bytes, int size) throws IOException {
