@@ -77,7 +77,7 @@ public class PostNewUpload implements Route {
         int numberChunks = Integer.parseInt(request.queryParams("numberChunks"));
         LOG.info("numberChunks: " + numberChunks);
 
-        int sizeBytes = Integer.parseInt(request.queryParams("sizeBytes"));
+        long sizeBytes = Long.parseLong(request.queryParams("sizeBytes"));
         LOG.info("sizeBytes: " + sizeBytes);
 
         String md5Hash = request.queryParams("md5Hash");
@@ -118,7 +118,7 @@ public class PostNewUpload implements Route {
                 query.setInt(2, fleetId);
                 query.setString(3, filename);
                 query.setString(4, identifier);
-                query.setInt(5, sizeBytes);
+                query.setLong(5, sizeBytes);
                 query.setInt(6, numberChunks);
                 query.setString(7, md5Hash);
                 query.setString(8, chunkStatus);
