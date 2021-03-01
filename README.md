@@ -8,7 +8,7 @@ Using SSH (reccomended):
 ```
 Using HTTPS:
 ```
-~/ $ git clone git@github.com:travisdesell/ngafid2.0
+~/ $ git clone https://github.com/travisdesell/ngafid2.0.git
 ```
 
 ## 2. Set up the database
