@@ -21,7 +21,7 @@ import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
-public class CSVWriter{
+public class CSVWriter {
     private File file;
     private Flight flight;
     private ZipEntry entry;
@@ -95,31 +95,17 @@ public class CSVWriter{
      *
      * @return a primitive array of bytes 
      */
-    public byte[] toBinaryData() throws IOException {
+    public byte [] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
         return IOUtils.toByteArray(inputStream);
     }
         
     /**
-     * Writes data to a file output stream
-     *
-     * @param inputStream the input stream to copy data from
-     *
-     * @return a String with all the data for the CSV file
-     *
-     * @throws IOException if there is an IOException when parsing the inputStream
-     */
-    private String writeToFile() throws IOException {
-        String strOut = new String(toBinaryData());
-        return strOut;
-    }
-
-    /**
      * Accessor method for the {@link ZipEntry} associated with this flight
      *
      * @return and instance of {@link ZipEntry}
      */
-    public ZipEntry getFlightEntry(){
+    public ZipEntry getFlightEntry() {
         return this.entry;
     }
 
@@ -132,7 +118,7 @@ public class CSVWriter{
      */
     public String write() throws IOException {
         String fileOut = "";
-        fileOut = this.writeToFile();
+        fileOut = new String(toBinaryData());
         zipArchive.close();
         return fileOut;
     }
@@ -166,7 +152,7 @@ public class CSVWriter{
      * @return a {@link String} with the zip file and archive paths
      */
     @Override
-    public String toString(){
-        return this.zipArchive.toString()+" "+this.entry.toString();
+    public String toString() {
+        return this.zipArchive.toString() + " " + this.entry.toString();
     }
 }
