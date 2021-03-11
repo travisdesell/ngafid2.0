@@ -115,7 +115,7 @@ public class ProcessFlights {
                                 if (entry.getName().contains(".csv")) {
                                     try {
                                         InputStream stream = zipFile.getInputStream(entry);
-                                        Flight flight = new Flight(entry.getName(), stream, connection);
+                                        Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
 
                                         if (connection != null) {
                                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);

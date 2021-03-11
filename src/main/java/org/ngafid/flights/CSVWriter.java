@@ -21,7 +21,7 @@ import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
-public class CSVWriter{
+public class CSVWriter {
     private File file;
 	private Flight flight;
 	private ZipEntry entry;
