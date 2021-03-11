@@ -448,6 +448,16 @@ class Flight extends React.Component {
 
             //toggle visibility if already loaded
             this.state.eventsVisible = !this.state.eventsVisible;
+            this.state.eventLayer.setVisible(this.state.eventsVisible);
+            this.state.eventOutlineLayer.setVisible(this.state.eventsVisible);
+
+            if(!this.state.eventsVisible) {
+                console.log("clearing plotly");
+                global.plotlyLayout.shapes = [];
+                Plotly.relayout('plot', global.plotlyLayout);
+            }
+
+            console.log(global.plotlyLayout);
             this.setState(this.state);
         }
     }
