@@ -106,14 +106,14 @@ public class Tails {
                 query.setInt(1, fleetId);
                 query.setString(2, systemId);
 
-                LOG.info(query.toString());
+                LOG.fine(query.toString());
                 ResultSet resultSet = query.executeQuery();
 
                 if (resultSet.next()) {
-                    LOG.info("confirmed exists!");
+                    LOG.fine("confirmed exists!");
                     //confirmed existed in the database, return the id
                     confirmed = resultSet.getBoolean(1);
-                    LOG.info("confirmed: " + confirmed);
+                    LOG.fine("confirmed: " + confirmed);
 
                     confirmedMap.put(systemId, confirmed);
                     resultSet.close();
@@ -121,7 +121,7 @@ public class Tails {
                     return confirmed;
 
                 } else {
-                    LOG.info("confirmed does not exist!");
+                    LOG.fine("confirmed does not exist!");
                     //system id did not exist in the database, this should not happen -- return null
                     resultSet.close();
                     query.close();
@@ -143,7 +143,7 @@ public class Tails {
         query.setInt(1, fleetId);
         query.setString(2, systemId);
 
-        LOG.info(query.toString());
+        LOG.fine(query.toString());
         ResultSet resultSet = query.executeQuery();
 
         String tail = null;
@@ -152,7 +152,7 @@ public class Tails {
             //system id existed in the database, get its tail number and if it was confirmed
             tail = resultSet.getString(1);
             confirmed = resultSet.getBoolean(2);
-            LOG.info("tail was not in db!");
+            LOG.fine("tail was not in db!");
         }
         resultSet.close();
         query.close();
@@ -169,8 +169,8 @@ public class Tails {
             query.setInt(2, fleetId);
             query.setString(3, systemId);
 
-            LOG.info("suggestedTail = '" + suggestedTail + "'");
-            LOG.info(query.toString());
+            LOG.fine("suggestedTail = '" + suggestedTail + "'");
+            LOG.fine(query.toString());
             query.executeUpdate();
 
             query.close();
@@ -184,7 +184,7 @@ public class Tails {
         query.setInt(2, fleetId);
         query.setString(3, systemId);
 
-        LOG.info(query.toString());
+        LOG.fine(query.toString());
 
         query.executeUpdate();
 
@@ -337,12 +337,12 @@ public class Tails {
 
         String queryString  = "SELECT count(system_id) FROM tails WHERE fleet_id = ?";
 
-        LOG.info(queryString);
+        LOG.fine(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
 
-        LOG.info(query.toString());
+        LOG.fine(query.toString());
         ResultSet resultSet = query.executeQuery();
 
         resultSet.next();

@@ -1176,6 +1176,17 @@ public class Flight {
 
                 if (key.equals("airframe_name")) {
                     airframeType = value.substring(1, value.length() - 1);
+
+                    if (airframeType.equals("Diamond DA 40")) {
+                        airframeType = "Diamond DA40";
+
+                    } else if (airframeType.equals("Garmin Flight Display") && fleetId == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopter*/) {
+                        airframeType = "R44";
+
+                        //TODO: add a helicopter column to the flight
+                        //and don't process exceedences on helicopters in CalculateExceedences until there are specific exceedences for them
+                        //isHelicopter = true;
+                    }
                 } else if (key.equals("system_id")) {
                     systemId = value.substring(1, value.length() - 1);
                 }
@@ -1472,7 +1483,8 @@ public class Flight {
         }
     }
 
-    public Flight(String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+        this.fleetId = fleetId;
         this.filename = zipEntryName;
         this.tailConfirmed = false;
 
@@ -1514,7 +1526,8 @@ public class Flight {
         checkExceptions();
     }
 
-    public Flight(String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(int fleetId, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+        this.fleetId = fleetId;
         this.filename = filename;
         String[] parts = filename.split("/");
         this.suggestedTailNumber = parts[0];

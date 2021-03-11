@@ -187,7 +187,7 @@ class SeveritiesPage extends React.Component {
                 let index = data.points[i].pointIndex;
                 let flightId = data.points[i].data.flightIds[index];
                 let otherFlightId = null;
-                if (flightId.indexOf(' ') >= 0) {
+                if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
                     let parts = flightId.split(' ');
                     flightId = parts[0];
                     otherFlightId = parts[1];
