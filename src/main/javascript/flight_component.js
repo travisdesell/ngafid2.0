@@ -448,6 +448,9 @@ class Flight extends React.Component {
 
             //toggle visibility if already loaded
             this.state.eventsVisible = !this.state.eventsVisible;
+            this.state.eventLayer.setVisible(this.state.eventsVisible);
+            this.state.eventOutlineLayer.setVisible(this.state.eventsVisible);
+            console.log(this.state);
             this.setState(this.state);
         }
     }
