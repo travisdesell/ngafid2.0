@@ -340,10 +340,10 @@ class UploadsPage extends React.Component {
         let state = this.state;
         state.pending_uploads = pending_uploads;
 
-		if (this.state.numberPages == 0) {
-			this.state.numberPages = 1;
-			this.state.currentPage = 0;
-		}
+        if (this.state.numberPages == 0) {
+            this.state.numberPages = 1;
+            this.state.currentPage = 0;
+        }
 
         this.setState(state);
         this.startUpload(file);
@@ -464,17 +464,12 @@ class UploadsPage extends React.Component {
         xhr.send(formData);
     }
 
-    submitFilter(resetCurrentPage = false) {
+    submitFilter() {
         //prep data
         var uploadsPage = this;
 
-        let currentPage = this.state.currentPage;
-        if (resetCurrentPage === true) {
-            currentPage = 0;
-        }
-
         var submissionData = {
-            currentPage : currentPage,
+            currentPage : this.state.currentPage,
             pageSize : this.state.pageSize
         };
 
@@ -501,7 +496,6 @@ class UploadsPage extends React.Component {
 
                 uploadsPage.setState({
                     uploads : response.uploads,
-                    currentPage : currentPage,
                     numberPages : response.numberPages
                 });
             },
@@ -579,7 +573,7 @@ class UploadsPage extends React.Component {
                     }
 
                     <Paginator
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        submitFilter={() => {this.submitFilter();}}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -603,7 +597,7 @@ class UploadsPage extends React.Component {
                     }
 
                     <Paginator
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+                        submitFilter={() => {this.submitFilter();}}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}

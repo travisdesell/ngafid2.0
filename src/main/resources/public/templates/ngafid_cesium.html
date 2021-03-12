@@ -33,42 +33,411 @@
             padding: 0;
             overflow: hidden;
             /* font-family: sans-serif;
-                background: #000; */
+                    background: #000; */
+        }
+    
+        .backdrop {
+            display: inline-block;
+            background: rgba(42, 42, 42, 0.7);
+            border-radius: 5px;
+            border: 1px solid #444;
+            padding: 5px 10px;
+            color: #fff;
+            line-height: 150%;
+            font-size: small;
+        }
+    
+        #heightSliderLabel,
+        #heightValue {
+            vertical-align: top;
+        }
+    
+        .backdrop a:link,
+        .backdrop a:visited,
+        .backdrop a:hover {
+            color: #fff
+        }
+    
+        .loadingIndicator {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -33px;
+            margin-left: -33px;
+            width: 66px;
+            height: 66px;
+            background: url(Source/Images/ajax-loader.gif) center no-repeat;
+        }
+    
+        .one {
+            display: none;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            margin-top: -33px;
+            margin-left: -33px;
+            width: 66px;
+            height: 66px;
+            background: url(Source/Images/ajax-loader.gif) center no-repeat;
+        }
+    
+        .cover {
+            display: none;
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.75);
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+        }
+    
+        #menu {
+            position: absolute;
+            left: 10px;
+            top: 10px;
+        }
+    
+        .nowrap {
+            white-space: nowrap;
+        }
+    
+        button.cesium-infoBox-camera {
+            display: none;
+        }
+    
+        #3DTiles {
+            padding-top: 0px;
+        }
+    
+        #toolbar {
+            z-index: 0;
+            position: absolute;
+            top: 10px;
+            left: 10px;
         }
     </style>
 
     <!-- Cesium css file -->
-    <script src="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Cesium.js"></script>
-    <link href="https://cesium.com/downloads/cesiumjs/releases/1.67/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
+    <script src="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Cesium.js"></script>
+    <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 </head>
 
 <body>
     <!-- Cesium container load here -->
     <div id="cesiumContainer"></div>
 
+    <!-- Controling the flight phase in cesium page -->
+    <div id="toolbar">
+        <select class="cesium-button" id="dropdown">
+            <option value="0">Select Flight Phase</option>
+            <option value="1">Show Taxiing</option>
+            <option value="2">Show Takeoff</option>
+            <option value="3">Show Climb</option>
+            <option value="4">Show Cruise to Final</option>
+            <option value="5">Show Full Flight</option>
+        </select>
+        <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
+    </div>
+
     <script>
+
         // Access Cesium Ion Token here
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
 
         // Creates the Viewer 
         var viewer = new Cesium.Viewer('cesiumContainer', {
-            terrainProvider: Cesium.createWorldTerrain(),
             scene3DOnly: true,
             selectionIndicator: false,
             baseLayerPicker: false
+            // ,
+            // terrainProvider: Cesium.createWorldTerrain(),
+            // animation: false,
         });
+        
+        viewer.scene.globe.depthTestAgainstTerrain = true;
 
-        var arrCoord = {{ geoFlightInfo }};
-        var flightLoad = viewer.entities.add({
-            name: 'NGAFID-CESIUM 3D Flight Reanimation',
-            wall: {
-                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoord),
-                material: Cesium.Color.YELLOW.withAlpha(0.8),
-                outline: true,
-                outlineColor: Cesium.Color.BLACK.withAlpha(0.3),
-                outlineWidth: 0.4,
-                cornerType: Cesium.CornerType.BEVELED,
+        var arrCoordAglTaxiing = {{ flightGeoAglTaxiing }};
+        var arrCoordAglTakeOff = {{ flightGeoAglTakeOff }};
+        var arrCoordAglClimb = {{ flightGeoAglClimb }};
+        var arrCoordAglCruiseFinal = {{ flightGeoAglCruise }};
+        var arrCoordAgl = {{ flightGeoInfoAgl }};
+
+        // Setting taxiing phase
+        function applyNgafidStyleTaxi() {
+
+            var geoFlightLoadAGLTaxi = viewer.entities.add({
+                name: 'Flight Taxiing-Phase-NGAFID-CESIUM',
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
+                    material: Cesium.Color.BLUE.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                }
+
+            });
+
+            var geoFlightlineTaxi = viewer.entities.add({
+                name: "Flight Taxiing-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
+                    width: 3,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.BLUE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                },
+            });
+
+            var geoFlightKeepGroundTaxi = viewer.entities.add({
+                name: "Flight Taxiing-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.BLUE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
+
+            // Setting viewer points and direction based on phase
+            viewer.zoomTo(viewer.entities);
+            var scene = viewer.scene;
+            var skyAtmosphere = scene.skyAtmosphere;
+            var globe = scene.globe;
+        }
+
+        // Setting a takeoff-liftoff phase
+        function applyNgafidStyleTakeoff() {
+
+            var geoFlightLoadAGLTakeoff = viewer.entities.add({
+                name: 'Flight Takeoff-Phase-NGAFID-CESIUM',
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
+                    material: Cesium.Color.PURPLE.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                }
+            });
+
+            var geoFlightlineTakeoff = viewer.entities.add({
+                name: "Flight Takeoff-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
+                    width: 3,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.PURPLE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                },
+            });
+
+            var geoFlightKeepGroundTakeoff = viewer.entities.add({
+                name: "Flight Takeoff-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.PURPLE,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
+
+            // Setting viewer points and direction based on phase
+            viewer.zoomTo(viewer.entities);
+            var scene = viewer.scene;
+            var skyAtmosphere = scene.skyAtmosphere;
+            var globe = scene.globe;
+        }
+
+        // Setting a climb phase
+        function applyNgafidStyleClimb() {
+
+            var geoFlightLoadAGLClimb = viewer.entities.add({
+                name: 'Flight TakeOff-Climb-Phase-NGAFID-CESIUM',
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
+                    material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                }
+            });
+
+            var geoFlightlineClimb = viewer.entities.add({
+                name: "Flight TakeOff-Climb-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
+                    width: 3,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.SADDLEBROWN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                },
+            });
+
+            var geoFlightKeepGroundClimb = viewer.entities.add({
+                name: "Flight TakeOff-Climb-Phase-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.SADDLEBROWN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
+
+            // Setting viewer points and direction based on phase
+            viewer.zoomTo(viewer.entities);
+            var scene = viewer.scene;
+            var skyAtmosphere = scene.skyAtmosphere;
+            var globe = scene.globe;
+        }
+
+        // Setting post cruise to final flight phase
+        function applyNgafidStyleCruise() {
+
+            var geoFlightLoadAGLRest = viewer.entities.add({
+                name: 'Flight Post-Cruise-NGAFID-CESIUM',
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
+                    material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                }
+            });
+
+            var geoFlightlineRest = viewer.entities.add({
+                name: "Flight Post-Cruise-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
+                    width: 3,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.MEDIUMSEAGREEN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                },
+            });
+
+            var geoFlightKeepGroundRest = viewer.entities.add({
+                name: "Flight Post-Cruise-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.MEDIUMSEAGREEN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
+
+            // Setting viewer points and direction based on phase
+            viewer.zoomTo(viewer.entities);
+            var scene = viewer.scene;
+            var skyAtmosphere = scene.skyAtmosphere;
+            var globe = scene.globe;
+        }
+
+        // Apply full flight phase
+        function applyNgafidStyleEntire() {
+
+            var geoFlightLoadAGLEntire = viewer.entities.add({
+                name: 'Flight Entire-Flight-NGAFID-CESIUM',
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
+                    material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                }
+            });
+
+            var geoFlightlineEntire = viewer.entities.add({
+                name: "Flight Entire-Flight-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
+                    width: 3,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.MEDIUMSEAGREEN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                },
+            });
+
+            var geoFlightKeepGroundEntire = viewer.entities.add({
+                name: "Flight Entire-Flight-NGAFID-CESIUM",
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.MEDIUMSEAGREEN,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
+
+            // Setting viewer points and direction based on phase
+            viewer.zoomTo(viewer.entities);
+            var scene = viewer.scene;
+            var skyAtmosphere = scene.skyAtmosphere;
+            var globe = scene.globe;
+
+        }
+
+        // Set menu options
+        var menu = document.getElementById("dropdown");
+
+        menu.options[1].onselect = function () {
+            applyNgafidStyleTaxi();
+        };
+
+        menu.options[2].onselect = function () {
+            applyNgafidStyleTakeoff();
+        };
+
+        menu.options[3].onselect = function () {
+            applyNgafidStyleClimb();
+        };
+
+        menu.options[4].onselect = function () {
+            applyNgafidStyleCruise();
+        };
+
+        menu.options[5].onselect = function () {
+            applyNgafidStyleEntire();
+        };
+
+        menu.onchange = function () {
+            var item = menu.options[menu.selectedIndex];
+            if (item && typeof item.onselect === "function") {
+                item.onselect();
             }
+        };
+
+        // Setting initial defaulting display
+        var geoFlightKeepGround = viewer.entities.add({
+            name: "Flight Phase-NGAFID-CESIUM",
+            polyline: {
+                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
+                width: 1,
+                material: new Cesium.PolylineOutlineMaterialProperty({
+                    color: Cesium.Color.MEDIUMSEAGREEN,
+                    outlineWidth: 2,
+                    outlineColor: Cesium.Color.YELLOW,
+                }),
+                clampToGround: true,
+            },
         });
 
         viewer.zoomTo(viewer.entities);
@@ -76,11 +445,11 @@
         var skyAtmosphere = scene.skyAtmosphere;
         var globe = scene.globe;
 
-        var viewModel = {
-            hueShift: 0.0,
-            saturationShift: 0.0,
-            brightnessShift: 0.0
-        };
+        // var viewModel = {
+        //     hueShift: 0.0,
+        //     saturationShift: 0.0,
+        //     brightnessShift: 0.0
+        // };
 
         // Convert view into  observables model 
         Cesium.knockout.track(viewModel);
@@ -88,7 +457,8 @@
         var toolbar = document.getElementById('toolbar');
         Cesium.knockout.applyBindings(viewModel, toolbar);
 
-        // Make globe view to 3D skyAtmosphere with HSB parameters. This can be use in ngafid flight on different altitutes
+        // Make globe view to 3D skyAtmosphere with HSB parameters. 
+        // This can be use in ngafid flight on different altitutes
         function subscribeParameter(name, globeName) {
             Cesium.knockout.getObservable(viewModel, name).subscribe(
                 function (newValue) {

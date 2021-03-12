@@ -21,8 +21,6 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.FlightPaginator;
-import org.ngafid.common.Page;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -32,7 +30,6 @@ import org.ngafid.flights.Flight;
 public class PostRemoveTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostRemoveTag.class.getName());
     private Gson gson;
-	private FlightPaginator flightPaginator;
 
     public PostRemoveTag(Gson gson) {
         this.gson = gson;
@@ -55,14 +52,14 @@ public class PostRemoveTag implements Route {
             Connection connection = Database.getConnection();
 
             if(isPermanent){
-				LOG.info("deleting tag: "+tagId);
+                LOG.info("deleting tag: "+tagId);
                 Flight.deleteTag(tagId, connection);
-				Page<Flight> page = WebServer.flightPaginator.currentPage();
-				return gson.toJson(page);
-            }else if(allTags){
+                //TODO: change this with the bugfixes!
+                return null;       
+            } else if(allTags) {
                 LOG.info("Clearing all tags from flight "+flightId);
                 Flight.unassociateAllTags(flightId, connection);
-            }else{
+            } else {
                 Flight.unassociateTags(tagId, connection, flightId);
             }
 

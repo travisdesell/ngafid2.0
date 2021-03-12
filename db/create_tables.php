@@ -10,9 +10,8 @@ $drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
-query_ngafid_db("DROP TABLE sim_aircraft");
-
 /*
+query_ngafid_db("DROP TABLE sim_aircraft");
 query_ngafid_db("DROP TABLE visited_airports");
 query_ngafid_db("DROP TABLE visited_runways");
 query_ngafid_db("DROP TABLE flight_tag_map");
@@ -438,29 +437,24 @@ $query = "CREATE TABLE `event_statistics` (
 
 query_ngafid_db($query);
 
-
-$query = "CREATE TABLE `saved_queries` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `user_id` INT(11) NOT NULL,
-    `query_group_id` INT(11) NOT NULL,
-    `query_name` VARCHAR(128),
-    `query` VARCHAR(2048),
-    `query_text` VARCHAR(2048),
-
-    PRIMARY KEY(`id`),
-    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
-    ) ENGINE InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-
 $query = "CREATE TABLE `sim_aircraft` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `fleet_id` INT(11) NOT NULL,
     `path` VARCHAR(2048) NOT NULL,
 
-	PRIMARY KEY(`id`),
-	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+    PRIMARY KEY(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `user_preferences` (
+    `user_id` INT(11) NOT NULL,
+    `decimal_precision` INT(11) NOT NULL,
+    `metrics` VARCHAR(4096) NOT NULL,
+
+    PRIMARY KEY(`user_id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
