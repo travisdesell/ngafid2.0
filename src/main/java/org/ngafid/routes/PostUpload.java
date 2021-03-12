@@ -1,17 +1,13 @@
 package org.ngafid.routes;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.IOException;
+import java.io.*;
 
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
+import java.security.DigestInputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.logging.Logger;
@@ -167,16 +163,23 @@ public class PostUpload implements Route {
 
                 //check to see if the MD5 hash matches
                 String newMd5Hash = null;
+                InputStream is = null;
                 try {
                     MessageDigest md = MessageDigest.getInstance("MD5");
-                    byte[] hash = md.digest(Files.readAllBytes(Paths.get(targetFilename)));
+                    is = new BufferedInputStream(new FileInputStream(Paths.get(targetFilename).toFile()));
+                    DigestInputStream dis = new DigestInputStream(is, md);
+
+                    // This walks through the input streams bytes
+                    while (dis.read() != -1) { }
+
+                    byte[] hash = md.digest();
                     newMd5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
-                } catch (NoSuchAlgorithmException e) {
+                } catch (NoSuchAlgorithmException | IOException e) {
                     e.printStackTrace();
                     System.exit(1);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                    System.exit(1);
+                } finally {
+                    if (is != null)
+                        is.close();
                 }
 
                 LOG.info("new md5 hash:      '" + newMd5Hash + "'");

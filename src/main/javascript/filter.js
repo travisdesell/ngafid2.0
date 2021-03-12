@@ -2,9 +2,6 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-//import { saveQueriesModal } from "./save_query_modal.js"
-import { loadQueriesModal, saveQueriesModal } from "./load_query_modal.js"
-
 class Filter extends React.Component {
     constructor(props) {
         super(props);
@@ -184,12 +181,6 @@ class Filter extends React.Component {
             );
         }
 
-        // establish depth for load button
-        let loadButton = "";
-        if (filter.depth == 0) {
-            loadButton = (<button type="button" className={ruleClasses} onClick={() => loadQueriesModal.show()}>Load Saved</button>);
-        }
-
         return (
             <div className="d-flex justify-content-between">
 
@@ -205,8 +196,7 @@ class Filter extends React.Component {
 
                 <div className="p-2">
                     <button type="button" className={ruleClasses} onClick={() => this.addRule(filter)}>Add Rule</button>
-                    <button type="button" className={ruleClasses} onClick={() => this.addGroup(filter)}>Add Group</button>
-                    { loadButton }
+                    <button type="button" className={groupClasses} onClick={() => this.addGroup(filter)}>Add Group</button>
                     { removeButton }
                 </div>
             </div>
@@ -237,6 +227,7 @@ class Filter extends React.Component {
             this.props.parentRerender();
         }
     }
+
 
     renderRuleSelect(currentFilter) {
         return (
@@ -441,7 +432,9 @@ class Filter extends React.Component {
                                             <div className="p-2">
                                                 { this.getRemoveButton(filters, index) }
                                             </div>
+
                                         </div>
+
                                         { errorContent }
                                     </div>
                                 </div>
@@ -462,7 +455,7 @@ class Filter extends React.Component {
     render() {
         let depth = 0;
 
-        let groupClasses = "btn btn-primary btn-sm mr-1";
+        let groupClasses = "btn btn-primary btn-sm";
 
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -500,7 +493,6 @@ class Filter extends React.Component {
 
                         <div className="p-2">
                             <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={externalSubmit} >{this.props.submitButtonName}</button>
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => {saveQueriesModal.updateQuery(this.getQuery()); saveQueriesModal.show();}} hidden={externalSubmit} >Save</button>
                         </div>
                     </div>
 

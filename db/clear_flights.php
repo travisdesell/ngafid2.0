@@ -32,12 +32,20 @@ query_ngafid_db("DELETE FROM upload_errors");
 echo "deleted upload_errors!\n";
 query_ngafid_db("DELETE FROM flight_messages");
 echo "deleted flight_messages!\n";
+query_ngafid_db("DELETE FROM flight_tag_map");
+echo "deleted flight tag map!\n";
+query_ngafid_db("DELETE FROM flight_tags");
+echo "deleted flight tags!\n";
 
 query_ngafid_db("DELETE FROM flights");
 echo "deleted flights!\n";
 
+query_ngafid_db("ALTER TABLE flights AUTO_INCREMENT = 1");
+echo "reset flights counter\n";
+
 //reset upload status
 query_ngafid_db("UPDATE uploads SET status = 'UPLOADED', n_valid_flights = 0, n_warning_flights = 0, n_error_flights = 0 WHERE status = 'IMPORTED' OR status = 'ERROR'");
 echo "reset uploads!\n";
+
 
 ?>

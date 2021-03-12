@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
+import Overlay from 'react-bootstrap/Overlay';
 import { errorModal } from "./error_modal.js";
 
 var activePage = "";
@@ -57,6 +58,8 @@ class DropdownLink extends React.Component {
 class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
+
+        this.infoTarget = React.createRef();
     }
 
     attemptLogIn() {
@@ -112,6 +115,7 @@ class SignedInNavbar extends React.Component {
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
+        //const [show, setShow] = React.useState(false);
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
@@ -147,7 +151,7 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" style={{backgroundColor:selectBgColor}} 
+                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{backgroundColor:selectBgColor}} 
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
@@ -160,7 +164,6 @@ class SignedInNavbar extends React.Component {
                                     <option value="IFREnrouteLowCharts">IFR Enroute Low Charts</option>
                                     <option value="IFREnrouteHighCharts">IFR Enroute High Charts</option>
                                 </select>
-
                             </div>
                         </ul>
 
@@ -173,7 +176,7 @@ class SignedInNavbar extends React.Component {
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
+                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/dashboard"/>
                             </div>
@@ -193,6 +196,8 @@ class SignedInNavbar extends React.Component {
                                 <div className="dropdown-divider" hidden={manageHidden}></div>
                                 <DropdownLink name={"Update Password"} hidden={false} href="/protected/update_password"/>
                                 <DropdownLink name={"Update Profile"} hidden={false} href="/protected/update_profile"/>
+                                <div className="dropdown-divider"></div>
+                                <DropdownLink name={"My Preferences"} hidden={false} href="/protected/preferences"/>
                                 <div className="dropdown-divider"></div>
                                 <DropdownLink name={"Log Out"} hidden={false} onClick={() => this.attemptLogOut()}/>
                             </div>
