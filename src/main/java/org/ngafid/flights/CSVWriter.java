@@ -23,27 +23,27 @@ import org.ngafid.Database;
 
 public class CSVWriter {
     private File file;
-	private Flight flight;
-	private ZipEntry entry;
-	private ZipFile zipArchive;
+    private Flight flight;
+    private ZipEntry entry;
+    private ZipFile zipArchive;
 
-	/**
-	 * Constructor
-	 * Finds the zip file with the filght requested
-	 *
-	 * @param directoryRoot the root directory of the zipped files
-	 * @param uploadId the id of the upload
-	 */
+    /**
+     * Constructor
+     * Finds the zip file with the filght requested
+     *
+     * @param directoryRoot the root directory of the zipped files
+     * @param uploadId the id of the upload
+     */
     public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
         System.out.println("creating file from: '" + directoryRoot + "'");
 
-		//File root = new File(directoryRoot);
-		//File[] dirs = root.listFiles();
+        //File root = new File(directoryRoot);
+        //File[] dirs = root.listFiles();
 
-		this.flight = flight;
+        this.flight = flight;
 
-		int uploadId = flight.getUploadId();
-		System.out.println("target upload id is: " + uploadId);
+        int uploadId = flight.getUploadId();
+        System.out.println("target upload id is: " + uploadId);
 
         //TODO: Probably better to pass the connection in as an argument to the constructor
         Connection connection = Database.getConnection();
@@ -79,94 +79,80 @@ public class CSVWriter {
             System.exit(1);
         }
 
-		String filename = flight.getFilename();
-		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
+        String filename = flight.getFilename();
+        Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
 
-			if (entry.getName().equals(filename)) {
-				this.entry = entry;
-			} 
-		} 
-	}
+            if (entry.getName().equals(filename)) {
+                this.entry = entry;
+            } 
+        } 
+    }
 
-	/**
-	 * Gets the CSV file as primitive (binary) data
-	 *
-	 * @return a primitive array of bytes 
-	 */
-	public byte[] toBinaryData() throws IOException {
-		InputStream inputStream = zipArchive.getInputStream(this.entry);
-		return IOUtils.toByteArray(inputStream);
-	}
-		
-	/**
-	 * Writes data to a file output stream
-	 *
-	 * @param inputStream the input stream to copy data from
-	 *
-	 * @return a String with all the data for the CSV file
-	 *
-	 * @throws IOException if there is an IOException when parsing the inputStream
-	 */
-	private String writeToFile() throws IOException {
-		String strOut = new String(toBinaryData());
-		return strOut;
-	}
+    /**
+     * Gets the CSV file as primitive (binary) data
+     *
+     * @return a primitive array of bytes 
+     */
+    public byte [] toBinaryData() throws IOException {
+        InputStream inputStream = zipArchive.getInputStream(this.entry);
+        return IOUtils.toByteArray(inputStream);
+    }
+        
+    /**
+     * Accessor method for the {@link ZipEntry} associated with this flight
+     *
+     * @return and instance of {@link ZipEntry}
+     */
+    public ZipEntry getFlightEntry() {
+        return this.entry;
+    }
 
-	/**
-	 * Accessor method for the {@link ZipEntry} associated with this flight
-	 *
-	 * @return and instance of {@link ZipEntry}
-	 */
-	public ZipEntry getFlightEntry(){
-		return this.entry;
-	}
+    /**
+     * Writes to a file and gets the zip archive first
+     *
+     * @return a String with the file contents
+     *
+     * @throws IOException if there is a problem with file i/o
+     */
+    public String write() throws IOException {
+        String fileOut = "";
+        fileOut = new String(toBinaryData());
+        zipArchive.close();
+        return fileOut;
+    }
 
-	/**
-	 * Writes to a file and gets the zip archive first
-	 *
-	 * @return a String with the file contents
-	 *
-	 * @throws IOException if there is a problem with file i/o
-	 */
-	public String write() throws IOException {
-		String fileOut = "";
-		fileOut = this.writeToFile();
-		zipArchive.close();
-		return fileOut;
-	}
+    /**
+     * Writes to a file and gets the zip archive first
+     *
+     * @return a String with the file contents
+     *
+     * @throws IOException if there is a problem with file i/o
+     */
+    public ZipEntry getZipEntry() throws IOException {
+        ZipFile zipArchive = new ZipFile(this.file);
+        String filename = flight.getFilename();
+        Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+        while (entries.hasMoreElements()) {
+            ZipEntry entry = entries.nextElement();
 
-	/**
-	 * Writes to a file and gets the zip archive first
-	 *
-	 * @return a String with the file contents
-	 *
-	 * @throws IOException if there is a problem with file i/o
-	 */
-	public ZipEntry getZipEntry() throws IOException {
-		ZipFile zipArchive = new ZipFile(this.file);
-		String filename = flight.getFilename();
-		Enumeration<? extends ZipEntry> entries = zipArchive.entries();
-		while (entries.hasMoreElements()) {
-			ZipEntry entry = entries.nextElement();
+            if (entry.getName().equals(filename)) {
+                zipArchive.close();
+                return entry;
+            } 
+        } 
+        zipArchive.close();
+        return null;
+    }
 
-			if (entry.getName().equals(filename)) {
-				zipArchive.close();
-				return entry;
-			} 
-		} 
-		zipArchive.close();
-		return null;
-	}
-
-	/**
-	 * Gets a string representation of a CSV Writer object
-	 *
-	 * @return a {@link String} with the zip file and archive paths
-	 */
-	@Override
-	public String toString(){
-		return this.zipArchive.toString()+" "+this.entry.toString();
-	}
+    /**
+     * Gets a string representation of a CSV Writer object
+     *
+     * @return a {@link String} with the zip file and archive paths
+     */
+    @Override
+    public String toString() {
+        return this.zipArchive.toString() + " " + this.entry.toString();
+    }
 }

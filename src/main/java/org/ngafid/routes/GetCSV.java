@@ -31,9 +31,9 @@ public class GetCSV implements Route {
     }
 
 
-	/**
-	* {inheritDoc}
-	*/
+    /**
+    * {inheritDoc}
+    */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -57,29 +57,29 @@ public class GetCSV implements Route {
         }
 
 
-		try {
+        try {
             response.header("Content-Disposition", "attachment; filename=flight_" + flightId + ".csv");
             response.type("application/force-download");
 
-			Flight flight = Flight.getFlight(Database.getConnection(), flightId);
+            Flight flight = Flight.getFlight(Database.getConnection(), flightId);
 
-			int uploaderId = flight.getUploaderId(); 
+            int uploaderId = flight.getUploaderId(); 
 
-			String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
-				uploaderId + "/";
-			
-			CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
+            String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
+                uploaderId + "/";
+            
+            CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
 
-			LOG.info("Got file path for flight #"+flightId);
-			LOG.info(csvWriter.toString());
+            LOG.info("Got file path for flight #"+flightId);
+            LOG.info(csvWriter.toString());
 
-			return csvWriter.write();
+            return csvWriter.write();
 
-		} catch (SQLException e) {
-			return gson.toJson(new ErrorResponse(e));
-		} catch (IOException e) {
-			LOG.severe(e.toString());
-		}
+        } catch (SQLException e) {
+            return gson.toJson(new ErrorResponse(e));
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+        }
         return "";
     }
 }

@@ -1,12 +1,8 @@
 package org.ngafid.flights;
 
-import java.io.*;
-
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
-import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -14,13 +10,15 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
+import org.ngafid.Database;
 import org.ngafid.filters.Pair;
+
+import static org.ngafid.flights.CalculationParameters.*;
 
 import javax.sql.rowset.serial.SerialBlob;
 
@@ -28,6 +26,7 @@ public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
+    private boolean cache = true;
     private int id = -1;
     private int flightId = -1;
     private String name;
@@ -53,6 +52,12 @@ public class DoubleTimeSeries {
         max = Double.NaN;
 
         validCount = 0;
+    }
+
+    public DoubleTimeSeries(String name, String dataType, boolean cache) {
+        this(name, dataType);
+
+        this.cache = cache;
     }
 
     public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
@@ -97,6 +102,15 @@ public class DoubleTimeSeries {
         }
 
         avg /= validCount;
+    }
+
+    /**
+     * Checks to see whether this series will be cached in the database
+     *
+     * @return a boolean representaion of wheteher or not it should be cached
+     */
+    public final boolean isCached() {
+        return this.cache;
     }
 
     /**
@@ -325,6 +339,7 @@ public class DoubleTimeSeries {
 
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
+        if (!this.cache) return;
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
@@ -401,5 +416,68 @@ public class DoubleTimeSeries {
             System.exit(1);
         }
     }
+
+    public static Optional<DoubleTimeSeries> getExistingLaggedSeries(Connection connection, int flightId, String seriesName, int n) {
+        String laggedName = seriesName + LAG_SUFFIX + n;
+
+        try {
+            DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+            if (laggedSeries != null) return Optional.of(laggedSeries);
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    public static Optional<DoubleTimeSeries> getExistingLeadingSeries(Connection connection, int flightId, String seriesName, int n) {
+        String laggedName = seriesName + LEAD_SUFFIX + n;
+
+        try {
+            DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+            if (leadingSeries != null) return Optional.of(leadingSeries);
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Lags a timeseries N indicies
+     */
+    public DoubleTimeSeries lag(int n) {
+        Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(Database.getConnection(), this.flightId, this.name, n);
+
+        if (existingSeries.isPresent()) {
+            return existingSeries.get();
+        }
+
+        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
+
+        for (int i = 0; i < data.length; i++) {
+            laggedSeries.add((i >= n) ? data[i - n] : Double.NaN);
+        }
+
+        return laggedSeries;
+    }
+
+    public DoubleTimeSeries lead(int n) {
+        Optional<DoubleTimeSeries> existingSeries = getExistingLeadingSeries(Database.getConnection(), this.flightId, this.name, n);
+
+        if (existingSeries.isPresent()) {
+            return existingSeries.get();
+        }
+
+        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(this.name + LEAD_SUFFIX + n, "double");
+
+        int len = data.length;
+        for (int i = 0; i < len; i++) {
+            leadingSeries.add((i < len - n) ? data[i + n] : Double.NaN);
+        }
+
+        return leadingSeries;
+    }
+
 }
 

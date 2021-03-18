@@ -10,9 +10,8 @@ $drop_tables = false;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
-query_ngafid_db("DROP TABLE sim_aircraft");
-
 /*
+query_ngafid_db("DROP TABLE sim_aircraft");
 query_ngafid_db("DROP TABLE visited_airports");
 query_ngafid_db("DROP TABLE visited_runways");
 query_ngafid_db("DROP TABLE flight_tag_map");
@@ -185,6 +184,19 @@ $query = "CREATE TABLE `flight_tags` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `airframe_types` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(32) NOT NULL,
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY `name_key` (`name`) 
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+query_ngafid_db($query);
+query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
+query_ngafid_db("INSERT INTO airframe_types SET name = 'Rotorcraft'");
+query_ngafid_db("INSERT INTO airframe_types SET name = 'UAS Fixed Wing'");
+query_ngafid_db("INSERT INTO airframe_types SET name = 'UAS Rotorcraft'");
+
 
 $query = "CREATE TABLE `flights` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
@@ -193,6 +205,7 @@ $query = "CREATE TABLE `flights` (
     `upload_id` INT(11) NOT NULL,
     `system_id` VARCHAR(16) NOT NULL,
     `airframe_id` INT(11) NOT NULL,
+    `airframe_type_id` INT(11) NOT NULL,
     `start_time` DATETIME,
     `end_time` DATETIME,
     `time_offset` VARCHAR(6),
@@ -220,6 +233,7 @@ $query = "CREATE TABLE `flights` (
     FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
     FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
     FOREIGN KEY(`airframe_id`) REFERENCES airframes(`id`),
+    FOREIGN KEY(`airframe_type_id`) REFERENCES airframe_types(`id`),
     FOREIGN KEY(`fleet_id`, `system_id`) REFERENCES tails(`fleet_id`, `system_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
@@ -452,11 +466,21 @@ $query = "CREATE TABLE `sim_aircraft` (
     `fleet_id` INT(11) NOT NULL,
     `path` VARCHAR(2048) NOT NULL,
 
-	PRIMARY KEY(`id`),
-	FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
+    PRIMARY KEY(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `user_preferences` (
+    `user_id` INT(11) NOT NULL,
+    `decimal_precision` INT(11) NOT NULL,
+    `metrics` VARCHAR(4096) NOT NULL,
+
+    PRIMARY KEY(`user_id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
 
 ?>

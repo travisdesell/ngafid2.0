@@ -257,7 +257,7 @@ public class Event {
 
         //get a map of the airframe ids to airframe names
         for (String airframe : fleetAirframes) {
-            airframeIds.put(Airframes.getId(connection, airframe), airframe);
+            airframeIds.put(Airframes.getNameId(connection, airframe), airframe);
 
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }

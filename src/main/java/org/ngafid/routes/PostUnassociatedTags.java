@@ -42,7 +42,7 @@ public class PostUnassociatedTags implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
-		int fleetId = user.getFleetId();
+        int fleetId = user.getFleetId();
 
         int flightId = Integer.parseInt(request.queryParams("id"));
         System.out.println("TAGGED FLTID: "+flightId);
