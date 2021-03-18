@@ -33,7 +33,7 @@ public class EventDefinition {
     private String name;
     private int startBuffer;
     private int stopBuffer;
-    private int airframeId;
+    private int airframeNameId;
     private Filter filter;
     private TreeSet<String> columnNames;
     private TreeSet<String> severityColumnNames;
@@ -99,11 +99,11 @@ public class EventDefinition {
      * @param severityColumnNames a list of column names (unique) which are used to calculate the severity
      * @param severityType a string representation of the severity type, can be 'min', 'abs' or 'max'
      */
-    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeId, Filter filter, TreeSet<String> severityColumnNames, String severityType) {
+    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId, Filter filter, TreeSet<String> severityColumnNames, String severityType) {
         this.fleetId = fleetId;
         this.startBuffer = startBuffer;
         this.stopBuffer = stopBuffer;
-        this.airframeId = airframeId;
+        this.airframeNameId = airframeNameId;
         this.filter = filter;
         this.columnNames = filter.getColumnNames();
         this.severityColumnNames = severityColumnNames;
@@ -123,7 +123,7 @@ public class EventDefinition {
         this.name = resultSet.getString(3);
         this.startBuffer = resultSet.getInt(4);
         this.stopBuffer = resultSet.getInt(5);
-        this.airframeId = resultSet.getInt(6);
+        this.airframeNameId = resultSet.getInt(6);
         try {
         this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
         } catch (Exception e) {
@@ -180,8 +180,8 @@ public class EventDefinition {
     /**
      * @return the airframe id of the event definition
      */
-    public int getAirframeId() {
-        return airframeId;
+    public int getAirframeNameId() {
+        return airframeNameId;
     }
 
     /**
@@ -359,7 +359,7 @@ public class EventDefinition {
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } else {
-            int airframeId = Airframes.getId(connection, airframe);
+            int airframeNameId = Airframes.getNameId(connection, airframe);
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -367,7 +367,7 @@ public class EventDefinition {
             preparedStatement.setString(2, name);
             preparedStatement.setInt(3, startBuffer);
             preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, airframeId);
+            preparedStatement.setInt(5, airframeNameId);
             preparedStatement.setString(6, filterJson);
             preparedStatement.setString(7, gson.toJson(columnNames));
             preparedStatement.setString(8, severityColumnNamesJson);
@@ -535,7 +535,7 @@ public class EventDefinition {
      * @return a string representation of this event definition
      */
     public String toString() {
-        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer + ", airframeId: " + airframeId +
+        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer + ", airframeNameId: " + airframeNameId +
             ", condition: " + gson.toJson(filter) + ", column_names : " + gson.toJson(columnNames) + ", severity_column_names: " + gson.toJson(severityColumnNames) + ", severity_type: " + severityType + "]";
     }
 

@@ -21,8 +21,6 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.FlightPaginator;
-import org.ngafid.common.Page;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -31,10 +29,10 @@ import org.ngafid.flights.Flight;
 
 public class PostSimAircraft implements Route {
     private static final Logger LOG = Logger.getLogger(PostSimAircraft.class.getName());
-	private static Connection connection = Database.getConnection();
+    private static Connection connection = Database.getConnection();
 
-	private final static String CACHE = "cache";
-	private final static String RMCACHE = "rmcache";
+    private final static String CACHE = "cache";
+    private final static String RMCACHE = "rmcache";
 
     private Gson gson;
 
@@ -43,9 +41,9 @@ public class PostSimAircraft implements Route {
         LOG.info("initialized " + this.getClass().getName() + " route!");
     }
 
-	/**
-	 * {inheritDoc}
-	 */
+    /**
+     * {inheritDoc}
+     */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
@@ -53,31 +51,31 @@ public class PostSimAircraft implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-		String type = request.queryParams("type");
-		String path = request.queryParams("path");
+        String type = request.queryParams("type");
+        String path = request.queryParams("path");
 
-		LOG.info("performing "+type+" on "+path);
+        LOG.info("performing "+type+" on "+path);
 
-		int fleetId = user.getFleetId();
+        int fleetId = user.getFleetId();
 
         try {
-			switch (type) {
-				case CACHE:
-					List<String> currPaths = Flight.getSimAircraft(connection, fleetId);
-					if (!currPaths.contains(path)) {
-						Flight.addSimAircraft(connection, fleetId, path);
-						return gson.toJson("SUCCESS");
-					} else {
-						return gson.toJson("FAILURE");
-					}
+            switch (type) {
+                case CACHE:
+                    List<String> currPaths = Flight.getSimAircraft(connection, fleetId);
+                    if (!currPaths.contains(path)) {
+                        Flight.addSimAircraft(connection, fleetId, path);
+                        return gson.toJson("SUCCESS");
+                    } else {
+                        return gson.toJson("FAILURE");
+                    }
 
-				case RMCACHE:
-					Flight.removeSimAircraft(connection, fleetId, path);
-					return gson.toJson(Flight.getSimAircraft(connection, fleetId));
+                case RMCACHE:
+                    Flight.removeSimAircraft(connection, fleetId, path);
+                    return gson.toJson(Flight.getSimAircraft(connection, fleetId));
 
-				default:
-					return gson.toJson("FAILURE");
-			}
+                default:
+                    return gson.toJson("FAILURE");
+            }
 
         } catch (Exception e) {
             System.err.println("Error in SQL ");

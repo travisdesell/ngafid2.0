@@ -1,6 +1,7 @@
 package org.ngafid;
 
 
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -8,8 +9,6 @@ import com.github.mustachejava.MustacheFactory;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
-
-import org.ngafid.common.FlightPaginator;
 
 import spark.Spark;
 import spark.Session;
@@ -40,9 +39,6 @@ public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 	
-	// Have a pointer to the paginator for flights so more than one route can mainpulate the flight pages
-	public static FlightPaginator flightPaginator;
-
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
@@ -245,10 +241,14 @@ public final class WebServer {
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
+        Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
+        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
+        Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
         Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));

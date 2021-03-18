@@ -22,7 +22,7 @@ class HelpModal extends React.Component {
     show(title, message, closeMethod) {
         this.state.title = title;
         this.state.message = message;
-		this.state.closeMethod = closeMethod;
+        this.state.closeMethod = closeMethod;
         this.setState(this.state);
 
         $("#help-modal").modal('show');

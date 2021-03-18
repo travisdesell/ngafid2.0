@@ -164,6 +164,9 @@ public class Tails {
             if (suggestedTail == null) {
                 query.setString(1, "");
             } else {
+                // TODO: This is a hack. Probably should change the DB or change how suggestedTail is generated
+                if (suggestedTail.length() > 16)
+                    suggestedTail = suggestedTail.substring(0, 16);
                 query.setString(1, suggestedTail);
             }
             query.setInt(2, fleetId);

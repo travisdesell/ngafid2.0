@@ -21,7 +21,6 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.common.FlightTag;
-import org.ngafid.common.Page;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
@@ -62,17 +61,17 @@ public class PostEditTag implements Route {
 
             FlightTag currentTag = Flight.getTag(connection, tagId);
 
-			LOG.info("currentTag: "+currentTag+" edited tag: "+flightTag);
+            LOG.info("currentTag: "+currentTag+" edited tag: "+flightTag);
 
             if(flightTag.equals(currentTag)){
-				LOG.info("No change detected in the tag.");
+                LOG.info("No change detected in the tag.");
                 return gson.toJson(NO_CHANGE);
             }
 
             FlightTag changedTag = Flight.editTag(connection, flightTag);
-			Page<Flight> page = WebServer.flightPaginator.currentPage();
 
-            return gson.toJson(page);
+            //TODO: fix this too!
+            return gson.toJson(null);
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();
