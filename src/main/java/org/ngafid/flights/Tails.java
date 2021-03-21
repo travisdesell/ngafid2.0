@@ -1,7 +1,5 @@
 package org.ngafid.flights;
 
-import com.mysql.jdbc.Statement;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

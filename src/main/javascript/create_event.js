@@ -35,6 +35,9 @@ for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     });
 }
 
+console.log("filter rules: ");
+console.log(rules);
+
 class CreateEventCard extends React.Component {
     constructor(props) {
         super(props);
@@ -46,7 +49,8 @@ class CreateEventCard extends React.Component {
             eventName : "",
             airframe : 0,
             startBuffer : "",
-            stopBuffer : ""
+            stopBuffer : "",
+            severityColumnNames : []
         }
 
         this.exceedenceFilter = React.createRef();
@@ -66,6 +70,50 @@ class CreateEventCard extends React.Component {
         console.log("new airframe: " + airframe);
         this.setState({
             airframe : airframe
+        });
+    }
+
+    validateSeverityType(event) {
+        let severityType = event.target.value;
+        console.log("new severity type: " + severityType);
+        this.setState({
+            severityType : severityType
+        });
+    }
+
+    changeSeverityColumn(event) {
+        let severityColumn = event.target.value;
+        console.log("new severity column: " + severityColumn);
+        this.setState({
+            severityColumn : severityColumn
+        });
+    }
+
+    addSeverityColumn() {
+        console.log("adding severity column: " + this.state.severityColumn);
+        let newSeverityColumns = this.state.severityColumnNames;
+
+        if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
+            newSeverityColumns.push(this.state.severityColumn);
+        }
+
+        console.log("new severity columns array:");
+        console.log(newSeverityColumns);
+        this.setState({
+            severityColumnNames : newSeverityColumns
+        });
+    }
+
+    removeSeverityColumn(columnName) {
+        let newSeverityColumns = this.state.severityColumnNames;
+
+        let columnIndex = newSeverityColumns.indexOf(columnName);
+        newSeverityColumns.splice(columnIndex, 1);
+
+        console.log("new severity columns array:");
+        console.log(newSeverityColumns);
+        this.setState({
+            severityColumnNames : newSeverityColumns
         });
     }
 
@@ -100,6 +148,8 @@ class CreateEventCard extends React.Component {
             eventName : this.state.eventName,
             startBuffer : this.state.startBuffer,
             stopBuffer : this.state.stopBuffer,
+            severityColumnNames : JSON.stringify(this.state.severityColumnNames),
+            severityType : this.state.severityType,
             airframe : airframes[this.state.airframe]
         };   
         console.log(submissionData);
@@ -191,10 +241,12 @@ class CreateEventCard extends React.Component {
         }
 
         let validationHidden = (validationMessage == "");
-        let updateProfileDisabled = !validationHidden;
+        let createEventDisabled = !validationHidden;
 
         console.log("airframes:");
         console.log(airframes);
+
+        console.log("rendering with new severityColumnNames: " + this.state.severityColumnNames);
 
         return (
             <div className="card-body" style={style}>
@@ -236,6 +288,7 @@ class CreateEventCard extends React.Component {
                         </div>
                     </div>
 
+
                     <div className="form-group" style={formGroupStyle}>
                         <div className="d-flex">
                             <div className="p-2" style={formHeaderStyle}>
@@ -261,10 +314,75 @@ class CreateEventCard extends React.Component {
                     <div className="form-group" style={formGroupStyle}>
                         <div className="d-flex">
                             <div className="p-2" style={formHeaderStyle}>
+                                <label htmlFor="severityColumnNames" style={labelStyle}>Severity Columns</label>
+                            </div>
+                            <div className="p-2">
+
+                                <select id="severityColumnNames" className="form-control" onChange={(event) => this.changeSeverityColumn(event)} value={this.state.severityColumn}>
+                                    {
+                                        doubleTimeSeriesNames.map((seriesName, index) => {
+                                            return (
+                                                <option key={index} value={seriesName}>{seriesName}</option>
+                                            )
+                                        })
+                                    }
+                                </select>               
+                            </div>
+                            <div className="p-2 flex-fill">
+
+                                {
+                                    this.state.severityColumnNames.map((columnName, index) => {
+                                        return (<button type="button" key={columnName} className="btn btn-primary mr-1" onClick={() => this.removeSeverityColumn(columnName)}>{columnName} <i className="fa fa-times p-1"></i></button>)
+                                    })
+                                }
+
+                            </div>
+                            <div className="p-2">
+                                <button type="button" className="btn btn-primary" onClick={() => this.addSeverityColumn()}>Add Column</button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label htmlFor="severityTypeSelect" style={labelStyle}>Severity Type</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+
+                                <select id="severityTypeSelect" className="form-control" onChange={(event) => this.validateSeverityType(event)} value={this.state.severityType}>
+                                    <option key="min" value="min">Minimum</option>
+                                    <option key="max" value="max">Maximum</option>
+                                    <option key="min abs" value="abs">Minimum Absolute Value</option>
+                                    <option key="max abs" value="abs">Maximum Absolute Value</option>
+                                </select>               
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
                                 <label style={labelStyle}>Exceedence Definition</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <Filter ref={this.exceedenceFilter} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
+                                <Filter 
+                                    ref={this.exceedenceFilter} 
+                                    externalSubmit={true}
+                                    submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+
+                                    filterVisible={true}
+                                    depth={0} 
+                                    baseIndex="[0-0]" 
+                                    key="[0-0]" 
+                                    parent={null} 
+                                    type="GROUP" 
+                                    parentRerender={() => {this.forceUpdate();}} 
+                                    rules={rules} 
+                                    submitButtonName="Create Event" 
+                                />
                             </div>
                         </div>
                     </div>
@@ -276,7 +394,7 @@ class CreateEventCard extends React.Component {
                             <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
                         </div>
                         <div className="p-2">
-                            <button className="btn btn-primary float-right" onClick={() => {this.submitFilter()}} disabled={updateProfileDisabled}>Create Event</button>
+                            <button className="btn btn-primary float-right" onClick={() => {this.submitFilter()}} disabled={createEventDisabled}>Create Event</button>
                         </div>
                     </div>
 

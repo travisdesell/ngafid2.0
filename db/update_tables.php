@@ -95,4 +95,27 @@ query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
 query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
 query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
 
+
+query_ngafid_db("alter table event_definitions modify column severity_type VARCHAR(7)");                 
+query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
+
+
+/*
+ * +-----------------------+--------------+------+-----+---------+----------------+
+ * | Field                 | Type         | Null | Key | Default | Extra          |
+ * +-----------------------+--------------+------+-----+---------+----------------+
+ * | id                    | int(11)      | NO   | PRI | NULL    | auto_increment |
+ * | fleet_id              | int(11)      | NO   |     | NULL    |                |
+ * | airframe_id           | int(11)      | NO   |     | NULL    |                |
+ * | name                  | varchar(64)  | NO   |     | NULL    |                |
+ * | start_buffer          | int(11)      | YES  |     | NULL    |                |
+ * | stop_buffer           | int(11)      | YES  |     | NULL    |                |
+ * | column_names          | varchar(128) | YES  |     | NULL    |                |
+ * | condition_json        | varchar(512) | YES  |     | NULL    |                |
+ * | severity_column_names | varchar(128) | YES  |     | NULL    |                |
+ * | severity_type         | varchar(3)   | YES  |     | NULL    |                |
+ * | color                 | varchar(6)   | YES  |     | NULL    |                |
+ * +-----------------------+--------------+------+-----+---------+----------------+
+ */
+
 ?>

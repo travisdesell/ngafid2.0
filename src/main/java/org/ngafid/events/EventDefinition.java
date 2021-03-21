@@ -25,8 +25,9 @@ public class EventDefinition {
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     public static final int MIN_SEVERITY = 1;
-    public static final int ABS_SEVERITY = 2;
-    public static final int MAX_SEVERITY = 3;
+    public static final int MAX_SEVERITY = 2;
+    public static final int MIN_ABS_SEVERITY = 3;
+    public static final int MAX_ABS_SEVERITY = 4;
 
     private int id = -1;
     private int fleetId;
@@ -48,10 +49,12 @@ public class EventDefinition {
     void initializeSeverity() {
         if (severityType.equals("min")) {
             severityTypeId = MIN_SEVERITY;
-        } else if (severityType.equals("abs")) {
-            severityTypeId = ABS_SEVERITY;
         } else if (severityType.equals("max")) {
             severityTypeId = MAX_SEVERITY;
+        } else if (severityType.equals("min abs")) {
+            severityTypeId = MIN_ABS_SEVERITY;
+        } else if (severityType.equals("max abs")) {
+            severityTypeId = MAX_ABS_SEVERITY;
         } else {
             LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
             System.exit(1);
@@ -239,7 +242,6 @@ public class EventDefinition {
         return max;
     }
 
-
     /**
      * Calculates the minimum value in an array of DoubleTimeSeries at a particular time.
      * It ignores NaNs and returns Double.MAX_VALUE if all values are NaN
@@ -260,6 +262,26 @@ public class EventDefinition {
     }
 
     /**
+     * Calculates the minimum absolute value in an array of DoubleTimeSeries at a particular time.
+     * It ignores NaNs and returns +Double.MAX_VALUE if all values are NaN
+     *
+     * @param columns are the DoubleTimeSeries
+     * @param time is the time step in the series
+     */
+
+    double minAbsArray(DoubleTimeSeries[] columns, int time) {
+        double min = Double.MAX_VALUE;
+
+        for (int i = 0; i < severityColumnIds.length; i++) {
+            double value = Math.abs(columns[severityColumnIds[i]].get(time));
+            if (Double.isNaN(value)) continue;
+            min = Math.min(value, min);
+        }
+        return min;
+    }
+
+
+    /**
      * Gets the severity value for this event definition at time 
      *
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
@@ -269,9 +291,10 @@ public class EventDefinition {
      */
 
     public double getSeverity(DoubleTimeSeries[] columns, int time) {
-        if (columns.length == 0) {
+        if (columns.length == 1) {
             switch (severityTypeId) {
-                case ABS_SEVERITY:
+                case MIN_ABS_SEVERITY:
+                case MAX_ABS_SEVERITY:
                     return Math.abs(columns[0].get(time));
 
                 case MIN_SEVERITY:
@@ -288,10 +311,13 @@ public class EventDefinition {
                 case MIN_SEVERITY:
                     return minArray(columns, time);
 
-                case ABS_SEVERITY:
+                case MAX_SEVERITY:
                     return maxArray(columns, time);
 
-                case MAX_SEVERITY:
+                case MIN_ABS_SEVERITY:
+                    return minAbsArray(columns, time);
+
+                case MAX_ABS_SEVERITY:
                     return maxAbsArray(columns, time);
 
                 default:
@@ -314,12 +340,14 @@ public class EventDefinition {
 
     public double updateSeverity(double currentSeverity, DoubleTimeSeries[] doubleSeries, int time) {
         switch (severityTypeId) {
-            case ABS_SEVERITY:
+            case MAX_ABS_SEVERITY:
             case MAX_SEVERITY:
                 return Math.max(currentSeverity, getSeverity(doubleSeries, time));
 
+            case MIN_ABS_SEVERITY:
             case MIN_SEVERITY:
                 return Math.min(currentSeverity, getSeverity(doubleSeries, time));
+
 
             default:
                 System.err.println("Error getting severity for event:  " + toString());

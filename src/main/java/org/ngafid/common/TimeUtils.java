@@ -61,6 +61,12 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
+        //+19:00 is not a valid time offset in Java (range is -18 to 18) so this is a hack to fix
+        //weird input data
+        if (originalOffset.equals("+19:00")) {
+            ldt = ldt.plusHours(1);
+            originalOffset = "+18:00";
+        }
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
 
