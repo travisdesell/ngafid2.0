@@ -23,10 +23,10 @@ import spark.Session;
 import spark.Spark;
 
 
-
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
@@ -38,17 +38,17 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-public class GetCreateEvent implements Route {
-    private static final Logger LOG = Logger.getLogger(GetCreateEvent.class.getName());
+public class GetUpdateEvent implements Route {
+    private static final Logger LOG = Logger.getLogger(GetUpdateEvent.class.getName());
     private Gson gson;
 
-    public GetCreateEvent(Gson gson) {
+    public GetUpdateEvent(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetCreateEvent(Gson gson, String messageType, String messageText) {
+    public GetUpdateEvent(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -59,7 +59,7 @@ public class GetCreateEvent implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "create_event.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "update_event.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
@@ -80,11 +80,14 @@ public class GetCreateEvent implements Route {
                 return null;
             }
 
+
             Connection connection = Database.getConnection();
 
-            scopes.put("create_event_js",
+            scopes.put("update_event_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
                     );
 
             StringWriter stringOut = new StringWriter();

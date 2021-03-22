@@ -443,6 +443,7 @@ public class EventDefinition {
         resultSet.close();
         preparedStatement.close();
 
+
         return allEvents;
     }
 

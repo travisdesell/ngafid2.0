@@ -39,6 +39,8 @@ module.exports = {
         trends: __dirname + "/src/main/javascript/trends.js",
         severities: __dirname + "/src/main/javascript/severities.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
+        update_event: __dirname + "/src/main/javascript/update_event.js",
+        event_definition: __dirname + "/src/main/javascript/event_definition.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
         time_zones: __dirname + "/src/main/javascript/time_zones.js",
         user_preferences : __dirname + "/src/main/javascript/preferences_page.js",
