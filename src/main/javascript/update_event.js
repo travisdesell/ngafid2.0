@@ -9,12 +9,16 @@ import { EventDefinitionCard } from './event_definition.js';
 
 
 var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    <SignedInNavbar activePage="update event" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
 
 airframes.unshift("All Airframes");
 
+airframeMap[0] = "All Airframes";
+
+//remove the 'proximity' event because this can't be modified by this interface
+eventDefinitions.splice(0,1);
 
 var rules = [];
 
@@ -35,18 +39,37 @@ for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     });
 }
 
-class CreateEventCard extends React.Component {
+class UpdateEventCard extends React.Component {
     constructor(props) {
         super(props);
 
+        let eventDefinition = eventDefinitions[0];
+
+        /*
         this.state = {
             filterVisible : true,
-            eventName : "",
+            eventIndex : 0,
+            eventName : eventDefinitions[0].name,                           
+            airframeNameId : eventDefinitions[0].airframeNameId,            
             airframe : 0,
             startBuffer : "",
             stopBuffer : "",
             severityColumnNames : []
-        }
+        }   
+        */
+
+        this.state = {
+            filterVisible : true,
+            eventIndex : 0,
+            eventName : eventDefinition.name,
+            airframe : airframeMap[eventDefinition.airframeNameId],
+            airframeNameId : eventDefinition.airframeNameId,
+            startBuffer : eventDefinition.startBuffer,
+            stopBuffer : eventDefinition.stopBuffer,
+            severityColumnNames : eventDefinition.severityColumnNames,
+            severityType : eventDefinition.severityType,
+            filters : eventDefinition.filter
+         }
     }
 
     validateEventName(event) {
@@ -125,6 +148,26 @@ class CreateEventCard extends React.Component {
         });
     }
 
+    changeSelectedEvent(event) {
+        //the key will be the index of the event definition
+        let eventDefinition = eventDefinitions[event.target.value];
+        console.log("new selected eventDefinition:")
+        console.log(eventDefinition);
+        console.log("name: " + eventDefinition.name);
+        console.log("airframeNameId: " + eventDefinition.airframeNameId);
+
+        this.setState({
+            eventIndex : event.target.value,
+            eventName : eventDefinition.name,
+            airframe : airframeMap[eventDefinition.airframeNameId],
+            airframeNameId : eventDefinition.airframeNameId,
+            startBuffer : eventDefinition.startBuffer,
+            stopBuffer : eventDefinition.stopBuffer,
+            severityColumnNames : eventDefinition.severityColumnNames,
+            severityType : eventDefinition.severityType
+        });
+    }
+
     submitFilter(exceedenceFilter) {
         //console.log( this.state.filters );
 
@@ -178,31 +221,74 @@ class CreateEventCard extends React.Component {
             padding : 5
         };
 
+        let formGroupStyle = {
+            marginBottom: '0px',
+            padding: '0 4 0 4'
+        };
+
+        let formHeaderStyle = {
+            width: '200px',
+            flex: '0 0 200px'
+        };
+
+        let labelStyle = {
+            padding : '7 0 7 0',
+            margin : '0',
+            display: 'block',
+            textAlign: 'right'
+        };
+
         let bgStyle = {
             background : "rgba(248,259,250,0.8)",
             margin:0
         };
+
+        let initialSelect = this.state.eventName + " - " + airframeMap[this.state.airframeNameId];
+        console.log("initial select: " + initialSelect);
 
         return (
             <div className="card-body" style={style}>
 
                 <div className="card mb-1" style={bgStyle}>
                     <h5 className="card-header">
-                        Create Event
+                        Update Event
                     </h5>
+
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label htmlFor="eventSelect" style={labelStyle}>Select Event</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+
+                                <select id="eventSelect" className="form-control" onChange={(event) => this.changeSelectedEvent(event)} value={this.state.eventIndex}>
+                                    {
+                                        eventDefinitions.map((eventDefinition, index) => {
+                                            let fullName = eventDefinition.name + " - " + airframeMap[eventDefinition.airframeNameId];
+                                            return (
+                                                <option key={index} value={index}>{fullName}</option>
+                                            )
+                                        })
+                                    }
+                                </select>
+                            </div>
+                        </div>
+                    </div>
 
                     <EventDefinitionCard
                         rules={rules}
                         airframes={airframes}
                         doubleTimeSeriesNames={doubleTimeSeriesNames}
 
-                        submitName={"Create Event"}
+                        eventNameHidden={true}
+                        submitName={"Update Event"}
                         eventName={this.state.eventName}
                         airframe={this.state.airframe}
                         startBuffer={this.state.startBuffer}
                         stopBuffer={this.state.stopBuffer}
                         severityColumn={this.state.severityColumn}
                         severityColumnNames={this.state.severityColumnNames}
+                        severityType={this.state.severityType}
 
                         submitFilter={(exceedenceFilter) => this.submitFilter(exceedenceFilter)}
                         validateEventName={(event) => this.validateEventName(event)}
@@ -222,6 +308,6 @@ class CreateEventCard extends React.Component {
 }
 
 let createEventCard = ReactDOM.render(
-    <CreateEventCard />,
-    document.querySelector('#create-event-card')
+    <UpdateEventCard />,
+    document.querySelector('#update-event-card')
 );

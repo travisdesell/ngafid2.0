@@ -118,4 +118,7 @@ query_ngafid_db("update event_definitions set severity_type = 'max abs' where se
  * +-----------------------+--------------+------+-----+---------+----------------+
  */
 
+query_ngafid_db("alter table user add column admin BOOLEAN default 0");
+query_ngafid_db("alter table user add column aggregate_view BOOLEAN default 0");
+
 ?>

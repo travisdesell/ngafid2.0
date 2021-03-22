@@ -233,6 +233,8 @@ public final class WebServer {
         
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
+        Spark.get("/protected/update_event", new GetUpdateEvent(gson));
+        Spark.post("/protected/update_event", new PostUpdateEvent(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));

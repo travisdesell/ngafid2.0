@@ -31,6 +31,8 @@ public class User {
     private String address;
     private String phoneNumber;
     private String zipCode;
+    private boolean admin;
+    private boolean aggregateView;
 
     /**
      * The following are references to the fleet the user has access to (if it has approved access
@@ -60,6 +62,20 @@ public class User {
         return firstName + " " + lastName;
     }
 
+
+    /**
+     * @return true if the user has admin access
+     */
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    /**
+     * @return true if the user has aggregate view access
+     */
+    public boolean hasAggregateView() {
+        return aggregateView;
+    }
 
 
     /**
@@ -156,7 +172,7 @@ public class User {
      * @return A user object for the user with that id, null if the user did not exist.
      */
     public static User get(Connection connection, int userId, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view FROM user WHERE id = ?");
         query.setInt(1, userId);
 
         LOG.info(query.toString());
@@ -175,6 +191,8 @@ public class User {
         user.address = resultSet.getString(8);
         user.phoneNumber = resultSet.getString(9);
         user.zipCode = resultSet.getString(10);
+        user.admin = resultSet.getBoolean(11);
+        user.aggregateView = resultSet.getBoolean(12);
 
         //get the access level of the user for this fleet
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
@@ -287,7 +305,7 @@ public class User {
      * @return A user object if the password for that email address was correct. null if the user did not exist.
      */
     public static User get(Connection connection, String email, String password) throws SQLException, AccountException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE email = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view FROM user WHERE email = ?");
         query.setString(1, email);
 
         LOG.info(query.toString());
@@ -307,6 +325,8 @@ public class User {
         user.address = resultSet.getString(8);
         user.phoneNumber = resultSet.getString(9);
         user.zipCode = resultSet.getString(10);
+        user.admin = resultSet.getBoolean(11);
+        user.aggregateView = resultSet.getBoolean(12);
 
         if (!new PasswordAuthentication().authenticate(password.toCharArray(), passwordToken)) {
             LOG.info("User password was incorrect.");
