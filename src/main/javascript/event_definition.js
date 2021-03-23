@@ -4,7 +4,7 @@ import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
 
-import { Filter } from './filter.js';
+import { Filter, isValidFilter } from './filter.js';
 
 
 class EventDefinitionCard extends React.Component {
@@ -63,12 +63,8 @@ class EventDefinitionCard extends React.Component {
             validationMessage = "Stop buffer time must be greater than 1 second.";
 
             //first time rendering this component exceedenceFilter will not be defined
-        } else if (typeof this.exceedenceFilter != 'undefined') {
-            console.log("checking exceedenceFilter isValid");
-
-            if ( !this.exceedenceFilter.current.isValid()) {
-                validationMessage = "Correct the incomplete filter.";
-            }
+        } else if ( !isValidFilter(this.props.filters, this.props.rules)) {
+            validationMessage = "Correct the incomplete filter.";
         }
 
         let validationHidden = (validationMessage == "");
@@ -191,20 +187,12 @@ class EventDefinitionCard extends React.Component {
                         </div>
                         <div className="p-2 flex-fill">
                             <Filter 
-                                ref={this.exceedenceFilter} 
-                                filters={this.props.filters}
-
-                                externalSubmit={true}
-
                                 filterVisible={true}
-                                depth={0} 
-                                baseIndex="[0-0]" 
-                                key="[0-0]" 
-                                parent={null} 
-                                type="GROUP" 
-                                parentRerender={() => {this.forceUpdate();}} 
+                                filters={this.props.filters}
                                 rules={this.props.rules} 
-                                submitButtonName="Create Event" 
+
+                                getFilter={() => {return this.props.getFilter()}}
+                                setFilter={(filter) => this.props.setFilter(filter)}
                             />
                         </div>
                     </div>
@@ -217,7 +205,7 @@ class EventDefinitionCard extends React.Component {
                         <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
                     </div>
                     <div className="p-2">
-                        <button className="btn btn-primary float-right" onClick={() => {this.props.submitFilter(this.exceedenceFilter)}} disabled={createEventDisabled}>{this.props.submitName}</button>
+                        <button className="btn btn-primary float-right" onClick={() => {this.props.submitFilter()}} disabled={createEventDisabled}>{this.props.submitName}</button>
                     </div>
                 </div>
 

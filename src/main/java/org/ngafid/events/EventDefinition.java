@@ -369,7 +369,7 @@ public class EventDefinition {
         Filter filter = gson.fromJson(filterJson, Filter.class);
         TreeSet<String> columnNames = filter.getColumnNames();
 
-        if (airframe.equals("All Airframes (Generic)")) {
+        if (airframe.equals("All Airframes")) {
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);

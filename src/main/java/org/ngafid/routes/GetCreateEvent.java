@@ -84,7 +84,8 @@ public class GetCreateEvent implements Route {
 
             scopes.put("create_event_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
                     );
 
             StringWriter stringOut = new StringWriter();
