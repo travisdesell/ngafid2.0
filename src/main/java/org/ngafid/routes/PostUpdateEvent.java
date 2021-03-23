@@ -37,6 +37,7 @@ public class PostUpdateEvent implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         int fleetId = 0; //all events work on all fleets for now
+        int eventId = Integer.parseInt(request.queryParams("eventId"));
         String eventName = request.queryParams("eventName");
         int startBuffer = Integer.parseInt(request.queryParams("startBuffer"));
         int stopBuffer = Integer.parseInt(request.queryParams("stopBuffer"));
@@ -45,6 +46,7 @@ public class PostUpdateEvent implements Route {
         String severityColumnNamesJSON = request.queryParams("severityColumnNames");
         String severityType = request.queryParams("severityType");
 
+        LOG.info("eventId: " + eventId);
         LOG.info("eventName: " + eventName);
         LOG.info("startBuffer: " + startBuffer);
         LOG.info("stopBuffer: " + stopBuffer);
@@ -58,7 +60,7 @@ public class PostUpdateEvent implements Route {
         try {
             Connection connection = Database.getConnection();
 
-            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
+            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe, filterJSON, severityColumnNamesJSON, severityType);
 
             return "{}";
         } catch (SQLException e) {

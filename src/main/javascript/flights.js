@@ -358,10 +358,15 @@ class FlightsPage extends React.Component {
             mapVisible : false,
             mapSelected : false,
             mapStyle : "Road",
-            filterRef : React.createRef(),
             flightsRef : React.createRef(),
             layers : [],
             flights : undefined, //start out with no specified flights
+
+            filters : {
+                type : "GROUP",
+                condition : "AND",
+                filters : []
+            }, 
 
             //needed for paginator
             currentPage : 0,
@@ -532,13 +537,17 @@ class FlightsPage extends React.Component {
         });
     }
 
+    setFilter(filter) {
+        this.setState({
+            filters : filter
+        });
+    }
+
     submitFilter(resetCurrentPage = false) {
         console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize);
 
-        let query = this.filterRef.getQuery();
-
         console.log("Submitting filters:");
-        console.log( query );
+        console.log( this.state.filters );
 
         $("#loading").show();
 
@@ -550,7 +559,7 @@ class FlightsPage extends React.Component {
         }
 
         var submissionData = {
-            filterQuery : JSON.stringify(query),
+            filterQuery : JSON.stringify(this.state.filters),
             currentPage : currentPage,
             pageSize : this.state.pageSize
         };
@@ -627,7 +636,7 @@ class FlightsPage extends React.Component {
                 <SignedInNavbar 
                     activePage="flights"
                     selectableLayers={this.state.selectableLayers}
-                    filterVisible={this.state.filterVisible}
+                    filterVisible={true}
                     plotVisible={this.state.plotVisible}
                     mapVisible={this.state.mapVisible}
                     filterSelected={this.state.filterSelected}
@@ -653,16 +662,17 @@ class FlightsPage extends React.Component {
 
                 <div style={style}>
                     <Filter
-                        ref={elem => this.filterRef = elem}
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         filterVisible={this.state.filterVisible}
-                        depth={0}
-                        baseIndex="[0-0]"
-                        key="[0-0]"
-                        parent={null}
-                        type="GROUP"
-                        rules={rules}
+
                         submitButtonName="Apply Filter"
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+
+                        rules={rules}
+                        filters={this.state.filters}
+
+                        getFilter={() => {return this.state.filters}}
+                        setFilter={(filter) => this.setFilter(filter)}
+
                     />
 
                     <Paginator

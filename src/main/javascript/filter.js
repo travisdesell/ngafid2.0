@@ -277,6 +277,36 @@ class Rule extends React.Component {
                     inputs.push("");
                 }
             }
+
+            //set the time zone automatically
+            if ((inputs[0] == "Start Date and Time") ||
+                (inputs[0] == "End Date and Time") ||
+                (inputs[0] == "Start Time") ||
+                (inputs[0] == "End Time")) {
+
+                var split = new Date().toString().split(" ");
+                console.log(split);
+                //var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
+                var timeZoneFormatted = split[split.length - 2];
+                timeZoneFormatted = timeZoneFormatted.slice(0, 6) + ":" + timeZoneFormatted.slice(6);
+
+                console.log("current time zone is: " + timeZoneFormatted);
+
+                let timeZoneIndex = 0;
+                for (let i = 0; i < timeZones.length; i++) {
+                    if (timeZones[i].includes(timeZoneFormatted)) {
+                        console.log("changing time zone index to " + i + ", '" + timeZones[i] + "'");
+                        timeZoneIndex = i;
+                        if (timeZones[i].includes("US")) {
+                            break;
+                        }
+                    }
+                }
+
+                //set the time zone to the current time zone
+                inputs[3] = timeZones[timeZoneIndex];
+            }
+
             //console.log("fixed inputs:");
             //console.log(inputs);
 
@@ -363,6 +393,14 @@ class Group extends React.Component {
             orActive = "active";
         }
 
+        let submitHidden = true;
+        let submitDisabled = true;
+        if (typeof this.props.submitButtonName !== 'undefined') {
+            submitHidden = false;
+
+            submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
+        }
+
         return (
             <div className="card mb-1 m-1 border-secondary" style={{background : "rgba(248,259,250,0.8)", margin:0}}>
                 <div className="d-flex justify-content-between">
@@ -421,6 +459,10 @@ class Group extends React.Component {
                     <div className="p-2 flex-fill">
                         <span style={errorMessageStyle} hidden={errorHidden}>{errorMessage}</span>
                     </div>
+
+                    <div className="p-2">
+                        <button type="button" className="btn btn-primary btn-sm" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
+                    </div>
                 </div>
 
             </div>
@@ -438,11 +480,14 @@ class Filter extends React.Component {
             <div className="card-body" hidden={!this.props.filterVisible} style={{padding:0, margin:0}}>
                 <Group
                     treeIndex="root" 
+                    submitButtonName={this.props.submitButtonName}
                     rules={this.props.rules}
                     filters={this.props.filters}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
+                    submitFilter={() => this.props.submitFilter()}
                 />
+
             </div>
         );
     }
