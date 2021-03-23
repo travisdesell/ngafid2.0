@@ -48,6 +48,7 @@ class UpdateEventCard extends React.Component {
         this.state = {
             filterVisible : true,
             eventIndex : 0,
+            eventId : eventDefinition.id,
             eventName : eventDefinition.name,
             airframe : airframeMap[eventDefinition.airframeNameId],
             airframeNameId : eventDefinition.airframeNameId,
@@ -138,13 +139,11 @@ class UpdateEventCard extends React.Component {
     changeSelectedEvent(event) {
         //the key will be the index of the event definition
         let eventDefinition = eventDefinitions[event.target.value];
-        console.log("new selected eventDefinition:")
         console.log(eventDefinition);
-        console.log("name: " + eventDefinition.name);
-        console.log("airframeNameId: " + eventDefinition.airframeNameId);
 
         this.setState({
             eventIndex : event.target.value,
+            eventId : eventDefinition.id,
             eventName : eventDefinition.name,
             airframe : airframeMap[eventDefinition.airframeNameId],
             airframeNameId : eventDefinition.airframeNameId,
@@ -170,6 +169,7 @@ class UpdateEventCard extends React.Component {
 
         var submissionData = {
             filterQuery : JSON.stringify(this.state.filters),
+            eventId : this.state.eventId,
             eventName : this.state.eventName,
             startBuffer : this.state.startBuffer,
             stopBuffer : this.state.stopBuffer,
@@ -181,7 +181,7 @@ class UpdateEventCard extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/protected/create_event',
+            url: '/protected/update_event',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
