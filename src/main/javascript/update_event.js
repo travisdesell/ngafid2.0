@@ -45,19 +45,6 @@ class UpdateEventCard extends React.Component {
 
         let eventDefinition = eventDefinitions[0];
 
-        /*
-        this.state = {
-            filterVisible : true,
-            eventIndex : 0,
-            eventName : eventDefinitions[0].name,                           
-            airframeNameId : eventDefinitions[0].airframeNameId,            
-            airframe : 0,
-            startBuffer : "",
-            stopBuffer : "",
-            severityColumnNames : []
-        }   
-        */
-
         this.state = {
             filterVisible : true,
             eventIndex : 0,
@@ -164,28 +151,31 @@ class UpdateEventCard extends React.Component {
             startBuffer : eventDefinition.startBuffer,
             stopBuffer : eventDefinition.stopBuffer,
             severityColumnNames : eventDefinition.severityColumnNames,
-            severityType : eventDefinition.severityType
+            severityType : eventDefinition.severityType,
+            filters : eventDefinition.filter
         });
     }
 
-    submitFilter(exceedenceFilter) {
-        //console.log( this.state.filters );
+    setFilter(filter) {
+        this.setState({
+            filters : filter
+        });
+    }
 
-        let query = exceedenceFilter.current.getQuery();
-
+    submitFilter() {
         console.log("Submitting filters:");
-        console.log( query );
+        console.log( this.state.filters );
 
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(query),
+            filterQuery : JSON.stringify(this.state.filters),
             eventName : this.state.eventName,
             startBuffer : this.state.startBuffer,
             stopBuffer : this.state.stopBuffer,
             severityColumnNames : JSON.stringify(this.state.severityColumnNames),
             severityType : this.state.severityType,
-            airframe : airframes[this.state.airframe]
+            airframe : this.state.airframe
         };   
         console.log(submissionData);
 
@@ -289,8 +279,12 @@ class UpdateEventCard extends React.Component {
                         severityColumn={this.state.severityColumn}
                         severityColumnNames={this.state.severityColumnNames}
                         severityType={this.state.severityType}
+                        filters={this.state.filters}
 
-                        submitFilter={(exceedenceFilter) => this.submitFilter(exceedenceFilter)}
+                        getFilter={() => {return this.state.filters}}
+                        setFilter={(filter) => this.setFilter(filter)}
+
+                        submitFilter={() => this.submitFilter()}
                         validateEventName={(event) => this.validateEventName(event)}
                         validateAirframe={(event) => this.validateAirframe(event)}
                         validateSeverityType={(event) => this.validateSeverityType(event)}

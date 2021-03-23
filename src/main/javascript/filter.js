@@ -4,499 +4,338 @@ import ReactDOM from "react-dom";
 
 import { timeZones } from "./time_zones.js";
 
-class Filter extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            filters : {
-                type : "GROUP",
-                condition : "AND",
-                depth : 0,
-                filters : []
-            }
+function getRuleFromInput(input, rules) {
+    let rule = null;
+    for (let i = 0; i < rules.length; i++) {
+        if (input === rules[i].name) {
+            rule = rules[i];
+            break;
         }
     }
+    return rule;
+}
 
-    addRule(filter) {
-        let emptyRule = {
-            type : "RULE",
-            depth: filter.depth + 1,
-            inputs : [0]
-        };
-        filter.filters.push(emptyRule);
-
-        this.setState(this.state);
-        if (typeof this.props.parentRerender != 'undefined') {
-            this.props.parentRerender();
+function filterValid(filter, rules) {
+    if (filter.type == "GROUP") {
+        if (filter.filters.length == 0) {
+            return "Group has no rules.";
+        } else {
+            return "";
         }
-    }
+    } else if (filter.type == "RULE") {
+        //console.log(filter);
+        let inputs = filter.inputs;
 
-    addGroup(filter) {
-        console.log("adding group to filter:");
-        console.log(filter);
-
-        let emptyGroup = {
-            type : "GROUP",
-            condition : "AND",
-            depth: filter.depth + 1,
-            filters : []
-        };
-        filter.filters.push(emptyGroup);
-        console.log("after adding");
-        console.log(filter);
-
-        this.setState(this.state);
-        if (typeof this.props.parentRerender != 'undefined') {
-            this.props.parentRerender();
-        }
-    }
-
-    removeFilter(filters, index) {
-        console.log("removing filter " + index + " on filters:");
-        console.log(filters);
-        filters.splice(index, 1);
-        this.setState(this.state);
-        if (typeof this.props.parentRerender != 'undefined') {
-            this.props.parentRerender();
-        }
-    }
-
-    orClicked(filter, disabled) {
-        if (disabled) {
-            console.log("not changing because button disabled");
-            return;
-        }
-
-        console.log("changing group condition to: OR for filter:");
-        console.log(filter);
-        filter.condition = "OR";
-        console.log(filter);
-        console.log("state filter:");
-        console.log(this.state.filters);
-        this.setState(this.state);
-    }
-
-    andClicked(filter, disabled) {
-        if (disabled) {
-            console.log("not changing because button disabled");
-            return;
-        }
-
-        console.log("changing group condition to: AND for filter:");
-        console.log(filter);
-        filter.condition = "AND";
-        console.log(filter);
-        console.log("state filter:");
-        console.log(this.state.filters);
-        this.setState(this.state);
-    }
-
-    getQuery() {
-        console.log("getting filter query!");
-        let query = this.getQueryHelper(this.state.filters);
-        console.log(query);
-
-        return query;
-    }
-
-    getQueryHelper(filter) {
-        let query = {};
-
-        if (filter.type == "RULE") {
-            let inputs = filter.inputs;
-
-            //console.log("rule:");
-            let rule = this.props.rules[inputs[0] - 1];
+        if (inputs[0] == 0) {
+            return "Please select a rule.";
+        } else {
+            //console.log("checking rule valid, inputs then rule:");
+            //console.log(inputs);
+            let rule = getRuleFromInput(inputs[0], rules);
             //console.log(rule);
 
-            query.type = "RULE";
-            query.inputs = [];
-            query.inputs.push(rule.name);
-
-            for (let i = 1; i < inputs.length; i++) {
-
-                let condition = rule.conditions[i-1];
-                //console.log(condition);
-                //console.log("inputs[" + i + "]: " + inputs[i]);
-
-                if (condition.type == "select") {
-                    query.inputs.push(condition.options[inputs[i]]);
-                } else {
-                    query.inputs.push(inputs[i]);
-                }
+            if (rule == null) {
+                return "Please select a rule.";
             }
 
-        } else if (filter.type == "GROUP") {
-            query.type = "GROUP";
-            query.condition = filter.condition;
-            query.filters = [];
+            for (let i = 0; i < rule.conditions.length; i++) {
+                if (rule.conditions[i].type == "number") {
+                    if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                        return "Please enter a number.";
+                    }
 
-            let filters = filter.filters;
-            for (let i = 0; i < filters.length; i++) {
-                query.filters.push(this.getQueryHelper(filters[i]));
-            }
-        } else {
-            console.log("UNKNOWN FILTER '" + filter.type + "'");
-        }
+                } else if (rule.conditions[i].type == "time") {
+                    if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                        return "Please enter a time.";
+                    }
 
-        return query;
-    }
+                } else if (rule.conditions[i].type == "date") {
+                    if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                        return "Please enter a date.";
+                    }
 
-    getRemoveButton(parentFilters, removeIndex) {
-        let removeClasses = "btn btn-danger btn-sm";
-        return ( <button type="button" className={removeClasses}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.removeFilter(parentFilters, removeIndex)}></i> </button> );
-    }
-
-    getFilterHeader(filter, includeRemove, parentFilters, removeIndex) {
-        let ruleClasses = "btn btn-primary btn-sm mr-1";
-        let groupClasses = "btn btn-primary btn-sm";
-        let removeButton = "";
-
-        let andFixed = this.state.andFixed;
-        let disabledClasses = "";
-
-        if (includeRemove) {
-            groupClasses += " mr-1";
-            removeButton = this.getRemoveButton(parentFilters, removeIndex);
-            andFixed = false;
-        }
-        if (andFixed) disabledClasses = " disabled";
-
-
-        let andDefaultChecked = false;
-        let orDefaultChecked = false;
-
-        if (filter.groupCondition == "AND") {
-            andDefaultChecked = true;
-        } else {
-            orDefaultChecked = true; 
-        }
-
-        let orButton = "";
-        if (!andFixed) {
-            orButton = (
-                <label className={"btn btn-outline-primary btn-sm"} onClick={() => this.orClicked(filter, andFixed)}>
-                    <input type="radio" name="options" id="option3" autoComplete="off" defaultChecked={orDefaultChecked} />OR
-                </label> 
-            );
-        }
-
-        return (
-            <div className="d-flex justify-content-between">
-
-                <div className="p-2">
-                    <div className="btn-group btn-group-toggle" data-toggle="buttons">
-                        <label className={"btn btn-outline-primary btn-sm active"} onClick={() => this.andClicked(filter, andFixed)}>
-                            <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andDefaultChecked} />AND
-                        </label>
-                        { orButton }
-                    </div>
-
-                </div>
-
-                <div className="p-2">
-                    <button type="button" className={ruleClasses} onClick={() => this.addRule(filter)}>Add Rule</button>
-                    <button type="button" className={groupClasses} onClick={() => this.addGroup(filter)}>Add Group</button>
-                    { removeButton }
-                </div>
-            </div>
-        );
-    }
-
-    ruleChange(currentFilter, inputIndex, event) {
-        console.log("changing rule input " + inputIndex + " to: " + event.target.value);
-
-        if (inputIndex == 0) {
-            //reset the inputs for this filter because the rule type changed
-            console.log("resetting the current filter's inputs");
-            console.log("current filter:");
-            console.log(currentFilter);
-            console.log("rules:");
-            console.log(this.props.rules[event.target.value - 1]);
-
-            if ((this.props.rules[event.target.value - 1].name == "Start Date and Time") ||
-                (this.props.rules[event.target.value - 1].name == "End Date and Time") ||
-                (this.props.rules[event.target.value - 1].name == "Start Time") ||
-                (this.props.rules[event.target.value - 1].name == "End Time")) {
-
-                var split = new Date().toString().split(" ");
-                console.log(split);
-                //var timeZoneFormatted = split[split.length - 2] + " " + split[split.length - 1];
-                var timeZoneFormatted = split[split.length - 2];
-                timeZoneFormatted = timeZoneFormatted.slice(0, 6) + ":" + timeZoneFormatted.slice(6);
-
-                console.log("current time zone is: " + timeZoneFormatted);
-
-                let timeZoneIndex = 0;
-                for (let i = 0; i < timeZones.length; i++) {
-                    if (timeZones[i].includes(timeZoneFormatted)) {
-                        console.log("changing time zone index to " + i + ", '" + timeZones[i] + "'");
-                        timeZoneIndex = i;
-                        if (timeZones[i].includes("US")) {
-                            break;
-                        }
+                } else if (rule.conditions[i].type == "datetime-local") {
+                    if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
+                        return "Please enter a date and time.";
                     }
                 }
-
-                //set the time zone to the current time zone
-                currentFilter.inputs = [ 0, 0, "", timeZoneIndex ];
-            } else {
-                currentFilter.inputs = [ 0 ];
             }
-
+            return "";
         }
+    } else {
+        return "Unknown filter type: '" + filter.type + "'";
+    }
+}
 
-        currentFilter.inputs[inputIndex] = event.target.value;
-        /*
-        console.log("all filters:");
-        console.log(this.state.filters);
+function recursiveValid(filters, rules) {
+    if (filterValid(filters, rules) != "") return false;
 
-        console.log("new rule, inputs first:");
-        console.log(currentFilter.inputs);
-        console.log(this.props.rules[currentFilter.inputs[0] - 1]);
-        */
+    //console.log("recursiveValid on:");
+    //console.log(filters);
 
-        this.setState(this.state);
-        if (typeof this.props.parentRerender != 'undefined') {
-            this.props.parentRerender();
+    let subFilters = filters.filters;
+    for (let i = 0; i < subFilters.length; i++) {
+        if (subFilters[i].type == "GROUP") {
+            let subValid = recursiveValid(subFilters[i], rules);
+            //console.log("GROUP was valid? " + subValid);
+            if (!subValid) return false;
+        } else if (subFilters[i].type == "RULE") {
+            let subValid = (filterValid(subFilters[i], rules) == "");
+            //console.log("RULE was valid? " + subValid);
+            if (!subValid) return false;
+        } else {
+            //console.log("type wasn't defined!");
+            return false;
         }
     }
+    return true;
+}
 
+export function isValidFilter(filters, rules) {
+    //console.log("isValidFilter?");
+    //console.log(rules);
+    let valid = recursiveValid(filters, rules);
+    //console.log("isValid? " + valid);
+    return valid;
+}
 
-    renderRuleSelect(currentFilter) {
-        return (
-            <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.ruleChange(currentFilter, 0, event)} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[0]}>
-                <option value="0">Select Rule</option>
-                { 
-                    this.props.rules.map((ruleInfo, index) => {
-                        //console.log("adding rule: " + ruleInfo.name + ", with value: " + index);
-                        return ( <option value={index + 1} key={"rule-" + index}>{ruleInfo.name}</option> );
-                    })
-                }
-            </select>
-        );
+function getFilterAtTreeIndexHelper(filter, treeIndex) {
+    console.log("current treeIndex: " + treeIndex);
+    console.log(filter);
+
+    let commaIndex = treeIndex.indexOf(",");
+    console.log("commaIndex: " + commaIndex);
+
+    if (commaIndex === -1) {
+        console.log("final filter:")
+        console.log(filter.filters[treeIndex]);
+        return filter.filters[treeIndex];
+
+    } else {
+        let filterIndex = treeIndex.substr(0, commaIndex);
+        let nextIndex = treeIndex.substr(commaIndex + 1);
+        console.log("nextIndex: " + nextIndex);
+
+        return getFilterAtTreeIndexHelper(filter.filters[filterIndex], nextIndex);
+    }
+}
+
+function getFilterAtTreeIndex(filter, treeIndex) {
+    console.log("starting treeIndex: " + treeIndex);
+    console.log(filter);
+
+    if (treeIndex === "root") {
+        //this is the top level filter
+        return filter;
+    } else {
+        let nextIndex = treeIndex.substr(treeIndex.indexOf(",") + 1);
+        return getFilterAtTreeIndexHelper(filter, nextIndex);
+    }
+}
+
+function andClicked(filter, treeIndex) {
+    console.log("and clicked at treeIndex: " + treeIndex);
+    let targetFilter = getFilterAtTreeIndex(filter, treeIndex);
+    console.log(targetFilter);
+    if (targetFilter.type === "GROUP") {
+        targetFilter.condition = "AND";
+    }
+    return filter;
+}
+
+function orClicked(filter, treeIndex) {
+    console.log("or clicked at treeIndex: " + treeIndex);
+    let targetFilter = getFilterAtTreeIndex(filter, treeIndex);
+    console.log(targetFilter);
+    if (targetFilter.type === "GROUP") {
+        targetFilter.condition = "OR";
+    }
+    return filter;
+}
+
+function addRule(filter, treeIndex) {
+    console.log("adding rule at treeIndex: " + treeIndex);
+    let targetFilter = getFilterAtTreeIndex(filter, treeIndex);
+    console.log(targetFilter);
+
+    targetFilter.filters.push({
+        type : "RULE",
+        inputs : []
+    });
+    
+    return filter;
+}
+
+function addGroup(filter, treeIndex) {
+    console.log("adding group at treeIndex: " + treeIndex);
+    let targetFilter = getFilterAtTreeIndex(filter, treeIndex);
+    console.log(targetFilter);
+
+    targetFilter.filters.push({
+        type : "GROUP",
+        condition : "AND",
+        filters : []
+    });
+    return filter;
+}
+
+function removeFilter(filter, treeIndex) {
+    console.log("removing filter with treeIndex: " + treeIndex);
+    console.log(filter);
+
+    //first check to see if the treeIndex is the root filter, if so, just clear it
+    if (treeIndex === "root") {
+        //return an empty group
+        return {
+            type : "GROUP",
+            condition : "AND",
+            filters : []
+        };
+
+    } else {
+        //otherwise get the *parent* of the treeIndex
+        let parentIndex = treeIndex.substr(0, treeIndex.lastIndexOf(","));
+        let childIndex = treeIndex.substr(treeIndex.lastIndexOf(",") + 1);
+        console.log("parentIndex: " + parentIndex + ", childIndex: " + childIndex);
+
+        let parentFilter = getFilterAtTreeIndex(filter, parentIndex);
+        parentFilter.filters.splice(childIndex, 1);
     }
 
-    renderRule(currentFilter) {
-        let inputs = currentFilter.inputs;
-        let selectedRule = inputs[0];
+    return filter;
+}
 
-        if (selectedRule == 0) {
+function ruleChange(filter, treeIndex, rules, inputs, event) {
+    console.log("changing rule with treeIndex: " + treeIndex);
+    console.log(inputs);
+    console.log("event.target.value: " + event.target.value);
+    console.log("filter: ");
+    console.log(filter);
+
+    inputs[0] = event.target.value;
+    inputs.splice(1);
+
+    return filter;
+}
+
+
+function ruleValueChange(filter, treeIndex, inputs, index, event) {
+    console.log("changing rule with treeIndex: " + treeIndex);
+    console.log("modified index: " + index);
+    console.log(inputs);
+    console.log("event.target.value: " + event.target.value);
+    console.log("filter: ");
+    console.log(filter);
+
+    inputs[index + 1] = event.target.value;
+
+    return filter;
+}
+
+
+class Rule extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        let inputs = this.props.filter.inputs;
+        let selectedRule = getRuleFromInput(inputs[0], this.props.rules);
+
+        //console.log("rendering rule");
+        //console.log(inputs);
+        //console.log(selectedRule);
+
+        if (selectedRule == null) {
             return (
                 <div style={{display: "flex", flexDirection: "row"}}>
-                    { this.renderRuleSelect(currentFilter) }
+                    <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.props.setFilter(ruleChange(this.props.getFilter(), this.props.treeIndex, this.props.rules, inputs, event))} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={inputs[0]}>
+                        <option value="Select Rule">Select Rule</option>
+                        { 
+                            this.props.rules.map((ruleInfo, index) => {
+                                //console.log("adding rule: " + ruleInfo.name + ", with value: " + index);
+                                return ( <option value={ruleInfo.name} key={"rule-" + index}>{ruleInfo.name}</option> );
+                            })
+                        }
+                    </select>
+
+                    <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
                 </div>
             );
 
         } else {
+            //console.log("selectedRule.conditions:");
+            //console.log(selectedRule.conditions);
+            //console.log("inputs:");
+            //console.log(inputs);
+
+            while (inputs.length < selectedRule.conditions.length + 1) {
+                let lastInput = inputs.length - 1;
+                if (selectedRule.conditions[lastInput].type == "select") {
+                    inputs.push(selectedRule.conditions[lastInput].options[0]);
+                } else {
+                    inputs.push("");
+                }
+            }
+            //console.log("fixed inputs:");
+            //console.log(inputs);
+
 
             return (
                 <div style={{display: "flex", flexDirection: "row"}}>
-                    { this.renderRuleSelect(currentFilter) }
+                    <select id="stateSelect" type="select" className="form-control" onChange={(event) => this.props.setFilter(ruleChange(this.props.getFilter(), this.props.treeIndex, this.props.rules, inputs, event))} style={{flexBasis:"180px", flexShrink:0, marginRight:5}} value={inputs[0]}>
+
+                        <option value="Select Rule">Select Rule</option>
+                        { 
+                            this.props.rules.map((ruleInfo, index) => {
+                                //console.log("adding rule: " + ruleInfo.name + ", with value: " + index);
+                                return ( <option value={ruleInfo.name} key={"rule-" + index}>{ruleInfo.name}</option> );
+                            })
+                        }
+                    </select>
 
                     {
-                        this.props.rules[selectedRule - 1].conditions.map((conditionInfo, index) => {
+                        selectedRule.conditions.map((conditionInfo, index) => {
                             if (conditionInfo.type == "select") {
-                                if (typeof currentFilter.inputs[index + 1] == 'undefined') currentFilter.inputs[index + 1] = 0;
-
                                 let flexBasis = "150px";
                                 if (conditionInfo.name == "timezone") {
                                     flexBasis = "375px";
                                 }
 
                                 return (
-                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:flexBasis, flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}>
+                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))} style={{flexBasis:flexBasis, flexShrink:0, marginRight:5}} value={inputs[index + 1]}>
                                         { 
                                             conditionInfo.options.map((optionInfo, index) => {
-                                                //console.log("adding option: " + optionInfo + ", with value: " + index + ", key: " + (conditionInfo.name + "-" + index));
-                                                return ( <option value={index} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
+                                                return ( <option value={optionInfo} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
                                             })
                                         }
                                     </select>
                                 );
 
                             } else if (conditionInfo.type == "time" || conditionInfo.type == "date" || conditionInfo.type == "number" || conditionInfo.type == "datetime-local") {
-                                if (typeof currentFilter.inputs[index + 1] == 'undefined') {
-                                    currentFilter.inputs[index + 1] = "";
-                                }
 
                                 return (
-                                    <input type={conditionInfo.type} step="any" key={"input-" + index} className={"form-control"} aria-describedby="valueHelp" placeholder={"Enter " + conditionInfo.name} onChange={(event) => this.ruleChange(currentFilter, index + 1, event)} style={{flexBasis:"150px", flexShrink:0, marginRight:5}} value={currentFilter.inputs[index + 1]}/>
+                                    <input type={conditionInfo.type} step="any" key={"input-" + index} className={"form-control"} aria-describedby="valueHelp" placeholder={"Enter " + conditionInfo.name} onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))} style={{flexBasis:"150px", flexShrink:0, marginRight:5}} value={inputs[index + 1]}/>
                                 );
                             }
                         })
                     }
+
+                    <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
+
                 </div>
             );
         }
     }
+}
 
-    filterValid(filter) {
-        if (filter.type == "GROUP") {
-            if (filter.filters.length == 0) {
-                return "Group has no rules.";
-            } else {
-                return "";
-            }
-        } else if (filter.type == "RULE") {
-            console.log("checking if rule valid udpated 3, made some other changes! and some more!!: ");
-            console.log(filter);
-            let inputs = filter.inputs;
 
-            if (inputs[0] == 0) {
-                return "Please select a rule.";
-            } else {
-                let rule = this.props.rules[inputs[0] - 1];
-                console.log("checking rule valid, inputs then rule:");
-                console.log(inputs);
-                console.log(rule);
-                for (let i = 0; i < rule.conditions.length; i++) {
-                    if (rule.conditions[i].type == "number") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a number.";
-                        }
-
-                    } else if (rule.conditions[i].type == "time") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a time.";
-                        }
-
-                    } else if (rule.conditions[i].type == "date") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a date.";
-                        }
-
-                    } else if (rule.conditions[i].type == "datetime-local") {
-                        if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
-                            return "Please enter a date and time.";
-                        }
-                    }
-                }
-                return "";
-            }
-        } else {
-            return "Unknown filter type: '" + filter.type + "'";
-        }
-    }
-
-    recursiveValid(filters) {
-        if (this.filterValid(filters) != "") return false;
-
-        //console.log("recursiveValid on:");
-        //console.log(filters);
-
-        let subFilters = filters.filters;
-        for (let i = 0; i < subFilters.length; i++) {
-            if (subFilters[i].type == "GROUP") {
-                let subValid = this.recursiveValid(subFilters[i]);
-                //console.log("GROUP was valid? " + subValid);
-                if (!subValid) return false;
-            } else if (subFilters[i].type == "RULE") {
-                let subValid = (this.filterValid(subFilters[i]) == "");
-                //console.log("RULE was valid? " + subValid);
-                if (!subValid) return false;
-            } else {
-                //console.log("type wasn't defined!");
-                return false;
-            }
-        }
-        return true;
-    }
-
-    isValid() {
-        let valid = this.recursiveValid(this.state.filters);
-        console.log("isValid? " + valid);
-        return valid;
-    }
-
-    renderFilters(filters) {
-        let filterContent = "";
-
-        if (filters.length == 0) return "";
-
-        let errorMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        return (
-            <div>
-                {
-                    filters.map((currentFilter, index) => {
-                        let cardClasses = "card mb-1 m-1";
-                        let errorMessage = this.filterValid(currentFilter);
-                        console.log("filter error mesage: " + errorMessage);
-                        let errorContent = "";
-
-                        if (errorMessage == "") {
-                            cardClasses += " border-secondary";
-                        } else {
-                            cardClasses += " border-danger";
-                            errorContent = (
-                                <div className="d-flex justify-content-end">
-                                    <div className="p-2 flex-fill">
-                                        <span style={errorMessageStyle}>{errorMessage}</span>
-                                    </div>
-                                </div>
-                            );
-                        }
-
-                        if (currentFilter.type === "GROUP") {
-
-                            return (
-                                <div className="card-body p-2" key={index}>
-                                    <div className={cardClasses} style={{background : "rgba(248,259,250,0.8)"}}>
-                                        { this.getFilterHeader(currentFilter, true, filters, index) }
-
-                                        { this.renderFilters(currentFilter.filters) }
-
-                                        { errorContent }
-                                    </div>
-                                </div>
-                            );
-
-                        } else if (currentFilter.type === "RULE") {
-
-                            return (
-                                <div className="card-body p-2" key={index}>
-                                    <div className={cardClasses} style={{background : "rgba(248,259,250,0.8)"}}>
-                                        <div className="d-flex justify-content-between">
-                                            <div className="p-2">
-                                                { this.renderRule(currentFilter) } 
-                                            </div>
-
-                                            <div className="p-2">
-                                                { this.getRemoveButton(filters, index) }
-                                            </div>
-
-                                        </div>
-
-                                        { errorContent }
-                                    </div>
-                                </div>
-                            );
-
-                        } else {
-                            console.log("unknown filter type: '" + currentFilter.type + "'");
-                            return (
-                                <div key={index}> EMPTY FILTER </div>
-                            );
-                        }
-                    })
-                }
-            </div>
-        );
+class Group extends React.Component {
+    constructor(props) {
+        super(props);
     }
 
     render() {
-        let depth = 0;
-
-        let groupClasses = "btn btn-primary btn-sm";
-
         let errorMessageStyle = {
             padding : '7 0 7 0',
             margin : '0',
@@ -507,36 +346,103 @@ class Filter extends React.Component {
 
         let errorHidden = true;
         let errorMessage = "";
-        if (this.state.filters.filters.length == 0) {
+        if (this.props.filters.length == 0) {
             errorHidden = false;
             errorMessage = "Group has no rules.";
         }
-        let submitDisabled = !this.recursiveValid(this.state.filters);
 
-        let externalSubmit = false;
-        if (typeof this.props.externalSubmit != 'undefined') {
-            externalSubmit = this.props.externalSubmit;
+        //console.log("GROUP: index: " + this.props.treeIndex);
+        //console.log(this.props.filters);
+
+        let andChecked = this.props.filters.condition === "AND";
+        let andActive = "";
+        let orActive = "";
+        if (andChecked) {
+            andActive = "active";
+        } else {
+            orActive = "active";
         }
-        console.log(externalSubmit);
 
         return (
-            <div className="card-body" hidden={!this.props.filterVisible} style={{padding:0, margin:0}}>
-                <div className="card mb-1 m-1 border-secondary" style={{background : "rgba(248,259,250,0.8)", margin:0}}>
-                    { this.getFilterHeader(this.state.filters, false, null, 0) }
+            <div className="card mb-1 m-1 border-secondary" style={{background : "rgba(248,259,250,0.8)", margin:0}}>
+                <div className="d-flex justify-content-between">
 
-                    { this.renderFilters(this.state.filters.filters) }
-
-                    <div className="d-flex justify-content-end">
-                        <div className="p-2 flex-fill">
-                            <span style={errorMessageStyle} hidden={errorHidden}>{errorMessage}</span>
+                    <div className="p-2">
+                        <div className="btn-group btn-group-toggle" data-toggle="buttons">
+                            <label className={"btn btn-outline-primary btn-sm " + andActive} onClick={() => this.props.setFilter(andClicked(this.props.getFilter(), this.props.treeIndex))}>
+                                <input type="radio" name="options" id="option1" autoComplete="off" defaultChecked={andChecked} />AND
+                            </label>
+                            <label className={"btn btn-outline-primary btn-sm " + orActive} onClick={() => this.props.setFilter(orClicked(this.props.getFilter(), this.props.treeIndex))}>
+                                <input type="radio" name="options" id="option2" autoComplete="off" defaultChecked={!andChecked} />OR
+                            </label> 
                         </div>
 
-                        <div className="p-2">
-                            <button type="button" className={groupClasses} disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={externalSubmit} >{this.props.submitButtonName}</button>
-                        </div>
                     </div>
 
+                    <div className="p-2">
+                        <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add Rule</button>
+                        <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add Group</button>
+                        <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
+                    </div>
                 </div>
+
+                {
+                    this.props.filters.filters.map((filterInfo, index) => {
+                        if (filterInfo.type === "GROUP") {
+                            return (
+                                <div className="p-2" key={this.props.treeIndex + "," + index}>
+                                    <Group
+                                        key={this.props.treeIndex + "," + index}
+                                        treeIndex={this.props.treeIndex + "," + index}
+                                        rules={this.props.rules}
+                                        filters={filterInfo}
+                                        getFilter={() => {return this.props.getFilter()}}
+                                        setFilter={(filter) => this.props.setFilter(filter)}
+                                    />
+                                </div>);
+
+                        } else if (filterInfo.type === "RULE") {
+                            return (
+                                <div className="p-2" key={this.props.treeIndex + "," + index}>
+                                    <Rule
+                                        key={this.props.treeIndex + "," + index}
+                                        treeIndex={this.props.treeIndex + "," + index}
+                                        rules={this.props.rules}
+                                        filter={filterInfo}
+                                        getFilter={() => {return this.props.getFilter()}}
+                                        setFilter={(filter) => this.props.setFilter(filter)}
+                                    />
+                                </div>);
+                        }
+                    })
+                }
+
+                <div className="d-flex justify-content-end">
+                    <div className="p-2 flex-fill">
+                        <span style={errorMessageStyle} hidden={errorHidden}>{errorMessage}</span>
+                    </div>
+                </div>
+
+            </div>
+        );
+    }
+}
+
+class Filter extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <div className="card-body" hidden={!this.props.filterVisible} style={{padding:0, margin:0}}>
+                <Group
+                    treeIndex="root" 
+                    rules={this.props.rules}
+                    filters={this.props.filters}
+                    getFilter={() => {return this.props.getFilter()}}
+                    setFilter={(filter) => this.props.setFilter(filter)}
+                />
             </div>
         );
     }

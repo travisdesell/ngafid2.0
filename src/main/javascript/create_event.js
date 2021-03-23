@@ -15,6 +15,8 @@ var navbar = ReactDOM.render(
 
 airframes.unshift("All Airframes");
 
+airframeMap[0] = "All Airframes";
+
 
 var rules = [];
 
@@ -42,10 +44,17 @@ class CreateEventCard extends React.Component {
         this.state = {
             filterVisible : true,
             eventName : "",
-            airframe : 0,
+            airframe : airframeMap[0],
+            airframeNameId : 0,
             startBuffer : "",
             stopBuffer : "",
-            severityColumnNames : []
+            severityType : "min",
+            severityColumnNames : [],
+            filters : {
+                type : "GROUP",
+                condition : "AND",
+                filters : []
+            }
         }
     }
 
@@ -125,24 +134,29 @@ class CreateEventCard extends React.Component {
         });
     }
 
-    submitFilter(exceedenceFilter) {
-        //console.log( this.state.filters );
+    setFilter(filter) {
+        this.setState({
+            filters : filter
+        });
+    }
 
-        let query = exceedenceFilter.current.getQuery();
-
+    submitFilter() {
         console.log("Submitting filters:");
-        console.log( query );
+        console.log( this.state.filters );
+        console.log("airframe: " + this.state.airframe);
+        console.log("airframeNameId: " + this.state.airframeNameId);
+        console.log(airframeMap);
 
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(query),
+            filterQuery : JSON.stringify(this.state.filters),
             eventName : this.state.eventName,
             startBuffer : this.state.startBuffer,
             stopBuffer : this.state.stopBuffer,
             severityColumnNames : JSON.stringify(this.state.severityColumnNames),
             severityType : this.state.severityType,
-            airframe : airframes[this.state.airframe]
+            airframe : this.state.airframe
         };   
         console.log(submissionData);
 
@@ -203,8 +217,12 @@ class CreateEventCard extends React.Component {
                         stopBuffer={this.state.stopBuffer}
                         severityColumn={this.state.severityColumn}
                         severityColumnNames={this.state.severityColumnNames}
+                        filters={this.state.filters}
 
-                        submitFilter={(exceedenceFilter) => this.submitFilter(exceedenceFilter)}
+                        getFilter={() => {return this.state.filters}}
+                        setFilter={(filter) => this.setFilter(filter)}
+
+                        submitFilter={() => this.submitFilter()}
                         validateEventName={(event) => this.validateEventName(event)}
                         validateAirframe={(event) => this.validateAirframe(event)}
                         validateSeverityType={(event) => this.validateSeverityType(event)}
