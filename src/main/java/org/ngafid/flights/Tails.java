@@ -309,7 +309,7 @@ public class Tails {
      * @return the number of unconfirmed tails for this fleet
      */
     public static int getUnconfirmedTailsCount(Connection connection, int fleetId) throws SQLException {
-        String queryString = "SELECT count(*) FROM tails WHERE fleet_id = ?";
+        String queryString = "SELECT count(*) FROM tails WHERE fleet_id = ? AND confirmed = 0";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
 
