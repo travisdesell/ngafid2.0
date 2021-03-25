@@ -411,7 +411,7 @@ $query = "CREATE TABLE `events` (
     `severity` DOUBLE NOT NULL,
 
     PRIMARY KEY(`id`),
-    FOREIGN KEY(`fleet_id`) REFERENCES fleets(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
     INDEX(`start_time`),
     INDEX(`end_time`),
