@@ -99,6 +99,8 @@ $query = "CREATE TABLE `user` (
     `phone_number` VARCHAR(24),
     `reset_phrase` VARCHAR(64),
     `registration_time` DATETIME,
+    `admin` BOOLEAN DEFAULT 0,
+    `aggregate_view` BOOLEAN DEFAULT 0,
 
     PRIMARY KEY(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
@@ -144,6 +146,12 @@ $query = "CREATE TABLE `airframes` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-28-181'");
+query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
+query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
+query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
+
 
 $query = "CREATE TABLE `fleet_airframes` (
     `fleet_id` INT(11) NOT NULL,
@@ -380,7 +388,7 @@ $query = "CREATE TABLE `event_definitions` (
     `column_names` VARCHAR(128),
     `condition_json` VARCHAR(512),
     `severity_column_names` VARCHAR(128),
-    `severity_type` VARCHAR(3),
+    `severity_type` VARCHAR(7),
     `color` VARCHAR(6) DEFAULT NULL,
 
     PRIMARY KEY(`id`),
