@@ -290,7 +290,7 @@ class UpdateEventCard extends React.Component {
                         validateSeverityType={(event) => this.validateSeverityType(event)}
                         changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
                         addSeverityColumn={() => this.addSeverityColumn()}
-                        removeSeverityColumn={(columnName) => this.addSeverityColumn(columnName)}
+                        removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
                         validateStartBuffer={(event) => this.validateStartBuffer(event)}
                         validateStopBuffer={(event) => this.validateStopBuffer(event)}
                     />
