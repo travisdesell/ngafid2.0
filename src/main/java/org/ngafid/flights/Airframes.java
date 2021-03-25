@@ -279,4 +279,37 @@ public class Airframes {
         return idToNameMap;
     }
 
+    /**
+     * Queries the database for all airframe names and their ids and returns a
+     * hashmap of them.
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the id of the fleet for the airframes
+     * @return a HashMap of all airframe name ids to their names
+     */
+
+    public static HashMap<Integer,String> getIdToNameMap(Connection connection, int fleetId) throws SQLException {
+        HashMap<Integer,String> idToNameMap = new HashMap<Integer,String>();
+
+        String queryString = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+
+        //LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            //airframe existed in the database, return the id
+            int id = resultSet.getInt(1);
+            String airframe = resultSet.getString(2);
+            idToNameMap.put(id, airframe);
+        }
+        resultSet.close();
+        query.close();
+
+
+        return idToNameMap;
+    }
+
+
 }

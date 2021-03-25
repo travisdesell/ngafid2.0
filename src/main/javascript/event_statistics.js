@@ -166,6 +166,103 @@ var eventStats = [
 ];
 */
 
+let eventStats = [];
+airframeMap[0] = "Generic";
+
+console.log(eventDefinitions);
+
+let eventDefinitionsMap = {};
+for (let i = 0; i < eventDefinitions.length; i++) {
+    let eventDefinition = eventDefinitions[i];
+    let airframeId = eventDefinition.airframeNameId;
+
+    if (!(airframeId in eventDefinitionsMap)) {
+        eventDefinitionsMap[airframeId] = [];
+        console.log("map did not have airframeId: " + airframeId);
+    }
+    eventDefinitionsMap[airframeId].push(eventDefinition);
+}
+
+console.log(eventDefinitionsMap);
+
+class EventCard extends React.Component {
+    render() {
+        return (
+            <div className="col-sm-12" key={eventIndex} style={{padding:"0 0 0 0"}}>
+                <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <h5 className="card-header">
+                        <div className="d-flex">
+                            <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
+                                {eventInfo.eventName}
+                            </div>
+                            <button type="button" className="btn btn-outline-secondary" style={{padding:"3 8 3 8", marginRight:"5"}} onClick={() => {this.toggleEventInfo(eventInfo)}}>
+                                <i className='fa fa-info'></i>
+                            </button>
+                            <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
+                                <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
+                            </div>
+                        </div>
+                    </h5>
+
+                    <div className="card-body" >
+                        <p hidden={eventInfo.infoHidden}>
+                            {eventInfo.humanReadable}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+}
+
+class AirframeCard extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            expanded : false
+        }
+    }
+
+    expandClicked() {
+        this.setState({
+            expanded : !this.state.expanded
+        });
+    }
+
+    render() {
+        let marginTop = 0;
+        if (!this.props.first) {
+            marginTop = 14;
+        }
+
+        const styleButton = { };
+        let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
+        let expandIconClasses = "fa ";
+        let expandDivClasses = "";
+
+        if (this.state.expanded) {
+            expandIconClasses += "fa-angle-double-up";
+            expandDivClasses = "m-0 mt-1 mb-4";
+        } else {
+            expandIconClasses += "fa-angle-double-down";
+            expandDivClasses = "m-0";
+        }
+
+
+        return (
+            <div style={{marginTop:marginTop, padding:"0 5 0 5"}}>
+                <div className="card mb-1 m-1" style={{background : "rgba(100,100,100,0.2)", padding:"10 10 10 10"}}>
+                    <h5 style={{marginBottom:0}}> 
+                        {this.props.airframeName + " Event Statistics"}
+                        <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
+                    </h5>
+                </div>
+
+            </div>
+        );
+    }
+}
 
 class DashboardCard extends React.Component {
     constructor(props) {
@@ -184,13 +281,39 @@ class DashboardCard extends React.Component {
         this.setState(this.state);
     }
 
-
     render() {
+        console.log(airframeMap);
+
+        let airframeIds = Object.keys(airframeMap);
+
+        return (
+            <div>
+                <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                {
+                    airframeIds.map((airframeId, airframeIndex) => {
+                        console.log(airframeId);
+                        let first = true;
+                        if (airframeIndex > 0) first = false
+                        return (
+                            <AirframeCard
+                                key={airframeIndex}
+                                first={first}
+                                airframeId={airframeId}
+                                airframeName={airframeMap[airframeId]}
+                            />);
+                    })
+                }
+            </div>
+         );
+    }
+
+    renderOld() {
         console.log(eventStats);
 
         return (
             <div>
-                <SignedInNavbar activePage="dashboard" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 {
                     this.state.eventStats.map((airframeStats, airframeIndex) => {
@@ -318,5 +441,5 @@ class DashboardCard extends React.Component {
 
 var profilePage = ReactDOM.render(
     <DashboardCard />,
-    document.querySelector('#dashboard-page')
+    document.querySelector('#event-statistics-page')
 );

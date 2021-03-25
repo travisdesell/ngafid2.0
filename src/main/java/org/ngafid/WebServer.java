@@ -185,7 +185,7 @@ public final class WebServer {
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
 
-        Spark.get("/protected/dashboard", new GetDashboard(gson));
+        Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
@@ -253,7 +253,7 @@ public final class WebServer {
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
-        Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
+        Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         LOG.info("NGAFID WebServer initialization complete.");

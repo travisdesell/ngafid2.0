@@ -24,16 +24,18 @@ import spark.Session;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
+import org.ngafid.flights.Airframes;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-import org.ngafid.events.EventStatistics;
 
-public class GetDashboard implements Route {
-    private static final Logger LOG = Logger.getLogger(GetDashboard.class.getName());
+public class GetEventStatistics implements Route {
+    private static final Logger LOG = Logger.getLogger(GetEventStatistics.class.getName());
     private Gson gson;
 
     private static class Message {
@@ -48,13 +50,13 @@ public class GetDashboard implements Route {
 
     private List<Message> messages = new ArrayList<Message>();
 
-    public GetDashboard(Gson gson) {
+    public GetEventStatistics(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetDashboard(Gson gson, String messageType, String messageText) {
+    public GetEventStatistics(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -68,7 +70,7 @@ public class GetDashboard implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "dashboard.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "event_statistics.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
@@ -81,7 +83,7 @@ public class GetDashboard implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, fleetId);
+            //ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, fleetId);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -93,8 +95,10 @@ public class GetDashboard implements Route {
 
             long startTime = System.currentTimeMillis();
             scopes.put("events_js",
-                    "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    );
+                //"var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
+                "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
+                "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n"
+            );
             long endTime = System.currentTimeMillis();
             LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
 
