@@ -10,9 +10,39 @@ import java.time.format.DateTimeFormatter;
 
 public class TimeUtils {
 
+    /**
+     * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
+     * if the offset is okay.
+     *
+     * @param the LocalDateTime value which will be updated
+     * @param the bad offset
+     * @return the fixed offset
+     */
+    public static String updateBadOffset(LocalDateTime ldt, String offset) {
+        //weird input data
+        if (offset.equals("+19:00")) {
+            ldt = ldt.plusHours(1);
+            offset = "+18:00";
+        } else if (offset.equals("-20:00")) {
+            ldt = ldt.minusHours(2);
+            offset = "-18:00";
+        } else if (offset.equals("-21:00")) {
+            ldt = ldt.minusHours(3);
+            offset = "-18:00";
+        } else if (offset.equals("+20:00")) {
+            ldt = ldt.plusHours(2);
+            offset = "+18:00";
+        }
+
+        return offset;
+    }
+
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        //fix bad offset values
+        offset = updateBadOffset(ldt, offset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(offset);
@@ -39,6 +69,9 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
+        //fix bad offset values
+        offset = updateBadOffset(ldt, offset);
+
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(offset);
 
@@ -61,12 +94,9 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        //+19:00 is not a valid time offset in Java (range is -18 to 18) so this is a hack to fix
-        //weird input data
-        if (originalOffset.equals("+19:00")) {
-            ldt = ldt.plusHours(1);
-            originalOffset = "+18:00";
-        }
+        //fix bad offset values
+        offset = updateBadOffset(ldt, offset);
+
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
 

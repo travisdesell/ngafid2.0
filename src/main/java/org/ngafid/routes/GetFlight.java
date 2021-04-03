@@ -97,42 +97,45 @@ public class GetFlight implements Route {
 
             Connection connection = Database.getConnection();
 
-            String flightId = request.queryParams("flight_id");
-            String otherFlightId = request.queryParams("other_flight_id");
-            LOG.info("URL flight id is: " + flightId);
-            LOG.info("URL other flight id is: " + otherFlightId);
+            String[] flightIds = request.queryParamValues("flight_id");
+            LOG.info("Flight id(s) are: " + Arrays.toString(flightIds));
 
             long startTime, endTime;
 
-            Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
-            Flight otherFlight = null;
-            if (otherFlightId != null) {
-                otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
+            ArrayList<Flight> flights = new ArrayList<Flight>();
 
-            }
+            for (String flightId : flightIds) {
+                Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
 
-            if (flight.getFleetId() != fleetId || (otherFlight != null && otherFlight.getFleetId() != fleetId)) {
-                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
-                Spark.halt(401, "User did not have access to this flight.");
-
-            } else {
-                StringBuilder sb = new StringBuilder();
-                if (otherFlightId == null) {
-                    sb.append("var flights = [" + gson.toJson(flight) + "];");
-                } else {
-                    sb.append("var flights = [" + gson.toJson(flight) + ", " + gson.toJson(otherFlight) + "];");
+                if (flight.getFleetId() != fleetId) {
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    Spark.halt(401, "User did not have access to this flight.");
                 }
 
-                scopes.put("flight_js", sb.toString());
-
-                StringWriter stringOut = new StringWriter();
-                startTime = System.currentTimeMillis();
-                mustache.execute(new PrintWriter(stringOut), scopes).flush();
-                endTime = System.currentTimeMillis();
-                LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
-
-                resultString = stringOut.toString();
+                flights.add(flight);
             }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("var flights = [");
+
+            boolean first = true;
+            for (Flight flight : flights) {
+                if (!first) sb.append(", ");
+                first = false;
+                sb.append(gson.toJson(flight));
+            }
+            sb.append("];");
+
+            scopes.put("flight_js", sb.toString());
+
+            StringWriter stringOut = new StringWriter();
+            startTime = System.currentTimeMillis();
+            mustache.execute(new PrintWriter(stringOut), scopes).flush();
+            endTime = System.currentTimeMillis();
+            LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
+            resultString = stringOut.toString();
+
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
