@@ -176,7 +176,6 @@ class SignedInNavbar extends React.Component {
                             ? <NavLink name={"Aggregate Dashboard"} active={this.props.activePage === "aggregate"} href="/protected/aggregate"/>
                             : ""
                         }
-                        <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
 
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">

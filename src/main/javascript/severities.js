@@ -197,7 +197,7 @@ class SeveritiesPage extends React.Component {
                 if (otherFlightId == null) {
                     window.open("/protected/flight?flight_id=" + flightId);
                 } else {
-                    window.open("/protected/flight?flight_id=" + otherFlightId + "&other_flight_id=" + flightId);
+                    window.open("/protected/flight?flight_id=" + otherFlightId + "&flight_id=" + flightId);
                 }
 
                 //might want to only open one tab if for some reason multiple points overlap (which shouldn't but might happen)
