@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -97,7 +98,7 @@ public class GetFlight implements Route {
 
             Connection connection = Database.getConnection();
 
-            String[] flightIds = request.queryParamValues("flight_id");
+            String[] flightIds = request.queryParamsValues("flight_id");
             LOG.info("Flight id(s) are: " + Arrays.toString(flightIds));
 
             long startTime, endTime;

@@ -23,15 +23,18 @@ public class TimeUtils {
         if (offset.equals("+19:00")) {
             ldt = ldt.plusHours(1);
             offset = "+18:00";
+        } else if (offset.equals("+20:00")) {
+            ldt = ldt.plusHours(2);
+            offset = "+18:00";
         } else if (offset.equals("-20:00")) {
             ldt = ldt.minusHours(2);
             offset = "-18:00";
         } else if (offset.equals("-21:00")) {
             ldt = ldt.minusHours(3);
             offset = "-18:00";
-        } else if (offset.equals("+20:00")) {
-            ldt = ldt.plusHours(2);
-            offset = "+18:00";
+        } else if (offset.equals("-22:00")) {
+            ldt = ldt.minusHours(4);
+            offset = "-18:00";
         }
 
         return offset;
@@ -95,7 +98,7 @@ public class TimeUtils {
         LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         //fix bad offset values
-        offset = updateBadOffset(ldt, offset);
+        originalOffset = updateBadOffset(ldt, originalOffset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
