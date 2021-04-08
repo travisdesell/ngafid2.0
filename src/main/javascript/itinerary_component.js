@@ -45,6 +45,12 @@ class Itinerary extends React.Component {
         this.setState(this.state);
     }
 
+    setDefaultLayer() {
+        let defaultLayerName = 'Itinerary'; //changeme if we want the default layer to be something different
+
+        this.selectLayer(defaultLayerName);
+    }
+
     getSelectedLayer() {
         for (let i = 0; i < this.props.layers.length; i++) {
             let layer = this.props.layers[i];
@@ -53,7 +59,9 @@ class Itinerary extends React.Component {
                 return layer.get('description');
             }
         }
-        return 'Select Layer to Display';
+
+        this.setDefaultLayer();
+        return 'Itinerary with Phases';
     }
 
     render() {
