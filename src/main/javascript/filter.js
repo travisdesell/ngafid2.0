@@ -140,7 +140,6 @@ function andClicked(filter, treeIndex) {
     if (targetFilter.type === "GROUP") {
         targetFilter.condition = "AND";
     }
-    return filter;
 }
 
 function orClicked(filter, treeIndex) {
@@ -364,7 +363,7 @@ class Group extends React.Component {
     constructor(props) {
         super(props);
     }
-
+   
     render() {
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -436,6 +435,8 @@ class Group extends React.Component {
                                         filters={filterInfo}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
+                                        setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
+                                        getSortByColumn={() => {return this.props.getSortByColumn}}
                                     />
                                 </div>);
 
@@ -461,6 +462,16 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
+                        <button className="m-1 btn btn-primary btn-sm dropdown-toggle"  type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Sorting by: {this.props.getSortByColumn}
+                        </button>
+                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        {
+                            this.props.rules.map((ruleInfo, index) => {
+                                return ( <button className="dropdown-item" type="button" key={index} onClick={() => this.props.setSortByColumn(ruleInfo.name)}>{ruleInfo.name}</button> );
+                            })
+                        }
+                        </div>
                         <button type="button" className="btn btn-primary btn-sm" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
@@ -486,6 +497,8 @@ class Filter extends React.Component {
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}
+                    setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
+                    getSortByColumn={() => {return this.props.getSortByColumn}}
                 />
 
             </div>

@@ -338,17 +338,29 @@ public class Flight {
         return diffSeconds;
     }
 
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String orderingColumnn) throws SQLException {
+        return Flight.getFlights(connection, fleetId, filter, " ORDER BY " + orderingColumnn + " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+    }
+
+    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize) throws SQLException {
+        return Flight.getFlights(connection, fleetId, filter, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+    }
+
     /**
-     * This method allows us to specify the range of rows we want to get from the database
-     * which is useful for pagination
+     * This method allows for the query using a given filter to be modified by appending a SQL constraint such as LIMIT or ORDER BY or 
+     * combinations thereof
+     *
+     * @param connection the database connection
+     * @param fleetId the fleet id
+     * @param filter the filter used to query flights
+     * @param constraints the additional query constraints appended to the query
      */
-    public static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String sqlLimit) throws SQLException {
+    private static ArrayList<Flight> getFlights(Connection connection, int fleetId, Filter filter, String constraints) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString = "SELECT id, fleet_id, uploader_id, upload_id, system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
 
-        if (sqlLimit != null && !sqlLimit.isEmpty())
-            queryString += sqlLimit;
+        queryString = (constraints != null && !constraints.isEmpty()) ? (queryString + constraints) : queryString;
 
         LOG.info(queryString);
 
