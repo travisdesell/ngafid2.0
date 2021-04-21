@@ -93,7 +93,16 @@ public final class WebServer {
         LOG.info("NGAFID WebServer is initializing.");
 
         // Get the port for the NGAFID webserver to listen on
-        Spark.port( Integer.parseInt(System.getenv("NGAFID_PORT")) );
+        int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
+        Spark.port(port);
+        
+        //----- FOR HTTPS ONLY -----
+        if (port == 8443 || port == 443) {
+            LOG.info("HTTPS Detected, using a keyfile");
+            Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
+        }
+        //--------------------------
+        
         Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
 
         int maxThreads = 32;
