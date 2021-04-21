@@ -11,6 +11,7 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
 
 import spark.Spark;
+import spark.Service;
 import spark.Session;
 
 import java.io.IOException;
@@ -100,6 +101,16 @@ public final class WebServer {
         if (port == 8443 || port == 443) {
             LOG.info("HTTPS Detected, using a keyfile");
             Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
+
+            // Make sure we redirect all HTTP traffic to HTTPS now
+            Service http = Service.ignite().port(8080);
+            http.before(((request, response) -> {
+                final String url = request.url();
+                if (url.startsWith("http://")) {
+                    final String[] toHttps = url.split("http://");
+                    response.redirect("https://" + toHttps[1]);
+                }
+            }));
         }
         //--------------------------
         
