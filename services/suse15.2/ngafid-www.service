@@ -5,8 +5,10 @@ After=multi-user.target
 [Service]
 Type=simple
 User=ngafid
-Environment="NGAFID_PORT=8181"
+Environment="NGAFID_PORT=8443"
 Environment="NGAFID_UPLOAD_DIR=/mnt/ngafid/ngafid_data/uploads"
+Environment=HTTPS_PASSKEY="k31U8rpOU65t@BQVsxK51?%6"
+Environment=HTTPS_CERT_PATH=/mnt/ngafid/ssl/ngafid_keystore.jks
 Environment="NGAFID_ARCHIVE_DIR=/mnt/ngafid/ngafid_data/archive"
 Environment="NGAFID_DB_INFO=/mnt/ngafid/ngafid2.0/db/db_info.php"
 Environment="TERRAIN_DIRECTORY=/mnt/ngafid/ngafid_data/terrain/"
