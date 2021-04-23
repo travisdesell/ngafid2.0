@@ -19,7 +19,7 @@ public class Database {
 
     public static Connection getConnection() { 
         try {
-            if (connection.isClosed()) {
+            if (connection.isClosed()) { //investigate further here 
                 setConnection();
             } 
         } catch (SQLException e) {

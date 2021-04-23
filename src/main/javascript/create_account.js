@@ -72,7 +72,7 @@ class CreateAccountCard extends React.Component {
 
 
         if (this.state.checkedRadio == "newFleet") {
-            submissionData.fleetName = $("#newFleetName").val().trim();
+            //submissionData.fleetName = $("#newFleetName").val().trim();
         } else if (this.state.checkedRadio == "existingFleet") {
             submissionData.fleetName = $("#fleetSelect").val().trim();
         } else if (this.state.checkedRadio == "gaard") {
@@ -102,7 +102,7 @@ class CreateAccountCard extends React.Component {
                 }
 
                 if (checkedRadio == "newFleet") {
-                    window.location.replace("/protected/welcome");
+                    //window.location.replace("/protected/welcome");
 
                 } else if (checkedRadio == "existingFleet") {
                     window.location.replace("/protected/waiting");
@@ -135,7 +135,7 @@ class CreateAccountCard extends React.Component {
         if (checkedRadio == "existingFleet") {
             this.validateFleetSelect();
         } else if (checkedRadio == "newFleet") {
-            this.validateFleetName();
+            //this.validateFleetName();
         }
     }
 
@@ -856,7 +856,7 @@ class CreateAccountCard extends React.Component {
                                             </label>
                                         </div>
                                         <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} />
+                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} disabled/>
                                             <label className="form-check-label" htmlFor="exampleRadios2">
                                                 I am operating my own fleet.
                                             </label>

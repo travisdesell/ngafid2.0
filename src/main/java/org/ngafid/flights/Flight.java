@@ -1266,6 +1266,9 @@ public class Flight {
                             airframeName.equals("PA-28-181") ||
                             airframeName.equals("PA-44-180") ||
                             airframeName.equals("Piper PA-46-500TP Meridian") ||
+                            airframeName.contains("Boeing") ||
+                            airframeName.contains("Airbus") ||
+                            airframeName.contains("Gulfstream") ||
                             airframeName.equals("Beechcraft A36/G36")) {
                         airframeType = "Fixed Wing";
                     } else if (airframeName.equals("R44")) {
@@ -1504,7 +1507,7 @@ public class Flight {
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
 
-            } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft")) {
+            } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft") || airframeName.contains("Gulfstream") || airframeName.contains("Boeing") || airframeName.contains("Airbus")) {
                 LOG.warning("Cannot calculate engine divergences because airframe data recorder does not track CHT and/or EGT: '" + airframeName + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeName +" does not track CHT and/or EGT"));
 
