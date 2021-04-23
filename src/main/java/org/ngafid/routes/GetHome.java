@@ -49,7 +49,7 @@ public class GetHome implements Route {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
-        messages.add(new Message("warning", "We are performing a re-import of all NGAFID data to allow for a number of new features. Please bear with us while the data is being re-imported. This may take a couple weeks."));
+        messages.add(new Message("primary", "This is a beta site for the NGAFID project intended for use by authorized personnel only. Please contact 'aidan <at> labellahome <dot> org' for more information."));
 
     }
 
