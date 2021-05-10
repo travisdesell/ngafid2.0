@@ -58,6 +58,9 @@ public class EventStatistics {
     }
 
     public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+        //cannot update event statistics if the flight had no startDateTime
+        if (startDateTime == null) return;
+
         String firstOfMonth = getFirstOfMonth(startDateTime);
 
         String query = "INSERT INTO event_statistics (fleet_id, airframe_id, event_definition_id, month_first_day, flights_with_event, total_flights, min_severity, sum_severity, max_severity, min_duration, sum_duration, max_duration) VALUES (?, ?, ?, ?, 1, 1, 999999, 0, -999999, 999999, 0, -999999) ON DUPLICATE KEY UPDATE flights_with_event = flights_with_event + 1, total_flights = total_flights + 1";
@@ -74,6 +77,9 @@ public class EventStatistics {
     }
 
     public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+        //cannot update event statistics if the flight had no startDateTime
+        if (startDateTime == null) return;
+
         String firstOfMonth = getFirstOfMonth(startDateTime);
 
         String query = "INSERT INTO event_statistics (fleet_id, airframe_id, event_definition_id, month_first_day, flights_with_event, total_flights, min_severity, sum_severity, max_severity, min_duration, sum_duration, max_duration) VALUES (?, ?, ?, ?, 0, 1, 999999, 0, -999999, 999999, 0, -999999) ON DUPLICATE KEY UPDATE total_flights = total_flights + 1";

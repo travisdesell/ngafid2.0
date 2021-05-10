@@ -1269,6 +1269,7 @@ public class Flight {
                     if (airframeName.equals("Cessna 172R") ||
                             airframeName.equals("Cessna 172S") ||
                             airframeName.equals("Cessna 172T") ||
+                            airframeName.equals("Cessna 182T") ||
                             airframeName.equals("Cirrus SR20") ||
                             airframeName.equals("Diamond DA40") ||
                             airframeName.equals("Diamond DA 40 F") ||
@@ -1276,7 +1277,8 @@ public class Flight {
                             airframeName.equals("Diamond DA42NG") ||
                             airframeName.equals("PA-28-181") ||
                             airframeName.equals("PA-44-180") ||
-                            airframeName.equals("Piper PA-46-500TP Meridian")) {
+                            airframeName.equals("Piper PA-46-500TP Meridian") ||
+                            airframeName.equals("Beechcraft A36/G36")) {
                         airframeType = "Fixed Wing";
                     } else if (airframeName.equals("R44")) {
                         airframeType = "Rotorcraft";
@@ -1497,18 +1499,11 @@ public class Flight {
                 calculateDivergence(egt2Names, "E2 EGT Divergence", "deg F");
 
 
-            } else if (airframeName.equals("Cirrus SR20")) {
+            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
 
-                String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
-                calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
-
-            } else if (airframeName.equals("Cessna 182T")) {
-                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
-                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
-
-                String egtNames[] = {"E1 EGT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
+                String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", "E1 EGT5", "E1 EGT6"};
                 calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("Diamond DA 40") || airframeName.equals("Diamond DA 40 F") || airframeName.equals("Diamond DA40")) {
