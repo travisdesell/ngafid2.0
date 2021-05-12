@@ -221,7 +221,7 @@ var rules = [
             {
                 type : "select",
                 name : "doubleSeries",
-                options : doubleTimeSeriesNames
+                oplufthansations : doubleTimeSeriesNames
             },
             {
                 type : "select",
@@ -346,6 +346,18 @@ var rules = [
 
 ];
 
+var sortableColumns = ["Flight Number", 
+                       "Duration",
+                       "Start Date and Time", 
+                       "End Date and Time",
+                       "Number Airports Visited",
+                       "Number of tags associated",
+                       "Total Event Count",
+                       "System ID",
+                       "Tail Number",
+                       "Airframe",
+                       "Number Takeoffs/Landings"];
+
 class FlightsPage extends React.Component {
     constructor(props) {
         super(props);
@@ -361,7 +373,8 @@ class FlightsPage extends React.Component {
             flightsRef : React.createRef(),
             layers : [],
             flights : undefined, //start out with no specified flights
-            sortColumn : "Flight Number", //need to define a default here, flt# will alias to primary key server side
+            sortColumn : "Start Date and Time", //need to define a default here, flt# will alias to primary key server side
+            sortingOrder : "Descending", //need to define a default here, descending is default
 
             filters : {
                 type : "GROUP",
@@ -413,21 +426,35 @@ class FlightsPage extends React.Component {
         
     }
 
-    getSortByColumn() {
-        return this.state.sortColumn;
-    }
-
     setMapStyle(style) {
          this.setState({
             mapStyle : style
         });
     }
 
-    setSortByColumn(column) {
+    setSortingColumn(column) {
         console.log("sorting by: " + column);
-        this.setState({
-            sortColumn : column
-        });
+        this.state.sortColumn = column;
+        this.setState(this.state);
+
+        this.submitFilter(true);
+    }
+
+    getSortingColumn() {
+        return this.state.sortColumn;
+    }
+
+    setSortingOrder(order) {
+        if (order != this.state.sortingOrder) {
+            console.log("sorting in " + order + " order");
+            this.state.sortingOrder = order;
+            this.setState(this.state);
+            this.submitFilter(true);
+        }
+    }
+
+    getSortingOrder() {
+        return this.state.sortingOrder;
     }
 
     showMap() {
@@ -573,7 +600,8 @@ class FlightsPage extends React.Component {
             filterQuery : JSON.stringify(this.state.filters),
             currentPage : currentPage,
             pageSize : this.state.pageSize,
-            orderBy : this.state.sortColumn //switch to java terminology :) 
+            sortingColumn : this.state.sortColumn,
+            sortingOrder : this.state.sortingOrder
         };
 
         console.log(submissionData);
@@ -684,8 +712,8 @@ class FlightsPage extends React.Component {
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}
-                        setSortByColumn={(sortColumn) => this.setSortByColumn(sortColumn)}
-                        getSortByColumn={() => this.getSortByColumn()}
+                        setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
+                        getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
 
                     />
 
@@ -696,8 +724,12 @@ class FlightsPage extends React.Component {
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
-                        setSortByColumn={(sortColumn) => this.setSortByColumn(sortColumn)}
-                        getSortByColumn={() => this.getSortByColumn()}
+                        rules={sortableColumns}
+                        setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                        getSortingColumn={() => this.getSortingColumn()}
+                        setSortingOrder={(order) => this.setSortingOrder(order)}
+                        getSortingOrder={() => this.getSortingOrder()}
+                        sortOptions = {sortableColumns}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
@@ -732,11 +764,15 @@ class FlightsPage extends React.Component {
                         submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         items={this.state.flights}
                         itemName="flights"
+                        rules={sortableColumns}
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
-                        setSortByColumn={(sortColumn) => this.setSortByColumn(sortColumn)}
-                        getSortByColumn={() => this.getSortByColumn()}
+                        setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                        getSortingColumn={() => this.getSortingColumn()}
+                        setSortingOrder={(order) => this.setSortingOrder(order)}
+                        getSortingOrder={() => this.getSortingOrder()}
+                        sortOptions = {sortableColumns}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}

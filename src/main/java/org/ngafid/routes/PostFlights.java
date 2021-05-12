@@ -80,7 +80,9 @@ public class PostFlights implements Route {
         try {
             int currentPage = Integer.parseInt(request.queryParams("currentPage"));
             int pageSize = Integer.parseInt(request.queryParams("pageSize"));
-            String orderingColumnn = request.queryParams("orderBy");
+            String orderingColumnn = request.queryParams("sortingColumn");
+
+            boolean isAscending = (request.queryParams("sortingOrder").equals("Ascending") ? true : false);
 
             Connection connection = Database.getConnection();
 
@@ -88,29 +90,58 @@ public class PostFlights implements Route {
             int numberPages = totalFlights / pageSize;
 
             LOG.info("Ordered by: " + orderingColumnn);
+            ArrayList<Flight> flights = null;
 
-            String sqlColumnId = "id";
+            /**
+             * Flight Number
+             * Duration
+             * Start Date and Time 
+             * End Date and Time
+             * Number Airports Visited
+             * Number of tags associated
+             * Total Event Count
+             * System ID
+             * Tail Number
+             * Airframe
+             * Number Takeoffs/Landings
+             **/
+
             switch (orderingColumnn) {
-                case "Flight Number":
-                    sqlColumnId = "id";
-                    break;
                 case "Airframe":
-                    sqlColumnId = "airframe_id";
-                    break;
-                case "Tail Number":
-                    sqlColumnId = "airframe_id";
-                    break;
-                case "Start Date":
-                    sqlColumnId = "start_time";
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
                     break;
                 case "Duration":
-                    sqlColumnId = "number_rows";
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
+                    break;
+                case "Tail Number":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
+                    break;
+                case "Start Date and Time":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "start_time", isAscending);
+                    break;
+                case "End Date and Time":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "end_time", isAscending);
+                    break;
+                case "System ID":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "number_rows", isAscending);
+                    break;
+                case "Number Airports Visited":
+                    //flights = Flight.getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
+                    break;
+                case "Number of tags associated":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "flight_tags", isAscending);
+                    break;
+                case "Number Takeoffs/Landings":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "itinerary", isAscending);
+                    break;
+                case "Total Event Count":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "events", isAscending);
                     break;
                 default:
-                    sqlColumnId = "id";
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "id", isAscending);
                     break;
             }
-            ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, currentPage, pageSize, sqlColumnId);
+
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");
