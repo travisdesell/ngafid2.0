@@ -462,16 +462,6 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                        <button className="m-1 btn btn-primary btn-sm dropdown-toggle"  type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Sorting by: {this.props.getSortByColumn}
-                        </button>
-                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                        {
-                            this.props.rules.map((ruleInfo, index) => {
-                                return ( <button className="dropdown-item" type="button" key={index} onClick={() => this.props.setSortByColumn(ruleInfo.name)}>{ruleInfo.name}</button> );
-                            })
-                        }
-                        </div>
                         <button type="button" className="btn btn-primary btn-sm" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
