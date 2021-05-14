@@ -347,16 +347,16 @@ var rules = [
 ];
 
 var sortableColumns = ["Flight Number", 
-                       "Flight Length (valid data points)",
+                       "Flight Length (Number of Valid Data Points)",
                        "Start Date and Time", 
                        "End Date and Time",
-                       "Number Airports Visited",
-                       "Number of tags associated",
+                       "Number of Airports Visited",
+                       "Number of Tags Associated",
                        "Total Event Count",
                        "System ID",
                        "Tail Number",
                        "Airframe",
-                       "Number Takeoffs/Landings"];
+                       "Number of Takeoffs/Landings"];
 
 class FlightsPage extends React.Component {
     constructor(props) {

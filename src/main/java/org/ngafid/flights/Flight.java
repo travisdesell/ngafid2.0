@@ -66,6 +66,7 @@ public class Flight {
     private final static double MAX_RUNWAY_DISTANCE_FT = 100;
 
     private final static String flightColumns = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed";
+    private final static String flightColumnsTails = "id, fleet_id, uploader_id, upload_id, f.system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed";
 
     private int id = -1;
     private int fleetId = -1;
@@ -342,12 +343,16 @@ public class Flight {
 
     public static ArrayList<Flight> getFlightsSorted(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String orderingParameter, boolean isAscending) throws SQLException {
         switch (orderingParameter) {
+            case "tail_number":
+                return getFlightsSortedByTails(connection, fleetId, filter, currentPage, pageSize, isAscending);
             case "itinerary":
                 return getFlightsSortedByOccurencesInTable(connection, fleetId, filter, currentPage, pageSize, "itinerary", isAscending);
             case "flight_tags":
                 return getFlightsSortedByOccurencesInTable(connection, fleetId, filter, currentPage, pageSize, "flight_tag_map", isAscending);
             case "events":
                 return getFlightsSortedByOccurencesInTable(connection, fleetId, filter, currentPage, pageSize, "events", isAscending);
+            case "airports_visited":
+                return getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
             default:
                 return Flight.getFlights(connection, fleetId, filter, " ORDER BY " + orderingParameter + " " + (isAscending ? "ASC" : "DESC") + " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
         }
@@ -408,11 +413,10 @@ public class Flight {
         return flights;
     }
     
-    public static ArrayList<Flight> getFlightsSortedByTails(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String tableName, boolean isAscending) throws SQLException {
+    private static ArrayList<Flight> getFlightsSortedByTails(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, boolean isAscending) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT " + flightColumns + " FROM(SELECT " + flightColumns + " FROM flights WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT flight_id FROM " + tableName + ") AS i ON f.id = i.flight_id"
-            + " GROUP BY i.airport ORDER BY COUNT(i.flight_id) " + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+        String queryString = " SELECT " + flightColumnsTails + " FROM(SELECT " + flightColumns + " FROM flights WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT system_id, tail FROM tails) AS t ON f.system_id = t.system_id ORDER BY t.tail " + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
@@ -442,11 +446,10 @@ public class Flight {
         return flights;
     }
 
-    public static ArrayList<Flight> getFlightsSortedByAirportsVisited(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String tableName, boolean isAscending) throws SQLException {
+    private static ArrayList<Flight> getFlightsSortedByAirportsVisited(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, boolean isAscending) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString = "SELECT " + flightColumns + " FROM(SELECT " + flightColumns + " FROM flights WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT flight_id FROM " + tableName + ") AS i ON f.id = i.flight_id"
-            + " GROUP BY i.airport ORDER BY COUNT(i.flight_id) " + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+        String queryString = "SELECT " + flightColumns + " FROM (SELECT " + flightColumns + " FROM flights WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) +")f LEFT OUTER JOIN(SELECT DISTINCT airport, flight_id FROM itinerary)a ON id = a.flight_id GROUP BY f.id ORDER BY COUNT(a.flight_id) " + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
