@@ -94,7 +94,7 @@ public class PostFlights implements Route {
 
             /**
              * Flight Number
-             * Duration
+             * Flight Length (valid data points)
              * Start Date and Time 
              * End Date and Time
              * Number Airports Visited
@@ -110,11 +110,11 @@ public class PostFlights implements Route {
                 case "Airframe":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
                     break;
-                case "Duration":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
+                case "Flight Length (valid data points)":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "number_rows", isAscending);
                     break;
                 case "Tail Number":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "tail_number", isAscending);
                     break;
                 case "Start Date and Time":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "start_time", isAscending);
@@ -123,7 +123,7 @@ public class PostFlights implements Route {
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "end_time", isAscending);
                     break;
                 case "System ID":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "number_rows", isAscending);
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "system_id", isAscending);
                     break;
                 case "Number Airports Visited":
                     //flights = Flight.getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
