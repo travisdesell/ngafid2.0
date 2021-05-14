@@ -122,6 +122,18 @@ class Paginator extends React.Component {
         }
         */
 
+        var sorter = "";
+        if (this.props.sortOptions != null) {
+            sorter = (
+                <PaginationSorter
+                    sortOptions={this.props.sortOptions}
+                    setSortingColumn={(sortColumn) => this.props.setSortingColumn(sortColumn)}
+                    getSortingColumn={() => this.props.getSortingColumn()}
+                    setSortingOrder={(order) => this.props.setSortingOrder(order)}
+                    getSortingOrder={() => this.props.getSortingOrder()}
+                />
+            );
+        }
 
 
         if (typeof this.props.items != 'undefined') {
@@ -147,13 +159,7 @@ class Paginator extends React.Component {
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
                         </div>
 
-                        <PaginationSorter
-                            sortOptions={this.props.sortOptions}
-                            setSortingColumn={(sortColumn) => this.props.setSortingColumn(sortColumn)}
-                            getSortingColumn={() => this.props.getSortingColumn()}
-                            setSortingOrder={(order) => this.props.setSortingOrder(order)}
-                            getSortingOrder={() => this.props.getSortingOrder()}
-                        />
+                        {sorter}
 
                         <DropdownButton className="ml-auto mr-2" id="dropdown-item-button-resize" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
                             <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>

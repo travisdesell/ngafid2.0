@@ -408,6 +408,40 @@ public class Flight {
         return flights;
     }
     
+    public static ArrayList<Flight> getFlightsSortedByTails(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String tableName, boolean isAscending) throws SQLException {
+        ArrayList<Object> parameters = new ArrayList<Object>();
+
+        String queryString = "SELECT " + flightColumns + " FROM(SELECT " + flightColumns + " FROM flights WHERE fleet_id = ? AND " + filter.toQueryString(fleetId, parameters) + ")f LEFT OUTER JOIN(SELECT flight_id FROM " + tableName + ") AS i ON f.id = i.flight_id"
+            + " GROUP BY i.airport ORDER BY COUNT(i.flight_id) " + (isAscending ? "ASC" : "DESC") + " LIMIT " + (currentPage * pageSize) + "," + pageSize;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, fleetId);
+        for (int i = 0; i < parameters.size(); i++) {
+            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
+
+            if (parameters.get(i) instanceof String) {
+                query.setString(i + 2, (String)parameters.get(i));
+            } else if (parameters.get(i) instanceof Double) {
+                query.setDouble(i + 2, (Double)parameters.get(i));
+            } else if (parameters.get(i) instanceof Integer) {
+                query.setInt(i + 2, (Integer)parameters.get(i));
+            }
+        }
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        while (resultSet.next()) {
+            flights.add(new Flight(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return flights;
+    }
+
     public static ArrayList<Flight> getFlightsSortedByAirportsVisited(Connection connection, int fleetId, Filter filter, int currentPage, int pageSize, String tableName, boolean isAscending) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 

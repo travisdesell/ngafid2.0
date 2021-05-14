@@ -347,7 +347,7 @@ var rules = [
 ];
 
 var sortableColumns = ["Flight Number", 
-                       "Duration",
+                       "Flight Length (valid data points)",
                        "Start Date and Time", 
                        "End Date and Time",
                        "Number Airports Visited",
