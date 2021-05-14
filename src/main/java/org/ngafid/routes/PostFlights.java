@@ -110,7 +110,7 @@ public class PostFlights implements Route {
                 case "Airframe":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
                     break;
-                case "Flight Length (valid data points)":
+                case "Flight Length (Number of Valid Data Points)":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "number_rows", isAscending);
                     break;
                 case "Tail Number":
@@ -125,13 +125,13 @@ public class PostFlights implements Route {
                 case "System ID":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "system_id", isAscending);
                     break;
-                case "Number Airports Visited":
-                    //flights = Flight.getFlightsSortedByAirportsVisited(connection, fleetId, filter, currentPage, pageSize, isAscending);
+                case "Number of Airports Visited":
+                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airports_visited", isAscending);
                     break;
-                case "Number of tags associated":
+                case "Number of Tags Associated":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "flight_tags", isAscending);
                     break;
-                case "Number Takeoffs/Landings":
+                case "Number of Takeoffs/Landings":
                     flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "itinerary", isAscending);
                     break;
                 case "Total Event Count":
