@@ -2,6 +2,12 @@ package org.ngafid.flights;
 
 import static org.ngafid.flights.CalculationParameters.*;
 
+/**
+ * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 
+ *
+ * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
+ */
+
 public class VSPDRegression implements Calculation {
     private final DoubleTimeSeries altB;
     private final DoubleTimeSeries altBLag;
