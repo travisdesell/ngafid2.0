@@ -11,6 +11,8 @@ public class VSPDRegression implements Calculation {
 
     /**
      * This is a linear regression calculation to get a more instantaneous VSI
+     *
+     * @param flight the {@link Flight} to perform a regression on
      */
     public VSPDRegression(Flight flight) {
         this.altB = flight.getDoubleTimeSeries(ALT_B);
@@ -19,7 +21,7 @@ public class VSPDRegression implements Calculation {
     }
 
     /**
-     * @{inheritDoc}
+     * {@inheritDoc}
      */
     @Override
     public double calculate(int index) {
@@ -52,6 +54,12 @@ public class VSPDRegression implements Calculation {
         }
     }
 
+    /**
+     * Used to normalize altitudes 
+     *
+     * @param yValues the array of y values (altitudes)
+     * @param yA the average y value 
+     */
     public static void normalizeAltitudes(double [] yValues, double yA) {
         double stdDev = stdDev(yValues, yA);
 
@@ -63,6 +71,12 @@ public class VSPDRegression implements Calculation {
         }
     }
            
+    /**
+     * Takes the standard deviation of the yValues
+     *
+     * @param yValues the array of yValues (altitudes)
+     * @param yA the average y value
+     */
     public static double stdDev(double [] yValues, double yA) {
         double n = 0.d;
         int k = yValues.length;
@@ -74,6 +88,13 @@ public class VSPDRegression implements Calculation {
         return Math.sqrt(n / k);
     }
 
+    /**
+     * Takes the average of the y values
+     *
+     * @param yValues the array of y values to average
+     *
+     * @return the average of the y values as a double
+     */
     public static double average(double ... yValues) {
         double sum = 0.d;
 
@@ -84,6 +105,16 @@ public class VSPDRegression implements Calculation {
         return sum / yValues.length;
     }
 
+    /**
+     * Performs a linear regression on any data point such that the lengths of the datasets is 3
+     *
+     * @param xValues the x values to use for the regression 
+     * @param yValues the x values to use for the regression 
+     * @param yA the average of the y values
+     * @param xA the average of the x values
+     *
+     * @return the regression coefeccient (derivative) of the functon portryaed through the x and y values
+     */
     public static double vsiLinearRegression(double [] xValues, double [] yValues, double yA, double xA) {
         double n = 0.d;
         double d = 0.d;
