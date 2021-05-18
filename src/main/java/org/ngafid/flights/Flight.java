@@ -59,6 +59,15 @@ import org.ngafid.filters.Filter;
 
 import static org.ngafid.flights.CalculationParameters.*;
 
+/**
+ * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
+ *
+ * @author <a href = tjdvse@rit.edu>Travis Desell @ RIT SE</a>
+ * @author <a href = josh@mail.rit.edu>Josh Karns @ RIT SE</a>
+ * @author <a href = fa3019@rit.edu>Farhad Akhbardeh @ RIT SE</a>
+ * @author <a href = apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
+ */
+
 public class Flight {
     private static final Logger LOG = Logger.getLogger(Flight.class.getName());
 
@@ -1760,6 +1769,8 @@ public class Flight {
 
     /**
      * Runs the Loss of Control/Stall Index calculations
+     *
+     * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
      */
     public void runLOCICalculations() throws MalformedFlightFileException {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
