@@ -337,15 +337,38 @@ public class DoubleTimeSeries {
         return slice;
     }
 
+    private int getSeriesNameId(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT id FROM double_series_names WHERE name = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setString(1, this.name);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        } else {
+            queryString = "INSERT INTO double_series_names(name) VALUES(?)";
+
+            query = connection.prepareStatement(queryString);
+            query.setString(1, this.name);
+
+            if (query.executeUpdate() == 1) {
+                return getSeriesNameId(connection, flightId);
+            }
+        }
+        return -1;
+    }
+
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
         if (!this.cache) return;
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name, data_type, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
-            preparedStatement.setString(2, name);
+            preparedStatement.setInt(2, this.getSeriesNameId(connection, flightId));
             preparedStatement.setString(3, dataType);
 
             preparedStatement.setInt(4, this.size);
