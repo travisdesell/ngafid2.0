@@ -25,6 +25,7 @@ import javax.sql.rowset.serial.SerialBlob;
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
+    private static final String DS_COLUMNS = "ds.id, ds.flight_id, dsn.name, ds.data_type, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
     private boolean cache = true;
     private int id = -1;
@@ -169,7 +170,7 @@ public class DoubleTimeSeries {
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> name = new ArrayList<>();
 
-        String queryString = "select distinct(name) from double_series ORDER BY name";
+        String queryString = "SELECT name FROM double_series_names ORDER BY name";
         PreparedStatement query = connection.prepareStatement(queryString);
 
         //LOG.info(query.toString());
@@ -195,7 +196,8 @@ public class DoubleTimeSeries {
      * @return An ArrayList of all the DoubleTimeSeries for his flight.
      */
     public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? ORDER BY name");
+        PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name");
+
         query.setInt(1, flightId);
         LOG.info(query.toString());
 
@@ -220,7 +222,8 @@ public class DoubleTimeSeries {
      * @return a DoubleTimeSeries for his flight and column name, null if it does not exist.
      */
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT * FROM double_series WHERE flight_id = ? AND name = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?");
+
         query.setInt(1, flightId);
         query.setString(2, name);
         LOG.info(query.toString());
