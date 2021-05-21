@@ -1,11 +1,11 @@
+package org.ngafid.flights;
+
 /**
  * This is a {@link DoubleTimeSeries} that requires further analysis, such
  * as a {@link Calculation}. This class is meant to be expandable
  *
- * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
+ * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-
-package org.ngafid.flights;
 
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     private final Flight flight;
@@ -14,8 +14,9 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      * Default Constructor
      *
      * @param name the new name of the time series
+     * @param dataType the dataType of the new timeseries, represented by a {@link String}
      * @param cache indicates if the new series should be stored in the database after all analysis is complete
-     * @param calculationSeries is the {@link CalculationSeries} object containg information about this new series and the flight itself
+     * @param flight the flight instance the timeseries is being calcualted for
      */
     public CalculatedDoubleTimeSeries(String name, String dataType, boolean cache, Flight flight) {
         super(name, dataType, cache);
