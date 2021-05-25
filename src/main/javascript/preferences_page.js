@@ -173,9 +173,26 @@ class PreferencesPage extends React.Component {
             float : "auto"
         };
 
+        let labelStyle = {
+            padding : '7 0 7 0',
+            margin : '0',
+            display: 'block',
+            textAlign: 'left'
+        };
+
         let listStyle = {
             maxHeight: "400px",
             overflowY: "scroll"
+        };
+
+        let formGroupStyle = {
+            marginBottom: '0px',
+            padding: '0 4 0 4'
+        };
+
+        let formHeaderStyle = {
+            width: '200px',
+            flex: '0 0 200px'
         };
 
         //let listStyle = {
@@ -236,8 +253,39 @@ class PreferencesPage extends React.Component {
                                                 <div className="col" style={{padding:"0 0 0 0"}}>
                                                     <div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
                                                         <h6 className="card-header">
-                                                            Your Flight Metric Preferences:
+                                                            Your Flight Metric Viewer Preferences:
                                                         </h6>
+                                                        <div className="form-group" style={formGroupStyle}>
+                                                            <div className="d-flex">
+                                                                <div className="p-2" style={formHeaderStyle}>
+                                                                    <label htmlFor="severityColumnNames" style={labelStyle}>Selected Metrics</label>
+                                                                </div>
+                                                                <div className="p-2">
+
+                                                                    <select id="severityColumnNames" className="form-control" onChange={(event) => this.props.changeSeverityColumn(event)} value={this.props.severityColumn}>
+                                                                        {
+                                                                            serverMetrics.map((seriesName, index) => {
+                                                                                return (
+                                                                                    <option key={index} value={seriesName}>{seriesName}</option>
+                                                                                )
+                                                                            })
+                                                                        }
+                                                                    </select>               
+                                                                </div>
+                                                                <div className="p-2 flex-fill">
+
+                                                                    {
+                                                                        selectedMetrics.map((columnName, index) => {
+                                                                            return (<button type="button" key={columnName} className="btn btn-primary mr-1" onClick={() => this.props.removeSeverityColumn(columnName)}>{columnName} <i className="fa fa-times p-1"></i></button>)
+                                                                        })
+                                                                    }
+
+                                                                </div>
+                                                                <div className="p-2">
+                                                                    <button type="button" className="btn btn-primary" onClick={() => this.props.addSeverityColumn()}>Add Column</button>
+                                                                </div>
+                                                            </div>
+                                                        </div>
                                                         <div className="card-body">
                                                             <div className="form-row align-items-left justify-content-left">
                                                                 <Form.Group controlId="exampleForm.ControlInput1">
@@ -253,32 +301,7 @@ class PreferencesPage extends React.Component {
                                                                     </Form.Control>    
                                                                 </Form.Group>
                                                             </div>
-                                                            <div className="form-row align-items-left justify-content-left">
-                                                                <Row>
-                                                                    <Col xs md="auto">
-                                                                        <Form.Group>
-                                                                            <Form.Label>Your Selected Metrics:</Form.Label>
-                                                                            <ListGroup style={listStyle} label="Your Selected Metrics">
-                                                                                {selectedMetricsHTML}
-                                                                            </ListGroup>
-                                                                        </Form.Group>
-                                                                    </Col>
-                                                                    <Col>
-                                                                        <Form.Label>Available Metrics:</Form.Label>
-                                                                        <Form.Control as="select" onChange={this.addMetric.bind(this)} value="Select a metric">
-                                                                        <option value="Select a metric" key='0' disabled>Select a metric</option>
-                                                                        {
-                                                                            serverMetrics.map((name, key) => {
-                                                                                return (
-                                                                                    <option value={name} key={key+1}>{name}</option>
-                                                                                );
-                                                                            })
-                                                                        }
-                                                                        </Form.Control>    
-                                                                    </Col>
-                                                                </Row>
-                                                            </div>
-                                                        <hr style={{padding:"0", margin:"0 0 5 0"}}></hr>
+                                                        <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
                                                     </div>
                                                 </div>
                                             </div>

@@ -1,9 +1,3 @@
-/**
- * Generates/Copies CSV files for flights in the ngafid
- *
- * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella</a>
- */
-
 package org.ngafid.flights;
 
 import java.io.File;
@@ -21,6 +15,11 @@ import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
+/**
+ * Generates/Copies CSV files for flights in the NGAFID
+ *
+ * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
+ */
 public class CSVWriter {
     private File file;
     private Flight flight;
@@ -32,7 +31,7 @@ public class CSVWriter {
      * Finds the zip file with the filght requested
      *
      * @param directoryRoot the root directory of the zipped files
-     * @param uploadId the id of the upload
+     * @param flight the {@link Flight} to write data for
      */
     public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
         System.out.println("creating file from: '" + directoryRoot + "'");
@@ -103,7 +102,7 @@ public class CSVWriter {
     /**
      * Accessor method for the {@link ZipEntry} associated with this flight
      *
-     * @return and instance of {@link ZipEntry}
+     * @return an instance of {@link ZipEntry}
      */
     public ZipEntry getFlightEntry() {
         return this.entry;
