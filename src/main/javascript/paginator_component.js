@@ -74,7 +74,7 @@ class Paginator extends React.Component {
     repaginate(pageSize) {
         console.log("Re-Paginating");
         this.props.updateItemsPerPage(pageSize);
-        this.props.submitFilter();
+        this.props.submitFilter(true);
     }
 
     render() {
@@ -135,12 +135,16 @@ class Paginator extends React.Component {
             );
         }
 
+        let numTotalPages = this.props.numberPages;
+        if (this.props.numberPages == 0) {
+            numTotalPages = 1;
+        }
 
         if (typeof this.props.items != 'undefined') {
             return (
                 <div className="card mb-1 border-secondary">
                     <div className="row m-0 p-2">
-                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
+                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {numTotalPages}</button>
 
                         <Pagination size="sm" className="m-0 mr-2">
                             <Pagination.First disabled={this.props.currentPage === 0} onClick={() => this.jumpPage(0)}/>

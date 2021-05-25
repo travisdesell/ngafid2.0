@@ -87,12 +87,17 @@ public class PostFlights implements Route {
             Connection connection = Database.getConnection();
 
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
-            int numberPages = totalFlights / pageSize;
+            int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
+
+            LOG.info("number pages: " + numberPages);
+
 
             LOG.info("Ordered by: " + orderingColumnn);
             ArrayList<Flight> flights = null;
 
             /**
+             * Valid Column Names:
+             *
              * Flight Number
              * Flight Length (valid data points)
              * Start Date and Time 
@@ -106,42 +111,7 @@ public class PostFlights implements Route {
              * Number Takeoffs/Landings
              **/
 
-            switch (orderingColumnn) {
-                case "Airframe":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airframe_id", isAscending);
-                    break;
-                case "Flight Length (Number of Valid Data Points)":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "number_rows", isAscending);
-                    break;
-                case "Tail Number":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "tail_number", isAscending);
-                    break;
-                case "Start Date and Time":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "start_time", isAscending);
-                    break;
-                case "End Date and Time":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "end_time", isAscending);
-                    break;
-                case "System ID":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "system_id", isAscending);
-                    break;
-                case "Number of Airports Visited":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "airports_visited", isAscending);
-                    break;
-                case "Number of Tags Associated":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "flight_tags", isAscending);
-                    break;
-                case "Number of Takeoffs/Landings":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "itinerary", isAscending);
-                    break;
-                case "Total Event Count":
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "events", isAscending);
-                    break;
-                default:
-                    flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, "id", isAscending);
-                    break;
-            }
-
+            flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");
