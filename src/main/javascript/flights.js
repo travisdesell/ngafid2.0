@@ -346,17 +346,19 @@ var rules = [
 
 ];
 
-var sortableColumns = ["Flight Number", 
-                       "Flight Length (Number of Valid Data Points)",
-                       "Start Date and Time", 
-                       "End Date and Time",
-                       "Number of Airports Visited",
-                       "Number of Tags Associated",
-                       "Total Event Count",
-                       "System ID",
-                       "Tail Number",
-                       "Airframe",
-                       "Number of Takeoffs/Landings"];
+const sortableColumns = new Map();
+
+sortableColumns.set("Flight Number", "id");
+sortableColumns.set("Flight Length (Number of Valid Data Points)", "number_rows");
+sortableColumns.set("Start Date and Time", "start_time");
+sortableColumns.set("End Date and Time", "end_time");
+sortableColumns.set("Number of Airports Visited", "airports_visited");
+sortableColumns.set("Number of Tags Associated", "flight_tags");
+sortableColumns.set("Total Event Count", "events");
+sortableColumns.set("System ID", "system_id");
+sortableColumns.set("Tail Number", "tail_number");
+sortableColumns.set("Airframe", "airframe_id");
+sortableColumns.set("Number of Takeoffs/Landings", "itinerary");
 
 class FlightsPage extends React.Component {
     constructor(props) {
@@ -600,7 +602,7 @@ class FlightsPage extends React.Component {
             filterQuery : JSON.stringify(this.state.filters),
             currentPage : currentPage,
             pageSize : this.state.pageSize,
-            sortingColumn : this.state.sortColumn,
+            sortingColumn : sortableColumns.get(this.state.sortColumn),
             sortingOrder : this.state.sortingOrder
         };
 
@@ -671,6 +673,8 @@ class FlightsPage extends React.Component {
 
         style.padding = "5";
 
+        let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
+    
         return (
             <div>
                 <SignedInNavbar 
@@ -729,7 +733,7 @@ class FlightsPage extends React.Component {
                         getSortingColumn={() => this.getSortingColumn()}
                         setSortingOrder={(order) => this.setSortingOrder(order)}
                         getSortingOrder={() => this.getSortingOrder()}
-                        sortOptions = {sortableColumns}
+                        sortOptions = {sortableColumnsHumanReadable}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
@@ -772,7 +776,7 @@ class FlightsPage extends React.Component {
                         getSortingColumn={() => this.getSortingColumn()}
                         setSortingOrder={(order) => this.setSortingOrder(order)}
                         getSortingOrder={() => this.getSortingOrder()}
-                        sortOptions = {sortableColumns}
+                        sortOptions = {sortableColumnsHumanReadable}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
