@@ -503,13 +503,13 @@ $query = "CREATE TABLE `user_preferences` (
 
 query_ngafid_db($query);
 
-$query = "CREATE TABLE `user_pref_metrics_map` (
+$query = "CREATE TABLE `user_preferences_metrics` (
     `user_id` INT(11) NOT NULL,
-    `double_series_name_id` INT(11) NOT NULL,
+    `metric_id` INT(11) NOT NULL,
 
-    PRIMARY KEY(`user_id`,`double_series_name_id`),
+    PRIMARY KEY(`user_id`,`metric_id`),
     FOREIGN KEY(`user_id`) REFERENCES user(`id`),
-    FOREIGN KEY(`double_series_name_id`) REFERENCES double_series_names(`id`)
+    FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);

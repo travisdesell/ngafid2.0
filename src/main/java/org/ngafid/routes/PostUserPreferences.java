@@ -12,8 +12,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import spark.Route;
 import spark.Request;
@@ -52,14 +50,10 @@ public class PostUserPreferences implements Route {
 
 
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            List<String> metricList = mapper.readValue(metrics, List.class);
-            LOG.info("got metrics: " + metricList);
+            UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
 
-            UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId(), gson);
-
-            if (currentPreferences.update(decimalPrecision, metricList)) {
-                User.storeUserPreferences(connection, user.getId(), currentPreferences, gson);
+            if (currentPreferences.update(decimalPrecision)) {
+                User.storeUserPreferences(connection, user.getId(), currentPreferences);
             }
 
             return gson.toJson(currentPreferences);
