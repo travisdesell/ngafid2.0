@@ -97,7 +97,7 @@ class MapPopup extends React.Component {
             top : this.props.placement[1] + this.state.navbarWidth,
             left : this.props.placement[0],
             display : this.props.on,
-            minWidth: 300
+            minWidth: 320
         }
 
         if(this.state.status !== "none"){
@@ -170,23 +170,25 @@ class MapPopup extends React.Component {
                     >
                         <Popover.Title as="h2"> 
                             <Row>
-                                <Col sm={6}>Flight Metrics</Col>
-                                <ButtonGroup className="text-right" aria-label="toolbar">
-                                    {this.state.events != null &&
-                                        <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
-                                            <i className="fa fa-exclamation p-1"></i>
+                                <Col sm={5}>Flight Metrics</Col>
+                                <Col style={{ display: "flex" }}>
+                                    <ButtonGroup className="text-right" aria-label="toolbar" style={{marginLeft: "auto"}}>
+                                        {this.state.events != null &&
+                                            <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
+                                                <i className="fa fa-exclamation p-1"></i>
+                                            </Button>
+                                        }
+                                        <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <i className="fa fa fa-cog p-1"></i>
                                         </Button>
-                                    }
-                                    <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
-                                        <i className="fa fa fa-cog p-1"></i>
-                                    </Button>
-                                    <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
-                                        <i className="fa fa-thumb-tack p-1"></i>
-                                    </Button>
-                                    <Button onClick={() => this.close()} variant="outline-secondary" size="sm">
-                                        <i className="fa fa-times p-1"></i>
-                                    </Button>
-                                </ButtonGroup>
+                                        <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <i className="fa fa-thumb-tack p-1"></i>
+                                        </Button>
+                                        <Button onClick={() => this.close()} variant="outline-secondary" size="sm">
+                                            <i className="fa fa-times p-1"></i>
+                                        </Button>
+                                    </ButtonGroup>
+                                </Col>
                             </Row>
                         </Popover.Title>
                         <Popover.Content> 
