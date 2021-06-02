@@ -22,11 +22,13 @@ class PreferencesPage extends React.Component {
         this.state = {
             fullName : userName,
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            selectedMetrics : userPreferences.flightMetrics,
+            decimalPrecision : userPreferences.decimalPrecision
         };
 
         console.log("this users prefs:");
-        console.log(this.state.preferences);
+        console.log(this.state);
     }
 
 
@@ -45,7 +47,9 @@ class PreferencesPage extends React.Component {
                                                 {this.state.fullName}'s Preferences:
                                             </h5>
                                             <MetricViewerSettings
-                                                isVertical={false}>
+                                                isVertical={false}
+                                                selectedMetrics={this.state.selectedMetrics}
+                                                decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
                                     </div>
                                 </div>
@@ -61,6 +65,6 @@ class PreferencesPage extends React.Component {
 console.log("setting preferences page with react!");
 
 var preferencesPage = ReactDOM.render(
-    <PreferencesPage waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
+    <PreferencesPage userPreferences={userPreferences} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
    document.querySelector('#preferences-page')
 )
