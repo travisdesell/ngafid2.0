@@ -80,12 +80,38 @@ public class PostFlights implements Route {
         try {
             int currentPage = Integer.parseInt(request.queryParams("currentPage"));
             int pageSize = Integer.parseInt(request.queryParams("pageSize"));
+            String orderingColumnn = request.queryParams("sortingColumn");
+
+            boolean isAscending = (request.queryParams("sortingOrder").equals("Ascending") ? true : false);
 
             Connection connection = Database.getConnection();
 
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
-            int numberPages = totalFlights / pageSize;
-            ArrayList<Flight> flights = Flight.getFlights(connection, fleetId, filter, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
+
+            LOG.info("number pages: " + numberPages);
+
+
+            LOG.info("Ordered by: " + orderingColumnn);
+            ArrayList<Flight> flights = null;
+
+            /**
+             * Valid Column Names:
+             *
+             * Flight Number
+             * Flight Length (valid data points)
+             * Start Date and Time 
+             * End Date and Time
+             * Number Airports Visited
+             * Number of tags associated
+             * Total Event Count
+             * System ID
+             * Tail Number
+             * Airframe
+             * Number Takeoffs/Landings
+             **/
+
+            flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");

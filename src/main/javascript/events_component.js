@@ -14,11 +14,11 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 // populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
-for (let d = 0; d < 61; d++){
+for (let d = -3; d < 70; d++){
     // iterate through RGB permutations (up to 64)
-    let green = d % 4;
-    let blue = Math.trunc(d/4) % 4;
-    let red = Math.trunc(d/16) % 4;
+    let green = (d + 3) % 4;
+    let blue = Math.trunc((d + 3)/4) % 4;
+    let red = Math.trunc((d + 3)/16) % 4;
 
     eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
 }
@@ -234,6 +234,13 @@ class Events extends React.Component {
                 {
                     this.state.events.map((event, index) => {
                         let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
+                        let otherFlightText = "";
+                        let otherFlightURL = "";
+                        if (event.eventDefinitionId == -1) { 
+                            otherFlightText = ", other flight id: ";
+                            otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+                        }
+
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
                                 <div style={{flex: "0 0"}}>
@@ -241,7 +248,7 @@ class Events extends React.Component {
                                 </div>
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime }
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
                                 </button>
                             </div>
                         );

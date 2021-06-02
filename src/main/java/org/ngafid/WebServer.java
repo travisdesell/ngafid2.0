@@ -11,6 +11,7 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.PasswordAuthentication;
 
 import spark.Spark;
+import spark.Service;
 import spark.Session;
 
 import java.io.IOException;
@@ -93,7 +94,26 @@ public final class WebServer {
         LOG.info("NGAFID WebServer is initializing.");
 
         // Get the port for the NGAFID webserver to listen on
-        Spark.port( Integer.parseInt(System.getenv("NGAFID_PORT")) );
+        int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
+        Spark.port(port);
+        
+        //----- FOR HTTPS ONLY -----
+        if (port == 8443 || port == 443) {
+            LOG.info("HTTPS Detected, using a keyfile");
+            Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
+
+            // Make sure we redirect all HTTP traffic to HTTPS now
+            Service http = Service.ignite().port(8080);
+            http.before(((request, response) -> {
+                final String url = request.url();
+                if (url.startsWith("http://")) {
+                    final String[] toHttps = url.split("http://");
+                    response.redirect("https://" + toHttps[1]);
+                }
+            }));
+        }
+        //--------------------------
+        
         Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
 
         int maxThreads = 32;
@@ -182,8 +202,10 @@ public final class WebServer {
 
         Spark.get("/protected/trends", new GetTrends(gson));
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
+        Spark.get("/protected/severities", new GetSeverities(gson));
+        Spark.post("/protected/severities", new PostSeverities(gson));
 
-        Spark.get("/protected/dashboard", new GetDashboard(gson));
+        Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
@@ -236,6 +258,8 @@ public final class WebServer {
         
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
+        Spark.get("/protected/update_event", new GetUpdateEvent(gson));
+        Spark.post("/protected/update_event", new PostUpdateEvent(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
@@ -250,11 +274,13 @@ public final class WebServer {
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+        Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
+        Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
-        Spark.get("/protected/*", new GetDashboard(gson, "danger", "The page you attempted to access does not exist."));
+        Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         LOG.info("NGAFID WebServer initialization complete.");

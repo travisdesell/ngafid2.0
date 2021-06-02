@@ -6,6 +6,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -97,31 +98,45 @@ public class GetFlight implements Route {
 
             Connection connection = Database.getConnection();
 
-            String flightId = request.queryParams("flight_id");
-            LOG.info("URL flight id is: " + flightId);
+            String[] flightIds = request.queryParamsValues("flight_id");
+            LOG.info("Flight id(s) are: " + Arrays.toString(flightIds));
 
             long startTime, endTime;
 
-            Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
+            ArrayList<Flight> flights = new ArrayList<Flight>();
 
-            if (flight.getFleetId() != fleetId) {
-                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
-                Spark.halt(401, "User did not have access to this flight.");
+            for (String flightId : flightIds) {
+                Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
 
-            } else {
-                StringBuilder sb = new StringBuilder();
-                sb.append("var flights = [" + gson.toJson(flight) + "];");
+                if (flight.getFleetId() != fleetId) {
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    Spark.halt(401, "User did not have access to this flight.");
+                }
 
-                scopes.put("flight_js", sb.toString());
-
-                StringWriter stringOut = new StringWriter();
-                startTime = System.currentTimeMillis();
-                mustache.execute(new PrintWriter(stringOut), scopes).flush();
-                endTime = System.currentTimeMillis();
-                LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
-
-                resultString = stringOut.toString();
+                flights.add(flight);
             }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("var flights = [");
+
+            boolean first = true;
+            for (Flight flight : flights) {
+                if (!first) sb.append(", ");
+                first = false;
+                sb.append(gson.toJson(flight));
+            }
+            sb.append("];");
+
+            scopes.put("flight_js", sb.toString());
+
+            StringWriter stringOut = new StringWriter();
+            startTime = System.currentTimeMillis();
+            mustache.execute(new PrintWriter(stringOut), scopes).flush();
+            endTime = System.currentTimeMillis();
+            LOG.info("mustache write took: " + ((endTime - startTime) / 1000.0) + " seconds");
+
+            resultString = stringOut.toString();
+
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));

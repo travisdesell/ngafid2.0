@@ -12,7 +12,7 @@ export default class TimeHeader extends React.Component {
         console.log(this.props.airframes);
 
         let years = [];
-        for (let year = props.startYear; year <= props.endYear; year++) {
+        for (let year = 2000; year <= props.endYear; year++) {
             years.push(year);
         }
 
@@ -26,9 +26,20 @@ export default class TimeHeader extends React.Component {
         console.log(this.props.airframes);
         console.log(this.state);
 
+        let exportButton = null;
+        if ('exportCSV' in this.props) {
+            exportButton = (
+                <div className="col-auto">
+                    <button className="btn btn-primary-outline" onClick={() => this.props.exportCSV()}>Export</button>
+                </div>
+            );
+        }
+
         return (
             <div className="row card-header d-flex" style={{color : "rgba(75,75,75,250)", padding:"7 20 7 20", margin:"0"}}>
                 <h4 className="mr-auto" style={{margin:"4 0 4 0"}}>{this.props.name}</h4>
+
+                { exportButton }
 
                 <div className="form-row">
                     <div className="col-auto">

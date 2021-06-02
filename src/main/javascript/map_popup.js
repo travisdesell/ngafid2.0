@@ -12,8 +12,10 @@ import Alert from 'react-bootstrap/Alert';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
-import ListGroup from 'react-bootstrap/ListGroup'
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
+import ListGroup from 'react-bootstrap/ListGroup';
 import {eventColorScheme} from './events_component.js';
+import {metricViewerSettingsModal} from './metric_viewer_modal.js';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -53,6 +55,10 @@ class MapPopup extends React.Component {
         });
     }
 
+    openSettingsDialog() {
+        metricViewerSettingsModal.show();
+    }
+
     pin() {
         if (this.state.status == 'pinned') {
             console.log("unpinning the popup!")
@@ -65,7 +71,7 @@ class MapPopup extends React.Component {
 
     getRelevantEvents() {
         let timeIndex = this.props.lociData[0];
-
+6
         var events = new Array();
         console.log("events props");
         console.log(events);
@@ -95,7 +101,8 @@ class MapPopup extends React.Component {
         var style = {
             top : this.props.placement[1] + this.state.navbarWidth,
             left : this.props.placement[0],
-            display : this.props.on
+            display : this.props.on,
+            minWidth: 320
         }
 
         if(this.state.status !== "none"){
@@ -140,6 +147,7 @@ class MapPopup extends React.Component {
                         {
                             this.state.events.map((event, key) => {
                                 let eventColor = eventColorScheme[event.eventDefinitionId];
+                                let descriptionString = event.startTime + " to " + event.endTime + " severity: " + event.severity;
 
                                 let badgeStyle = {
                                     backgroundColor : eventColor
@@ -148,7 +156,7 @@ class MapPopup extends React.Component {
                                 return (
                                     <ListGroup.Item style={lgStyle} key={key}>
                                         <h6>
-                                            <Badge style={badgeStyle} key={key}>{event.eventDefinition.name}</Badge>
+                                            <Badge style={badgeStyle} key={key} title={descriptionString}>{event.eventDefinition.name}</Badge>
                                         </h6>
                                     </ListGroup.Item>
                                 );
@@ -160,34 +168,33 @@ class MapPopup extends React.Component {
             }
 
             return (
-                <div style={{ height: 120 }}>
+                <div style={{ height: 120}}>
                     <Popover
                         id="popover-basic"
                         style={style}
                     >
-                        <Popover.Title as="h3"> 
-                            <Container>
-                                <Row>
-                                    <Col sm={5}>Flight Metrics</Col>
-                                    <Col sm={2}>
-                                    {this.state.events != null &&
-                                        <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
-                                            <i className="fa fa-exclamation p-1"></i>
+                        <Popover.Title as="h2"> 
+                            <Row>
+                                <Col sm={5}>Flight Metrics</Col>
+                                <Col style={{ display: "flex" }}>
+                                    <ButtonGroup className="text-right" aria-label="toolbar" style={{marginLeft: "auto"}}>
+                                        {this.state.events != null &&
+                                            <Button onClick={() => this.toggleEventRow()} data-toggle="button" variant="outline-secondary" size="sm">
+                                                <i className="fa fa-exclamation p-1"></i>
+                                            </Button>
+                                        }
+                                        <Button onClick={() => this.openSettingsDialog()} data-toggle="button" variant="outline-secondary" size="sm">
+                                            <i className="fa fa fa-cog p-1"></i>
                                         </Button>
-                                    }
-                                    </Col>
-                                    <Col sm={2}>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa-thumb-tack p-1"></i>
                                         </Button>
-                                    </Col>
-                                    <Col sm={2}>
                                         <Button onClick={() => this.close()} variant="outline-secondary" size="sm">
                                             <i className="fa fa-times p-1"></i>
                                         </Button>
-                                    </Col>
-                                </Row>
-                            </Container>
+                                    </ButtonGroup>
+                                </Col>
+                            </Row>
                         </Popover.Title>
                         <Popover.Content> 
 

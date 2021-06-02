@@ -19,7 +19,7 @@ public class Database {
 
     public static Connection getConnection() { 
         try {
-            if (connection.isClosed()) {
+            if (connection.isClosed()) { //investigate further here 
                 setConnection();
             } 
         } catch (SQLException e) {
@@ -77,7 +77,7 @@ public class Database {
 
         try {
             // This will load the MySQL driver, each DB has its own driver
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
             java.util.Properties connProperties = new java.util.Properties();
             connProperties.put("user", dbUser);
