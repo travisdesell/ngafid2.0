@@ -19,8 +19,8 @@ class MetricViewerSettings extends React.Component {
         super(props);
 
         this.state = {
-            decimalPrecision : userPreferences.decimalPrecision,
-            selectedMetrics : userPreferences.flightMetrics,
+            selectedMetrics : props.selectedMetrics,
+            decimalPrecision : props.decimalPrecision
         }
     }
 

@@ -15,6 +15,7 @@ import Button from 'react-bootstrap/Button';
 import ButtonGroup from 'react-bootstrap/ButtonGroup';
 import ListGroup from 'react-bootstrap/ListGroup';
 import {eventColorScheme} from './events_component.js';
+import {metricViewerSettingsModal} from './metric_viewer_modal.js';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -54,6 +55,10 @@ class MapPopup extends React.Component {
         });
     }
 
+    openSettingsDialog() {
+        metricViewerSettingsModal.show();
+    }
+
     pin() {
         if (this.state.status == 'pinned') {
             console.log("unpinning the popup!")
@@ -66,7 +71,7 @@ class MapPopup extends React.Component {
 
     getRelevantEvents() {
         let timeIndex = this.props.lociData[0];
-
+6
         var events = new Array();
         console.log("events props");
         console.log(events);
@@ -178,7 +183,7 @@ class MapPopup extends React.Component {
                                                 <i className="fa fa-exclamation p-1"></i>
                                             </Button>
                                         }
-                                        <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
+                                        <Button onClick={() => this.openSettingsDialog()} data-toggle="button" variant="outline-secondary" size="sm">
                                             <i className="fa fa fa-cog p-1"></i>
                                         </Button>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">
