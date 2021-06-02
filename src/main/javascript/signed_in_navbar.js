@@ -119,7 +119,7 @@ class SignedInNavbar extends React.Component {
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
-        let eventsActive = this.props.activePage === "trends" || this.props.activePage === "dashboard";
+        let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
@@ -172,13 +172,31 @@ class SignedInNavbar extends React.Component {
                     <ul className="navbar-nav">
                         <NavLink name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
 
+                        {aggregateView
+                            ? <NavLink name={"Aggregate Dashboard"} active={this.props.activePage === "aggregate"} href="/protected/aggregate"/>
+                            : ""
+                        }
+
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
-                                <DropdownLink name={"Statistics"} hidden={false} href="/protected/dashboard"/>
+                                <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
+                                <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
+                                {admin
+                                    ? <div className="dropdown-divider"></div>
+                                    : ""
+                                }
+                                {admin
+                                    ? <DropdownLink name={"Create Event"} hidden={false} href="/protected/create_event"/>
+                                    : ""
+                                }
+                                {admin
+                                    ? <DropdownLink name={"Update Event"} hidden={false} href="/protected/update_event"/>
+                                    : ""
+                                }
                             </div>
                         </li>
 

@@ -50,6 +50,11 @@ public class GetNgafidCesium implements Route {
         LOG.info("getting kml for flight id: " + flightIdStr);
         int flightId = Integer.parseInt(flightIdStr);
 
+        String otherFlightId = request.queryParams("other_flight_id");
+        LOG.info("URL flight id is: " + flightId);
+        LOG.info("URL other flight id is: " + otherFlightId);
+
+ 
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
@@ -65,12 +70,18 @@ public class GetNgafidCesium implements Route {
 
             Connection connection = Database.getConnection();
             Flight flight = Flight.getFlight(connection, flightId);
+            Flight otherFlight = null;
+            if (otherFlightId != null) {
+                otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
 
-            if (flight.getFleetId() != fleetId) {
-                LOG.severe("INVALID ACCESS: user did not have access to view this flight.");
-                Spark.halt(401, "User did not have access to view this fleet.");
+            }
+
+            if (flight.getFleetId() != fleetId || (otherFlight != null && otherFlight.getFleetId() != fleetId)) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                Spark.halt(401, "User did not have access to this flight.");
                 return null;
             }
+
 
             DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
             DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");

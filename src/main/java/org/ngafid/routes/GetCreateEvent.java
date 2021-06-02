@@ -20,6 +20,8 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
+
 
 
 import org.ngafid.Database;
@@ -72,11 +74,18 @@ public class GetCreateEvent implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
+            if (!user.isAdmin()) {
+                LOG.severe("INVALID ACCESS: user does not have access to this page.");
+                Spark.halt(401, "User did not have access to this page.");
+                return null;
+            }
+
             Connection connection = Database.getConnection();
 
             scopes.put("create_event_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n"
+                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
                     );
 
             StringWriter stringOut = new StringWriter();

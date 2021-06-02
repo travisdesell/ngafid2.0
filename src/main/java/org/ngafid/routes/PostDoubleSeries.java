@@ -16,9 +16,12 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
+import org.ngafid.common.TimeUtils;
+
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
 
 public class PostDoubleSeries implements Route {
     private static final Logger LOG = Logger.getLogger(PostDoubleSeries.class.getName());
@@ -32,19 +35,49 @@ public class PostDoubleSeries implements Route {
     }
 
     private class DoubleSeries {
-        int[] x;
+        String[] x;
         double[] y;
 
         public DoubleSeries(int flightId, String name) throws SQLException {
             Connection connection = Database.getConnection();
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
+            /*
+            StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
+            StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
+            StringTimeSeries utcOffsetSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
 
-            x = new int[doubleTimeSeries.size()];
-            y = new double[doubleTimeSeries.size()];
-            for (int i = 0; i < doubleTimeSeries.size(); i++) {
-                x[i] = i;
-                y[i] = doubleTimeSeries.get(i);
+            ArrayList<String> times = new ArrayList<String>();
+            ArrayList<Double> values = new ArrayList<Double>();
+            */
+
+            //if (dateSeries == null || timeSeries == null || utcOffsetSeries == null) {
+                x = new String[doubleTimeSeries.size()];
+                y = new double[doubleTimeSeries.size()];
+
+                for (int i = 0; i < doubleTimeSeries.size(); i++) {
+                    x[i] = String.valueOf(i);
+                    y[i] = doubleTimeSeries.get(i);
+                }
+                /*
+            } else {
+                for (int i = 0; i < doubleTimeSeries.size(); i++) {
+                    if (dateSeries.get(i).equals("") || dateSeries.get(i) == null) continue;
+                    if (timeSeries.get(i).equals("") || timeSeries.get(i) == null) continue;
+                    if (utcOffsetSeries.get(i).equals("") || utcOffsetSeries.get(i) == null) continue;
+
+                    times.add( TimeUtils.toUTC(dateSeries.get(i), timeSeries.get(i), utcOffsetSeries.get(i)) );
+                    values.add( doubleTimeSeries.get(i) );
+                }
+
+                x = new String[times.size()];
+                y = new double[times.size()];
+
+                for (int i = 0; i < times.size(); i++) {
+                    x[i] = times.get(i);
+                    y[i] = values.get(i);
+                }
             }
+            */
        }
     }
 

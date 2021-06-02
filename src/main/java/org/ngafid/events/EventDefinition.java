@@ -25,15 +25,16 @@ public class EventDefinition {
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     public static final int MIN_SEVERITY = 1;
-    public static final int ABS_SEVERITY = 2;
-    public static final int MAX_SEVERITY = 3;
+    public static final int MAX_SEVERITY = 2;
+    public static final int MIN_ABS_SEVERITY = 3;
+    public static final int MAX_ABS_SEVERITY = 4;
 
     private int id = -1;
     private int fleetId;
     private String name;
     private int startBuffer;
     private int stopBuffer;
-    private int airframeId;
+    private int airframeNameId;
     private Filter filter;
     private TreeSet<String> columnNames;
     private TreeSet<String> severityColumnNames;
@@ -48,10 +49,12 @@ public class EventDefinition {
     void initializeSeverity() {
         if (severityType.equals("min")) {
             severityTypeId = MIN_SEVERITY;
-        } else if (severityType.equals("abs")) {
-            severityTypeId = ABS_SEVERITY;
         } else if (severityType.equals("max")) {
             severityTypeId = MAX_SEVERITY;
+        } else if (severityType.equals("min abs")) {
+            severityTypeId = MIN_ABS_SEVERITY;
+        } else if (severityType.equals("max abs")) {
+            severityTypeId = MAX_ABS_SEVERITY;
         } else {
             LOG.severe("Unknown severity type: '" + severityType + " for EventDefinition: '" + name + "'");
             System.exit(1);
@@ -99,11 +102,11 @@ public class EventDefinition {
      * @param severityColumnNames a list of column names (unique) which are used to calculate the severity
      * @param severityType a string representation of the severity type, can be 'min', 'abs' or 'max'
      */
-    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeId, Filter filter, TreeSet<String> severityColumnNames, String severityType) {
+    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId, Filter filter, TreeSet<String> severityColumnNames, String severityType) {
         this.fleetId = fleetId;
         this.startBuffer = startBuffer;
         this.stopBuffer = stopBuffer;
-        this.airframeId = airframeId;
+        this.airframeNameId = airframeNameId;
         this.filter = filter;
         this.columnNames = filter.getColumnNames();
         this.severityColumnNames = severityColumnNames;
@@ -123,7 +126,7 @@ public class EventDefinition {
         this.name = resultSet.getString(3);
         this.startBuffer = resultSet.getInt(4);
         this.stopBuffer = resultSet.getInt(5);
-        this.airframeId = resultSet.getInt(6);
+        this.airframeNameId = resultSet.getInt(6);
         try {
         this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
         } catch (Exception e) {
@@ -180,8 +183,8 @@ public class EventDefinition {
     /**
      * @return the airframe id of the event definition
      */
-    public int getAirframeId() {
-        return airframeId;
+    public int getAirframeNameId() {
+        return airframeNameId;
     }
 
     /**
@@ -239,7 +242,6 @@ public class EventDefinition {
         return max;
     }
 
-
     /**
      * Calculates the minimum value in an array of DoubleTimeSeries at a particular time.
      * It ignores NaNs and returns Double.MAX_VALUE if all values are NaN
@@ -260,6 +262,26 @@ public class EventDefinition {
     }
 
     /**
+     * Calculates the minimum absolute value in an array of DoubleTimeSeries at a particular time.
+     * It ignores NaNs and returns +Double.MAX_VALUE if all values are NaN
+     *
+     * @param columns are the DoubleTimeSeries
+     * @param time is the time step in the series
+     */
+
+    double minAbsArray(DoubleTimeSeries[] columns, int time) {
+        double min = Double.MAX_VALUE;
+
+        for (int i = 0; i < severityColumnIds.length; i++) {
+            double value = Math.abs(columns[severityColumnIds[i]].get(time));
+            if (Double.isNaN(value)) continue;
+            min = Math.min(value, min);
+        }
+        return min;
+    }
+
+
+    /**
      * Gets the severity value for this event definition at time 
      *
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
@@ -269,9 +291,10 @@ public class EventDefinition {
      */
 
     public double getSeverity(DoubleTimeSeries[] columns, int time) {
-        if (columns.length == 0) {
+        if (columns.length == 1) {
             switch (severityTypeId) {
-                case ABS_SEVERITY:
+                case MIN_ABS_SEVERITY:
+                case MAX_ABS_SEVERITY:
                     return Math.abs(columns[0].get(time));
 
                 case MIN_SEVERITY:
@@ -288,10 +311,13 @@ public class EventDefinition {
                 case MIN_SEVERITY:
                     return minArray(columns, time);
 
-                case ABS_SEVERITY:
+                case MAX_SEVERITY:
                     return maxArray(columns, time);
 
-                case MAX_SEVERITY:
+                case MIN_ABS_SEVERITY:
+                    return minAbsArray(columns, time);
+
+                case MAX_ABS_SEVERITY:
                     return maxAbsArray(columns, time);
 
                 default:
@@ -314,12 +340,14 @@ public class EventDefinition {
 
     public double updateSeverity(double currentSeverity, DoubleTimeSeries[] doubleSeries, int time) {
         switch (severityTypeId) {
-            case ABS_SEVERITY:
+            case MAX_ABS_SEVERITY:
             case MAX_SEVERITY:
                 return Math.max(currentSeverity, getSeverity(doubleSeries, time));
 
+            case MIN_ABS_SEVERITY:
             case MIN_SEVERITY:
                 return Math.min(currentSeverity, getSeverity(doubleSeries, time));
+
 
             default:
                 System.err.println("Error getting severity for event:  " + toString());
@@ -333,6 +361,56 @@ public class EventDefinition {
 
 
     /**
+     * Updates an existing event definition into the database.
+     *
+     * @param connection is the connection to the database.
+     */
+    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
+        Filter filter = gson.fromJson(filterJson, Filter.class);
+        TreeSet<String> columnNames = filter.getColumnNames();
+
+        if (airframe.equals("All Airframes")) {
+            String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, startBuffer);
+            preparedStatement.setInt(4, stopBuffer);
+            preparedStatement.setInt(5, 0);
+            preparedStatement.setString(6, filterJson);
+            preparedStatement.setString(7, gson.toJson(columnNames));
+            preparedStatement.setString(8, severityColumnNamesJson);
+            preparedStatement.setString(9, severityType);
+            preparedStatement.setInt(10, eventId);
+
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        } else {
+            int airframeNameId = Airframes.getNameId(connection, airframe);
+            String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
+
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, startBuffer);
+            preparedStatement.setInt(4, stopBuffer);
+            preparedStatement.setInt(5, airframeNameId);
+            preparedStatement.setString(6, filterJson);
+            preparedStatement.setString(7, gson.toJson(columnNames));
+            preparedStatement.setString(8, severityColumnNamesJson);
+            preparedStatement.setString(9, severityType);
+            preparedStatement.setInt(10, eventId);
+
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+            preparedStatement.close();
+        }
+    }
+
+
+    /**
      * Inserts this event definition into the database.
      *
      * @param connection is the connection to the database.
@@ -341,7 +419,7 @@ public class EventDefinition {
         Filter filter = gson.fromJson(filterJson, Filter.class);
         TreeSet<String> columnNames = filter.getColumnNames();
 
-        if (airframe.equals("All Airframes (Generic)")) {
+        if (airframe.equals("All Airframes")) {
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -359,7 +437,7 @@ public class EventDefinition {
             preparedStatement.executeUpdate();
             preparedStatement.close();
         } else {
-            int airframeId = Airframes.getId(connection, airframe);
+            int airframeNameId = Airframes.getNameId(connection, airframe);
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -367,7 +445,7 @@ public class EventDefinition {
             preparedStatement.setString(2, name);
             preparedStatement.setInt(3, startBuffer);
             preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, airframeId);
+            preparedStatement.setInt(5, airframeNameId);
             preparedStatement.setString(6, filterJson);
             preparedStatement.setString(7, gson.toJson(columnNames));
             preparedStatement.setString(8, severityColumnNamesJson);
@@ -414,6 +492,7 @@ public class EventDefinition {
         }
         resultSet.close();
         preparedStatement.close();
+
 
         return allEvents;
     }
@@ -535,7 +614,7 @@ public class EventDefinition {
      * @return a string representation of this event definition
      */
     public String toString() {
-        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer + ", airframeId: " + airframeId +
+        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer + ", airframeNameId: " + airframeNameId +
             ", condition: " + gson.toJson(filter) + ", column_names : " + gson.toJson(columnNames) + ", severity_column_names: " + gson.toJson(severityColumnNames) + ", severity_type: " + severityType + "]";
     }
 

@@ -36,7 +36,7 @@ public class PostDoubleSeriesNames implements Route {
         public DoubleSeriesNames(int flightId) throws SQLException {
             Connection connection = Database.getConnection();
 
-            PreparedStatement query = connection.prepareStatement("SELECT name FROM double_series WHERE flight_id = ? ORDER BY name");
+            PreparedStatement query = connection.prepareStatement("SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name");
             query.setInt(1, flightId);
             ResultSet resultSet = query.executeQuery();
 

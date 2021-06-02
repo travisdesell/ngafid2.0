@@ -5,15 +5,17 @@ import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import { Filter } from './filter.js';
+import { EventDefinitionCard } from './event_definition.js';
 
 
 var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
 
-airframes.unshift("All Airframes (Generic)");
+airframes.unshift("All Airframes");
+
+airframeMap[0] = "All Airframes";
 
 
 var rules = [];
@@ -40,17 +42,20 @@ class CreateEventCard extends React.Component {
         super(props);
 
         this.state = {
-            mapVisible : false,
-            plotVisible : false,
             filterVisible : true,
             eventName : "",
-            airframe : 0,
+            airframe : airframeMap[0],
+            airframeNameId : 0,
             startBuffer : "",
-            stopBuffer : ""
+            stopBuffer : "",
+            severityType : "min",
+            severityColumnNames : [],
+            filters : {
+                type : "GROUP",
+                condition : "AND",
+                filters : []
+            }
         }
-
-        this.exceedenceFilter = React.createRef();
-        this.severityFilter = React.createRef();
     }
 
     validateEventName(event) {
@@ -66,6 +71,50 @@ class CreateEventCard extends React.Component {
         console.log("new airframe: " + airframe);
         this.setState({
             airframe : airframe
+        });
+    }
+
+    validateSeverityType(event) {
+        let severityType = event.target.value;
+        console.log("new severity type: " + severityType);
+        this.setState({
+            severityType : severityType
+        });
+    }
+
+    changeSeverityColumn(event) {
+        let severityColumn = event.target.value;
+        console.log("new severity column: " + severityColumn);
+        this.setState({
+            severityColumn : severityColumn
+        });
+    }
+
+    addSeverityColumn() {
+        console.log("adding severity column: " + this.state.severityColumn);
+        let newSeverityColumns = this.state.severityColumnNames;
+
+        if (newSeverityColumns.indexOf(this.state.severityColumn) === -1) {
+            newSeverityColumns.push(this.state.severityColumn);
+        }
+
+        console.log("new severity columns array:");
+        console.log(newSeverityColumns);
+        this.setState({
+            severityColumnNames : newSeverityColumns
+        });
+    }
+
+    removeSeverityColumn(columnName) {
+        let newSeverityColumns = this.state.severityColumnNames;
+
+        let columnIndex = newSeverityColumns.indexOf(columnName);
+        newSeverityColumns.splice(columnIndex, 1);
+
+        console.log("new severity columns array:");
+        console.log(newSeverityColumns);
+        this.setState({
+            severityColumnNames : newSeverityColumns
         });
     }
 
@@ -85,22 +134,29 @@ class CreateEventCard extends React.Component {
         });
     }
 
+    setFilter(filter) {
+        this.setState({
+            filters : filter
+        });
+    }
+
     submitFilter() {
-        //console.log( this.state.filters );
-
-        let query = this.exceedenceFilter.current.getQuery();
-
         console.log("Submitting filters:");
-        console.log( query );
+        console.log( this.state.filters );
+        console.log("airframe: " + this.state.airframe);
+        console.log("airframeNameId: " + this.state.airframeNameId);
+        console.log(airframeMap);
 
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(query),
+            filterQuery : JSON.stringify(this.state.filters),
             eventName : this.state.eventName,
             startBuffer : this.state.startBuffer,
             stopBuffer : this.state.stopBuffer,
-            airframe : airframes[this.state.airframe]
+            severityColumnNames : JSON.stringify(this.state.severityColumnNames),
+            severityType : this.state.severityType,
+            airframe : this.state.airframe
         };   
         console.log(submissionData);
 
@@ -132,69 +188,14 @@ class CreateEventCard extends React.Component {
     }
 
     render() {
-        console.log("rendering events!");
-
         let style = {
             padding : 5
         };
 
-        let formGroupStyle = {
-            marginBottom: '0px',
-            padding: '0 4 0 4'
-        };
-
-        let formHeaderStyle = {
-            width: '200px',
-            flex: '0 0 200px'
-        };
-
-        let labelStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'right'
-        };
-
-        let bgStyle={
+        let bgStyle = {
             background : "rgba(248,259,250,0.8)",
             margin:0
         };
-
-        let validationMessageStyle = {
-            padding : '7 0 7 0',
-            margin : '0',
-            display: 'block',
-            textAlign: 'left',
-            color: 'red'
-        };
-
-        let validationMessage = "";
-
-        if (this.state.eventName == "") {
-            validationMessage = "Please enter an event name.";
-        } else if (this.state.startBuffer == "") {
-            validationMessage = "Please enter a start buffer time.";
-        } else if (parseInt(this.state.startBuffer) < 1) {
-            validationMessage = "Start buffer time must be greater than 1 second.";
-        } else if (this.state.stopBuffer == "") {
-            validationMessage = "Please enter a stop buffer time.";
-        } else if (parseInt(this.state.startBuffer) < 1) {
-            validationMessage = "Stop buffer time must be greater than 1 second.";
-
-            //first time rendering this component exceedenceFilter will not be defined
-        } else if (typeof this.exceedenceFilter != 'undefined') {
-            console.log("checking exceedenceFilter isValid");
-
-            if ( !this.exceedenceFilter.current.isValid()) {
-                validationMessage = "Correct the incomplete filter.";
-            }
-        }
-
-        let validationHidden = (validationMessage == "");
-        let updateProfileDisabled = !validationHidden;
-
-        console.log("airframes:");
-        console.log(airframes);
 
         return (
             <div className="card-body" style={style}>
@@ -204,81 +205,33 @@ class CreateEventCard extends React.Component {
                         Create Event
                     </h5>
 
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="eventName" style={labelStyle}>Event name</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <input type="text" className="form-control" id="eventName" aria-describedby="eventName" placeholder="Enter event name" onChange={(event) => this.validateEventName(event)} value={this.state.eventName}/>
-                            </div>
-                        </div>
-                    </div>
+                    <EventDefinitionCard
+                        rules={rules}
+                        airframes={airframes}
+                        doubleTimeSeriesNames={doubleTimeSeriesNames}
 
+                        submitName={"Create Event"}
+                        eventName={this.state.eventName}
+                        airframe={this.state.airframe}
+                        startBuffer={this.state.startBuffer}
+                        stopBuffer={this.state.stopBuffer}
+                        severityColumn={this.state.severityColumn}
+                        severityColumnNames={this.state.severityColumnNames}
+                        filters={this.state.filters}
 
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="airframeSelect" style={labelStyle}>Event for</label>
-                            </div>
-                            <div className="p-2 flex-fill">
+                        getFilter={() => {return this.state.filters}}
+                        setFilter={(filter) => this.setFilter(filter)}
 
-                                <select id="airframeSelect" className="form-control" onChange={(event) => this.validateAirframe(event)} value={this.state.airframe}>
-                                    {
-                                        airframes.map((airframeInfo, index) => {
-                                            return (
-                                                <option key={index} value={index}>{airframeInfo}</option>
-                                            )
-                                        })
-                                    }
-                                </select>               
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="startBuffer" style={labelStyle}>Start buffer (seconds)</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <input type="number" className="form-control" id="eventName" aria-describedby="startBuffer" placeholder="Enter seconds" min="1" onChange={(event) => this.validateStartBuffer(event)} value={this.state.startBuffer} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="stopBuffer" style={labelStyle}>Stop buffer (seconds)</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <input type="number" className="form-control" id="eventName" aria-describedby="stopBuffer" placeholder="Enter seconds" min="1" onChange={(event) => this.validateStopBuffer(event)} value={this.state.stopBuffer}/>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="form-group" style={formGroupStyle}>
-                        <div className="d-flex">
-                            <div className="p-2" style={formHeaderStyle}>
-                                <label style={labelStyle}>Exceedence Definition</label>
-                            </div>
-                            <div className="p-2 flex-fill">
-                                <Filter ref={this.exceedenceFilter} depth={0} baseIndex="[0-0]" key="[0-0]" parent={null} type="GROUP" parentRerender={() => {this.forceUpdate();}} rules={rules} submitButtonName="Create Event" externalSubmit={true} />
-                            </div>
-                        </div>
-                    </div>
-
-                    <div className="d-flex">
-                        <div className="p-2" style={formHeaderStyle}>
-                        </div>
-                        <div className="p-2 flex-fill">
-                            <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
-                        </div>
-                        <div className="p-2">
-                            <button className="btn btn-primary float-right" onClick={() => {this.submitFilter()}} disabled={updateProfileDisabled}>Create Event</button>
-                        </div>
-                    </div>
+                        submitFilter={() => this.submitFilter()}
+                        validateEventName={(event) => this.validateEventName(event)}
+                        validateAirframe={(event) => this.validateAirframe(event)}
+                        validateSeverityType={(event) => this.validateSeverityType(event)}
+                        changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
+                        addSeverityColumn={() => this.addSeverityColumn()}
+                        removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
+                        validateStartBuffer={(event) => this.validateStartBuffer(event)}
+                        validateStopBuffer={(event) => this.validateStopBuffer(event)}
+                    />
 
                 </div>
             </div>
