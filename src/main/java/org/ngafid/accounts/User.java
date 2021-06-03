@@ -264,6 +264,10 @@ public class User {
         query.setInt(2, userPreferences.getDecimalPrecision());
 
         query.executeUpdate();
+
+        for (String metric : userPreferences.getFlightMetrics()) {
+            addUserPreferenceMetric(connection, userId, metric);
+        }
     }
 
     /**
