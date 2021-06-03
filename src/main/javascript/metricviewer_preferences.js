@@ -131,9 +131,11 @@ class MetricViewerSettings extends React.Component {
     }
 
     render() {
+        let exemptCols = ["LOC-I Index", "Stall Index"]; //put columns here that we dont want to show in the popup
         let selectedMetrics = this.state.selectedMetrics;
         let defSeriesNames = this.getAllDoubleSeriesNames();
         let serverMetrics = defSeriesNames.filter((e) => !selectedMetrics.includes(e));
+        serverMetrics = serverMetrics.filter((e) => !exemptCols.includes(e));
 
         let styleButtonSq = {
             flex : "right",
@@ -158,8 +160,7 @@ class MetricViewerSettings extends React.Component {
         };
 
         let formHeaderStyle = {
-            width: '150px',
-            flex: '0 0 150px'
+            flex: '0 0 180px'
         };
 
         let metricsRow = (
@@ -174,7 +175,7 @@ class MetricViewerSettings extends React.Component {
                         })
                     }
                 </div>
-                <div className="p-2 flex">
+                <div className="p-2 flex" style={{flex: '0 0 280px'}}>
                     <select id="columnNames" className="form-control" onChange={this.addMetric.bind(this)} value="Select a new metric to add...">
                     <option key={0} value="Select a new metric to add..." disabled>Select a new metric to add...</option>
                     {
@@ -206,10 +207,10 @@ class MetricViewerSettings extends React.Component {
                             <div className="form-group" style={formGroupStyle}>
                             {metricsRow}
                             <div className="d-flex">
-                                <div className="p-2" style={formHeaderStyle}>
+                                <div className="p-2 d-flex" style={formHeaderStyle}>
                                     <label htmlFor="selectedMetricsNames" style={labelStyle}>Decimal Precision:</label>
                                 </div>
-                                <div className="p-2 flex">
+                                <div className="p-2 d-flex">
                                     <select id="columnNames" className="form-control" onChange={this.changePrecision.bind(this)}>
                                         <option key={0}>0</option>
                                         <option key={1}>1</option>

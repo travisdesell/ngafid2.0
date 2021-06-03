@@ -56,7 +56,8 @@ class MapPopup extends React.Component {
     }
 
     openSettingsDialog() {
-        metricViewerSettingsModal.show();
+        this.close();
+        metricViewerSettingsModal.show(this);
     }
 
     pin() {
@@ -183,7 +184,7 @@ class MapPopup extends React.Component {
                                                 <i className="fa fa-exclamation p-1"></i>
                                             </Button>
                                         }
-                                        <Button onClick={() => this.openSettingsDialog()} data-toggle="button" variant="outline-secondary" size="sm">
+                                        <Button onClick={() => this.openSettingsDialog()} variant="outline-secondary" size="sm">
                                             <i className="fa fa fa-cog p-1"></i>
                                         </Button>
                                         <Button onClick={() => this.pin()} data-toggle="button" variant="outline-secondary" size="sm">

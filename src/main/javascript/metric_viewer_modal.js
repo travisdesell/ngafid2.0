@@ -3,6 +3,7 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Popover from 'react-bootstrap/Popover';
+import Modal from 'react-bootstrap/Modal'
 
 import {MetricViewerSettings} from "./metricviewer_preferences.js"
 
@@ -17,13 +18,19 @@ class MetricViewerSettingsModal extends React.Component {
 
         this.state = {
             title : "",
-            message : ""
+            message : "",
+            show : false
         };
     }
 
-    show(){
+    show(parent) {
         $("#metric-settings-modal").modal('show');
         this.getUserPreferences();
+
+        this.setState({
+            show : true,
+            parent : parent
+        });
     }
 
     getUserPreferences() {
@@ -56,6 +63,8 @@ class MetricViewerSettingsModal extends React.Component {
     }
 
     render() {
+        let showThis = this.state.show;
+
         let formGroupStyle = {
             marginBottom: '8px'
         };
@@ -104,22 +113,16 @@ class MetricViewerSettingsModal extends React.Component {
 
         return (
             <div className='modal-content'>
+
                 <div className='modal-header'>
-                    <h5 id='confirm-modal-title' className='modal-title'>Confirm Operation</h5>
-                    <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
+                    <h5 id='confirm-modal-title' className='modal-title'>Change Your Metric Viewer Settings:</h5>
+                    <button type='button' className='close' data-dismiss='modal' onClick={() => this.state.parent.show()} aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
 
-                <div id='confirm-modal-body' className='modal-body'>
-                    <h4>Settings</h4>
-
+                <div id='confirm-modal-body' className='modal-body' style={{flex: 'fill'}}>
                     {settingsDialog}
-                </div>
-
-                <div className='modal-footer'>
-                    <button type='button' className='btn btn-primary' data-dismiss='modal' >Confirm</button>
-                    <button type='button' className='btn btn-secondary' data-dismiss='modal'>Close</button>
                 </div>
             </div>
         );
