@@ -1,6 +1,7 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+//import {loadFilterModal} from './load_filter_modal.js';
 
 import { timeZones } from "./time_zones.js";
 
@@ -176,6 +177,18 @@ function addGroup(filter, treeIndex) {
         filters : []
     });
     return filter;
+}
+
+function renderFilterSelector(getFiltersMethod) {
+    let filters = getFiltersMethod();
+
+    console.log("got some filters");
+    console.log(filters);
+
+    let filterObj = JSON.parse(filters[0].filter);
+    console.log(filterObj);
+
+    return [];
 }
 
 function removeFilter(filter, treeIndex) {
@@ -373,6 +386,9 @@ class Group extends React.Component {
             color: 'red'
         };
 
+        console.log("filter props:");
+        console.log(this.props);
+
         let errorHidden = true;
         let errorMessage = "";
         if (this.props.filters.length == 0) {
@@ -417,6 +433,7 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
+                        <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(renderFilterSelector(this.props.getStoredFilters.bind(this)))}>Load a Saved Filter</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add Rule</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add Group</button>
                         <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
@@ -462,7 +479,8 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                        <button type="button" className="btn btn-primary btn-sm" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
+                        <button type="button" className="btn btn-primary btn-sm mr-0" disabled={submitDisabled} onClick={() => this.props.storeFilter("some filter")} hidden={submitHidden} >save</button>
+                        <button type="button" className="btn btn-primary btn-sm mr-0" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
 
@@ -484,6 +502,8 @@ class Filter extends React.Component {
                     submitButtonName={this.props.submitButtonName}
                     rules={this.props.rules}
                     filters={this.props.filters}
+                    getStoredFilters={() => this.props.getStoredFilters()}
+                    storeFilter={(name) => this.props.storeFilter(name)}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}

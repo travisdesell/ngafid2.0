@@ -27,6 +27,7 @@ query_ngafid_db("alter table flights add index `end_timestamp_index` (`end_times
 */
 //
 //new double_series_names table and user preferences update
+//
 query_ngafid_db("alter table double_series change name name_id int not null");
 query_ngafid_db("alter table user_preferences drop column metrics");
 $query = "CREATE TABLE `double_series_names` (
@@ -50,6 +51,11 @@ $query = "CREATE TABLE `user_preferences_metrics` (
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
+
+//Saved filters table
+//TODO: replace this
+query_ngafid_db($query);
+
 //for user preferences
 /*
 $query = "CREATE TABLE `user_preferences` (
