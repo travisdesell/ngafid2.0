@@ -583,6 +583,50 @@ class FlightsPage extends React.Component {
         });
     }
 
+    storeFilter(name) {
+        let submissionData = {
+            name : name,
+            filterJSON : JSON.stringify(this.state.filters)
+        }
+
+        console.log("Storing filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/stored_filters',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+               //probably want to render some sort of success message here 
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    getStoredFilters() {
+        let filters = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/stored_filters',
+            dataType : 'json',
+            success : function(response) {
+                console.log("received filters response: ");
+                console.log(response);
+                filters = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+
+        return filters;
+    }
+
     submitFilter(resetCurrentPage = false) {
         console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize + " sortByColumn: " + this.state.sortColumn);
 
@@ -674,7 +718,7 @@ class FlightsPage extends React.Component {
         style.padding = "5";
 
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
-    
+
         return (
             <div>
                 <SignedInNavbar 
@@ -713,6 +757,8 @@ class FlightsPage extends React.Component {
 
                         rules={rules}
                         filters={this.state.filters}
+                        getStoredFilters={() => this.getStoredFilters()}
+                        storeFilter={(name) => this.storeFilter(name)}
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}
