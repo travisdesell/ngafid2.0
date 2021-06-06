@@ -1,7 +1,13 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-//import {loadFilterModal} from './load_filter_modal.js';
+import Overlay from 'react-bootstrap/Overlay';
+import Popover from 'react-bootstrap/Popover';
+import Button from 'react-bootstrap/Button';
+import FormControl from 'react-bootstrap/FormControl';
+import InputGroup from 'react-bootstrap/InputGroup';
+
+import {loadFilterModal} from './load_filter_modal.js';
 
 import { timeZones } from "./time_zones.js";
 
@@ -179,17 +185,6 @@ function addGroup(filter, treeIndex) {
     return filter;
 }
 
-function renderFilterSelector(getFiltersMethod) {
-    let filters = getFiltersMethod();
-
-    console.log("got some filters");
-    console.log(filters);
-
-    let filterObj = JSON.parse(filters[0].filter);
-    console.log(filterObj);
-
-    return [];
-}
 
 function removeFilter(filter, treeIndex) {
     console.log("removing filter with treeIndex: " + treeIndex);
@@ -375,8 +370,48 @@ class Rule extends React.Component {
 class Group extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            showPopover : false,
+            popoverTarget : "",
+            saveButtonDisabled : true,
+            filterSaved : false,
+            filterName : ""
+        }
+    }
+
+    togglePopover() {
+        this.state.showPopover = !this.state.showPopover;
+        this.setState(this.state);
+    }
+
+    setPopoverTarget(target) {
+        this.state.popoverTarget = target;
+        this.setState(this.state);
+    }
+
+    saveFilter() {
+        console.log("Saving filter with name: ");
+        console.log(this.state.filterName);
+
+        this.props.storeFilter(this.state.filterName);
+
+        this.state.saveButtonDisabled = true;
+        this.state.showPopover = false;
+        this.state.filterSaved = true;
+        this.setState(this.state);
+    }
+
+    setSelectedFilter(filter) {
+        this.props.setFilter(JSON.parse(filter));
     }
    
+    renderFilterSelector(getFiltersMethod, submitMethod) {
+        let filters = getFiltersMethod();
+
+        loadFilterModal.show(filters, submitMethod);
+    }
+
     render() {
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -408,12 +443,24 @@ class Group extends React.Component {
             orActive = "active";
         }
 
+        const handleClick = (event) => {
+            this.togglePopover();
+            this.setPopoverTarget(event.target);
+        };
+
+        let saveButtonLabel = "Save Filter";
+        if (this.state.filterSaved) {
+            console.log("Filter was saved, updating button");
+            saveButtonLabel = "Filter Saved!";
+        }
+
         let submitHidden = true;
         let submitDisabled = true;
         if (typeof this.props.submitButtonName !== 'undefined') {
             submitHidden = false;
-
             submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
+            this.state.saveButtonDisabled = !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved;
+            this.state.filterSaved = false;
         }
 
         return (
@@ -433,7 +480,6 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                        <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(renderFilterSelector(this.props.getStoredFilters.bind(this)))}>Load a Saved Filter</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add Rule</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add Group</button>
                         <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
@@ -479,8 +525,29 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                        <button type="button" className="btn btn-primary btn-sm mr-0" disabled={submitDisabled} onClick={() => this.props.storeFilter("some filter")} hidden={submitHidden} >save</button>
-                        <button type="button" className="btn btn-primary btn-sm mr-0" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
+                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={() => this.renderFilterSelector(this.props.getStoredFilters.bind(this), this.setSelectedFilter.bind(this))}>Load a Saved Filter</button>
+                          <Button onClick={handleClick} size="sm" hidden={submitHidden} disabled={this.state.saveButtonDisabled} className="mr-1">
+                              {saveButtonLabel}
+                          </Button>
+                          <Overlay
+                            show={this.state.showPopover}
+                            target={this.state.popoverTarget}
+                            placement="bottom"
+                            containerPadding={20}
+                          >
+                            <Popover id="popover-contained">
+                              <Popover.Title as="h3">{saveButtonLabel}</Popover.Title>
+                              <Popover.Content>
+                                  <InputGroup className="mb-3">
+                                      <FormControl placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
+                                          <InputGroup.Append>
+                                              <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
+                                          </InputGroup.Append>
+                                  </InputGroup>
+                              </Popover.Content>
+                            </Popover>
+                          </Overlay>
+                        <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
 

@@ -18,10 +18,7 @@ window.$ = $;
 
 class SelectAircraftModal extends React.Component {
     constructor(props) {
-        console.log("cstr slam");
-        console.log(props);
         super();
-        console.log("getSimAircraft invoked");
         this.state = {
             paths : [],
             activeId : 0

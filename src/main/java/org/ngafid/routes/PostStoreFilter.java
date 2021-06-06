@@ -36,10 +36,16 @@ public class PostStoreFilter implements Route {
 
             String name = request.queryParams("name");
             String filterJSON = request.queryParams("filterJSON");
+            String type = request.queryParams("type");
 
-            LOG.info("Storing filter: " + name);
-
-            StoredFilter storedFilter = StoredFilter.storeFilter(connection, user, filterJSON, name);
+            switch (type) {
+                case "Store":
+                    LOG.info("Storing filter: " + name);
+                    StoredFilter storedFilter = StoredFilter.storeFilter(connection, user, filterJSON, name);
+                    break;
+                default:
+                    break;
+            }
 
             return gson.toJson(storedFilter);
         } catch (SQLException e) {

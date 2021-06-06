@@ -586,7 +586,8 @@ class FlightsPage extends React.Component {
     storeFilter(name) {
         let submissionData = {
             name : name,
-            filterJSON : JSON.stringify(this.state.filters)
+            filterJSON : JSON.stringify(this.state.filters),
+            type : "store"
         }
 
         console.log("Storing filter " + name);

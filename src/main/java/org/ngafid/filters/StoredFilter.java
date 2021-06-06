@@ -46,7 +46,7 @@ public class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static List<StoredFilter> getStoredFilters(Connection connection, User user) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, filter_json, name FROM stored_filters WHERE user_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT name, filter_json FROM stored_filters WHERE user_id = ?");
 
         query.setInt(1, user.getId());
         ResultSet resultSet = query.executeQuery();
@@ -55,7 +55,7 @@ public class StoredFilter {
 
         while (resultSet.next()) {
             StoredFilter filterResponse = 
-                new StoredFilter(resultSet.getString(2), resultSet.getString(3));
+                new StoredFilter(resultSet.getString(1), resultSet.getString(2));
             filters.add(filterResponse);
         }
 
