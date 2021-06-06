@@ -2,14 +2,10 @@ import 'bootstrap';
 
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import { errorModal } from "./error_modal.js";
-
 import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
-
-import { helpModal } from './help_modal.js';
 
 import $ from 'jquery';
 window.jQuery = $;
@@ -19,6 +15,12 @@ window.$ = $;
 class LoadFilterModal extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            activeId : 0,
+            filters : [],
+            submitMethod : undefined
+        }
     }
 
     show(filters, submitMethod) {
@@ -31,26 +33,18 @@ class LoadFilterModal extends React.Component {
         $("#load_filter-modal").modal('show');
     }
 
-    getSimAircraft(){
-        let thisModal = this;
+    selectPathId(pathId){
+        this.state.activeId = pathId;
+        this.setState(this.state);
+    }
 
-        $.ajax({
-            type: 'GET',
-            url: '/protected/sim_acft',
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                
-                thisModal.state.paths = response;
-                if(thisModal.state.paths != null & thisModal.state.paths.length > 0){
-                    thisModal.state.selectedPath = thisModal.state.paths[0];
-                }
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
+    modalClicked() {
+        let pathId = this.state.activeId - 1;
+        this.state.submitMethod(this.state.filters[pathId].filter);
+    }
+
+    getSelectedFilter() {
+        return this.state.filters[this.state.activeId].filter;
     }
 
     render() {
@@ -65,16 +59,14 @@ class LoadFilterModal extends React.Component {
         }
 
         console.log("loading filter select modal");
-        console.log(this.state.paths);
         let filters = this.state.filters;
 
         let selectRow = (
             <ListGroup id="listgrp" defaultActiveKey="#custom" style={listStyle}>
             <ListGroup.Item active={this.state.activeId == 0} onClick={() => this.selectPathId(0)}>
-              <input type="text" id="cust_path" className="form-control" placeholder="Enter a new or custom path to a *.acf file"/>
             </ListGroup.Item>
-            {paths != null && paths.length > 0 &&
-                paths.map((path, index) => {
+            {filters != null && filters.length > 0 &&
+                filters.map((filter, index) => {
                     let relIndex = index + 1;
                     let isActive = (this.state.activeId - 1 == index);
                     return(
@@ -82,7 +74,7 @@ class LoadFilterModal extends React.Component {
                             <Container>
                                 <Row className="justify-content-md-center">
                                     <Col xs lg="12">
-                                        {path}
+                                        {filter.name}
                                     </Col>
                                 </Row>
                             </Container>
@@ -100,16 +92,14 @@ class LoadFilterModal extends React.Component {
             <div className='modal-content'>
 
                 <div className='modal-header'>
-                    <h5 id='confirm-modal-title' className='modal-title'>Select Aircraft Filepath for X-Plane</h5>
+                    <h5 id='confirm-modal-title' className='modal-title'>Select Filter</h5>
                     <button type='button' className='close' data-dismiss='modal' aria-label='Close'>
                         <span aria-hidden='true'>&times;</span>
                     </button>
                 </div>
 
                 <div id='confirm-modal-body' className='modal-body'>
-                    <h4>Select *.acf filepath for X-Plane</h4>
-                        Please select a previously saved filter
-
+                    <h4>Select the filter you wish to load</h4>
                     <div className="row p-2">
                         <div className="col">
                             {selectRow}
@@ -118,7 +108,7 @@ class LoadFilterModal extends React.Component {
                 </div>
 
                 <div className='modal-footer'>
-                    <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Submit</button>
+                    <button type='button' className='btn btn-primary' data-dismiss='modal' onClick={() => this.modalClicked()}>Done</button>
                     <button type='button' className='btn btn-secondary' data-dismiss='modal'>Cancel</button>
                 </div>
 
