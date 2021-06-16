@@ -250,7 +250,9 @@ public final class WebServer {
 
         // Saving filters routes
         Spark.get("/protected/stored_filters", new GetStoredFilters(gson));
-        Spark.post("/protected/stored_filters", new PostStoreFilter(gson));
+        Spark.post("/protected/store_filter", new PostStoreFilter(gson));
+        Spark.post("/protected/remove_filter", new PostRemoveFilter(gson));
+        Spark.post("/protected/modify_filter", new PostModifyFilter(gson));
 
         // Cesium related routes
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));

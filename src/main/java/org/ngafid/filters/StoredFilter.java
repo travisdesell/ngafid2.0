@@ -45,10 +45,10 @@ public class StoredFilter {
      *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
-    public static List<StoredFilter> getStoredFilters(Connection connection, User user) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT name, filter_json FROM stored_filters WHERE user_id = ?");
+    public static List<StoredFilter> getStoredFilters(Connection connection, int fleetId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT name, filter_json FROM stored_filters WHERE fleet_id = ?");
 
-        query.setInt(1, user.getId());
+        query.setInt(1, fleetId);
         ResultSet resultSet = query.executeQuery();
 
         List<StoredFilter> filters = new ArrayList<>();
@@ -72,16 +72,57 @@ public class StoredFilter {
      *
      * @throws SQLException in the event there is an issue with the SQL query.
      */
-    public static StoredFilter storeFilter(Connection connection, User user, String filterJSON, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, user_id) VALUES (?,?,?)");
+    public static StoredFilter storeFilter(Connection connection, int fleetId, String filterJSON, String name) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, fleet_id) VALUES (?,?,?)");
 
         query.setString(1, filterJSON);
         query.setString(2, name);
-        query.setInt(3, user.getId());
+        query.setInt(3, fleetId);
 
         query.executeUpdate();
 
         return new StoredFilter(name, filterJSON);
+    }
+
+    /**
+     * This method removes a stored filter for a {@link User} from the database
+     *
+     * @param connection is the SQL database connection
+     * @param user is the user removing the filter
+     * @param name is the name of the filter to be removed
+     *
+     * @throws SQLException in the event there is an issue with the SQL query.
+     */
+    public static void removeFilter(Connection connection, int fleetId, String name) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("DELETE FROM stored_filters WHERE fleet_id = ? AND name = ?");
+
+        query.setInt(1, fleetId);
+        query.setString(2, name);
+
+        query.executeUpdate();
+    }
+
+    /**
+     * This method modifies a filter that already exists in the Database.
+     *
+     * @param connection is the SQL database connection
+     * @param fleetId is the Fleet ID
+     * @param filterJSON is the new filter JSON 
+     * @param currentName is the name of the filter that already exists
+     * @param newName is the new name to be given to the {@link StoredFilter}
+     *
+     * @throws SQLException in the event there is an issue with the SQL query.
+     */
+    public static void modifyFilter(Connection connection, int fleetId, String filterJSON, String currentName, String newName) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("UPDATE stored_filters SET fleet_id = ?, name = ?, filter_json = ? WHERE name = ? AND fleet_id = ?");
+
+        query.setInt(1, fleetId);
+        query.setString(2, newName);
+        query.setString(3, filterJSON);
+        query.setString(4, currentName);
+        query.setInt(5, fleetId);
+
+        query.executeUpdate();
     }
 
     /**
