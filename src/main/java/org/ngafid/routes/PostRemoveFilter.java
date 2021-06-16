@@ -14,11 +14,11 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 // A route to save a user's query to the saved_queries table in the database
-public class PostStoreFilter implements Route {
-    private static final Logger LOG = Logger.getLogger(PostStoreFilter.class.getName());
+public class PostRemoveFilter implements Route {
+    private static final Logger LOG = Logger.getLogger(PostRemoveFilter.class.getName());
     private Gson gson;
 
-    public PostStoreFilter(Gson gson) {
+    public PostRemoveFilter(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -36,11 +36,9 @@ public class PostStoreFilter implements Route {
             int fleetId = user.getFleetId();
 
             String name = request.queryParams("name");
-            String filterJSON = request.queryParams("filterJSON");
 
-            LOG.info("Storing filter: " + name);
-            LOG.info(filterJSON);
-            StoredFilter.storeFilter(connection, fleetId, filterJSON, name);
+            LOG.info("Removing filter: " + name);
+            StoredFilter.removeFilter(connection, fleetId, name);
 
             return gson.toJson(StoredFilter.getStoredFilters(connection, fleetId));
         } catch (SQLException e) {

@@ -4,10 +4,13 @@ import ReactDOM from "react-dom";
 import Overlay from 'react-bootstrap/Overlay';
 import Popover from 'react-bootstrap/Popover';
 import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
 import FormControl from 'react-bootstrap/FormControl';
 import InputGroup from 'react-bootstrap/InputGroup';
-
-import {loadFilterModal} from './load_filter_modal.js';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
 
 import { timeZones } from "./time_zones.js";
 
@@ -372,22 +375,41 @@ class Group extends React.Component {
         super(props);
 
         this.state = {
-            showPopover : false,
-            popoverTarget : "",
+            showSavePopover : false,
+            showLoadPopover : false,
+            loadPopoverTarget : "",
+            savePopoverTarget : "",
             saveButtonDisabled : true,
             filterSaved : false,
             filterName : ""
         }
     }
 
-    togglePopover() {
-        this.state.showPopover = !this.state.showPopover;
+    toggleLoadPopover() {
+        this.state.showLoadPopover = !this.state.showLoadPopover;
         this.setState(this.state);
     }
 
-    setPopoverTarget(target) {
-        this.state.popoverTarget = target;
+    setLoadPopoverTarget(target) {
+        this.state.loadPopoverTarget = target;
         this.setState(this.state);
+    }
+
+    toggleSavePopover() {
+        this.state.showSavePopover = !this.state.showSavePopover;
+        this.setState(this.state);
+    }
+
+    setSavePopoverTarget(target) {
+        this.state.savePopoverTarget = target;
+        this.setState(this.state);
+    }
+
+    setFilter(filter) {
+        this.toggleLoadPopover();
+        let filterJSON = JSON.parse(filter.filter);
+
+        this.props.setFilter(filterJSON);
     }
 
     saveFilter() {
@@ -397,7 +419,7 @@ class Group extends React.Component {
         this.props.storeFilter(this.state.filterName);
 
         this.state.saveButtonDisabled = true;
-        this.state.showPopover = false;
+        this.state.showSavePopover = false;
         this.state.filterSaved = true;
         this.setState(this.state);
     }
@@ -413,6 +435,8 @@ class Group extends React.Component {
     }
 
     render() {
+        var validated = false;
+
         let errorMessageStyle = {
             padding : '7 0 7 0',
             margin : '0',
@@ -420,6 +444,25 @@ class Group extends React.Component {
             textAlign: 'left',
             color: 'red'
         };
+
+        let styleButtonSq = {
+            flex : "right",
+            float : "auto"
+        };
+
+        let listStyle = {
+            maxHeight: "400px",
+            overflowY: "scroll"
+        }
+
+        let popoverStyle = {
+            maxHeight: "400px",
+            minWidth: "800px"
+        }
+
+        let listGrpStyle = {
+            maxHeight: "400px"
+        }
 
         console.log("filter props:");
         console.log(this.props);
@@ -430,6 +473,7 @@ class Group extends React.Component {
             errorHidden = false;
             errorMessage = "Group has no rules.";
         }
+
 
         //console.log("GROUP: index: " + this.props.treeIndex);
         //console.log(this.props.filters);
@@ -443,15 +487,61 @@ class Group extends React.Component {
             orActive = "active";
         }
 
-        const handleClick = (event) => {
-            this.togglePopover();
-            this.setPopoverTarget(event.target);
+        const handleLoadClick = (event) => {
+            this.toggleLoadPopover();
+            this.setLoadPopoverTarget(event.target);
+        };
+
+        const handleSaveClick = (event) => {
+            this.toggleSavePopover();
+            validated = true;
+            this.setSavePopoverTarget(event.target);
         };
 
         let saveButtonLabel = "Save Filter";
         if (this.state.filterSaved) {
             console.log("Filter was saved, updating button");
             saveButtonLabel = "Filter Saved!";
+        }
+
+        let loadFilterPopoverContent = "No filters created yet!";
+
+        let filters = this.props.storedFilters;
+
+        if (filters != null && filters.length > 0) {
+            loadFilterPopoverContent = (
+                filters.map((filter, index) => {
+                    console.log(filter);
+                    let relIndex = index + 1;
+                    let isActive = (this.state.activeId - 1 == index);
+                    return(
+                        <ListGroup.Item active={isActive} key={index}>
+                            <Container>
+                                <Row className="justify-content-md-center">
+                                    <Col xs lg="9">
+                                        {filter.name}
+                                    </Col>
+                                    <Col xs lg="1">
+                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.setFilter(filter)} title="Use this filter">
+                                            <i className="fa fa-check" aria-hidden="true"></i>
+                                        </button>
+                                    </Col>
+                                    <Col xs lg="1">
+                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter.name)} title="Edit this filter">
+                                            <i className="fa fa-pencil" aria-hidden="true"></i>
+                                        </button>
+                                    </Col>
+                                    <Col xs lg="1">
+                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.props.removeFilter(filter.name)} title="Delete this filter">
+                                            <i className="fa fa-trash" aria-hidden="true"></i>
+                                        </button>
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </ListGroup.Item>
+                    );
+                })
+            );
         }
 
         let submitHidden = true;
@@ -496,6 +586,7 @@ class Group extends React.Component {
                                         treeIndex={this.props.treeIndex + "," + index}
                                         rules={this.props.rules}
                                         filters={filterInfo}
+                                        getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                         setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
@@ -511,6 +602,7 @@ class Group extends React.Component {
                                         treeIndex={this.props.treeIndex + "," + index}
                                         rules={this.props.rules}
                                         filter={filterInfo}
+                                        getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                     />
@@ -525,21 +617,42 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={() => this.renderFilterSelector(this.props.getStoredFilters.bind(this), this.setSelectedFilter.bind(this))}>Load a Saved Filter</button>
-                          <Button onClick={handleClick} size="sm" hidden={submitHidden} disabled={this.state.saveButtonDisabled} className="mr-1">
-                              {saveButtonLabel}
+                          <Button hidden={submitHidden} onClick={handleLoadClick} size="sm" className="mr-1">
+                              Load a Saved Filter
                           </Button>
                           <Overlay
-                            show={this.state.showPopover}
-                            target={this.state.popoverTarget}
+                            show={this.state.showLoadPopover}
+                            target={this.state.loadPopoverTarget}
                             placement="bottom"
                             containerPadding={20}
                           >
-                            <Popover id="popover-contained">
+                            <Popover id="popover-contained" style={popoverStyle}>
+                              <Popover.Title as="h3">Load Filter</Popover.Title>
+                              <Popover.Content>
+                                <ListGroup id="listgrp" defaultActiveKey="#custom" style={listGrpStyle}>
+                                {loadFilterPopoverContent}
+                                </ListGroup>
+                              </Popover.Content>
+                            </Popover>
+                          </Overlay>
+
+                          <Button onClick={handleSaveClick} size="sm" hidden={submitHidden} disabled={this.state.saveButtonDisabled} className="mr-1">
+                              {saveButtonLabel}
+                          </Button>
+                          <Overlay
+                            show={this.state.showSavePopover}
+                            target={this.state.savePopoverTarget}
+                            placement="bottom"
+                            containerPadding={20}
+                          >
+                            <Popover id="popover-contained" style={{flex : "fill"}}>
                               <Popover.Title as="h3">{saveButtonLabel}</Popover.Title>
                               <Popover.Content>
-                                  <InputGroup className="mb-3">
-                                      <FormControl placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
+                                  <InputGroup className="mb-3" validated="true">
+                                      <FormControl placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
+                                      <Form.Control.Feedback type="invalid">
+                                          You have already stored a filter with this name!
+                                      </Form.Control.Feedback>
                                           <InputGroup.Append>
                                               <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
                                           </InputGroup.Append>
@@ -550,7 +663,6 @@ class Group extends React.Component {
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
-
             </div>
         );
     }
@@ -569,7 +681,8 @@ class Filter extends React.Component {
                     submitButtonName={this.props.submitButtonName}
                     rules={this.props.rules}
                     filters={this.props.filters}
-                    getStoredFilters={() => this.props.getStoredFilters()}
+                    storedFilters={this.props.storedFilters}
+                    removeFilter={(name) => this.props.removeFilter(name)}
                     storeFilter={(name) => this.props.storeFilter(name)}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}

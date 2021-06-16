@@ -42,8 +42,10 @@ public class GetStoredFilters implements Route {
             User user = session.attribute("user");
             Connection connection = Database.getConnection();
 
-            List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, user);
-            System.out.println(filters.toString());
+            int fleetId = user.getFleetId();
+
+            List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, fleetId);
+            LOG.info("Pushing " + filters.size() + " filters to the user");
 
             return gson.toJson(filters);
         } catch (SQLException e) {

@@ -377,6 +377,7 @@ class FlightsPage extends React.Component {
             flights : undefined, //start out with no specified flights
             sortColumn : "Start Date and Time", //need to define a default here, flt# will alias to primary key server side
             sortingOrder : "Descending", //need to define a default here, descending is default
+            storedFilters : this.getStoredFilters(),
 
             filters : {
                 type : "GROUP",
@@ -583,6 +584,34 @@ class FlightsPage extends React.Component {
         });
     }
 
+    removeFilter(name) {
+        let flightsState = this;
+
+        let submissionData = {
+            name : name,
+        }
+
+        console.log("Removing filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                console.log("Updated filters:");
+                console.log(response);
+                flightsState.storedFilters = response;
+                flightsState.setState(flightsState.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
     storeFilter(name) {
         let submissionData = {
             name : name,
@@ -594,12 +623,13 @@ class FlightsPage extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/protected/stored_filters',
+            url: '/protected/store_filter',
             data : submissionData,
             dataType : 'json',
             timeout : 0, 
             success : function(response) {
-               //probably want to render some sort of success message here 
+                flightsState.state.storedFilters = response;
+                flightsState.setState(flightsState.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
@@ -609,7 +639,7 @@ class FlightsPage extends React.Component {
     }
 
     getStoredFilters() {
-        let filters = [];
+        let storedFilters = [];
 
         $.ajax({
             type: 'GET',
@@ -618,14 +648,15 @@ class FlightsPage extends React.Component {
             success : function(response) {
                 console.log("received filters response: ");
                 console.log(response);
-                filters = response;
+                
+                storedFilters = response;
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
             async: false 
         });  
 
-        return filters;
+        return storedFilters;
     }
 
     submitFilter(resetCurrentPage = false) {
@@ -758,8 +789,9 @@ class FlightsPage extends React.Component {
 
                         rules={rules}
                         filters={this.state.filters}
-                        getStoredFilters={() => this.getStoredFilters()}
+                        storedFilters={this.state.storedFilters}
                         storeFilter={(name) => this.storeFilter(name)}
+                        removeFilter={(name) => this.removeFilter(name)}
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}
