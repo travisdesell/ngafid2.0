@@ -1,5 +1,5 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React, { Component, useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import Overlay from 'react-bootstrap/Overlay';
 import Popover from 'react-bootstrap/Popover';
@@ -380,6 +380,7 @@ class Group extends React.Component {
             loadPopoverTarget : "",
             savePopoverTarget : "",
             saveButtonDisabled : true,
+            editingFilter : {},
             filterSaved : false,
             filterName : ""
         }
@@ -390,8 +391,9 @@ class Group extends React.Component {
         this.setState(this.state);
     }
 
-    setLoadPopoverTarget(target) {
-        this.state.loadPopoverTarget = target;
+    setLoadPopoverTarget(event) {
+        this.state.loadPopoverTarget = event.target;
+        console.log("setting load popover target");
         this.setState(this.state);
     }
 
@@ -400,8 +402,8 @@ class Group extends React.Component {
         this.setState(this.state);
     }
 
-    setSavePopoverTarget(target) {
-        this.state.savePopoverTarget = target;
+    setSavePopoverTarget(event) {
+        this.state.savePopoverTarget = event.target;
         this.setState(this.state);
     }
 
@@ -424,6 +426,23 @@ class Group extends React.Component {
         this.setState(this.state);
     }
 
+    editFilter(filter) {
+        this.props.setFilter(JSON.parse(filter.filter));
+        this.state.editingFilter = filter;
+        this.setState(this.state);
+       
+        //let target = $("load-filter-button").click(function(event){
+            //return event.target;
+        //});
+
+        //this.state.loadPopoverTarget = target;
+    }
+
+    handleLoadClick(event) {
+        this.toggleLoadPopover();
+        this.setLoadPopoverTarget(event);
+    }
+
     setSelectedFilter(filter) {
         this.props.setFilter(JSON.parse(filter));
     }
@@ -435,7 +454,7 @@ class Group extends React.Component {
     }
 
     render() {
-        var validated = false;
+        var validated = false, loadFilterButtonId = "load-filter-button";
 
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -443,6 +462,11 @@ class Group extends React.Component {
             display: 'block',
             textAlign: 'left',
             color: 'red'
+        };
+
+        let editingButtonStyle = {
+            color : 'green',
+            borderColor : 'green'
         };
 
         let styleButtonSq = {
@@ -487,15 +511,11 @@ class Group extends React.Component {
             orActive = "active";
         }
 
-        const handleLoadClick = (event) => {
-            this.toggleLoadPopover();
-            this.setLoadPopoverTarget(event.target);
-        };
 
         const handleSaveClick = (event) => {
             this.toggleSavePopover();
             validated = true;
-            this.setSavePopoverTarget(event.target);
+            this.setSavePopoverTarget(event);
         };
 
         let saveButtonLabel = "Save Filter";
@@ -504,9 +524,27 @@ class Group extends React.Component {
             saveButtonLabel = "Filter Saved!";
         }
 
-        let loadFilterPopoverContent = "No filters created yet!";
-
         let filters = this.props.storedFilters;
+
+        let loadFilterPopoverContent = "";
+
+        let loadFilterFunction = this.handleLoadClick;
+        if (this.state.editingFilter == null){
+            loadFilterFunction = this.handleLoadClickPersist;
+        }
+
+        const UpdatingPopover = React.forwardRef(({ popper, children, show: _, ...props }, ref) => {
+                useEffect(() => {
+                  console.log('updating!');
+                  popper.scheduleUpdate();
+                }, [children, popper]);
+            
+                return (
+                <Popover ref={ref} {...props}>
+                  {children}
+                </Popover>
+                );
+        });
 
         if (filters != null && filters.length > 0) {
             loadFilterPopoverContent = (
@@ -514,7 +552,29 @@ class Group extends React.Component {
                     console.log(filter);
                     let relIndex = index + 1;
                     let isActive = (this.state.activeId - 1 == index);
-                    return(
+                    //Normal
+                    let editButton = ( 
+                        <Col xs lg="1">
+                            <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                                <i className="fa fa-pencil" aria-hidden="true"></i> 
+                            </button>
+                        </Col>
+                    );
+
+                    if (filter === this.state.editingFilter) {
+                        //When editing 
+                        editButton = (
+                            <Col xs lg="1">
+                                <button className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.editFilter(filter)} title="Submit changes">
+                                    <i className="fa fa-check" aria-hidden="true" style={editingButtonStyle}></i>
+                                </button>
+                            </Col>
+                        )
+                    }
+
+
+
+                    return (
                         <ListGroup.Item active={isActive} key={index}>
                             <Container>
                                 <Row className="justify-content-md-center">
@@ -523,14 +583,10 @@ class Group extends React.Component {
                                     </Col>
                                     <Col xs lg="1">
                                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.setFilter(filter)} title="Use this filter">
-                                            <i className="fa fa-check" aria-hidden="true"></i>
+                                            <i className="fa fa-arrow-circle-left" aria-hidden="true"></i>
                                         </button>
                                     </Col>
-                                    <Col xs lg="1">
-                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter.name)} title="Edit this filter">
-                                            <i className="fa fa-pencil" aria-hidden="true"></i>
-                                        </button>
-                                    </Col>
+                                    {editButton}
                                     <Col xs lg="1">
                                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.props.removeFilter(filter.name)} title="Delete this filter">
                                             <i className="fa fa-trash" aria-hidden="true"></i>
@@ -617,7 +673,7 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                          <Button hidden={submitHidden} onClick={handleLoadClick} size="sm" className="mr-1">
+                          <Button hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} size="sm" className="mr-1">
                               Load a Saved Filter
                           </Button>
                           <Overlay
@@ -626,14 +682,14 @@ class Group extends React.Component {
                             placement="bottom"
                             containerPadding={20}
                           >
-                            <Popover id="popover-contained" style={popoverStyle}>
+                            <UpdatingPopover id="popover-contained" style={popoverStyle}>
                               <Popover.Title as="h3">Load Filter</Popover.Title>
                               <Popover.Content>
                                 <ListGroup id="listgrp" defaultActiveKey="#custom" style={listGrpStyle}>
                                 {loadFilterPopoverContent}
                                 </ListGroup>
                               </Popover.Content>
-                            </Popover>
+                            </UpdatingPopover>
                           </Overlay>
 
                           <Button onClick={handleSaveClick} size="sm" hidden={submitHidden} disabled={this.state.saveButtonDisabled} className="mr-1">
@@ -648,10 +704,10 @@ class Group extends React.Component {
                             <Popover id="popover-contained" style={{flex : "fill"}}>
                               <Popover.Title as="h3">{saveButtonLabel}</Popover.Title>
                               <Popover.Content>
-                                  <InputGroup className="mb-3" validated="true">
+                                  <InputGroup hasValidation className="mb-3">
                                       <FormControl placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
                                       <Form.Control.Feedback type="invalid">
-                                          You have already stored a filter with this name!
+                                          A Filter with this name already exists. Please choose a different name.
                                       </Form.Control.Feedback>
                                           <InputGroup.Append>
                                               <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
