@@ -8,7 +8,7 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 
 
-/*
+
 //need this for changes to allow for display of severity webpages
 query_ngafid_db("alter table events add column `fleet_id` INT(11) after `id`");
 
@@ -24,37 +24,37 @@ query_ngafid_db("alter table flights add column end_timestamp INT(11) after star
 query_ngafid_db("update flights set start_timestamp = UNIX_TIMESTAMP(start_time), end_timestamp = UNIX_TIMESTAMP(end_time)");
 query_ngafid_db("alter table flights add index `start_timestamp_index` (`start_timestamp`) using btree");
 query_ngafid_db("alter table flights add index `end_timestamp_index` (`end_timestamp`) using btree");
-*/
+
 //
 //new double_series_names table and user preferences update
 //
-query_ngafid_db("alter table double_series change name name_id int not null");
-query_ngafid_db("alter table user_preferences drop column metrics");
-$query = "CREATE TABLE `double_series_names` (
+//query_ngafid_db("alter table double_series change name name_id int not null");
+//query_ngafid_db("alter table user_preferences drop column metrics");
+//$query = "CREATE TABLE `double_series_names` (
 
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(64) NOT NULL,
+    //`id` INT(11) NOT NULL AUTO_INCREMENT,
+    //`name` VARCHAR(64) NOT NULL,
 
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+    //PRIMARY KEY(`id`),
+    //UNIQUE KEY(`id`, `name`)
+//) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-query_ngafid_db($query);
+//query_ngafid_db($query);
 
-$query = "CREATE TABLE `user_preferences_metrics` (
-    `user_id` INT(11) NOT NULL,
-    `metric_id` INT(11) NOT NULL,
+//$query = "CREATE TABLE `user_preferences_metrics` (
+    //`user_id` INT(11) NOT NULL,
+    //`metric_id` INT(11) NOT NULL,
 
-    PRIMARY KEY(`user_id`,`metric_id`),
-    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
-    FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+    //PRIMARY KEY(`user_id`,`metric_id`),
+    //FOREIGN KEY(`user_id`) REFERENCES user(`id`),
+    //FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
+//) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-query_ngafid_db($query);
+//query_ngafid_db($query);
 
-//Saved filters table
-//TODO: replace this
-query_ngafid_db($query);
+////Saved filters table
+////TODO: replace this
+//query_ngafid_db($query);
 
 //for user preferences
 /*
