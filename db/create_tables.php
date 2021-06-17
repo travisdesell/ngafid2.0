@@ -520,7 +520,7 @@ $query = "CREATE TABLE `stored_filters` (
     `filter_json` VARCHAR(2048) NOT NULL,
 
     PRIMARY KEY(`fleet_id`,`name`),
-    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
+    FOREIGN KEY(`fleet_id`) REFERENCES user(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
