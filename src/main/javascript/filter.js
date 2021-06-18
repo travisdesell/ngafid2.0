@@ -1,8 +1,10 @@
 import 'bootstrap';
-import React, { Component, useState, useEffect } from "react";
+import React, { Component, useState, useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
 import Overlay from 'react-bootstrap/Overlay';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Popover from 'react-bootstrap/Popover';
+import Tooltip from 'react-bootstrap/Tooltip';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
 import FormControl from 'react-bootstrap/FormControl';
@@ -456,6 +458,8 @@ class Group extends React.Component {
     render() {
         var validated = false, loadFilterButtonId = "load-filter-button";
 
+        let target = React.createRef();
+
         let errorMessageStyle = {
             padding : '7 0 7 0',
             margin : '0',
@@ -546,6 +550,19 @@ class Group extends React.Component {
                 );
         });
 
+        const UpdatingOverlayTrigger = React.forwardRef(({ popper, children, show: _, ...props }, ref) => {
+                useEffect(() => {
+                  console.log('updating!');
+                  popper.scheduleUpdate();
+                }, [children, popper]);
+            
+                return (
+                <OverlayTrigger ref={ref} {...props}>
+                  {children}
+                </OverlayTrigger>
+                );
+        });
+
         if (filters != null && filters.length > 0) {
             loadFilterPopoverContent = (
                 filters.map((filter, index) => {
@@ -561,17 +578,25 @@ class Group extends React.Component {
                         </Col>
                     );
 
+                    let nameField = filter.name;
+
                     if (filter === this.state.editingFilter) {
                         //When editing 
+                        let show = true;
                         editButton = (
                             <Col xs lg="1">
-                                <button className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.editFilter(filter)} title="Submit changes">
-                                    <i className="fa fa-check" aria-hidden="true" style={editingButtonStyle}></i>
-                                </button>
+                                <UpdatingOverlayTrigger overlay={<Tooltip id="tooltip-edit-filter-name">Click me when you are ready to save changes</Tooltip>} placement="bottom" popper={popper} show={show} trigger='click'>
+                                    <button ref={target} className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.editFilter(filter)}>
+                                        <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
+                                    </button>
+                                </UpdatingOverlayTrigger>
                             </Col>
-                        )
-                    }
+                        );
 
+                        nameField = (
+                            <FormControl placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
+                        );
+                    }
 
 
                     return (
@@ -579,7 +604,7 @@ class Group extends React.Component {
                             <Container>
                                 <Row className="justify-content-md-center">
                                     <Col xs lg="9">
-                                        {filter.name}
+                                        {nameField}
                                     </Col>
                                     <Col xs lg="1">
                                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.setFilter(filter)} title="Use this filter">
@@ -701,7 +726,7 @@ class Group extends React.Component {
                             placement="bottom"
                             containerPadding={20}
                           >
-                            <Popover id="popover-contained" style={{flex : "fill"}}>
+                            <UpdatingPopover id="popover-contained" style={{flex : "fill"}}>
                               <Popover.Title as="h3">{saveButtonLabel}</Popover.Title>
                               <Popover.Content>
                                   <InputGroup hasValidation className="mb-3">
@@ -714,7 +739,7 @@ class Group extends React.Component {
                                           </InputGroup.Append>
                                   </InputGroup>
                               </Popover.Content>
-                            </Popover>
+                            </UpdatingPopover>
                           </Overlay>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
