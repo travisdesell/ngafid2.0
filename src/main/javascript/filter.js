@@ -1,5 +1,5 @@
 import 'bootstrap';
-import React, { Component, useState, useEffect, useRef } from "react";
+import React, { Component, useState, useEffect, useRef, createRef } from "react";
 import ReactDOM from "react-dom";
 import Overlay from 'react-bootstrap/Overlay';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
@@ -458,7 +458,6 @@ class Group extends React.Component {
     render() {
         var validated = false, loadFilterButtonId = "load-filter-button";
 
-        let target = React.createRef();
 
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -472,6 +471,10 @@ class Group extends React.Component {
             color : 'green',
             borderColor : 'green'
         };
+
+        let tooltipStyle = {
+            backgroundColor : 'green'
+        }
 
         let styleButtonSq = {
             flex : "right",
@@ -550,32 +553,16 @@ class Group extends React.Component {
                 );
         });
 
-        const UpdatingOverlayTrigger = React.forwardRef(({ popper, children, show: _, ...props }, ref) => {
-                useEffect(() => {
-                  console.log('updating!');
-                  popper.scheduleUpdate();
-                }, [children, popper]);
-            
-                return (
-                <OverlayTrigger ref={ref} {...props}>
-                  {children}
-                </OverlayTrigger>
-                );
-        });
-
         if (filters != null && filters.length > 0) {
             loadFilterPopoverContent = (
                 filters.map((filter, index) => {
-                    console.log(filter);
                     let relIndex = index + 1;
                     let isActive = (this.state.activeId - 1 == index);
                     //Normal
                     let editButton = ( 
-                        <Col xs lg="1">
-                            <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
-                                <i className="fa fa-pencil" aria-hidden="true"></i> 
-                            </button>
-                        </Col>
+                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                            <i className="fa fa-pencil" aria-hidden="true"></i> 
+                        </button>
                     );
 
                     let nameField = filter.name;
@@ -584,20 +571,29 @@ class Group extends React.Component {
                         //When editing 
                         let show = true;
                         editButton = (
-                            <Col xs lg="1">
-                                <UpdatingOverlayTrigger overlay={<Tooltip id="tooltip-edit-filter-name">Click me when you are ready to save changes</Tooltip>} placement="bottom" popper={popper} show={show} trigger='click'>
-                                    <button ref={target} className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.editFilter(filter)}>
-                                        <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
-                                    </button>
-                                </UpdatingOverlayTrigger>
-                            </Col>
+                            <div className="m-1">
+                                <OverlayTrigger
+                                  trigger='click'
+                                  key="top"
+                                  delay={{ show: 250, hide: 400 }}
+                                  placement="top"
+                                  overlay={
+                                    <Tooltip id="tooltip-click-me">
+                                      Click me when you are ready to save your changes
+                                    </Tooltip>
+                                  }
+                                >
+                                <button className="btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.setFilter(filter)}>
+                                    <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
+                                </button>
+                                </OverlayTrigger>
+                            </div>
                         );
 
                         nameField = (
                             <FormControl placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
                         );
                     }
-
 
                     return (
                         <ListGroup.Item active={isActive} key={index}>
@@ -611,7 +607,9 @@ class Group extends React.Component {
                                             <i className="fa fa-arrow-circle-left" aria-hidden="true"></i>
                                         </button>
                                     </Col>
-                                    {editButton}
+                                    <Col xs lg="1">
+                                        {editButton}
+                                    </Col>
                                     <Col xs lg="1">
                                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.props.removeFilter(filter.name)} title="Delete this filter">
                                             <i className="fa fa-trash" aria-hidden="true"></i>
