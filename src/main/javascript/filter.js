@@ -416,6 +416,14 @@ class Group extends React.Component {
         this.props.setFilter(filterJSON);
     }
 
+    modifyFilter(filter) {
+        let currentFilter = this.state.editingFilter;
+        let filterName = this.state.filterName;
+
+        console.log("chaning filter : " + currentFilter.name + " with filter : " + currentFilter.name + " to: " + filterName + " with filter: " + filter);
+        this.props.modifyFilter(filter, currentFilter.name, filterName);
+    }
+
     saveFilter() {
         console.log("Saving filter with name: ");
         console.log(this.state.filterName);
@@ -575,15 +583,14 @@ class Group extends React.Component {
                                 <OverlayTrigger
                                   trigger='click'
                                   key="top"
-                                  delay={{ show: 250, hide: 400 }}
                                   placement="top"
                                   overlay={
                                     <Tooltip id="tooltip-click-me">
-                                      Click me when you are ready to save your changes
+                                      Filter Saved!
                                     </Tooltip>
                                   }
                                 >
-                                <button className="btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.setFilter(filter)}>
+                                <button className="btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.modifyFilter(filter)}>
                                     <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
                                 </button>
                                 </OverlayTrigger>
@@ -763,6 +770,7 @@ class Filter extends React.Component {
                     storedFilters={this.props.storedFilters}
                     removeFilter={(name) => this.props.removeFilter(name)}
                     storeFilter={(name) => this.props.storeFilter(name)}
+                    modifyFilter={(filterJSON, currentName, newName) => this.props.modifyFilter(filterJSON, currentName, newName)}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}

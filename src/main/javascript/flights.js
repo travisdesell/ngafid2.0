@@ -584,6 +584,36 @@ class FlightsPage extends React.Component {
         });
     }
 
+    modifyFilter(filterJSON, currentName, newName) {
+        let flightsState = this;
+
+        let submissionData = {
+            currentName : currentName,
+            newName : newName,
+            filterJSON : JSON.stringify(filterJSON)
+        }
+
+        console.log("Mofifying filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/modify_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                console.log("Updated filters:");
+                console.log(response);
+                flightsState.storedFilters = response;
+                flightsState.setState(flightsState.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
     removeFilter(name) {
         let flightsState = this;
 
@@ -792,6 +822,7 @@ class FlightsPage extends React.Component {
                         storedFilters={this.state.storedFilters}
                         storeFilter={(name) => this.storeFilter(name)}
                         removeFilter={(name) => this.removeFilter(name)}
+                        modifyFilter={(filterJSON, currentName, newName) => this.modifyFilter(filterJSON, currentName, newName)}
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}
