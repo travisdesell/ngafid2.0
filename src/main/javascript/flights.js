@@ -584,13 +584,13 @@ class FlightsPage extends React.Component {
         });
     }
 
-    modifyFilter(filterJSON, currentName, newName) {
+    modifyFilter(currentName, newName) {
         let flightsState = this;
 
         let submissionData = {
             currentName : currentName,
             newName : newName,
-            filterJSON : JSON.stringify(filterJSON)
+            filterJSON : JSON.stringify(this.state.filters)
         }
 
         console.log("Mofifying filter " + name);
@@ -822,7 +822,7 @@ class FlightsPage extends React.Component {
                         storedFilters={this.state.storedFilters}
                         storeFilter={(name) => this.storeFilter(name)}
                         removeFilter={(name) => this.removeFilter(name)}
-                        modifyFilter={(filterJSON, currentName, newName) => this.modifyFilter(filterJSON, currentName, newName)}
+                        modifyFilter={(currentName, newName) => this.modifyFilter(currentName, newName)}
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}

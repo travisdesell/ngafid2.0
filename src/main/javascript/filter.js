@@ -7,6 +7,7 @@ import Popover from 'react-bootstrap/Popover';
 import Tooltip from 'react-bootstrap/Tooltip';
 import Button from 'react-bootstrap/Button';
 import Form from 'react-bootstrap/Form';
+import FormGroup from 'react-bootstrap/Form';
 import FormControl from 'react-bootstrap/FormControl';
 import InputGroup from 'react-bootstrap/InputGroup';
 import ListGroup from 'react-bootstrap/ListGroup';
@@ -420,8 +421,10 @@ class Group extends React.Component {
         let currentFilter = this.state.editingFilter;
         let filterName = this.state.filterName;
 
-        console.log("chaning filter : " + currentFilter.name + " with filter : " + currentFilter.name + " to: " + filterName + " with filter: " + filter);
-        this.props.modifyFilter(filter, currentFilter.name, filterName);
+        console.log("chaning filter : " + currentFilter.name + " with filter : " + currentFilter.name + " to: " + filterName + " with filter: ");
+        console.log(filter);
+
+        this.props.modifyFilter(currentFilter.name, filterName);
     }
 
     saveFilter() {
@@ -503,6 +506,7 @@ class Group extends React.Component {
             maxHeight: "400px"
         }
 
+
         console.log("filter props:");
         console.log(this.props);
 
@@ -566,6 +570,14 @@ class Group extends React.Component {
                 filters.map((filter, index) => {
                     let relIndex = index + 1;
                     let isActive = (this.state.activeId - 1 == index);
+
+                    let filterPillStyle = {
+                        backgroundColor : filter.color,
+                        marginRight : '4px',
+                        lineHeight : '4',
+                        opacity : '75%',
+                        fontSize : '100%'
+                    }
                     //Normal
                     let editButton = ( 
                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
@@ -573,7 +585,13 @@ class Group extends React.Component {
                         </button>
                     );
 
-                    let nameField = filter.name;
+                    let nameField = (
+                        <button type="button" class="btn" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '2', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                            <span className="badge badge-pill badge-primary" style={filterPillStyle} >
+                                <i className="fa fa-filter" aria-hidden="true"></i>
+                            </span>   {filter.name}
+                        </button>
+                    );
 
                     if (filter === this.state.editingFilter) {
                         //When editing 
@@ -598,7 +616,9 @@ class Group extends React.Component {
                         );
 
                         nameField = (
-                            <FormControl placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
+                            <Form.Group controlId="edit-filter-name-dialog">
+                                <Form.Control placeholder={filter.name} onChange={(e) => this.setState({ filterName : e.target.value })} />
+                            </Form.Group>
                         );
                     }
 
@@ -606,13 +626,8 @@ class Group extends React.Component {
                         <ListGroup.Item active={isActive} key={index}>
                             <Container>
                                 <Row className="justify-content-md-center">
-                                    <Col xs lg="9">
+                                    <Col xs lg="10">
                                         {nameField}
-                                    </Col>
-                                    <Col xs lg="1">
-                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.setFilter(filter)} title="Use this filter">
-                                            <i className="fa fa-arrow-circle-left" aria-hidden="true"></i>
-                                        </button>
                                     </Col>
                                     <Col xs lg="1">
                                         {editButton}
@@ -770,7 +785,7 @@ class Filter extends React.Component {
                     storedFilters={this.props.storedFilters}
                     removeFilter={(name) => this.props.removeFilter(name)}
                     storeFilter={(name) => this.props.storeFilter(name)}
-                    modifyFilter={(filterJSON, currentName, newName) => this.props.modifyFilter(filterJSON, currentName, newName)}
+                    modifyFilter={(currentName, newName) => this.props.modifyFilter(currentName, newName)}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}

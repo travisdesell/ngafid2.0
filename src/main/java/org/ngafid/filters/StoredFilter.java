@@ -21,7 +21,7 @@ public class StoredFilter {
      * @param name is the common name given to the stored filter by the user.
      * @param filter is the filter as a {@link String} in the form of a JSON object.
      */
-    private String name, filter;
+    private String name, filter, color;
 
     /**
      * Default constructor
@@ -29,10 +29,12 @@ public class StoredFilter {
      *
      * @param name is the common name given by the user
      * @param filter is the filter in JSON form
+     * @param color is the color of this filter in hex
      */
-    private StoredFilter(String name, String filter) {
+    private StoredFilter(String name, String filter, String color) {
         this.name = name;
         this.filter = filter;
+        this.color = color;
     }
 
     /**
@@ -46,7 +48,7 @@ public class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static List<StoredFilter> getStoredFilters(Connection connection, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT name, filter_json FROM stored_filters WHERE fleet_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT name, filter_json, color FROM stored_filters WHERE fleet_id = ?");
 
         query.setInt(1, fleetId);
         ResultSet resultSet = query.executeQuery();
@@ -55,7 +57,7 @@ public class StoredFilter {
 
         while (resultSet.next()) {
             StoredFilter filterResponse = 
-                new StoredFilter(resultSet.getString(1), resultSet.getString(2));
+                new StoredFilter(resultSet.getString(1), resultSet.getString(2), resultSet.getString(3));
             filters.add(filterResponse);
         }
 
