@@ -41,7 +41,7 @@ public class PostModifyFilter implements Route {
 
             LOG.info("Modifying filter: " + currentName);
             LOG.info(filterJSON);
-            StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName);
+            StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
             LOG.info("New filter: name: " + newName + "; filterJSON: " + filterJSON + ";");
 
             return gson.toJson(StoredFilter.getStoredFilters(connection, fleetId));
