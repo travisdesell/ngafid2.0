@@ -37,10 +37,11 @@ public class PostStoreFilter implements Route {
 
             String name = request.queryParams("name");
             String filterJSON = request.queryParams("filterJSON");
+            String color = request.queryParams("color");
 
             LOG.info("Storing filter: " + name);
             LOG.info(filterJSON);
-            StoredFilter.storeFilter(connection, fleetId, filterJSON, name);
+            StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
 
             return gson.toJson(StoredFilter.getStoredFilters(connection, fleetId));
         } catch (SQLException e) {

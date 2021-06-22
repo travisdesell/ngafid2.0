@@ -14,6 +14,7 @@ import ListGroup from 'react-bootstrap/ListGroup';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
+import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
 
@@ -377,6 +378,8 @@ class Group extends React.Component {
     constructor(props) {
         super(props);
 
+        let colorRand = Colors.randomValue();
+
         this.state = {
             showSavePopover : false,
             showLoadPopover : false,
@@ -385,8 +388,11 @@ class Group extends React.Component {
             saveButtonDisabled : true,
             editingFilter : {},
             filterSaved : false,
-            filterName : ""
+            filterName : "",
+            filterColor : colorRand
         }
+
+        this.handleColorChange = this.handleColorChange.bind(this);
     }
 
     toggleLoadPopover() {
@@ -466,9 +472,17 @@ class Group extends React.Component {
         loadFilterModal.show(filters, submitMethod);
     }
 
+    handleColorChange(event) {
+        let color = event.target.value;
+        console.log(color);
+
+        this.setState({
+            filterColor : color
+        });
+    };
+
     render() {
         var validated = false, loadFilterButtonId = "load-filter-button";
-
 
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -506,6 +520,12 @@ class Group extends React.Component {
             maxHeight: "400px"
         }
 
+        let filterPillStyle = {
+            marginRight : '4px',
+            lineHeight : '4',
+            opacity : '75%',
+            fontSize : '100%'
+        }
 
         console.log("filter props:");
         console.log(this.props);
@@ -537,6 +557,7 @@ class Group extends React.Component {
             this.setSavePopoverTarget(event);
         };
 
+
         let saveButtonLabel = "Save Filter";
         if (this.state.filterSaved) {
             console.log("Filter was saved, updating button");
@@ -552,32 +573,40 @@ class Group extends React.Component {
             loadFilterFunction = this.handleLoadClickPersist;
         }
 
-        const UpdatingPopover = React.forwardRef(({ popper, children, show: _, ...props }, ref) => {
-                useEffect(() => {
-                  console.log('updating!');
-                  popper.scheduleUpdate();
-                }, [children, popper]);
-            
-                return (
-                <Popover ref={ref} {...props}>
-                  {children}
-                </Popover>
-                );
-        });
+        var saveCard = "";
+        if (this.state.showSavePopover) {
+            saveCard = (
+                <div class="card mb-3 float-right" style={{maxWidth : "500px"}}>
+                    <div class="card-header">
+                        Save Filter
+                    </div>
+                <div class="card-body">
+                      <div className="input-group mb-3">
+                            <div className="input-group-prepend">
+                                  <button type="button" className="btn btn-outline-secondary" onClick={(e) => $("#color-picker-filter").click()}>
+                                      <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor}}>
+                                          <i className="fa fa-filter" aria-hidden="true"></i>
+                                      </span>
+                                  </button>
+                                  <input key="cc-0" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value}) && this.forceUpdate()} value={this.state.filterColor} id="color-picker-filter"/>
+                            </div>
+                                <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
+                            <div className="input-group-append">
+                                  <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+            );
+        }
 
+        var loadCard = "";
         if (filters != null && filters.length > 0) {
             loadFilterPopoverContent = (
                 filters.map((filter, index) => {
                     let relIndex = index + 1;
                     let isActive = (this.state.activeId - 1 == index);
 
-                    let filterPillStyle = {
-                        backgroundColor : filter.color,
-                        marginRight : '4px',
-                        lineHeight : '4',
-                        opacity : '75%',
-                        fontSize : '100%'
-                    }
                     //Normal
                     let editButton = ( 
                         <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
@@ -587,7 +616,7 @@ class Group extends React.Component {
 
                     let nameField = (
                         <button type="button" class="btn" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '2', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
-                            <span className="badge badge-pill badge-primary" style={filterPillStyle} >
+                            <span className="badge badge-pill badge-primary" style={[filterPillStyle , {backgroundColor : "#ff00ff"}]}>
                                 <i className="fa fa-filter" aria-hidden="true"></i>
                             </span>   {filter.name}
                         </button>
@@ -727,44 +756,33 @@ class Group extends React.Component {
                             placement="bottom"
                             containerPadding={20}
                           >
-                            <UpdatingPopover id="popover-contained" style={popoverStyle}>
+                            <Popover id="popover-contained" style={popoverStyle}>
                               <Popover.Title as="h3">Load Filter</Popover.Title>
                               <Popover.Content>
                                 <ListGroup id="listgrp" defaultActiveKey="#custom" style={listGrpStyle}>
                                 {loadFilterPopoverContent}
                                 </ListGroup>
                               </Popover.Content>
-                            </UpdatingPopover>
+                            </Popover>
                           </Overlay>
 
-                          <Button onClick={handleSaveClick} size="sm" hidden={submitHidden} disabled={this.state.saveButtonDisabled} className="mr-1">
+                          <button type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled}>
                               {saveButtonLabel}
-                          </Button>
-                          <Overlay
-                            show={this.state.showSavePopover}
-                            target={this.state.savePopoverTarget}
-                            placement="bottom"
-                            containerPadding={20}
-                          >
-                            <UpdatingPopover id="popover-contained" style={{flex : "fill"}}>
-                              <Popover.Title as="h3">{saveButtonLabel}</Popover.Title>
-                              <Popover.Content>
-                                  <InputGroup hasValidation className="mb-3">
-                                      <FormControl placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
-                                      <Form.Control.Feedback type="invalid">
-                                          A Filter with this name already exists. Please choose a different name.
-                                      </Form.Control.Feedback>
-                                          <InputGroup.Append>
-                                              <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
-                                          </InputGroup.Append>
-                                  </InputGroup>
-                              </Popover.Content>
-                            </UpdatingPopover>
-                          </Overlay>
+                          </button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
                 </div>
+                <div className="container justify-content-end" style={{maxWidth : '100%'}}>
+                    <div className="row">
+                        <div className="col">
+                        </div>
+                        <div className="col justify-content-end">
+                            {saveCard}
+                        </div>
+                    </div>
+                </div>
             </div>
+
         );
     }
 }
