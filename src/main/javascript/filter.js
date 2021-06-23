@@ -677,7 +677,7 @@ class Group extends React.Component {
         var saveCard = "";
         if (this.state.showSavePopover) {
             saveCard = (
-                <div className="card mb-3 float-right" style={{minWidth : "500px"}}>
+                <div className="card m-1 float-right" style={{minWidth : "500px"}}>
                     <div className="card-header">
                         <p className="font-weight-bold">Save Filter</p>
                     </div>
@@ -706,9 +706,12 @@ class Group extends React.Component {
             let filters = this.getStoredFilters();
             if(filters != null && filters.length > 0) {
                 loadCard = (
-                    <div className="card mb-3 float-right" style={{minWidth : "800px"}}>
+                    <div className="card m-1 float-right" style={{minWidth : "800px"}}>
                         <div className="card-header">
-                            <p className="font-weight-bold">Saved Filters:</p>
+                            <div className="row justify-content-between">
+                                <p className="col font-weight-bold float-left">Saved Filters:</p>
+                                <p className="col-2 font-weight-bold float-right">Close</p>
+                            </div>
                         </div>
                         <div className="card-body">
                             <ul className="list-group">
@@ -774,7 +777,7 @@ class Group extends React.Component {
             );
             } else {
                 loadCard = (
-                    <div className="card mb-3 float-right" style={{maxWidth : "500px"}}>
+                    <div className="card m-1 float-right" style={{maxWidth : "500px"}}>
                         <div className="card-header">
                             <p className="font-weight-bold">
                                 No Saved Filters for this fleet.
@@ -873,12 +876,8 @@ class Group extends React.Component {
                 </div>
                 <div className="container" style={{maxWidth : '100%'}}>
                     <div className="d-flex flex-row-reverse">
-                        <div className="m-1">
-                            {saveCard}
-                        </div>
-                        <div className="m-1">
-                            {loadCard}
-                        </div>
+                        {saveCard}
+                        {loadCard}
                     </div>
                 </div>
             </div>
