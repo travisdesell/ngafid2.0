@@ -623,7 +623,7 @@ class Group extends React.Component {
             marginRight : '4px',
             lineHeight : '4',
             opacity : '75%',
-            fontSize : '100%'
+            fontSize : '100%',
         }
 
         let errorHidden = true;
@@ -725,11 +725,11 @@ class Group extends React.Component {
                                     );
 
                                     let nameField = (
-                                        <button type="button" className="btn" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1.4', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
-                                            <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color}}>
+                                        <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1.2', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                                            <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
                                                 <i className="fa fa-filter" aria-hidden="true"></i>
                                             </span>
-                                            <span className="ml-2">
+                                            <span className="ml-2 font-weight-bold">
                                                 {filter.name}
                                             </span>
                                         </button>
@@ -870,7 +870,10 @@ class Group extends React.Component {
                           <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Filter saved successfully">
                               Save Filter
                           </button>
-                        <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
+                        <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >
+                            <i className="fa fa-filter mr-1" aria-hidden="true"></i>
+                            {this.props.submitButtonName}
+                        </button>
                     </div>
 
                 </div>
