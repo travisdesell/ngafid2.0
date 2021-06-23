@@ -41,7 +41,7 @@ public class StoredFilter {
      * This method queries the database for the users stored filters.
      *
      * @param connection is the SQL database connection
-     * @param user is the user that has the stored filters
+     * @param fleetId is the id of the fleet that the filter belongs to
      *
      * @return an {@link List} with {@link StoredFilter} instances, a collection of all that belong to the user.
      *
@@ -68,7 +68,7 @@ public class StoredFilter {
      * Stores a filter and returns its instance as a {@link StoredFilter}
      *
      * @param connection is the SQL database connection
-     * @param user is the user storing the filter
+     * @param fleetId is the id of the fleet that the filter belongs to
      * @param color is the color of this filter in hex
      * 
      * @return a {@link StoredFilter} instance containing the data upon successful insertion into the db
@@ -92,7 +92,7 @@ public class StoredFilter {
      * This method removes a stored filter for a {@link User} from the database using its primary key (fleetId, name)
      *
      * @param connection is the SQL database connection
-     * @param user is the user removing the filter
+     * @param fleetId is the id of the fleet that the filter belongs to
      * @param name is the name of the filter to be removed
      *
      * @throws SQLException in the event there is an issue with the SQL query.
@@ -104,6 +104,32 @@ public class StoredFilter {
         query.setString(2, name);
 
         query.executeUpdate();
+    }
+
+    /**
+     * Checks if a StoredFilter exists in the database already using is primary key
+     *
+     * @param connection is the SQL database connection
+     * @param fleetId is the id of the fleet that the filter belongs to
+     * @param name is the name of the filter to be removed
+     *
+     * @return a boolean representing the presence of the filter in the database
+     *
+     * @throws SQLException in the event there is an issue with the SQL query.
+     */
+    public static boolean filterExists(Connection connection, int fleetId, String name) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT EXISTS(SELECT name, fleet_id FROM stored_filters WHERE fleet_id = ? AND name = ?)");
+
+        query.setInt(1, fleetId);
+        query.setString(2, name);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getBoolean(1);
+        }
+        
+        return false;
     }
 
     /**

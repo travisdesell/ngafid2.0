@@ -13,7 +13,11 @@ import spark.Session;
 import java.sql.*;
 import java.util.logging.Logger;
 
-// A route to save a user's query to the saved_queries table in the database
+/**
+ * This class provides the spark route for storing filters into the NGAFID's Database
+ *
+ * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
+ */
 public class PostStoreFilter implements Route {
     private static final Logger LOG = Logger.getLogger(PostStoreFilter.class.getName());
     private Gson gson;
@@ -41,9 +45,14 @@ public class PostStoreFilter implements Route {
 
             LOG.info("Storing filter: " + name);
             LOG.info(filterJSON);
-            StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
 
-            return gson.toJson(StoredFilter.getStoredFilters(connection, fleetId));
+            if (!StoredFilter.filterExists(connection, fleetId, name)) {
+                StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
+                return gson.toJson("SUCCESS");
+            } else {
+                return gson.toJson("DUPLICATE_PK");
+            }
+
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
