@@ -38,6 +38,7 @@ public class PostModifyFilter implements Route {
             String currentName = request.queryParams("currentName");
             String newName = request.queryParams("newName");
             String filterJSON = request.queryParams("filterJSON");
+            String color = request.queryParams("color");
 
             LOG.info("Modifying filter: " + currentName);
             LOG.info(filterJSON);

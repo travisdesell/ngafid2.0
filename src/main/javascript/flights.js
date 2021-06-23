@@ -584,89 +584,6 @@ class FlightsPage extends React.Component {
         });
     }
 
-    modifyFilter(currentName, newName) {
-        let flightsState = this;
-
-        let submissionData = {
-            currentName : currentName,
-            newName : newName,
-            filterJSON : JSON.stringify(this.state.filters)
-        }
-
-        console.log("Mofifying filter " + name);
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/modify_filter',
-            data : submissionData,
-            dataType : 'json',
-            timeout : 0, 
-            success : function(response) {
-                console.log("Updated filters:");
-                console.log(response);
-                flightsState.storedFilters = response;
-                flightsState.setState(flightsState.state);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
-    }
-
-    removeFilter(name) {
-        let flightsState = this;
-
-        let submissionData = {
-            name : name,
-        }
-
-        console.log("Removing filter " + name);
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/remove_filter',
-            data : submissionData,
-            dataType : 'json',
-            timeout : 0, 
-            success : function(response) {
-                console.log("Updated filters:");
-                console.log(response);
-                flightsState.storedFilters = response;
-                flightsState.setState(flightsState.state);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
-    }
-
-    storeFilter(name) {
-        let submissionData = {
-            name : name,
-            filterJSON : JSON.stringify(this.state.filters),
-            type : "store"
-        }
-
-        console.log("Storing filter " + name);
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/store_filter',
-            data : submissionData,
-            dataType : 'json',
-            timeout : 0, 
-            success : function(response) {
-                flightsState.state.storedFilters = response;
-                flightsState.setState(flightsState.state);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
-    }
 
     getStoredFilters() {
         let storedFilters = [];
@@ -819,10 +736,6 @@ class FlightsPage extends React.Component {
 
                         rules={rules}
                         filters={this.state.filters}
-                        storedFilters={this.state.storedFilters}
-                        storeFilter={(name) => this.storeFilter(name)}
-                        removeFilter={(name) => this.removeFilter(name)}
-                        modifyFilter={(currentName, newName) => this.modifyFilter(currentName, newName)}
 
                         getFilter={() => {return this.state.filters}}
                         setFilter={(filter) => this.setFilter(filter)}
