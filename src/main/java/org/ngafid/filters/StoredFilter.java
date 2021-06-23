@@ -76,11 +76,12 @@ public class StoredFilter {
      * @throws SQLException in the event there is an issue with the SQL query.
      */
     public static StoredFilter storeFilter(Connection connection, int fleetId, String filterJSON, String name, String color) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, fleet_id) VALUES (?,?,?)");
+        PreparedStatement query = connection.prepareStatement("INSERT INTO stored_filters (filter_json, name, fleet_id, color) VALUES (?,?,?,?)");
 
         query.setString(1, filterJSON);
         query.setString(2, name);
         query.setInt(3, fleetId);
+        query.setString(4, color);
 
         query.executeUpdate();
 

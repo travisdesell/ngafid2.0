@@ -386,6 +386,7 @@ class Group extends React.Component {
             loadPopoverTarget : "",
             savePopoverTarget : "",
             saveButtonDisabled : true,
+            storedFilters : props.storedFilters,
             editingFilter : {},
             filterSaved : false,
             filterName : "",
@@ -423,26 +424,118 @@ class Group extends React.Component {
         this.props.setFilter(filterJSON);
     }
 
-    modifyFilter(filter) {
-        let currentFilter = this.state.editingFilter;
-        let filterName = this.state.filterName;
-
-        console.log("chaning filter : " + currentFilter.name + " with filter : " + currentFilter.name + " to: " + filterName + " with filter: ");
-        console.log(filter);
-
-        this.props.modifyFilter(currentFilter.name, filterName);
-    }
-
     saveFilter() {
         console.log("Saving filter with name: ");
         console.log(this.state.filterName);
 
-        this.props.storeFilter(this.state.filterName);
+        this.storeFilter(this.state.filterName, this.state.filterColor);
 
         this.state.saveButtonDisabled = true;
         this.state.showSavePopover = false;
         this.state.filterSaved = true;
         this.setState(this.state);
+    }
+
+    modifyFilter() {
+        let thisFilter = this;
+
+        let submissionData = {
+            currentName : this.state.filterName,
+            newName : this.state.editingFilter.name,
+            filterJSON : JSON.stringify(this.props.getFilter())
+        }
+
+        console.log("Mofifying filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/modify_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                thisFilter.filterRef.setStoredFilters(response);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    removeFilter(name) {
+        let thisFilter = this;
+
+        let submissionData = {
+            name : name,
+        }
+
+        console.log("Removing filter " + name);
+        console.log(this.filterRef);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                thisFilter.setState(thisFilter.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    storeFilter(name, color) {
+        let thisFilter = this;
+
+        let submissionData = {
+            name : name,
+            filterJSON : JSON.stringify(this.props.getFilter()),
+            color : color
+        }
+
+        console.log("Storing filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/store_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                flightsState.filterRef.setStoredFilters(response);
+            },
+
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    getStoredFilters() {
+        let storedFilters = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/stored_filters',
+            dataType : 'json',
+            success : function(response) {
+                console.log("received filters response: ");
+                console.log(response);
+                
+                storedFilters = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+
+        return storedFilters;
     }
 
     editFilter(filter) {
@@ -455,6 +548,12 @@ class Group extends React.Component {
         //});
 
         //this.state.loadPopoverTarget = target;
+    }
+
+    setStoredFilters(filters) {
+        this.setState({
+            storedFilters : filters
+        });
     }
 
     handleLoadClick(event) {
@@ -527,9 +626,6 @@ class Group extends React.Component {
             fontSize : '100%'
         }
 
-        console.log("filter props:");
-        console.log(this.props);
-
         let errorHidden = true;
         let errorMessage = "";
         if (this.props.filters.length == 0) {
@@ -557,14 +653,19 @@ class Group extends React.Component {
             this.setSavePopoverTarget(event);
         };
 
-
-        let saveButtonLabel = "Save Filter";
         if (this.state.filterSaved) {
-            console.log("Filter was saved, updating button");
-            saveButtonLabel = "Filter Saved!";
+            $('#save-filter-button').tooltip('show');
+            this.state.filterSaved = false;
+        } else {
+            // wait 15s to hide success msg
+            setTimeout(function() { //Start the timer
+                $('#save-filter-button').tooltip('hide');
+             }.bind(this), 15000)
         }
 
-        let filters = this.props.storedFilters;
+        let filters = this.state.storedFilters;
+
+        console.log(filters);
 
         let loadFilterPopoverContent = "";
 
@@ -576,11 +677,11 @@ class Group extends React.Component {
         var saveCard = "";
         if (this.state.showSavePopover) {
             saveCard = (
-                <div class="card mb-3 float-right" style={{maxWidth : "500px"}}>
-                    <div class="card-header">
-                        Save Filter
+                <div className="card mb-3 float-right" style={{minWidth : "500px"}}>
+                    <div className="card-header">
+                        <p className="font-weight-bold">Save Filter</p>
                     </div>
-                <div class="card-body">
+                <div className="card-body">
                       <div className="input-group mb-3">
                             <div className="input-group-prepend">
                                   <button type="button" className="btn btn-outline-secondary" onClick={(e) => $("#color-picker-filter").click()}>
@@ -592,7 +693,7 @@ class Group extends React.Component {
                             </div>
                                 <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
                             <div className="input-group-append">
-                                  <Button onClick={() => {this.saveFilter()}} variant="outline-secondary">Save</Button>
+                                  <button type="button" className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}}>Save</button>
                             </div>
                       </div>
                   </div>
@@ -601,77 +702,90 @@ class Group extends React.Component {
         }
 
         var loadCard = "";
-        if (filters != null && filters.length > 0) {
-            loadFilterPopoverContent = (
-                filters.map((filter, index) => {
-                    let relIndex = index + 1;
-                    let isActive = (this.state.activeId - 1 == index);
-
-                    //Normal
-                    let editButton = ( 
-                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
-                            <i className="fa fa-pencil" aria-hidden="true"></i> 
-                        </button>
-                    );
-
-                    let nameField = (
-                        <button type="button" class="btn" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '2', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
-                            <span className="badge badge-pill badge-primary" style={[filterPillStyle , {backgroundColor : "#ff00ff"}]}>
-                                <i className="fa fa-filter" aria-hidden="true"></i>
-                            </span>   {filter.name}
-                        </button>
-                    );
-
-                    if (filter === this.state.editingFilter) {
-                        //When editing 
-                        let show = true;
-                        editButton = (
-                            <div className="m-1">
-                                <OverlayTrigger
-                                  trigger='click'
-                                  key="top"
-                                  placement="top"
-                                  overlay={
-                                    <Tooltip id="tooltip-click-me">
-                                      Filter Saved!
-                                    </Tooltip>
-                                  }
-                                >
-                                <button className="btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.modifyFilter(filter)}>
-                                    <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
-                                </button>
-                                </OverlayTrigger>
-                            </div>
-                        );
-
-                        nameField = (
-                            <Form.Group controlId="edit-filter-name-dialog">
-                                <Form.Control placeholder={filter.name} onChange={(e) => this.setState({ filterName : e.target.value })} />
-                            </Form.Group>
-                        );
-                    }
-
-                    return (
-                        <ListGroup.Item active={isActive} key={index}>
-                            <Container>
-                                <Row className="justify-content-md-center">
-                                    <Col xs lg="10">
-                                        {nameField}
-                                    </Col>
-                                    <Col xs lg="1">
-                                        {editButton}
-                                    </Col>
-                                    <Col xs lg="1">
-                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.props.removeFilter(filter.name)} title="Delete this filter">
-                                            <i className="fa fa-trash" aria-hidden="true"></i>
+        if (this.state.showLoadPopover) {
+            let filters = this.getStoredFilters();
+            if(filters != null && filters.length > 0) {
+                loadCard = (
+                    <div className="card mb-3 float-right" style={{minWidth : "800px"}}>
+                        <div className="card-header">
+                            <p className="font-weight-bold">Saved Filters:</p>
+                        </div>
+                        <div className="card-body">
+                            <ul className="list-group">
+                            {
+                                filters.map((filter, index) => {
+                                    //Normal
+                                    let editButton = ( 
+                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                                            <i className="fa fa-pencil" aria-hidden="true"></i> 
                                         </button>
-                                    </Col>
-                                </Row>
-                            </Container>
-                        </ListGroup.Item>
-                    );
-                })
+                                    );
+
+                                    let nameField = (
+                                        <button type="button" className="btn" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1.4', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                                            <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color}}>
+                                                <i className="fa fa-filter" aria-hidden="true"></i>
+                                            </span>
+                                            <span className="ml-2">
+                                                {filter.name}
+                                            </span>
+                                        </button>
+                                    );
+
+                                    if (filter === this.state.editingFilter) {
+                                        //When editing 
+                                        editButton = (
+                                            <button className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.modifyFilter(filter)}>
+                                                <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
+                                            </button>
+                                        );
+
+                                        nameField = (
+                                              <div className="input-group mb-3">
+                                                  <input type="text" className="form-control" placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })}/>
+                                              </div>
+                                        );
+                                    }
+
+                                    return (
+                                        <li className="list-group-item" key={index}>
+                                            <div className="container">
+                                                <div className="row justify-content-md-center">
+                                                    <div className="col-lg-10">
+                                                        {nameField}
+                                                    </div>
+                                                    <div className="col-lg-1">
+                                                        {editButton}
+                                                    </div>
+                                                    <div className="col-lg-1">
+                                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeFilter(filter.name)} title="Delete this filter">
+                                                            <i className="fa fa-trash" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    );
+                                })
+                            }
+                        </ul>
+                    </div>
+                </div>
             );
+            } else {
+                loadCard = (
+                    <div className="card mb-3 float-right" style={{maxWidth : "500px"}}>
+                        <div className="card-header">
+                            <p className="font-weight-bold">
+                                No Saved Filters for this fleet.
+                            </p>
+                        </div>
+                        <div className="card-body">
+                            No filters stored yet.
+                        </div>
+                    </div>
+                );
+            }
         }
 
         let submitHidden = true;
@@ -747,37 +861,23 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                          <Button hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} size="sm" className="mr-1">
+                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} >
                               Load a Saved Filter
-                          </Button>
-                          <Overlay
-                            show={this.state.showLoadPopover}
-                            target={this.state.loadPopoverTarget}
-                            placement="bottom"
-                            containerPadding={20}
-                          >
-                            <Popover id="popover-contained" style={popoverStyle}>
-                              <Popover.Title as="h3">Load Filter</Popover.Title>
-                              <Popover.Content>
-                                <ListGroup id="listgrp" defaultActiveKey="#custom" style={listGrpStyle}>
-                                {loadFilterPopoverContent}
-                                </ListGroup>
-                              </Popover.Content>
-                            </Popover>
-                          </Overlay>
-
-                          <button type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled}>
-                              {saveButtonLabel}
+                          </button>
+                          <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Filter saved successfully">
+                              Save Filter
                           </button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
                     </div>
+
                 </div>
-                <div className="container justify-content-end" style={{maxWidth : '100%'}}>
-                    <div className="row">
-                        <div className="col">
-                        </div>
-                        <div className="col justify-content-end">
+                <div className="container" style={{maxWidth : '100%'}}>
+                    <div className="d-flex flex-row-reverse">
+                        <div className="m-1">
                             {saveCard}
+                        </div>
+                        <div className="m-1">
+                            {loadCard}
                         </div>
                     </div>
                 </div>
@@ -800,10 +900,6 @@ class Filter extends React.Component {
                     submitButtonName={this.props.submitButtonName}
                     rules={this.props.rules}
                     filters={this.props.filters}
-                    storedFilters={this.props.storedFilters}
-                    removeFilter={(name) => this.props.removeFilter(name)}
-                    storeFilter={(name) => this.props.storeFilter(name)}
-                    modifyFilter={(currentName, newName) => this.props.modifyFilter(currentName, newName)}
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}
