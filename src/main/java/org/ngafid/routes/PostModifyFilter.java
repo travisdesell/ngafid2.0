@@ -40,12 +40,17 @@ public class PostModifyFilter implements Route {
             String filterJSON = request.queryParams("filterJSON");
             String color = request.queryParams("color");
 
-            LOG.info("Modifying filter: " + currentName);
+            LOG.info("Modifying filter: " + currentName + " to: " + newName);
             LOG.info(filterJSON);
-            StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
-            LOG.info("New filter: name: " + newName + "; filterJSON: " + filterJSON + ";");
 
-            return gson.toJson(StoredFilter.getStoredFilters(connection, fleetId));
+            if (!StoredFilter.filterExists(connection, fleetId, newName)) {
+                StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
+                LOG.info("New filter: name: " + newName + "; filterJSON: " + filterJSON + ";");
+                return gson.toJson("SUCCESS");
+            } else {
+                LOG.info("Detected duplicate primary key, returning error to user");
+                return gson.toJson("DUPLICATE_PK");
+            }
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));

@@ -429,23 +429,19 @@ class Group extends React.Component {
         console.log(this.state.filterName);
 
         this.storeFilter(this.state.filterName, this.state.filterColor);
-
-        this.state.saveButtonDisabled = true;
-        this.state.showSavePopover = false;
-        this.state.filterSaved = true;
-        this.setState(this.state);
     }
 
-    modifyFilter() {
+    submitChanges(filter) {
         let thisFilter = this;
 
         let submissionData = {
-            currentName : this.state.filterName,
-            newName : this.state.editingFilter.name,
-            filterJSON : JSON.stringify(this.props.getFilter())
+            currentName : filter.name,
+            newName : this.state.filterName,
+            filterJSON : JSON.stringify(this.props.getFilter()),
+            color : this.state.filterColor
         }
 
-        console.log("Mofifying filter " + name);
+        console.log("Mofifying filter " + filter.name);
 
         $.ajax({
             type: 'POST',
@@ -454,7 +450,17 @@ class Group extends React.Component {
             dataType : 'json',
             timeout : 0, 
             success : function(response) {
-                thisFilter.filterRef.setStoredFilters(response);
+                if (response === "DUPLICATE_PK") {
+                    console.log("duplicate pk detected");
+                    $('#modify-filter-submit-button').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('modify-filter-submit-buttond').tooltip('hide');
+                     }.bind(this), 10000)
+                } else {
+                    thisFilter.state.editingFilter = {};
+                }
+
+                thisFilter.setState(thisFilter.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
@@ -507,7 +513,26 @@ class Group extends React.Component {
             dataType : 'json',
             timeout : 0, 
             success : function(response) {
-                flightsState.filterRef.setStoredFilters(response);
+                if (response === "DUPLICATE_PK") {
+                    console.log("duplicate pk detected");
+                    $('#save-filter-button-card').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#save-filter-button-card').tooltip('hide');
+                     }.bind(this), 10000)
+                } else {
+                    $('#save-filter-button-card').tooltip('hide');
+                    $('#save-filter-button').tooltip('show');
+
+                    thisFilter.state.saveButtonDisabled = true;
+                    thisFilter.state.showSavePopover = false;
+                    thisFilter.state.filterSaved = true;
+
+                    setTimeout(function() { //show success tooltip for a max 5s
+                        $('#save-filter-button').tooltip('hide');
+                     }.bind(this), 5000)
+                }
+
+                thisFilter.setState(thisFilter.state);
             },
 
             error : function(jqXHR, textStatus, errorThrown) {
@@ -591,11 +616,6 @@ class Group extends React.Component {
             color: 'red'
         };
 
-        let editingButtonStyle = {
-            color : 'green',
-            borderColor : 'green'
-        };
-
         let tooltipStyle = {
             backgroundColor : 'green'
         }
@@ -653,15 +673,15 @@ class Group extends React.Component {
             this.setSavePopoverTarget(event);
         };
 
-        if (this.state.filterSaved) {
-            $('#save-filter-button').tooltip('show');
-            this.state.filterSaved = false;
-        } else {
-            // wait 15s to hide success msg
-            setTimeout(function() { //Start the timer
-                $('#save-filter-button').tooltip('hide');
-             }.bind(this), 15000)
-        }
+        //if (this.state.filterSaved) {
+            //$('#save-filter-button').tooltip('show');
+            //this.state.filterSaved = false;
+        //} else {
+            //// wait 15s to hide success msg
+            //setTimeout(function() { //start the timer
+                //$('#save-filter-button').tooltip('hide');
+             //}.bind(this), 15000)
+        //}
 
         let filters = this.state.storedFilters;
 
@@ -678,22 +698,24 @@ class Group extends React.Component {
         if (this.state.showSavePopover) {
             saveCard = (
                 <div className="card m-1 float-right" style={{minWidth : "500px"}}>
-                    <div className="card-header">
-                        <p className="font-weight-bold">Save Filter</p>
+                    <div className="card-header float-left">Store Filter:
+                        <button type="button" className="mr-1 btn btn-danger btn-sm float-right">
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showSavePopover : false})}></i> 
+                        </button>
                     </div>
                 <div className="card-body">
                       <div className="input-group mb-3">
                             <div className="input-group-prepend">
-                                  <button type="button" className="btn btn-outline-secondary" onClick={(e) => $("#color-picker-filter").click()}>
-                                      <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor}}>
+                                  <button type="button" className="btn btn-outline-secondary" title="Assign a color to this filter" onClick={(e) => $("#color-picker-filter").click()}>
+                                      <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
                                           <i className="fa fa-filter" aria-hidden="true"></i>
                                       </span>
                                   </button>
-                                  <input key="cc-0" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value}) && this.forceUpdate()} value={this.state.filterColor} id="color-picker-filter"/>
+                                  <input key="cc-0" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter"/>
                             </div>
-                                <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} required/>
+                                <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                             <div className="input-group-append">
-                                  <button type="button" className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}}>Save</button>
+                                  <button type="button" id='save-filter-button-card' className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="A filter in your fleet already exists with that name! Please choose another name.">Save</button>
                             </div>
                       </div>
                   </div>
@@ -707,25 +729,24 @@ class Group extends React.Component {
             if(filters != null && filters.length > 0) {
                 loadCard = (
                     <div className="card m-1 float-right" style={{minWidth : "800px"}}>
-                        <div className="card-header">
-                            <div className="row justify-content-between">
-                                <p className="col font-weight-bold float-left">Saved Filters:</p>
-                                <p className="col-2 font-weight-bold float-right">Close</p>
+                            <div className="card-header float-left">Saved Filters:
+                                <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
+                                    <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                                </button>
                             </div>
-                        </div>
                         <div className="card-body">
                             <ul className="list-group">
                             {
                                 filters.map((filter, index) => {
                                     //Normal
                                     let editButton = ( 
-                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
                                             <i className="fa fa-pencil" aria-hidden="true"></i> 
                                         </button>
                                     );
 
                                     let nameField = (
-                                        <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1.2', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                                        <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
                                             <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
                                                 <i className="fa fa-filter" aria-hidden="true"></i>
                                             </span>
@@ -735,17 +756,26 @@ class Group extends React.Component {
                                         </button>
                                     );
 
-                                    if (filter === this.state.editingFilter) {
+                                    if (filter.name == this.state.editingFilter.name) {
                                         //When editing 
                                         editButton = (
-                                            <button className="m-1 btn btn-outline-secondary align-right" style={editingButtonStyle} onClick={() => this.modifyFilter(filter)}>
-                                                <i className='fa fa-check' aria-hidden='true' style={editingButtonStyle}></i>
+                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="A filter in your fleet already exists with that name! Please choose another name.">
+                                                <i className='fa fa-check' aria-hidden='true'></i>
                                             </button>
                                         );
-
+                                        
+                                        this.state.filterColor = filter.color;
                                         nameField = (
                                               <div className="input-group mb-3">
-                                                  <input type="text" className="form-control" placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })}/>
+                                                    <div className="input-group-prepend">
+                                                          <button type="button" className="btn btn-outline-secondary" title="Assign a different color to this filter" onClick={(e) => $("#color-picker-filter-mod").click()}>
+                                                              <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
+                                                                  <i className="fa fa-filter" aria-hidden="true"></i>
+                                                              </span>
+                                                          </button>
+                                                          <input key="cc-1" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter-mod"/>
+                                                    </div>
+                                                    <input type="text" className="form-control" placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                                               </div>
                                         );
                                     }
@@ -761,7 +791,7 @@ class Group extends React.Component {
                                                         {editButton}
                                                     </div>
                                                     <div className="col-lg-1">
-                                                        <button className="m-1 btn btn-outline-secondary align-right" style={styleButtonSq} onClick={() => this.removeFilter(filter.name)} title="Delete this filter">
+                                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.removeFilter(filter.name)} title="Delete this filter">
                                                             <i className="fa fa-trash" aria-hidden="true"></i>
                                                         </button>
                                                     </div>
@@ -778,13 +808,13 @@ class Group extends React.Component {
             } else {
                 loadCard = (
                     <div className="card m-1 float-right" style={{maxWidth : "500px"}}>
-                        <div className="card-header">
-                            <p className="font-weight-bold">
-                                No Saved Filters for this fleet.
-                            </p>
+                        <div className="card-header float-left">No filters stored yet.
+                            <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
+                                <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                            </button>
                         </div>
                         <div className="card-body">
-                            No filters stored yet.
+                            No filters stored yet for this fleet.
                         </div>
                     </div>
                 );
