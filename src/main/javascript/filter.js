@@ -18,6 +18,11 @@ import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
 
+//Used to check names for filter validation
+function isEmptyOrSpaces(str){
+    return str === null || str.match(/^ *$/) !== null;
+}
+
 function getRuleFromInput(input, rules) {
     let rule = null;
     for (let i = 0; i < rules.length; i++) {
@@ -441,6 +446,22 @@ class Group extends React.Component {
             color : this.state.filterColor
         }
 
+        if (isEmptyOrSpaces(submissionData.newName)) {
+            $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#modify-filter-submit-button').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
+        } else if (submissionData.newName === submissionData.currentName && filter.filter === submissionData.filterJSON && filter.color === submissionData.color) {
+            $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is different from its original name, the filter color is different, or that the filter rules are different.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#modify-filter-submit-button').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
+        }
+
         console.log("Mofifying filter " + filter.name);
 
         $.ajax({
@@ -451,13 +472,19 @@ class Group extends React.Component {
             timeout : 0, 
             success : function(response) {
                 if (response === "DUPLICATE_PK") {
-                    console.log("duplicate pk detected");
                     $('#modify-filter-submit-button').tooltip('show');
                     setTimeout(function() { //show resolution tooltip for a max 10s
-                        $('modify-filter-submit-buttond').tooltip('hide');
+                        $('#modify-filter-submit-button').tooltip('hide');
                      }.bind(this), 10000)
                 } else {
                     thisFilter.state.editingFilter = {};
+                    thisFilter.state.showLoadPopover = false;
+                    
+                    $('#modify-filter-submit-button').tooltip('hide');
+                    $('#load-filter-button').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#load-filter-button').tooltip('hide');
+                     }.bind(this), 10000)
                 }
 
                 thisFilter.setState(thisFilter.state);
@@ -502,6 +529,16 @@ class Group extends React.Component {
             name : name,
             filterJSON : JSON.stringify(this.props.getFilter()),
             color : color
+        }
+
+        if (isEmptyOrSpaces(name)) {
+            console.log('empty str');
+            $('#save-filter-button-card').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#save-filter-button-card').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
         }
 
         console.log("Storing filter " + name);
@@ -715,7 +752,7 @@ class Group extends React.Component {
                             </div>
                                 <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                             <div className="input-group-append">
-                                  <button type="button" id='save-filter-button-card' className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="A filter in your fleet already exists with that name! Please choose another name.">Save</button>
+                                  <button type="button" id='save-filter-button-card' className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}} data-toggle="tooltip" data-trigger='manual' data-placement="top" data-title='A filter with that name already exists in your fleet. Please provide a unique name.'>Save</button>
                             </div>
                       </div>
                   </div>
@@ -759,7 +796,7 @@ class Group extends React.Component {
                                     if (filter.name == this.state.editingFilter.name) {
                                         //When editing 
                                         editButton = (
-                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="A filter in your fleet already exists with that name! Please choose another name.">
+                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" data-title="A filter in your fleet already exists with that name! Please choose another name.">
                                                 <i className='fa fa-check' aria-hidden='true'></i>
                                             </button>
                                         );
@@ -894,7 +931,7 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} >
+                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} data-toggle='tooltip' data-placement='top' data-trigger='manual' data-title='Changes Saved!'>
                               Load a Saved Filter
                           </button>
                           <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Filter saved successfully">
