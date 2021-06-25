@@ -453,7 +453,7 @@ class Group extends React.Component {
              }.bind(this), 10000)
 
             return;
-        } else if (submissionData.newName === submissionData.currentName && filter.filter === submissionData.filterJSON && filter.color === submissionData.color) {
+        } else if (submissionData.newName === submissionData.currentName && filter.filter === this.props.getFilter() && filter.color === submissionData.color) {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is different from its original name, the filter color is different, or that the filter rules are different.').tooltip('show');
             setTimeout(function() { //show resolution tooltip for a max 10s
                 $('#modify-filter-submit-button').tooltip('hide');
@@ -603,6 +603,7 @@ class Group extends React.Component {
     editFilter(filter) {
         this.props.setFilter(JSON.parse(filter.filter));
         this.state.editingFilter = filter;
+        this.state.filterName = filter.name;
         this.setState(this.state);
        
         //let target = $("load-filter-button").click(function(event){
@@ -812,7 +813,7 @@ class Group extends React.Component {
                                                           </button>
                                                           <input key="cc-1" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter-mod"/>
                                                     </div>
-                                                    <input type="text" className="form-control" placeholder={filter.name} aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
+                                                    <input type="text" className="form-control" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                                               </div>
                                         );
                                     }
