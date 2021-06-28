@@ -248,10 +248,11 @@ public final class WebServer {
         
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
-        // Saving queries routes
-        //Spark.get("/protected/get_query_groups", new GetQueryGroups(gson));
-        Spark.get("/protected/get_queries", new GetQueries(gson));
-        Spark.post("/protected/save_query", new PostSaveQuery(gson));
+        // Saving filters routes
+        Spark.get("/protected/stored_filters", new GetStoredFilters(gson));
+        Spark.post("/protected/store_filter", new PostStoreFilter(gson));
+        Spark.post("/protected/remove_filter", new PostRemoveFilter(gson));
+        Spark.post("/protected/modify_filter", new PostModifyFilter(gson));
 
         // Cesium related routes
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));

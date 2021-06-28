@@ -1,8 +1,27 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React, { Component, useState, useEffect, useRef, createRef } from "react";
 import ReactDOM from "react-dom";
+import Overlay from 'react-bootstrap/Overlay';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Popover from 'react-bootstrap/Popover';
+import Tooltip from 'react-bootstrap/Tooltip';
+import Button from 'react-bootstrap/Button';
+import Form from 'react-bootstrap/Form';
+import FormGroup from 'react-bootstrap/Form';
+import FormControl from 'react-bootstrap/FormControl';
+import InputGroup from 'react-bootstrap/InputGroup';
+import ListGroup from 'react-bootstrap/ListGroup';
+import Container from 'react-bootstrap/Container';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
+
+//Used to check names for filter validation
+function isEmptyOrSpaces(str){
+    return str === null || str.match(/^ *$/) !== null;
+}
 
 function getRuleFromInput(input, rules) {
     let rule = null;
@@ -177,6 +196,7 @@ function addGroup(filter, treeIndex) {
     });
     return filter;
 }
+
 
 function removeFilter(filter, treeIndex) {
     console.log("removing filter with treeIndex: " + treeIndex);
@@ -362,9 +382,270 @@ class Rule extends React.Component {
 class Group extends React.Component {
     constructor(props) {
         super(props);
+
+        let colorRand = Colors.randomValue();
+
+        this.state = {
+            showSavePopover : false,
+            showLoadPopover : false,
+            loadPopoverTarget : "",
+            savePopoverTarget : "",
+            saveButtonDisabled : true,
+            storedFilters : props.storedFilters,
+            editingFilter : {},
+            filterSaved : false,
+            filterName : "",
+            filterColor : colorRand
+        }
+
+        this.handleColorChange = this.handleColorChange.bind(this);
+    }
+
+    toggleLoadPopover() {
+        this.state.showLoadPopover = !this.state.showLoadPopover;
+        this.setState(this.state);
+    }
+
+    setLoadPopoverTarget(event) {
+        this.state.loadPopoverTarget = event.target;
+        console.log("setting load popover target");
+        this.setState(this.state);
+    }
+
+    toggleSavePopover() {
+        this.state.showSavePopover = !this.state.showSavePopover;
+        this.setState(this.state);
+    }
+
+    setSavePopoverTarget(event) {
+        this.state.savePopoverTarget = event.target;
+        this.setState(this.state);
+    }
+
+    setFilter(filter) {
+        this.toggleLoadPopover();
+        let filterJSON = JSON.parse(filter.filter);
+
+        this.props.setFilter(filterJSON);
+    }
+
+    saveFilter() {
+        console.log("Saving filter with name: ");
+        console.log(this.state.filterName);
+
+        this.storeFilter(this.state.filterName, this.state.filterColor);
+    }
+
+    submitChanges(filter) {
+        let thisFilter = this;
+
+        let submissionData = {
+            currentName : filter.name,
+            newName : this.state.filterName,
+            filterJSON : JSON.stringify(this.props.getFilter()),
+            color : this.state.filterColor
+        }
+
+        if (isEmptyOrSpaces(submissionData.newName)) {
+            $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#modify-filter-submit-button').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
+        } else if (submissionData.newName === submissionData.currentName && filter.filter === this.props.getFilter() && filter.color === submissionData.color) {
+            $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is different from its original name, the filter color is different, or that the filter rules are different.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#modify-filter-submit-button').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
+        }
+
+        console.log("Mofifying filter " + filter.name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/modify_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                if (response === "DUPLICATE_PK") {
+                    $('#modify-filter-submit-button').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#modify-filter-submit-button').tooltip('hide');
+                     }.bind(this), 10000)
+                } else {
+                    thisFilter.state.editingFilter = {};
+                    thisFilter.state.showLoadPopover = false;
+                    
+                    $('#modify-filter-submit-button').tooltip('hide');
+                    $('#load-filter-button').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#load-filter-button').tooltip('hide');
+                     }.bind(this), 10000)
+                }
+
+                thisFilter.setState(thisFilter.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    removeFilter(name) {
+        let thisFilter = this;
+
+        let submissionData = {
+            name : name,
+        }
+
+        console.log("Removing filter " + name);
+        console.log(this.filterRef);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                thisFilter.setState(thisFilter.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    storeFilter(name, color) {
+        let thisFilter = this;
+
+        let submissionData = {
+            name : name,
+            filterJSON : JSON.stringify(this.props.getFilter()),
+            color : color
+        }
+
+        if (isEmptyOrSpaces(name)) {
+            console.log('empty str');
+            $('#save-filter-button-card').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
+            setTimeout(function() { //show resolution tooltip for a max 10s
+                $('#save-filter-button-card').tooltip('hide');
+             }.bind(this), 10000)
+
+            return;
+        }
+
+        console.log("Storing filter " + name);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/store_filter',
+            data : submissionData,
+            dataType : 'json',
+            timeout : 0, 
+            success : function(response) {
+                if (response === "DUPLICATE_PK") {
+                    console.log("duplicate pk detected");
+                    $('#save-filter-button-card').tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#save-filter-button-card').tooltip('hide');
+                     }.bind(this), 10000)
+                } else {
+                    $('#save-filter-button-card').tooltip('hide');
+                    $('#save-filter-button').tooltip('show');
+
+                    thisFilter.state.saveButtonDisabled = true;
+                    thisFilter.state.showSavePopover = false;
+                    thisFilter.state.filterSaved = true;
+
+                    setTimeout(function() { //show success tooltip for a max 5s
+                        $('#save-filter-button').tooltip('hide');
+                     }.bind(this), 5000)
+                }
+
+                thisFilter.setState(thisFilter.state);
+            },
+
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flights", errorThrown);
+            },   
+            async: true 
+        });  
+    }
+
+    getStoredFilters() {
+        let storedFilters = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/stored_filters',
+            dataType : 'json',
+            success : function(response) {
+                console.log("received filters response: ");
+                console.log(response);
+                
+                storedFilters = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+
+        return storedFilters;
+    }
+
+    editFilter(filter) {
+        this.props.setFilter(JSON.parse(filter.filter));
+        this.state.editingFilter = filter;
+        this.state.filterName = filter.name;
+        this.setState(this.state);
+       
+        //let target = $("load-filter-button").click(function(event){
+            //return event.target;
+        //});
+
+        //this.state.loadPopoverTarget = target;
+    }
+
+    setStoredFilters(filters) {
+        this.setState({
+            storedFilters : filters
+        });
+    }
+
+    handleLoadClick(event) {
+        this.toggleLoadPopover();
+        this.setLoadPopoverTarget(event);
+    }
+
+    setSelectedFilter(filter) {
+        this.props.setFilter(JSON.parse(filter));
     }
    
+    renderFilterSelector(getFiltersMethod, submitMethod) {
+        let filters = getFiltersMethod();
+
+        loadFilterModal.show(filters, submitMethod);
+    }
+
+    handleColorChange(event) {
+        let color = event.target.value;
+        console.log(color);
+
+        this.setState({
+            filterColor : color
+        });
+    };
+
     render() {
+        var validated = false, loadFilterButtonId = "load-filter-button";
+
         let errorMessageStyle = {
             padding : '7 0 7 0',
             margin : '0',
@@ -373,12 +654,43 @@ class Group extends React.Component {
             color: 'red'
         };
 
+        let tooltipStyle = {
+            backgroundColor : 'green'
+        }
+
+        let styleButtonSq = {
+            flex : "right",
+            float : "auto"
+        };
+
+        let listStyle = {
+            maxHeight: "400px",
+            overflowY: "scroll"
+        }
+
+        let popoverStyle = {
+            maxHeight: "400px",
+            minWidth: "800px"
+        }
+
+        let listGrpStyle = {
+            maxHeight: "400px"
+        }
+
+        let filterPillStyle = {
+            marginRight : '4px',
+            lineHeight : '4',
+            opacity : '75%',
+            fontSize : '100%',
+        }
+
         let errorHidden = true;
         let errorMessage = "";
         if (this.props.filters.length == 0) {
             errorHidden = false;
             errorMessage = "Group has no rules.";
         }
+
 
         //console.log("GROUP: index: " + this.props.treeIndex);
         //console.log(this.props.filters);
@@ -392,12 +704,179 @@ class Group extends React.Component {
             orActive = "active";
         }
 
+
+        const handleSaveClick = (event) => {
+            this.toggleSavePopover();
+            validated = true;
+            this.setSavePopoverTarget(event);
+        };
+
+        //if (this.state.filterSaved) {
+            //$('#save-filter-button').tooltip('show');
+            //this.state.filterSaved = false;
+        //} else {
+            //// wait 15s to hide success msg
+            //setTimeout(function() { //start the timer
+                //$('#save-filter-button').tooltip('hide');
+             //}.bind(this), 15000)
+        //}
+
+        let filters = this.state.storedFilters;
+
+        console.log(filters);
+
+        let loadFilterPopoverContent = "";
+
+        let loadFilterFunction = this.handleLoadClick;
+        if (this.state.editingFilter == null){
+            loadFilterFunction = this.handleLoadClickPersist;
+        }
+
+        var saveCard = "";
+        if (this.state.showSavePopover) {
+            saveCard = (
+                <div className="card m-1 float-right" style={{minWidth : "500px"}}>
+                    <div className="card-header float-left">Store Filter:
+                        <button type="button" className="mr-1 btn btn-danger btn-sm float-right">
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showSavePopover : false})}></i> 
+                        </button>
+                    </div>
+                <div className="card-body">
+                      <div className="input-group mb-3">
+                            <div className="input-group-prepend">
+                                  <button type="button" className="btn btn-outline-secondary" title="Assign a color to this filter" onClick={(e) => $("#color-picker-filter").click()}>
+                                      <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
+                                          <i className="fa fa-filter" aria-hidden="true"></i>
+                                      </span>
+                                  </button>
+                                  <input key="cc-0" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter"/>
+                            </div>
+                                <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
+                            <div className="input-group-append">
+                                  <button type="button" id='save-filter-button-card' className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}} data-toggle="tooltip" data-trigger='manual' data-placement="top" data-title='A filter with that name already exists in your fleet. Please provide a unique name.'>Save</button>
+                            </div>
+                      </div>
+                  </div>
+              </div>
+            );
+        }
+
+        var loadCard = "";
+        if (this.state.showLoadPopover) {
+            let filters = this.getStoredFilters();
+            if(filters != null && filters.length > 0) {
+                loadCard = (
+                    <div className="card m-1 float-right" style={{minWidth : "800px"}}>
+                            <div className="card-header float-left">Saved Filters:
+                                <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
+                                    <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                                </button>
+                            </div>
+                        <div className="card-body" style={{maxHeight : "400px", overflowY : "scroll"}}>
+                            <ul className="list-group">
+                            {
+                                filters.map((filter, index) => {
+                                    let initColor = filter.color;
+                                    let newColor = JSON.parse(JSON.stringify(this.state.filterColor)); //make copy for each index
+                                    //Normal
+                                    let editButton = ( 
+                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
+                                            <i className="fa fa-pencil" aria-hidden="true"></i> 
+                                        </button>
+                                    );
+
+                                    let nameField = (
+                                        <div className="col-lg-10">
+                                            <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                                                <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
+                                                    <i className="fa fa-filter" aria-hidden="true"></i>
+                                                </span>
+                                                <span className="ml-2 font-weight-bold">
+                                                    {filter.name}
+                                                </span>
+                                            </button>
+                                        </div>
+                                    );
+
+                                    if (filter.name == this.state.editingFilter.name) {
+                                        //When editing 
+                                        editButton = (
+                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Submit Changes" data-title="A filter in your fleet already exists with that name! Please choose another name.">
+                                                <i className='fa fa-check' aria-hidden='true'></i>
+                                            </button>
+                                        );
+
+                                        let color = initColor;
+                                        if (initColor !== newColor) {
+                                            color = newColor;
+                                        }
+                                        
+                                        nameField = (
+                                              <><div className="col-lg-9 input-group mb-3">
+                                                    <div className="input-group-prepend">
+                                                          <button type="button" className="btn btn-outline-secondary" title="Assign a different color to this filter" onClick={(e) => $("#color-picker-filter-mod").click()}>
+                                                              <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
+                                                                  <i className="fa fa-filter" aria-hidden="true"></i>
+                                                              </span>
+                                                          </button>
+                                                          <input key="cc-1" type="color" className="hidden" style={{display: "none"}} name="eventColor" onChange={e => this.setState({filterColor: e.target.value})} value={this.state.filterColor} id="color-picker-filter-mod"/>
+                                                    </div>
+                                                    <input type="text" className="form-control" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
+                                              </div>
+                                              <div className="col-lg-1">
+                                                    <button className="m-1 btn btn-outline-danger align-right" style={styleButtonSq} onClick={e => this.setState({editingFilter : {}})} title="Discard Changes">
+                                                        <i className="fa fa-times" aria-hidden="true"></i>
+                                                    </button>
+                                              </div></>
+                                        );
+                                    }
+
+                                    return (
+                                        <li className="list-group-item" key={index}>
+                                            <div className="container">
+                                                <div className="row justify-content-md-center">
+                                                    {nameField}
+                                                    <div className="col-lg-1">
+                                                        {editButton}
+                                                    </div>
+                                                    <div className="col-lg-1">
+                                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.removeFilter(filter.name)} title="Delete this filter">
+                                                            <i className="fa fa-trash" aria-hidden="true"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </li>
+                                    );
+                                })
+                            }
+                        </ul>
+                    </div>
+                </div>
+            );
+            } else {
+                loadCard = (
+                    <div className="card m-1 float-right" style={{maxWidth : "500px"}}>
+                        <div className="card-header float-left">No filters stored yet.
+                            <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
+                                <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                            </button>
+                        </div>
+                        <div className="card-body">
+                            No filters stored yet for this fleet.
+                        </div>
+                    </div>
+                );
+            }
+        }
+
         let submitHidden = true;
         let submitDisabled = true;
         if (typeof this.props.submitButtonName !== 'undefined') {
             submitHidden = false;
-
             submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
+            this.state.saveButtonDisabled = !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved;
+            this.state.filterSaved = false;
         }
 
         return (
@@ -433,6 +912,7 @@ class Group extends React.Component {
                                         treeIndex={this.props.treeIndex + "," + index}
                                         rules={this.props.rules}
                                         filters={filterInfo}
+                                        getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                         setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
@@ -448,6 +928,7 @@ class Group extends React.Component {
                                         treeIndex={this.props.treeIndex + "," + index}
                                         rules={this.props.rules}
                                         filter={filterInfo}
+                                        getStoredFilters={() => this.props.getStoredFilters()}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
                                     />
@@ -462,11 +943,27 @@ class Group extends React.Component {
                     </div>
 
                     <div className="p-2">
-                        <button type="button" className="btn btn-primary btn-sm" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >{this.props.submitButtonName}</button>
+                          <button type="button" className="btn btn-primary btn-sm mr-1" hidden={submitHidden} onClick={(event) => this.handleLoadClick(event)} id={loadFilterButtonId} data-toggle='tooltip' data-placement='top' data-trigger='manual' data-title='Changes Saved!'>
+                              Load a Saved Filter
+                          </button>
+                          <button id="save-filter-button" type="button" className="btn btn-primary btn-sm mr-1" onClick={handleSaveClick} hidden={submitHidden} disabled={this.state.saveButtonDisabled} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Filter saved successfully">
+                              Save Filter
+                          </button>
+                        <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >
+                            <i className="fa fa-filter mr-1" aria-hidden="true"></i>
+                            {this.props.submitButtonName}
+                        </button>
+                    </div>
+
+                </div>
+                <div className="container" style={{maxWidth : '100%'}}>
+                    <div className="d-flex flex-row-reverse">
+                        {saveCard}
+                        {loadCard}
                     </div>
                 </div>
-
             </div>
+
         );
     }
 }

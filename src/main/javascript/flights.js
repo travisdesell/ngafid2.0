@@ -377,6 +377,7 @@ class FlightsPage extends React.Component {
             flights : undefined, //start out with no specified flights
             sortColumn : "Start Date and Time", //need to define a default here, flt# will alias to primary key server side
             sortingOrder : "Descending", //need to define a default here, descending is default
+            storedFilters : this.getStoredFilters(),
 
             filters : {
                 type : "GROUP",
@@ -583,6 +584,28 @@ class FlightsPage extends React.Component {
         });
     }
 
+
+    getStoredFilters() {
+        let storedFilters = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/stored_filters',
+            dataType : 'json',
+            success : function(response) {
+                console.log("received filters response: ");
+                console.log(response);
+                
+                storedFilters = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+
+        return storedFilters;
+    }
+
     submitFilter(resetCurrentPage = false) {
         console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize + " sortByColumn: " + this.state.sortColumn);
 
@@ -674,7 +697,7 @@ class FlightsPage extends React.Component {
         style.padding = "5";
 
         let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
-    
+
         return (
             <div>
                 <SignedInNavbar 

@@ -514,4 +514,16 @@ $query = "CREATE TABLE `user_preferences_metrics` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `stored_filters` (
+    `fleet_id` INT(11) NOT NULL,
+    `name` VARCHAR(512) NOT NULL,
+    `color` VARCHAR(8) NOT NULL,
+    `filter_json` VARCHAR(2048) NOT NULL,
+
+    PRIMARY KEY(`fleet_id`,`name`),
+    FOREIGN KEY(`fleet_id`) REFERENCES user(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 ?>
