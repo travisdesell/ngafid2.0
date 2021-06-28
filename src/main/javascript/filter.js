@@ -772,10 +772,12 @@ class Group extends React.Component {
                                     <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
                                 </button>
                             </div>
-                        <div className="card-body">
+                        <div className="card-body" style={{maxHeight : "400px", overflowY : "scroll"}}>
                             <ul className="list-group">
                             {
                                 filters.map((filter, index) => {
+                                    let initColor = filter.color;
+                                    let newColor = JSON.parse(JSON.stringify(this.state.filterColor)); //make copy for each index
                                     //Normal
                                     let editButton = ( 
                                         <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.editFilter(filter)} title="Edit Filter">
@@ -784,27 +786,33 @@ class Group extends React.Component {
                                     );
 
                                     let nameField = (
-                                        <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
-                                            <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
-                                                <i className="fa fa-filter" aria-hidden="true"></i>
-                                            </span>
-                                            <span className="ml-2 font-weight-bold">
-                                                {filter.name}
-                                            </span>
-                                        </button>
+                                        <div className="col-lg-10">
+                                            <button type="button" className="m-1 btn btn-secondary" onClick={() => this.setFilter(filter)} key={index} style={{lineHeight : '1', fontSize : '100%', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title="Filter Info">
+                                                <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : filter.color, verticalAlign : 'text-bottom'}}>
+                                                    <i className="fa fa-filter" aria-hidden="true"></i>
+                                                </span>
+                                                <span className="ml-2 font-weight-bold">
+                                                    {filter.name}
+                                                </span>
+                                            </button>
+                                        </div>
                                     );
 
                                     if (filter.name == this.state.editingFilter.name) {
                                         //When editing 
                                         editButton = (
-                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" data-title="A filter in your fleet already exists with that name! Please choose another name.">
+                                            <button className="m-1 btn btn-outline-success align-right" id='modify-filter-submit-button' onClick={() => this.submitChanges(filter)} data-toggle="tooltip" data-trigger='manual' data-placement="top" title="Submit Changes" data-title="A filter in your fleet already exists with that name! Please choose another name.">
                                                 <i className='fa fa-check' aria-hidden='true'></i>
                                             </button>
                                         );
+
+                                        let color = initColor;
+                                        if (initColor !== newColor) {
+                                            color = newColor;
+                                        }
                                         
-                                        this.state.filterColor = filter.color;
                                         nameField = (
-                                              <div className="input-group mb-3">
+                                              <><div className="col-lg-9 input-group mb-3">
                                                     <div className="input-group-prepend">
                                                           <button type="button" className="btn btn-outline-secondary" title="Assign a different color to this filter" onClick={(e) => $("#color-picker-filter-mod").click()}>
                                                               <span className="badge badge-pill badge-primary" style={filterPillStyle , {backgroundColor : this.state.filterColor, verticalAlign : 'text-bottom'}}>
@@ -815,6 +823,11 @@ class Group extends React.Component {
                                                     </div>
                                                     <input type="text" className="form-control" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                                               </div>
+                                              <div className="col-lg-1">
+                                                    <button className="m-1 btn btn-outline-danger align-right" style={styleButtonSq} onClick={e => this.setState({editingFilter : {}})} title="Discard Changes">
+                                                        <i className="fa fa-times" aria-hidden="true"></i>
+                                                    </button>
+                                              </div></>
                                         );
                                     }
 
@@ -822,9 +835,7 @@ class Group extends React.Component {
                                         <li className="list-group-item" key={index}>
                                             <div className="container">
                                                 <div className="row justify-content-md-center">
-                                                    <div className="col-lg-10">
-                                                        {nameField}
-                                                    </div>
+                                                    {nameField}
                                                     <div className="col-lg-1">
                                                         {editButton}
                                                     </div>
