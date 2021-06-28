@@ -46,13 +46,11 @@ public class PostStoreFilter implements Route {
             LOG.info("Storing filter: " + name);
             LOG.info(filterJSON);
 
-            if (!StoredFilter.filterExists(connection, fleetId, name)) {
-                StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
-                return gson.toJson("SUCCESS");
-            } else {
-                return gson.toJson("DUPLICATE_PK");
-            }
-
+            StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
+            return gson.toJson("SUCCESS");
+        } catch (SQLIntegrityConstraintViolationException se) {
+            LOG.info("DUPLICATE_PK detected: " + se.toString());
+            return gson.toJson("DUPLICATE_PK");
         } catch (SQLException e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));

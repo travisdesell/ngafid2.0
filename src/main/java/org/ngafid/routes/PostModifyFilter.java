@@ -47,7 +47,7 @@ public class PostModifyFilter implements Route {
             LOG.info("New filter: name: " + newName + "; filterJSON: " + filterJSON + ";");
             return gson.toJson("SUCCESS");
         } catch (SQLIntegrityConstraintViolationException se) {
-            LOG.info("DUPLICATE_PK detected");
+            LOG.info("DUPLICATE_PK detected: " + se.toString());
             return gson.toJson("DUPLICATE_PK");
         } catch (SQLException e) {
             LOG.severe(e.toString());
