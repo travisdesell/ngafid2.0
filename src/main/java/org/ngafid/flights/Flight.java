@@ -1258,7 +1258,9 @@ public class Flight {
                             airframeName.equals("Cessna 172S") ||
                             airframeName.equals("Cessna 172T") ||
                             airframeName.equals("Cessna 182T") ||
+                            airframeName.equals("Cessna Model 525") ||
                             airframeName.equals("Cirrus SR20") ||
+                            airframeName.equals("Cirrus SR22 (3600 GW)") ||
                             airframeName.equals("Diamond DA40") ||
                             airframeName.equals("Diamond DA 40 F") ||
                             airframeName.equals("Diamond DA40NG") ||
@@ -1469,13 +1471,13 @@ public class Flight {
 
         try {
             if (airframeName.equals("Cessna 172S") || airframeName.equals("Cessna 172R")) {
+                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
+
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
                 calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("PA-28-181")) {
-                String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
-                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
-
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
                 calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
 
@@ -1487,7 +1489,7 @@ public class Flight {
                 calculateDivergence(egt2Names, "E2 EGT Divergence", "deg F");
 
 
-            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36")) {
+            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22 (3600 GW)")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
 
@@ -1504,7 +1506,7 @@ public class Flight {
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
 
-            } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft")) {
+            } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft") || airframeName.equals("Cessna Model 525")) {
                 LOG.warning("Cannot calculate engine divergences because airframe data recorder does not track CHT and/or EGT: '" + airframeName + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeName +" does not track CHT and/or EGT"));
 
@@ -1546,8 +1548,10 @@ public class Flight {
 
     private void checkIfExists(Connection connection) throws FlightAlreadyExistsException {
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.md5_hash = ?");
+            //make sure that the hash is for the same fleet, because we can have duplicate flights across fleets (e.g., on the demo account)
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.md5_hash = ? AND flights.fleet_id = ?");
             preparedStatement.setString(1, md5Hash);
+            preparedStatement.setInt(2, fleetId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
