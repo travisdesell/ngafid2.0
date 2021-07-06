@@ -35,7 +35,7 @@ import org.ngafid.filters.Pair;
 
 import org.ngafid.airports.Airports;
 
-public class FixFlightTimes {
+public class FixCHT1Divergence {
 
     public static void main(String[] arguments) {
         try {
