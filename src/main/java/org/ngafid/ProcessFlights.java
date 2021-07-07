@@ -34,6 +34,7 @@ public class ProcessFlights {
 
     public static void main(String[] arguments) {
         while (true) {
+            connection = Database.resetConnection();
 
             Instant start = Instant.now();
 

@@ -592,10 +592,10 @@ public class CalculateProximity {
 
     public static void main(String[] arguments) {
         try {
-            Connection connection = Database.getConnection();
 
             int flightsPerQuery = 5000;
             while (true) {
+                Connection connection = Database.resetConnection();
                 Instant start = Instant.now();
 
                 ArrayList<Flight> flights = Flight.getFlights(connection, "NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + adjacencyEventDefinitionId + " AND flight_processed.flight_id = flights.id)", flightsPerQuery);

@@ -26,6 +26,9 @@ public class TimeUtils {
         } else if (offset.equals("+20:00")) {
             ldt = ldt.plusHours(2);
             offset = "+18:00";
+        } else if (offset.equals("-19:00")) {
+            ldt = ldt.minusHours(1);
+            offset = "-18:00";
         } else if (offset.equals("-20:00")) {
             ldt = ldt.minusHours(2);
             offset = "-18:00";

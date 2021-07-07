@@ -30,6 +30,17 @@ public class Database {
         return connection;
     }
 
+    public static Connection resetConnection() {
+        try {
+            if (connection != null) connection.close();
+            setConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        return connection;
+    }
+
     private static void setConnection() {
         if (System.getenv("NGAFID_DB_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
@@ -64,10 +75,12 @@ public class Database {
             dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
             dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
 
+            /*
             System.out.println("dbHost: '" + dbHost + "'");
             System.out.println("dbName: '" + dbName + "'");
             System.out.println("dbUser: '" + dbUser + "'");
             System.out.println("dbPassword: '" + dbPassword + "'");
+            */
 
         } catch (IOException e) {
             System.err.println("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
