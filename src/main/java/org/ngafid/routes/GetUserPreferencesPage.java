@@ -60,7 +60,7 @@ public class GetUserPreferencesPage implements Route {
         int fleetId = user.getFleetId();
 
         try {
-            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId(), gson);
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);

@@ -12,6 +12,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import spark.Route;
 import spark.Request;
@@ -26,12 +28,12 @@ import org.ngafid.flights.DoubleTimeSeries;
 
 import static org.ngafid.flights.CalculationParameters.*;
 
-public class PostUserPreferences implements Route {
-    private static final Logger LOG = Logger.getLogger(PostUserPreferences.class.getName());
+public class PostUserPreferencesMetric implements Route {
+    private static final Logger LOG = Logger.getLogger(PostUserPreferencesMetric.class.getName());
     private Gson gson;
     private static Connection connection = Database.getConnection();
 
-    public PostUserPreferences(Gson gson) {
+    public PostUserPreferencesMetric(Gson gson) {
         this.gson = gson;
 
         LOG.info("post loci metrics route initialized.");
@@ -43,20 +45,21 @@ public class PostUserPreferences implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
+        int userId = user.getId();
 
-        String metrics = request.queryParams("flight_metrics");
-
-        int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
-
+        String metric = request.queryParams("metricName");
+        String type = request.queryParams("modificationType");
 
         try {
-            UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
+            LOG.info("Modifiying " + metric + " (" + type + ") for user: " + user.toString());
 
-            if (currentPreferences.update(decimalPrecision)) {
-                User.storeUserPreferences(connection, user.getId(), currentPreferences);
+            if (type.equals("addition")) {
+                User.addUserPreferenceMetric(connection, userId, metric);
+            } else { 
+                User.removeUserPreferenceMetric(connection, userId, metric);
             }
 
-            return gson.toJson(currentPreferences);
+            return gson.toJson(User.getUserPreferences(connection, userId).getFlightMetrics());
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

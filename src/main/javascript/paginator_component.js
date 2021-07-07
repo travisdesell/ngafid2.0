@@ -5,6 +5,8 @@ import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
 import Form from 'react-bootstrap/Form';
+import FormCheck from 'react-bootstrap/FormCheck';
+import { PaginationSorter } from './sorter_component.js';
 
 
 class Paginator extends React.Component {
@@ -72,7 +74,7 @@ class Paginator extends React.Component {
     repaginate(pageSize) {
         console.log("Re-Paginating");
         this.props.updateItemsPerPage(pageSize);
-        this.props.submitFilter();
+        this.props.submitFilter(true);
     }
 
     render() {
@@ -120,13 +122,29 @@ class Paginator extends React.Component {
         }
         */
 
+        var sorter = "";
+        if (this.props.sortOptions != null) {
+            sorter = (
+                <PaginationSorter
+                    sortOptions={this.props.sortOptions}
+                    setSortingColumn={(sortColumn) => this.props.setSortingColumn(sortColumn)}
+                    getSortingColumn={() => this.props.getSortingColumn()}
+                    setSortingOrder={(order) => this.props.setSortingOrder(order)}
+                    getSortingOrder={() => this.props.getSortingOrder()}
+                />
+            );
+        }
 
+        let numTotalPages = this.props.numberPages;
+        if (this.props.numberPages == 0) {
+            numTotalPages = 1;
+        }
 
         if (typeof this.props.items != 'undefined') {
             return (
                 <div className="card mb-1 border-secondary">
                     <div className="row m-0 p-2">
-                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {this.props.numberPages}</button>
+                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {numTotalPages}</button>
 
                         <Pagination size="sm" className="m-0 mr-2">
                             <Pagination.First disabled={this.props.currentPage === 0} onClick={() => this.jumpPage(0)}/>
@@ -145,13 +163,16 @@ class Paginator extends React.Component {
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
                         </div>
 
-                        <DropdownButton className="ml-auto" id="dropdown-item-button" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
+                        {sorter}
+
+                        <DropdownButton className="ml-auto mr-2" id="dropdown-item-button-resize" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
                             <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(50)}>50 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(100)}>100 {this.props.itemName} per page</Dropdown.Item>
                         </DropdownButton>
+
                     </div>
                 </div>
             );
