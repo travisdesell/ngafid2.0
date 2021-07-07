@@ -50,6 +50,12 @@ class FlightPage extends React.Component {
         });
     }
 
+    setAvailableLayers(plotLayers) {
+        console.log("changing selectable layers on navbar");
+        console.log(plotLayers);
+
+        this.setState({selectableLayers : plotLayers});
+    }
 
     showMap() {
         if (this.state.mapVisible) return;
@@ -233,6 +239,7 @@ class FlightPage extends React.Component {
                         showPlot={() => {this.showPlot();}}
                         getFilterQuery={() => {return this.getQuery();}}
                         flights={this.state.flights}
+                        setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {
                             this.setState({
                                 flights : flights

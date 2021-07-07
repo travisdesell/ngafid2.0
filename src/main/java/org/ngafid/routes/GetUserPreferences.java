@@ -48,7 +48,7 @@ public class GetUserPreferences implements Route {
         User user = session.attribute("user");
 
         try {
-            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId(), gson);
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 
             return gson.toJson(userPreferences);
         } catch (Exception se) {
