@@ -60,9 +60,11 @@ public class StringTimeSeries {
 
     // Added to get StringTimeSeries
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
-        query.setInt(1, flightId);
-        query.setString(2, name);
+        PreparedStatement query = connection.prepareStatement("SELECT ssn.name, ss.data_type, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
+
+        query.setString(1, name);
+        query.setInt(2, flightId);
+
         //LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();
@@ -82,16 +84,16 @@ public class StringTimeSeries {
     // Added to get results for StringTimeSeries
     public StringTimeSeries(ResultSet resultSet) throws SQLException {
 
-        name = resultSet.getString(3);
+        this.name = resultSet.getString(1);
         //System.out.println("name: " + name);
-        dataType = resultSet.getString(4);
+        dataType = resultSet.getString(2);
         //System.out.println("data type: " + dataType);
-        int length = resultSet.getInt(5);
+        int length = resultSet.getInt(3);
         //System.out.println("length: " + length);
-        validCount = resultSet.getInt(6);
+        validCount = resultSet.getInt(4);
         //System.out.println("valid count: " + validCount);
 
-        Blob values = resultSet.getBlob(7);
+        Blob values = resultSet.getBlob(5);
         byte[] bytes = values.getBytes(1, (int)values.length());
         //System.out.println("values.length: " + (int)values.length());
         values.free();
@@ -176,14 +178,37 @@ public class StringTimeSeries {
         return validCount;
     }
 
+    private int getSeriesNameId(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT id FROM string_series_names WHERE name = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setString(1, this.name);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        } else {
+            queryString = "INSERT INTO string_series_names(name) VALUES(?)";
+
+            query = connection.prepareStatement(queryString);
+            query.setString(1, this.name);
+
+            if (query.executeUpdate() == 1) {
+                return getSeriesNameId(connection, flightId);
+            }
+        }
+        return -1;
+    }
+
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, data_type, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
-            preparedStatement.setString(2, name);
+            preparedStatement.setInt(2, this.getSeriesNameId(connection, flightId));
             preparedStatement.setString(3, dataType);
             preparedStatement.setInt(4, timeSeries.size());
             preparedStatement.setInt(5, validCount);
