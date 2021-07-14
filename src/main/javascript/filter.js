@@ -17,6 +17,7 @@ import Row from 'react-bootstrap/Row';
 import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
+import { confirmModal } from "./confirm_modal.js";
 
 //Used to check names for filter validation
 function isEmptyOrSpaces(str){
@@ -425,8 +426,11 @@ class Group extends React.Component {
     setFilter(filter) {
         this.toggleLoadPopover();
         let filterJSON = JSON.parse(filter.filter);
-
         this.props.setFilter(filterJSON);
+
+        setTimeout(function() { //show resolution tooltip for a max 10s
+            this.props.submitFilter();
+         }.bind(this), 50)
     }
 
     saveFilter() {
@@ -496,7 +500,13 @@ class Group extends React.Component {
         });  
     }
 
-    removeFilter(name) {
+    deleteFilterClicked(name) {
+        confirmModal.show("Confirm Delete Filter: '" + name + "'",
+                        "Are you sure you wish to delete filter '" + name +"'?\n\nThis operation will remove it from your fleet, meaning it will be deleted for other users as well. This operation cannot be undone!",
+                        () => {this.deleteFilter(name)});
+    }
+
+    deleteFilter(name) {
         let thisFilter = this;
 
         let submissionData = {
@@ -604,6 +614,7 @@ class Group extends React.Component {
         this.props.setFilter(JSON.parse(filter.filter));
         this.state.editingFilter = filter;
         this.state.filterName = filter.name;
+        this.state.filterColor = filter.color;
         this.setState(this.state);
        
         //let target = $("load-filter-button").click(function(event){
@@ -806,11 +817,6 @@ class Group extends React.Component {
                                             </button>
                                         );
 
-                                        let color = initColor;
-                                        if (initColor !== newColor) {
-                                            color = newColor;
-                                        }
-                                        
                                         nameField = (
                                               <><div className="col-lg-9 input-group mb-3">
                                                     <div className="input-group-prepend">
@@ -840,7 +846,7 @@ class Group extends React.Component {
                                                         {editButton}
                                                     </div>
                                                     <div className="col-lg-1">
-                                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.removeFilter(filter.name)} title="Delete this filter">
+                                                        <button className="m-1 btn btn-outline-primary align-right" style={styleButtonSq} onClick={() => this.deleteFilterClicked(filter.name)} title="Delete this filter">
                                                             <i className="fa fa-trash" aria-hidden="true"></i>
                                                         </button>
                                                     </div>
@@ -950,7 +956,6 @@ class Group extends React.Component {
                               Save Filter
                           </button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" disabled={submitDisabled} onClick={() => this.props.submitFilter(true /*reset current page*/)} hidden={submitHidden} >
-                            <i className="fa fa-filter mr-1" aria-hidden="true"></i>
                             {this.props.submitButtonName}
                         </button>
                     </div>
