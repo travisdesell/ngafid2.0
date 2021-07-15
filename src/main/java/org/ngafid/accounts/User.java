@@ -307,6 +307,26 @@ public class User {
     }
 
     /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param precision the new decimal precision value to store
+     */
+    public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId, int decimalPrecision) throws SQLException {
+        String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, decimalPrecision);
+        query.setInt(2, userId);
+
+        query.executeUpdate();
+
+        return getUserPreferences(connection, userId);
+    }
+
+    /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user
      *
      * @param connection A connection to the mysql database.

@@ -24,12 +24,10 @@ class MetricViewerSettings extends React.Component {
         }
     }
 
-    updatePreferences() {
-        console.log("updating preferences");
-        console.log(this.state.selectedMetrics);
+    updatePrecision() {
+        console.log("Updating Precision to " + this.state.decimalPrecision);
 
         var submissionData = {
-            flight_metrics : JSON.stringify(this.state.selectedMetrics),
             decimal_precision : this.state.decimalPrecision
         };
 
@@ -127,7 +125,7 @@ class MetricViewerSettings extends React.Component {
     changePrecision(precision) {
         this.state.decimalPrecision = event.target.value;
 
-        this.updatePreferences();
+        this.updatePrecision();
     }
 
     render() {
