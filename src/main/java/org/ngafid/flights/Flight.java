@@ -1654,7 +1654,7 @@ public class Flight {
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", "E1 EGT5", "E1 EGT6"};
                 calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
 
-            } else if (airframeName.equals("Diamond DA 40") || airframeName.equals("Diamond DA 40 F") || airframeName.equals("Diamond DA40")) {
+            } else if (airframeName.equals("Diamond DA 40") || airframeName.equals("Diamond DA 40 F") || airframeName.equals("Diamond DA40") || airframeName.startsWith("Boeing") || airframeName.startsWith("Airbus")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
                 calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
 
