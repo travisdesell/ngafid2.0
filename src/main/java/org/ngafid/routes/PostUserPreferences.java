@@ -44,19 +44,9 @@ public class PostUserPreferences implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        String metrics = request.queryParams("flight_metrics");
-
         int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
-
-
         try {
-            UserPreferences currentPreferences = User.getUserPreferences(connection, user.getId());
-
-            if (currentPreferences.update(decimalPrecision)) {
-                User.storeUserPreferences(connection, user.getId(), currentPreferences);
-            }
-
-            return gson.toJson(currentPreferences);
+            return gson.toJson(User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
