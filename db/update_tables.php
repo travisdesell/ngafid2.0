@@ -90,14 +90,16 @@ query_ngafid_db("ALTER TABLE `flights` ADD INDEX `airframe_type_id_index` (`airf
 //3 - PA-44-180
 //4 - Cirrus SR20
 
-query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-28-181'");
-query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
-query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
-query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
+$set_airframes = false;
+if ($set_airframes) {
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-28-181'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
 
-
-query_ngafid_db("alter table event_definitions modify column severity_type VARCHAR(7)");                 
-query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
+    query_ngafid_db("alter table event_definitions modify column severity_type VARCHAR(7)");                 
+    query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
+}
 
 
 /*
@@ -118,7 +120,18 @@ query_ngafid_db("update event_definitions set severity_type = 'max abs' where se
  * +-----------------------+--------------+------+-----+---------+----------------+
  */
 
-query_ngafid_db("alter table user add column admin BOOLEAN default 0");
-query_ngafid_db("alter table user add column aggregate_view BOOLEAN default 0");
+$update_users_admin = false;
+if ($update_users_admin) {
+    query_ngafid_db("alter table user add column admin BOOLEAN default 0");
+    query_ngafid_db("alter table user add column aggregate_view BOOLEAN default 0");
+}
+
+
+//for checking to see if current updates have been done to inserted flights (e.g., did we fix calculating the CHT divergence)
+$update_flights_status = false;
+if ($update_flights_status) {
+    query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
+}
+
 
 ?>

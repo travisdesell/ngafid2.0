@@ -231,6 +231,7 @@ $query = "CREATE TABLE `flights` (
     `has_agl` TINYINT(1) NOT NULL,
     `events_calculated` INT(1) NOT NULL DEFAULT 0,
     `insert_completed` INT(1) NOT NULL DEFAULT 0,
+    `processing_status` BIGINT(20) default 0,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`fleet_id`, `md5_hash`),
