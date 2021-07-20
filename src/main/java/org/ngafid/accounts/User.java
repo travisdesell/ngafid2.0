@@ -8,6 +8,7 @@ import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.ngafid.flights.Tails;
@@ -211,20 +212,36 @@ public class User {
      *
      * @return an instane of {@link UserPreferences} with all the user's preferences and settings
      */
-    public static UserPreferences getUserPreferences(Connection connection, int userId, Gson gson) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision, metrics FROM user_preferences WHERE user_id = ?");
+    public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = ?");
         query.setInt(1, userId);
 
         ResultSet resultSet = query.executeQuery();
 
-        UserPreferences userPreferences = null;
-
+        int decimalPrecision = 1;
 
         if (resultSet.next()) {
-            userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
-        } else {
+            decimalPrecision = resultSet.getInt(1);
+        }
+            
+        UserPreferences userPreferences = null;
+
+        query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
+        query.setInt(1, userId);
+
+        resultSet = query.executeQuery();
+
+        List<String> metricNames = new ArrayList<>();
+
+        while (resultSet.next()) {
+            metricNames.add(resultSet.getString(1));
+        }
+
+        if (metricNames.isEmpty()) {
             userPreferences = UserPreferences.defaultPreferences(userId);
-            storeUserPreferences(connection, userId, userPreferences, gson);
+            storeUserPreferences(connection, userId, userPreferences);
+        } else {
+            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames);
         }
 
         return userPreferences;
@@ -237,17 +254,76 @@ public class User {
      * @param userId the userId to update for
      * @param userPreferences the {@link UserPreferences} instance to store
      */
-    public static void storeUserPreferences(Connection connection, int userId, UserPreferences userPreferences, Gson gson) throws SQLException {
-        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision, metrics) VALUES (?, ?, ?) " +
-            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision), metrics = VALUES(metrics)";
+    public static void storeUserPreferences(Connection connection, int userId, UserPreferences userPreferences) throws SQLException {
+        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?) " +
+            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision)";
 
         PreparedStatement query = connection.prepareStatement(queryString);
 
         query.setInt(1, userId);
         query.setInt(2, userPreferences.getDecimalPrecision());
-        query.setString(3, userPreferences.getFlightMetrics(gson));
 
         query.executeUpdate();
+
+        for (String metric : userPreferences.getFlightMetrics()) {
+            addUserPreferenceMetric(connection, userId, metric);
+        }
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void addUserPreferenceMetric(Connection connection, int userId, String metricName) throws SQLException {
+        String queryString = "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, (SELECT id FROM double_series_names WHERE name = ?))";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setString(2, metricName);
+
+        query.executeUpdate();
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void removeUserPreferenceMetric(Connection connection, int userId, String metricName) throws SQLException {
+        String queryString = "DELETE FROM user_preferences_metrics WHERE user_id = ? AND metric_id = (SELECT id FROM double_series_names WHERE name = ?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setString(2, metricName);
+
+        query.executeUpdate();
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param precision the new decimal precision value to store
+     */
+    public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId, int decimalPrecision) throws SQLException {
+        String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, decimalPrecision);
+        query.setInt(2, userId);
+
+        query.executeUpdate();
+
+        return getUserPreferences(connection, userId);
     }
 
     /**
