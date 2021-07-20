@@ -221,7 +221,7 @@ var rules = [
             {
                 type : "select",
                 name : "doubleSeries",
-                oplufthansations : doubleTimeSeriesNames
+                options : doubleTimeSeriesNames
             },
             {
                 type : "select",
