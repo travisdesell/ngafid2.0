@@ -25,45 +25,6 @@ query_ngafid_db("update flights set start_timestamp = UNIX_TIMESTAMP(start_time)
 query_ngafid_db("alter table flights add index `start_timestamp_index` (`start_timestamp`) using btree");
 query_ngafid_db("alter table flights add index `end_timestamp_index` (`end_timestamp`) using btree");
 */
-//
-//new double_series_names table and user preferences update
-query_ngafid_db("alter table double_series change name name_id int not null");
-query_ngafid_db("alter table user_preferences drop column metrics");
-$query = "CREATE TABLE `double_series_names` (
-
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(64) NOT NULL,
-
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-$query = "CREATE TABLE `user_preferences_metrics` (
-    `user_id` INT(11) NOT NULL,
-    `metric_id` INT(11) NOT NULL,
-
-    PRIMARY KEY(`user_id`,`metric_id`),
-    FOREIGN KEY(`user_id`) REFERENCES user(`id`),
-    FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-//for user preferences
-/*
-$query = "CREATE TABLE `user_preferences` (
-    `user_id` INT(11) NOT NULL,
-    `decimal_precision` INT(11) NOT NULL,
-    `metrics` VARCHAR(4096) NOT NULL,
-
-    PRIMARY KEY(`user_id`),
-    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-*/
-
 
 //need to update this to be able to differentiate between flights by type (e.g., fixed wing, rotorcraft, uas)
 /*

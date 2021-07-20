@@ -168,7 +168,7 @@ public class DoubleTimeSeries {
     }
 
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
-        ArrayList<String> name = new ArrayList<>();
+        ArrayList<String> names = new ArrayList<>();
 
         String queryString = "SELECT name FROM double_series_names ORDER BY name";
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -177,14 +177,13 @@ public class DoubleTimeSeries {
         ResultSet resultSet = query.executeQuery();
 
         while (resultSet.next()) {
-            //airport existed in the database, return the id
-            String airport = resultSet.getString(1);
-            name.add(airport);
+            names.add(resultSet.getString(1));
         }
+
         resultSet.close();
         query.close();
 
-        return name;
+        return names;
     }
 
 
