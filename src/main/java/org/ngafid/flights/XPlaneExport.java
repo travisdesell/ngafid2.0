@@ -40,7 +40,10 @@ public abstract class XPlaneExport{
 
     /**
      * Defualt constructor for X-Plane exports
+     *
      * @param flightId the flightId to create the export for
+     * @param aircraftPath the path of the aircafts ACF file in XPlane
+     * @param useMSL indicates whether or not to use MSL data to create the export
      */
     public XPlaneExport(int flightId, String aircraftPath, boolean useMSL){
         try{
@@ -59,8 +62,11 @@ public abstract class XPlaneExport{
     /**
      * Creates a hashmap with references to {@link DoubleTimeSeries} instances
      * for a given flight parameter
+     *
      * @param connection the connection to the database
      * @param flightId the flight for which to retrieve data for
+     * @param useMSL indicates whether or not to use MSL data to create the export
+     *
      * @return a Map with the pertinent data
      */
     public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId, boolean useMSL) throws SQLException{
@@ -142,7 +148,11 @@ public abstract class XPlaneExport{
         return "";
     }
 
-    //TODO: fix this so that all events over 1s get included
+    /**
+     * Writes the events to the output file
+     *
+     * @param scopes the {@link Map} to place the events into
+     */
     private void writeEvents(Map<String, Object> scopes) {
         try{
             ArrayList<Event> events = Event.getAll(connection, this.flight.getId());
@@ -160,7 +170,8 @@ public abstract class XPlaneExport{
 
     /**
      * Creates an export using MustacheFactory
-     * @return an instance of a StringWriter that contains the export in the respective *.fdr format
+     *
+     * @return an instance of a {@link StringWriter} that contains the export in the respective *.fdr format
      */
     private StringWriter export(){
         HashMap<String, Object> scopes = new HashMap<String, Object>();
@@ -200,8 +211,10 @@ public abstract class XPlaneExport{
     /**
      * Returns a string full of 0's, follwed by a comma, to poplulate the extra as null in the FDR format.
      * If we start tracking other data, we can change this method to include such data
+     *
      * @param nZeros the number of 0's
-     * @return a string in the format 0(0),0(1),...0(n),
+     *
+     * @return a {@link String} in the format 0(0),0(1),...0(n),
      */
     protected String getZeros(int nZeros){
         StringBuilder sb = new StringBuilder();
@@ -213,6 +226,7 @@ public abstract class XPlaneExport{
 
     /**
      * Fills the data block with the flight data for the version of X-Plane requested
+     *
      * @param buffer the {@link StringBuffer} to write to 
      * @param scopes the scopes used by {@link MustacheFactory}
      */
@@ -220,6 +234,7 @@ public abstract class XPlaneExport{
 
     /**
      * Returns the file as a String
+     *
      * @return a {@link String} instance of the data
      */
     public String toFdrFile(){

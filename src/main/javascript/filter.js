@@ -140,7 +140,6 @@ function andClicked(filter, treeIndex) {
     if (targetFilter.type === "GROUP") {
         targetFilter.condition = "AND";
     }
-    return filter;
 }
 
 function orClicked(filter, treeIndex) {
@@ -364,7 +363,7 @@ class Group extends React.Component {
     constructor(props) {
         super(props);
     }
-
+   
     render() {
         let errorMessageStyle = {
             padding : '7 0 7 0',
@@ -436,6 +435,8 @@ class Group extends React.Component {
                                         filters={filterInfo}
                                         getFilter={() => {return this.props.getFilter()}}
                                         setFilter={(filter) => this.props.setFilter(filter)}
+                                        setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
+                                        getSortByColumn={() => {return this.props.getSortByColumn}}
                                     />
                                 </div>);
 
@@ -486,6 +487,8 @@ class Filter extends React.Component {
                     getFilter={() => {return this.props.getFilter()}}
                     setFilter={(filter) => this.props.setFilter(filter)}
                     submitFilter={() => this.props.submitFilter()}
+                    setSortByColumn={(sortColumn) => this.props.setSortByColumn(sortColumn)}
+                    getSortByColumn={() => {return this.props.getSortByColumn}}
                 />
 
             </div>
