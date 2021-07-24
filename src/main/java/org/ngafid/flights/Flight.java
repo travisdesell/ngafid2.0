@@ -1606,7 +1606,7 @@ public class Flight {
 
             //scan eagle files have no data types, set all to ""
             for (int i = 0; i < headers.size(); i++) {
-                dataTypes.add("");
+                dataTypes.add("none");
             }
 
         } else {
