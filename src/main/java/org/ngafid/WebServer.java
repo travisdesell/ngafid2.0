@@ -245,6 +245,10 @@ public final class WebServer {
         Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
         Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
         Spark.post("/protected/edit_tag", new PostEditTag(gson));
+
+        //For maintenance statistics
+        Spark.post("/protected/maintenance", new PostMaintenanceStatistics(gson));
+        Spark.post("/protected/maintenance_rate", new PostMaintenanceRating(gson));
         
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 

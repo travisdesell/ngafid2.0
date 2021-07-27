@@ -68,6 +68,8 @@ class Flight extends React.Component {
         this.displayParameters = this.displayParameters.bind(this);
         this.closeParamDisplay = this.closeParamDisplay.bind(this);
         this.zoomChanged = this.zoomChanged.bind(this);
+
+        this.getMaintenance();
     }
 
     fetchEvents() {
@@ -992,6 +994,69 @@ class Flight extends React.Component {
           }
     }
 
+    getMaintenance() {
+        var thisFlight = this;
+
+        var submissionData = {
+            flightId : this.props.flightInfo.id,
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/maintenance',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("got maintenance stats:");
+                console.log(response);
+                thisFlight.state.maintenanceRating = response.maintenanceRating;
+                thisFlight.state.maintenanceProbability = response.maintenanceProbability;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log("Error getting upset data:");
+                console.log(errorThrown);
+            },   
+            async: false 
+        });  
+    }
+
+    updateMaintenanceRating() {
+        var thisFlight = this;
+
+        var submissionData = {
+            flightId : this.props.flightInfo.id,
+            rating : this.state.maintenanceRating
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/maintenance_rate',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log(response);
+
+                if (response == "SUCCESS") {
+                    $('#submit_button_rate_' + thisFlight.props.flightInfo.id).tooltip('show');
+                    setTimeout(function() { //show resolution tooltip for a max 10s
+                        $('#submit_button_rate_' + thisFlight.props.flightInfo.id).tooltip('hide');
+                     }.bind(this), 5000)
+                }
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log("Error getting upset data:");
+                console.log(errorThrown);
+            },   
+            async: false 
+        });  
+    }
+
+    setMaintenanceRating(event) {
+        this.setState({
+            maintenanceRating : event.target.value
+        });
+    }
+    
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1058,6 +1123,7 @@ class Flight extends React.Component {
         }
 
         let tagPills = "";
+        let submitButtonId = "submit_button_rate_" + this.props.flightInfo.id;
         if(this.state.tags != null){
             tagPills = 
             this.state.tags.map((tag, index) => {
@@ -1116,6 +1182,22 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
                             {visitedAirports.join(", ")}
+                        </div>
+
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
+                            {this.state.maintenanceProbability}
+                        </div>
+
+                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
+                            <div class="input-group input-group-sm">
+                                <div class="input-group-prepend">
+                                    <span class="input-group-text" id="inputGroup-sizing-sm">Rating</span>
+                                 </div>
+                                <input type="text" class="form-control" value={this.state.maintenanceRating} onChange={(event) => this.setMaintenanceRating(event)} aria-label="Small" aria-describedby="inputGroup-sizing-sm"/>
+                                <div class="input-group-append">
+                                    <button id={submitButtonId} class="btn btn-outline-secondary" type="button" onClick={() => this.updateMaintenanceRating()} data-placement="top" data-trigger="manual" title="Submitted!">Submit</button>
+                                </div>
+                            </div>
                         </div>
 
                         <div className={cellClasses} style={{

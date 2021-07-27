@@ -1125,6 +1125,58 @@ public class Flight {
         return paths;
     }
 
+    public static double getMaintenanceStatistics(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT maintenance_probability FROM flights WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, flightId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        double prob = -1.d;
+
+        if (resultSet.next()) {
+            prob = resultSet.getDouble(1);
+        }
+
+        resultSet.close();
+        query.close();
+
+        return prob;
+    }
+
+    public static int getMaintenanceRating(Connection connection, int flightId) throws SQLException {
+        String queryString = "SELECT mp_rating FROM flights WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, flightId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        int rating = -1;
+
+        if (resultSet.next()) {
+            rating = resultSet.getInt(1);
+        }
+
+        resultSet.close();
+        query.close();
+
+        return rating;
+    }
+
+    public static void setMaintenanceRating(Connection connection, int maintenaneRating, int flightId) throws SQLException{
+        String queryString = "UPDATE flights SET mp_rating = ? WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, maintenaneRating);
+        query.setInt(2, flightId);
+
+        query.executeUpdate();
+    }
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
