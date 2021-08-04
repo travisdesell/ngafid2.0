@@ -468,8 +468,7 @@ query_ngafid_db($query);
 
 $query = "CREATE TABLE `turn_to_final` (
     `flight_id` INT(11) NOT NULL,
-    `size` INT(11) NOT NULL,
-    `version` INT(11) NOT NULL,
+    `version` BIGINT(11) NOT NULL,
     data MEDIUMBLOB,
 
     PRIMARY KEY(`flight_id`),
