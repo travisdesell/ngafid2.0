@@ -65,12 +65,12 @@ public class StringTimeSeries {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
         query.setInt(1, flightId);
         query.setString(2, name);
-        LOG.info(query.toString());
+        //LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
             StringTimeSeries sts = new StringTimeSeries(resultSet);
-            System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
+            //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
             resultSet.close();
             query.close();
             return sts;
@@ -85,19 +85,20 @@ public class StringTimeSeries {
     public StringTimeSeries(ResultSet resultSet) throws SQLException, IOException, ClassNotFoundException {
 
         name = resultSet.getString(3);
-        System.out.println("name: " + name);
+        //System.out.println("name: " + name);
         dataType = resultSet.getString(4);
-        System.out.println("data type: " + dataType);
+        //System.out.println("data type: " + dataType);
         int length = resultSet.getInt(5);
-        System.out.println("length: " + length);
+        //System.out.println("length: " + length);
         validCount = resultSet.getInt(6);
-        System.out.println("valid count: " + validCount);
+        //System.out.println("valid count: " + validCount);
 
         Blob values = resultSet.getBlob(7);
         byte[] bytes = values.getBytes(1, (int)values.length());
-        System.out.println("values.length: " + (int)values.length());
+        //System.out.println("values.length: " + (int)values.length());
         values.free();
-
+        
+        // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String> objects into the StringTimeSeries cache.
         this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
     }
 

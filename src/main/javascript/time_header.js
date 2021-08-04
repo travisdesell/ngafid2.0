@@ -15,7 +15,7 @@ export default class TimeHeader extends React.Component {
         }
 
         let years = [];
-        for (let year = props.startYear; year <= props.endYear; year++) {
+        for (let year = 2000; year <= props.endYear; year++) {
             years.push(year);
         }
 
@@ -27,9 +27,34 @@ export default class TimeHeader extends React.Component {
     }
 
     makeHeaderContents(additionalHeaderContents, additionalRowContents) {
+        console.log(this.props.airframes);
+        console.log(this.state);
+
+        let exportButton = null;
+        if ('exportCSV' in this.props) {
+            exportButton = (
+                <div className="col-auto">
+                    <button className="btn btn-primary-outline" onClick={() => this.props.exportCSV()}>Export</button>
+                </div>
+            );
+        }
+
+        let all_months = ...;
+        let airframe = null;
+        if ('airframe' in this.props) 
+            airframe = (
+                <div className="input-group">
+                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {this.props.airframe}
+                    </button>
+                </div>
+            );
+        else
+            airframe = ( );
         return (
             <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
                 <div className="col-auto">
+                    { airframe } 
                     <div className="input-group">
                         <div className="input-group-prepend">
                             <div className="input-group-text">Start Date</div>
@@ -37,24 +62,17 @@ export default class TimeHeader extends React.Component {
                             <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content"}}>
                                 {
                                     this.state.years.map((year, index) => {
-                                        return (
-                                            <option key={index} value={year}>{year}</option>
-                                        );
+                                        if (year <= this.props.endYear)
+                                            return (
+                                                <option key={index} value={year}>{year}</option>
+                                            );
+                                        else
+                                            return ( );
                                     })
                                 }
                             </select>
                             <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content"}}>
-                                {
-                                    this.state.months.map((month, index) => {
-                                        return (
-                                            <option key={index} value={index+1}>{month}</option>
-                                        );
-                                    })
-                                }
-                            </select>
-                        </div>
-                    </div>
-                </div>
+                { exportButton }
 
                 <div className="col-auto">
                     <div className="input-group">
@@ -63,9 +81,12 @@ export default class TimeHeader extends React.Component {
                             <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content"}}>
                                 {
                                     this.state.years.map((year, index) => {
-                                        return (
-                                            <option key={index} value={year}>{year}</option>
-                                        );
+                                        if (year >= this.props.startYear)
+                                            return (
+                                                <option key={index} value={year}>{year}</option>
+                                            );
+                                        else
+                                            return ( );
                                     })
                                 }
                             </select>

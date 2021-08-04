@@ -12,15 +12,15 @@ import static org.ngafid.flights.XPlaneParameters.*;
 public class XPlane11Export extends XPlaneExport{
 
     /**
-     * {inheritDoc}
+     * {@inheritDoc}
      */
     public XPlane11Export(int flightId, String aircraftPath, boolean useMSL){
         super(flightId, aircraftPath, useMSL);
     }
 
     /**
-     * {inheritDoc}
-     * */
+     * {@inheritDoc}
+     */
     @Override
     public void writeFlightData(StringBuffer buffer, Map<String, Object> scopes){
         int length = parameters.get(ALT).size();

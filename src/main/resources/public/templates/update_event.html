@@ -7,15 +7,17 @@
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
 
+    <link rel="stylesheet" href="https://cdn.rawgit.com/openlayers/openlayers.github.io/master/en/v5.2.0/css/ol.css" type="text/css">
+
     <script>
         var plotMapHidden = true;
         {{{navbar_js}}}
-        {{{events_js}}}
+        {{{update_event_js}}}
     </script>
 
 </head>
 <body>
-    <div id="dashboard-page"></div>
+    <div id='navbar'></div>
 
     <div id="loading" style="display:none">
         <img id="loading-image" src="/images/ajax-loader.gif" alt="Loading..." />
@@ -28,8 +30,12 @@
         </div>
     </div>
 
+    <div id="update-event-card"></div>
+
     <!-- Load our javascript. -->
-    <script src="/js/dashboard-bundle.js"></script>
+
+    <script src="/js/update_event-bundle.js"></script>
+
 
 </body>
 </html>

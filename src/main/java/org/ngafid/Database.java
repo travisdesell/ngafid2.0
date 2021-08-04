@@ -19,7 +19,7 @@ public class Database {
 
     public static Connection getConnection() { 
         try {
-            if (connection.isClosed()) {
+            if (connection.isClosed()) { //investigate further here 
                 setConnection();
             } 
         } catch (SQLException e) {
@@ -27,6 +27,17 @@ public class Database {
             System.exit(1);
         }
 
+        return connection;
+    }
+
+    public static Connection resetConnection() {
+        try {
+            if (connection != null) connection.close();
+            setConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
         return connection;
     }
 
@@ -64,10 +75,12 @@ public class Database {
             dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
             dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
 
+            /*
             System.out.println("dbHost: '" + dbHost + "'");
             System.out.println("dbName: '" + dbName + "'");
             System.out.println("dbUser: '" + dbUser + "'");
             System.out.println("dbPassword: '" + dbPassword + "'");
+            */
 
         } catch (IOException e) {
             System.err.println("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
@@ -77,7 +90,7 @@ public class Database {
 
         try {
             // This will load the MySQL driver, each DB has its own driver
-            Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
 
             java.util.Properties connProperties = new java.util.Properties();
             connProperties.put("user", dbUser);

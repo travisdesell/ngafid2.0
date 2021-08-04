@@ -2,6 +2,7 @@ package org.ngafid;
 
 import org.ngafid.Database;
 import org.ngafid.events.Event;
+import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
@@ -50,7 +51,7 @@ public class CalculateExceedences {
 
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
-        int airframeId = flight.getAirframeId();
+        int airframeNameId = flight.getAirframeNameId();
 
         try {
 
@@ -65,6 +66,7 @@ public class CalculateExceedences {
                     || (minMaxRPM1 == null && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) //RPM1 is null, RPM2 is < 800
                     || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
+                System.out.println("engines never turned on, setting flight_processed.had_error = 1");
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -84,6 +86,7 @@ public class CalculateExceedences {
                 Pair<Double,Double> minMax = DoubleTimeSeries.getMinMax(connection, flightId, columnName);
 
                 if (minMax == null) {
+                    System.out.println("minMax was null, setting flight_processed.had_error = 1");
                     //couldn't calculate this exceedence because at least one of the columns was missing
                     PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                     stmt.setInt(1, fleetId);
@@ -113,7 +116,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, eventDefinition.getId(), flight.getStartDateTime());
                 return;
             }
 
@@ -122,6 +125,7 @@ public class CalculateExceedences {
 
             if (timeSeries == null || dateSeries == null) {
                 //couldn't calculate this exceedence because the date or time column was missing
+                System.out.println("time series or date series was missing, setting flight_processed.had_error = 1");
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -183,7 +187,7 @@ public class CalculateExceedences {
                                 //the event
                             } else {
                                 //we had enough triggers to reach the start count so create the event
-                                Event event = new Event (startTime, endTime, startLine, endLine, severity);
+                                Event event = new Event(startTime, endTime, startLine, endLine, severity);
                                 eventList.add(event);
                             }
 
@@ -239,11 +243,11 @@ public class CalculateExceedences {
             double maxDuration = -Double.MAX_VALUE;
             for (i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
-                event.updateDatabase(connection, flightId, eventDefinition.getId());
+                event.updateDatabase(connection, fleetId, flightId, eventDefinition.getId());
                 if (event.getStartTime() != null) {
-                    EventStatistics.updateEventStatistics(connection, fleetId, airframeId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
+                    EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinition.getId(), event.getStartTime(), event.getSeverity(), event.getDuration());
                 } else if (event.getEndTime() != null) {
-                    EventStatistics.updateEventStatistics(connection, fleetId, airframeId, eventDefinition.getId(), event.getEndTime(), event.getSeverity(), event.getDuration());
+                    EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinition.getId(), event.getEndTime(), event.getSeverity(), event.getDuration());
                 } else {
                     System.out.println("WARNING: could not update event statistics for event: " + event);
                     System.out.println("WARNING: event start and end time were both null.");
@@ -276,7 +280,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, eventDefinition.getId(), flight.getStartDateTime());
 
             } else {
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0");
@@ -287,7 +291,7 @@ public class CalculateExceedences {
                 stmt.executeUpdate();
                 stmt.close();
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeId, eventDefinition.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, eventDefinition.getId(), flight.getStartDateTime());
             }
 
         } catch(SQLException e) {
@@ -303,11 +307,15 @@ public class CalculateExceedences {
 
     public static void main(String[] arguments) {
         try {
-            Connection connection = Database.getConnection();
+            Connection connection = Database.resetConnection();
+
+            //for now only calculate exceedences for fixed wing aircraft
+            int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
 
             while (true) {
+                connection = Database.resetConnection();
                 Instant start = Instant.now();
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection);
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 System.out.println("n events = " + allEvents.size());
                 for (int i = 0; i < allEvents.size(); i++) {
                     //process events for this event type
@@ -318,10 +326,10 @@ public class CalculateExceedences {
 
                     ArrayList<Flight> flights = null;
                     
-                    if (currentDefinition.getAirframeId() == 0) {
-                        flights = Flight.getFlights(connection, "NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
+                    if (currentDefinition.getAirframeNameId() == 0) {
+                        flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
                     } else {
-                        flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeId() + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
+                        flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
                     }
 
                     for (int j = 0; j < flights.size(); j++) {
