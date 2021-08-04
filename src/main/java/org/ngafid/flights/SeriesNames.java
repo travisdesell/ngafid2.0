@@ -1,17 +1,22 @@
 package org.ngafid.flights;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
 
 
 public class SeriesNames {
 
 
-    public static int getDoubleNameId(Connection connection, String name) {
+    public static String getDoubleName(Connection connection, int id) {
     }
 
-    public static int getStringeNameId(Connection connection, String name) {
+    public static String getStringName(Connection connection, int id) {
     }
 
-    private int getSeriesNameId(Connection connection, int flightId) throws SQLException {
+    public static int getStringNameId(Connection connection, String name) throws SQLException {
         String queryString = "SELECT id FROM string_series_names WHERE name = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -34,7 +39,7 @@ public class SeriesNames {
         return -1;
     }
 
-    private int getSeriesNameId(Connection connection, int flightId) throws SQLException {
+    public static int getDoubleNameId(Connection connection, String name) throws SQLException {
         String queryString = "SELECT id FROM double_series_names WHERE name = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);

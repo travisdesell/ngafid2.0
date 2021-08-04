@@ -210,7 +210,7 @@ public class DoubleTimeSeries {
         ArrayList<DoubleTimeSeries> allSeries = new ArrayList<DoubleTimeSeries>();
         ResultSet resultSet = query.executeQuery();
         while (resultSet.next()) {
-            DoubleTimeSeries result = new DoubleTimeSeries(resultSet);
+            DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
             allSeries.add(result);
         }
         resultSet.close();
@@ -457,14 +457,14 @@ public class DoubleTimeSeries {
     /**
      * Lags a timeseries N indicies
      */
-    public DoubleTimeSeries lag(int n) {
+    public DoubleTimeSeries lag(Connection connection, int n) throws SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(Database.getConnection(), this.flightId, this.name, n);
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
         }
 
-        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
+        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(connection, this.name + LAG_SUFFIX + n, "double");
 
         for (int i = 0; i < data.length; i++) {
             laggedSeries.add((i >= n) ? data[i - n] : Double.NaN);
@@ -473,14 +473,14 @@ public class DoubleTimeSeries {
         return laggedSeries;
     }
 
-    public DoubleTimeSeries lead(int n) {
+    public DoubleTimeSeries lead(Connection connection, int n) throws SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLeadingSeries(Database.getConnection(), this.flightId, this.name, n);
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
         }
 
-        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(this.name + LEAD_SUFFIX + n, "double");
+        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(connection, this.name + LEAD_SUFFIX + n, "double");
 
         int len = data.length;
         for (int i = 0; i < len; i++) {

@@ -1479,7 +1479,7 @@ public class Flight {
         endDateTime = endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
-    private void initialize(InputStream inputStream) throws FatalFlightFileException, IOException {
+    private void initialize(Connection connection, InputStream inputStream) throws FatalFlightFileException, IOException, SQLException {
         numberRows = 0;
         ArrayList<ArrayList<String>> csvValues;
 
@@ -1718,7 +1718,7 @@ public class Flight {
             if (isDoubleList) {
                 //System.out.println(headers.get(i) + " is a DOUBLE column, ArrayList size: " + current.size());
                 //System.out.println(current);
-                DoubleTimeSeries dts = new DoubleTimeSeries(headers.get(i), dataTypes.get(i), current);
+                DoubleTimeSeries dts = new DoubleTimeSeries(connection, headers.get(i), dataTypes.get(i), current);
                 if (dts.validCount() > 0) {
                     doubleTimeSeries.put(headers.get(i), dts);
                 } else {
@@ -1728,7 +1728,7 @@ public class Flight {
             } else {
                 //System.out.println(headers.get(i) + " is a STRING column, ArrayList size: " + current.size());
                 //System.out.println(current);
-                StringTimeSeries sts = new StringTimeSeries(headers.get(i), dataTypes.get(i), current);
+                StringTimeSeries sts = new StringTimeSeries(connection, headers.get(i), dataTypes.get(i), current);
                 if (sts.validCount() > 0) {
                     stringTimeSeries.put(headers.get(i), sts);
                 } else {
@@ -1749,8 +1749,8 @@ public class Flight {
         }
     }
 
-    private void process(InputStream inputStream) throws IOException, FatalFlightFileException {
-        initialize(inputStream);
+    private void process(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
+        initialize(connection, inputStream);
 
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
@@ -1798,25 +1798,25 @@ public class Flight {
         }
 
         try {
-            calculateAGL("AltAGL", "AltMSL", "Latitude", "Longitude");
+            calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
 
         try {
-            calculateAirportProximity("Latitude", "Longitude", "AltAGL");
+            calculateAirportProximity(connection, "Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
 
         try {
-            calculateTotalFuel(new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
+            calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
 
         try {
-            calculateLaggedAltMSL("AltMSL", 10, "AltMSL Lag Diff");
+            calculateLaggedAltMSL(connection, "AltMSL", 10, "AltMSL Lag Diff");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -1824,39 +1824,39 @@ public class Flight {
         try {
             if (airframeName.equals("Cessna 172S") || airframeName.equals("Cessna 172R")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
-                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
+                calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                 processingStatus |= CHT_DIVERGENCE_CALCULATED;
 
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
-                calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
+                calculateDivergence(connection, egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("PA-28-181")) {
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
-                calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
+                calculateDivergence(connection, egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("PA-44-180")) {
                 String egt1Names[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
-                calculateDivergence(egt1Names, "E1 EGT Divergence", "deg F");
+                calculateDivergence(connection, egt1Names, "E1 EGT Divergence", "deg F");
 
                 String egt2Names[] = {"E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"};
-                calculateDivergence(egt2Names, "E2 EGT Divergence", "deg F");
+                calculateDivergence(connection, egt2Names, "E2 EGT Divergence", "deg F");
 
 
             } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22 (3600 GW)")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
-                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
+                calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                 processingStatus |= CHT_DIVERGENCE_CALCULATED;
 
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4", "E1 EGT5", "E1 EGT6"};
-                calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
+                calculateDivergence(connection, egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("Diamond DA 40") || airframeName.equals("Diamond DA 40 F") || airframeName.equals("Diamond DA40")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
-                calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
+                calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                 processingStatus |= CHT_DIVERGENCE_CALCULATED;
 
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
-                calculateDivergence(egtNames, "E1 EGT Divergence", "deg F");
+                calculateDivergence(connection, egtNames, "E1 EGT Divergence", "deg F");
 
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
@@ -1870,7 +1870,7 @@ public class Flight {
                 System.exit(1);
             }
 
-            runLOCICalculations();
+            runLOCICalculations(connection);
 
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
@@ -1959,7 +1959,7 @@ public class Flight {
             if (connection != null) checkIfExists(connection);
 
             inputStream.reset();
-            process(inputStream);
+            process(connection, inputStream);
 
         } catch (FatalFlightFileException e) {
             status = "WARNING";
@@ -1967,6 +1967,10 @@ public class Flight {
         } catch (IOException e) {
             status = "WARNING";
             throw e;
+        } catch (SQLException e) {
+            System.out.println(e);
+            e.printStackTrace();
+            System.exit(1);
         }
 
         checkExceptions();
@@ -1977,11 +1981,11 @@ public class Flight {
      *
      * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
      */
-    public void runLOCICalculations() throws MalformedFlightFileException {
+    public void runLOCICalculations(Connection connection) throws MalformedFlightFileException, SQLException {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
         if (this.isC172()) {
-            CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(CAS, "knots", true, this);
+            CalculatedDoubleTimeSeries cas = new CalculatedDoubleTimeSeries(connection, CAS, "knots", true, this);
             cas.create(index -> {
                 DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
                 double iasValue = ias.get(index);
@@ -1994,10 +1998,10 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(VSPD_CALCULATED, "ft/min", false, this);
-        vspdCalculated.create(new VSPDRegression(this));
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
+        vspdCalculated.create(new VSPDRegression(connection, this));
 
-        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(DENSITY_RATIO, "ratio", false, this);
+        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
         densityRatio.create(index -> {
             DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
             DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
@@ -2008,14 +2012,14 @@ public class Flight {
             return pressRatio / tempRatio;
         });
 
-        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(TAS_FTMIN, "ft/min", false, this);
+        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", false, this);
         tasFtMin.create(index -> {
             DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
 
             return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
         });
 
-        CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(AOA_SIMPLE, "degrees", true, this);
+        CalculatedDoubleTimeSeries aoaSimple = new CalculatedDoubleTimeSeries(connection, AOA_SIMPLE, "degrees", true, this);
         aoaSimple.create(index -> {
             DoubleTimeSeries pitch = getDoubleTimeSeries(PITCH);
 
@@ -2027,7 +2031,7 @@ public class Flight {
             return value; 
         });
 
-        CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(STALL_PROB, "index", true, this);
+        CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(connection, STALL_PROB, "index", true, this);
         stallIndex.create(index -> {
             return (Math.min(((Math.abs(aoaSimple.get(index) / AOA_CRIT)) * 100), 100)) / 100;
         });
@@ -2037,9 +2041,9 @@ public class Flight {
             // This can be changed down the road
             checkCalculationParameters(LOCI, LOCI_DEPENDENCIES);
             DoubleTimeSeries hdg = getDoubleTimeSeries(HDG); 
-            DoubleTimeSeries hdgLagged = hdg.lag(YAW_RATE_LAG);
+            DoubleTimeSeries hdgLagged = hdg.lag(connection, YAW_RATE_LAG);
 
-            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(PRO_SPIN_FORCE, "index", true, this);
+            CalculatedDoubleTimeSeries coordIndex = new CalculatedDoubleTimeSeries(connection, PRO_SPIN_FORCE, "index", true, this);
             coordIndex.create(index -> {
                 DoubleTimeSeries roll = getDoubleTimeSeries(ROLL);
                 DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
@@ -2057,7 +2061,7 @@ public class Flight {
                 return value;
             });
             
-            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(LOCI, "index", true, this);
+            CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
             loci.create(index -> {
                 double prob = (stallIndex.get(index) * getDoubleTimeSeries(PRO_SPIN_FORCE).get(index));
                 return prob / 100;
@@ -2086,7 +2090,7 @@ public class Flight {
             if (connection != null) checkIfExists(connection);
 
             inputStream.reset();
-            process(inputStream);
+            process(connection, inputStream);
 
        //} catch (FileNotFoundException e) {
        //   System.err.println("ERROR: could not find flight file '" + filename + "'");
@@ -2097,12 +2101,16 @@ public class Flight {
         } catch (IOException e) {
             status = "WARNING";
             throw e;
+        } catch (SQLException e) {
+            System.err.println(e);
+            e.printStackTrace();
+            System.exit(1);
         }
 
         checkExceptions();
     }
 
-    public void calculateLaggedAltMSL(String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException {
+    public void calculateLaggedAltMSL(Connection connection, String altMSLColumnName, int lag, String laggedColumnName) throws MalformedFlightFileException, SQLException {
         headers.add(laggedColumnName);
         dataTypes.add("ft msl");
 
@@ -2111,7 +2119,7 @@ public class Flight {
             throw new MalformedFlightFileException("Cannot calculate '" + laggedColumnName + "' as parameter '" + altMSLColumnName + "' was missing.");
         }
 
-        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(laggedColumnName, "ft msl");
+        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(connection, laggedColumnName, "ft msl");
 
         for (int i = 0; i < altMSL.size(); i++) {
             if (i < lag) laggedAltMSL.add(0.0);
@@ -2124,7 +2132,7 @@ public class Flight {
     }
 
 
-    public void calculateDivergence(String[] columnNames, String varianceColumnName, String varianceDataType) throws MalformedFlightFileException {
+    public void calculateDivergence(Connection connection, String[] columnNames, String varianceColumnName, String varianceDataType) throws MalformedFlightFileException, SQLException {
         //need to initialize these if we're fixing the divergence calculation error (they aren't initialized in the constructor)
         if (headers == null) headers = new ArrayList<String>();
         if (dataTypes == null) dataTypes = new ArrayList<String>();
@@ -2140,7 +2148,7 @@ public class Flight {
             }
         }
 
-        DoubleTimeSeries variance = new DoubleTimeSeries(varianceColumnName, varianceDataType);
+        DoubleTimeSeries variance = new DoubleTimeSeries(connection, varianceColumnName, varianceDataType);
 
         for (int i = 0; i < columns[0].size(); i++) {
             double max = -Double.MAX_VALUE;
@@ -2164,7 +2172,7 @@ public class Flight {
     }
 
 
-    public void calculateTotalFuel(String[] fuelColumnNames, String totalFuelColumnName) throws MalformedFlightFileException {
+    public void calculateTotalFuel(Connection connection, String[] fuelColumnNames, String totalFuelColumnName) throws MalformedFlightFileException, SQLException {
         headers.add(totalFuelColumnName);
         dataTypes.add("gals");
 
@@ -2178,7 +2186,7 @@ public class Flight {
             }
         }
 
-        DoubleTimeSeries totalFuel = new DoubleTimeSeries(totalFuelColumnName, "gals");
+        DoubleTimeSeries totalFuel = new DoubleTimeSeries(connection, totalFuelColumnName, "gals");
 
         for (int i = 0; i < fuelQuantities[0].size(); i++) {
             double totalFuelValue = 0.0;
@@ -2193,7 +2201,7 @@ public class Flight {
 
     }
 
-    public void calculateAGL(String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException {
+    public void calculateAGL(Connection connection, String altitudeAGLColumnName, String altitudeMSLColumnName, String latitudeColumnName, String longitudeColumnName) throws MalformedFlightFileException, SQLException {
         //calculates altitudeAGL (above ground level) from altitudeMSL (mean sea levl)
         headers.add(altitudeAGLColumnName);
         dataTypes.add("ft agl");
@@ -2235,7 +2243,7 @@ public class Flight {
         hasCoords = true;
         hasAGL = true;
 
-        DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(altitudeAGLColumnName, "ft agl");
+        DoubleTimeSeries altitudeAGLTS = new DoubleTimeSeries(connection, altitudeAGLColumnName, "ft agl");
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -2269,7 +2277,7 @@ public class Flight {
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
     }
 
-    public void calculateAirportProximity(String latitudeColumnName, String longitudeColumnName, String altitudeAGLColumnName) throws MalformedFlightFileException {
+    public void calculateAirportProximity(Connection connection, String latitudeColumnName, String longitudeColumnName, String altitudeAGLColumnName) throws MalformedFlightFileException, SQLException {
         //calculates if the aircraft is within maxAirportDistance from an airport
 
         DoubleTimeSeries latitudeTS = doubleTimeSeries.get(latitudeColumnName);
@@ -2319,14 +2327,14 @@ public class Flight {
         headers.add("RunwayDistance");
         dataTypes.add("ft");
 
-        StringTimeSeries nearestAirportTS = new StringTimeSeries("NearestAirport", "txt");
+        StringTimeSeries nearestAirportTS = new StringTimeSeries(connection, "NearestAirport", "txt");
         stringTimeSeries.put("NearestAirport", nearestAirportTS);
-        DoubleTimeSeries airportDistanceTS = new DoubleTimeSeries("AirportDistance", "ft");
+        DoubleTimeSeries airportDistanceTS = new DoubleTimeSeries(connection, "AirportDistance", "ft");
         doubleTimeSeries.put("AirportDistance", airportDistanceTS);
 
-        StringTimeSeries nearestRunwayTS = new StringTimeSeries("NearestRunway", "txt");
+        StringTimeSeries nearestRunwayTS = new StringTimeSeries(connection, "NearestRunway", "txt");
         stringTimeSeries.put("NearestRunway", nearestRunwayTS);
-        DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries("RunwayDistance", "ft");
+        DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries(connection, "RunwayDistance", "ft");
         doubleTimeSeries.put("RunwayDistance", runwayDistanceTS);
 
 
