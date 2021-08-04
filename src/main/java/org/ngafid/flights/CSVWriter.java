@@ -1,9 +1,3 @@
-/**
- * Generates/Copies CSV files for flights in the ngafid
- *
- * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella</a>
- */
-
 package org.ngafid.flights;
 
 import java.io.File;
@@ -21,7 +15,12 @@ import spark.utils.IOUtils;
 
 import org.ngafid.Database;
 
-public class CSVWriter{
+/**
+ * Generates/Copies CSV files for flights in the NGAFID
+ *
+ * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
+ */
+public class CSVWriter {
     private File file;
     private Flight flight;
     private ZipEntry entry;
@@ -32,7 +31,7 @@ public class CSVWriter{
      * Finds the zip file with the filght requested
      *
      * @param directoryRoot the root directory of the zipped files
-     * @param uploadId the id of the upload
+     * @param flight the {@link Flight} to write data for
      */
     public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
         System.out.println("creating file from: '" + directoryRoot + "'");
@@ -95,31 +94,17 @@ public class CSVWriter{
      *
      * @return a primitive array of bytes 
      */
-    public byte[] toBinaryData() throws IOException {
+    public byte [] toBinaryData() throws IOException {
         InputStream inputStream = zipArchive.getInputStream(this.entry);
         return IOUtils.toByteArray(inputStream);
     }
         
     /**
-     * Writes data to a file output stream
-     *
-     * @param inputStream the input stream to copy data from
-     *
-     * @return a String with all the data for the CSV file
-     *
-     * @throws IOException if there is an IOException when parsing the inputStream
-     */
-    private String writeToFile() throws IOException {
-        String strOut = new String(toBinaryData());
-        return strOut;
-    }
-
-    /**
      * Accessor method for the {@link ZipEntry} associated with this flight
      *
-     * @return and instance of {@link ZipEntry}
+     * @return an instance of {@link ZipEntry}
      */
-    public ZipEntry getFlightEntry(){
+    public ZipEntry getFlightEntry() {
         return this.entry;
     }
 
@@ -132,7 +117,7 @@ public class CSVWriter{
      */
     public String write() throws IOException {
         String fileOut = "";
-        fileOut = this.writeToFile();
+        fileOut = new String(toBinaryData());
         zipArchive.close();
         return fileOut;
     }
@@ -166,7 +151,7 @@ public class CSVWriter{
      * @return a {@link String} with the zip file and archive paths
      */
     @Override
-    public String toString(){
-        return this.zipArchive.toString()+" "+this.entry.toString();
+    public String toString() {
+        return this.zipArchive.toString() + " " + this.entry.toString();
     }
 }

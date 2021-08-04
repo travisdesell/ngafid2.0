@@ -36,8 +36,6 @@ public class PostCreateEvent implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        LOG.info("test: " + request.queryParams("test"));
-
         int fleetId = 0; //all events work on all fleets for now
         String eventName = request.queryParams("eventName");
         int startBuffer = Integer.parseInt(request.queryParams("startBuffer"));
@@ -53,6 +51,9 @@ public class PostCreateEvent implements Route {
         LOG.info("airframe: " + airframe);
         LOG.info("filter JSON:");
         LOG.info(filterJSON);
+        LOG.info("severityColumnNames JSON:");
+        LOG.info(severityColumnNamesJSON);
+        LOG.info("severity type: " + severityType);
 
         try {
             Connection connection = Database.getConnection();

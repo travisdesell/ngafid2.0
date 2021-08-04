@@ -14,6 +14,10 @@ import java.util.HashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+
 import com.google.gson.Gson;
 
 import spark.Route;
@@ -25,15 +29,27 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
+
+import org.ngafid.filters.Filter;
+
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.FlightWarning;
+import org.ngafid.flights.Tail;
+import org.ngafid.flights.Tails;
+import org.ngafid.flights.Upload;
+
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-import org.ngafid.events.EventStatistics;
 
-public class GetDashboard implements Route {
-    private static final Logger LOG = Logger.getLogger(GetDashboard.class.getName());
+public class GetSeverities implements Route {
+    private static final Logger LOG = Logger.getLogger(GetSeverities.class.getName());
     private Gson gson;
 
     private static class Message {
@@ -48,13 +64,13 @@ public class GetDashboard implements Route {
 
     private List<Message> messages = new ArrayList<Message>();
 
-    public GetDashboard(Gson gson) {
+    public GetSeverities(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetDashboard(Gson gson, String messageType, String messageText) {
+    public GetSeverities(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -68,20 +84,18 @@ public class GetDashboard implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "dashboard.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "severities.html";
         LOG.severe("template file: '" + templateFile + "'");
+
+        final Session session = request.session();
+        User user = session.attribute("user");
+        int fleetId = user.getFleetId();
 
         try  {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
             Connection connection = Database.getConnection();
-
-            final Session session = request.session();
-            User user = session.attribute("user");
-            int fleetId = user.getFleetId();
-
-            ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, fleetId);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -92,11 +106,13 @@ public class GetDashboard implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             long startTime = System.currentTimeMillis();
-            scopes.put("events_js",
-                    "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    );
+            String fleetInfo =
+                "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
+                "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n";
+
+            scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
+            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

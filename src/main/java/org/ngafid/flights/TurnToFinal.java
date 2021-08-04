@@ -242,23 +242,26 @@ public class TurnToFinal implements Serializable {
         assert o instanceof ArrayList;
 
         LOG.info("FOUND IN TTF CACHE: " + o.toString());
+        
+        return (ArrayList<TurnToFinal>) o;
 
-        if (o instanceof ArrayList<?>) {
-            ArrayList<?> a = (ArrayList<?>) o;
-            ArrayList<TurnToFinal> ttfs = new ArrayList<TurnToFinal>(a.size());
-            for (Object i : a) {
-                if (i instanceof TurnToFinal) {
-                    ttfs.add((TurnToFinal) i);
-                } else {
-                    LOG.severe("Found incorrect element object in TurnToFinal cache.");
-                    return null;
-                }
-            }
-            return ttfs;
-        } else {
-            LOG.severe("Found incorrect object in TurnToFinal cache.");
-            return null;
-        }
+        // If you want to get rid of the unchecked caste
+        // if (o instanceof ArrayList<?>) {
+        //     ArrayList<?> a = (ArrayList<?>) o;
+        //     ArrayList<TurnToFinal> ttfs = new ArrayList<TurnToFinal>(a.size());
+        //     for (Object i : a) {
+        //         if (i instanceof TurnToFinal) {
+        //             ttfs.add((TurnToFinal) i);
+        //         } else {
+        //             LOG.severe("Found incorrect element object in TurnToFinal cache.");
+        //             return null;
+        //         }
+        //     }
+        //     return ttfs;
+        // } else {
+        //     LOG.severe("Found incorrect object in TurnToFinal cache.");
+        //     return null;
+        // }
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {

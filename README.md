@@ -1,8 +1,14 @@
 # Steps for running the NGAFID2.0 website
 
 ## 1. Clone the repository
+
+Using SSH (reccomended):
 ```
 ~/ $ git clone git@github.com:travisdesell/ngafid2.0
+```
+Using HTTPS:
+```
+~/ $ git clone https://github.com/travisdesell/ngafid2.0.git
 ```
 
 ## 2. Set up the database
@@ -10,8 +16,7 @@ Install mysql on your system. For ubuntu:
 ```
 ~/ $ sudo apt install mysql-server
 ```
-For mySQL on SUSE
-https://software.opensuse.org/package/mysql-community-server
+
 
 ### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
 Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
@@ -188,7 +193,11 @@ https://github.com/olado/doT.git
 setting up javascript with react/webpack/babel:
 https://www.valentinog.com/blog/react-webpack-babel/
 
+For mySQL on SUSE
+https://software.opensuse.org/package/mysql-community-server
 
+For Arch:
+https://aur.archlinux.org/packages/mysql57/
 
 #not used anymore
 information on using PM2 to start/restart node servers:

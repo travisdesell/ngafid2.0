@@ -128,31 +128,6 @@ class Flight extends React.Component {
         }
     }
 
-    getUserPreferences() {
-        let thisFlight = this;
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/user_preference',
-            dataType : 'json',
-            success : function(response) {
-                console.log("got user pref response");
-                console.log(response);
-
-                thisFlight.setState({
-                    decimalPrecision : response.decimalPrecision,
-                    flightMetrics : response.flightMetrics
-                });
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                console.log("Error getting upset data:");
-                console.log(errorThrown);
-            },   
-            async: true 
-        });  
-    }
-    
-
     componentWillUnmount() {
         console.log("unmounting:");
         console.log(this.props.flightInfo);
@@ -319,7 +294,7 @@ class Flight extends React.Component {
         target.state.baseLayer.setStyle(new Style({
             stroke: new Stroke({
                 color: event.target.value,
-                width: 1.5
+                width: 3
             })
         }));
 
@@ -448,6 +423,16 @@ class Flight extends React.Component {
 
             //toggle visibility if already loaded
             this.state.eventsVisible = !this.state.eventsVisible;
+            this.state.eventLayer.setVisible(this.state.eventsVisible);
+            this.state.eventOutlineLayer.setVisible(this.state.eventsVisible);
+
+            if(!this.state.eventsVisible) {
+                console.log("clearing plotly");
+                global.plotlyLayout.shapes = [];
+                Plotly.relayout('plot', global.plotlyLayout);
+            }
+
+            console.log(global.plotlyLayout);
             this.setState(this.state);
         }
     }
@@ -516,7 +501,7 @@ class Flight extends React.Component {
         console.log(this.state.events);
             
 
-        var lociInfo = new Array(), info = null;
+        var lociInfo = new Array(), info = null, precision = 0;
 
         if (target != null && (target.parent === "LOC-I Index" || target.parent === "Stall Index")) {
             let index = target.getId();
@@ -527,7 +512,6 @@ class Flight extends React.Component {
             console.log(this.state.flightMetrics);
             let submissionData = {
                 flight_id : this.props.flightInfo.id,
-                flight_metrics : JSON.stringify(this.state.flightMetrics),
                 time_index : index
             }
 
@@ -551,7 +535,8 @@ class Flight extends React.Component {
                 success : function(response) {
                     console.log("got loci_metrics response");
                     console.log(response);
-                    info = response;
+                    info = response.values;
+                    precision = response.precision;
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
                     console.log("Error getting upset data:");
@@ -567,7 +552,7 @@ class Flight extends React.Component {
                 info : info,
                 lociData : lociInfo,
                 placement : pixel,
-                precision : this.state.decimalPrecision,
+                precision : precision,
                 lineSeg : target,
                 closePopup : this.closeParamDisplay(),
                 title : 'title'
@@ -673,8 +658,6 @@ class Flight extends React.Component {
 
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
-
-        this.getUserPreferences();
 
         if (!this.state.mapLoaded) {
             this.props.showMap();
@@ -1113,7 +1096,7 @@ class Flight extends React.Component {
 
                         <div className={cellClasses} style={{flexBasis:"120px", flexShrink:0, flexGrow:0}}>
 
-                            {flightInfo.airframeType}
+                            {flightInfo.airframeName}
                         </div>
 
                         <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>

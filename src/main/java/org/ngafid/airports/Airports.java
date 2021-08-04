@@ -96,10 +96,14 @@ public class Airports {
                 numberAirports++;
             }
 
+            System.out.println("Creating buffered reader for '" + RUNWAYS_FILE + "'");
             //now read the runways file and add runways to airports
             br = new BufferedReader(new FileReader(RUNWAYS_FILE));
+            System.out.println("buffered reader is ready? " + br.ready());
 
             while ((line = br.readLine()) != null) {
+                //System.out.println("read runways line: " + line);
+
                 String[] values = line.split(",");
 
                 String id = values[0];

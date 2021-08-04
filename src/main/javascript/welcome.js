@@ -212,7 +212,7 @@ class WelcomePage extends React.Component {
         var date = new Date();
         this.state = {
             airframe : "All Airframes",
-            startYear : 2000,
+            startYear : 2020,
             startMonth : 1,
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,

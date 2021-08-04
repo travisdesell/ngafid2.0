@@ -2,19 +2,12 @@
 package org.ngafid.routes;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.logging.Logger;
-import java.lang.reflect.Type;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.gson.Gson;
-import com.google.gson.reflect.TypeToken;
 
 import spark.Route;
 import spark.Request;
@@ -27,8 +20,11 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import static org.ngafid.flights.CalculationParameters.*;
-
+/**
+ * This class posts the LOCI metrics data for the map flight metric viewer.
+ *
+ * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
+ */
 public class PostLOCIMetrics implements Route {
     private static final Logger LOG = Logger.getLogger(PostLOCIMetrics.class.getName());
     private Gson gson;
@@ -60,17 +56,30 @@ public class PostLOCIMetrics implements Route {
         }
     }
 
+    protected class FlightMetricResponse {
+        List<FlightMetric> values;
+        int precision;
+
+        public FlightMetricResponse(List<FlightMetric> values, int precision) {
+            this.values = values;
+            this.precision = precision;
+        }
+
+        @Override
+        public String toString() {
+            return values.toString() + " with " + precision + " significant figures";
+        }
+    }
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling supplementary loci metrics route!");
 
         final Session session = request.session();
         User user = session.attribute("user");
-        String rawMetrics = request.queryParams("flight_metrics");
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int timeIndex = Integer.parseInt(request.queryParams("time_index"));
 
-        ObjectMapper om = new ObjectMapper();
 
         try {
             //check to see if the user has access to this data
@@ -81,7 +90,8 @@ public class PostLOCIMetrics implements Route {
 
             LOG.info("getting metrics for flight #" + flightId + " at index " + timeIndex);
 
-            List<String> metrics = om.readValue(rawMetrics, List.class);
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
+            List<String> metrics = userPreferences.getFlightMetrics();
             List<FlightMetric> flightMetrics = new ArrayList<>();
 
             for (String seriesName : metrics) {
@@ -95,16 +105,10 @@ public class PostLOCIMetrics implements Route {
                     flightMetrics.add(flightMetric);
                 }
             }
+            
+            LOG.info("Posting " + flightMetrics.size() + " metrics to user");
 
-            //System.out.println(gson.toJson(uploadDetails));
-            //need to convert NaNs to null so they can be parsed by JSON
-
-            //LOG.info(output);
-            for (FlightMetric fm : flightMetrics) {
-                System.out.println(fm.toString());
-            }
-
-            return gson.toJson(flightMetrics);
+            return gson.toJson(new FlightMetricResponse(flightMetrics, userPreferences.getDecimalPrecision()));
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

@@ -16,6 +16,8 @@ import { FlightsCard } from './flights_card_component.js';
 
 import Plotly from 'plotly.js';
 
+import { timeZones } from "./time_zones.js";
+
 
 /*
 var airframes = [ "PA-28-181", "Cessna 172S", "PA-44-180", "Cirrus SR20"  ];
@@ -24,7 +26,6 @@ var doubleTimeSeriesNames = [ "E1 CHT1", "E1 CHT2", "E1 CHT3" ];
 var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
 // var tagNames = ["Tag A", "Tag B"];
-
 var rules = [
     {
         name : "Airframe",
@@ -109,6 +110,11 @@ var rules = [
             {
                 type  : "datetime-local",
                 name : "date and time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -124,6 +130,11 @@ var rules = [
             {
                 type  : "datetime-local",
                 name : "date and time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -158,7 +169,6 @@ var rules = [
         ]
     },
 
-
     {
         name : "Start Time",
         conditions : [
@@ -170,6 +180,11 @@ var rules = [
             {
                 type  : "time",
                 name : "time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -185,6 +200,11 @@ var rules = [
             {
                 type  : "time",
                 name : "time"
+            },
+            {
+                type : "select",
+                name : "timezone", 
+                options : timeZones
             }
         ]
     },
@@ -201,7 +221,7 @@ var rules = [
             {
                 type : "select",
                 name : "doubleSeries",
-                options : doubleTimeSeriesNames
+                oplufthansations : doubleTimeSeriesNames
             },
             {
                 type : "select",
@@ -326,6 +346,20 @@ var rules = [
 
 ];
 
+const sortableColumns = new Map();
+
+sortableColumns.set("Flight Number", "id");
+sortableColumns.set("Flight Length (Number of Valid Data Points)", "number_rows");
+sortableColumns.set("Start Date and Time", "start_time");
+sortableColumns.set("End Date and Time", "end_time");
+sortableColumns.set("Number of Airports Visited", "airports_visited");
+sortableColumns.set("Number of Tags Associated", "flight_tags");
+sortableColumns.set("Total Event Count", "events");
+sortableColumns.set("System ID", "system_id");
+sortableColumns.set("Tail Number", "tail_number");
+sortableColumns.set("Airframe", "airframe_id");
+sortableColumns.set("Number of Takeoffs/Landings", "itinerary");
+
 class FlightsPage extends React.Component {
     constructor(props) {
         super(props);
@@ -338,10 +372,17 @@ class FlightsPage extends React.Component {
             mapVisible : false,
             mapSelected : false,
             mapStyle : "Road",
-            filterRef : React.createRef(),
             flightsRef : React.createRef(),
             layers : [],
             flights : undefined, //start out with no specified flights
+            sortColumn : "Start Date and Time", //need to define a default here, flt# will alias to primary key server side
+            sortingOrder : "Descending", //need to define a default here, descending is default
+
+            filters : {
+                type : "GROUP",
+                condition : "AND",
+                filters : []
+            }, 
 
             //needed for paginator
             currentPage : 0,
@@ -385,7 +426,7 @@ class FlightsPage extends React.Component {
 
         this.setMapStyle(style);
         
-   }
+    }
 
     setMapStyle(style) {
          this.setState({
@@ -393,6 +434,30 @@ class FlightsPage extends React.Component {
         });
     }
 
+    setSortingColumn(column) {
+        console.log("sorting by: " + column);
+        this.state.sortColumn = column;
+        this.setState(this.state);
+
+        this.submitFilter(true);
+    }
+
+    getSortingColumn() {
+        return this.state.sortColumn;
+    }
+
+    setSortingOrder(order) {
+        if (order != this.state.sortingOrder) {
+            console.log("sorting in " + order + " order");
+            this.state.sortingOrder = order;
+            this.setState(this.state);
+            this.submitFilter(true);
+        }
+    }
+
+    getSortingOrder() {
+        return this.state.sortingOrder;
+    }
 
     showMap() {
         if (this.state.mapVisible) return;
@@ -512,13 +577,17 @@ class FlightsPage extends React.Component {
         });
     }
 
-    submitFilter(resetCurrentPage = false) {
-        console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize);
+    setFilter(filter) {
+        this.setState({
+            filters : filter
+        });
+    }
 
-        let query = this.filterRef.getQuery();
+    submitFilter(resetCurrentPage = false) {
+        console.log("submitting filter! currentPage: " + this.state.currentPage + ", pageSize: " + this.state.pageSize + " sortByColumn: " + this.state.sortColumn);
 
         console.log("Submitting filters:");
-        console.log( query );
+        console.log( this.state.filters );
 
         $("#loading").show();
 
@@ -530,9 +599,11 @@ class FlightsPage extends React.Component {
         }
 
         var submissionData = {
-            filterQuery : JSON.stringify(query),
+            filterQuery : JSON.stringify(this.state.filters),
             currentPage : currentPage,
-            pageSize : this.state.pageSize
+            pageSize : this.state.pageSize,
+            sortingColumn : sortableColumns.get(this.state.sortColumn),
+            sortingOrder : this.state.sortingOrder
         };
 
         console.log(submissionData);
@@ -602,12 +673,14 @@ class FlightsPage extends React.Component {
 
         style.padding = "5";
 
+        let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
+    
         return (
             <div>
                 <SignedInNavbar 
                     activePage="flights"
                     selectableLayers={this.state.selectableLayers}
-                    filterVisible={this.state.filterVisible}
+                    filterVisible={true}
                     plotVisible={this.state.plotVisible}
                     mapVisible={this.state.mapVisible}
                     filterSelected={this.state.filterSelected}
@@ -633,16 +706,19 @@ class FlightsPage extends React.Component {
 
                 <div style={style}>
                     <Filter
-                        ref={elem => this.filterRef = elem}
-                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         filterVisible={this.state.filterVisible}
-                        depth={0}
-                        baseIndex="[0-0]"
-                        key="[0-0]"
-                        parent={null}
-                        type="GROUP"
-                        rules={rules}
+
                         submitButtonName="Apply Filter"
+                        submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
+
+                        rules={rules}
+                        filters={this.state.filters}
+
+                        getFilter={() => {return this.state.filters}}
+                        setFilter={(filter) => this.setFilter(filter)}
+                        setCurrentSortingColumn={(sortColumn) => this.setCurrentSortingColumn(sortColumn)}
+                        getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
+
                     />
 
                     <Paginator
@@ -652,6 +728,12 @@ class FlightsPage extends React.Component {
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
+                        rules={sortableColumns}
+                        setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                        getSortingColumn={() => this.getSortingColumn()}
+                        setSortingOrder={(order) => this.setSortingOrder(order)}
+                        getSortingOrder={() => this.getSortingOrder()}
+                        sortOptions = {sortableColumnsHumanReadable}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}
@@ -686,9 +768,15 @@ class FlightsPage extends React.Component {
                         submitFilter={(resetCurrentPage) => {this.submitFilter(resetCurrentPage);}}
                         items={this.state.flights}
                         itemName="flights"
+                        rules={sortableColumns}
                         currentPage={this.state.currentPage}
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
+                        setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                        getSortingColumn={() => this.getSortingColumn()}
+                        setSortingOrder={(order) => this.setSortingOrder(order)}
+                        getSortingOrder={() => this.getSortingOrder()}
+                        sortOptions = {sortableColumnsHumanReadable}
                         updateCurrentPage={(currentPage) => {
                             this.state.currentPage = currentPage;
                         }}

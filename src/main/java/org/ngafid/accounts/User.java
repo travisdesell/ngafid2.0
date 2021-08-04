@@ -1,17 +1,19 @@
 package org.ngafid.accounts;
 
-import com.mysql.jdbc.Statement;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import org.ngafid.flights.Tails;
 
+import com.google.gson.Gson;
 
 public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
@@ -30,6 +32,8 @@ public class User {
     private String address;
     private String phoneNumber;
     private String zipCode;
+    private boolean admin;
+    private boolean aggregateView;
 
     /**
      * The following are references to the fleet the user has access to (if it has approved access
@@ -59,6 +63,20 @@ public class User {
         return firstName + " " + lastName;
     }
 
+
+    /**
+     * @return true if the user has admin access
+     */
+    public boolean isAdmin() {
+        return admin;
+    }
+
+    /**
+     * @return true if the user has aggregate view access
+     */
+    public boolean hasAggregateView() {
+        return aggregateView;
+    }
 
 
     /**
@@ -155,7 +173,7 @@ public class User {
      * @return A user object for the user with that id, null if the user did not exist.
      */
     public static User get(Connection connection, int userId, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, email, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view FROM user WHERE id = ?");
         query.setInt(1, userId);
 
         LOG.info(query.toString());
@@ -174,6 +192,8 @@ public class User {
         user.address = resultSet.getString(8);
         user.phoneNumber = resultSet.getString(9);
         user.zipCode = resultSet.getString(10);
+        user.admin = resultSet.getBoolean(11);
+        user.aggregateView = resultSet.getBoolean(12);
 
         //get the access level of the user for this fleet
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
@@ -188,23 +208,40 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId the userId to query for
+     * @param gson is a Gson object to convert to JSON
      *
      * @return an instane of {@link UserPreferences} with all the user's preferences and settings
      */
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision, metrics FROM user_preferences WHERE user_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = ?");
         query.setInt(1, userId);
 
         ResultSet resultSet = query.executeQuery();
 
-        UserPreferences userPreferences = null;
-
+        int decimalPrecision = 1;
 
         if (resultSet.next()) {
-            userPreferences = new UserPreferences(userId, resultSet.getInt(1), resultSet.getString(2));
-        } else {
+            decimalPrecision = resultSet.getInt(1);
+        }
+            
+        UserPreferences userPreferences = null;
+
+        query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
+        query.setInt(1, userId);
+
+        resultSet = query.executeQuery();
+
+        List<String> metricNames = new ArrayList<>();
+
+        while (resultSet.next()) {
+            metricNames.add(resultSet.getString(1));
+        }
+
+        if (metricNames.isEmpty()) {
             userPreferences = UserPreferences.defaultPreferences(userId);
             storeUserPreferences(connection, userId, userPreferences);
+        } else {
+            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames);
         }
 
         return userPreferences;
@@ -218,14 +255,53 @@ public class User {
      * @param userPreferences the {@link UserPreferences} instance to store
      */
     public static void storeUserPreferences(Connection connection, int userId, UserPreferences userPreferences) throws SQLException {
-        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision, metrics) VALUES (?, ?, ?) " +
-            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision), metrics = VALUES(metrics)";
+        String queryString = "INSERT INTO user_preferences (user_id, decimal_precision) VALUES (?, ?) " +
+            "ON DUPLICATE KEY UPDATE user_id = VALUES(user_id), decimal_precision = VALUES(decimal_precision)";
 
         PreparedStatement query = connection.prepareStatement(queryString);
 
         query.setInt(1, userId);
         query.setInt(2, userPreferences.getDecimalPrecision());
-        query.setString(3, userPreferences.getFlightMetrics());
+
+        query.executeUpdate();
+
+        for (String metric : userPreferences.getFlightMetrics()) {
+            addUserPreferenceMetric(connection, userId, metric);
+        }
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void addUserPreferenceMetric(Connection connection, int userId, String metricName) throws SQLException {
+        String queryString = "INSERT INTO user_preferences_metrics (user_id, metric_id) VALUES (?, (SELECT id FROM double_series_names WHERE name = ?))";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setString(2, metricName);
+
+        query.executeUpdate();
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param userPreferences the {@link UserPreferences} instance to store
+     */
+    public static void removeUserPreferenceMetric(Connection connection, int userId, String metricName) throws SQLException {
+        String queryString = "DELETE FROM user_preferences_metrics WHERE user_id = ? AND metric_id = (SELECT id FROM double_series_names WHERE name = ?)";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, userId);
+        query.setString(2, metricName);
 
         query.executeUpdate();
     }
@@ -285,7 +361,7 @@ public class User {
      * @return A user object if the password for that email address was correct. null if the user did not exist.
      */
     public static User get(Connection connection, String email, String password) throws SQLException, AccountException {
-        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, city, address, phone_number, zip_code FROM user WHERE email = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT id, password_token, first_name, last_name, country, state, city, address, phone_number, zip_code, admin, aggregate_view FROM user WHERE email = ?");
         query.setString(1, email);
 
         LOG.info(query.toString());
@@ -305,6 +381,8 @@ public class User {
         user.address = resultSet.getString(8);
         user.phoneNumber = resultSet.getString(9);
         user.zipCode = resultSet.getString(10);
+        user.admin = resultSet.getBoolean(11);
+        user.aggregateView = resultSet.getBoolean(12);
 
         if (!new PasswordAuthentication().authenticate(password.toCharArray(), passwordToken)) {
             LOG.info("User password was incorrect.");
@@ -486,7 +564,7 @@ public class User {
         user.phoneNumber = phoneNumber;
         user.zipCode = zipCode;
 
-        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?", Statement.RETURN_GENERATED_KEYS);
+        PreparedStatement query = connection.prepareStatement("INSERT INTO user SET email = ?, password_token = ?, first_name = ?, last_name = ?, country = ?, state = ?, city = ?, address = ?, phone_number = ?, zip_code = ?, registration_time = NOW()", Statement.RETURN_GENERATED_KEYS);
         query.setString(1, user.email);
         query.setString(2, passwordToken);
         query.setString(3, user.firstName);
