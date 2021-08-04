@@ -1,5 +1,8 @@
 package org.ngafid.flights;
 
+import java.sql.Connection;
+import java.sql.SQLException;
+
 /**
  * This is a {@link DoubleTimeSeries} that requires further analysis, such
  * as a {@link Calculation}. This class is meant to be expandable
@@ -18,8 +21,8 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      * @param cache indicates if the new series should be stored in the database after all analysis is complete
      * @param flight the flight instance the timeseries is being calcualted for
      */
-    public CalculatedDoubleTimeSeries(String name, String dataType, boolean cache, Flight flight) {
-        super(name, dataType, cache);
+    public CalculatedDoubleTimeSeries(Connection connection, String name, String dataType, boolean cache, Flight flight) throws SQLException {
+        super(connection, name, dataType, cache);
         this.flight = flight;
     }
 

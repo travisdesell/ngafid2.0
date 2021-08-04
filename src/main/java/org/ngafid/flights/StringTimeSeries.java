@@ -52,7 +52,7 @@ public class StringTimeSeries {
         this.name = name;
         this.nameId = SeriesNames.getStringNameId(connection, name);
         this.dataType = dataType;
-        this.typeId = TypeName.getId(connection, dataType);
+        this.typeId = TypeNames.getId(connection, dataType);
         this.timeSeries = timeSeries;
 
         validCount = 0;
@@ -75,7 +75,7 @@ public class StringTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            StringTimeSeries sts = new StringTimeSeries(resultSet);
+            StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
             //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
             resultSet.close();
             query.close();
@@ -88,7 +88,7 @@ public class StringTimeSeries {
     }
 
     // Added to get results for StringTimeSeries
-    public StringTimeSeries(ResultSet resultSet) throws SQLException {
+    public StringTimeSeries(Connection connection, ResultSet resultSet) throws SQLException {
 
         this.nameId = resultSet.getInt(1);
         this.name = SeriesNames.getStringName(connection, this.nameId);

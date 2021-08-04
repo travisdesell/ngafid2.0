@@ -69,7 +69,7 @@ public class FixCHT1Divergence {
 
                         try {
                             String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
-                            flight.calculateDivergence(chtNames, "E1 CHT Divergence", "deg F");
+                            flight.calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                             DoubleTimeSeries chtDivergence = flight.getDoubleTimeSeries("E1 CHT Divergence");
                             chtDivergence.updateDatabase(connection, flightId);
                             System.out.println("Calculated CHT!");
