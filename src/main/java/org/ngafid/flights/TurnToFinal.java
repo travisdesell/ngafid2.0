@@ -1,55 +1,40 @@
 package org.ngafid.flights;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonSyntaxException;
 import com.google.gson.JsonElement;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
 import org.ngafid.common.Compression;
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Pair;
 
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.io.Serializable;
-import java.nio.ByteBuffer;
 import java.sql.*;
 import java.util.*;
-import java.util.Collections.*;
-import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import java.util.zip.Inflater;
 
 import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
 
 public class TurnToFinal implements Serializable {
+    //                                             NGAFIDTTF0000L
+    private static final long serialVersionUID = 0x46AF1D77F0000L;
+
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
-    private static final int TURN_TO_FINAL_VERSION = 0;
-
     private static final double FEET_PER_MILE = 5280;
-
-    // The optimal descent is 300 feet vertically down for every mile traveled horizontally
-    private static final double OPTIMAL_DESCENT_PER_MILE = 300;
 
     // 0.1 miles of tolerance is allowed
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
-    private static final Map<String, Double> AIRFRAME_TO_OPTIMAL_DESCENT_SPEED =
-            Map.of("Cessna 172S", 61.0,
-                    "PA-28-181", 66.0);
-
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll, velocity, stallProbability, locProbability;
+    private final double[] latitude, longitude, altitude, roll, stallProbability, locProbability, altMSL;
     private double runwayAltitude;
     private double maxRoll;
     private final Runway runway;
     private final String flightId;
-    private final String airframe;
 
     public final String airportIataCode;
     public final String flightStartDate;
@@ -58,13 +43,9 @@ public class TurnToFinal implements Serializable {
 
     private ArrayList<Integer> locExceedences;
     private ArrayList<Integer> centerLineExceedences;
-    private ArrayList<Double> selfDefinedGlideAngle;
-    private ArrayList<Integer> optimalDescentSlopeWarnings;
-    private ArrayList<Integer> optimalDescentSlopeExceedences;
-    private ArrayList<Integer> optimalDescentSpeedExceedences;
+    private ArrayList<Double>  selfDefinedGlidPathDeviations;
 
-    // TODO: Think about using ArrayList<Double> to avoid the conversion steps
-    // TODO: Consider saving the whole flight object here
+    private double selfDefinedGlideAngle;
 
     /**
      * The timeseries arrays passed here should start from the 400 ft above the runway point, and end when the aircraft
@@ -74,17 +55,16 @@ public class TurnToFinal implements Serializable {
      * @param lat
      * @param lon
      */
-    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate, double runwayAltitude, double[] altitude, double[] roll,
-                       double[] lat, double[] lon, double[] velocity, double[] stallProbability, double[] locProbability) {
+    public TurnToFinal(String flightId, String airframe, Runway runway, String airportIataCode, String flightStartDate, double runwayAltitude, double[] altitude, double[] altMSL, double[] roll,
+                       double[] lat, double[] lon, double[] stallProbability, double[] locProbability) {
         this.flightId = flightId;
         this.runway = runway;
         this.runwayAltitude = runwayAltitude;
         this.latitude = lat;
         this.longitude = lon;
         this.altitude = altitude;
+        this.altMSL = altMSL;
         this.roll = roll;
-        this.airframe = airframe;
-        this.velocity = velocity;
         this.airportIataCode = airportIataCode;
         this.flightStartDate = flightStartDate;
         this.stallProbability = stallProbability;
@@ -109,21 +89,11 @@ public class TurnToFinal implements Serializable {
 
         // This is the angle from the ground between the aircrafts position at 400ft and the touchdown point
         // There should be one entry here per itinerary object
-        this.selfDefinedGlideAngle = new ArrayList<>();
-        calculateSelfDefinedGlideAngle();
+        this.selfDefinedGlideAngle = Double.NaN;
 
-        // "Optimal descent exceedence"
-        // The optimal descent ratio is 300ft descent for every 1 nautical mile.
-        // The optimal line can be easily constructed starting from the 400ft above the runway point,
-        // and we look for deviations > 5 ft and > 10 ft
-        this.optimalDescentSlopeExceedences = new ArrayList<>();
-        this.optimalDescentSlopeWarnings = new ArrayList<>();
-        this.optimalDescentSpeedExceedences = new ArrayList<>();
-        calculateOptimalDescentExceedences();
+        calculateSelfDefindGlidePath();
 
         this.maxRoll = Arrays.stream(roll).map(Math::abs).max().getAsDouble();
-
-        // TODO: write methods to populate these lists
     }
 
     private double[] getExtendedRunwayCenterLine() {
@@ -163,108 +133,53 @@ public class TurnToFinal implements Serializable {
         }
     }
 
-    private void calculateSelfDefinedGlideAngle() {
-        //     *
-        //     | \
-        //     |   \  c = sqrt(a*a + b*b);
-        //  a  |     \
-        //     *_______*
-        //         b
+    // Calculate self defined glide path + glide path angle
+    private void calculateSelfDefindGlidePath() {
+        //  
+        //   A
+        //   *
+        //   |\
+        //   | \
+        //   |  \
+        //   |   \
+        //   |    \
+        //   |     \ 
+        //   |      *  D
+        //   |      |\
+        //   |      | \
+        //   |      |  \
+        //   |      |   \
+        //   |__    |    \
+        //   |##|   |     \ 
+        //   *------*------*
+        //   B      E       C
         //
-        // Angle bc is the self defined glide angle if:
-        //   - vertex ac is the location of the plane
-        //   - a is the vertical distance of the plane to the runway (plane height - runway height)
-        //   - b is the horizontal distance of the plane to the runway
         //
-        // 1. We must find the length of side c using the pythagorean theorem
-        // 2. We the use arcsin to find the angle:
-        //              sin(angle_bc) = b / c
-        //      thus:   arcsin(b / c) = angle_bc
+        // In this diagram, A is the altitude of the plane ~ 300 feet, projected back a bit to allow for calculation of the glide path
+        // and deviations from it. B + C is the altitude of the aircraft when it / is closest to the runway. B can be considered the origin,
+        // and the line BC is the distance between the lat / lon coordinates at the beginning of the turn to final.
 
+        final int last = altMSL.length - 1;
+        final double altA = altMSL[0];
+        final double altC = altMSL[last];
+        final double altB = altC;
 
+        // This is all in terms of feet
+        final double BC = Airports.calculateDistanceInFeet(latitude[0], longitude[0], latitude[last], longitude[last]);
+        final double AB = altA - altB;
+        selfDefinedGlideAngle = Math.tanh(AB / BC);
 
-        for (int i = 0; i < this.altitude.length - 2; i++) {
-            double a = this.altitude[i] - runwayAltitude;
-
-            double startLat = this.latitude[i];
-            double startLon = this.longitude[i];
-            int lastIndex = this.latitude.length - 1;
-            double touchdownLat = this.latitude[lastIndex];
-            double touchdownLon = this.longitude[lastIndex];
-            double b = Airports.calculateDistanceInFeet(startLat, startLon, touchdownLat, touchdownLon);
-
-            double c = Math.sqrt(a * a + b * b);
-
-            double angle = Math.acos(b / c);
-            if (Double.isNaN(angle))
-                LOG.info("Calculated NAN self defined glide angle");
-            angle = Math.toDegrees(angle);
-            this.selfDefinedGlideAngle.add(angle);
+        // Feet of descent per foot traveled towards the runway.
+        final double expDescent = AB / BC;
+        for (int i = 0; i < altMSL.length; i++) {
+            double lat = latitude[i];
+            double lon = longitude[i];
+            double EC = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
+            double expAlt = altA - expDescent * EC;
+            double actualAlt = altMSL[i];
+            double deviation = expAlt - actualAlt;
+            selfDefinedGlidPathDeviations.add(deviation);
         }
-    }
-
-    private void calculateOptimalDescentExceedences() {
-        // 1. Figure out what the slope should be for the optimal descent (i.e. 300ft / 1 mile)
-        // 2. Use this slope to figure out what the altitude should be at any point in time
-        // 3. If the planes altitude is > 5 ft different than the optimal altitude,
-        //      then add a warning
-        // 4. If the planes altitude > 10ft different than the optimal altitude,
-        //      then add an error
-        // So, our list will contain valid and invalid indices, so we must check them when we want to use them or there
-        // will be some index out of bounds stuff.
-        //
-        // The aircraft are supposed strive to have a constant speed while descending, so we also check to ensure they are
-        // close to the optimal. We will use a percentage threshold: if your speed is X% different, then you we'll
-        // consider it an exceedence. This X value will be a double between 0 and 1, but the appropriate value is yet
-        // to be decided
-
-        // TODO: Figure out if the assumptions made in this method are acceptable:
-        //      1. The aircraft is may not be traveling stright towards the runway when it hits the
-        //          400 ft mark. This means the "optimal slope" may not be correct.
-
-        int start_idx = 0;
-        int end_index = this.altitude.length - 1;
-
-        // How far the aircraft is from the touchdown point horizontally, in feet
-        double distance = Airports.calculateDistanceInFeet(
-                latitude[start_idx], longitude[start_idx], latitude[end_index], longitude[end_index]);
-        double altitude = this.altitude[start_idx];
-
-        // this.selfDefinedGlideAngle = Math.atan(altitude / distance);
-
-        // How the aircraft should descend optimally
-        // 300 ft / 1 mile = x feet / distance miles
-        // (300 ft / 1 mile) * distance miles = x feet
-        double optimal_slope = OPTIMAL_DESCENT_PER_MILE;
-
-        for (int i = 1; i < this.altitude.length; i++) {
-            // This is probably not a cheap calculation
-            double next_distance = Airports.calculateDistanceInFeet(
-                    latitude[i], longitude[i], latitude[end_index], longitude[end_index]);
-
-            // This is the distance traveled directly towards the touchdown point.
-            // We may want to change this to the absolute amount of distance traveled
-            double dist_horizontally_traveled_ft = distance - next_distance;
-            double dist_horizontally_traveled_miles = dist_horizontally_traveled_ft / FEET_PER_MILE;
-            double proper_descent_amount = optimal_slope * dist_horizontally_traveled_miles;
-            double actual_altitude = this.altitude[i];
-
-            // The difference between actual altitude and the expected altitude
-            double delta = Math.abs(actual_altitude - (altitude - proper_descent_amount));
-
-            if (delta > 10) {
-                this.optimalDescentSlopeExceedences.add(i);
-            } else if (delta > 5) {
-                this.optimalDescentSlopeWarnings.add(i);
-            }
-
-            double velocity =
-
-            // Carry our calculated optimal altitude.
-            altitude = altitude - proper_descent_amount;
-            distance = next_distance;
-        }
-
     }
 
     public double[] getPosition(int timestep) {
@@ -283,10 +198,9 @@ public class TurnToFinal implements Serializable {
         Blob blob = new SerialBlob(data);
 
         PreparedStatement preparedStatement =
-                connection.prepareStatement("INSERT INTO turn_to_final (flight_id, size, version, data) VALUES (?, ?, ?, ?)");
+                connection.prepareStatement("INSERT INTO turn_to_final (flight_id, version, data) VALUES (?, ?, ?)");
         preparedStatement.setInt(1, flight_id);
-        preparedStatement.setInt(2, (int) data.length);
-        preparedStatement.setInt(3, TURN_TO_FINAL_VERSION);
+        preparedStatement.setLong(3, TurnToFinal.serialVersionUID);
         preparedStatement.setBlob(4, blob);
 
         preparedStatement.execute();
@@ -302,23 +216,19 @@ public class TurnToFinal implements Serializable {
 
         ResultSet resultSet = query.executeQuery();
         if (!resultSet.next()) {
-            //TODO: should probably throw an exception
-            LOG.info("TTF CACHE ERROR");
+            LOG.info("Flight not found in TurnToFinal cache");
             resultSet.close();
             query.close();
             return null;
         }
 
-
-        int fid = resultSet.getInt(1);
-        int size = resultSet.getInt(2);
-        int version = resultSet.getInt(3);
-        Blob values = resultSet.getBlob(4);
+        int version = resultSet.getInt(2);
+        Blob values = resultSet.getBlob(3);
 
         query.close();
         resultSet.close();
 
-        if (version < TURN_TO_FINAL_VERSION) {
+        if (version != TurnToFinal.serialVersionUID) {
             LOG.info("TTF VERSION OUTDATED");
             PreparedStatement deleteQuery = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
             query.setInt(1, flight.getId());
@@ -333,13 +243,29 @@ public class TurnToFinal implements Serializable {
 
         LOG.info("FOUND IN TTF CACHE: " + o.toString());
 
-        return (ArrayList<TurnToFinal>) o;
+        if (o instanceof ArrayList<?>) {
+            ArrayList<?> a = (ArrayList<?>) o;
+            ArrayList<TurnToFinal> ttfs = new ArrayList<TurnToFinal>(a.size());
+            for (Object i : a) {
+                if (i instanceof TurnToFinal) {
+                    ttfs.add((TurnToFinal) i);
+                } else {
+                    LOG.severe("Found incorrect element object in TurnToFinal cache.");
+                    return null;
+                }
+            }
+            return ttfs;
+        } else {
+            LOG.severe("Found incorrect object in TurnToFinal cache.");
+            return null;
+        }
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
+        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
         DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
         DoubleTimeSeries stallProbability = flight.getDoubleTimeSeries(PARAM_STALL_PROBABILITY);
@@ -399,7 +325,7 @@ public class TurnToFinal implements Serializable {
                     break;
                 }
 
-                if (altitude[from] > 400) // - runwayAltitude > 400)
+                if (altitude[from] > 300) // - runwayAltitude > 400)
                     break;
 
                 from -= 1;
@@ -431,10 +357,10 @@ public class TurnToFinal implements Serializable {
             TurnToFinal ttf = new TurnToFinal(Integer.toString(flightId),
                     flight.getAirframeType(), runway, airport.iataCode, flight.getStartDateTime(), runwayAltitude,
                     altTimeSeries.sliceCopy(from, to),
+                    altMSLTimeSeries.sliceCopy(from, to),
                     rollTimeSeries.sliceCopy(from, to),
                     latTimeSeries.sliceCopy(from, to),
                     lonTimeSeries.sliceCopy(from, to),
-                    velocityTimeSeries.sliceCopy(from, to),
                     stallProbabilityArray, locProbabilityArray);
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
@@ -481,8 +407,6 @@ public class TurnToFinal implements Serializable {
                     Map.entry(PARAM_JSON_LOSS_OF_CONTROL_EXC, this.locExceedences),
                     Map.entry(PARAM_JSON_CENTER_LINE_EXC, this.centerLineExceedences),
                     Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
-                    Map.entry(PARAM_JSON_OPTIMAL_DESCENT_WARN, this.optimalDescentSlopeWarnings),
-                    Map.entry(PARAM_JSON_OPTIMAL_DESCENT_EXC, this.optimalDescentSlopeExceedences),
                     Map.entry(PARAM_JSON_LATITUDE, this.latitude),
                     Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
                     Map.entry(PARAM_ALTITUDE_ABOVE_SEA_LEVEL, this.altitude),
