@@ -103,3 +103,8 @@ function fix_nulls($type) {
 //query_ngafid_db("ALTER TABLE double_series ADD CONSTRAINT `double_series_name_ibfk_1` FOREIGN KEY(`name_id`) REFERENCES double_series_names(`id`), ADD CONSTRAINT `double_series_type_ibfk_1` FOREIGN KEY(`data_type_id`) REFERENCES data_type_names(`id`)");
 //query_ngafid_db("ALTER TABLE double_series DROP COLUMN `name`, DROP COLUMN `data_type`, LOCK=SHARED");
 
+
+
+//query_ngafid_db("ALTER TABLE string_series MODIFY name_id int(11) NOT NULL, MODIFY data_type_id int(11) NOT NULL");
+query_ngafid_db("ALTER TABLE double_series MODIFY name_id int(11) NOT NULL, MODIFY data_type_id int(11) NOT NULL");
+
