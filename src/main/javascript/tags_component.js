@@ -60,15 +60,15 @@ class Tags extends React.Component {
      * called everytime props are updated
      * @param oldProps the old props before the update
      */
-    componentDidUpdate(oldProps) {
-        console.log("props updated");
-        const newProps = this.props;
-          if (oldProps.tags !== newProps.tags) {
-            this.state.tags = this.props.tags;
-            this.state.addFormActive = false; //close the add form to indicate the tag has been edited or no longer exists
-            this.setState(this.state);
-          }
-    }
+    //componentDidUpdate(oldProps) {
+        //console.log("props updated");
+        //const newProps = this.props;
+          //if (oldProps.tags !== newProps.tags) {
+            //this.state.tags = this.props.tags;
+            //this.state.addFormActive = false; //close the add form to indicate the tag has been edited or no longer exists
+            //this.setState(this.state);
+          //}
+    //}
 
     /**
      * Handles the event for which the add button is pressed
@@ -76,117 +76,14 @@ class Tags extends React.Component {
     addClicked() {
         this.state.addActive = !this.state.addActive;
         this.state.infoActive = !this.state.infoActive;
+
         if (this.state.addFormActive) {
             this.state.addFormActive = false;
         }
-        this.setState(this.state);
-        this.getUnassociatedTags();
-    }
 
-    /**
-     * Uses a ajax-json call to create a new tag in the server database
-     */
-    addTag() {
-        let tname = $("#comName").val(); 
-        let tdescription = $("#description").val(); 
-        let tcolor = $("#color").val(); 
-
-        if (invalidString(tname) || invalidString(tdescription)) {
-            errorModal.show("Error creating tag!",
-                            "Please ensure the name and description fields are correctly filled out!");
-            return;
-        }
-
-        var submissionData = {
-            name : tname,
-            description : tdescription,
-            color : tcolor,
-            id : this.state.flightId
-        };
-        console.log("Creating a new tag for flight #"+this.state.flightId);
-
-        let thisFlight = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/create_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                if (response != "ALREADY_EXISTS") {
-                    if (thisFlight.state.tags != null) {
-                        thisFlight.state.tags.push(response);
-                    } else {
-                        thisFlight.state.tags = new Array(response);
-                    }
-                    thisFlight.state.addFormActive = false;
-                    thisFlight.setState(thisFlight.state);
-                    thisFlight.updateParent(thisFlight.state.tags);
-                } else {
-                    errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
-                }
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
-    }
-
-    /**
-     * Uses a ajax-json call to get the tags that are unassoicated with the current flight 
-     */
-    getUnassociatedTags() {
-        console.log("getting unassociated tags!")
-
-        var submissionData = {
-            id : this.state.flightId
-        };
-
-        let thisFlight = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/get_unassociated_tags',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                thisFlight.state.unassociatedTags = response;
-                thisFlight.setState(thisFlight.state);
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
-    }
-
-    /**
-     * Handles when the user presses the delete button, and prompts them with @module confirmModal
-     */
-    deleteTag() {
-        if (this.state.activeTag != null) {
-            console.log("delete tag invoked!");
-            confirmModal.show("Confirm Delete Tag: '" + this.state.activeTag.name + "'",
-                            "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
-                            () => {this.confirmDelete()}
-                            );
-        } else {
-            errorModal.show("Please select a tag to delete first!",
-                            "Cannot delete any tags");
-        }
-
-    }
-
-
-    /**
-     * Handles when the user presses the clear all tags button, and prompts them with @module confirmModal
-     */
-    clearTags() {
-        confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #"+this.state.flightId+"?",
-                          () => {this.removeTag(-2, false)});
+        this.setState({
+            unassociatedTags : this.props.getUnassociatedTags(this.state.flightId)
+        });
     }
 
     /**
@@ -208,7 +105,7 @@ class Tags extends React.Component {
      * @param tag the tag to edit
      */
     editTag(tag) {
-        console.log("Editing tag: "+tag.hashId);
+        console.log("Editing tag: " + tag.hashId);
         if (this.state.activeTag == null || this.state.activeTag != tag) {
             this.state.editing = true;
             this.state.addFormActive = true;
@@ -220,49 +117,8 @@ class Tags extends React.Component {
 
         this.state.activeTag = tag;
         this.state.editedTag = cloneDeep(tag);
+
         this.setState(this.state);
-    }
-
-    /**
-     * Calls the server using ajax-json to notify it of the new tag change
-     */
-    submitEdit() {
-        console.log("submitting edit for tag: "+this.state.activeTag.hashId);
-
-        var oldTag = this.state.activeTag;
-        var submissionData = {
-            tag_id : this.state.activeTag.hashId,
-            name : this.state.editedTag.name,
-            description : this.state.editedTag.description,
-            color : this.state.editedTag.color
-        };
-
-        let thisFlight = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/edit_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                if (response != "NOCHANGE") {
-                    console.log("tag was edited!");
-                    thisFlight.state.activeTag = oldTag;
-                    let index = thisFlight.state.tags.indexOf(oldTag);
-                    thisFlight.state.tags = response.data[thisFlight.state.flightIndex].tags.value;
-                    console.log(response.data[thisFlight.state.flightIndex]);
-                    thisFlight.updateFlights(response.data);
-                } else {
-                    thisFlight.showNoEditError();
-                }
-                thisFlight.setState(thisFlight.state);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-            },
-            async: true
-        });
     }
 
     /**
@@ -305,117 +161,20 @@ class Tags extends React.Component {
     }
 
     /**
-     * removes a tag from a flight, either permanent or just from one flight
-     * @param id the tagid of the tag being removed
-     * @param perm a bool representing whether or not the removal is permanent
-     */
-    removeTag(id, perm) {
-        console.log("un-associating tag #"+id+" with flight #"+this.state.flightId);
-
-        if (id==null || id == -1) {
-            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
-            return;
-        }
-
-        let allTags = (id == -2);
-
-        var submissionData = {
-            flight_id : this.state.flightId,
-            tag_id : id,
-            permanent : perm,
-            all : allTags
-        };
-        
-        this.state.activeTag = null;
-
-        let thisFlight = this;
-        console.log("calling deletion ajax");
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/remove_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                if (perm) {
-                    console.log("permanent deletion, refreshing all flights with: ");
-                    console.log(response);
-                    console.log(response.data[thisFlight.state.flightIndex]);
-                    let allFlights = response.data;
-                    thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
-                    thisFlight.state.addFormActive = false;
-                    thisFlight.updateFlights(allFlights);
-                } else {
-                    thisFlight.state.tags = response;
-                    thisFlight.setState(thisFlight.state);
-                    thisFlight.getUnassociatedTags();
-                    thisFlight.state.addFormActive = false;
-                    thisFlight.state.addActive = false;
-                    thisFlight.updateParent(thisFlight.state.tags);
-                }
-                thisFlight.setState(thisFlight.state);
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
-    }
-
-    /**
-     * Associates a tag with this flight
-     * @param id the tag id to associate
-     */
-    associateTag(id) {
-        console.log("associating tag #"+id+" with flight #"+this.state.flightId);
-
-        var submissionData = {
-            id : this.state.flightId,
-            tag_id : id
-        };
-
-        let thisFlight = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/associate_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                if (thisFlight.state.tags != null) {
-                    thisFlight.state.tags.push(response);
-                } else {
-                    thisFlight.state.tags = new Array(response);
-                    console.log(thisFlight.state.tags);
-                }
-                thisFlight.getUnassociatedTags();
-                thisFlight.updateParent(thisFlight.state.tags);
-                thisFlight.setState(thisFlight.state);
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
-    }
-
-    /**
      * Updates the parent when the flights on the current page have changed
      */
-    updateFlights(flights) {
-        console.log("sending new flights to parents");
-        console.log(flights);
-        this.state.parent.updateFlights(flights);
-    }
+    //updateFlights(flights) {
+        //console.log("sending new flights to parents");
+        //console.log(flights);
+        //this.state.parent.updateFlights(flights);
+    //}
 
     /**
      * Updates the parent of changes ONLY made to this flights tags
      */
-    updateParent(tags) {
-        this.state.parent.invokeUpdate(tags);
-    }
+    //updateParent(tags) {
+        //this.state.parent.invokeUpdate(tags);
+    //}
 
     /**
      * sets the state value editedTag which is used to make sure that the user has made an edit, before
@@ -458,7 +217,7 @@ class Tags extends React.Component {
             height : "38",
         };
 
-        let tags = this.state.tags;
+        let tags = this.props.flight.tags;
         let unassociatedTags = this.state.unassociatedTags;
         let hasOtherTags = (unassociatedTags != null);
 
@@ -467,7 +226,7 @@ class Tags extends React.Component {
             activeId = activeTag.hashId;
         }
 
-        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = (() => this.addTag()), tagStat = "";
+        let defName = "", defDescript = "", defColor=Colors.randomValue(), defAddAction = {}, tagStat = "";
         if (tags == null || tags.length == 0) {
             tagStat = (<div><b className={"p-2"} style={{marginBottom:"2"}}>No tags yet!</b>
                 <button className={buttonClasses} style={styleButtonSq} data-toggle="button" title="Add a tag to this flight" onClick={() => this.addClicked()}>Add a tag</button>
@@ -502,17 +261,18 @@ class Tags extends React.Component {
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
             defColor = this.state.editedTag.color;
-            defAddAction = (
-                (() => this.submitEdit())
-            );
+            defAddAction = () => {this.props.editTag(this.state.editedTag, this.state.activeTag)} ;
         }
 
         if (this.state.adding) {
             defName = this.state.editedTag.name;
             defDescript = this.state.editedTag.description;
             defColor = this.state.editedTag.color;
-            defAddAction = (
-                (() => this.addTag())
+            defAddAction = () => this.props.addTag(
+                this.state.flightId,
+                $("#comName").val(), 
+                $("#description").val(), 
+                $("#color").val() 
             );
         }
 
@@ -544,7 +304,7 @@ class Tags extends React.Component {
                                 fontSize : "110%"
                             }
                             return (
-                                    <Dropdown.Item key={index} as="button" onSelect={() => this.associateTag(tag.hashId)}>
+                                    <Dropdown.Item key={index} as="button" onSelect={() => this.props.associateTag(tag.hashId, this.state.flightId)}>
                                         <div className="row">
                                             <div className="col-xs-1 text-center">
                                                 <span className="badge badge-pill badge-primary" style={style}>
