@@ -39,9 +39,8 @@ export default class TimeHeader extends React.Component {
             );
         }
 
-        let all_months = ...;
         let airframe = null;
-        if ('airframe' in this.props) 
+        if ('airframe' in this.props) {
             airframe = (
                 <div className="input-group">
                     <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -49,8 +48,8 @@ export default class TimeHeader extends React.Component {
                     </button>
                 </div>
             );
-        else
-            airframe = ( );
+        }
+
         return (
             <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
                 <div className="col-auto">
@@ -67,11 +66,23 @@ export default class TimeHeader extends React.Component {
                                                 <option key={index} value={year}>{year}</option>
                                             );
                                         else
-                                            return ( );
+                                            return null;
                                     })
                                 }
                             </select>
                             <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content"}}>
+                                {
+                                    this.state.months.map((month, index) => {
+                                        return (
+                                            <option key={index} value={index+1}>{month}</option>
+                                        );
+                                    })
+                                }
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
                 { exportButton }
 
                 <div className="col-auto">
@@ -86,7 +97,7 @@ export default class TimeHeader extends React.Component {
                                                 <option key={index} value={year}>{year}</option>
                                             );
                                         else
-                                            return ( );
+                                            return null;
                                     })
                                 }
                             </select>
