@@ -292,7 +292,7 @@ $query = "CREATE TABLE `double_series_names` (
     `name` VARCHAR(64) NOT NULL,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
+    UNIQUE KEY(`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -302,7 +302,7 @@ $query = "CREATE TABLE `string_series_names` (
     `name` VARCHAR(64) NOT NULL,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
+    UNIQUE KEY(`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -312,7 +312,7 @@ $query = "CREATE TABLE `data_type_names` (
     `name` VARCHAR(64) NOT NULL,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
+    UNIQUE KEY(`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);

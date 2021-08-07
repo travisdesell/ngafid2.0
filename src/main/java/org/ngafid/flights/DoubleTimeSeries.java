@@ -187,6 +187,7 @@ public class DoubleTimeSeries {
             String name = resultSet.getString(1);
             names.add(name);
         }
+
         resultSet.close();
         query.close();
 

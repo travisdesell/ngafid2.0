@@ -102,7 +102,6 @@ if ($update_user_preferences_metrics) {
 }
 
 
-
 //need to update this to be able to differentiate between flights by type (e.g., fixed wing, rotorcraft, uas)
 /*
 $query = "CREATE TABLE `airframe_types` (
