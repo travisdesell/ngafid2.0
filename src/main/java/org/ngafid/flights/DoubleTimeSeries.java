@@ -25,7 +25,7 @@ import javax.sql.rowset.serial.SerialBlob;
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
-    private static final String DS_COLUMNS = "ds.id, ds.flight_id, dsn.name, ds.data_type, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
+    private static final String DS_COLUMNS = "ds.id, ds.flight_id, dsn.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
     private boolean cache = true;
     private int id = -1;
@@ -353,7 +353,7 @@ public class DoubleTimeSeries {
         if (!this.cache) return;
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
             preparedStatement.setInt(2, nameId);

@@ -4,6 +4,7 @@ package org.ngafid.flights;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.HashMap;
@@ -73,11 +74,10 @@ public class TypeNames {
                 PreparedStatement insertQuery = connection.prepareStatement(insertQueryString, Statement.RETURN_GENERATED_KEYS);
                 insertQuery.setString(1, name);
 
-                query.executeUpdate();
-                resultSet.close();
+                insertQuery.executeUpdate();
 
-                resultSet = query.getGeneratedKeys();
-                resultSet.next();
+                ResultSet insertResultSet = insertQuery.getGeneratedKeys();
+                insertResultSet.next();
 
                 id = resultSet.getInt(1);
 
@@ -85,11 +85,15 @@ public class TypeNames {
                 //to *both* hashmaps to save other lookups
                 idToName.put(id, name);
                 nameToId.put(name, id);
+
+                insertResultSet.close();
+                insertQuery.close();
             }
+
             resultSet.close();
             query.close();
         }
 
-        return name;
+        return id;
     }
 }
