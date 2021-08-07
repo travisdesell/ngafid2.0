@@ -79,7 +79,7 @@ public class TypeNames {
                 ResultSet insertResultSet = insertQuery.getGeneratedKeys();
                 insertResultSet.next();
 
-                id = resultSet.getInt(1);
+                id = insertResultSet.getInt(1);
 
                 //now that it was added to the database, add the name and id
                 //to *both* hashmaps to save other lookups
