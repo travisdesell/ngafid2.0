@@ -16,6 +16,14 @@ public class SeriesNames {
     private static HashMap<Integer, String> stringIdToName = new HashMap<Integer, String>();
     private static HashMap<String, Integer> stringNameToId = new HashMap<String, Integer>();
 
+    /**
+     * Get a column name for a string series given a particular id
+     *
+     * @param connection is the connection to the database
+     * @param id is the id of the string series column
+     *
+     * @throws SQLException if there is an error with the database or query
+     */
     public static String getStringName(Connection connection, int id) throws SQLException {
         String name = stringIdToName.get(id);
 
@@ -48,6 +56,14 @@ public class SeriesNames {
         return name;
     }
 
+    /**
+     * Get a name for a string series given a particular id
+     *
+     * @param connection is the connection to the database
+     * @param name is the actual column name
+     *
+     * @throws SQLException if there is an error with the database or query
+     */
     public static int getStringNameId(Connection connection, String name) throws SQLException {
         Integer id = stringNameToId.get(name);
 
@@ -98,6 +114,14 @@ public class SeriesNames {
         return id;
     }
 
+    /**
+     * Get a column name for a double series given a particular id
+     *
+     * @param connection is the connection to the database
+     * @param id is the id of the double series column
+     *
+     * @throws SQLException if there is an error with the database or query
+     */
     public static String getDoubleName(Connection connection, int id) throws SQLException {
         String name = doubleIdToName.get(id);
 
@@ -130,6 +154,14 @@ public class SeriesNames {
         return name;
     }
 
+    /**
+     * Get a name for a double series given a particular id
+     *
+     * @param connection is the connection to the database
+     * @param name is the actual column name
+     *
+     * @throws SQLException if there is an error with the database or query
+     */
     public static int getDoubleNameId(Connection connection, String name) throws SQLException {
         Integer id = doubleNameToId.get(name);
 

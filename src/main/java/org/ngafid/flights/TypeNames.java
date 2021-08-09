@@ -12,9 +12,17 @@ import java.util.HashMap;
 
 
 public class TypeNames {
+    //keep HashMaps of the names to ids and ids to names so we can reduce
+    //database access and speed things up
     private static HashMap<Integer, String> idToName = new HashMap<Integer, String>();
     private static HashMap<String, Integer> nameToId = new HashMap<String, Integer>();
 
+    /**
+     * Get a type name (for either a double or string series) given a particular id
+     *
+     * @param connection is the connection to the database
+     * @param id is the id of the type name
+     */
     public static String getName(Connection connection, int id) throws SQLException {
         String name = idToName.get(id);
 
@@ -47,6 +55,12 @@ public class TypeNames {
         return name;
     }
 
+    /**
+     * Get a type id (for either a double or string series) given a particular name
+     *
+     * @param connection is the connection to the database
+     * @param name is the actual type name
+     */
     public static int getId(Connection connection, String name) throws SQLException {
         Integer id = nameToId.get(name);
 
