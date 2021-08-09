@@ -25,7 +25,7 @@ import javax.sql.rowset.serial.SerialBlob;
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
-    private static final String DS_COLUMNS = "ds.id, ds.flight_id, dsn.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
+    private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
     private boolean cache = true;
     private int id = -1;
@@ -153,7 +153,7 @@ public class DoubleTimeSeries {
     }
 
     public static Pair<Double,Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
-        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
+        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dss ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
         query.setString(2, name);
