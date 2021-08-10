@@ -388,19 +388,40 @@ public class EventStatistics {
     }
 
     /**
+     * Gets the number of exceedences for the entire NGAFID between two dates. If either date is null it will
+     * select greater than or less than the date specified. If both are null it gets the total amount
+     * of exceedences.
+     *
+     * @param connection is the connection to the database
+     * @param startTime is the earliest time to start counting events (it will count from the beginning of time if it is null)
+     * @param endTime is the latest time to count events (it will count until the current date if it is null)
+     *
+     * @return the number of events between the two given times
+     */
+    public static int getEventCount(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
+        return getEventCount(connection, 0, startTime, endTime);
+    }
+
+
+    /**
      * Gets the number of exceedences for a given fleet between two dates. If either is null it will
      * select greater than or less than the date specified. If both are null it gets the total amount
      * of exceedences.
      *
      * @param connection is the connection to the database
-     * @param fleetId is the id of the fleet
+     * @param fleetId is the id of the fleet, if fleetId <= 0 it will return for the entire NGAFID
      * @param startTime is the earliest time to start counting events (it will count from the beginning of time if it is null)
      * @param endTime is the latest time to count events (it will count until the current date if it is null)
      *
      * @return the number of events between the two given times
      */
     public static int getEventCount(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
-        String query = "SELECT count(events.id) FROM events, flights WHERE flights.fleet_id = ? AND events.flight_id = flights.id";
+        String query;
+        if (fleetId > 0) {
+            query = "SELECT count(events.id) FROM events, flights WHERE flights.fleet_id = ? AND events.flight_id = flights.id";
+        } else {
+            query = "SELECT count(events.id) FROM events, flights WHERE events.flight_id = flights.id";
+        }
 
         if (startTime != null) {
             query += " AND events.end_time >= ?";
@@ -411,11 +432,14 @@ public class EventStatistics {
         }
 
         PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
+        int current = 1;
+        if (fleetId > 0) {
+            preparedStatement.setInt(1, fleetId);
+            current = 2;
+        }
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
-        int current = 2;
         if (startTime != null) {
             preparedStatement.setString(current, startTime.format(formatter));
             current++;
@@ -684,11 +708,125 @@ public class EventStatistics {
     }
 
     /**
+     * Gets the number of exceedences for each type and airframe for the entire NGAFID. It will be organized into a data structure
+     * so plotly can display it on the webpage
+     *
+     * @param connection is the connection to the database
+     * @param startTime is the earliest time to start counting events (it will count from the beginning of time if it is null)
+     * @param endTime is the latest time to count events (it will count until the current date if it is null)
+     */
+    public static HashMap<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
+        //String query = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
+        String query = "SELECT id, airframe FROM airframes ORDER BY airframe";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        //preparedStatement.setInt(1, fleetId);
+
+        ArrayList<Integer> airframeNameIds = new ArrayList<Integer>();
+        ArrayList<String> airframeNames = new ArrayList<String>();
+        //airframeNameIds.add(0);
+
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        //get the event statistics for each airframe
+        while (resultSet.next()) {
+            int airframeNameId = resultSet.getInt(1);
+            String airframeName = resultSet.getString(2);
+            airframeNameIds.add(airframeNameId);
+            airframeNames.add(airframeName);
+        }
+
+        resultSet.close();
+        preparedStatement.close();
+
+        HashMap<String, EventCounts> eventCounts = new HashMap<String, EventCounts>();
+
+        for (int i = 0; i < airframeNameIds.size(); i++) {
+            eventCounts.put(airframeNames.get(i), new EventCounts(airframeNames.get(i)));
+        }
+
+        for (int i = 0; i < airframeNameIds.size(); i++) {
+            int airframeNameId = airframeNameIds.get(i);
+            query = "SELECT id, name FROM event_definitions WHERE (airframe_id = ? OR airframe_id = 0) ORDER BY name";
+
+            preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setInt(1, airframeNameId);
+
+            LOG.info(preparedStatement.toString());
+
+            resultSet = preparedStatement.executeQuery();
+
+            EventCounts eventCount = eventCounts.get(airframeNames.get(i));
+
+            while (resultSet.next()) {
+                int definitionId = resultSet.getInt(1);
+                String eventName = resultSet.getString(2);
+
+                //LOG.info("initialzing event counts for id: " + definitionId + " and name: '" + eventName + "'");
+
+                eventCount.initializeEvent(eventName);
+
+                query = "SELECT flights_with_event, total_flights, total_events FROM event_statistics WHERE event_statistics.event_definition_id = ? AND airframe_id = ?";
+
+                if (startTime != null) {
+                    query += " AND month_first_day >= ?";
+                }
+
+                if (endTime != null) {
+                    query += " AND month_first_day <= ?";
+                }
+
+                PreparedStatement statStatement = connection.prepareStatement(query);
+                statStatement.setInt(1, definitionId);
+                statStatement.setInt(2, airframeNameId);
+
+                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+                int current = 3;
+                if (startTime != null) {
+                    statStatement.setString(current, startTime.format(formatter));
+                    current++;
+                }
+
+                if (endTime != null) {
+                    statStatement.setString(current, endTime.format(formatter));
+                    current++;
+                }
+                LOG.info(statStatement.toString());
+
+                ResultSet statSet = statStatement.executeQuery();
+
+                while (statSet.next()) {
+                    int flightsWithEvent = statSet.getInt(1);
+                    int totalFlights = statSet.getInt(2);
+                    int totalEvents = statSet.getInt(3);
+
+                    //LOG.info("event name: '" + eventName + "', statFleetId: " + statFleetId + ", flightsWithEvent: " + flightsWithEvent + ", totalFlights: " + totalFlights + ", totalEvents: " + totalEvents);
+
+                    eventCount.update(eventName, flightsWithEvent, totalFlights, totalEvents);
+                    //eventCount.updateAggregate(eventName, flightsWithEvent, totalFlights, totalEvents);
+                }
+
+                statSet.close();
+                statStatement.close();
+            }
+
+            resultSet.close();
+            preparedStatement.close();
+        }
+
+        for (EventCounts eventCount : eventCounts.values()) {
+            eventCount.assignLists();
+        }
+
+        return eventCounts;
+    }
+
+    /**
      * Gets the number of exceedences for each type and airframe for a fleet. It will be organized into a data structure
      * so plotly can display it on the webpage
      *
      * @param connection is the connection to the database
-     * @param fleetId is the id of the fleet
+     * @param fleetId is the id of the fleet, fleetId needs to be > 0 (i.e., a valid fleet id)
      * @param startTime is the earliest time to start counting events (it will count from the beginning of time if it is null)
      * @param endTime is the latest time to count events (it will count until the current date if it is null)
      */
