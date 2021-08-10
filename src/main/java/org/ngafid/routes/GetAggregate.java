@@ -24,9 +24,12 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+
+import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
 import org.ngafid.filters.Filter;
@@ -124,8 +127,9 @@ public class GetAggregate implements Route {
                 "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
                 "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +
                 "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
-                //"var eventCounts = JSON.parse('" + gson.toJson(eventCountsMap) + "');";
+                "var eventCounts = " + gson.toJson(eventCountsMap) + ";" +
+                "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
+                "var numberUsers = " + User.getNumberUsers(connection) + ";";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
