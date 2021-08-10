@@ -4,6 +4,8 @@ import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightWarning;
+import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.StringTimeSeries;
 
 import java.math.BigDecimal;
@@ -38,124 +40,67 @@ import org.ngafid.airports.Airports;
 public class FixCHT1Divergence {
 
     public static void main(String[] arguments) {
-            //System.out.println("found " + flights.size() + " flights with start/end times == NULL or end_time < start_time");
+        try {
+            Connection connection = Database.getConnection();
 
-            //int count = 0;
-            //for (Flight flight : flights) {
-                //int flightId = flight.getId();
-                //System.out.println("fixing flight id: " + flightId);
-                //String startDateTime = flight.getStartDateTime();
-                //String endDateTime = flight.getEndDateTime();
+            int total = 0;
+            boolean found = true;
+            while (found) {
+                ArrayList<Flight> flights = Flight.getFlights(connection, "(airframe_id = 2 OR airframe_id = 10) AND NOT (processing_status & " + Flight.CHT_DIVERGENCE_CALCULATED + ")", 100);
 
-                //System.out.println("\tinitial start and end date times: " + startDateTime + " " + endDateTime);
+                System.out.println("found " + flights.size() + " flights with CHT divergence not processed");
+                found = flights.size() > 0;
 
-                //StringTimeSeries dates = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
-                //StringTimeSeries times = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
-                //StringTimeSeries offsets = StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
+                int count = 0;
+                for (Flight flight : flights) {
+                    int flightId = flight.getId();
+                    System.out.println("fixing flight id: " + flightId);
 
-                //if (dates == null) {
-                    //System.out.println("\tdate series was null!");
-                    //System.out.println();
-                    //continue;
-                //}
+                    DoubleTimeSeries divergenceSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 CHT Divergence");
+                    if (flight.getDoubleTimeSeries(connection, "E1 CHT Divergence") != null) {
+                        System.out.println("had CHT1 divergence!");
+                    } else {
+                        System.out.println("DID NOT have CHT1 divergence!");
 
-                //if (times == null) {
-                    //System.out.println("\ttime series was null!");
-                    //System.out.println();
-                    //continue;
-                //}
+                        flight.getDoubleTimeSeries(connection, "E1 CHT1");
+                        flight.getDoubleTimeSeries(connection, "E1 CHT2");
+                        flight.getDoubleTimeSeries(connection, "E1 CHT3");
+                        flight.getDoubleTimeSeries(connection, "E1 CHT4");
 
-                //if (offsets == null) {
-                    //System.out.println("\toffset series was null!");
-                    //System.out.println();
-                    //continue;
-                //}
+                        try {
+                            String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
+                            flight.calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
+                            DoubleTimeSeries chtDivergence = flight.getDoubleTimeSeries("E1 CHT Divergence");
+                            chtDivergence.updateDatabase(connection, flightId);
+                            System.out.println("Calculated CHT!");
+                        } catch (MalformedFlightFileException e) {
+                            System.out.println("ERROR: calculating CHT divergence: " + e.getMessage());
+                            FlightWarning.insertWarning(connection, flightId, e.getMessage());
+                        }
+                    }
 
+                    PreparedStatement ps = connection.prepareStatement("UPDATE flights SET processing_status = processing_status | ? WHERE id = ?");
+                    ps.setLong(1, Flight.CHT_DIVERGENCE_CALCULATED);
+                    ps.setInt(2, flightId);
+                    System.out.println(ps.toString());
+                    ps.executeUpdate();
+                    ps.close();
 
-                //int dateSize = dates.size();
-                //int timeSize = times.size();
-                //int offsetSize = offsets.size();
+                    System.out.println();
+                    count++;
+                    total++;
+                }
 
-                //System.out.println("\tdate size: " + dateSize + ", time size: " + timeSize + ", offset size: " + offsetSize);
+                System.out.println("processed " + count + " flights, total flights processed: " + total);
+            }
 
-                ////get the minimum sized length of each of these series, they should all be the same but 
-                ////if the last column was cut off it might not be the case
-                //int minSize = dateSize;
-                //if (minSize < timeSize) minSize = timeSize;
-                //if (minSize < offsetSize) minSize = offsetSize;
+            connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
 
-                ////find the first non-null time entry
-                //int start = 0;
-                //while (start < minSize &&
-                        //(dates.get(start) == null || dates.get(start).equals("") || 
-                         //times.get(start) == null || times.get(start).equals("") ||
-                         //offsets.get(start) == null || offsets.get(start).equals("") || offsets.get(start).equals("+19:00"))) {
-
-                    //start++;
-                //}
-                //System.out.println("\tfirst date time and offset not null at index: " + start);
-
-                //if (start >= minSize) {
-                    //System.out.println("series were all NULL, cannot calculate start/end times");
-                    //System.out.println();
-                    //continue;
-                //}
-
-                ////find the last full date time offset entry row
-                //int end = minSize - 1;
-                //while (end >= 0 &&
-                        //(dates.get(end) == null || dates.get(end).equals("") || 
-                         //times.get(end) == null || times.get(end).equals("") ||
-                         //offsets.get(end) == null || offsets.get(end).equals(""))) {
-
-                    //end--;
-                //}
-
-                //String startDate = dates.get(start);
-                //String startTime = times.get(start);
-                //String startOffset = offsets.get(start);
-
-                //String endDate = dates.get(end);
-                //String endTime = times.get(end);
-                //String endOffset = offsets.get(end);
-
-                //System.out.println("\t\t\tfirst not null  " + start + " -- " + startDate + " " + startTime + " " + startOffset);
-                //System.out.println("\t\t\tlast not null   " + endDate + " " + endTime + " " + endOffset);
-
-                //OffsetDateTime startODT = TimeUtils.convertToOffset(startDate + " " + startTime, startOffset, endOffset);
-                //OffsetDateTime endODT = TimeUtils.convertToOffset(endDate + " " + endTime, endOffset, endOffset);
-
-                //String convertedStart;
-                //String convertedEnd;
-                //if (startODT.isAfter(endODT)) {
-                    ////start time is after the end time -- corrupt time sequence
-                    //convertedStart = null;
-                    //convertedEnd = null;
-                    //endOffset = null;
-                    //System.out.println("\t\t\tstart time was AFTER the end time -- this is a corrupt flight file!");
-                //} else {
-                    //convertedStart = startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                    //convertedEnd = endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-                //}
-
-                //System.out.println("\t\t\tconverted start " + convertedStart);
-                //System.out.println("\t\t\tconverted end   " + convertedEnd);
-
-                //PreparedStatement ps = connection.prepareStatement("UPDATE flights SET start_time = ?, end_time = ?, time_offset = ? WHERE id = ?");
-                //ps.setString(1, convertedStart);
-                //ps.setString(2, convertedEnd);
-                //ps.setString(3, endOffset);
-                //ps.setInt(4, flightId);
-                //System.out.println(ps);
-                //ps.executeUpdate();
-                //ps.close();
-
-                //System.out.println();
-                //count++;
-            //}
-
-            //System.out.println("processed " + count + " flights");
-
-            //connection.close();
+        System.err.println("finished!");
+        System.exit(1);
     }
 }
