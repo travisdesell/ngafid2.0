@@ -49,7 +49,6 @@ class Flight extends React.Component {
             tagsVisible : false,
             itineraryVisible : false,
             points : [],
-            tags : props.tags,
             parent : props.parent,
             selectedPlot : null,
             color : color,
@@ -612,50 +611,8 @@ class Flight extends React.Component {
     }
 
     tagClicked() {
-        console.log("tag clicked!");
-
-        if (!this.state.tagsLoaded) {
-            console.log("loading tags!");
-
-            var thisFlight = this;
-
-            var submissionData = {
-                flightId : this.props.flightInfo.id,
-            };
-
-            $.ajax({
-                type: 'POST',
-                url: '/protected/flight_tags',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-
-                    if(response != null){
-                        thisFlight.state.tags = response;
-                    }
-
-                    thisFlight.state.tagsLoaded = true;
-                    thisFlight.state.tagsVisible = !thisFlight.state.tagsVisible;
-                    thisFlight.setState(thisFlight.state);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
-                    thisFlight.state.tagsLoaded = false;
-                    thisFlight.setState(thisFlight.state);
-
-                    errorModal.show("Error Loading Flight Tags", errorThrown);
-                },   
-                async: true 
-            });  
-
-        } else {
-            console.log("tags already loaded!");
-
-            //toggle visibility if already loaded
-            this.state.tagsVisible = !this.state.tagsVisible;
-            this.setState(this.state);
-        }
+        this.state.tagsVisible = !this.state.tagsVisible;
+        this.setState(this.state);
     }
 
     globeClicked() {
@@ -1110,7 +1067,8 @@ class Flight extends React.Component {
         let tagsRow = "";
         if (this.state.tagsVisible) {
             tagsRow = (
-                    <Tags tags={this.state.tags} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} />
+                    <Tags flight={this.props.flightInfo} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} addTag={this.props.addTag} removeTag={this.props.removeTag} 
+                        deleteTag={this.props.deleteTag} getUnassociatedTags={this.props.getUnassociatedTags} associateTag={this.props.associateTag} clearTags={this.props.clearTags} editTag={this.props.editTag}/>
             );
         }
 
@@ -1122,11 +1080,12 @@ class Flight extends React.Component {
                 );
         }
 
-        let tagPills = "";
         let submitButtonId = "submit_button_rate_" + this.props.flightInfo.id;
-        if(this.state.tags != null){
+
+        let tagPills = "";
+        if (this.props.flightInfo.tags != null && this.props.flightInfo.tags.length > 0) {
             tagPills = 
-            this.state.tags.map((tag, index) => {
+            this.props.flightInfo.tags.map((tag, index) => {
                 let style = {
                     backgroundColor : tag.color,
                     marginRight : '4px',
