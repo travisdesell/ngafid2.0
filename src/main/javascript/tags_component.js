@@ -119,12 +119,14 @@ class Tags extends React.Component {
     }
 
     setToggle(index) {
-        let len = this.props.flight.tags.length;
+        if (this.props.flight.tags != null && this.props.flight.tags.length > 0) {
+            let len = this.props.flight.tags.length;
 
-        for (var i = 0; i < len; i++) {
-            if (i != index) {
-                let id = '#tag_button_' + i;
-                $(id).removeClass('active');
+            for (var i = 0; i < len; i++) {
+                if (i != index) {
+                    let id = '#tag_button_' + i;
+                    $(id).removeClass('active');
+                }
             }
         }
     }
