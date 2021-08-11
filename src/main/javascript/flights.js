@@ -717,7 +717,7 @@ class FlightsPage extends React.Component {
                     for (var i = 0; i < thisFlight.state.flights.length; i++) {
                         let flight = thisFlight.state.flights[i];
                         if (flight.id == flightId) {
-                            if (typeof flight.tags == []) {
+                            if (flight.tags != null && flight.tags.length > 0) {
                                 flight.tags.push(response);
                             } else {
                                 flight.tags = [response];
@@ -802,8 +802,6 @@ class FlightsPage extends React.Component {
             id : flightId
         };
 
-        let thisFlight = this;
-
         $.ajax({
             type: 'POST',
             url: '/protected/get_unassociated_tags',
@@ -826,16 +824,17 @@ class FlightsPage extends React.Component {
     /**
      * Handles when the user presses the delete button, and prompts them with @module confirmModal
      */
-    deleteTag(tag) {
+    deleteTag(flightId, tag) {
+        console.log(tag);
         if (tag != null) {
             console.log("delete tag invoked!");
-            confirmModal.show("Confirm Delete Tag: '" + tag + "'",
+            confirmModal.show("Confirm Delete Tag: '" + tag.name + "'",
                             "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
-                            () => {this.confirmDelete()}
+                            () => {this.removeTag(flightId, tag, true)}
                             );
         } else {
             errorModal.show("Please select a tag to delete first!",
-                            "Cannot delete any tags");
+                            "You did not select a tag to delete");
         }
 
     }
@@ -843,26 +842,23 @@ class FlightsPage extends React.Component {
     /**
      * removes a tag from a flight, either permanent or just from one flight
      * @param id the tagid of the tag being removed
-     * @param perm a bool representing whether or not the removal is permanent
+     * @param tag is the tag being removed
+     * @param isPermanent a bool representing whether or not the removal is permanent
      */
-    removeTag(flightId, tagId, perm) {
-        console.log("un-associating tag #" + tagId + " with flight #" + flightId);
+    removeTag(flightId, tag, isPermanent) {
+        console.log("un-associating tag #" + tag.hashId + " with flight #" + flightId);
 
-        if (tagId == null || tagId == -1) {
+        if (tag.hashId == null || tag.hashId == -1) {
             errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
             return;
         }
 
-        let allTags = (tagId == -2);
-
         var submissionData = {
-            flight_tagId : flightId,
-            tag_id : tagId,
-            permanent : perm,
-            all : allTags
+            flight_id : flightId,
+            tag_id : tag.hashId,
+            permanent : isPermanent,
+            all : (tag.hashId == -2)
         };
-        
-        this.state.activeTag = null;
 
         let thisFlight = this;
         console.log("calling deletion ajax");
@@ -875,27 +871,43 @@ class FlightsPage extends React.Component {
             success : function(response) {
                 console.log("received response: ");
                 console.log(response);
-                if (perm) {
-                    console.log("permanent deletion, refreshing all flights with: ");
-                    console.log(response);
-                    console.log(response.data[thisFlight.state.flightIndex]);
-                    let allFlights = response.data;
-                    thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
-                    thisFlight.state.addFormActive = false;
-                    thisFlight.updateFlights(allFlights);
+                if (isPermanent) {
+                    console.log("permanent deletion of tag: " + tag.name);
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        console.log(flight);
+                        if (flight.tags != null) {
+                            let tags = flight.tags;
+                            for (var j = 0; j < tags.length; j++) {
+                                let tag = tags[j];
+                                if (tag.hashId == response.tag.hashId) {
+                                    tags.splice(j, 1);
+                                }
+                            }
+                        }
+                    } 
+                } else if (response.allTagsCleared) {
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            flight.tags = [];
+                        }
+                    } 
                 } else {
-                    thisFlight.state.tags = response;
-                    thisFlight.setState(thisFlight.state);
-                    thisFlight.getUnassociatedTags();
-                    thisFlight.state.addFormActive = false;
-                    thisFlight.state.addActive = false;
-                    thisFlight.updateParent(thisFlight.state.tags);
-                }
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        let tags = flight.tags;
+                        if (flight.id == flightId) {
+                            let tags = flight.tags;
+                            tags.splice(tags.indexOf(tag), 1);
+                        }
+                    }
+                } 
                 thisFlight.setState(thisFlight.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
             },   
-            async: true 
+            async: false 
         });  
     }
 
@@ -924,7 +936,7 @@ class FlightsPage extends React.Component {
                 for (var i = 0; i < thisFlight.state.flights.length; i++) {
                     let flight = thisFlight.state.flights[i];
                     if (flight.id == flightId) {
-                        if (typeof flight.tags == []) {
+                        if (flight.tags != null && flight.tags.length > 0) {
                             flight.tags.push(response);
                         } else {
                             flight.tags = [response];
@@ -1056,7 +1068,7 @@ class FlightsPage extends React.Component {
 
                         addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
                         removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
-                        deleteTag={(tag) => this.deleteTag(tag)}
+                        deleteTag={(flightId, tag) => this.deleteTag(flightId, tag)}
                         getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
                         associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
                         clearTags={(flightId) => this.clearTags(flightId)}
