@@ -45,19 +45,11 @@ public class PostUnassociatedTags implements Route {
         int fleetId = user.getFleetId();
 
         int flightId = Integer.parseInt(request.queryParams("id"));
-        System.out.println("TAGGED FLTID: "+flightId);
-
 
         try {
-            System.out.println("try");
             Connection connection = Database.getConnection();
 
-            List<FlightTag> fltTags = null;
-
             List<FlightTag> tags = Flight.getUnassociatedTags(connection, flightId, fleetId);
-            if(tags != null){
-                fltTags = tags;
-            }
 
             //check to see if the user has access to this data
             if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
@@ -65,12 +57,8 @@ public class PostUnassociatedTags implements Route {
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            System.out.println("unassoc. tags: "+fltTags);
-
-
-            return gson.toJson(fltTags);
+            return gson.toJson(tags);
         } catch (SQLException e) {
-            System.err.println("Error in SQL ");
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }

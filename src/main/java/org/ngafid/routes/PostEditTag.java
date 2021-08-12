@@ -68,10 +68,7 @@ public class PostEditTag implements Route {
                 return gson.toJson(NO_CHANGE);
             }
 
-            FlightTag changedTag = Flight.editTag(connection, flightTag);
-
-            //TODO: fix this too!
-            return gson.toJson(null);
+            return gson.toJson(Flight.editTag(connection, flightTag));
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();
