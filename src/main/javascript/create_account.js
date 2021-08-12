@@ -856,7 +856,7 @@ class CreateAccountCard extends React.Component {
                                             </label>
                                         </div>
                                         <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()}/>
+                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} />
                                             <label className="form-check-label" htmlFor="exampleRadios2">
                                                 I am operating my own fleet.
                                             </label>

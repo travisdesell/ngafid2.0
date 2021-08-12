@@ -89,10 +89,9 @@ public class PostFlights implements Route {
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
 
-            LOG.info("number pages: " + numberPages);
-
-
             LOG.info("Ordered by: " + orderingColumnn);
+            LOG.info("Filter: " + filter.toString());
+
             ArrayList<Flight> flights = null;
 
             /**
