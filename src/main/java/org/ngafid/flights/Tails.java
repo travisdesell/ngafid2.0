@@ -326,22 +326,39 @@ public class Tails {
     }
 
     /**
+     *  Gets the total number of tails in the NGAFID.
+     *
+     *  @param connection is the database connection
+     *
+     *  @return the number of different tails in the fleet
+     */
+    public static int getNumberTails(Connection connection) throws SQLException {
+        return getNumberTails(connection, 0);
+    }
+
+
+    /**
      *  Gets the total number of tails for a fleet.
      *
      *  @param connection is the database connection
-     *  @param fleetId is the id of the fleet
+     *  @param fleetId is the id of the fleet, if the id <= 0 then get tails for the entire NGAFID
      *
      *  @return the number of different tails in the fleet
      */
     public static int getNumberTails(Connection connection, int fleetId) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
-        String queryString  = "SELECT count(system_id) FROM tails WHERE fleet_id = ?";
+        String queryString;
+        if (fleetId > 0) {
+            queryString = "SELECT count(system_id) FROM tails WHERE fleet_id = ?";
+        } else {
+            queryString = "SELECT count(system_id) FROM tails";
+        }
 
         LOG.fine(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, fleetId);
+        if (fleetId > 0) query.setInt(1, fleetId);
 
         LOG.fine(query.toString());
         ResultSet resultSet = query.executeQuery();

@@ -231,6 +231,7 @@ $query = "CREATE TABLE `flights` (
     `has_agl` TINYINT(1) NOT NULL,
     `events_calculated` INT(1) NOT NULL DEFAULT 0,
     `insert_completed` INT(1) NOT NULL DEFAULT 0,
+    `processing_status` BIGINT(20) default 0,
 
     PRIMARY KEY(`id`),
     UNIQUE KEY(`fleet_id`, `md5_hash`),
@@ -286,11 +287,41 @@ $query = "CREATE TABLE `itinerary` (
 
 query_ngafid_db($query);
 
+$query = "CREATE TABLE `double_series_names` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(64) NOT NULL,
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `string_series_names` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(64) NOT NULL,
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `data_type_names` (
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(64) NOT NULL,
+
+    PRIMARY KEY(`id`),
+    UNIQUE KEY(`name`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
 $query = "CREATE TABLE `double_series` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
     `name_id` INT(11) NOT NULL,
-    `data_type` VARCHAR(64) NOT NULL,
+    `data_type_id` INT(11) NOT NULL,
     `length` INT(11) NOT NULL,
     `valid_length` INT(11) NOT NULL,
     `min` double,
@@ -303,16 +334,7 @@ $query = "CREATE TABLE `double_series` (
     INDEX(`name_id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
     FOREIGN KEY(`name_id`) REFERENCES double_series_names(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-$query = "CREATE TABLE `double_series_names` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(64) NOT NULL,
-
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
+    FOREIGN KEY(`data_type_id`) REFERENCES data_type_names(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -321,7 +343,7 @@ $query = "CREATE TABLE `string_series` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `flight_id` INT(11) NOT NULL,
     `name_id` INT(11) NOT NULL,
-    `data_type` VARCHAR(64) NOT NULL,
+    `data_type_id` INT(11) NOT NULL,
     `length` INT(11) NOT NULL,
     `valid_length` INT(11) NOT NULL,
     data MEDIUMBLOB,
@@ -331,16 +353,7 @@ $query = "CREATE TABLE `string_series` (
     INDEX(`name_id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
     FOREIGN KEY(`name_id`) REFERENCES string_series_names(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
-
-query_ngafid_db($query);
-
-$query = "CREATE TABLE `string_series_names` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `name` VARCHAR(64) NOT NULL,
-
-    PRIMARY KEY(`id`),
-    UNIQUE KEY(`id`, `name`)
+    FOREIGN KEY(`data_type_id`) REFERENCES data_type_names(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -506,7 +519,6 @@ query_ngafid_db($query);
 $query = "CREATE TABLE `user_preferences` (
     `user_id` INT(11) NOT NULL,
     `decimal_precision` INT(11) NOT NULL,
-    `metrics` VARCHAR(4096) NOT NULL,
 
     PRIMARY KEY(`user_id`),
     FOREIGN KEY(`user_id`) REFERENCES user(`id`)

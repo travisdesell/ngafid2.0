@@ -39,11 +39,16 @@ public class PostCoordinates implements Route {
             DoubleTimeSeries latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
 
+            if (latitudes == null || longitudes == null) {
+                latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "DID_GPS_LAT");
+                longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "DID_GPS_LON");
+            }
+
             for (int i = 0; i < latitudes.size(); i++) {
                 double longitude = longitudes.get(i);
                 double latitude = latitudes.get(i);
 
-                if (Double.isNaN(longitude) || Double.isNaN(latitude)) {
+                if (Double.isNaN(longitude) || Double.isNaN(latitude) || latitude == 0.0 || longitude == 0.0) {
                 } else {
                     if (nanOffset < 0) nanOffset = i;
                     coordinates.add(new double[]{longitude, latitude});

@@ -136,7 +136,7 @@ public class RunLOCICalculations {
         while (it.hasNext()) {
             try {
                 Flight flight = Flight.getFlight(connection, it.next());    
-                flight.runLOCICalculations();
+                flight.runLOCICalculations(connection);
             } catch (Exception e){
                 e.printStackTrace();
             }
