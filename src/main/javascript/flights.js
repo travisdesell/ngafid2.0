@@ -824,14 +824,14 @@ class FlightsPage extends React.Component {
     /**
      * Handles when the user presses the delete button, and prompts them with @module confirmModal
      */
-    deleteTag(flightId, tag) {
+    deleteTag(flightId, tagId) {
         console.log(tag);
-        if (tag != null) {
+        if (tagId != null) {
             console.log("delete tag invoked!");
             confirmModal.show("Confirm Delete Tag: '" + tag.name + "'",
-                            "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
-                            () => {this.removeTag(flightId, tag, true)}
-                            );
+                "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+                () => {this.removeTag(flightId, tagId, true)}
+            );
         } else {
             errorModal.show("Please select a tag to delete first!",
                             "You did not select a tag to delete");
@@ -845,19 +845,19 @@ class FlightsPage extends React.Component {
      * @param tag is the tag being removed
      * @param isPermanent a bool representing whether or not the removal is permanent
      */
-    removeTag(flightId, tag, isPermanent) {
-        console.log("un-associating tag #" + tag.hashId + " with flight #" + flightId);
+    removeTag(flightId, tagId, isPermanent) {
+        console.log("un-associating tag #" + tagId + " with flight #" + flightId);
 
-        if (tag.hashId == null || tag.hashId == -1) {
+        if (tagId == null || tagId == -1) {
             errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
             return;
         }
 
         var submissionData = {
             flight_id : flightId,
-            tag_id : tag.hashId,
+            tag_id : tagId,
             permanent : isPermanent,
-            all : (tag.hashId == -2)
+            all : (tagId == -2)
         };
 
         let thisFlight = this;
@@ -872,7 +872,7 @@ class FlightsPage extends React.Component {
                 console.log("received response: ");
                 console.log(response);
                 if (isPermanent) {
-                    console.log("permanent deletion of tag: " + tag.name);
+                    console.log("permanent deletion of tag with id: " + tagId);
                     for (var i = 0; i < thisFlight.state.flights.length; i++) {
                         let flight = thisFlight.state.flights[i];
                         console.log(flight);
@@ -880,7 +880,7 @@ class FlightsPage extends React.Component {
                             let tags = flight.tags;
                             for (var j = 0; j < tags.length; j++) {
                                 let tag = tags[j];
-                                if (tag.hashId == response.tag.hashId) {
+                                if (tagId == response.tagId) {
                                     tags.splice(j, 1);
                                 }
                             }
@@ -1068,7 +1068,7 @@ class FlightsPage extends React.Component {
 
                         addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
                         removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
-                        deleteTag={(flightId, tag) => this.deleteTag(flightId, tag)}
+                        deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
                         getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
                         associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
                         clearTags={(flightId) => this.clearTags(flightId)}
