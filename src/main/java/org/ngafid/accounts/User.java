@@ -163,6 +163,30 @@ public class User {
     }
 
     /**
+     * Return the number of users in the NGAFID
+     *
+     * @param connection A connection to the mysql database.
+     *
+     * @exception SQLException if there was a problem with the query or database.
+     *
+     * @return the number of users in the NGAFID
+     */
+    public static int getNumberUsers(Connection connection) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM user");
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            int numberUsers = resultSet.getInt(1);
+            return numberUsers;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
      * Get a user from the database based on the users id. 
      *
      * @param connection A connection to the mysql database.

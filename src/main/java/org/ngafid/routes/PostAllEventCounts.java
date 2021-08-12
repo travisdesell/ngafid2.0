@@ -25,11 +25,11 @@ import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.common.*;
 
-public class PostEventCounts implements Route {
-    private static final Logger LOG = Logger.getLogger(PostEventCounts.class.getName());
+public class PostAllEventCounts implements Route {
+    private static final Logger LOG = Logger.getLogger(PostAllEventCounts.class.getName());
     private Gson gson;
 
-    public PostEventCounts(Gson gson) {
+    public PostAllEventCounts(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -47,17 +47,17 @@ public class PostEventCounts implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        //check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
-            Spark.halt(401, "User did not have access to view events for this fleet.");
+        //check to see if the user has access to view aggregate information
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
+            Spark.halt(401, "User did not have aggregate access to view all event counts.");
             return null;
         }
 
         try {
             Connection connection = Database.getConnection();
 
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {
