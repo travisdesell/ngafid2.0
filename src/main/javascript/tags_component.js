@@ -138,15 +138,8 @@ class Tags extends React.Component {
         errorModal.show("Error editing tag", "Please make a change to the tag first before pressing submit!");
     }
 
-    /**
-     * invoked by another function when the user has confirmed they would like to delete the tag permanently
-     */
-    confirmDelete() {
-        this.removeTag(this.state.activeTag.hashId, true);
-    }
-
     removeTag() {
-        this.props.removeTag(this.props.flight.id, this.state.activeTag, false);
+        this.props.removeTag(this.props.flight.id, this.state.activeTag.hashId, false);
         this.setToggle(-1);
         this.setState({
             editing : false,
@@ -155,7 +148,7 @@ class Tags extends React.Component {
     }
 
     deleteTag() {
-        this.props.deleteTag(this.props.flight.id, this.state.activeTag);
+        this.props.deleteTag(this.props.flight.id, this.state.activeTag.hashId);
         this.setState({
             editing : false,
             addFormActive : false
@@ -294,7 +287,7 @@ class Tags extends React.Component {
                     <button id="show-add-form-button" className={buttonClasses} style={styleButtonSq} aria-pressed={this.state.addActive} title="Add a tag to this flight" onClick={() => this.addClicked()} data-toggle="button"><i className="fa fa-plus" aria-hidden="true"></i></button>
                     <button className={buttonClasses} style={styleButtonSq} title="Remove the selected tag from this flight" onClick={() => this.removeTag()}><i className="fa fa-minus" aria-hidden="true"></i></button>
                     <button className={buttonClasses} style={styleButtonSq} title="Permanently delete the selected tag from all flights" onClick={() => this.deleteTag()}><i className="fa fa-trash" aria-hidden="true"></i></button>
-                    <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.props.clearTags()}><i className="fa fa-eraser" aria-hidden="true"></i></button>
+                    <button className={buttonClasses} style={styleButtonSq} title="Clear all the tags from this flight" onClick={() => this.props.clearTags(this.props.flight.id)}><i className="fa fa-eraser" aria-hidden="true"></i></button>
                 </div> 
             );
         }
