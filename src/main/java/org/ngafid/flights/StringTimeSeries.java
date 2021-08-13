@@ -66,7 +66,7 @@ public class StringTimeSeries {
 
     // Added to get StringTimeSeries
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT ssn.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
 
         query.setString(1, name);
         query.setInt(2, flightId);
