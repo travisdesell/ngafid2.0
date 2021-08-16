@@ -562,6 +562,102 @@ class FlightsPage extends React.Component {
         }
     }
 
+    /**
+     * removes a tag from a flight, either permanent or just from one flight
+     * @param id the tagid of the tag being removed
+     * @param perm a bool representing whether or not the removal is permanent
+     */
+    removeTag(id, perm) {
+        console.log("un-associating tag #" + id + " with flight #" + this.state.flightId);
+
+        if (id==null || id == -1) {
+            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+            return;
+        }
+
+        let allTags = (id == -2);
+
+        var submissionData = {
+            flight_id : this.state.flightId,
+            tag_id : id,
+            permanent : perm,
+            all : allTags
+        };
+        
+        this.state.activeTag = null;
+
+        let thisFlight = this;
+        console.log("calling deletion ajax");
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if (perm) {
+                    console.log("permanent deletion, refreshing all flights with: ");
+                    console.log(response);
+                    let allFlights = response.data;
+                    thisFlight.state.tags = allFlights[flight_compthisFlight.state.flightIndex].tags.value;
+                    thisFlight.state.addFormActive = false;
+                    thisFlight.updateFlights(allFlights);
+                } else {
+                    thisFlight.state.tags = response;
+                    thisFlight.setState(thisFlight.state);
+                    thisFlight.getUnassociatedTags();
+                    thisFlight.state.addFormActive = false;
+                    thisFlight.state.addActive = false;
+                    thisFlight.updateParent(thisFlight.state.tags);
+                }
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+    /**
+     * Associates a tag with this flight
+     * @param id the tag id to associate
+     */
+    associateTag(id) {
+        console.log("associating tag #"+id+" with flight #"+this.state.flightId);
+
+        var submissionData = {
+            id : this.state.flightId,
+            tag_id : id
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/associate_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if (thisFlight.state.tags != null) {
+                    thisFlight.state.tags.push(response);
+                } else {
+                    thisFlight.state.tags = new Array(response);
+                    console.log(thisFlight.state.tags);
+                }
+                thisFlight.getUnassociatedTags();
+                thisFlight.updateParent(thisFlight.state.tags);
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
     togglePlot() {
         if (this.state.plotVisible) {
             this.hidePlot();

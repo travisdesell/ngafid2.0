@@ -253,7 +253,7 @@ class Tags extends React.Component {
                     let index = thisFlight.state.tags.indexOf(oldTag);
                     thisFlight.state.tags = response.data[thisFlight.state.flightIndex].tags.value;
                     console.log(response.data[thisFlight.state.flightIndex]);
-                    thisFlight.updateFlights(response.data);
+                    thisFlight.updateFlights(response);
                 } else {
                     thisFlight.showNoEditError();
                 }
@@ -344,7 +344,7 @@ class Tags extends React.Component {
                     console.log(response);
                     console.log(response.data[thisFlight.state.flightIndex]);
                     let allFlights = response.data;
-                    thisFlight.state.tags = allFlights[thisFlight.state.flightIndex].tags.value;
+                    thisFlight.state.tags = allFlights[flight_compthisFlight.state.flightIndex].tags.value;
                     thisFlight.state.addFormActive = false;
                     thisFlight.updateFlights(allFlights);
                 } else {
