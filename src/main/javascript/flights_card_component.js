@@ -70,7 +70,15 @@ class FlightsCard extends React.Component {
                                 return (
                                     <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} flightInfo={flightInfo} navBar={this.props.navBar} pageIndex={index}
                                         updateParentState={(newFlights) => this.props.setFlights(newFlights)} setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
-                                        parent={this} layers={this.props.layers} tags={flightInfo.tags.value} key={flightInfo.id}/>
+                                        parent={this} layers={this.props.layers} key={flightInfo.id}
+                                        addTag={this.props.addTag}
+                                        removeTag={this.props.removeTag}
+                                        deleteTag={this.props.deleteTag}
+                                        getUnassociatedTags={this.props.getUnassociatedTags}
+                                        associateTag={this.props.associateTag}
+                                        clearTags={this.props.clearTags}
+                                        editTag={this.props.editTag}
+                                    />
                                 );
                             }
                         })

@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
 import com.google.gson.Gson;
@@ -183,7 +184,6 @@ public class User {
             return 0;
         }
     }
-
 
 
     /**
