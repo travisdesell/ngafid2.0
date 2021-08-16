@@ -125,7 +125,7 @@ public class Flight {
     private ArrayList<String> headers;
 
     //the tags associated with this flight
-    private Optional<List<FlightTag>> tags = Optional.empty();
+    private List<FlightTag> tags = null;
 
     private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
@@ -1225,18 +1225,16 @@ public class Flight {
 
         itinerary = Itinerary.getItinerary(connection, id);
 
-        List<FlightTag> tags = getTags(connection, id);
-        if (tags != null){
-            this.tags = Optional.of(tags);
-        }
+        //Populate the tags
+        this.tags = getTags(connection, id);
     }
 
     public int getId() {
         return id;
     }
 
-    public boolean hasTags(){
-        return this.tags.isPresent();
+    public boolean hasTags() {
+        return this.tags != null;
     }
 
     public int getFleetId() {

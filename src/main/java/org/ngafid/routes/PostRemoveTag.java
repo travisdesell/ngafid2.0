@@ -1,13 +1,8 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.logging.Logger;
-import java.util.Optional;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -19,13 +14,9 @@ import spark.Session;
 import spark.Spark;
 
 import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.common.FlightTag;
 import org.ngafid.accounts.User;
-import org.ngafid.events.Event;
-import org.ngafid.events.EventDefinition;
-import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
+import org.ngafid.common.*;
 
 public class PostRemoveTag implements Route {
     private static final Logger LOG = Logger.getLogger(PostRemoveTag.class.getName());
@@ -36,9 +27,25 @@ public class PostRemoveTag implements Route {
         LOG.info("initialized " + this.getClass().getName() + " route!");
     }
 
+    public class RemoveTagResponse {
+        private boolean allTagsCleared;
+        private FlightTag tag;
+
+        public RemoveTagResponse() {
+            this.tag = null;
+            this.allTagsCleared = true;
+        }
+
+        public RemoveTagResponse(FlightTag tag) {
+            this.tag = tag;
+            this.allTagsCleared = false;
+        }
+    }
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
+        Connection connection = Database.getConnection();
 
         final Session session = request.session();
         User user = session.attribute("user");
@@ -48,22 +55,20 @@ public class PostRemoveTag implements Route {
         boolean isPermanent = Boolean.parseBoolean(request.queryParams("permanent"));
         boolean allTags = Boolean.parseBoolean(request.queryParams("all"));
 
-        try {
-            Connection connection = Database.getConnection();
 
-            if(isPermanent){
-                LOG.info("deleting tag: "+tagId);
+        try {
+            FlightTag tag = Flight.getTag(connection, tagId);
+            if(isPermanent) {
+                LOG.info("Permanently deleting tag: " + tag.toString());
                 Flight.deleteTag(tagId, connection);
-                //TODO: change this with the bugfixes!
-                return null;       
             } else if(allTags) {
-                LOG.info("Clearing all tags from flight "+flightId);
+                LOG.info("Clearing all tags from flight " + flightId);
                 Flight.unassociateAllTags(flightId, connection);
+                
+                return gson.toJson(new RemoveTagResponse());
             } else {
                 Flight.unassociateTags(tagId, connection, flightId);
             }
-
-            List<FlightTag> tags = Flight.getTags(connection, flightId);
 
             //check to see if the user has access to this data
             if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
@@ -71,7 +76,7 @@ public class PostRemoveTag implements Route {
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            return gson.toJson(tags);
+            return gson.toJson(new RemoveTagResponse(tag));
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
             e.printStackTrace();

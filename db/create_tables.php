@@ -333,7 +333,7 @@ $query = "CREATE TABLE `double_series` (
     INDEX(`flight_id`),
     INDEX(`name_id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
-    FOREIGN KEY(`name_id`) REFERENCES double_series_names(`id`)
+    FOREIGN KEY(`name_id`) REFERENCES double_series_names(`id`),
     FOREIGN KEY(`data_type_id`) REFERENCES data_type_names(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
@@ -352,7 +352,7 @@ $query = "CREATE TABLE `string_series` (
     INDEX(`flight_id`),
     INDEX(`name_id`),
     FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
-    FOREIGN KEY(`name_id`) REFERENCES string_series_names(`id`)
+    FOREIGN KEY(`name_id`) REFERENCES string_series_names(`id`),
     FOREIGN KEY(`data_type_id`) REFERENCES data_type_names(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
