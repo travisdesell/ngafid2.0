@@ -30,23 +30,29 @@ public class StringTimeSeries {
     private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
 
+    private int nameId;
     private String name;
+    private int typeId;
     private String dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
 
 
-    public StringTimeSeries(String name, String dataType) {
+    public StringTimeSeries(Connection connection, String name, String dataType) throws SQLException {
         this.name = name;
+        this.nameId = SeriesNames.getStringNameId(connection, name);
         this.dataType = dataType;
+        this.typeId = TypeNames.getId(connection, dataType);
         this.timeSeries = new ArrayList<String>();
 
         validCount = 0;
     }
 
-    public StringTimeSeries(String name, String dataType, ArrayList<String> timeSeries) {
+    public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries) throws SQLException {
         this.name = name;
+        this.nameId = SeriesNames.getStringNameId(connection, name);
         this.dataType = dataType;
+        this.typeId = TypeNames.getId(connection, dataType);
         this.timeSeries = timeSeries;
 
         validCount = 0;
@@ -60,14 +66,16 @@ public class StringTimeSeries {
 
     // Added to get StringTimeSeries
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT * FROM string_series WHERE flight_id = ? AND name = ?");
-        query.setInt(1, flightId);
-        query.setString(2, name);
+        PreparedStatement query = connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
+
+        query.setString(1, name);
+        query.setInt(2, flightId);
+
         //LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            StringTimeSeries sts = new StringTimeSeries(resultSet);
+            StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
             //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
             resultSet.close();
             query.close();
@@ -80,18 +88,22 @@ public class StringTimeSeries {
     }
 
     // Added to get results for StringTimeSeries
-    public StringTimeSeries(ResultSet resultSet) throws SQLException {
+    public StringTimeSeries(Connection connection, ResultSet resultSet) throws SQLException {
 
-        name = resultSet.getString(3);
+        this.nameId = resultSet.getInt(1);
+        this.name = SeriesNames.getStringName(connection, this.nameId);
         //System.out.println("name: " + name);
-        dataType = resultSet.getString(4);
+
+        this.typeId = resultSet.getInt(2);
+        this.dataType = TypeNames.getName(connection, this.typeId);
         //System.out.println("data type: " + dataType);
-        int length = resultSet.getInt(5);
+
+        int length = resultSet.getInt(3);
         //System.out.println("length: " + length);
-        validCount = resultSet.getInt(6);
+        validCount = resultSet.getInt(4);
         //System.out.println("valid count: " + validCount);
 
-        Blob values = resultSet.getBlob(7);
+        Blob values = resultSet.getBlob(5);
         byte[] bytes = values.getBytes(1, (int)values.length());
         //System.out.println("values.length: " + (int)values.length());
         values.free();
@@ -180,11 +192,11 @@ public class StringTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name, data_type, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setString(3, dataType);
+            preparedStatement.setInt(2, nameId);
+            preparedStatement.setInt(3, typeId);
             preparedStatement.setInt(4, timeSeries.size());
             preparedStatement.setInt(5, validCount);
 

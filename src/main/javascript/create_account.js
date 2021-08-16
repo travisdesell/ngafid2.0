@@ -850,7 +850,7 @@ class CreateAccountCard extends React.Component {
                                     <div className="p-2 flex-fill">
 
                                         <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTyepGAARD" value="gaard" onChange={() => this.validateAccountType()} disabled/>
+                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTyepGAARD" value="gaard" onChange={() => this.validateAccountType()}disabled/>
                                             <label className="form-check-label" htmlFor="exampleRadios1">
                                                 I am a GAARD User.
                                             </label>

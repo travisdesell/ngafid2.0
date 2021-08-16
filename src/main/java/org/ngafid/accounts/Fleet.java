@@ -36,6 +36,30 @@ public class Fleet {
     }
 
     /**
+     * Return the number of fleets in the NGAFID
+     *
+     * @param connection A connection to the mysql database.
+     *
+     * @exception SQLException if there was a problem with the query or database.
+     *
+     * @return the number of fleets in the NGAFID
+     */
+    public static int getNumberFleets(Connection connection) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM fleet");
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            int numberFleets = resultSet.getInt(1);
+            return numberFleets;
+        } else {
+            return 0;
+        }
+    }
+
+
+    /**
      * @return the number of users waiting for access to this fleet.
      */
     public int getWaitingUserCount() {

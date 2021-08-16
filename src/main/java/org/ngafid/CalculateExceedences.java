@@ -65,6 +65,7 @@ public class CalculateExceedences {
                     || (minMaxRPM1 == null && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) //RPM1 is null, RPM2 is < 800
                     || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
+                System.out.println("engines never turned on, setting flight_processed.had_error = 1");
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -84,6 +85,7 @@ public class CalculateExceedences {
                 Pair<Double,Double> minMax = DoubleTimeSeries.getMinMax(connection, flightId, columnName);
 
                 if (minMax == null) {
+                    System.out.println("minMax was null, setting flight_processed.had_error = 1");
                     //couldn't calculate this exceedence because at least one of the columns was missing
                     PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                     stmt.setInt(1, fleetId);
@@ -122,6 +124,7 @@ public class CalculateExceedences {
 
             if (timeSeries == null || dateSeries == null) {
                 //couldn't calculate this exceedence because the date or time column was missing
+                System.out.println("time series or date series was missing, setting flight_processed.had_error = 1");
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -299,12 +302,13 @@ public class CalculateExceedences {
 
     public static void main(String[] arguments) {
         try {
-            Connection connection = Database.getConnection();
+            Connection connection = Database.resetConnection();
 
             //for now only calculate exceedences for fixed wing aircraft
             int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
 
             while (true) {
+                connection = Database.resetConnection();
                 Instant start = Instant.now();
                 ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 System.out.println("n events = " + allEvents.size());
