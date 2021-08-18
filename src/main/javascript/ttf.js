@@ -759,6 +759,7 @@ class TTFCard extends React.Component {
             );
         }
         // console.log(this.state);
+        console.log(runways);
         let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
         let rollSlider =
             <RollSlider

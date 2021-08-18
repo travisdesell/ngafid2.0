@@ -6,7 +6,7 @@ import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
-import com.mysql.jdbc.exceptions.jdbc4.MySQLIntegrityConstraintViolationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -61,7 +61,7 @@ public class PostTurnToFinal implements Route {
                         iataCodes.add(ttf.airportIataCode);
                     }
                 }
-            } catch (MySQLIntegrityConstraintViolationException e) {
+            } catch (SQLIntegrityConstraintViolationException e) {
                 e.printStackTrace();
                 return gson.toJson(new ErrorResponse(e));
             } catch (SQLException e) {
