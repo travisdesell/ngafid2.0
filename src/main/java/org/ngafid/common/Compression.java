@@ -16,10 +16,6 @@ public class Compression {
     private static final boolean NOWRAP = false;
 
     private static byte[] inflate(byte[] data) throws IOException {
-        for (int i = 0; i < 4; i++) {
-            System.out.printf("0x%02x\n", data[i]);
-        }
-
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Inflater inflater = new Inflater(NOWRAP);
         InflaterOutputStream outputStream = new InflaterOutputStream(baos, inflater);
