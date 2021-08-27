@@ -5,6 +5,8 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
+import Splitter from 'ol-ext/interaction/Splitter';
+import Split from 'ol-ext/interaction/Split';
 import { map, styles, layers, Colors } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Geometry from 'ol/geom/Geometry';
@@ -53,8 +55,7 @@ class Itinerary extends React.Component {
     setDefaultLayer() {
         let defaultLayerName = 'Itinerary'; //changeme if we want the default layer to be something different
 
-        this.selectLayer(defaultLayerName);
-    }
+        this.selectLayer(defaultLayerName); }
 
     getSelectedLayer() {
         for (let i = 0; i < this.props.layers.length; i++) {
@@ -75,24 +76,9 @@ class Itinerary extends React.Component {
 
         console.log("Trimming flight to timestamp " + min + " through " + max);
 
-        let layers = this.props.layers;
-        //for (var i = 0; i < layers.length; i++) {
-            //let layer = layers[i];
-            //let source = layer.getSource();
-            //let features = source.getFeatures();
-            ////if (features.length >= this.props.numberRows) {
-                //for (var j = 0; j < features.length; j++) {
-                    //let feature = features[i];
-                    //if (j < min || j > max) {
-                        //let geometry = feature.getGeometry();
-                        //geometry.setStyle(new Style());
-                        ////console.log(feature.getStyle());
-                    //} else {
+        let split = new Split();
 
-                    //}
-                //}
-            ////}
-        //}
+        this.props.drawLociLayers(min, max);
     }
 
     render() {
