@@ -1152,9 +1152,9 @@ class Flight extends React.Component {
                                 <div class="input-group-prepend">
                                     <span class="input-group-text" id="inputGroup-sizing-sm">Rating</span>
                                  </div>
-                                <input type="text" class="form-control" value={this.state.maintenanceRating} onChange={(event) => this.setMaintenanceRating(event)} aria-label="Small" aria-describedby="inputGroup-sizing-sm"/>
+                                <input type="text" class="form-control" value={this.state.maintenanceRating} onChange={(event) => this.setMaintenanceRating(event)} aria-label="Small" aria-describedby="inputGroup-sizing-sm" disabled={this.state.maintenanceRating == "NS/NR"}/>
                                 <div class="input-group-append">
-                                    <button id={submitButtonId} class="btn btn-outline-secondary" type="button" onClick={() => this.updateMaintenanceRating()} data-placement="top" data-trigger="manual" title="Submitted!">Submit</button>
+                                    <button id={submitButtonId} class="btn btn-outline-secondary" type="button" onClick={() => this.updateMaintenanceRating()} data-placement="top" data-trigger="manual" title="Submitted!" disabled={this.state.maintenanceRating == "NS/NR"}>Submit</button>
                                 </div>
                             </div>
                         </div>
