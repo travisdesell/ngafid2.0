@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
 import com.google.gson.Gson;
@@ -161,6 +162,29 @@ public class User {
         return fleet.getId() == fleetId && (fleetAccess.isManager() || fleetAccess.isUpload() || fleetAccess.isView());
     }
 
+    /**
+     * Return the number of users in the NGAFID
+     *
+     * @param connection A connection to the mysql database.
+     *
+     * @exception SQLException if there was a problem with the query or database.
+     *
+     * @return the number of users in the NGAFID
+     */
+    public static int getNumberUsers(Connection connection) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM user");
+
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            int numberUsers = resultSet.getInt(1);
+            return numberUsers;
+        } else {
+            return 0;
+        }
+    }
+
 
     /**
      * Get a user from the database based on the users id. 
@@ -304,6 +328,26 @@ public class User {
         query.setString(2, metricName);
 
         query.executeUpdate();
+    }
+
+    /**
+     * Updates the users preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param precision the new decimal precision value to store
+     */
+    public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId, int decimalPrecision) throws SQLException {
+        String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, decimalPrecision);
+        query.setInt(2, userId);
+
+        query.executeUpdate();
+
+        return getUserPreferences(connection, userId);
     }
 
     /**

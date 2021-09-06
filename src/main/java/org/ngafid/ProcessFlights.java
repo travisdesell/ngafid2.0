@@ -36,9 +36,13 @@ public class ProcessFlights {
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
 
                     PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id = ? LIMIT 1");
+
                     //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id = ? AND id = 2281");
                     //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id != 1");
                     //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ?");
+
+                    //targetFleetId = 1;
+                    //PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id, uploader_id, fleet_id, filename FROM uploads WHERE status = ? AND fleet_id = ? AND id = 2495 LIMIT 1");
                     uploadsPreparedStatement.setString(1, "UPLOADED");
                     uploadsPreparedStatement.setInt(2, targetFleetId);
 
@@ -177,7 +181,7 @@ public class ProcessFlights {
             System.err.println("finished in " + elapsed_seconds);
 
             try {
-                Thread.sleep(3000);
+                Thread.sleep(10000);
             } catch (Exception e) {
                 System.err.println(e);
                 e.printStackTrace();
