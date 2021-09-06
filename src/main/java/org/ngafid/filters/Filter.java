@@ -254,7 +254,7 @@ public class Filter {
             case "Parameter":
                 parameters.add(inputs.get(2));
                 parameters.add(inputs.get(4));
-                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND double_series.name = ? AND double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
+                return "EXISTS (SELECT id FROM double_series WHERE flights.id = double_series.flight_id AND double_series.name_id = (SELECT id FROM double_series_names WHERE name = ?) AND double_series." + checkSeriesOp(inputs.get(1)) + " " + checkOperator(inputs.get(3)) + " ?)";
 
             case "Airport":
                 String iataCode1 = inputs.get(1).substring(0, 3);

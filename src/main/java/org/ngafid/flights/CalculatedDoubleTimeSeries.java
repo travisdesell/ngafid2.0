@@ -8,6 +8,7 @@ package org.ngafid.flights;
 
 import java.io.IOException;
 import java.sql.SQLException;
+import java.sql.Connection;
 
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     private final Flight flight;
@@ -20,8 +21,8 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      * @param cache indicates if the new series should be stored in the database after all analysis is complete
      * @param flight the flight instance the timeseries is being calcualted for
      */
-    public CalculatedDoubleTimeSeries(String name, String dataType, boolean cache, Flight flight) {
-        super(name, dataType, cache);
+    public CalculatedDoubleTimeSeries(Connection connection, String name, String dataType, boolean cache, Flight flight) throws SQLException {
+        super(connection, name, dataType, cache);
         this.flight = flight;
     }
 
