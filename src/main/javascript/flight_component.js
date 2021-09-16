@@ -60,7 +60,8 @@ class Flight extends React.Component {
             eventLayer : null,
             itineraryLayer : null,
             eventOutlines : [],
-            eventOutlineLayer : null
+            eventOutlineLayer : null,
+            maintenanceProbability : 0.0
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -1102,6 +1103,45 @@ class Flight extends React.Component {
             });
         }
 
+        let maintenanceProbabilityBadge = (
+            <span className="badge badge-success m-1">
+                <div className="row">
+                    <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
+                    <div className="col-sm mr-1">
+                        {this.state.maintenanceProbability}
+                    </div>
+                </div>
+            </span>
+        );
+                    
+        if (this.state.maintenanceProbability > 0.5) {
+                maintenanceProbabilityBadge = (
+                <span className="badge badge-warning m-1">
+                    <div className="row">
+                        <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
+                        <div className="col-sm mr-1">
+                            {this.state.maintenanceProbability}
+                        </div>
+                    </div>
+                </span>
+            );
+        }
+
+        if (this.state.maintenanceProbability >= 0.75) {
+                maintenanceProbabilityBadge = (
+                <span className="badge badge-danger m-1">
+                    <div className="row">
+                        <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
+                        <div className="col-sm mr-1">
+                            {this.state.maintenanceProbability}
+                        </div>
+                    </div>
+                </span>
+            );
+        }
+
+        
+
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
@@ -1135,7 +1175,6 @@ class Flight extends React.Component {
                         </div>
 
                         <div className={cellClasses} style={{flexBasis:"80px", flexShrink:0, flexGrow:0}}>
-
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
@@ -1143,18 +1182,22 @@ class Flight extends React.Component {
                             {visitedAirports.join(", ")}
                         </div>
 
-                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-                            {this.state.maintenanceProbability}
+                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
+                            {maintenanceProbabilityBadge}
                         </div>
 
                         <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-                            <div class="input-group input-group-sm">
-                                <div class="input-group-prepend">
-                                    <span class="input-group-text" id="inputGroup-sizing-sm">Rating</span>
+                            <div className="input-group input-group-sm">
+                                <div className="input-group-prepend">
+                                    <span className="input-group-text" id="inputGroup-sizing-sm">Rating</span>
                                  </div>
-                                <input type="text" class="form-control" value={this.state.maintenanceRating} onChange={(event) => this.setMaintenanceRating(event)} aria-label="Small" aria-describedby="inputGroup-sizing-sm" disabled={this.state.maintenanceRating == "NS/NR"}/>
-                                <div class="input-group-append">
-                                    <button id={submitButtonId} class="btn btn-outline-secondary" type="button" onClick={() => this.updateMaintenanceRating()} data-placement="top" data-trigger="manual" title="Submitted!" disabled={this.state.maintenanceRating == "NS/NR"}>Submit</button>
+                                <button type="button" className="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                    Select...
+                                </button>
+                                <div className="dropdown-menu">
+                                    <a className="dropdown-item" href="#">Accurate</a>
+                                    <a className="dropdown-item" href="#">Inaccurate</a>
+                                    <a className="dropdown-item" href="#">Unsure</a>
                                 </div>
                             </div>
                         </div>

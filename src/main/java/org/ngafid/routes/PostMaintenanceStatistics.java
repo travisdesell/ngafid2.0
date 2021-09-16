@@ -42,7 +42,7 @@ public class PostMaintenanceStatistics implements Route {
             }
 
             if (probability == -1) {
-                this.maintenanceProbability = "No Maint. Statisitcs";
+                this.maintenanceProbability = "No Stats";
             } else if (probability == -2) {
                 this.maintenanceRating = "No Stats (csv format err.)";
             } else {
