@@ -5,8 +5,6 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
 import {fromLonLat, toLonLat} from 'ol/proj.js';
-import Splitter from 'ol-ext/interaction/Splitter';
-import Split from 'ol-ext/interaction/Split';
 import { map, styles, layers, Colors } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Geometry from 'ol/geom/Geometry';
