@@ -153,7 +153,7 @@ public class DoubleTimeSeries {
     }
 
     public static Pair<Double,Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
-        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dss ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
+        String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, flightId);
         query.setString(2, name);

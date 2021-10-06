@@ -24,7 +24,7 @@ function displayPlots(selectedAirframe) {
     var percentData = [];
 
     var fleetPercents = {
-        name : 'Your Fleet',
+        name : 'All Fleets',
         type : 'bar',
         orientation : 'h',
         hoverinfo : 'y+text',
@@ -35,18 +35,6 @@ function displayPlots(selectedAirframe) {
         totalFlightsCounts : []
     }
 
-
-    var ngafidPercents = {
-        name : 'All Other Fleets',
-        type : 'bar',
-        orientation : 'h',
-        hoverinfo : 'y+text',
-        hovertext : [],
-        y : [],
-        x : [],
-        flightsWithEventCounts : [],
-        totalFlightsCounts : []
-    }
 
     for (let [key, value] of Object.entries(eventCounts)) {
         if (value.airframeName === "Garmin Flight Display") continue;
@@ -79,25 +67,12 @@ function displayPlots(selectedAirframe) {
                     fleetPercents.totalFlightsCounts[pos] = value.totalFlightsCounts[i];
                 }
             }
-
-            var index = ngafidPercents.y.indexOf(value.names[i]);
-            if (index !== -1) {
-                ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
-                ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
-            } else {
-                let pos = ngafidPercents.y.length;
-                ngafidPercents.y.push(value.names[i]);
-                ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
-                ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
-            }
         }
     }
 
-    percentData.push(ngafidPercents);
     percentData.push(fleetPercents);
 
     console.log(fleetPercents);
-    console.log(ngafidPercents);
 
     for (let j = 0; j < percentData.length; j++) {
         let value = percentData[j];
@@ -157,52 +132,6 @@ function displayPlots(selectedAirframe) {
 }
 
 
-
-class Notifications extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.state = {
-            notifications : [
-                { count : waitingUserCount, message : "users waiting for access", badgeType : "badge-info" },
-                { count : unconfirmedTailsCount, message : "tail numbers need to be confirmed", badgeType : "badge-info" },
-                { count : uploadsNotImported, message : "uploads waiting to be imported", badgeType : "badge-warning" },
-                { count : uploadsWithError, message : "uploads with processing errors", badgeType : "badge-danger" },
-                { count : flightsWithWarning, message : "flights with import warnings", badgeType: "badge-warning" },
-                { count : flightsWithError, message : "flights with import errors", badgeType : "badge-danger" }
-            ]
-        };
-    }
-
-
-    render() {
-        return (
-            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)", height:"258px"}}>
-                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Notifications</h4>
-                <div className="card-body">
-                    <table>
-                        <tbody>
-                            {
-                                this.state.notifications.map((info, index) => {
-                                    if (info.count == 0) {
-                                        return;
-                                    } else {
-                                        return (
-                                            <tr key={index}>
-                                                <td style={{textAlign:"right", paddingBottom:"6"}}><span className={'badge ' + info.badgeType}>{Number(info.count).toLocaleString('en')}</span></td>
-                                                <td style={{paddingBottom:"6"}}>&nbsp;{info.message}</td>
-                                            </tr>
-                                        );
-                                    }
-                                })
-                            }
-                       </tbody>
-                    </table>
-                </div>
-            </div>
-        );
-    }
-}
 
 
 class AggregatePage extends React.Component {
@@ -268,7 +197,7 @@ class AggregatePage extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/protected/event_counts',
+            url: '/protected/all_event_counts',
             data : submission_data,
             dataType : 'json',
             success : function(response) {
@@ -314,7 +243,7 @@ class AggregatePage extends React.Component {
                     <div className="row">
                         <div className="col-lg-6" style={{paddingRight:"0"}}>
                             <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Your Fleet</h4>
+                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>All Fleets</h4>
                                 <div className="card-body">
                                     <div className="row">
                                         <div className = "col-sm-4">
@@ -351,7 +280,24 @@ class AggregatePage extends React.Component {
                         </div>
 
                         <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                            <Notifications />
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
+                                <div className="card-body">
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{numberFleets}</h3> Fleets <br></br>
+                                        </div>
+                                    </div>
+
+                                    <hr></hr>
+
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{numberUsers}</h3> Users<br></br>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 

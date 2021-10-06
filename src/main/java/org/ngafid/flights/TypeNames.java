@@ -22,6 +22,8 @@ public class TypeNames {
      *
      * @param connection is the connection to the database
      * @param id is the id of the type name
+     *
+     * @throws SQLException if there is an error with the database or query
      */
     public static String getName(Connection connection, int id) throws SQLException {
         String name = idToName.get(id);
@@ -60,6 +62,8 @@ public class TypeNames {
      *
      * @param connection is the connection to the database
      * @param name is the actual type name
+     *
+     * @throws SQLException if there is an error with the database or query
      */
     public static int getId(Connection connection, String name) throws SQLException {
         Integer id = nameToId.get(name);

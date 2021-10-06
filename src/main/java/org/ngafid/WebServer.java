@@ -200,6 +200,7 @@ public final class WebServer {
         Spark.get("/protected/welcome", new GetWelcome(gson));
         Spark.get("/protected/aggregate", new GetAggregate(gson));
         Spark.post("/protected/event_counts", new PostEventCounts(gson));
+        Spark.post("/protected/all_event_counts", new PostAllEventCounts(gson));
 
         Spark.get("/protected/trends", new GetTrends(gson));
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
@@ -277,6 +278,7 @@ public final class WebServer {
         Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+        Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));

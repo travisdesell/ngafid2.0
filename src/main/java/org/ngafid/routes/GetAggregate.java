@@ -24,9 +24,12 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+
+import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
 import org.ngafid.filters.Filter;
@@ -89,6 +92,13 @@ public class GetAggregate implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
+        //check to see if the user has access to view aggregate information
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate dashboard.");
+            Spark.halt(401, "User did not have aggregate access to view aggregate dashboard.");
+            return null;
+        }
+
         try  {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
@@ -106,25 +116,20 @@ public class GetAggregate implements Route {
             LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
 
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-
-
+            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
 
             long startTime = System.currentTimeMillis();
             String fleetInfo =
-                "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
-                "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +
-                "var numberAircraft = " + Tails.getNumberTails(connection, fleetId) + ";\n" +
-                "var totalEvents = " + EventStatistics.getEventCount(connection, fleetId, null, null) + ";\n" +
-                "var yearEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfYear, null) + ";\n" +
-                "var monthEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null) + ";\n" +
-                "var uploadsNotImported = " + Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") + ";\n" +
-                "var uploadsWithError = " + Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") + ";\n" +
-                "var flightsWithWarning = " + FlightWarning.getCount(connection, fleetId) + ";\n" +
-                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n" +
-                "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
-                "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
-                //"var eventCounts = JSON.parse('" + gson.toJson(eventCountsMap) + "');";
+                "var numberFlights = " + Flight.getNumFlights(connection, null) + ";\n" +
+                "var flightHours = " + Flight.getTotalFlightHours(connection, null) + ";\n" +
+                "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
+                "var totalEvents = " + EventStatistics.getEventCount(connection, null, null) + ";\n" +
+                "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
+                "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +
+                "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
+                "var eventCounts = " + gson.toJson(eventCountsMap) + ";" +
+                "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
+                "var numberUsers = " + User.getNumberUsers(connection) + ";";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

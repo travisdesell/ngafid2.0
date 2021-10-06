@@ -258,11 +258,25 @@ public class Flight {
     }
 
     /**
+     *  Gets the total number of flights for the entire NGAFID with a given filter. If the filter is null it returns 
+     *  the total number of flights in the NGAFID
+     *
+     *  @param connection is the database connection
+     *  @param is the filter to select the flights, can be null.
+     *
+     *  @return the number of flights, given the specified filter (or no filter if the filter is null).
+     */
+    public static int getNumFlights(Connection connection, Filter filter) throws SQLException {
+        return getNumFlights(connection, 0, filter);
+    }
+
+
+    /**
      *  Gets the total number of flights for a given fleet and filter. If the filter is null it returns the number of flights
      *  for the fleet.
      *
-     u  @param connection is the database connection
-     *  @param fleetId is the id of the fleet
+     *  @param connection is the database connection
+     *  @param fleetId is the id of the fleet, <= 0 will select for all fleets
      *  @param is the filter to select the flights, can be null.
      *
      *  @return the number of flights for the fleet, given the specified filter (or no filter if the filter is null).
@@ -271,16 +285,24 @@ public class Flight {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString;
-        if (filter != null) {
-            queryString = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        if (fleetId <= 0) {
+            if (filter != null) {
+                queryString = "SELECT count(id) FROM flights WHERE (" + filter.toQueryString(fleetId, parameters) + ")";
+            } else {
+                queryString = "SELECT count(id) FROM flights";
+            }
         } else {
-            queryString = "SELECT count(id) FROM flights WHERE fleet_id = ?";
+            if (filter != null) {
+                queryString = "SELECT count(id) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+            } else {
+                queryString = "SELECT count(id) FROM flights WHERE fleet_id = ?";
+            }
         }
 
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, fleetId);
+        if (fleetId > 0) query.setInt(1, fleetId);
         if (filter != null) {
             for (int i = 0; i < parameters.size(); i++) {
                 LOG.info("setting query parameter " + i + ": " + parameters.get(i));
@@ -324,11 +346,25 @@ public class Flight {
     }
 
     /**
+     *  Gets the total number of flight hours for a given filter. If the filter is null it returns the number of flight hours
+     *  for the entire NGAFID.
+     *
+     *  @param connection is the database connection
+     *  @param is the filter to select the flights, can be null.
+     *
+     *  @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
+     */
+    public static long getTotalFlightHours(Connection connection, Filter filter) throws SQLException {
+        return getTotalFlightHours(connection, 0, filter);
+    }
+
+
+    /**
      *  Gets the total number of flight hours for a given fleet and filter. If the filter is null it returns the number of flight hours
      *  for the fleet.
      *
      *  @param connection is the database connection
-     *  @param fleetId is the id of the fleet
+     *  @param fleetId is the id of the fleet, if <= 0 it will be for the entire NGAFID
      *  @param is the filter to select the flights, can be null.
      *
      *  @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
@@ -337,16 +373,26 @@ public class Flight {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString;
-        if (filter != null) {
-            queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+        if (fleetId <= 0) {
+            if (filter != null) {
+                queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + filter.toQueryString(fleetId, parameters) + ")";
+            } else {
+                queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights";
+            }
         } else {
-            queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ?";
+            if (filter != null) {
+                queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ? AND (" + filter.toQueryString(fleetId, parameters) + ")";
+            } else {
+                queryString  = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE fleet_id = ?";
+            }
         }
+
 
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, fleetId);
+        if (fleetId > 0) query.setInt(1, fleetId);
+
         if (filter != null) {
             for (int i = 0; i < parameters.size(); i++) {
                 LOG.info("setting query parameter " + i + ": " + parameters.get(i));
