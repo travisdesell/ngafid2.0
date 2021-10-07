@@ -223,7 +223,7 @@ class AirframeCard extends React.Component {
         this.state = {
             expanded : false,
             isLoaded : false,
-            eventStats : null
+            eventStats : {}
         }
     }
 
@@ -241,7 +241,6 @@ class AirframeCard extends React.Component {
         });
 
         if (!this.state.isLoaded) {
-            // fetchPosts().then()
             this.getStats(this);
         }
     }
@@ -262,7 +261,10 @@ class AirframeCard extends React.Component {
             success : function(response) {
                 if (response.events != null) {
                     console.log("Successfully acquired event stats for airframe");
-                    airframeCard.setState(() => ({isLoaded : true, eventStats : response}));
+                    airframeCard.setState({
+                        isLoaded : true,
+                        eventStats : response
+                    });
                 } else {
                     console.log("Bad juju, must investigate");
                 }
@@ -305,7 +307,7 @@ class AirframeCard extends React.Component {
 
                 <div className="row" style={{padding:"0 15 0 15"}}>
                     {
-                        (!this.state.expanded || this.state.eventStats.events == null) ? "" : this.state.eventStats.events.map((eventInfo, eventIndex) => {
+                        (!this.state.expanded || this.state.eventStats == null) ? "" : this.state.eventStats.events.map((eventInfo, eventIndex) => {
                             let processedPercentage = (100.0 * parseFloat(eventInfo.processedFlights) / parseFloat(eventInfo.totalFlights)).toFixed(2);
                             if (typeof eventInfo.infoHidden == 'undefined') eventInfo.infoHidden = true;
 
