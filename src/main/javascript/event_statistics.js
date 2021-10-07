@@ -223,7 +223,6 @@ class AirframeCard extends React.Component {
         this.state = {
             expanded : false,
             isLoaded : false,
-            eventStats : {}
         }
     }
 
