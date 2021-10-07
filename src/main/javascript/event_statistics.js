@@ -227,25 +227,31 @@ class AirframeCard extends React.Component {
         }
     }
 
+    toggleEventInfo(eventInfo) {
+        console.log("eventInfo.infoHidden is: " + eventInfo.infoHidden);
+        eventInfo.infoHidden = !eventInfo.infoHidden;
+        console.log("eventInfo.infoHidden changed to: " + eventInfo.infoHidden);
+
+        this.setState(this.state);
+    }
+
     expandClicked() {
         this.setState({
             expanded : !this.state.expanded
         });
 
         if (!this.state.isLoaded) {
-            this.getStats();
+            // fetchPosts().then()
+            this.getStats(this);
         }
     }
 
-    getStats() {
+    getStats(airframeCard) {
         console.log("Acquiring event stats");
-
-        let airframeCard = this;
 
         var submissionData = {
             airframeNameId : this.props.airframeId,
-            airframeName : this.props.airframeName//,
-            // eventDefs: eventDefinitions
+            airframeName : this.props.airframeName
         };
 
         $.ajax({
@@ -256,11 +262,7 @@ class AirframeCard extends React.Component {
             success : function(response) {
                 if (response.events != null) {
                     console.log("Successfully acquired event stats for airframe");
-                    eventStats.push(response);
-                    airframeCard.setState({
-                        isLoaded : true,
-                        eventStats : response
-                    })
+                    airframeCard.setState(() => ({isLoaded : true, eventStats : response}));
                 } else {
                     console.log("Bad juju, must investigate");
                 }
@@ -282,7 +284,6 @@ class AirframeCard extends React.Component {
         let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
         let expandIconClasses = "fa ";
         let expandDivClasses = "";
-        let expandStatChildren = "";
 
         if (this.state.expanded) {
             expandIconClasses += "fa-angle-double-up";
