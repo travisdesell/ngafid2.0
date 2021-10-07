@@ -123,5 +123,33 @@ public class TimeUtils {
         return odt3;
     }
 
+    public static String convertToOffset(String originalDateTime, String originalOffset, String newOffset) {
+        // create a LocalDateTime using the date time passed as parameter
+        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+
+        //fix bad offset values
+        //originalOffset = updateBadOffset(ldt, originalOffset);
+
+        // parse the offset
+        ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
+
+        // create an OffsetDateTime using the parsed offset
+        OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
+
+        // print the date time with the parsed offset
+        //System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        //System.out.println("with offset:               \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+
+        ZoneOffset offset2 = ZoneOffset.of(newOffset);
+        OffsetDateTime odt3 = odt.withOffsetSameInstant(offset2);
+
+        //String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        //String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        //System.out.println("with offset (same instant):\t" + newTime);
+
+        return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+    }
+
+
 
 }

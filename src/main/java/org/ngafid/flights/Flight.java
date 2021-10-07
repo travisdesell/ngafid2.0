@@ -27,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
+import java.time.DateTimeException;
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -1509,8 +1510,23 @@ public class Flight {
         System.out.println("\t\t\tfirst not null  " + start + " -- " + startDate + " " + startTime + " " + startOffset);
         System.out.println("\t\t\tlast not null   " + endDate + " " + endTime + " " + endOffset);
 
-        OffsetDateTime startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
-        OffsetDateTime endODT = TimeUtils.convertToOffset(endDate, endTime, endOffset, "+00:00");
+        OffsetDateTime startODT = null;
+        try {
+            startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
+        } catch (DateTimeException dte) {
+            System.err.println("Corrupt start time data in flight file: " + dte.getMessage());
+            //System.exit(1);
+            throw new MalformedFlightFileException("Corrupt start time data in flight file: '" + dte.getMessage() + "'");
+        }
+
+        OffsetDateTime endODT = null;
+        try {
+            endODT = TimeUtils.convertToOffset(endDate, endTime, endOffset, "+00:00");
+        } catch (DateTimeException dte) {
+            System.err.println("Corrupt end time data in flight file: " + dte.getMessage());
+            //System.exit(1);
+            throw new MalformedFlightFileException("Corrupt end time data in flight file: '" + dte.getMessage() + "'");
+        }
 
         if (startODT.isAfter(endODT)) {
             startDateTime = null;
@@ -1595,7 +1611,7 @@ public class Flight {
                         if (airframeName.equals("Diamond DA 40")) {
                             airframeName = "Diamond DA40";
 
-                        } else if (airframeName.equals("Garmin Flight Display") && fleetId == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
+                        } else if ((airframeName.equals("Garmin Flight Display") || airframeName.equals("Robinson R44 Raven I")) && fleetId == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
                             airframeName = "R44";
                         }
 
@@ -1828,7 +1844,8 @@ public class Flight {
                 }
 
                 System.out.println("Calculating start and end time for ScanEagle!");
-                calculateScanEagleStartEndTime("DID_GPS_TIME", "DID_GPS_LAT", "DID_GPS_LON");
+                //calculateScanEagleLatLon("DID_GPS_LAT", "DID_GPS_LON", "Latitude", "Longitude");
+                calculateScanEagleStartEndTime("DID_GPS_TIME", "Latitude", "Longitude");
 
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
@@ -1905,6 +1922,9 @@ public class Flight {
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
 
+            } else if (airframeName.equals("ScanEagle")) {
+                //This is a UAV, we can't calculate these divergences
+
             } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft") || airframeName.equals("Cessna Model 525")) {
                 LOG.warning("Cannot calculate engine divergences because airframe data recorder does not track CHT and/or EGT: '" + airframeName + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeName +" does not track CHT and/or EGT"));
@@ -1948,7 +1968,7 @@ public class Flight {
     private void checkIfExists(Connection connection) throws FlightAlreadyExistsException {
         try {
             //make sure that the hash is for the same fleet, because we can have duplicate flights across fleets (e.g., on the demo account)
-            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.md5_hash = ? AND flights.fleet_id = ?");
+            PreparedStatement preparedStatement = connection.prepareStatement("SELECT uploads.id, uploads.filename, flights.filename FROM flights, uploads WHERE flights.md5_hash = ? AND flights.fleet_id = ? AND flights.upload_id = uploads.id");
             preparedStatement.setString(1, md5Hash);
             preparedStatement.setInt(2, fleetId);
             ResultSet resultSet = preparedStatement.executeQuery();
