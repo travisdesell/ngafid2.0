@@ -614,11 +614,41 @@ class Flight extends React.Component {
     }
 
     drawLociLayers(lowerConstraint, upperConstraint) {
+        console.log(map);
         const lociData = this.state.seriesData.get('LOC-I Index');
         const spData = this.state.seriesData.get('Stall Index');
 
-        generateStallLayer(spData, layers, this, lowerConstraint, upperConstraint);
-        generateLOCILayer(lociData, layers, this, lowerConstraint, upperConstraint);
+        generateStallLayer(spData, this.state.layers, this, lowerConstraint, upperConstraint);
+        generateLOCILayer(lociData, this.state.layers, this, lowerConstraint, upperConstraint);
+
+        console.log("drawing loci layers!");
+        console.log(this.state.layers);
+
+        this.replaceMapLayers();
+    }
+
+    mapLayerIndexOf(layerName) {
+        let mapLayers = map.getLayers().getArray();
+
+        for (let i = 0; i < mapLayers.length; i++) {
+            if (mapLayers[i].get('name') === layerName) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    replaceMapLayers() {
+        let mapLayers = map.getLayers().getArray();
+        for (let i = 0; i < this.state.layers.length; i++) {
+            let layer = this.state.layers[i];
+            let index = this.mapLayerIndexOf(layer.get('name'));
+
+            if (index != -1) {
+                mapLayers[index] = layer;
+            }
+        }
     }
 
     globeClicked() {
@@ -817,6 +847,7 @@ class Flight extends React.Component {
                     let baseLayer = thisFlight.state.baseLayer;
 
                     baseLayer.flightState = thisFlight;
+                    let flightInfo = thisFlight.props.flightInfo;
 
                     thisFlight.state.pathVisible = true;
                     thisFlight.state.itineraryVisible = true;
@@ -827,10 +858,11 @@ class Flight extends React.Component {
                     // toggle visibility of itinerary
                     layers.push(baseLayer, phaseLayer);
 
-                    drawLociLayers(0, itinerary.length);
-                    
+                    //TODO fix here
+                    drawLociLayers(0, flightInfo.numberRows);
+
                     console.log("adding layers!");
-                    for(let i = 0; i < layers.length; i++){
+                    for(let i = 0; i < layers.length; i++) {
                         let layer = layers[i];
                         console.log(layer);
                         if(layer.get('name').includes('Itinerary')) {

@@ -70,6 +70,7 @@ function mapLayerIndexOf(layers, layerName) {
  * @param flight the flight object that has data pertaining to the flight
  */
 function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstraint) {
+    console.log("generating LOCI layer");
     var spPhases = [], spOutlinePhases = [];
     if (spData != null) {
         for(let i = lowerConstraint; i < upperConstraint; i++){
@@ -132,7 +133,7 @@ function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstr
     });
 
     spLayer.flightState = flight;
-    layers.push(spLayerOutline, spLayer);
+    flight.state.layers.push(spLayerOutline, spLayer);
 }
 
 /**
@@ -143,6 +144,7 @@ function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstr
  * @param flight the flight object that has data pertaining to the flight
  */
 function generateLOCILayer(lociData, layers, flight, lowerConstraint, upperConstraint) {
+    console.log("generating LOCI layer from " + lowerConstraint + " to " + upperConstraint);
     var lociPhases = [], lociOutlinePhases = [];
     if (lociData != null) {
         for(let i = lowerConstraint; i < upperConstraint; i++){
@@ -208,19 +210,30 @@ function generateLOCILayer(lociData, layers, flight, lowerConstraint, upperConst
 
     lociLayer.flightState = flight;
 
-    let lociOutlineIndex = mapLayerIndexOf(layers, lociLayerOutline.get('name'));
-    if (lociOutlineIndex >= 0) {
-        layers[lociOutlineIndex] = lociLayerOutline;
-    } else {
-        layers.push(lociLayerOutline);
+    for (let i = 0; i < flight.state.layers.length; i++) {
+        if (flight.state.layers[i].get('name').includes("LOC-I")) {
+            flight.state.layers.splice(i, 1);
+        }
     }
+    // let lociOutlineIndex = mapLayerIndexOf(layers, lociLayerOutline.get('name'));
+    // if (lociOutlineIndex >= 0) {
+    //     layers[lociOutlineIndex] = lociLayerOutline;
+    //     console.log("setting layer as it already exists!");
+    // } else {
+    //     layers.push(lociLayerOutline);
+    // }
 
-    let lociLayerIndex = mapLayerIndexOf(layers, lociLayer.get('name'));
-    if (lociLayerIndex >= 0) {
-        layers[lociLayerIndex] = lociLayerOutline;
-    } else {
-        layers.push(lociLayerOutline, lociLayer);
-    }
+    // let lociLayerIndex = mapLayerIndexOf(layers, lociLayer.get('name'));
+    // if (lociLayerIndex >= 0) {
+    //     console.log(layers);
+    //     layers[lociLayerIndex] = lociLayerOutline;
+    //     console.log("setting layer as it already exists!");
+    //     console.log(layers);
+    // } else {
+    //     flight.state.layers.push(lociLayer);
+    // }
+    flight.state.layers.push(lociLayerOutline);
+    flight.state.layers.push(lociLayer);
 }
 
 export {generateStallLayer, generateLOCILayer};

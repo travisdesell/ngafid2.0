@@ -74,8 +74,6 @@ class Itinerary extends React.Component {
 
         console.log("Trimming flight to timestamp " + min + " through " + max);
 
-        let split = new Split();
-
         this.props.drawLociLayers(min, max);
     }
 
@@ -109,7 +107,7 @@ class Itinerary extends React.Component {
         let eventHighlights = [];
         for (var i = 0; i < this.props.events.length; i++) {
             let event = this.props.events[i];
-            eventHighlights.push({"start" : event.startLine, "end" : event.endLine, style: "background: #99CC00;"})
+            // eventHighlights.push({"start" : event.startLine, "end" : event.endLine, style: "background: #99CC00;"})
         }
 
         console.log("event highlights:");
@@ -135,13 +133,14 @@ class Itinerary extends React.Component {
         
 
         const el = $('#slider').on('slide', (el) => this.changeItineraryRange(el)).data('slider');
+        console.log(this.props.layers);
 
         return (
             <div>
                 <b className={"m-0 p-1"} style={{marginBottom:"0", overflowY:"auto"}}>Itinerary:</b>
                 <div className="row">
                     <div className="col mb-1 ml-3 mr-5">
-                        <input id="slider" type="text" onChange={() => this.changeItineraryRange()} style={{width : "100%"}}/>
+                        <input id="slider" type="range" onMouseUp={() => this.changeItineraryRange()} style={{width : "100%"}}/>
                     </div>
                 </div>
                 <div className={cellClasses} style={cellStyle}>
