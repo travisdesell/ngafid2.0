@@ -19,6 +19,10 @@ global.plotlyLayout = {
     shapes : []
 };
 
+function invalidString(str) {
+    return (str == null || str.length < 0 || /^\s*$/.test(str));
+}
+
 class FlightPage extends React.Component {
     constructor(props) {
         super(props);
@@ -187,6 +191,278 @@ class FlightPage extends React.Component {
         return this.filterRef.getQuery();
     }
 
+    addTag(flightId, name, description, color) {
+        if (invalidString(name) || invalidString(description)) {
+            errorModal.show("Error creating tag!",
+                            "Please ensure the name and description fields are correctly filled out!");
+            return;
+        }
+
+        var submissionData = {
+            name : name,
+            description : description,
+            color : color,
+            id : flightId
+        };
+        console.log("Creating a new tag for flight # " + this.state.flightId);
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/create_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if (response != "ALREADY_EXISTS") {
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            if (flight.tags != null && flight.tags.length > 0) {
+                                flight.tags.push(response);
+                            } else {
+                                flight.tags = [response];
+                            }
+                        }
+                    }
+                    thisFlight.setState(thisFlight.state);
+                } else {
+                    errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
+                }
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+    /**
+     * Calls the server using ajax-json to notify it of the new tag change
+     */
+    editTag(newTag, currentTag) {
+        console.log("submitting edit for tag: "+currentTag.hashId);
+
+        console.log("current tag");
+        console.log(currentTag);
+
+        console.log("new tag");
+        console.log(newTag);
+
+        var submissionData = {
+            tag_id : currentTag.hashId,
+            name : newTag.name,
+            description : newTag.description,
+            color : newTag.color
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/edit_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if (response != "NOCHANGE") {
+                    console.log("tag was edited!");
+
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        console.log(flight);
+                        console.log(currentTag);
+                        if (flight.tags != null && flight.tags.length > 0) {
+                            let tags = flight.tags;
+                            for (var j = 0; j < tags.length; j++) {
+                                let tag = tags[j];
+                                if (tag.hashId == currentTag.hashId) {
+                                    tags[j] = response;
+                                }
+                            }
+                        }
+                    } 
+                    thisFlight.setState(thisFlight.state);
+                } else {
+                    thisFlight.showNoEditError();
+                }
+                thisFlight.setState(thisFlight.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: true
+        });
+    }
+
+    getUnassociatedTags(flightId) {
+        console.log("getting unassociated tags!")
+
+        let tags = [];
+
+        var submissionData = {
+            id : flightId
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/get_unassociated_tags',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                tags = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+
+        return tags;
+    }
+
+    /**
+     * Handles when the user presses the delete button, and prompts them with @module confirmModal
+     */
+    deleteTag(flightId, tagId) {
+        console.log(tag);
+        if (tagId != null) {
+            console.log("delete tag invoked!");
+            confirmModal.show("Confirm Delete Tag: '" + tag.name + "'",
+                "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+                () => {this.removeTag(flightId, tagId, true)}
+            );
+        } else {
+            errorModal.show("Please select a tag to delete first!",
+                            "You did not select a tag to delete");
+        }
+
+    }
+
+    /**
+     * removes a tag from a flight, either permanent or just from one flight
+     * @param id the tagid of the tag being removed
+     * @param tag is the tag being removed
+     * @param isPermanent a bool representing whether or not the removal is permanent
+     */
+    removeTag(flightId, tagId, isPermanent) {
+        console.log("un-associating tag #" + tagId + " with flight #" + flightId);
+
+        if (tagId == null || tagId == -1) {
+            errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+            return;
+        }
+
+        var submissionData = {
+            flight_id : flightId,
+            tag_id : tagId,
+            permanent : isPermanent,
+            all : (tagId == -2)
+        };
+
+        let thisFlight = this;
+        console.log("calling deletion ajax");
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/remove_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                if (isPermanent) {
+                    console.log("permanent deletion of tag with id: " + tagId);
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        console.log(flight);
+                        if (flight.tags != null) {
+                            let tags = flight.tags;
+                            for (var j = 0; j < tags.length; j++) {
+                                let tag = tags[j];
+                                if (tagId == response.tagId) {
+                                    tags.splice(j, 1);
+                                }
+                            }
+                        }
+                    } 
+                } else if (response.allTagsCleared) {
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            flight.tags = [];
+                        }
+                    } 
+                } else {
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        let tags = flight.tags;
+                        if (flight.id == flightId) {
+                            let tags = flight.tags;
+                            tags.splice(tags.indexOf(tag), 1);
+                        }
+                    }
+                } 
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: false 
+        });  
+    }
+
+    /**
+     * Associates a tag with this flight
+     * @param id the tag id to associate
+     */
+    associateTag(tagId, flightId) {
+        console.log("associating tag #"+tagId+" with flight #"+flightId);
+
+        var submissionData = {
+            id : flightId,
+            tag_id : tagId
+        };
+
+        let thisFlight = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/associate_tag',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+                for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                    let flight = thisFlight.state.flights[i];
+                    if (flight.id == flightId) {
+                        if (flight.tags != null && flight.tags.length > 0) {
+                            flight.tags.push(response);
+                        } else {
+                            flight.tags = [response];
+                        }
+                    }
+                }
+                thisFlight.setState(thisFlight.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+            },   
+            async: true 
+        });  
+    }
+
+
+    /**
+     * Handles when the user presses the clear all tags button, and prompts them with @module confirmModal
+     */
+    clearTags(flightId) {
+        confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #" + flightId + "?",
+                          () => {this.removeTag(flightId, -2, false)});
+    }
+
     render() {
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -247,6 +523,14 @@ class FlightPage extends React.Component {
                                 flights : flights
                             });
                         }}
+
+                        addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
+                        removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
+                        deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
+                        getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
+                        associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
+                        clearTags={(flightId) => this.clearTags(flightId)}
+                        editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
                     />
                 </div>
             </div>
