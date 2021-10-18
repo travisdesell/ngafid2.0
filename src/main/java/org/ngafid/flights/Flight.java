@@ -876,13 +876,13 @@ public class Flight {
      * @return a List with all the tags
      * @throws SQLException if there is an error with the database query
      */
-    public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException{
-        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = "+fleetId;
+    public static List<FlightTag> getAllTags(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT id, fleet_id, name, description, color FROM flight_tags WHERE fleet_id = " + fleetId;
         PreparedStatement query = connection.prepareStatement(queryString);
         ResultSet resultSet = query.executeQuery();
         List<FlightTag> tags = new ArrayList<>();
 
-        while(resultSet.next()){
+        while(resultSet.next()) {
             tags.add(new FlightTag(resultSet));
         }
 

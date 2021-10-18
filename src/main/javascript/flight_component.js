@@ -616,6 +616,44 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
+    drawLociLayers(lowerConstraint, upperConstraint) {
+        console.log(map);
+        const lociData = this.state.seriesData.get('LOC-I Index');
+        const spData = this.state.seriesData.get('Stall Index');
+
+        generateStallLayer(spData, this.state.layers, this, lowerConstraint, upperConstraint);
+        generateLOCILayer(lociData, this.state.layers, this, lowerConstraint, upperConstraint);
+
+        console.log("drawing loci layers!");
+        console.log(this.state.layers);
+
+        this.replaceMapLayers();
+    }
+
+    mapLayerIndexOf(layerName) {
+        let mapLayers = map.getLayers().getArray();
+
+        for (let i = 0; i < mapLayers.length; i++) {
+            if (mapLayers[i].get('name') === layerName) {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    replaceMapLayers() {
+        let mapLayers = map.getLayers().getArray();
+        for (let i = 0; i < this.state.layers.length; i++) {
+            let layer = this.state.layers[i];
+            let index = this.mapLayerIndexOf(layer.get('name'));
+
+            if (index != -1) {
+                mapLayers[index] = layer;
+            }
+        }
+    }
+
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -678,6 +716,8 @@ class Flight extends React.Component {
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
             };
+
+            const drawLociLayers = (lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint);
 
             $.ajax({
                 type: 'POST',
@@ -810,6 +850,7 @@ class Flight extends React.Component {
                     let baseLayer = thisFlight.state.baseLayer;
 
                     baseLayer.flightState = thisFlight;
+                    let flightInfo = thisFlight.props.flightInfo;
 
                     thisFlight.state.pathVisible = true;
                     thisFlight.state.itineraryVisible = true;
@@ -819,20 +860,17 @@ class Flight extends React.Component {
 
                     // toggle visibility of itinerary
                     layers.push(baseLayer, phaseLayer);
-                    
-                    const lociData = thisFlight.state.seriesData.get('LOC-I Index');
-                    const spData = thisFlight.state.seriesData.get('Stall Index');
 
-                    generateStallLayer(spData, layers, thisFlight);
-                    generateLOCILayer(lociData, layers, thisFlight);
-                    
+                    //TODO fix here
+                    drawLociLayers(0, flightInfo.numberRows);
+
                     console.log("adding layers!");
-                    for(let i = 0; i < layers.length; i++){
+                    for(let i = 0; i < layers.length; i++) {
                         let layer = layers[i];
                         console.log(layer);
                         if(layer.get('name').includes('Itinerary')) {
                             //Itinerary will be the default layer
-                            thisFlight.state.selectedPlot = layer.values_.name;
+                            thisFlight.state.selectedPlot = layer.get('name');
                             layer.setVisible(true);
                         } else {
                             layer.setVisible(false);
@@ -1054,7 +1092,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
+                <Itinerary showMap={() => {this.props.showMap();}} drawLociLayers={(lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint)} layers={this.state.layers} itinerary={flightInfo.itinerary} numberRows={flightInfo.numberRows} events={this.state.events} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 

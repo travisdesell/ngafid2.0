@@ -1,4 +1,5 @@
 'use strict';
+import "bootstrap-slider/dist/css/bootstrap-slider.css";
 
 
 class TabHeader extends React.Component {
