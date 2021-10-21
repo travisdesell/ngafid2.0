@@ -230,7 +230,7 @@ public class DoubleTimeSeries {
      * @param name is the column name of the double time series
      * @return a DoubleTimeSeries for his flight and column name, null if it does not exist.
      */
-    public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
+    public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?");
 
         query.setInt(1, flightId);
@@ -239,10 +239,17 @@ public class DoubleTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
-            resultSet.close();
-            query.close();
-            return result;
+            try {
+                DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
+                return result;
+            } catch (IOException e) {
+                LOG.severe("Encountered IOException while reading double time series from database. This should not happen.");
+                System.exit(1);
+            } finally {
+                resultSet.close();
+                query.close();
+            }
+            return null; // This is unreachable
         } else {
             //TODO: should probably throw an exception
             resultSet.close();
@@ -267,9 +274,28 @@ public class DoubleTimeSeries {
         Blob values = resultSet.getBlob(10);
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
-
+        
         this.data = Compression.inflateDoubleArray(bytes, size);
-        LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+       
+        // OLD COMPRESSION CODE
+        // byte[] bytes = values.getBytes(1, (int)values.length());
+        // values.free();
+
+        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+
+        // try {
+        //     Inflater inflater = new Inflater();
+        //     inflater.setInput(bytes, 0, bytes.length);
+        //     ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
+        //     int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
+        //     double[] timeSeriesArray = new double[size];
+        //     timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
+        //     this.data = timeSeriesArray;
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+        // 
+        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
     }
 
     public String toString() {
@@ -372,11 +398,47 @@ public class DoubleTimeSeries {
                 preparedStatement.setDouble(8, max);
             }
 
+            // UPDATED COMPRESSION CODE
+            // byte[] compressed = Compression.compressDoubleArray(this.data);
+            // Blob seriesBlob = new SerialBlob(compressed);
+            
             // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
             // is a list of objects rather than a list of primitives - it consumes much more memory.
             // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
-            byte[] compressed = Compression.compressDoubleArray(this.data);
-            Blob seriesBlob = new SerialBlob(compressed);
+            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
+            for (int i = 0; i < size; i++)
+                timeSeriesBytes.putDouble(data[i]);
+
+            // Hopefully this is enough memory. It should be enough.
+            int bufferSize = timeSeriesBytes.capacity() + 256;
+            ByteBuffer compressedTimeSeries;
+
+            // This is probably super overkill but it won't hurt?
+            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
+            // allocate more memory.
+            // I don't think it should happen unless the time series unless the compressed data is larger than the
+            // raw data, which should never happen.
+            int compressedDataLength;
+
+            for (;;) {
+                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
+                try {
+                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
+                    deflater.setInput(timeSeriesBytes.array());
+                    deflater.finish();
+                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
+                    deflater.end();
+                    break;
+                } catch (BufferOverflowException _boe) {
+                    bufferSize *= 2;
+                }
+            }
+
+            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
+            // we don't know what the compressed data size until after it is done being compressed
+            byte[] blobBytes = new byte[compressedDataLength];
+            compressedTimeSeries.get(blobBytes);
+            Blob seriesBlob = new SerialBlob(blobBytes);
 
             preparedStatement.setBlob(9, seriesBlob);
             preparedStatement.executeUpdate();
@@ -384,7 +446,7 @@ public class DoubleTimeSeries {
 
             seriesBlob.free();
 
-        } catch (SQLException | IOException e) {
+        } catch (SQLException e) { //  | IOException e) { // Re-enable this for the new compression code.
             e.printStackTrace();
             System.exit(1);
         }
@@ -396,7 +458,7 @@ public class DoubleTimeSeries {
         try {
             DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
             if (laggedSeries != null) return Optional.of(laggedSeries);
-        } catch (SQLException | IOException se) {
+        } catch (SQLException se) {
             se.printStackTrace();
         }
 
@@ -409,7 +471,7 @@ public class DoubleTimeSeries {
         try {
             DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
             if (leadingSeries != null) return Optional.of(leadingSeries);
-        } catch (SQLException | IOException se) {
+        } catch (SQLException se) {
             se.printStackTrace();
         }
 

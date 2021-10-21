@@ -44,4 +44,20 @@ function query_ngafid_db($query) {
     return $result;
 }
 
+function get_number_rows($table) {
+    $query = "SELECT COUNT(*) FROM $table";
+    $result = query_ngafid_db($query);
+    $all = $result->fetch_all();
+    return $all[0][0];
+}
+
+function iterated_table_deletion($table, $id) {
+    $size = get_number_rows($table);
+    echo "size = $size \n";
+    for ($i = 1; $i < $size; $i += 100000) {
+        query_ngafid_db("DELETE FROM $table WHERE $id < $i");
+        echo "deleted $table $id < $i!\n";
+    }
+}
+
 ?>

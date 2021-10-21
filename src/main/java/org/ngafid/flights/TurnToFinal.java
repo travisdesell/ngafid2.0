@@ -20,7 +20,7 @@ import static org.ngafid.flights.Parameters.*; //eliminates the need to use Para
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
-    private static final long serialVersionUID = 0x46AF1D77F0000L;
+    public static final long serialVersionUID = 0x46AF1D77F0000L;
 
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -30,7 +30,7 @@ public class TurnToFinal implements Serializable {
     private static final double CENTER_LINE_DEVIATION_TOLERANCE_IN_MILES = 0.1;
 
     // List of (lat, long) coords (in that order) representing a turn to final
-    private final double[] latitude, longitude, altitude, roll, stallProbability, locProbability, altMSL;
+    private final double[] latitude, longitude, altitude, roll, stallProbability, locProbability, altMSL, distanceFromRunway;
     private double runwayAltitude;
     private double maxRoll;
     private final Runway runway;
@@ -43,7 +43,7 @@ public class TurnToFinal implements Serializable {
 
     private ArrayList<Integer> locExceedences;
     private ArrayList<Integer> centerLineExceedences;
-    private ArrayList<Double>  selfDefinedGlidPathDeviations;
+    private ArrayList<Double>  selfDefinedGlidePathDeviations;
 
     private double selfDefinedGlideAngle;
 
@@ -69,6 +69,7 @@ public class TurnToFinal implements Serializable {
         this.flightStartDate = flightStartDate;
         this.stallProbability = stallProbability;
         this.locProbability = locProbability;
+        selfDefinedGlidePathDeviations = new ArrayList<>();
 
         assert this.latitude.length == this.longitude.length;
         assert this.latitude.length == this.altitude.length;
@@ -94,6 +95,12 @@ public class TurnToFinal implements Serializable {
         calculateSelfDefindGlidePath();
 
         this.maxRoll = Arrays.stream(roll).map(Math::abs).max().getAsDouble();
+
+        this.distanceFromRunway = new double[this.latitude.length];
+        int last = this.longitude.length;
+        for (int i = 0; i < last - 1; i++)
+            this.distanceFromRunway[i] = Airports.calculateDistanceInFeet(latitude[i], longitude[i], latitude[last - 1], longitude[last - 1]);
+
     }
 
     private double[] getExtendedRunwayCenterLine() {
@@ -167,7 +174,7 @@ public class TurnToFinal implements Serializable {
         // This is all in terms of feet
         final double BC = Airports.calculateDistanceInFeet(latitude[0], longitude[0], latitude[last], longitude[last]);
         final double AB = altA - altB;
-        selfDefinedGlideAngle = Math.tanh(AB / BC);
+        selfDefinedGlideAngle = Math.toDegrees(Math.tanh(AB / BC));
 
         // Feet of descent per foot traveled towards the runway.
         final double expDescent = AB / BC;
@@ -175,11 +182,13 @@ public class TurnToFinal implements Serializable {
             double lat = latitude[i];
             double lon = longitude[i];
             double EC = Airports.calculateDistanceInFeet(lat, lon, latitude[last], longitude[last]);
-            double expAlt = altA - expDescent * EC;
+            double expAlt = altB + expDescent * EC;
             double actualAlt = altMSL[i];
             double deviation = expAlt - actualAlt;
-            selfDefinedGlidPathDeviations.add(deviation);
+            selfDefinedGlidePathDeviations.add(deviation);
         }
+
+        // System.out.printf("%f %f %f %f\n", expDescent, altA, altC, altA - expDescent);
     }
 
     public double[] getPosition(int timestep) {
@@ -200,8 +209,8 @@ public class TurnToFinal implements Serializable {
         PreparedStatement preparedStatement =
                 connection.prepareStatement("INSERT INTO turn_to_final (flight_id, version, data) VALUES (?, ?, ?)");
         preparedStatement.setInt(1, flight_id);
-        preparedStatement.setLong(3, TurnToFinal.serialVersionUID);
-        preparedStatement.setBlob(4, blob);
+        preparedStatement.setLong(2, TurnToFinal.serialVersionUID);
+        preparedStatement.setBlob(3, blob);
 
         preparedStatement.execute();
         preparedStatement.close();
@@ -222,7 +231,7 @@ public class TurnToFinal implements Serializable {
             return null;
         }
 
-        int version = resultSet.getInt(2);
+        long version = resultSet.getLong(2);
         Blob values = resultSet.getBlob(3);
 
         query.close();
@@ -290,10 +299,6 @@ public class TurnToFinal implements Serializable {
         assert lat.length == lon.length;
 
         ArrayList<Itinerary> itineraries = Itinerary.getItinerary(connection, flightId);
-
-        // I don't think this should happen?
-        if (itineraries.size() == 0) return new ArrayList<>();
-
         ArrayList<TurnToFinal> ttfs = new ArrayList<>(itineraries.size());
 
         for (Itinerary it : itineraries) {
@@ -344,8 +349,6 @@ public class TurnToFinal implements Serializable {
                 max = Math.max(max, altitude[i]);
             }
 
-            System.out.println("min = " + min + " runwayAlt = " + runwayAltitude);
-            System.out.println("MaxMin = " + (max - min));
             if (max - min < 60 || Double.isNaN(max - min))
                 continue;
             if (min > 100 || Double.isNaN(min))
@@ -368,7 +371,6 @@ public class TurnToFinal implements Serializable {
             ttfs.add(ttf);
             //ttfs.add(new TurnToFinal(altitude, lat, lon, from, to));
         }
-
         cacheTurnToFinal(connection, flight.getId(), ttfs);
 
         return ttfs;
@@ -412,12 +414,15 @@ public class TurnToFinal implements Serializable {
                     Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
                     Map.entry(PARAM_JSON_LATITUDE, this.latitude),
                     Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
-                    Map.entry(PARAM_ALTITUDE_ABOVE_SEA_LEVEL, this.altitude),
+                    Map.entry(PARAM_ALTITUDE_ABOVE_SEA_LEVEL, this.altMSL),
+                    Map.entry("AltAGL", this.altitude),
+                    Map.entry("distanceFromRunway", this.distanceFromRunway),
                     Map.entry("flightId", this.flightId),
                     Map.entry("runway", this.runway),
                     Map.entry("airportIataCode", this.airportIataCode),
                     Map.entry("flightStartDate", this.flightStartDate),
                     Map.entry("maxRoll", this.maxRoll),
+                    Map.entry("selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
                     Map.entry(PARAM_LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
                     Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
             );

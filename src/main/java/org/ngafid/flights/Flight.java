@@ -263,25 +263,7 @@ public class Flight {
      */
     public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate, String endDate,
                                                                     String airportIataCode, int limit) throws SQLException {
-        String queryString =
-                "SELECT         " +
-                "  flights.id,  " +
-                "  fleet_id,    " +
-                "  uploader_id, " +
-                "  upload_id,   " +
-                "  system_id,     " +
-                "  airframe_id, " +
-                "  start_time,  " +
-                "  end_time,    " +
-                "  filename,    " +
-                "  md5_hash,    " +
-                "  number_rows, " +
-                "  status,      " +
-                "  has_coords,  " +
-                "  has_agl,     " +
-                "  insert_completed   " +
-                "FROM flights         " +
-                "WHERE                " +
+        String extraCondition =
                 "    (                " +
                 "    EXISTS(          " +
                 "        SELECT       " +
@@ -297,25 +279,7 @@ public class Flight {
                 "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
                 "    )" +
                 " ) ";
-
-        if (limit > 0) queryString += " LIMIT " + limit;
-
-        LOG.info(queryString);
-
-        PreparedStatement query = connection.prepareStatement(queryString);
-
-        LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
-
-        List<Flight> flights = new ArrayList<>();
-        while (resultSet.next()) {
-            flights.add(new Flight(connection, resultSet));
-        }
-
-        resultSet.close();
-        query.close();
-
-        return flights;
+        return getFlights(connection, extraCondition, limit);
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
@@ -778,8 +742,6 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
-
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
@@ -1399,7 +1361,7 @@ public class Flight {
         this.doubleTimeSeries.put(name, doubleTimeSeries);
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException, IOException {
+    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
         if (this.doubleTimeSeries.containsKey(name)) {
             return this.doubleTimeSeries.get(name);
         } else {
@@ -2219,10 +2181,6 @@ public class Flight {
         } catch (FatalFlightFileException | IOException | SQLException e) {
             status = "WARNING";
             throw e;
-        } catch (SQLException e) {
-            System.err.println(e);
-            e.printStackTrace();
-            System.exit(1);
         }
 
         checkExceptions();
