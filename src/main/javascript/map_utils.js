@@ -201,4 +201,4 @@ function generateLOCILayer(lociData, layers, flight) {
     layers.push(lociLayerOutline, lociLayer);
 }
 
-export {generateStallLayer, generateLOCILayer};
+export {generateStallLayer, generateLOCILayer, paletteAt };

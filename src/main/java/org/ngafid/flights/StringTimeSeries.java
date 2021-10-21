@@ -69,7 +69,7 @@ public class StringTimeSeries {
 
 
     // Added to get StringTimeSeries
-    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException, IOException, ClassNotFoundException {
+    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
 
         query.setString(1, name);
@@ -79,11 +79,20 @@ public class StringTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
-            //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
-            resultSet.close();
-            query.close();
-            return sts;
+            try {
+                StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
+                //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
+                resultSet.close();
+                query.close();
+                return sts;
+            } catch (IOException | ClassNotFoundException e) {
+                LOG.severe("Failed to read string time series from database due to a serialization error");
+                e.printStackTrace();
+                return null;
+            } finally {
+                resultSet.close();
+                query.close();
+            }
         } else {
             resultSet.close();
             query.close();

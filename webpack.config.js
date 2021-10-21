@@ -50,6 +50,8 @@ module.exports = {
         ttf: __dirname + "/src/main/javascript/ttf.js"
     },
 
+    devtool: "source-map",
+
     output: {
         // Farhad: for webpackCesium
         sourcePrefix: "",

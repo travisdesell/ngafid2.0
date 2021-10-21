@@ -3,10 +3,10 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Form from "react-bootstrap/Form";
 
-import { errorModal } from "./error_modal.js";
 import { map, styles, layers, Colors, overlay, initializeMap } from "./map.js";
 import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { paletteAt } from "./map_utils.js";
 
 import Overlay from 'ol/Overlay';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
@@ -32,6 +32,7 @@ class RollSlider extends React.Component {
     }
 
     makeRollSlider(min, max, onChange, getValue) {
+        
         return (
             <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}>
                 Minimum Roll Value = {getValue()}&deg;  <br/>
@@ -45,6 +46,107 @@ class RollSlider extends React.Component {
         return this.makeRollSlider(this.props.rollSliderMin, this.props.rollSliderMax, this.props.rollSliderChanged, this.props.rollSliderValue)
     }
 }
+
+// Default chart layout, used for empty charts
+const plotlyDefaultLayout = {
+    title: 'Chart',
+    showlegend: true,
+    autosize: true,
+    margin: {
+        pad: 2
+    },
+    xaxis: {
+        title: {
+            text: 'Time (Seconds)',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            }
+        },
+    },
+    yaxis: {
+        title: {
+            text: 'Self Defined Glide Angle',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            }
+        }
+    }
+};
+const glideAngleHistLayout = {
+    title: 'Histogram of Glide Path Angles',
+    bargap: 0.05,
+    showlegend: true,
+    autosize: true,
+    margin: {
+        pad: 10
+    },
+    xaxis: {title: 'Frequency'},
+    yaxis: {title: 'Glide Path Angle'}
+};
+const deviationsPlotlyLayout = {
+    title: 'Glide Path Deviations',
+    showlegend: true,
+    autosize: true,
+    margin: {
+        pad: 2
+    },
+    xaxis: {
+        title: {
+            text: 'Distance from Runway (ft.)',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            }
+        },
+        autorange: "reversed"
+    },
+    yaxis: {
+        title: {
+            text: 'Distance above Glidepath (ft.)',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            },
+            range: [-100, 100]
+        }
+    }
+};
+const altitudePlotlyLayout = {
+    title: 'Altitude vs. Distance to Runway',
+    showlegend: true,
+    autosize: true,
+    margin: {
+        pad: 2
+    },
+    xaxis: {
+        title: {
+            text: 'Distance from Runway (ft.)',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            }
+        },
+        autorange: "reversed"
+    },
+    yaxis: {
+        title: {
+            text: 'Alitude (AGL) (ft.)',
+            font: {
+                family: 'sans serif',
+                size: 18,
+                color: '#000000'
+            }
+        }
+    }
+};
+const plotlyConfig = {responsive: true};
 
 class TTFCard extends React.Component {
     constructor(props) {
@@ -118,36 +220,6 @@ class TTFCard extends React.Component {
                          })
                      })
                 }),
-            plotlyLayout: {
-                title: 'Self Defined Glide Angles vs. Time',
-                showlegend: true,
-                autosize: true,
-                margin: {
-                    pad: 2
-                },
-                xaxis: {
-                    title: {
-                        text: 'Time (Seconds)',
-                        font: {
-                            family: 'Courier New, monospace',
-                            size: 18,
-                            color: '#7f7f7f'
-                        }
-                    },
-                },
-                yaxis: {
-                    title: {
-                        text: 'Self Defined Glide Angle',
-                        font: {
-                            family: 'Courier New, monospace',
-                            size: 18,
-                            color: '#7f7f7f'
-                        }
-                    }
-                }
-            },
-
-            plotlyConfig: {responsive: true}
         };
 
         var navbar = ReactDOM.render(
@@ -198,9 +270,9 @@ class TTFCard extends React.Component {
             }
         });
 
-        Plotly.newPlot('glide-angle-plot', {}, this.state.plotlyLayout, this.state.plotlyConfig);
-        Plotly.newPlot('alt-plot', {}, this.state.plotlyLayout, this.state.plotlyConfig);
-        Plotly.newPlot('glide-angle-hist', {}, this.state.plotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('deviations-plot', [], deviationsPlotlyLayout, plotlyConfig);
+        Plotly.newPlot('alt-plot', [], altitudePlotlyLayout, plotlyConfig);
+        Plotly.newPlot('glide-angle-hist', [], glideAngleHistLayout, plotlyConfig);
     }
 
     mapSelectChanged(style) {
@@ -326,7 +398,7 @@ class TTFCard extends React.Component {
         return features;
     }
 
-    makeTtfLayers(ttf) {
+    makeTTFLayers(ttf) {
         // This will generate a layer for this ttf if once hasn't been generated before, and add it to the map as a
         // hidden layer.
         if (typeof ttf.layer !== 'undefined')
@@ -351,7 +423,7 @@ class TTFCard extends React.Component {
         ];
 
         let layer = new VectorLayer({
-            style: this.state.ttfStyle,
+            style: this.getStyle(ttf),
             source : new VectorSource({
                 features: features,
             }),
@@ -364,26 +436,45 @@ class TTFCard extends React.Component {
 
         // Create a layer of the optimalDescentExceedences
 
-        let odeFeatures = this.rangesToFeatures(points, this.rangeExtraction(ttf.locExceedences));
-        let optimalDescentExceedencesLayer = new VectorLayer({
-            style: this.state.optimalDescentExceedencesStyle,
-            source: new VectorSource({ features: odeFeatures }),
-        });
+        // let odeFeatures = this.rangesToFeatures(points, this.rangeExtraction(ttf.locExceedences));
+        // let optimalDescentExceedencesLayer = new VectorLayer({
+        //     style: this.state.optimalDescentExceedencesStyle,
+        //     source: new VectorSource({ features: odeFeatures }),
+        // });
 
-        ttf.optimalDescentExceedencesLayer = optimalDescentExceedencesLayer;
-        map.addLayer(optimalDescentExceedencesLayer);
-        optimalDescentExceedencesLayer.setVisible(false);
+        // ttf.optimalDescentExceedencesLayer = optimalDescentExceedencesLayer;
+        // map.addLayer(optimalDescentExceedencesLayer);
+        // optimalDescentExceedencesLayer.setVisible(false);
 
     }
 
+    getStyle(ttf) {
+        return new Style({
+            stroke: new Stroke({
+                // Assuming anything past 45 is really bad, so color will get increasingly
+                // red as roll approaches 45
+                color: paletteAt(ttf.maxRoll / 45),
+                width: 2.5
+            }),
+            image: new Circle({
+                radius: 5,
+                //fill: new Fill({color: [0, 0, 0, 255]}),
+                stroke: new Stroke({
+                    color: [0, 0, 0, 0],
+                    width: 2
+                })
+            })
+        })
+    }
+
     plotTTF(ttf) {
-        this.makeTtfLayers(ttf);
+        this.makeTTFLayers(ttf);
 
         let layer = ttf.layer;
         layer.setVisible(true);
 
-        let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
-        optimalDescentExceedencesLayer.setVisible(true);
+        // let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
+        // optimalDescentExceedencesLayer.setVisible(true);
 
         // let extent = layer.getSource().getExtent();
         // console.log(extent);
@@ -391,46 +482,45 @@ class TTFCard extends React.Component {
     }
 
     hideTTF(ttf) {
-        this.makeTtfLayers(ttf);
+        this.makeTTFLayers(ttf);
         let layer = ttf.layer;
         layer.setVisible(false);
 
-        let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
-        optimalDescentExceedencesLayer.setVisible(false);
+        // let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
+        // optimalDescentExceedencesLayer.setVisible(false);
     }
 
-    plotCharts(ttfs) {
+    // setMaximumRoll will move the roll slider to the maximum roll found in the set of ttfs so that
+    // all flights will be displayed
+    plotCharts(ttfs, setMaximumRoll = false) {
+        if (setMaximumRoll) {
+            let minRoll = Math.min(...ttfs.map(ttf => ttf.maxRoll));
+            this.onRollSliderChanged(minRoll, true);
+        }
+
+        console.log(ttfs.length);
+
         let max = Math.max(...ttfs.map(ttf => ttf.AltMSL.length));
-        console.log(max)
+        console.log(max);
         let curves = ttfs
             .map(ttf => {
                 let glideAngle = ttf.selfDefinedGlideAngle;
-                let alt = ttf.AltMSL;
-                let start = max - alt.length;
+                console.log(glideAngle);
+                let alt = ttf.AltAGL;
+
+                // This is what applies the roll filter
                 if (this.shouldDisplay(ttf)) {
-                    let x = Array.from({length: alt.length}, (v, k) => k + start);
-                    return { glideAngle: { name: ttf.flightId, x: x, y: glideAngle, type: 'scatter', mode: 'lines' },
-                             alt: { name: ttf.flightId, x: x, y: alt, type: 'scatter', mode: 'lines' },
-                             maxGlideAngle: Math.max(...ttf.selfDefinedGlideAngle)};
+                    return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.selfDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
+                             alt: { name: ttf.flightId, x: ttf.distanceFromRunway, y: alt, type: 'scatter', mode: 'lines' },
+                             maxGlideAngle: glideAngle };
                 } else
                     return null;
             })
             .filter(curve => curve != null);
-        let glideAngleCurves = curves.map(x => x.glideAngle);
+        let deviationsCurves = curves.map(x => x.deviations);
 
-        Plotly.newPlot('glide-angle-plot', glideAngleCurves, this.state.plotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('deviations-plot', deviationsCurves, deviationsPlotlyLayout, this.state.plotlyConfig);
 
-        var glideAngleHistLayout = {
-            title: 'Glide Angle Frequencies',
-            bargap: 0.05,
-            showlegend: true,
-            autosize: true,
-            margin: {
-                pad: 10
-            },
-            xaxis: {title: 'Glide Angle'},
-            yaxis: {title: 'Count'}
-        };
         let maxGlideAngles = curves.map(x => x.maxGlideAngle);
         var glideAngleTrace = {
             type: 'histogram',
@@ -445,36 +535,7 @@ class TTFCard extends React.Component {
         Plotly.newPlot('glide-angle-hist', [glideAngleTrace], glideAngleHistLayout)
 
         let altCurves = curves.map(x => x.alt);
-        var altLayout = {
-            title: 'Altitudes vs. Time',
-            showlegend: true,
-            autosize: true,
-            margin: {
-                pad: 10
-            },
-            yaxis: {
-                title: {
-                    text: 'Time (Seconds)',
-                    font: {
-                        family: 'Courier New, monospace',
-                        size: 18,
-                        color: '#7f7f7f'
-                    }
-                },
-            },
-            xaxis: {
-                title: {
-                    text: 'Altitude',
-                    font: {
-                        family: 'Courier New, monospace',
-                        size: 18,
-                        color: '#7f7f7f'
-                    }
-                }
-            }
-        };
-
-        Plotly.newPlot('alt-plot', altCurves, altLayout, this.state.plotlyConfig);
+        Plotly.newPlot('alt-plot', altCurves, altitudePlotlyLayout, this.state.plotlyConfig);
     }
 
     getRunwayValue() {
@@ -562,15 +623,15 @@ class TTFCard extends React.Component {
             for (var i = 0; i < response.ttfs.length; i++) {
                 let ttf = response.ttfs[i];
 
-                if (thisTTF.shouldDisplay(ttf)) {
+                // if (thisTTF.shouldDisplay(ttf)) {
                     ttfs.push(ttf);
                     thisTTF.plotTTF(ttf);
-                } else {
-                    thisTTF.hideTTF(ttf);
-                }
+                // } else {
+                //    thisTTF.hideTTF(ttf);
+                // }
             }
 
-            thisTTF.plotCharts(ttfs);
+            thisTTF.plotCharts(ttfs, true);
             thisTTF.setState({data: response})
         }
 
@@ -590,7 +651,7 @@ class TTFCard extends React.Component {
                 console.log("Removing old layers");
                 for (var ttf of this.state.data.ttfs) {
                     map.removeLayer(ttf.layer);
-                    map.removeLayer(ttf.optimalDescentExceedencesLayer);
+                    // map.removeLayer(ttf.optimalDescentExceedencesLayer);
                     console.log(ttf.layer);
                 }
             }
@@ -722,10 +783,15 @@ class TTFCard extends React.Component {
         this.forceUpdate();
     }
 
-    onRollSliderChanged(value) {
+    onRollSliderChanged(value, override=false) {
+        console.log(value);
         let slider = document.getElementById('rollSlider')
-        this.setState({minRoll: slider.value});
-        console.log(slider.value)
+        if (!override) {
+            this.setState({minRoll: slider.value});
+        } else {
+            this.setState({minRoll: value});
+        }
+        console.log(slider.value);
         if (this.state.data != null) {
             console.log(this.state.data);
             for (const ttf of this.state.data.ttfs) {

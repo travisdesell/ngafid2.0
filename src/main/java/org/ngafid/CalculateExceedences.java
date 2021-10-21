@@ -298,10 +298,6 @@ public class CalculateExceedences {
             System.err.println(e);
             e.printStackTrace();
             System.exit(1);
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            e.printStackTrace();
         }
     }
 

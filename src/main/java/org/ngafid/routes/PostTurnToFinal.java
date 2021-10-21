@@ -65,6 +65,7 @@ public class PostTurnToFinal implements Route {
                 e.printStackTrace();
                 return gson.toJson(new ErrorResponse(e));
             } catch (SQLException e) {
+                e.printStackTrace();
                 LOG.severe(e.toString());
                 return gson.toJson(new ErrorResponse(e));
             }
