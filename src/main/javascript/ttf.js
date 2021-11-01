@@ -3,10 +3,10 @@ import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Form from "react-bootstrap/Form";
 
-import { map, styles, layers, Colors, overlay, initializeMap } from "./map.js";
+import { map, styles, layers, Colors, overlay, initializeMap, container, content, closer } from "./map.js";
 import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-import { paletteAt } from "./map_utils.js";
+import { paletteAt, paletteGenerator } from "./map_utils.js";
 
 import Overlay from 'ol/Overlay';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
@@ -46,6 +46,8 @@ class RollSlider extends React.Component {
         return this.makeRollSlider(this.props.rollSliderMin, this.props.rollSliderMax, this.props.rollSliderChanged, this.props.rollSliderValue)
     }
 }
+
+let rollPalette = paletteGenerator([[0, 255, 0], [255, 255, 0], [255, 0, 0]], [0, 26, 30]);
 
 // Default chart layout, used for empty charts
 const plotlyDefaultLayout = {
@@ -227,6 +229,7 @@ class TTFCard extends React.Component {
                                  filterVisible={false}
                                  plotVisible={this.state.plotVisible}
                                  mapVisible={this.state.mapVisible}
+                                 activePage="ttf"
                                  filterSelected={false}
                                  plotSelected={false}
                                  mapSelected={false}
@@ -245,9 +248,9 @@ class TTFCard extends React.Component {
         // https://embed.plnkr.co/plunk/hhEAWk
         map.on('click', function(event) {
             // https://openlayers.org/en/latest/examples/popup.html
-            var container = document.getElementById('popup');
-            var content = document.getElementById('popup-content');
-            var closer = document.getElementById('popup-closer');
+            // var container = document.getElementById('popup');
+            // var content = document.getElementById('popup-content');
+            // var closer = document.getElementById('popup-closer');
 
             closer.onclick = function() {
                 overlay.setPosition(undefined);
@@ -453,7 +456,7 @@ class TTFCard extends React.Component {
             stroke: new Stroke({
                 // Assuming anything past 45 is really bad, so color will get increasingly
                 // red as roll approaches 45
-                color: paletteAt(ttf.maxRoll / 45),
+                color: rollPalette(ttf.maxRoll),
                 width: 2.5
             }),
             image: new Circle({

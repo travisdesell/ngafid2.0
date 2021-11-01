@@ -207,4 +207,4 @@ Colors.randomValue = function() {
 };
 
 
-export { map, styles, layers, Colors, initializeMap, overlay };
+export { map, styles, layers, Colors, initializeMap, overlay, container, closer, content };
