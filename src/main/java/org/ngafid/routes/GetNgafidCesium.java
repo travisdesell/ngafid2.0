@@ -5,6 +5,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -31,11 +32,32 @@ import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
 
+import java.util.HashSet;
+import java.util.*;
+
 import org.ngafid.filters.Filter;
 
 public class GetNgafidCesium implements Route {
     private static final Logger LOG = Logger.getLogger(GetNgafidCesium.class.getName());
     private Gson gson;
+
+    private static String CESIUM_DATA = "cesium_data";
+
+    public static class CesiumResponse {
+        ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
+        ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
+        ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
+        ArrayList<Double> flightGeoAglCruise = new ArrayList<>();
+        ArrayList<Double> flightGeoInfoAgl = new ArrayList<>();
+
+        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff, ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise, ArrayList<Double> flightGeoInfoAgl) {
+            this.flightGeoAglTaxiing = flightGeoAglTaxiing;
+            this.flightGeoAglTakeOff = flightGeoAglTakeOff;
+            this.flightGeoAglClimb = flightGeoAglClimb;
+            this.flightGeoAglCruise = flightGeoAglCruise;
+            this.flightGeoInfoAgl = flightGeoInfoAgl;
+        }
+    }
 
     public GetNgafidCesium(Gson gson) {
         this.gson = gson;
@@ -47,14 +69,13 @@ public class GetNgafidCesium implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String flightIdStr = request.queryParams("flight_id");
-        LOG.info("getting kml for flight id: " + flightIdStr);
+        LOG.info("getting information for flight id: " + flightIdStr);
         int flightId = Integer.parseInt(flightIdStr);
 
         String otherFlightId = request.queryParams("other_flight_id");
         LOG.info("URL flight id is: " + flightId);
         LOG.info("URL other flight id is: " + otherFlightId);
 
- 
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
@@ -70,6 +91,10 @@ public class GetNgafidCesium implements Route {
 
             Connection connection = Database.getConnection();
             Flight flight = Flight.getFlight(connection, flightId);
+
+            String[] flightIdsAll = request.queryParamsValues("flight_id");
+            LOG.info("Flight id(s) are: " + Arrays.toString(flightIdsAll));
+
             Flight otherFlight = null;
             if (otherFlightId != null) {
                 otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
@@ -82,97 +107,127 @@ public class GetNgafidCesium implements Route {
                 return null;
             }
 
+            HashMap<String, Object> scopes = new HashMap<String, Object>();
+            Map<String, Object> flights = new HashMap<String, Object>();
 
-            DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
-            DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
-            DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
-            DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
-            DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 RPM");
-            DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "GndSpd");
+            for (String flightIdNew : flightIdsAll) {
 
-            ArrayList<String> flightGeoAglTaxiing = new ArrayList<>();
-            ArrayList<String> flightGeoAglTakeOff = new ArrayList<>();
-            ArrayList<String> flightGeoAglClimb = new ArrayList<>();
-            ArrayList<String> flightGeoAglCruise = new ArrayList<>();
-            ArrayList<String> flightGeoInfoAgl = new ArrayList<>();
+                Flight incomingFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightIdNew));
+                int flightIdNewInteger = Integer.parseInt(flightIdNew);
 
-            int initCounter = 0;
-            int takeoffCounter = 0;
-            int countPostTakeoff = 0;
-            int sizePreClimb = 0;
-            int countPostCruise = 0;
+                DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
+                DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
+                DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Longitude");
+                DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltAGL");
+                DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
+                DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
 
-            // Calculate the taxiing phase
-            for (int i = 0; i < altAgl.size(); i++) {
+                ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
+                ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
+                ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
+                ArrayList<Double> flightGeoAglCruise = new ArrayList<>();
+                ArrayList<Double> flightGeoInfoAgl = new ArrayList<>();
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                    initCounter++;
-                    flightGeoAglTaxiing.add(longitude.get(i) + "," + latitude.get(i) + "," + altAgl.get(i));
+                int initCounter = 0;
+                int takeoffCounter = 0;
+                int countPostTakeoff = 0;
+                int sizePreClimb = 0;
+                int countPostCruise = 0;
 
-                    if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
-                        break;
-                    }
-                }
-            }
+                // Calculate the taxiing phase
+                for (int i = 0; i < altAgl.size(); i++) {
 
-            // Calculate the takeoff-init phase
-            for (int i = 0; i < altAgl.size(); i++) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                        initCounter++;
+                        flightGeoAglTaxiing.add(longitude.get(i));
+                        flightGeoAglTaxiing.add(latitude.get(i));
+                        flightGeoAglTaxiing.add(altAgl.get(i));
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                    if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
-
-                        if (takeoffCounter <= 15) {
-                            flightGeoAglTakeOff.add(longitude.get(i) + "," + latitude.get(i) + "," + altAgl.get(i));
-                            initCounter++;
-                        } else if (takeoffCounter > 15) {
+                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
                         }
-                        takeoffCounter++;
-                    } else {
-                        takeoffCounter = 0;
                     }
                 }
-            }
 
-            // Calculate the climb phase
-            for (int i = 0; i < altAgl.size(); i++) {
+                // Calculate the takeoff-init phase
+                for (int i = 0; i < altAgl.size(); i++) {
 
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                    if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
 
-                        if (countPostTakeoff >= 15) {
-                            flightGeoAglClimb.add(longitude.get(i) + "," + latitude.get(i) + "," + altAgl.get(i));
-                            initCounter++;
+                            if (takeoffCounter <= 15) {
+                                flightGeoAglTakeOff.add(longitude.get(i));
+                                flightGeoAglTakeOff.add(latitude.get(i));
+                                flightGeoAglTakeOff.add(altAgl.get(i));
+                                initCounter++;
+                            } else if (takeoffCounter > 15) {
+                                break;
+                            }
+                            takeoffCounter++;
+                        } else {
+                            takeoffCounter = 0;
                         }
-                        if (altAgl.get(i) >= 500) {
-                            break;
+                    }
+                }
+
+                // Calculate the climb phase
+                for (int i = 0; i < altAgl.size(); i++) {
+
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+
+                            if (countPostTakeoff >= 15) {
+                                flightGeoAglClimb.add(longitude.get(i));
+                                flightGeoAglClimb.add(latitude.get(i));
+                                flightGeoAglClimb.add(altAgl.get(i));
+                                initCounter++;
+                            }
+                            if (altAgl.get(i) >= 500) {
+                                break;
+                            }
+                            countPostTakeoff++;
                         }
-                        countPostTakeoff++;
                     }
                 }
-            }
 
-            // Calculate the cruise to final phase
-            //
-            sizePreClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) - 3;
+                // Calculate the cruise to final phase
+                int preClimb = (flightGeoAglTaxiing.size() + flightGeoAglTakeOff.size() + flightGeoAglClimb.size()) -9;
+                sizePreClimb = preClimb / 3;
 
-            for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                for (int i = 0; i < altAgl.size(); i++) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
 
-                    if (countPostCruise >= sizePreClimb) {
-                        flightGeoAglCruise.add(longitude.get(i) + "," + latitude.get(i) + "," + altAgl.get(i));
+                        if (countPostCruise >= sizePreClimb) {
+                            flightGeoAglCruise.add(longitude.get(i));
+                            flightGeoAglCruise.add(latitude.get(i));
+                            flightGeoAglCruise.add(altAgl.get(i));
+                        }
+                        countPostCruise++;
                     }
-                    countPostCruise++;
                 }
+
+                // Calculate the full phase
+                // I am avoiding NaN here as well!
+                for (int i = 0; i < altAgl.size(); i++) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                        flightGeoInfoAgl.add(longitude.get(i));
+                        flightGeoInfoAgl.add(latitude.get(i));
+                        flightGeoInfoAgl.add(altAgl.get(i));
+                    }
+                }
+
+                if (incomingFlight.getFleetId() != fleetId) {
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    Spark.halt(401, "User did not have access to this flight.");
+                }
+
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl);
+
+                flights.put(flightIdNew, cr);
+
             }
 
-            // Calculate the full phase
-            // I am avoiding NaN here as well!
-            for (int i = 0; i < altAgl.size(); i++) {
-                if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                    flightGeoInfoAgl.add(longitude.get(i) + "," + latitude.get(i) + "," + altAgl.get(i));
-                }
-            }
+            scopes.put(CESIUM_DATA, gson.toJson(flights));
 
             // This is for webpage section
             String resultString = "";
@@ -182,17 +237,9 @@ public class GetNgafidCesium implements Route {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
-            HashMap<String, Object> scopes = new HashMap<String, Object>();
-            // scopes.put("description", "Flight " + flightId);
-            scopes.put("flightId", flightId);
-            scopes.put("flightGeoInfoAgl", flightGeoInfoAgl);
-            scopes.put("flightGeoAglTaxiing", flightGeoAglTaxiing);
-            scopes.put("flightGeoAglTakeOff", flightGeoAglTakeOff);
-            scopes.put("flightGeoAglClimb", flightGeoAglClimb);
-            scopes.put("flightGeoAglCruise", flightGeoAglCruise);
-
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
+
             return stringOut.toString();
 
         } catch (SQLException e) {
@@ -204,3 +251,4 @@ public class GetNgafidCesium implements Route {
         return "";
     }
 }
+
