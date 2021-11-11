@@ -249,7 +249,8 @@ class AirframeCard extends React.Component {
 
         var submissionData = {
             airframeNameId : this.props.airframeId,
-            airframeName : this.props.airframeName
+            airframeName : this.props.airframeName,
+            uploadId : uploadID
         };
 
         $.ajax({
@@ -573,6 +574,50 @@ class DashboardCard extends React.Component {
                     })
                 }
 
+            </div>
+        );
+    }
+}
+
+class DashboardCardNew extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            eventStats : eventStats
+        };
+    }
+
+    toggleEventInfo(eventInfo) {
+        console.log("eventInfo.infoHidden is: " + eventInfo.infoHidden);
+        eventInfo.infoHidden = !eventInfo.infoHidden;
+        console.log("eventInfo.infoHidden changed to: " + eventInfo.infoHidden);
+
+        this.setState(this.state);
+    }
+
+    render() {
+        console.log(airframeMap);
+
+        let airframeIds = Object.keys(airframeMap);
+
+        return (
+            <div>
+                <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                {
+                    airframeIds.map((airframeId, airframeIndex) => {
+                        let first = true;
+                        if (airframeIndex > 0) first = false
+                        return (
+                            <AirframeCard
+                                key={airframeIndex}
+                                first={first}
+                                airframeId={airframeId}
+                                airframeName={airframeMap[airframeId]}
+                            />);
+                    })
+                }
             </div>
         );
     }

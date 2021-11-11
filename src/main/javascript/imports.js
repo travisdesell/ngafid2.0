@@ -341,6 +341,7 @@ class Import extends React.Component {
             <div className="m-1">
                 <div className="d-flex flex-row">
                     <div className={textClasses + " flex-fill"} style={styleName}>{importInfo.filename}</div>
+                    <a className={expandButtonClasses} href={"/protected/import_event_stats?upload_id=" + this.props.importInfo.id}>Stats</a>
                     <div className={textClasses} style={styleTime}>{importInfo.endTime}</div>
                     <div className={textClasses + " text-success"} style={styleCount}>{importInfo.validFlights} valid</div>
                     <div className={textClasses + " text-warning"} style={styleCount}>{importInfo.warningFlights} warnings</div>

@@ -91,7 +91,8 @@ public class GetImportEventStats implements Route {
             scopes.put("events_js",
                     //"var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
                     "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
-                            "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n"
+                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n" +
+                    "var uploadID = " + uploadIDs[0] + ";"
             );
             long endTime = System.currentTimeMillis();
             LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
