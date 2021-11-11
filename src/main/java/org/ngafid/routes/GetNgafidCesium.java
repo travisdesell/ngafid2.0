@@ -32,6 +32,7 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.CalculationParameters;
 import org.ngafid.flights.DoubleTimeSeries;
 
 import java.util.HashSet;
@@ -45,19 +46,14 @@ public class GetNgafidCesium implements Route {
     private Gson gson;
 
     private class LOCIInfo {
-        int flightId;
-        DoubleTimeSeries stallIndex, lociIndex;
+        DoubleTimeSeries stallIndex, lociIndex, aoa;
 
         public LOCIInfo(Flight flight) {
-            this.flightId = flight.getId();
-            Connection connection = Database.getConnection();
-            try {
-                this.stallIndex = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Stall Index");
-                this.lociIndex = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "LOC-I Index");
-            } catch (SQLException e) {
-                // TODO Auto-generated catch block
-                e.printStackTrace();
-            }
+            this.stallIndex = flight.getDoubleTimeSeries(CalculationParameters.STALL_PROB);
+            this.lociIndex = flight.getDoubleTimeSeries(CalculationParameters.LOCI);
+
+            //AOA is used to calculate the stall index - it might be useful for some visualization tools
+            this.aoa = flight.getDoubleTimeSeries(CalculationParameters.AOA_SIMPLE);
         }
     }
 
@@ -67,13 +63,17 @@ public class GetNgafidCesium implements Route {
         ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
         ArrayList<Double> flightGeoAglCruise = new ArrayList<>();
         ArrayList<Double> flightGeoInfoAgl = new ArrayList<>();
+        LOCIInfo lociInfo;
 
-        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff, ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise, ArrayList<Double> flightGeoInfoAgl) {
+        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff, ArrayList<Double> flightGeoAglClimb,
+                ArrayList<Double> flightGeoAglCruise, ArrayList<Double> flightGeoInfoAgl, LOCIInfo lociInfo) {
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
             this.flightGeoAglClimb = flightGeoAglClimb;
             this.flightGeoAglCruise = flightGeoAglCruise;
             this.flightGeoInfoAgl = flightGeoInfoAgl;
+
+            this.lociInfo = lociInfo;
         }
     }
 
@@ -239,7 +239,8 @@ public class GetNgafidCesium implements Route {
                     Spark.halt(401, "User did not have access to this flight.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl);
+                LOCIInfo lInfo = new LOCIInfo(incomingFlight);
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, lInfo);
 
                 flights.put(flightIdNew, cr);
 
