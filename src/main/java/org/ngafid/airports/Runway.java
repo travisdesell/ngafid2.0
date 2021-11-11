@@ -1,7 +1,8 @@
 package org.ngafid.airports;
 
+import java.io.Serializable;
 
-public class Runway {
+public class Runway implements Serializable {
 
     public final String siteNumber;
     public final String name;
@@ -41,41 +42,43 @@ public class Runway {
      *  https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
      */
     public double getDistanceFt(double point_latitude, double point_longitude) {
-        double A = point_longitude - lon1;
-        double B = point_latitude - lat1;
-        double C = lon2 - lon1;
-        double D = lat2 - lat1;
+        return Airports.shortestDistanceBetweenLineAndPointFt(point_latitude, point_longitude, lat1, lon1, lat2, lon2);
 
-        double dot = A * C + B * D;
-        double len_sq = C * C + D * D;
-        double param = -1;
+        // double A = point_longitude - lon1;
+        // double B = point_latitude - lat1;
+        // double C = lon2 - lon1;
+        // double D = lat2 - lat1;
 
-        if (len_sq != 0) {
-            //in case of 0 length line
-            param = dot / len_sq;
-        }
+        // double dot = A * C + B * D;
+        // double len_sq = C * C + D * D;
+        // double param = -1;
 
-        double xx, yy;
+        // if (len_sq != 0) {
+        //     //in case of 0 length line
+        //     param = dot / len_sq;
+        // }
 
-        if (param < 0) {
-            xx = lon1;
-            yy = lat1;
+        // double xx, yy;
 
-        } else if (param > 1) {
-            xx = lon2;
-            yy = lat2;
+        // if (param < 0) {
+        //     xx = lon1;
+        //     yy = lat1;
 
-        } else {
-            xx = lon1 + param * C;
-            yy = lat1 + param * D;
-        }
+        // } else if (param > 1) {
+        //     xx = lon2;
+        //     yy = lat2;
 
-        double dx = point_longitude - xx;
-        double dy = point_latitude - yy;
+        // } else {
+        //     xx = lon1 + param * C;
+        //     yy = lat1 + param * D;
+        // }
 
-        //return Math.sqrt(dx * dx + dy * dy);
-        //return min_distance * 3280.84;
-        return Airports.calculateDistanceInFeet(point_latitude, point_longitude, point_latitude + dy, point_longitude + dx);
+        // double dx = point_longitude - xx;
+        // double dy = point_latitude - yy;
+
+        // //return Math.sqrt(dx * dx + dy * dy);
+        // //return min_distance * 3280.84;
+        // return Airports.calculateDistanceInFeet(point_latitude, point_longitude, point_latitude + dy, point_longitude + dx);
     }
 
     public String toString() {

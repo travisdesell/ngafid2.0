@@ -120,6 +120,7 @@ class SignedInNavbar extends React.Component {
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
         let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
+        let analysisActive = this.props.activePage === "ttf";
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
@@ -197,6 +198,15 @@ class SignedInNavbar extends React.Component {
                                     ? <DropdownLink name={"Update Event"} hidden={false} href="/protected/update_event"/>
                                     : ""
                                 }
+                            </div>
+                        </li>
+                        
+                        <li className="nav-item dropdown">
+                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Analysis{analysisActive ? (<span className="sr-only">(current)</span>) : ""}
+                            </a>
+                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
+                                <DropdownLink name={"Turn to Final Tool"} hidden={false} active={this.props.activePage === "ttf"} href="/protected/ttf"/>
                             </div>
                         </li>
 

@@ -1,14 +1,14 @@
-package org.ngafid.flights;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
 /**
  * This is a {@link DoubleTimeSeries} that requires further analysis, such
  * as a {@link Calculation}. This class is meant to be expandable
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
+package org.ngafid.flights;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.sql.Connection;
 
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     private final Flight flight;
@@ -31,7 +31,7 @@ public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
      *
      * @param calculation the calculation to use to get the new {@link DoubleTimeSeries}
      */
-    public void create(Calculation calculation) {
+    public void create(Calculation calculation) throws IOException, SQLException {
         System.out.println("Performing " + super.getName() + " calculation");
 
         for (int i = 0; i < this.flight.getNumberRows(); i++) {
