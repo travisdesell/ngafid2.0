@@ -7,6 +7,8 @@ import java.io.StringWriter;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import java.util.logging.Logger;
 
@@ -36,6 +38,23 @@ import org.ngafid.filters.Filter;
 public class GetNgafidCesium implements Route {
     private static final Logger LOG = Logger.getLogger(GetNgafidCesium.class.getName());
     private Gson gson;
+
+    private class LOCIInfo {
+        int flightId;
+        DoubleTimeSeries stallIndex, lociIndex;
+
+        public LOCIInfo(Flight flight) {
+            this.flightId = flight.getId();
+            Connection connection = Database.getConnection();
+            try {
+                this.stallIndex = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Stall Index");
+                this.lociIndex = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "LOC-I Index");
+            } catch (SQLException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
+        }
+    }
 
     public GetNgafidCesium(Gson gson) {
         this.gson = gson;
@@ -72,7 +91,7 @@ public class GetNgafidCesium implements Route {
             Flight flight = Flight.getFlight(connection, flightId);
             Flight otherFlight = null;
             if (otherFlightId != null) {
-                otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
+                otherFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
 
             }
 
@@ -89,6 +108,10 @@ public class GetNgafidCesium implements Route {
             DoubleTimeSeries altAgl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
             DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "E1 RPM");
             DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "GndSpd");
+
+            //New LOCI Gradients
+            Map<Flight, LOCIInfo> loci = new HashMap<Flight, LOCIInfo>();
+            loci.put(otherFlight, new LOCIInfo(otherFlight));
 
             ArrayList<String> flightGeoAglTaxiing = new ArrayList<>();
             ArrayList<String> flightGeoAglTakeOff = new ArrayList<>();
