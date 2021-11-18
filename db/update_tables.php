@@ -8,7 +8,7 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 
 
-/*
+//Uncomment this region if first setting up the NGAFID
 //need this for changes to allow for display of severity webpages
 query_ngafid_db("alter table events add column `fleet_id` INT(11) after `id`");
 
@@ -24,7 +24,6 @@ query_ngafid_db("alter table flights add column end_timestamp INT(11) after star
 query_ngafid_db("update flights set start_timestamp = UNIX_TIMESTAMP(start_time), end_timestamp = UNIX_TIMESTAMP(end_time)");
 query_ngafid_db("alter table flights add index `start_timestamp_index` (`start_timestamp`) using btree");
 query_ngafid_db("alter table flights add index `end_timestamp_index` (`end_timestamp`) using btree");
-*/
 
 //new double_series_names table and user preferences update
 
