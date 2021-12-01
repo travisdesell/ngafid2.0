@@ -98,11 +98,14 @@ public class EventStatistics {
 
     private static class EventRow {
         String rowName;
+        String humanReadable;
 
         int flightsWithoutError;
+        double avgEvents;
+
         int flightsWithEvent;
         int totalEvents;
-        double avgEvents;
+        int processedFlights;
         double avgDuration;
         double minDuration;
         double maxDuration;
@@ -110,6 +113,7 @@ public class EventStatistics {
         double minSeverity;
         double maxSeverity;
 
+        // TODO No longer used?
         int aggFlightsWithoutError;
         int aggFlightsWithEvent;
         int aggTotalEvents;
@@ -126,6 +130,76 @@ public class EventStatistics {
             this.rowName = rowName;
         }
 
+        public static EventRow getNewStatistics(Connection connection, EventDefinition eventDefinition, int fleetId, int uploadId, boolean isGeneric) throws SQLException {
+            EventRow eventRow = new EventRow(eventDefinition.getName());
+            eventRow.humanReadable = eventDefinition.toHumanReadable();
+            int airframeNameId = eventDefinition.getAirframeNameId();
+            int eventId = eventDefinition.getId();
+            PreparedStatement preparedStatement;
+            ResultSet resultSet;
+
+            // Query Strings
+            String flightsProcessedQ = "SELECT count(*) FROM flight_processed JOIN flights ON flights.id = flight_processed.flight_id WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ? AND flights.upload_id = ? " + (!isGeneric ? " AND flights.airframe_id = ?" : "");
+            String flightsWithEventQ = "SELECT count(DISTINCT e.flight_id) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.event_definition_id = ? AND e.fleet_id = ? AND f.upload_id = ? " + (!isGeneric ? " AND f.airframe_id = ? " : "" );
+            String allStatsQ = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ? AND e.event_definition_id = ? " + (!isGeneric ? " AND f.airframe_id = ?" : "");
+
+            // Get number flights processed from this upload and airframe
+            preparedStatement = connection.prepareStatement(flightsProcessedQ);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setInt(2, eventId);
+            preparedStatement.setInt(3, uploadId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            eventRow.processedFlights = resultSet.getInt(1);
+            resultSet.close();
+            preparedStatement.close();
+
+            // Get number flights with event from this upload and airframe
+            preparedStatement = connection.prepareStatement(flightsWithEventQ);
+            preparedStatement.setInt(1, eventId);
+            preparedStatement.setInt(2, fleetId);
+            preparedStatement.setInt(3, uploadId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            eventRow.flightsWithEvent = resultSet.next() ? resultSet.getInt(1) : 0;
+            resultSet.close();
+            preparedStatement.close();
+
+            // Get the rest of the stats for this upload and airframe
+            preparedStatement = connection.prepareStatement(allStatsQ);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setInt(2, uploadId);
+            preparedStatement.setInt(3, eventId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            eventRow.totalEvents = (resultSet.next() ? resultSet.getInt(1) : 0);
+
+            if (eventRow.totalEvents != 0) {
+                eventRow.minSeverity = resultSet.getDouble(2);
+                eventRow.avgSeverity = resultSet.getDouble(3);
+                eventRow.maxSeverity = resultSet.getDouble(4);
+                eventRow.minDuration = resultSet.getDouble(5);
+                eventRow.avgDuration = resultSet.getDouble(6);
+                eventRow.maxDuration = resultSet.getDouble(7);
+            } else {
+                eventRow.minSeverity = 0;
+                eventRow.avgSeverity = 0;
+                eventRow.maxSeverity = 0;
+                eventRow.minDuration = 0;
+                eventRow.avgDuration = 0;
+                eventRow.maxDuration = 0;
+            }
+            resultSet.close();
+            preparedStatement.close();
+
+            return eventRow;
+        }
+
+        // TODO Remove because not used anymore
         public static EventRow getStatistics(Connection connection, String rowName, int fleetId, int eventId, String extraQuery, int[] extraParams) throws SQLException {
             EventRow eventRow = new EventRow(rowName);
 
@@ -249,6 +323,7 @@ public class EventStatistics {
         }
     }
 
+    // TODO Remove because not used anymore
     private static class AirframeStatistics {
         int eventId;
         String eventName;
@@ -260,6 +335,7 @@ public class EventStatistics {
 
         ArrayList<EventRow> monthStats = new ArrayList<EventRow>();
 
+        // TODO Remove because not used anymore
         AirframeStatistics(Connection connection, EventDefinition eventDefinition, int fleetId) throws SQLException {
             this.eventId = eventDefinition.getId();
             this.eventName = eventDefinition.getName();
@@ -283,7 +359,7 @@ public class EventStatistics {
                 preparedStatement.setInt(2, airframeNameId);
 
                 resultSet = preparedStatement.executeQuery();
-            } 
+            }
             resultSet.next();
 
             totalFlights = resultSet.getInt(1);
@@ -291,7 +367,7 @@ public class EventStatistics {
             resultSet.close();
             preparedStatement.close();
 
-            //get number flights processed 
+            //get number flights processed
             if (airframeNameId == 0) {
                 query = "SELECT count(*) FROM flight_processed WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
                 preparedStatement = connection.prepareStatement(query);
@@ -336,16 +412,79 @@ public class EventStatistics {
             monthStats.add(EventRow.getStatistics(connection, "Overall", fleetId, eventId, "", new int[]{}));
         }
 
+        int uploadID;
+        EventRow eventRow;
+
+        // TODO Remove because not used anymore
+        AirframeStatistics(Connection connection, EventDefinition eventDefinition, int uploadID, int fleetId) throws SQLException {
+            this.eventId = eventDefinition.getId();
+            this.eventName = eventDefinition.getName();
+            this.humanReadable = eventDefinition.toHumanReadable();
+            this.uploadID = uploadID;
+
+            int airframeNameId = eventDefinition.getAirframeNameId();
+            String query;
+            PreparedStatement preparedStatement;
+            ResultSet resultSet;
+
+            // Get number flights processed from this upload and airframe
+            int paramCount = 1;
+            String flightsProcessedQ = "SELECT count(*) FROM flight_processed " + (airframeNameId != 0 ? "INNER JOIN flights ON flights.airframe_id = ? AND flights.id = flight_processed.flight_id " : "") + "WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
+            preparedStatement = connection.prepareStatement(flightsProcessedQ);
+            if (airframeNameId == 0) preparedStatement.setInt(paramCount++, airframeNameId);
+            preparedStatement.setInt(paramCount++, fleetId);
+            preparedStatement.setInt(paramCount++, eventId);
+
+            resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            processedFlights = resultSet.getInt(1);
+            resultSet.close();
+            preparedStatement.close();
+
+            this.eventRow = new EventRow("Stats");
+            if (airframeNameId == 0) {
+                query = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ?";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setInt(2, uploadID);
+            } else {
+                query = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ? AND f.airframe_id = ?";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setInt(2, uploadID);
+                preparedStatement.setInt(3, airframeNameId);
+            }
+            resultSet = preparedStatement.executeQuery();
+            this.eventRow.totalEvents = (resultSet.next() ? resultSet.getInt(1) : 0);
+
+            if (this.eventRow.totalEvents != 0) {
+                this.eventRow.minSeverity = resultSet.getDouble(2);
+                this.eventRow.avgSeverity = resultSet.getDouble(3);
+                this.eventRow.maxSeverity = resultSet.getDouble(4);
+                this.eventRow.minDuration = resultSet.getDouble(5);
+                this.eventRow.avgDuration = resultSet.getDouble(6);
+                this.eventRow.maxDuration = resultSet.getDouble(7);
+            } else {
+                this.eventRow.minSeverity = 0;
+                this.eventRow.avgSeverity = 0;
+                this.eventRow.maxSeverity = 0;
+                this.eventRow.minDuration = 0;
+                this.eventRow.avgDuration = 0;
+                this.eventRow.maxDuration = 0;
+            }
+            resultSet.close();
+            preparedStatement.close();
+        }
     }
 
-    int airframeNameId;
-    String airframeName;
+    // TODO Remove OLD...
     ArrayList<AirframeStatistics> events;
-
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId) throws SQLException {
         this.airframeNameId = airframeNameId;
         this.airframeName = airframeName;
         events = new ArrayList<>();
+
+        LOG.info("Accidentally entered old stuff");
 
         ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection, "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[]{airframeNameId,  fleetId});
 
@@ -356,6 +495,41 @@ public class EventStatistics {
         }
     }
 
+
+    int airframeNameId;
+    String airframeName;
+    int totalFlights;
+    ArrayList<EventRow> eventRows;
+
+    public EventStatistics(Connection connection, int uploadID, int airframeNameId, String airframeName, int fleetID) throws SQLException {
+        this.airframeNameId = airframeNameId;
+        this.airframeName = airframeName;
+        ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection, "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[]{airframeNameId,  fleetID});
+        PreparedStatement preparedStatement;
+        ResultSet resultSet;
+
+        // Get number of flights from this upload and airframe
+        String totFlightsQ = "SELECT count(*) FROM flights WHERE fleet_id = ? AND upload_id = ? " + (airframeNameId != 0 ? "AND airframe_id = ?" : "");
+        preparedStatement = connection.prepareStatement(totFlightsQ);
+        preparedStatement.setInt(1, fleetID);
+        preparedStatement.setInt(2, uploadID);
+        if (airframeNameId != 0) preparedStatement.setInt(3, airframeNameId);
+
+        LOG.info(preparedStatement.toString());
+        resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        totalFlights = resultSet.getInt(1);
+        resultSet.close();
+        preparedStatement.close();
+
+        // Calculate stats of individual events
+        eventRows = new ArrayList<>();
+        for (EventDefinition ed : eventDefinitions) {
+            eventRows.add(EventRow.getNewStatistics(connection, ed, fleetID, uploadID, airframeNameId == 0));
+        }
+    }
+
+    // TODO Not used anymore?
     public static ArrayList<EventStatistics> getAll(Connection connection, int fleetId) throws SQLException {
         String query = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         PreparedStatement preparedStatement = connection.prepareStatement(query);

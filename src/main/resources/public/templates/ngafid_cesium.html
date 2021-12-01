@@ -12,7 +12,6 @@
         integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    <link rel='stylesheet' href='/css/cesiumStyle.css'>
     
     <script>
         var plotMapHidden = true;
@@ -21,9 +20,6 @@
     </script>
 
     <style>
-        /* @import url(../Build/Cesium/Widgets/widgets.css); */
-        /* @import url(/javascript/cesium/Build/Cesium/Widgets/widgets.css); */
-        /* Cesium my custom display */
         html,
         body,
         #cesiumContainer {
@@ -138,10 +134,11 @@
             <option value="5">Show Full Flight</option>
         </select>
         <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
+
     </div>
 
     <script>
-
+    
         // Access Cesium Ion Token here
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
 
@@ -150,250 +147,312 @@
             scene3DOnly: true,
             selectionIndicator: false,
             baseLayerPicker: false
-            // ,
-            // terrainProvider: Cesium.createWorldTerrain(),
-            // animation: false,
         });
-        
+
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
-        var arrCoordAglTaxiing = {{ flightGeoAglTaxiing }};
-        var arrCoordAglTakeOff = {{ flightGeoAglTakeOff }};
-        var arrCoordAglClimb = {{ flightGeoAglClimb }};
-        var arrCoordAglCruiseFinal = {{ flightGeoAglCruise }};
-        var arrCoordAgl = {{ flightGeoInfoAgl }};
-        console.log(arrCoordAgl);
+        var scopes = {{{ cesium_data }}};                
+        var keys = Object.keys(scopes);
+        var today = new Date();
+
+        // Setting default phase
+        for (var i = 0; i < keys.length; i++) {
+
+                let flightId = keys[i];
+                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+                var geoFlightLoadAGLEntireDemo = viewer.entities.add({
+
+                    name: "NGAFID CESIUM DEMO: " + keys[i],
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
+                        material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
+                });
+
+                var geoFlightKeepGroundEntireDemo = viewer.entities.add({
+
+                    name: "NGAFID CESIUM DEMO: " + keys[i],
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.LEMONCHIFFON,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+        }
 
         // Setting taxiing phase
         function applyNgafidStyleTaxi() {
+            for (var i = 0; i < keys.length; i++) {
 
-            var geoFlightLoadAGLTaxi = viewer.entities.add({
-                name: 'Flight Taxiing-Phase-NGAFID-CESIUM',
-                wall: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
-                    material: Cesium.Color.BLUE.withAlpha(0.8),
-                    cornerType: Cesium.CornerType.BEVELED,
-                }
+                let flightId = keys[i];
+                let taxiing = scopes[flightId].flightGeoAglTaxiing;
 
-            });
+                var geoFlightLoadAGLTaxi = viewer.entities.add({
+                    
+                    name: "NGAFID CESIUM FLIGHT TAXIING ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(taxiing),
+                        material: Cesium.Color.BLUE.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
 
-            var geoFlightlineTaxi = viewer.entities.add({
-                name: "Flight Taxiing-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
-                    width: 3,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.BLUE,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                },
-            });
+                });
 
-            var geoFlightKeepGroundTaxi = viewer.entities.add({
-                name: "Flight Taxiing-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTaxiing),
-                    width: 1,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.BLUE,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                    clampToGround: true,
-                },
-            });
+                var geoFlightlineTaxi = viewer.entities.add({
 
-            // Setting viewer points and direction based on phase
-            viewer.zoomTo(viewer.entities);
-            var scene = viewer.scene;
-            var skyAtmosphere = scene.skyAtmosphere;
-            var globe = scene.globe;
-        }
+                    name: "NGAFID CESIUM FLIGHT TAXIING ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
 
-        // Setting a takeoff-liftoff phase
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(taxiing),
+                        width: 3,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.BLUE,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                    },
+                });
+
+                var geoFlightKeepGroundTaxi = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT TAXIING ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(taxiing),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.BLUE,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+
+                // Setting viewer points and direction based on phase
+                viewer.zoomTo(viewer.entities);
+                var scene = viewer.scene;
+                var skyAtmosphere = scene.skyAtmosphere;
+                var globe = scene.globe;
+            }
+        }        
+
+        // Setting a takeOff-liftOff phase
         function applyNgafidStyleTakeoff() {
+            for (var i = 0; i < keys.length; i++) {
 
-            var geoFlightLoadAGLTakeoff = viewer.entities.add({
-                name: 'Flight Takeoff-Phase-NGAFID-CESIUM',
-                wall: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
-                    material: Cesium.Color.PURPLE.withAlpha(0.8),
-                    cornerType: Cesium.CornerType.BEVELED,
-                }
-            });
+                let flightId = keys[i];
+                let TakeOff = scopes[flightId].flightGeoAglTakeOff;
 
-            var geoFlightlineTakeoff = viewer.entities.add({
-                name: "Flight Takeoff-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
-                    width: 3,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.PURPLE,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                },
-            });
+                var geoFlightLoadAGLTakeoff = viewer.entities.add({
 
-            var geoFlightKeepGroundTakeoff = viewer.entities.add({
-                name: "Flight Takeoff-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglTakeOff),
-                    width: 1,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.PURPLE,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                    clampToGround: true,
-                },
-            });
+                    name: "NGAFID CESIUM FLIGHT TAKEOFF ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Takeoff</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(TakeOff),
+                        material: Cesium.Color.PURPLE.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
+                });
 
-            // Setting viewer points and direction based on phase
-            viewer.zoomTo(viewer.entities);
-            var scene = viewer.scene;
-            var skyAtmosphere = scene.skyAtmosphere;
-            var globe = scene.globe;
+                var geoFlightlineTakeoff = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT TAKEOFF ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Takeoff</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(TakeOff),
+                        width: 3,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.PURPLE,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                    },
+                });
+
+                var geoFlightKeepGroundTakeoff = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT TAKEOFF ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Takeoff</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(TakeOff),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.PURPLE,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+
+            }
         }
 
         // Setting a climb phase
         function applyNgafidStyleClimb() {
 
-            var geoFlightLoadAGLClimb = viewer.entities.add({
-                name: 'Flight TakeOff-Climb-Phase-NGAFID-CESIUM',
-                wall: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
-                    material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
-                    cornerType: Cesium.CornerType.BEVELED,
-                }
-            });
+            for (var i = 0; i < keys.length; i++) {
 
-            var geoFlightlineClimb = viewer.entities.add({
-                name: "Flight TakeOff-Climb-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
-                    width: 3,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.SADDLEBROWN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                },
-            });
+                let flightId = keys[i];
+                let Climb = scopes[flightId].flightGeoAglClimb;                
 
-            var geoFlightKeepGroundClimb = viewer.entities.add({
-                name: "Flight TakeOff-Climb-Phase-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglClimb),
-                    width: 1,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.SADDLEBROWN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                    clampToGround: true,
-                },
-            });
+                var geoFlightLoadAGLClimb = viewer.entities.add({
 
-            // Setting viewer points and direction based on phase
-            viewer.zoomTo(viewer.entities);
-            var scene = viewer.scene;
-            var skyAtmosphere = scene.skyAtmosphere;
-            var globe = scene.globe;
+                    name: "NGAFID CESIUM FLIGHT CLIMB ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Climb</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Climb),
+                        material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
+                });
+
+                var geoFlightlineClimb = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT CLIMB ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Climb</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Climb),
+                        width: 3,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.SADDLEBROWN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                    },
+                });
+
+                var geoFlightKeepGroundClimb = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT CLIMB ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Climb</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Climb),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.SADDLEBROWN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+
+            }
         }
 
         // Setting post cruise to final flight phase
         function applyNgafidStyleCruise() {
+            for (var i = 0; i < keys.length; i++) {
 
-            var geoFlightLoadAGLRest = viewer.entities.add({
-                name: 'Flight Post-Cruise-NGAFID-CESIUM',
-                wall: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
-                    material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
-                    cornerType: Cesium.CornerType.BEVELED,
-                }
-            });
+                let flightId = keys[i];
+                let Cruise = scopes[flightId].flightGeoAglCruise;                
 
-            var geoFlightlineRest = viewer.entities.add({
-                name: "Flight Post-Cruise-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
-                    width: 3,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.MEDIUMSEAGREEN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                },
-            });
+                var geoFlightLoadAGLRest = viewer.entities.add({
 
-            var geoFlightKeepGroundRest = viewer.entities.add({
-                name: "Flight Post-Cruise-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAglCruiseFinal),
-                    width: 1,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.MEDIUMSEAGREEN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                    clampToGround: true,
-                },
-            });
+                    name: "NGAFID CESIUM FLIGHT CRUISE TO FINAL ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Cruise to Final</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Cruise),
+                        material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
+                });
 
-            // Setting viewer points and direction based on phase
-            viewer.zoomTo(viewer.entities);
-            var scene = viewer.scene;
-            var skyAtmosphere = scene.skyAtmosphere;
-            var globe = scene.globe;
+                var geoFlightlineRest = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT CRUISE TO FINAL ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Cruise to Final</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Cruise),
+                        width: 3,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.MEDIUMSEAGREEN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                    },
+                });
+
+                var geoFlightKeepGroundRest = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FLIGHT CRUISE TO FINAL ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Cruise to Final</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(Cruise),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.MEDIUMSEAGREEN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+
+            }
         }
 
         // Apply full flight phase
         function applyNgafidStyleEntire() {
 
-            var geoFlightLoadAGLEntire = viewer.entities.add({
-                name: 'Flight Entire-Flight-NGAFID-CESIUM',
-                wall: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
-                    material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
-                    cornerType: Cesium.CornerType.BEVELED,
-                }
-            });
+            for (var i = 0; i < keys.length; i++) {
 
-            var geoFlightlineEntire = viewer.entities.add({
-                name: "Flight Entire-Flight-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
-                    width: 3,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.MEDIUMSEAGREEN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                },
-            });
+                let flightId = keys[i];
+                let InfoAgl = scopes[flightId].flightGeoInfoAgl;
 
-            var geoFlightKeepGroundEntire = viewer.entities.add({
-                name: "Flight Entire-Flight-NGAFID-CESIUM",
-                polyline: {
-                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
-                    width: 1,
-                    material: new Cesium.PolylineOutlineMaterialProperty({
-                        color: Cesium.Color.MEDIUMSEAGREEN,
-                        outlineWidth: 2,
-                        outlineColor: Cesium.Color.BLACK,
-                    }),
-                    clampToGround: true,
-                },
-            });
+                var geoFlightLoadAGLEntire = viewer.entities.add({
 
-            // Setting viewer points and direction based on phase
-            viewer.zoomTo(viewer.entities);
-            var scene = viewer.scene;
-            var skyAtmosphere = scene.skyAtmosphere;
-            var globe = scene.globe;
+                    name: "NGAFID CESIUM FULL FLIGHT ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Full Flight</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    wall: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAgl),
+                        material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
+                        cornerType: Cesium.CornerType.BEVELED,
+                    }
+                });
 
+                var geoFlightlineEntire = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FULL FLIGHT ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Full Flight</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAgl),
+                        width: 3,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.MEDIUMSEAGREEN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                    },
+                });
+
+                var geoFlightKeepGroundEntire = viewer.entities.add({
+
+                    name: "NGAFID CESIUM FULL FLIGHT ",
+                    description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Full Flight</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+                    polyline: {
+                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAgl),
+                        width: 1,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: Cesium.Color.MEDIUMSEAGREEN,
+                            outlineWidth: 2,
+                            outlineColor: Cesium.Color.BLACK,
+                        }),
+                        clampToGround: true,
+                    },
+                });
+
+            }
         }
 
         // Set menu options
@@ -424,22 +483,7 @@
             if (item && typeof item.onselect === "function") {
                 item.onselect();
             }
-        };
-
-        // Setting initial defaulting display
-        var geoFlightKeepGround = viewer.entities.add({
-            name: "Flight Phase-NGAFID-CESIUM",
-            polyline: {
-                positions: Cesium.Cartesian3.fromDegreesArrayHeights(arrCoordAgl),
-                width: 1,
-                material: new Cesium.PolylineOutlineMaterialProperty({
-                    color: Cesium.Color.MEDIUMSEAGREEN,
-                    outlineWidth: 2,
-                    outlineColor: Cesium.Color.YELLOW,
-                }),
-                clampToGround: true,
-            },
-        });
+        };    
 
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
@@ -474,6 +518,7 @@
 
         // cesium default globe layer removed for better view
         viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+        
         // Added world asset with globe ID for better sentinel imagery view
         viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
     </script>
@@ -481,5 +526,4 @@
     <script src="/js/ngafid_cesium-bundle.js"></script>
 
 </body>
-
 </html>

@@ -47,7 +47,10 @@ module.exports = {
         user_preferences : __dirname + "/src/main/javascript/preferences_page.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
+        ttf: __dirname + "/src/main/javascript/ttf.js"
     },
+
+    devtool: "source-map",
 
     output: {
         // Farhad: for webpackCesium

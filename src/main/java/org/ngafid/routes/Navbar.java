@@ -12,7 +12,7 @@ import spark.Request;
 
 public class Navbar {
     public static String getJavascript(Request request) {
-        User user = (User)request.session().attribute("user");
+        User user = request.session().attribute("user");
 
         boolean fleetManager = false;
         int waitingUserCount = 0;

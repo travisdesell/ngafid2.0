@@ -207,6 +207,7 @@ public final class WebServer {
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
 
+        Spark.get("/protected/import_event_stats", new GetImportEventStats(gson));
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
@@ -231,6 +232,9 @@ public final class WebServer {
         Spark.post("/protected/get_flights", new PostFlights(gson));
 
         Spark.get("/protected/flight", new GetFlight(gson));
+
+        Spark.get("/protected/ttf", new GetTurnToFinal());
+        Spark.post("/protected/ttf", new PostTurnToFinal(gson));
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));

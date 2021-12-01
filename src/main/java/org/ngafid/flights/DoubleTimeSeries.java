@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 
@@ -16,6 +17,7 @@ import java.util.zip.Deflater;
 import java.util.zip.Inflater;
 
 import org.ngafid.Database;
+import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
 
 import static org.ngafid.flights.CalculationParameters.*;
@@ -202,7 +204,7 @@ public class DoubleTimeSeries {
      * @param flightId is the id of the flight.
      * @return An ArrayList of all the DoubleTimeSeries for his flight.
      */
-    public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException {
+    public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId) throws SQLException, IOException {
         PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name");
 
         query.setInt(1, flightId);
@@ -237,10 +239,17 @@ public class DoubleTimeSeries {
 
         ResultSet resultSet = query.executeQuery();
         if (resultSet.next()) {
-            DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
-            resultSet.close();
-            query.close();
-            return result;
+            try {
+                DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
+                return result;
+            } catch (IOException e) {
+                LOG.severe("Encountered IOException while reading double time series from database. This should not happen.");
+                System.exit(1);
+            } finally {
+                resultSet.close();
+                query.close();
+            }
+            return null; // This is unreachable
         } else {
             //TODO: should probably throw an exception
             resultSet.close();
@@ -249,7 +258,7 @@ public class DoubleTimeSeries {
         }
     }
 
-    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException {
+    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException {
         id = resultSet.getInt(1);
         flightId = resultSet.getInt(2);
         nameId = resultSet.getInt(3);
@@ -265,20 +274,28 @@ public class DoubleTimeSeries {
         Blob values = resultSet.getBlob(10);
         byte[] bytes = values.getBytes(1, (int)values.length());
         values.free();
+        
+        this.data = Compression.inflateDoubleArray(bytes, size);
+       
+        // OLD COMPRESSION CODE
+        // byte[] bytes = values.getBytes(1, (int)values.length());
+        // values.free();
 
-        LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
 
-        try {
-            Inflater inflater = new Inflater();
-            inflater.setInput(bytes, 0, bytes.length);
-            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-            int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
-            double[] timeSeriesArray = new double[size];
-            timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
-            this.data = timeSeriesArray;
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+        // try {
+        //     Inflater inflater = new Inflater();
+        //     inflater.setInput(bytes, 0, bytes.length);
+        //     ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
+        //     int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
+        //     double[] timeSeriesArray = new double[size];
+        //     timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
+        //     this.data = timeSeriesArray;
+        // } catch (Exception e) {
+        //     e.printStackTrace();
+        // }
+        // 
+        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
     }
 
     public String toString() {
@@ -381,6 +398,10 @@ public class DoubleTimeSeries {
                 preparedStatement.setDouble(8, max);
             }
 
+            // UPDATED COMPRESSION CODE
+            // byte[] compressed = Compression.compressDoubleArray(this.data);
+            // Blob seriesBlob = new SerialBlob(compressed);
+            
             // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
             // is a list of objects rather than a list of primitives - it consumes much more memory.
             // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
@@ -423,7 +444,9 @@ public class DoubleTimeSeries {
             preparedStatement.executeUpdate();
             preparedStatement.close();
 
-        } catch (SQLException e) {
+            seriesBlob.free();
+
+        } catch (SQLException e) { //  | IOException e) { // Re-enable this for the new compression code.
             e.printStackTrace();
             System.exit(1);
         }
