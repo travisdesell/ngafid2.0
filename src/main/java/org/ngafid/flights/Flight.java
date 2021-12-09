@@ -46,10 +46,9 @@ import java.util.logging.Logger;
 
 import javax.xml.bind.DatatypeConverter;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
 import org.ngafid.common.*;
 import org.ngafid.Database;
+import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -234,6 +233,55 @@ public class Flight {
         return getFlights(connection, fleetId, 0);
     }
 
+    /**
+     * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
+     * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
+     * @param connection
+     * @param startDate
+     * @param endDate
+     * @return
+     */
+    public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
+        System.out.println("Start date = " + startDate);
+        System.out.println("End date = " + endDate);
+        String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
+                                + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
+        List<Flight> flights = getFlights(connection, extraCondition);
+        System.out.println("Number flights = " + flights.size());
+        return flights;
+    }
+    /**
+     * Like Flights.getFlightsWithinDateRange, but also only grabs flights that visit a certain airport.
+     * @param connection connection to the database
+     * @param startDate start date which must be formatted like this: "yyyy-mm-dd"
+     * @param endDate formatted the same as the start date.
+     * @param airportIataCode
+     * @return a list of flights where at least part of the flight occurs between the startDate and the endDate.
+     *          This list could be potentially huge if the date range is large so it may be smart to not give the users
+     *          full control over this parameter on the frontend? We'll see.
+     * @throws SQLException
+     */
+    public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate, String endDate,
+                                                                    String airportIataCode, int limit) throws SQLException {
+        String extraCondition =
+                "    (                " +
+                "    EXISTS(          " +
+                "        SELECT       " +
+                "          id         " +
+                "        FROM         " +
+                "          itinerary  " +
+                "        WHERE        " +
+                "          airport = '" + airportIataCode + "' " +
+                "    ) " +
+                "AND   " +
+                "    ( " +
+                "           (start_time BETWEEN '" + startDate + "' AND '" + endDate + "') " +
+                "        OR (end_time   BETWEEN '" + startDate + "' AND '" + endDate + "')  " +
+                "    )" +
+                " ) ";
+        return getFlights(connection, extraCondition, limit);
+    }
+
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ?";
         if (limit > 0) queryString += " LIMIT 100";
@@ -316,6 +364,7 @@ public class Flight {
                 }
             }
         }
+
 
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
@@ -694,8 +743,6 @@ public class Flight {
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, String extraCondition, int limit) throws SQLException {
-        ArrayList<Object> parameters = new ArrayList<Object>();
-
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE (" + extraCondition + ")";
 
         if (limit > 0) queryString += " LIMIT 100";
@@ -703,18 +750,6 @@ public class Flight {
         LOG.info(queryString);
 
         PreparedStatement query = connection.prepareStatement(queryString);
-        for (int i = 0; i < parameters.size(); i++) {
-            LOG.info("setting query parameter " + i + ": " + parameters.get(i));
-
-            if (parameters.get(i) instanceof String) {
-                query.setString(i + 1, (String)parameters.get(i));
-            } else if (parameters.get(i) instanceof Double) {
-                query.setDouble(i + 1, (Double)parameters.get(i));
-            } else if (parameters.get(i) instanceof Integer) {
-                query.setInt(i + 1, (Integer)parameters.get(i));
-            }
-        }
-
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
@@ -1327,8 +1362,15 @@ public class Flight {
         this.doubleTimeSeries.put(name, doubleTimeSeries);
     }
 
-    public DoubleTimeSeries getDoubleTimeSeries(String name) {
-        return doubleTimeSeries.get(name);
+    public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
+        if (this.doubleTimeSeries.containsKey(name)) {
+            return this.doubleTimeSeries.get(name);
+        } else {
+            DoubleTimeSeries dts = DoubleTimeSeries.getDoubleTimeSeries(Database.getConnection(), this.id, name);
+            this.doubleTimeSeries.put(name, dts);
+            return dts;
+        }
+
     }
 
     public StringTimeSeries getStringTimeSeries(String name) {
@@ -1351,7 +1393,7 @@ public class Flight {
     private void setMD5Hash(InputStream inputStream) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
-            byte [] hash = md.digest(inputStream.readAllBytes());
+            byte[] hash = md.digest(inputStream.readAllBytes());
             md5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
 
         } catch (NoSuchAlgorithmException e) {
@@ -1613,6 +1655,7 @@ public class Flight {
                                 airframeName.equals("PA-28-181") ||
                                 airframeName.equals("PA-44-180") ||
                                 airframeName.equals("Piper PA-46-500TP Meridian") ||
+                                airframeName.contains("Garmin") ||
                                 airframeName.equals("Beechcraft A36/G36")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44")) {
@@ -1905,7 +1948,7 @@ public class Flight {
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
 
-            } else if (airframeName.equals("Garmin Flight Display") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft") || airframeName.equals("Cessna Model 525")) {
+            } else if (airframeName.contains("Garmin") || airframeName.equals("Diamond DA42NG") || airframeName.equals("Diamond DA40NG") || airframeName.equals("Piper PA-46-500TP Meridian") || airframeName.equals("Unknown Aircraft") || airframeName.equals("Cessna Model 525")) {
                 LOG.warning("Cannot calculate engine divergences because airframe data recorder does not track CHT and/or EGT: '" + airframeName + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeName +" does not track CHT and/or EGT"));
 
@@ -1972,7 +2015,7 @@ public class Flight {
         }
     }
 
-    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
         this.fleetId = fleetId;
         this.filename = zipEntryName;
         this.tailConfirmed = false;
@@ -2005,10 +2048,7 @@ public class Flight {
             inputStream.reset();
             process(connection, inputStream);
 
-        } catch (FatalFlightFileException e) {
-            status = "WARNING";
-            throw e;
-        } catch (IOException e) {
+        } catch (FatalFlightFileException | IOException e) {
             status = "WARNING";
             throw e;
         } catch (SQLException e) {
@@ -2025,7 +2065,7 @@ public class Flight {
      *
      * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
      */
-    public void runLOCICalculations(Connection connection) throws MalformedFlightFileException, SQLException {
+    public void runLOCICalculations(Connection connection) throws MalformedFlightFileException, SQLException, IOException {
         checkCalculationParameters(STALL_PROB, STALL_DEPENDENCIES);
 
         if (this.isC172()) {
@@ -2033,7 +2073,7 @@ public class Flight {
             cas.create(index -> {
                 DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
                 double iasValue = ias.get(index);
-                
+
                 if (iasValue < 70.d) {
                     iasValue = (0.7d * iasValue) + 20.667;
                 }
@@ -2072,7 +2112,7 @@ public class Flight {
             fltPthAngle = fltPthAngle * (180 / Math.PI);
             double value = pitch.get(index) - fltPthAngle;
 
-            return value; 
+            return value;
         });
 
         CalculatedDoubleTimeSeries stallIndex = new CalculatedDoubleTimeSeries(connection, STALL_PROB, "index", true, this);
@@ -2093,10 +2133,10 @@ public class Flight {
                 DoubleTimeSeries tas = getDoubleTimeSeries(TAS_FTMIN);
 
                 double laggedHdg = hdgLagged.get(index);
-                double yawRate = Double.isNaN(laggedHdg) ? 0 : 
+                double yawRate = Double.isNaN(laggedHdg) ? 0 :
                     180 - Math.abs(180 - Math.abs(hdg.get(index) - laggedHdg) % 360);
 
-                double yawComp = yawRate * COMP_CONV; 
+                double yawComp = yawRate * COMP_CONV;
                 double vrComp = ((tas.get(index) / 60) * yawComp);
                 double rollComp = roll.get(index) * COMP_CONV;
                 double ctComp = Math.sin(rollComp) * 32.2;
@@ -2104,6 +2144,7 @@ public class Flight {
 
                 return value;
             });
+
             
             CalculatedDoubleTimeSeries loci = new CalculatedDoubleTimeSeries(connection, LOCI, "index", true, this);
             loci.create(index -> {
@@ -2113,7 +2154,7 @@ public class Flight {
         }
     }
 
-    public Flight(int fleetId, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public Flight(int fleetId, String filename, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.fleetId = fleetId;
         this.filename = filename;
         String[] parts = filename.split("/");
@@ -2139,16 +2180,9 @@ public class Flight {
        //} catch (FileNotFoundException e) {
        //   System.err.println("ERROR: could not find flight file '" + filename + "'");
        //   exceptions.add(e);
-        } catch (FatalFlightFileException e) {
+        } catch (FatalFlightFileException | IOException | SQLException e) {
             status = "WARNING";
             throw e;
-        } catch (IOException e) {
-            status = "WARNING";
-            throw e;
-        } catch (SQLException e) {
-            System.err.println(e);
-            e.printStackTrace();
-            System.exit(1);
         }
 
         checkExceptions();
