@@ -31,8 +31,8 @@ public class Database {
         return connection;
     }
 
-    public static boolean dbInfoDoesNotExist() {
-        return dbHost.isBlank() || dbName.isBlank() || dbUser.isBlank() || dbPassword.isBlank();
+    public static boolean dbInfoExists() {
+        return !dbHost.isBlank() && !dbName.isBlank() && !dbUser.isBlank() && !dbPassword.isBlank();
     }
 
     public static Connection resetConnection() {
@@ -57,7 +57,7 @@ public class Database {
 
 
         try {
-            if (!dbInfoDoesNotExist()) {
+            if (!dbInfoExists()) {
                 BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_DB_INFO));
                 bufferedReader.readLine();
 
@@ -77,12 +77,10 @@ public class Database {
                 dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
                 dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
 
-                /*
                 System.out.println("dbHost: '" + dbHost + "'");
                 System.out.println("dbName: '" + dbName + "'");
                 System.out.println("dbUser: '" + dbUser + "'");
                 System.out.println("dbPassword: '" + dbPassword + "'");
-                */
 
                 //Don't remove this!
                 bufferedReader.close();
