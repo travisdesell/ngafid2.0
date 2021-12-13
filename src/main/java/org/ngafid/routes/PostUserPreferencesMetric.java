@@ -13,7 +13,6 @@ import java.sql.SQLException;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import spark.Route;
 import spark.Request;
