@@ -53,7 +53,7 @@ public abstract class XPlaneExport{
             this.parameters = getSeriesData(connection, flightId, useMSL);
             this.startDateTime = flight.getStartDateTime();
             this.dataOut = this.export();
-        }catch (SQLException e){
+        }catch (SQLException | IOException e){
             this.dataOut = new StringWriter();
             this.dataOut.write(e.toString());
         }
@@ -69,7 +69,7 @@ public abstract class XPlaneExport{
      *
      * @return a Map with the pertinent data
      */
-    public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId, boolean useMSL) throws SQLException{
+    public static Map<String, DoubleTimeSeries> getSeriesData(Connection connection, int flightId, boolean useMSL) throws SQLException, IOException {
         Map<String, DoubleTimeSeries> seriesData = new HashMap<>();
 
         seriesData.put(ALT, DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, (useMSL ? "AltMSL" : "AltAGL")));

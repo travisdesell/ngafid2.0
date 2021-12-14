@@ -16,6 +16,7 @@ import java.sql.SQLException;
 
 public class Database {
     private static Connection connection;
+    private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
 
     public static Connection getConnection() { 
         try {
@@ -28,6 +29,10 @@ public class Database {
         }
 
         return connection;
+    }
+
+    public static boolean dbInfoExists() {
+        return !dbHost.isBlank() && !dbName.isBlank() && !dbUser.isBlank() && !dbPassword.isBlank();
     }
 
     public static Connection resetConnection() {
@@ -50,37 +55,36 @@ public class Database {
         }
         String NGAFID_DB_INFO = System.getenv("NGAFID_DB_INFO");
 
-        String dbHost = "";
-        String dbName = "";
-        String dbUser = "";
-        String dbPassword = "";
 
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_DB_INFO));
-            bufferedReader.readLine();
+            if (!dbInfoExists()) {
+                BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_DB_INFO));
+                bufferedReader.readLine();
 
-            dbUser = bufferedReader.readLine();
-            dbUser = dbUser.substring(dbUser.indexOf("'") + 1);
-            dbUser = dbUser.substring(0, dbUser.indexOf("'"));
+                dbUser = bufferedReader.readLine();
+                dbUser = dbUser.substring(dbUser.indexOf("'") + 1);
+                dbUser = dbUser.substring(0, dbUser.indexOf("'"));
 
-            dbName = bufferedReader.readLine();
-            dbName = dbName.substring(dbName.indexOf("'") + 1);
-            dbName = dbName.substring(0, dbName.indexOf("'"));
+                dbName = bufferedReader.readLine();
+                dbName = dbName.substring(dbName.indexOf("'") + 1);
+                dbName = dbName.substring(0, dbName.indexOf("'"));
 
-            dbHost = bufferedReader.readLine();
-            dbHost = dbHost.substring(dbHost.indexOf("'") + 1);
-            dbHost = dbHost.substring(0, dbHost.indexOf("'"));
+                dbHost = bufferedReader.readLine();
+                dbHost = dbHost.substring(dbHost.indexOf("'") + 1);
+                dbHost = dbHost.substring(0, dbHost.indexOf("'"));
 
-            dbPassword = bufferedReader.readLine();
-            dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
-            dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
+                dbPassword = bufferedReader.readLine();
+                dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
+                dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
 
-            /*
-            System.out.println("dbHost: '" + dbHost + "'");
-            System.out.println("dbName: '" + dbName + "'");
-            System.out.println("dbUser: '" + dbUser + "'");
-            System.out.println("dbPassword: '" + dbPassword + "'");
-            */
+                System.out.println("dbHost: '" + dbHost + "'");
+                System.out.println("dbName: '" + dbName + "'");
+                System.out.println("dbUser: '" + dbUser + "'");
+                System.out.println("dbPassword: '" + dbPassword + "'");
+
+                //Don't remove this!
+                bufferedReader.close();
+            }
 
         } catch (IOException e) {
             System.err.println("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
