@@ -1366,6 +1366,48 @@ public class Flight {
         //System.err.println("MD5 HASH: '" + md5Hash + "'");
     }
 
+    public void calculateScanEagleLatLon(Connection connection, String inLatColumnName, String inLonColumnName, String outLatColumnName, String outLonColumnName) throws SQLException {
+        DoubleTimeSeries inLatitudes = doubleTimeSeries.get(inLatColumnName);
+        DoubleTimeSeries inLongitudes = doubleTimeSeries.get(inLonColumnName);
+
+        int latSize = inLatitudes.size();
+        int lonSize = inLongitudes.size();
+
+        //System.out.println("inLatitudes.size(): " + inLatitudes.size() + ", inLongitudes.size(): " + inLongitudes.size());
+
+        DoubleTimeSeries latitude = new DoubleTimeSeries(connection, outLatColumnName, "degrees");
+        DoubleTimeSeries longitude = new DoubleTimeSeries(connection, outLonColumnName, "degrees");
+
+        for (int i = 0; i < inLatitudes.size(); i++) {
+            double inLat = inLatitudes.get(i);
+            double inLon = inLongitudes.get(i);
+            double outLat = Math.toDegrees(inLat);
+            double outLon = Math.toDegrees(inLon);
+
+            //if the latitude/longitudes haven't started being recorded yet set them to NaN
+            if (inLat == 0) outLat = Double.NaN;
+            if (inLon == 0) outLon = Double.NaN;
+
+            latitude.add(outLat);
+            longitude.add(outLon);
+
+            //System.out.println("\t inLat: " + inLat + ", inLon: " + inLon + ", outLat: " + outLat + ", outLon: " + outLon);
+        }
+
+        doubleTimeSeries.put(outLatColumnName, latitude);
+        doubleTimeSeries.put(outLonColumnName, longitude);
+    }
+
+    public void calculateScanEagleAltMSL(Connection connection, String outAltMSLColumnName, String inAltMSLColumnName) throws SQLException {
+        DoubleTimeSeries inAltMSL = doubleTimeSeries.get(inAltMSLColumnName);
+        DoubleTimeSeries outAltMSL = new DoubleTimeSeries(connection, outAltMSLColumnName, "feet");
+
+        for (int i = 0; i < inAltMSL.size(); i++) {
+            outAltMSL.add(inAltMSL.get(i) * 3.28084); //convert meters to feet
+        }
+        doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
+    }
+
     public void calculateScanEagleStartEndTime(String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
@@ -1417,7 +1459,8 @@ public class Flight {
         double firstLat = 0.0;
         for (int i = 0; i < latitudes.size(); i++) {
             //System.out.println("\t\tlat[" + i + "]: " + latitudes.get(i));
-            if (latitudes.get(i) != 0.0) {
+            double lat = latitudes.get(i);
+            if (lat != 0.0 && !Double.isNaN(lat)) {
                 firstLat = latitudes.get(i);
                 break;
             }
@@ -1427,7 +1470,8 @@ public class Flight {
         double firstLon = 0.0;
         for (int i = 0; i < longitudes.size(); i++) {
             //System.out.println("\t\tlon[" + i + "]: " + longitudes.get(i));
-            if (longitudes.get(i) != 0.0) {
+            double lon = longitudes.get(i);
+            if (lon != 0.0 && !Double.isNaN(lon)) {
                 firstLon = longitudes.get(i);
                 break;
             }
@@ -1613,6 +1657,13 @@ public class Flight {
 
                         } else if ((airframeName.equals("Garmin Flight Display") || airframeName.equals("Robinson R44 Raven I")) && fleetId == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
                             airframeName = "R44";
+                        } else if (airframeName.equals("Garmin Flight Display")) {
+                            throw new FatalFlightFileException("Flight airframe name was 'Garmin Flight Display' which does not specify what airframe type the flight was, please fix and re-upload so the flight can be properly identified and processed.");
+
+                        }
+
+                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                            airframeName = "Cirrus SR22";
                         }
 
                         if (airframeName.equals("Cessna 172R") ||
@@ -1621,7 +1672,7 @@ public class Flight {
                                 airframeName.equals("Cessna 182T") ||
                                 airframeName.equals("Cessna Model 525") ||
                                 airframeName.equals("Cirrus SR20") ||
-                                airframeName.equals("Cirrus SR22 (3600 GW)") ||
+                                airframeName.equals("Cirrus SR22") ||
                                 airframeName.equals("Diamond DA40") ||
                                 airframeName.equals("Diamond DA 40 F") ||
                                 airframeName.equals("Diamond DA40NG") ||
@@ -1844,13 +1895,13 @@ public class Flight {
                 }
 
                 System.out.println("Calculating start and end time for ScanEagle!");
-                //calculateScanEagleLatLon("DID_GPS_LAT", "DID_GPS_LON", "Latitude", "Longitude");
+                calculateScanEagleLatLon(connection, "DID_GPS_LAT", "DID_GPS_LON", "Latitude", "Longitude");
                 calculateScanEagleStartEndTime("DID_GPS_TIME", "Latitude", "Longitude");
+                calculateScanEagleAltMSL(connection, "AltMSL", "DID_GPS_ALT");
 
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-                return;
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
@@ -1870,16 +1921,18 @@ public class Flight {
             exceptions.add(e);
         }
 
-        try {
-            calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
-        } catch (MalformedFlightFileException e) {
-            exceptions.add(e);
-        }
+        if (!airframeName.equals("ScanEagle")) {
+            try {
+                calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
+            } catch (MalformedFlightFileException e) {
+                exceptions.add(e);
+            }
 
-        try {
-            calculateLaggedAltMSL(connection, "AltMSL", 10, "AltMSL Lag Diff");
-        } catch (MalformedFlightFileException e) {
-            exceptions.add(e);
+            try {
+                calculateLaggedAltMSL(connection, "AltMSL", 10, "AltMSL Lag Diff");
+            } catch (MalformedFlightFileException e) {
+                exceptions.add(e);
+            }
         }
 
         try {
@@ -1903,7 +1956,7 @@ public class Flight {
                 calculateDivergence(connection, egt2Names, "E2 EGT Divergence", "deg F");
 
 
-            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22 (3600 GW)")) {
+            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                 processingStatus |= CHT_DIVERGENCE_CALCULATED;
@@ -1934,15 +1987,21 @@ public class Flight {
                 System.exit(1);
             }
 
-            runLOCICalculations(connection);
+            if (!airframeName.equals("ScanEagle")) {
+                //LOCI doesn't apply to UAS
+                runLOCICalculations(connection);
+            }
 
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
 
         try {
-            if (hasCoords && hasAGL) {
-                calculateItinerary("GndSpd", "E1 RPM");
+            if (!airframeName.equals("ScanEagle")) {
+                //TODO: need to calculate itinerary differently for UAS
+                if (hasCoords && hasAGL) {
+                    calculateItinerary("GndSpd", "E1 RPM");
+                }
             }
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
