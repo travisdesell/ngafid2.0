@@ -1,5 +1,6 @@
 package org.ngafid.flights;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -23,7 +24,7 @@ public class VSPDRegression implements Calculation {
      *
      * @param flight the {@link Flight} to perform a regression on
      */
-    public VSPDRegression(Connection connection, Flight flight) throws SQLException {
+    public VSPDRegression(Connection connection, Flight flight) throws SQLException, IOException {
         this.altB = flight.getDoubleTimeSeries(ALT_B);
         this.altBLag = altB.lag(connection, VSI_LAG_DIFF);
         this.altBLead = altB.lead(connection, VSI_LAG_DIFF);
