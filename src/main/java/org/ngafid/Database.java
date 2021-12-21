@@ -1,22 +1,23 @@
 package org.ngafid;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.lang.Thread;
+import java.lang.Runnable;
 
 
 public class Database {
     private static Connection connection;
+    private static boolean connectionInitiated;
     private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+
+    private static final long HOUR = 3600000;
 
     public static Connection getConnection() { 
         try {
@@ -114,9 +115,60 @@ public class Database {
             e.printStackTrace();
             System.exit(1);
         }
+
+        if (!connectionInitiated) {
+            connectionInitiated = true; 
+
+            File logFile = null;
+            final String logFilePath = "/var/log/ngafid/poker.log";
+            try {
+                logFile = new File(logFilePath);
+
+                if (!logFile.exists()) {
+                    if (logFile.createNewFile()) {
+                        System.out.println("Created new file");
+                    }
+                }
+
+            } catch (IOException ie) {
+                ie.printStackTrace();
+            }
+
+            writeToLogFile(logFilePath, "Logfile for SQL server poker, starting at: " + LocalDateTime.now().toString());
+
+            new Thread(() -> {
+                while (true) {
+                    try {
+                        Thread.sleep(HOUR); 
+
+                        String dummyQuery = "SELECT id FROM event_definitions WHERE id <= 1";
+                        PreparedStatement preparedStatement = getConnection().prepareStatement(dummyQuery);
+
+                        ResultSet rs = preparedStatement.executeQuery();
+                        rs.close();
+
+                        writeToLogFile(logFilePath, "Performed query: " + dummyQuery + " at " + LocalDateTime.now().toString());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            }).start();
+        }
     }
 
     static {
         setConnection();
+    }
+
+    private static synchronized void writeToLogFile(String logFilePath, String message) {
+        try {
+            File file = new File(logFilePath);
+            PrintWriter pw = new PrintWriter(file);
+
+            pw.println(message);
+            pw.close();
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
     }
 }
