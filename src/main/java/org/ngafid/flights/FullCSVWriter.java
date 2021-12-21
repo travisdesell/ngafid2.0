@@ -24,7 +24,7 @@ public class FullCSVWriter {
 
     static Connection connection = Database.getConnection();
 
-    public FullCSVWriter(String fileName, int flightId) throws SQLException {
+    public FullCSVWriter(String fileName, int flightId) throws Exception {
         this.outFile = new File(fileName);
 
         this.timeSeries = DoubleTimeSeries.getAllDoubleTimeSeries(connection, flightId);
