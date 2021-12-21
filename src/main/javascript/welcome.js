@@ -245,7 +245,7 @@ class WelcomePage extends React.Component {
     }
 
     dateChange() {
-        console.log("[welcomecard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'"); 
+        console.log("[welcomecard] notifying date change 2, startYear: '" + this.state.startYear + "', startMonth: '" + this.state.startMonth + ", endYear: '" + this.state.endYear + "', endMonth: '" + this.state.endMonth + "'");
 
         let startDate = this.state.startYear + "-";
         let endDate = this.state.endYear + "-";
@@ -280,17 +280,17 @@ class WelcomePage extends React.Component {
                 if (response.err_msg) {
                     errorModal.show(response.err_title, response.err_msg);
                     return;
-                }   
+                }
 
                 eventCounts = response;
                 displayPlots(welcomePage.state.airframe);
                 welcomePage.setState({datesChanged : false});
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     airframeChange(airframe) {
@@ -301,9 +301,9 @@ class WelcomePage extends React.Component {
     render() {
         //console.log(systemIds);
 
-        const numberOptions = { 
+        const numberOptions = {
             minimumFractionDigits: 2,
-            maximumFractionDigits: 2 
+            maximumFractionDigits: 2
         };
 
         return (
@@ -362,10 +362,12 @@ class WelcomePage extends React.Component {
                                     name="Events"
                                     airframes={airframes}
                                     airframe={this.state.airframe}
-                                    startYear={this.state.startYear} 
-                                    startMonth={this.state.startMonth} 
-                                    endYear={this.state.endYear} 
-                                    endMonth={this.state.endMonth} 
+                                    airports={[]}
+                                    runways={[]}
+                                    startYear={this.state.startYear}
+                                    startMonth={this.state.startMonth}
+                                    endYear={this.state.endYear}
+                                    endMonth={this.state.endMonth}
                                     datesChanged={this.state.datesChanged}
                                     dateChange={() => this.dateChange()}
                                     airframeChange={(airframe) => this.airframeChange(airframe)}
@@ -401,5 +403,4 @@ var welcomePage= ReactDOM.render(
 );
 
 displayPlots("All Airframes");
-
 

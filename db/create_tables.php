@@ -32,7 +32,7 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE flight_processed");
     query_ngafid_db("DROP TABLE event_statistics");
     query_ngafid_db("DROP TABLE event_definitions");
-
+    
     query_ngafid_db("DROP TABLE itinerary");
     query_ngafid_db("DROP TABLE double_series");
     query_ngafid_db("DROP TABLE string_series");
@@ -41,16 +41,31 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE upload_errors");
     query_ngafid_db("DROP TABLE flight_messages");
 
+    query_ngafid_db("DROP TABLE airframe_types");
+    query_ngafid_db("DROP TABLE data_type_names");
+    query_ngafid_db("DROP TABLE flight_tag_map");
+    query_ngafid_db("DROP TABLE turn_to_final");
     query_ngafid_db("DROP TABLE flights");
     query_ngafid_db("DROP TABLE tails");
     query_ngafid_db("DROP TABLE airframes");
     query_ngafid_db("DROP TABLE fleet_airframes");
+    query_ngafid_db("DROP TABLE visited_airports");
+    query_ngafid_db("DROP TABLE visited_runways");
+    query_ngafid_db("DROP TABLE user_preferences");
+    query_ngafid_db("DROP TABLE user_preferences_metrics");
+    query_ngafid_db("DROP TABLE double_series_names");
+    query_ngafid_db("DROP TABLE string_series_names");
+    query_ngafid_db("DROP TABLE stored_filters");
+    query_ngafid_db("DROP TABLE flight_tags");
+    query_ngafid_db("DROP TABLE loci_processed");
+    query_ngafid_db("DROP TABLE sim_aircraft");
 
     query_ngafid_db("DROP TABLE uploads");
 
     query_ngafid_db("DROP TABLE fleet_access");
     query_ngafid_db("DROP TABLE fleet");
     query_ngafid_db("DROP TABLE user");
+    return;
 }
 
 
@@ -522,6 +537,17 @@ $query = "CREATE TABLE `user_preferences` (
 
     PRIMARY KEY(`user_id`),
     FOREIGN KEY(`user_id`) REFERENCES user(`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+query_ngafid_db($query);
+
+$query = "CREATE TABLE `turn_to_final` (
+    `flight_id` INT(11) NOT NULL,
+    `version` BIGINT(11) NOT NULL,
+    data MEDIUMBLOB,
+
+    PRIMARY KEY(`flight_id`),
+    FOREIGN KEY(`flight_id`) REFERENCES flights(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);

@@ -1,12 +1,18 @@
 package org.ngafid.filters;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Set;
 import java.util.logging.Logger;
 
 
 public class Conditional {
     private static final Logger LOG = Logger.getLogger(Conditional.class.getName());
+
+    private static final Set<String> VALID_RULE_CONDITIONS = Set.of("<", ">", ">=", "<=");
+    private static final Set<String> VALID_GROUP_CONDITIONS = Set.of("AND", "OR");
+
 
     private String type = null;
 
@@ -31,11 +37,20 @@ public class Conditional {
             this.type = "RULE";
             this.parameterName = filter.inputs.get(0);
             this.condition = filter.inputs.get(1);
+            if (!VALID_RULE_CONDITIONS.contains(this.condition)) {
+                LOG.severe("Could not set a invalid condition for a rule: '" + this.condition + "'");
+                System.exit(1);
+            }
             this.value = Double.parseDouble(filter.inputs.get(2));
 
         } else if (filter.type.equals("GROUP")) {
             this.type = "GROUP";
             this.condition = filter.condition;
+
+            if (!VALID_GROUP_CONDITIONS.contains(this.condition)) {
+                LOG.severe("Could not set a invalid condition for a group: ''" + this.type + "'");
+                System.exit(1);
+            }
 
             for (Filter child : filter.filters) {
                 children.add(new Conditional(child));
@@ -152,6 +167,80 @@ public class Conditional {
         }
 
         return false;
+    }
+
+    /**
+     * Generate java source code from this conditional.
+     * @return
+     */
+    public String codeGen() {
+        HashSet<String> parameters = new HashSet<>();
+        StringBuilder conditionSB = new StringBuilder();
+        this.codeGen(conditionSB, parameters);
+        String condition = conditionSB.toString();
+
+        StringBuilder classSB = new StringBuilder();
+
+        classSB.append(
+            "import java.util.List;\n" +
+            "import java.util.HashMap;\n\n" +
+            "public class CompiledCondition" + this.hashCode() + " {\n\n" +
+            "    private int length = -1;\n");
+
+        for (String parameter : parameters) {
+            classSB.append(
+            "    private double[] " + parameter + " = null;\n");
+        }
+        classSB.append("\n");
+        classSB.append(
+            "    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" +
+            "        this.length = length;");
+        for (String parameter : parameters) {
+            classSB.append(
+            "        this." + parameter + "Series = parameterMap.get(\"" + parameter + "\");\n");
+        }
+        classSB.append("}\n\n");
+
+        classSB.append(
+            "    public boolean evaluate(int timeStep) {\n");
+
+        for (String parameter : parameters) {
+            classSB.append(
+            "        double " + parameter + " = this." + parameter + "Series[timeStep];\n");
+        }
+
+        return condition.toString();
+    }
+
+    private void codeGen(StringBuilder sb, HashSet<String> parameters) {
+        if (type.equals("RULE")) {
+            parameters.add(parameterName);
+
+            sb.append("(");
+                // This is just an inlined NaN test
+                // https://stackoverflow.com/questions/18442503/java-isnan-how-it-works
+                sb.append("!(" + parameterName + " != " + parameterName + ")" );
+                sb.append(" && ");
+                // Hex string so we don't lose precision by rouding. toString may round a float to make it pretty
+                sb.append(parameterName + " " + condition + " " + Double.toHexString(this.value));
+            sb.append(")");
+        } else if (type.equals("GROUP")) {
+            sb.append("(");
+            if (condition.equals("AND")) {
+                for (Conditional child : children) {
+                    child.codeGen(sb, parameters);
+                    sb.append(" && ");
+                }
+                sb.append("true");
+            } else if (condition.equals("OR")) {
+                for (Conditional child : children) {
+                    child.codeGen(sb, parameters);
+                    sb.append(" || ");
+                }
+                sb.append("false");
+            }
+            sb.append(")");
+        }
     }
 
     /**
