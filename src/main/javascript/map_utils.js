@@ -4,6 +4,8 @@ import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import Feature from 'ol/Feature.js';
 import LineString from 'ol/geom/LineString.js';
+import {fromLonLat, toLonLat} from 'ol/proj.js';
+import Point from 'ol/geom/Point.js';
 
 
 // So the weights w0 and w1 are for the weighted average
@@ -80,6 +82,145 @@ function paletteGenerator(colors, pos) {
         }
         return colors[length - 1];
     }
+}
+
+function generateBaseLayer(flight, lowerConstraint, upperConstraint) {
+    let coordinates = flight.coordinates;
+    let nanOffset = flight.nanOffset;
+
+    flight.state.points = new Array();
+    let points = flight.state.points;
+    for (var i = lowerConstraint; i < upperConstraint; i++) {
+        var point = fromLonLat(coordinates[i]);
+        points.push(point);
+    }
+    console.log("pts");
+    console.log(points);
+
+    var color = flight.state.color;
+    //console.log(color);
+
+    flight.state.trackingPoint = new Feature({
+                    geometry : new Point(points[0]),
+                    name: 'TrackingPoint'
+                });
+
+    flight.state.trackingPoint.setId(points[0]);
+
+    flight.state.layers = new Array();
+    let layers = flight.state.layers;
+
+
+    // adding itinerary (approaches and takeoffs) to flightpath 
+    var itinerary = flight.props.flightInfo.itinerary;
+    var flight_phases = [];
+
+    // Create flight phase styles
+    var takeoff_style = new Style({
+                stroke: new Stroke({
+                    color: "#34eb52",
+                    width: 3
+                })
+            });
+
+    var approach_style = new Style({
+                stroke: new Stroke({
+                    color: "#347deb",
+                    width: 3
+                })
+            });
+
+    // create and add Features to flight_phases for each flight phase in itinerary
+    for (let i = 0; i < itinerary.length; i++) {
+        var stop = itinerary[i];
+        var approach = null;
+        var takeoff = null;
+
+        // creating Linestrings
+        if (stop.startOfApproach != -1 && stop.endOfApproach != -1) {
+            approach = new LineString( points.slice( stop.startOfApproach, stop.endOfApproach ) );
+        }
+        if (stop.startOfTakeoff != -1 && stop.endOfTakeoff != -1) {
+            takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
+        }
+
+        // set styles and add phases to flight_phases list
+        if (approach != null) {
+            let phase = new Feature({
+                             geometry: approach,
+                             name: 'Approach'
+                         });
+            phase.setStyle(approach_style);
+            flight_phases.push( phase );
+        }
+        if (takeoff != null) {
+            let phase = new Feature({
+                             geometry: takeoff,
+                             name: 'Takeoff'
+                         });
+            phase.setStyle(takeoff_style);
+            flight_phases.push( phase );
+        }
+    }
+
+    flight.state.baseLayer = new VectorLayer({
+        name : 'Itinerary' ,
+        description : 'Itinerary with Phases',
+        nMap : false,
+        style: new Style({
+            stroke: new Stroke({
+                color: color,
+                width: 3
+            }),
+            image: new Circle({
+                radius: 5,
+                //fill: new Fill({color: [0, 0, 0, 255]}),
+                stroke: new Stroke({
+                    color: [0, 0, 0, 0],
+                    width: 2
+                })
+            })
+        }),
+
+        source : new VectorSource({
+            features: [
+                new Feature({
+                    geometry: new LineString(points),
+                    name: 'Line'
+                }),
+                flight.state.trackingPoint,
+            ]
+        })
+    });
+
+    let phaseLayer = new VectorLayer({
+        name : 'Itinerary Phases',
+        nMap : true,
+        style: new Style({
+            stroke: new Stroke({
+                color: [1,1,1,1],
+                width: 3
+            })
+        }),
+
+        source : new VectorSource({
+            features: flight_phases
+        })
+    }); 
+
+    let baseLayer = flight.state.baseLayer;
+
+    baseLayer.flightState = flight;
+    let flightInfo = flight.props.flightInfo;
+
+    flight.state.pathVisible = true;
+    flight.state.itineraryVisible = true;
+    flight.state.nanOffset = nanOffset;
+    flight.state.coordinates = coordinates;
+    flight.state.points = points;
+
+    // toggle visibility of itinerary
+    layers.push(baseLayer, phaseLayer);
 }
 
 /**
@@ -256,4 +397,4 @@ function generateLOCILayer(lociData, layers, flight, lowerConstraint, upperConst
     flight.state.layers.push(lociLayer);
 }
 
-export {generateStallLayer, generateLOCILayer, paletteAt, paletteGenerator };
+export {generateBaseLayer, generateStallLayer, generateLOCILayer, paletteAt, paletteGenerator };

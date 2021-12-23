@@ -43,9 +43,9 @@ class Itinerary extends React.Component {
         let min = el.value[0];
         let max = el.value[1];
 
-        console.log("Trimming flight to timestamp " + min + " through " + max);
+        //console.log("Trimming flight to timestamp " + min + " through " + max);
 
-        this.props.drawLociLayers(min, max);
+        this.props.redrawFlightPath(min, max);
     }
 
     render() {

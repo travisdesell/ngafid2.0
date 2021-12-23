@@ -20,7 +20,7 @@ import { TraceButtons } from './trace_buttons_component.js';
 import { Tags } from './tags_component.js';
 import { Events } from './events_component.js';
 import { selectAircraftModal } from './select_acft_modal.js';
-import {generateLOCILayer, generateStallLayer} from './map_utils.js';
+import {generateBaseLayer, generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
 
@@ -613,17 +613,20 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    drawLociLayers(lowerConstraint, upperConstraint) {
-        console.log(map);
+    redrawFlightPath(lowerConstraint, upperConstraint) {
         //timer here?
-        const lociData = this.state.seriesData.get('LOC-I Index');
-        const spData = this.state.seriesData.get('Stall Index');
+        console.log("this layer:");
+        let layerName = this.getSelectedLayer();
+        console.log(layerName);
 
-        generateStallLayer(spData, this.state.layers, this, lowerConstraint, upperConstraint);
-        generateLOCILayer(lociData, this.state.layers, this, lowerConstraint, upperConstraint);
+        if (layerName.includes('Itinerary')) {
+            console.log("Trimming base layer");
+            generateBaseLayer(this, lowerConstraint, upperConstraint);
+        } else if (layerName.includes('Stall')) {
 
-        console.log("drawing loci layers!");
-        console.log(this.state.layers);
+        } else if (layerName.includes('LOC-I')) {
+
+        }
 
         this.replaceMapLayers();
         map.updateSize();
@@ -651,21 +654,15 @@ class Flight extends React.Component {
             let index = this.mapLayerIndexOf(name);
 
             //if (index != -1 && description === this.getSelectedLayer()) {
-                console.log(name + " " + description);
                 mapLayers[index] = layer;
             //}
         }
     }
 
     selectLayer(selectedLayer) {
-        console.log("setting selected layer ");
-        console.log(selectedLayer);
-
         for (let i = 0; i < this.state.layers.length; i++) {
             let layer = this.state.layers[i];
             layer.setVisible(layer.get('name').includes(selectedLayer));
-            console.log("setting layer: ");
-            console.log(layer);
         }
 
         this.setState(this.state);
@@ -757,8 +754,6 @@ class Flight extends React.Component {
                 flightId : this.props.flightInfo.id,
             };
 
-            const drawLociLayers = (lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint);
-
             $.ajax({
                 type: 'POST',
                 url: '/protected/coordinates',
@@ -768,143 +763,23 @@ class Flight extends React.Component {
                     //console.log("received response: ");
                     //console.log(response);
 
-                    var coordinates = response.coordinates;
-
-                    let points = thisFlight.state.points;
-                    for (var i = 0; i < coordinates.length; i++) {
-                        var point = fromLonLat(coordinates[i]);
-                        points.push(point);
-                    }
-
-                    var color = thisFlight.state.color;
-                    //console.log(color);
-
-                    thisFlight.state.trackingPoint = new Feature({
-                                    geometry : new Point(points[0]),
-                                    name: 'TrackingPoint'
-                                });
-
-                    thisFlight.state.trackingPoint.setId(points[0]);
-
-                    thisFlight.state.layers = new Array();
-                    let layers = thisFlight.state.layers;
-
-
-                    // adding itinerary (approaches and takeoffs) to flightpath 
                     var itinerary = thisFlight.props.flightInfo.itinerary;
-                    var flight_phases = [];
+                    console.log("itin");
+                    console.log(itinerary);
+                    thisFlight.coordinates = response.coordinates;
+                    thisFlight.nanOffset = response.nanOffset;
 
-                    // Create flight phase styles
-                    var takeoff_style = new Style({
-                                stroke: new Stroke({
-                                    color: "#34eb52",
-                                    width: 3
-                                })
-                            });
+                    generateBaseLayer(thisFlight, 0, response.coordinates.length);
 
-                    var approach_style = new Style({
-                                stroke: new Stroke({
-                                    color: "#347deb",
-                                    width: 3
-                                })
-                            });
+                    const lociData = thisFlight.state.seriesData.get('LOC-I Index');
+                    const spData = thisFlight.state.seriesData.get('Stall Index');
 
-                    // create and add Features to flight_phases for each flight phase in itinerary
-                    for (let i = 0; i < itinerary.length; i++) {
-                        var stop = itinerary[i];
-                        var approach = null;
-                        var takeoff = null;
-
-                        // creating Linestrings
-                        if (stop.startOfApproach != -1 && stop.endOfApproach != -1) {
-                            approach = new LineString( points.slice( stop.startOfApproach, stop.endOfApproach ) );
-                        }
-                        if (stop.startOfTakeoff != -1 && stop.endOfTakeoff != -1) {
-                            takeoff = new LineString( points.slice( stop.startOfTakeoff, stop.endOfTakeoff ) );
-                        }
-
-                        // set styles and add phases to flight_phases list
-                        if (approach != null) {
-                            let phase = new Feature({
-                                             geometry: approach,
-                                             name: 'Approach'
-                                         });
-                            phase.setStyle(approach_style);
-                            flight_phases.push( phase );
-                        }
-                        if (takeoff != null) {
-                            let phase = new Feature({
-                                             geometry: takeoff,
-                                             name: 'Takeoff'
-                                         });
-                            phase.setStyle(takeoff_style);
-                            flight_phases.push( phase );
-                        }
-                    }
-
-                    thisFlight.state.baseLayer = new VectorLayer({
-                        name : 'Itinerary' ,
-                        description : 'Itinerary with Phases',
-                        nMap : false,
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: color,
-                                width: 3
-                            }),
-                            image: new Circle({
-                                radius: 5,
-                                //fill: new Fill({color: [0, 0, 0, 255]}),
-                                stroke: new Stroke({
-                                    color: [0, 0, 0, 0],
-                                    width: 2
-                                })
-                            })
-                        }),
-
-                        source : new VectorSource({
-                            features: [
-                                new Feature({
-                                    geometry: new LineString(points),
-                                    name: 'Line'
-                                }),
-                                thisFlight.state.trackingPoint,
-                            ]
-                        })
-                    });
-
-                    let phaseLayer = new VectorLayer({
-                        name : 'Itinerary Phases',
-                        nMap : true,
-                        style: new Style({
-                            stroke: new Stroke({
-                                color: [1,1,1,1],
-                                width: 3
-                            })
-                        }),
-
-                        source : new VectorSource({
-                            features: flight_phases
-                        })
-                    }); 
+                    generateStallLayer(spData, thisFlight.state.layers, thisFlight, 0, response.coordinates.length);
+                    generateLOCILayer(lociData, thisFlight.state.layers, thisFlight, 0, response.coordinates.length);
 
                     let baseLayer = thisFlight.state.baseLayer;
+                    let layers = thisFlight.state.layers;
 
-                    baseLayer.flightState = thisFlight;
-                    let flightInfo = thisFlight.props.flightInfo;
-
-                    thisFlight.state.pathVisible = true;
-                    thisFlight.state.itineraryVisible = true;
-                    thisFlight.state.nanOffset = response.nanOffset;
-                    thisFlight.state.coordinates = response.coordinates;
-                    thisFlight.state.points = points;
-
-                    // toggle visibility of itinerary
-                    layers.push(baseLayer, phaseLayer);
-
-                    //TODO fix here
-                    drawLociLayers(0, flightInfo.numberRows);
-
-                    console.log("adding layers!");
                     for(let i = 0; i < layers.length; i++) {
                         let layer = layers[i];
                         console.log(layer);
@@ -918,7 +793,6 @@ class Flight extends React.Component {
                         map.addLayer(layer);
                     }
 
-                    console.log(layers);
                     thisFlight.props.setAvailableLayers(layers);
 
                     console.log("added layers");
@@ -1069,7 +943,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} drawLociLayers={(lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint)} layers={this.state.layers} itinerary={flightInfo.itinerary} numberRows={flightInfo.numberRows} events={this.state.events} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange} getSelectedLayer={() => this.getSelectedLayer()} selectLayer={(layer) => this.selectLayer(layer)} setDefaultLayer={() => this.setDefaultLayer()}/>
+                <Itinerary showMap={() => {this.props.showMap();}} redrawFlightPath={(lowerConstraint, upperConstraint) => this.redrawFlightPath(lowerConstraint, upperConstraint)} layers={this.state.layers} itinerary={flightInfo.itinerary} numberRows={flightInfo.numberRows} events={this.state.events} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange} getSelectedLayer={() => this.getSelectedLayer()} selectLayer={(layer) => this.selectLayer(layer)} setDefaultLayer={() => this.setDefaultLayer()}/>
             );
         }
 
