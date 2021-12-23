@@ -39,35 +39,6 @@ class Itinerary extends React.Component {
         });
     }
 
-    selectLayer(selectedLayer) {
-        console.log("setting selected layer");
-        for (let i = 0; i < this.props.layers.length; i++) {
-            let layer = this.props.layers[i];
-            layer.setVisible(layer.get('name').includes(selectedLayer));
-            console.log("setting layer: ");
-            console.log(layer);
-        }
-        this.setState(this.state);
-    }
-
-    setDefaultLayer() {
-        let defaultLayerName = 'Itinerary'; //changeme if we want the default layer to be something different
-
-        this.selectLayer(defaultLayerName); }
-
-    getSelectedLayer() {
-        for (let i = 0; i < this.props.layers.length; i++) {
-            let layer = this.props.layers[i];
-            console.log(layer);
-            if (layer.get('visible') && !layer.get('nMap')) {
-                return layer.get('description');
-            }
-        }
-
-        this.setDefaultLayer();
-        return 'Itinerary with Phases';
-    }
-
     changeItineraryRange(el) {
         let min = el.value[0];
         let max = el.value[1];
@@ -150,14 +121,14 @@ class Itinerary extends React.Component {
 
                     <button className="m-1 btn btn-outline-dark dropdown-toggle" style={styleButton} type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         <i className="fa fa-map-o p-1"></i>
-                        {this.getSelectedLayer()}
+                        {this.props.getSelectedLayer()}
                     </button>
                     <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
                     {
                         this.props.layers.map((layer, index) => {
                             if (!layer.get('nMap')) {
                                 return (
-                                    <button className="dropdown-item" type="button" key={index} onClick={() => this.selectLayer(layer.get('name'))} disabled={layer.get('disabled')}>{layer.get('description')}</button>
+                                    <button className="dropdown-item" type="button" key={index} onClick={() => this.props.selectLayer(layer.get('name'))} disabled={layer.get('disabled')}>{layer.get('description')}</button>
                                 );
                             }
                         })
