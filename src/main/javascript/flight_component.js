@@ -626,6 +626,7 @@ class Flight extends React.Component {
         console.log(this.state.layers);
 
         this.replaceMapLayers();
+        map.updateSize();
     }
 
     mapLayerIndexOf(layerName) {
@@ -649,10 +650,10 @@ class Flight extends React.Component {
             let name = layer.get('name');
             let index = this.mapLayerIndexOf(name);
 
-            if (index != -1/* && description === this.getSelectedLayer()*/) {
+            //if (index != -1 && description === this.getSelectedLayer()) {
                 console.log(name + " " + description);
                 mapLayers[index] = layer;
-            }
+            //}
         }
     }
 
