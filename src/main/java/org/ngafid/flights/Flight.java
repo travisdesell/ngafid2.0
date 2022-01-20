@@ -1712,6 +1712,7 @@ public class Flight {
                                 airframeName.equals("Cessna 172S") ||
                                 airframeName.equals("Cessna 172T") ||
                                 airframeName.equals("Cessna 182T") ||
+                                airframeName.equals("Cessna T182T") ||
                                 airframeName.equals("Cessna Model 525") ||
                                 airframeName.equals("Cirrus SR20") ||
                                 airframeName.equals("Cirrus SR22") ||
@@ -1723,6 +1724,8 @@ public class Flight {
                                 airframeName.equals("PA-44-180") ||
                                 airframeName.equals("Piper PA-46-500TP Meridian") ||
                                 airframeName.contains("Garmin") ||
+                                airframeName.equals("Quest Kodiak 100") ||
+                                airframeName.equals("Cessna 400") ||
                                 airframeName.equals("Beechcraft A36/G36")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44")) {
@@ -1777,6 +1780,8 @@ public class Flight {
             System.out.println("Headers line is: " + headersLine);
             headers.addAll( Arrays.asList( headersLine.split("\\,", -1) ) );
             headers.replaceAll(String::trim);
+
+            //if (airframeName.equals("Cessna T182T")) System.exit(1);
 
             if (dataTypes.size() != headers.size()) {
                 throw new FatalFlightFileException("Number of columns in the header line (" + headers.size() + ") != number of columns in the dataTypes line (" + dataTypes.size() + ")");
@@ -1999,7 +2004,7 @@ public class Flight {
                 calculateDivergence(connection, egt2Names, "E2 EGT Divergence", "deg F");
 
 
-            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22")) {
+            } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Cessna T182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22") || airframeName.equals("Cessna 400")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
                 processingStatus |= CHT_DIVERGENCE_CALCULATED;
@@ -2014,6 +2019,9 @@ public class Flight {
 
                 String egtNames[] = {"E1 EGT1", "E1 EGT2", "E1 EGT3", "E1 EGT4"};
                 calculateDivergence(connection, egtNames, "E1 EGT Divergence", "deg F");
+
+            } else if (airframeName.equals("Quest Kodiak 100")) {
+                //This airframe doesn't track engine CHTs EGTs
 
             } else if (airframeName.equals("R44")) {
                 //This is a helicopter, we can't calculate these divergences
