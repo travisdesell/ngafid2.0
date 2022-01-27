@@ -202,6 +202,13 @@ public class Flight {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
+        
+        query = "DELETE FROM turn_to_final WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
 
         query = "DELETE FROM flights WHERE id = ?";
         preparedStatement = connection.prepareStatement(query);
