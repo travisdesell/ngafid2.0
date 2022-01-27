@@ -1922,7 +1922,7 @@ public class Flight {
                     if (header.indexOf("TIME") >= 0 || header.indexOf("DATE") >= 0 || header.indexOf("LAT") >= 0 || header.indexOf("LON") >= 0 || header.indexOf("ALT") >= 0) {
                     //if (header.indexOf("ALT") >= 0) {
                         System.out.println(header + " -- DATE OR TIME!");
-                        StringTimeSeries sts = getStringTimeSeries(header);
+                        StringTimeSeries sts = stringTimeSeries.get(header);
                         if (sts != null) {
                             for (int i = 0; i < sts.size(); i++) {
                                 System.out.print(" " + sts.get(i));
@@ -1930,7 +1930,7 @@ public class Flight {
                             System.out.println();
                             System.out.println();
                         } else {
-                            DoubleTimeSeries dts = getDoubleTimeSeries(header);
+                            DoubleTimeSeries dts = doubleTimeSeries.get(header);
                             if (dts != null) {
                                 for (int i = 0; i < dts.size(); i++) {
                                     System.out.print(" " + dts.get(i));
@@ -2730,7 +2730,13 @@ public class Flight {
                 int flightId = resultSet.getInt(1);
                 this.id = flightId;
 
+                for (String key : doubleTimeSeries.keySet()) {
+                    System.out.println("double time series key: '" + key);
+                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                }
+
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
+                    System.out.println(series);
                     series.updateDatabase(connection, flightId);
                 }
 

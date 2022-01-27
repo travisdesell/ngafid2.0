@@ -11,29 +11,43 @@ import java.sql.SQLException;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
+
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.flights.*;
+import org.ngafid.SendEmail;
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightAlreadyExistsException;
+import org.ngafid.flights.FlightError;
+import org.ngafid.flights.Upload;
+import org.ngafid.flights.UploadError;
+import org.ngafid.accounts.User;
 
 public class ProcessUpload {
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
-        System.out.println(Arrays.toString(argmuents));
+        System.out.println(Arrays.toString(arguments));
 
         Connection connection = Database.getConnection();
 
-        int uploadId = Integer.parseInt(arguments[1]);
+        int uploadId = Integer.parseInt(arguments[0]);
         System.out.println("processing upload with id: " + uploadId);
-
+        try {
+            processFlight(connection, uploadId);
+        } catch (SQLException e) {
+            System.err.println("ERROR processing upload: " + e);
+            e.printStackTrace();
+        }
     }
 
     public static void processFlight(Connection connection, int uploadId) throws SQLException {
         Instant start = Instant.now();
-
 
         Upload upload = Upload.getUploadById(connection, uploadId);
 
@@ -46,13 +60,27 @@ public class ProcessUpload {
 
         //send email to me and uploader that an import is starting at a particular time
 
-        upload.reset(connection);
-
-        ArrayList<UploadException> flightErrors = new ArrayList<UploadException>();
-
         int uploaderId = upload.getUploaderId();
         int fleetId = upload.getFleetId();
         String filename = upload.getFilename();
+
+        User uploader = User.get(connection, uploaderId, fleetId);
+        String uploaderEmail = uploader.getEmail();
+
+        ArrayList<String> recipients = new ArrayList<String>();
+        recipients.add(uploaderEmail);
+        recipients.add("tjdvse@rit.edu"); //always email myself to keep tabs on things
+
+        String formattedStartDateTime = ZonedDateTime.now().format( DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)") );
+
+        String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
+        String body = subject;
+        SendEmail.sendEmail(recipients, subject, body);
+
+        upload.reset(connection);
+        System.out.println("upload was reset!\n\n");
+
+
 
         filename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + uploadId + "__" + filename;
         System.err.println("processing: '" + filename + "'");
@@ -63,6 +91,11 @@ public class ProcessUpload {
         String status = "IMPORTED";
 
         Exception uploadException = null;
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        HashMap<Integer, ArrayList<MalformedFlightFileException>> flightExceptions = new HashMap<Integer, ArrayList<MalformedFlightFileException>>();
+
+        ArrayList<UploadException> flightErrors = new ArrayList<UploadException>();
 
         int validFlights = 0;
         int warningFlights = 0;
@@ -100,6 +133,9 @@ public class ProcessUpload {
                             }
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            flights.add(flight);
+                            flightExceptions.put(flight.getId(), flight.getExceptions());
 
                             validFlights++;
                         } catch (IOException e) {
@@ -161,5 +197,9 @@ public class ProcessUpload {
         double elapsed_millis = (double) Duration.between(start, end).toMillis();
         double elapsed_seconds = elapsed_millis / 1000;
         System.err.println("finished in " + elapsed_seconds);
+
+        System.out.println("valid flights: " + validFlights);
+        System.out.println("warning flights: " + warningFlights);
+        System.out.println("error flights: " + errorFlights);
     }
 }
