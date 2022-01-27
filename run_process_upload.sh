@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessFlight" -Dexec.args="$1"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.ProcessUpload" -Dexec.args="$1"

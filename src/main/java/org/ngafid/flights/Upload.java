@@ -118,7 +118,7 @@ public class Upload {
     public void reset(Connection connection) throws SQLException {
         this.clearUpload(connection);
 
-        String query = "UPDATE upload SET status = 'UPLOADED' WHERE id = ?";
+        String query = "UPDATE uploads SET status = 'UPLOADED' WHERE id = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
