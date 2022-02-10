@@ -41,6 +41,8 @@ import java.util.TreeSet;
 
 import org.ngafid.WebServer;
 
+import org.ngafid.common.TimeUtils;
+
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.FatalFlightFileException;
@@ -199,8 +201,8 @@ public class ExtractMaintenanceFlights {
             //System.out.println(record.toString());
             targetTails.add(record.getTailNumber());
         }
-        LocalDate startDate = targetRecords.get(0).getOpenDate();
-        LocalDate endDate = targetRecords.get(targetRecords.size() -1 ).getCloseDate();
+        LocalDate startDate = targetRecords.get(0).getOpenDate().minusDays(10);
+        LocalDate endDate = targetRecords.get(targetRecords.size() -1 ).getCloseDate().plusDays(10);
         System.out.println("earliest date for label: " + startDate);
         System.out.println("latest date for label: " + endDate);
         System.out.println("label present for tails: " + targetTails);
@@ -260,6 +262,12 @@ public class ExtractMaintenanceFlights {
                         int airframeId = resultSet.getInt(4);
 
                         //System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " + flightEndTime + ", airframe id: " + airframeId);
+
+                        //convert the start time (which is in GMT) to CST
+                        flightStartTime = TimeUtils.convertToOffset(flightStartTime, "+00:00", "-06:00");
+                        flightEndTime = TimeUtils.convertToOffset(flightEndTime, "+00:00", "-06:00");
+
+                        //System.out.println("\t\tid: " + flightId + ", " + flightStartTime + " to " + flightEndTime + ", airframe id: " + airframeId);
                         timeline.add(new AircraftTimeline(flightId, flightStartTime, flightEndTime));
                         count++;
                     }
@@ -277,6 +285,8 @@ public class ExtractMaintenanceFlights {
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
 
+                    //System.err.println("current aircraft: " + ac);
+                    //System.err.println("starting with record: " + record);
                     while (record != null && ac.getEndTime().compareTo(record.getOpenDate()) > 0) {
                         previousRecord = record;
                         currentRecord++;
@@ -285,10 +295,49 @@ public class ExtractMaintenanceFlights {
                             break;
                         }
                         record = tailRecords.get(currentRecord);
-                        System.out.println("\t\tmoved to record: " + record);
+                        //System.out.println("\t\tmoved to record: " + record);
+                    }
+                    //System.out.println("moved to record: " + record);
+
+                    while (record == null || ac.getEndTime().compareTo(record.getCloseDate()) <= 0) {
+                        long daysToNext = -1;
+                        if (record != null) daysToNext = Math.max(0, ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate()));
+
+                        if (daysToNext == 0) {
+                            //this is the day an event occurred so the previous is the current record as well
+                            previousRecord = record;
+                        }
+
+                        long daysSincePrev = -1;
+                        if (previousRecord != null) daysSincePrev = Math.max(0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
+
+                        if (previousRecord != null) {
+                            //System.out.print("previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + ") ");
+                            ac.setPreviousEvent(previousRecord, daysSincePrev);
+                        } else {
+                            ac.setPreviousEvent(null, -1);
+                        }
+
+                        if (record != null) {
+                            //System.out.print(" next record open " + record.getOpenDate() + " (" + daysToNext + ") ");
+                            ac.setNextEvent(record, daysToNext);
+                        } else {
+                            ac.setNextEvent(null, -1);
+                        }
+                        //System.out.print(" " + ac.toString());
+                        //System.out.println();
+
+                        currentAircraft++;
+                        if (currentAircraft >= timeline.size()) break;
+                        ac = timeline.get(currentAircraft);
                     }
 
+                    if (record != null) {
+                        //step back so the last AC can be processed
+                        currentAircraft--;
+                    }
 
+                    /*
                     if (record != null) {
                         long daysToNext = ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate());
                         if (daysToNext == 0) {
@@ -297,21 +346,22 @@ public class ExtractMaintenanceFlights {
                         }
 
                         long daysSincePrev = -1;
-                        if (previousRecord != null) Math.max(0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
+                        if (previousRecord != null) daysSincePrev = Math.max(0, ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime()));
 
                         ac.setPreviousEvent(previousRecord, daysSincePrev);
                         ac.setNextEvent(record, daysToNext);
-                        //System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), next record open " + record.getOpenDate() + " (" + daysToNext + ")");
+                        System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), next record open " + record.getOpenDate() + " (" + daysToNext + ")");
 
                     } else {
                         long daysSincePrev = ChronoUnit.DAYS.between(previousRecord.getCloseDate(), ac.getStartTime());
-                        //System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), no next record");
+                        System.out.println("\t\t" + ac.toString() + ", previous record close " + previousRecord.getCloseDate() + " (" + daysSincePrev + "), no next record");
                         ac.setPreviousEvent(previousRecord, daysSincePrev);
                         ac.setNextEvent(null, -1);
                     }
+                    */
                 }
 
-
+                //setting flights to next/flights since prev
                 int NUMBER_EXTRACTIONS = 5;
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
@@ -354,8 +404,10 @@ public class ExtractMaintenanceFlights {
                     }
                 }
 
+                System.err.println("\n\nflightsToNext, flightsSincePrev set, now exporting files:");
                 for (int currentAircraft = 0; currentAircraft < timeline.size(); currentAircraft++) {
                     AircraftTimeline ac = timeline.get(currentAircraft);
+                    //System.out.println(ac + " -- NEXT " + ac.getNextEvent() + " -- PREV " + ac.getPreviousEvent());
 
                     if (ac.getDaysSincePrevious() == 0 || ac.getDaysToNext() == 0 || ac.getFlightsSincePrevious() != -1 || ac.getFlightsToNext() != -1) {
 
@@ -378,12 +430,17 @@ public class ExtractMaintenanceFlights {
                             when = "_before_" + ac.getFlightsToNext();
                         }
 
+                        if (event == null) {
+                            System.err.println("ERROR: event is null! currentAircraft: " + currentAircraft + ", timeline.size(): " + timeline.size());
+                        }
+                        if (labelToCluster == null) System.err.println("ERROR: labelToCluster is null!");
+
                         String eventCluster = labelToCluster.get(event.getLabel());
 
                         if (!eventCluster.equals(targetCluster)) continue;
-                        System.out.println(ac.toString());
+                        //System.out.println(ac.toString());
 
-                        System.out.println(" -- Event: '" + event.getLabel() + "', open '" + event.getOpenDate() + ", close '" + event.getCloseDate() + "'");
+                        //System.out.println(" -- Event: '" + event.getLabel() + "', open '" + event.getOpenDate() + ", close '" + event.getCloseDate() + "'");
 
                         String airframeType = flight.getAirframeType();
                         if (airframeType.equals("Cessna 172S") || airframeType.equals("Cessna 172R") || airframeType.equals("Cessna 172T")) {
@@ -409,7 +466,7 @@ public class ExtractMaintenanceFlights {
                         bw.write(event.toJSON());
                         bw.close();
 
-                        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt) + "_flight_" + airframeType + "_" + flight.getTailNumber() + when + ".csv";
+                        outfile += "/open_" + event.getOpenDate().format(fmt) + "_close_" + event.getCloseDate().format(fmt) + "_flight_" + airframeType + "_" + flight.getTailNumber() + when + "_" + flight.getId() + ".csv";
                         System.out.println(outfile);
 
                         String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId() + "/";

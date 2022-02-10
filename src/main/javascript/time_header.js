@@ -42,11 +42,22 @@ export default class TimeHeader extends React.Component {
         let airframe = null;
         if ('airframe' in this.props) {
             airframe = (
-                <div className="input-group">
-                    <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                        {this.props.airframe}
-                    </button>
-                </div>
+               <div className="col-auto">
+                   <div className="dropdown">
+                       <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           {this.props.airframe}
+                       </button>
+                       <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                           {
+                               this.props.airframes.map((airframeName, index) => {
+                                   return (
+                                       <a key={index} className="dropdown-item" onClick={event => this.props.airframeChange(airframeName)}>{airframeName}</a>
+                                   );
+                               })
+                           }
+                       </div>
+                   </div>
+               </div>
             );
         }
 
@@ -54,6 +65,9 @@ export default class TimeHeader extends React.Component {
             <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
                 <div className="col-auto">
                     { airframe } 
+
+                </div>
+                <div className="col-auto">
                     <div className="input-group">
                         <div className="input-group-prepend">
                             <div className="input-group-text">Start Date</div>
