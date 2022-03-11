@@ -1785,6 +1785,8 @@ public class Flight {
                                 airframeName.contains("Garmin") ||
                                 airframeName.equals("Quest Kodiak 100") ||
                                 airframeName.equals("Cessna 400") ||
+                                airframeName.startsWith("Boeing") ||    // This is for the gaard app test (I only have access to commercial jets 😛)
+                                airframeName.startsWith("Airbus") ||    // This is for the gaard app test (I only have access to commercial jets 😛)
                                 airframeName.equals("Beechcraft A36/G36")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44")) {
