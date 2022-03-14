@@ -14,6 +14,7 @@ public class SendEmail {
 
     private static String password;
     private static String username;
+    private static ArrayList<String> adminEmails;
 
     static {
         if (System.getenv("NGAFID_EMAIL_INFO") == null) {
@@ -24,6 +25,18 @@ public class SendEmail {
         }
         String NGAFID_EMAIL_INFO = System.getenv("NGAFID_EMAIL_INFO");
 
+        if (System.getenv("NGAFID_ADMIN_EMAILS") == null) {
+            System.err.println("ERROR: 'NGAFID_ADMIN_EMAILS' environment variable not specified at runtime.");
+            System.err.println("Please add a list of semicolon separated emails following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export NGAFID_ADMIN_EMAILS=\"person1@address.com;person2@address.net\"");
+            System.exit(1);
+        }
+        String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
+        adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
+        System.out.println("import emails will always also be sent to the following admin emails:");
+        for (String adminEmail : adminEmails) {
+            System.out.println("\t'" + adminEmail + "'");
+        }
 
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
@@ -40,6 +53,10 @@ public class SendEmail {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public static ArrayList<String> getAdminEmails() {
+        return adminEmails;
     }
 
     private static class SMTPAuthenticator extends javax.mail.Authenticator {
@@ -94,7 +111,7 @@ public class SendEmail {
             message.setSubject(subject);
 
             // Now set the actual message
-            message.setText(body);
+            message.setContent(body, "text/html; charset=utf-8");
 
             // Send message
             System.out.println("sending message!");

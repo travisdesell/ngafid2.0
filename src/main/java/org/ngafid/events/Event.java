@@ -114,6 +114,10 @@ public class Event {
         return endLine;
     }
 
+    public int getOtherFlightId() {
+        return otherFlightId;
+    }
+
     public String toString() {
         String readable =  "[line " + startLine + " to " + endLine + ", time " + startTime + " to " + endTime + ", severity: " + severity;
         if (otherFlightId != null) readable += ", other flight: " + otherFlightId;

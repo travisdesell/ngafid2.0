@@ -72,7 +72,7 @@ class CreateAccountCard extends React.Component {
 
 
         if (this.state.checkedRadio == "newFleet") {
-            //submissionData.fleetName = $("#newFleetName").val().trim();
+            submissionData.fleetName = $("#newFleetName").val().trim();
         } else if (this.state.checkedRadio == "existingFleet") {
             submissionData.fleetName = $("#fleetSelect").val().trim();
         } else if (this.state.checkedRadio == "gaard") {
@@ -102,7 +102,7 @@ class CreateAccountCard extends React.Component {
                 }
 
                 if (checkedRadio == "newFleet") {
-                    //window.location.replace("/protected/welcome");
+                    window.location.replace("/protected/welcome");
 
                 } else if (checkedRadio == "existingFleet") {
                     window.location.replace("/protected/waiting");
@@ -135,7 +135,7 @@ class CreateAccountCard extends React.Component {
         if (checkedRadio == "existingFleet") {
             this.validateFleetSelect();
         } else if (checkedRadio == "newFleet") {
-            //this.validateFleetName();
+            this.validateFleetName();
         }
     }
 
