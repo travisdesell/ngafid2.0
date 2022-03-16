@@ -128,19 +128,19 @@ public class ProcessUpload {
 
             ArrayList<String> recipients = new ArrayList<String>();
             recipients.add(uploaderEmail);
-            recipients.addAll(SendEmail.getAdminEmails()); //always email admins to keep tabs on things
+            ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); //always email admins to keep tabs on things
 
             String formattedStartDateTime = ZonedDateTime.now().format( DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)") );
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, subject, body);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body);
 
             upload.reset(connection);
             System.out.println("upload was reset!\n\n");
 
 
-            UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients);
+            UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
 
             boolean success = ingestFlights(connection, uploadId, fleetId, uploaderId, filename, uploadProcessedEmail);
 
