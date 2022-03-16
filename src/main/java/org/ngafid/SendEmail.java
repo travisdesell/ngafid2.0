@@ -65,8 +65,9 @@ public class SendEmail {
         }
     }
 
-    public static void sendEmail(ArrayList<String> recipients, String subject, String body) {
-        System.out.println("emailing to " + String.join(", ", recipients));
+    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
+        System.out.println("emailing to " + String.join(", ", toRecipients));
+        System.out.println("BCCing to " + String.join(", ", bccRecipients));
         System.out.println("subject: '" + subject);
         System.out.println("body: '" + body);
 
@@ -103,8 +104,12 @@ public class SendEmail {
             message.setFrom(new InternetAddress(from));
 
             // Set To: header field of the header.
-            for (String recipient : recipients) {
-                message.addRecipient(Message.RecipientType.TO, new InternetAddress(recipient));
+            for (String toRecipient : toRecipients) {
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
+            }
+
+            for (String bccRecipient : bccRecipients) {
+                message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccRecipient));
             }
 
             // Set Subject: header field
@@ -130,7 +135,9 @@ public class SendEmail {
         recipients.add("tjdvse@rit.edu");
         recipients.add("travis.desell@gmail.com");
 
-        sendEmail(recipients, "test NGAFID email", "testing testing 123");
+        ArrayList<String> bccRecipients = new ArrayList<String>();
+
+        sendEmail(recipients, bccRecipients, "test NGAFID email", "testing testing 123");
     }
 }
 
