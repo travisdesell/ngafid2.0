@@ -138,6 +138,7 @@ public class UploadProcessedEmail {
     private TreeMap<String, FlightInfo> flightInfoMap = new TreeMap<String, FlightInfo>();
     private String subject;
     private ArrayList<String> recipients;
+    private ArrayList<String> bccRecipients;
 
     int numberEvents = 0;
     int numberEventErrors = 0;
@@ -161,8 +162,9 @@ public class UploadProcessedEmail {
     private boolean importFailed = false;
     private ArrayList<String> importFailedMessages = new ArrayList<String>();
 
-    public UploadProcessedEmail(ArrayList<String> recipients) {
+    public UploadProcessedEmail(ArrayList<String> recipients, ArrayList<String> bccRecipients) {
         this.recipients = recipients;
+        this.bccRecipients = bccRecipients;
     }
 
     public void setSubject(String subject) {
@@ -297,6 +299,6 @@ public class UploadProcessedEmail {
 
         body.append("</body></html>");
 
-        SendEmail.sendEmail(recipients, subject, body.toString());
+        SendEmail.sendEmail(recipients, bccRecipients, subject, body.toString());
     }
 }
