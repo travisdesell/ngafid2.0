@@ -17,6 +17,9 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Collections;
 import java.util.TreeSet;
 
@@ -46,15 +49,15 @@ public class CalculateExceedences {
         this.stopBuffer = eventDefinition.getStopBuffer();
     }
 
-    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition) {
-        System.out.println("Processing flight: " + flight.getId() + ", " + flight.getFilename());
-
+    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition, UploadProcessedEmail uploadProcessedEmail) {
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
+        String flightFilename = flight.getFilename();
+
+        System.out.println("Processing flight: " + flightId + ", " + flightFilename);
 
         try {
-
             System.out.println("Event is: '" + eventDefinition.getName() + "'");
 
             //first check and see if this was actually a flight (RPM > 800)
@@ -67,6 +70,9 @@ public class CalculateExceedences {
                     || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
                 System.out.println("engines never turned on, setting flight_processed.had_error = 1");
+
+                uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate exceedences for flight " + flightId + ", '" + flightFilename + "' - engines never turned on");
+
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -88,6 +94,8 @@ public class CalculateExceedences {
                 if (minMax == null) {
                     System.out.println("minMax was null, setting flight_processed.had_error = 1");
                     //couldn't calculate this exceedence because at least one of the columns was missing
+                    uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate '" + eventDefinition.getName() + "' for flight " + flightId + ", '" + flightFilename + "' - " + columnName + " was missing");
+
                     PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                     stmt.setInt(1, fleetId);
                     stmt.setInt(2, flightId);
@@ -126,6 +134,8 @@ public class CalculateExceedences {
             if (timeSeries == null || dateSeries == null) {
                 //couldn't calculate this exceedence because the date or time column was missing
                 System.out.println("time series or date series was missing, setting flight_processed.had_error = 1");
+                uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate exceedences for flight " + flightId + ", '" + flightFilename + "' - date or time was missing");
+
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);
@@ -232,6 +242,7 @@ public class CalculateExceedences {
             for (i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
                 System.out.println( "Event : [line: " + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEndTime() + "]" );
+                uploadProcessedEmail.addExceedence(flightFilename, "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName() + "' from " + event.getStartTime() + " to " + event.getEndTime());
             }
 
             //Step 2: export the pitch events to the database
@@ -301,6 +312,51 @@ public class CalculateExceedences {
         }
     }
 
+    private static ArrayList<EventDefinition> allEvents = null;
+
+    public static void calculateExceedences(Connection connection, int uploadId, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
+        Instant start = Instant.now();
+        if (allEvents == null) {
+            allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
+        }
+        System.out.println("n events = " + allEvents.size());
+
+        int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
+
+        for (int i = 0; i < allEvents.size(); i++) {
+            //process events for this event type
+            EventDefinition currentDefinition = allEvents.get(i);
+            System.out.println("\t" + currentDefinition.toString());
+
+            CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
+
+            ArrayList<Flight> flights = null;
+
+            if (currentDefinition.getAirframeNameId() == 0) {
+                flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND upload_id = " + uploadId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
+            } else {
+                flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND upload_id = " + uploadId + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
+            }
+
+            for (int j = 0; j < flights.size(); j++) {
+                if (!flights.get(j).insertCompleted()) {
+                    //this flight is currently being inserted to
+                    //the database by ProcessFlights
+                    continue;
+                }
+
+                currentCalculator.processFlight(connection, flights.get(j), currentDefinition, uploadProcessedEmail);
+            }
+        }
+
+        Instant end = Instant.now();
+        long elapsed_millis = Duration.between(start, end).toMillis();
+        double elapsed_seconds = ((double) elapsed_millis) / 1000;
+        System.out.println("finished in " + elapsed_seconds);
+
+        uploadProcessedEmail.setExceedencesElapsedTime(elapsed_seconds);
+    }
+
     public static void main(String[] arguments) {
         try {
             Connection connection = Database.resetConnection();
@@ -335,7 +391,7 @@ public class CalculateExceedences {
                             continue;
                         }
 
-                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition);
+                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition, null);
                     }
                 }
 
