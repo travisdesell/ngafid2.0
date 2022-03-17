@@ -24,6 +24,9 @@ import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.LinkedHashSet;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
 import java.util.TreeSet;
@@ -303,19 +306,20 @@ public class CalculateProximity {
         stmt.close();
     }
 
-    public static void processFlight(Connection connection, Flight flight) {
+    public static void processFlight(Connection connection, Flight flight, UploadProcessedEmail uploadProcessedEmail) {
         System.out.println("Processing flight: " + flight.getId() + ", " + flight.getFilename());
-
 
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
+        String flightFilename = flight.getFilename();
 
         try {
             //get enough information about the flight to determine if we can calculate adjacencies with it
             FlightTimeLocation flightInfo = new FlightTimeLocation(connection, flight.getFleetId(), flightId, flight.getAirframeNameId(), flight.getStartDateTime(), flight.getEndDateTime());
 
             if (!flightInfo.isValid()) {
+                uploadProcessedEmail.addProximityError(flightFilename, "could not calculate proximity for flight " + flightId + ", '" + flightFilename + "' - was missing required data columns (date, time, latitude, longitude, altitude and/or indicated airspeed)");
                 processFlightWithError(connection, fleetId, flightId);
                 return;
             }
@@ -518,6 +522,7 @@ public class CalculateProximity {
             for (Event event : eventList) {
                 System.out.println("\t" + event.toString());
                 eventsFound++;
+                uploadProcessedEmail.addProximity(flightFilename, "flight " + flightId + ", '" + flightFilename + "' - had a proximity event with flight " + event.getOtherFlightId() + " from " + event.getStartTime() + " to " + event.getEndTime());
             }
 
             System.out.println("\n");
@@ -590,6 +595,37 @@ public class CalculateProximity {
         }
     }
 
+    public static void calculateProximity(Connection connection, int uploadId, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
+        Instant start = Instant.now();
+
+        ArrayList<Flight> flights = Flight.getFlights(connection, "upload_id = " + uploadId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + adjacencyEventDefinitionId + " AND flight_processed.flight_id = flights.id)");
+
+        int count = 0;
+        for (int j = 0; j < flights.size(); j++) {
+            if (!flights.get(j).insertCompleted()) {
+                //this flight is currently being inserted to
+                //the database by ProcessFlights
+                continue;
+            }
+
+            processFlight(connection, flights.get(j), uploadProcessedEmail);
+            count++;
+        }
+
+        Instant end = Instant.now();
+        double elapsed_seconds = (double)Duration.between(start, end).toMillis() / 1000.0;
+        double average_seconds = ((double) elapsed_seconds) / (double)count;
+        double avgTimeMatchedFlights = ((double)timeMatchFlights / (double) count);
+        double avgLocationMatchedFlights = ((double)locMatchFlights / (double)count);
+
+        System.out.println("calculated " + count + " proximity evaluations in " + elapsed_seconds + " seconds, averaged: " + average_seconds + " seconds per flight");
+        System.out.println("avg time matched flights: " + avgTimeMatchedFlights + ", avg loc matched flights: " + avgLocationMatchedFlights);
+        System.out.println("proximity events found:"  + eventsFound);
+
+        uploadProcessedEmail.setProximityElapsedTime(elapsed_seconds, average_seconds, avgTimeMatchedFlights, avgLocationMatchedFlights);
+    }
+
+
     public static void main(String[] arguments) {
         try {
 
@@ -608,7 +644,7 @@ public class CalculateProximity {
                         continue;
                     }
 
-                    processFlight(connection, flights.get(j));
+                    processFlight(connection, flights.get(j), null);
                     count++;
                 }
 

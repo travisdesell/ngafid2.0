@@ -153,6 +153,10 @@ public class Flight {
         return flights;
     }
 
+    public ArrayList<MalformedFlightFileException> getExceptions() {
+        return exceptions;
+    }
+
     public void remove(Connection connection) throws SQLException {
         String query = "DELETE FROM events WHERE flight_id = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -1340,6 +1344,10 @@ public class Flight {
         return this.tailNumber;
     }
 
+    public int getNumberRows() {
+        return this.numberRows;
+    }
+
     /**
      * @return the airframe id for this flight
      */
@@ -1396,10 +1404,6 @@ public class Flight {
      */
     public int getUploaderId(){
         return uploaderId;
-    }
-
-    public int getNumberRows() {
-        return numberRows;
     }
 
     public String getStatus() {
@@ -1909,6 +1913,10 @@ public class Flight {
             numberRows++;
         }
 
+        //ignore flights that are too short (they didn't actually take off)
+        if (numberRows < 180)  throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+
+
         if (lastLineWarning) {
             System.err.println("WARNING: last line of the file was cut short and ignored.");
         }
@@ -2099,7 +2107,7 @@ public class Flight {
                 System.exit(1);
             }
 
-            if (!airframeName.equals("ScanEagle")) {
+            if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
                 //LOCI doesn't apply to UAS
                 runLOCICalculations(connection);
             }
