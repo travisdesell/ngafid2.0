@@ -92,7 +92,7 @@ public class ProcessFlights {
 
                                     System.err.println("PROCESSING: " + name);
 
-                                    if (entry.getName().contains(".csv")) {
+                                    if (entry.getName().endsWith(".csv")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
                                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
@@ -118,6 +118,23 @@ public class ProcessFlights {
                                             errorFlights++;
                                         }
 
+                                    } else if (entry.getName().endsWith(".gpx")) {
+                                      try {
+                                        InputStream stream = zipFile.getInputStream(entry);
+                                        ArrayList<Flight> flights = Flight.processGPXFile(stream);
+
+                                        if (connection != null) {
+                                          for (Flight flight : flights) {
+                                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+                                            validFlights++;
+                                          }
+                                        }
+                                      } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                                          System.err.println(e.getMessage());
+                                          flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                          errorFlights++;
+                                      }
                                     } else {
                                         flightErrors.add(new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                                         errorFlights++;

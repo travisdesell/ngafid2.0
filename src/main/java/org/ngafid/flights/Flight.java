@@ -14,9 +14,24 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Iterator;
+import java.sql.Timestamp;
+import java.time.DateTimeException;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Date;
 
+// XML stuff.
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.DocumentBuilder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -2065,6 +2080,93 @@ public class Flight {
         }
 
         checkExceptions();
+    }
+
+    // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
+    private Flight(Connection connection, ArrayList<DoubleTimeSeries> doubleTimeSeries, ArrayList<StringTimeSeries> stringTimeSeries, Timestamp startTime, Timestamp endTime) {
+         
+    }
+
+    /**
+     * GPX is an XML file that follows the schema found here http://www.topografix.com/GPX/1/1/
+     *
+     * Multiple flights may be found in the same file, but can be separated by large delays in timestamp (large being > 5 minutes or so).
+     *
+     * So, this function parses all of the data, converts it to proper units, and creates separated flight objects. They need to be inserted into the database manually
+     *
+     * @return
+     */
+    public static ArrayList<Flight> processGPXFile(Connection connection, InputStream is) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, ParserConfigurationException, SAXException, SQLException, ParseException {
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(is);
+
+        NodeList l = doc.getElementsByTagName("trkseg");
+        if (l.getLength() == 0)
+          throw new FatalFlightFileException("could not parse GPX data file: failed to find data node.");
+
+        if (l.getLength() != 1)
+          throw new FatalFlightFileException("could not parse GPX data file: found multiple data nodes.");
+
+        Node dataNode = l.item(0);
+        int len = dataNode.getChildNodes().getLength();
+
+        DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
+        DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "feet msl", len); 
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "knots", len);
+        ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ'Z'");
+        
+        NodeList dates = doc.getElementsByTagName("time");
+        NodeList datanodes = doc.getElementsByTagName("trkpt");
+        NodeList elenodes = doc.getElementsByTagName("ele");
+        NodeList spdnodes = doc.getElementsByTagName("badelf:speed");
+        
+        if (!(dates.getLength() == datanodes.getLength() &&
+              dates.getLength() == elenodes.getLength() &&
+              dates.getLength() == spdnodes.getLength())) {
+            throw new FatalFlightFileException("Mismatching number of data tags in GPX file");
+        }
+
+        for (int i = 0; i < dates.getLength(); i++) {
+            Date parsedDate = dateFormat.parse(dates.item(i).getTextContent());
+            Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
+            timestamps.add(timestamp);
+
+            Node spdNode = spdnodes.item(i);
+            // Convert m / s to knots
+            spd.add(Double.parseDouble(spdNode.getTextContent()) * 1.94384);
+
+            Node eleNode = elenodes.item(i);
+            // Convert meters to feet.
+            msl.add(Double.parseDouble(eleNode.getTextContent()) * 3.28084);
+
+            Node d = datanodes.item(i);
+            NamedNodeMap attrs = d.getAttributes();
+            
+            Node latNode = attrs.getNamedItem("lat");
+            lat.add(Double.parseDouble(latNode.getTextContent()));
+            
+            Node lonNode = attrs.getNamedItem("lon");
+            lon.add(Double.parseDouble(lonNode.getTextContent()));
+        }
+
+        // ArrayList<Flight> flights = new ArrayList<Flight>();
+        // int start = 0;
+        // for (int end = 1; end < timestamps.size(); end++) {
+        //     // 1 minute delay -> new flight.
+        //     if (timestamps.get(end).getTime() - timestamps.get(end - 1).getTime() > 60000) {    
+        //         DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
+        //         DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
+        //         DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
+        //         DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
+        //     }
+        // }
+       
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        return flights;
     }
 
     /**
