@@ -138,6 +138,14 @@ public class StringTimeSeries {
         return timeSeries.get(i);
     }
 
+    public String getName() {
+        return name;
+    }
+
+    public String getDataType() {
+        return dataType;
+    }
+
     public String getFirstValid() {
         int position = 0;
         while (position < timeSeries.size()) {
@@ -199,5 +207,13 @@ public class StringTimeSeries {
         }
     }
 
+    public StringTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
+        StringTimeSeries newSeries = new StringTimeSeries(connection, name, dataType);
+
+        for (int i = from; i < until; i++)
+          newSeries.add(this.timeSeries.get(i));
+
+        return newSeries;
+    }
 }
 
