@@ -1,3 +1,5 @@
+console.log('importing stuff!');
+
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
@@ -536,12 +538,12 @@ class FlightPage extends React.Component {
     }
 }
 
+console.log("trying to render FlightPage");
 
 var flightPage = ReactDOM.render(
     <FlightPage />,
     document.querySelector('#flight-page')
 );
-
 
 console.log("rendered flightsCard!");
 

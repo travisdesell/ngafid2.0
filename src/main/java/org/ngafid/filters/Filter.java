@@ -17,6 +17,8 @@ public class Filter {
     protected String type = null;
     protected String condition = null;
 
+    protected String text = null;
+
     protected ArrayList<String> inputs = null;
     protected ArrayList<Filter> filters = null;
 
@@ -393,6 +395,12 @@ public class Filter {
      * @return A string of the human readable version of this filter
      */
     public String toHumanReadable() {
+        // Catch Proximity event definition JSON, which uses
+        // text instead of type for its value
+        if(text != null) {
+            return text;
+        }
+
         if (type.equals("RULE")) {
             String string = "";
             for (int i = 0; i < inputs.size(); i++) {
