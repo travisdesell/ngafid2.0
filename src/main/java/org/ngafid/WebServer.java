@@ -277,6 +277,7 @@ public final class WebServer {
         Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+        Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));

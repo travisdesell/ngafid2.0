@@ -40,11 +40,6 @@ public class PostCoordinates implements Route {
             DoubleTimeSeries latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
 
-            if (latitudes == null || longitudes == null) {
-                latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "DID_GPS_LAT");
-                longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "DID_GPS_LON");
-            }
-
             for (int i = 0; i < latitudes.size(); i++) {
                 double longitude = longitudes.get(i);
                 double latitude = latitudes.get(i);

@@ -15,6 +15,8 @@ import java.io.File;
 import java.util.logging.Logger;
 
 
+import org.ngafid.flights.Flight;
+
 
 public class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
@@ -74,7 +76,15 @@ public class Upload {
         folder.delete();
     }
 
-    public void remove(Connection connection) throws SQLException {
+    /**
+     * Removes all other entries in the database related to this upload so
+     * it can be reprocessed or deleted
+     *
+     * @param connection is the database connection
+     *
+     * @throws SQLException if there is an error in the database
+     */
+    public void clearUpload(Connection connection) throws SQLException {
         String query = "DELETE FROM upload_errors WHERE upload_id = ?";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
@@ -90,8 +100,46 @@ public class Upload {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
-        query = "DELETE FROM uploads WHERE id = ?";
-        preparedStatement = connection.prepareStatement(query);
+        ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, this.id);
+
+        for (Flight flight : flights) {
+            flight.remove(connection);
+        }
+    }
+
+    /**
+     * Removes all other entries in the database related to this upload 
+     * and sets its status to 'UPLOADED' so it can be reprocessed
+     *
+     * @param connection is the database connection
+     *
+     * @throws SQLException if there is an error in the database
+     */
+    public void reset(Connection connection) throws SQLException {
+        this.clearUpload(connection);
+
+        String query = "UPDATE uploads SET status = 'UPLOADED' WHERE id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
+    /**
+     * Removes all other entries in the database related to this upload 
+     * and then removes the upload from the database, and removes the
+     * uploaded files related to it from disk
+     *
+     * @param connection is the database connection
+     *
+     * @throws SQLException if there is an error in the database
+     */
+    public void remove(Connection connection) throws SQLException {
+        this.clearUpload(connection);
+
+        String query = "DELETE FROM uploads WHERE id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
@@ -130,7 +178,8 @@ public class Upload {
         }
     }
 
-    /**
+    
+    /*
      * This gets an upload only by it's id. Used by {@link CSVWriter} to get archival
      * files usually.
      *
@@ -318,6 +367,10 @@ public class Upload {
 
     public int getFleetId() {
         return fleetId;
+    }
+
+    public int getUploaderId() {
+        return uploaderId;
     }
 
     public String getFilename() {
