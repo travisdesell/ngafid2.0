@@ -19,6 +19,7 @@ import java.time.DateTimeException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
+import java.util.Calendar;
 
 // XML stuff.
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -1860,7 +1861,9 @@ public class Flight {
 
     private void process(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
         initialize(connection, inputStream);
-
+        process(connection);
+    }
+    private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
         //we should specify these.
@@ -1976,7 +1979,8 @@ public class Flight {
 
             } else {
                 LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeName + "'");
-                System.exit(1);
+                LOG.severe("Skipping...");
+                // System.exit(1);
             }
 
             runLOCICalculations(connection);
@@ -1986,7 +1990,7 @@ public class Flight {
         }
 
         try {
-            if (hasCoords && hasAGL) {
+            if (hasCoords && hasAGL && doubleTimeSeries.containsKey("E1 RPM")) {
                 calculateItinerary("GndSpd", "E1 RPM");
             }
         } catch (MalformedFlightFileException e) {
@@ -2035,6 +2039,50 @@ public class Flight {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    // Used for GPX files. May also be re-used for other flights where the processing occurs outside of the
+    // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
+    // separate flights.
+    public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
+                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection) 
+        throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+        this.doubleTimeSeries = doubleTimeSeries;
+        this.stringTimeSeries = stringTimeSeries;
+        this.airframeName = airframeName;
+        this.fleetId = fleetId;
+        this.filename = filename;
+        this.tailConfirmed = false;
+        this.suggestedTailNumber = suggestedTailNumber;
+        this.airframeType = "Fixed Wing";
+        this.systemId = suggestedTailNumber;
+        this.hasCoords = true;
+
+        dataTypes = new ArrayList<String>();
+        headers = new ArrayList<String>();
+
+        for (DoubleTimeSeries v : doubleTimeSeries.values()) {
+            dataTypes.add(v.getDataType());
+            headers.add(v.getName());
+            this.numberRows = v.size();
+        }
+
+        for (StringTimeSeries v : stringTimeSeries.values()) {
+            headers.add(v.getName());
+            dataTypes.add(v.getDataType());
+        }
+
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(filename.getBytes());
+            md5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
+            LOG.info("HASH = " + md5Hash); 
+            process(connection);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        this.status =  "SUCCESS";
     }
 
     public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
@@ -2096,7 +2144,8 @@ public class Flight {
      *
      * @return
      */
-    public static ArrayList<Flight> processGPXFile(Connection connection, InputStream is) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, ParserConfigurationException, SAXException, SQLException, ParseException {
+    public static ArrayList<Flight> processGPXFile(int fleetId, Connection connection, InputStream is, String filename) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, ParserConfigurationException, SAXException, SQLException, ParseException {
+        // BE-GPS-2200
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
         DocumentBuilder db = dbf.newDocumentBuilder();
         Document doc = db.parse(is);
@@ -2113,12 +2162,25 @@ public class Flight {
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
-        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "feet msl", len); 
-        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "knots", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft", len); 
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
         ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
+        // ss.SSSSSSXXX
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ssZZZ'Z'");
-        
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
+        String serialNumber = serialNumberNodes.item(0).getTextContent();
+
+        NodeList fdrModel = doc.getElementsByTagName("badelf:modelName");
+        String airframeName = fdrModel.item(0).getTextContent();
+        LOG.info("Airframe name: " + airframeName);
+
         NodeList dates = doc.getElementsByTagName("time");
         NodeList datanodes = doc.getElementsByTagName("trkpt");
         NodeList elenodes = doc.getElementsByTagName("ele");
@@ -2132,8 +2194,25 @@ public class Flight {
 
         for (int i = 0; i < dates.getLength(); i++) {
             Date parsedDate = dateFormat.parse(dates.item(i).getTextContent());
-            Timestamp timestamp = new java.sql.Timestamp(parsedDate.getTime());
-            timestamps.add(timestamp);
+            timestamps.add(new Timestamp(parsedDate.getTime()));
+            Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
+            
+            int offsetMS = cal.getTimeZone().getOffset(parsedDate.getTime());
+            String sign = offsetMS < 0 ? "-" : "+";
+            offsetMS = offsetMS < 0 ? -offsetMS : offsetMS;
+
+            int offsetSEC = offsetMS / 1000;
+            int offsetMIN = offsetSEC / 60;
+            int offsetHRS = offsetMIN / 60;
+            offsetMIN %= 60;
+            
+            String offsetHrsStr = (offsetHRS < 10 ? "0" : "") + offsetHRS;
+            String offsetMinStr = (offsetMIN < 10 ? "0" : "") + offsetMIN;
+            // This should look like +HH:mm
+            utcOfstSeries.add(sign + offsetHrsStr + ":" + offsetMinStr);
+
+            localDateSeries.add(lclDateFormat.format(parsedDate));
+            localTimeSeries.add(lclTimeFormat.format(parsedDate));
 
             Node spdNode = spdnodes.item(i);
             // Convert m / s to knots
@@ -2153,19 +2232,46 @@ public class Flight {
             lon.add(Double.parseDouble(lonNode.getTextContent()));
         }
 
-        // ArrayList<Flight> flights = new ArrayList<Flight>();
-        // int start = 0;
-        // for (int end = 1; end < timestamps.size(); end++) {
-        //     // 1 minute delay -> new flight.
-        //     if (timestamps.get(end).getTime() - timestamps.get(end - 1).getTime() > 60000) {    
-        //         DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
-        //         DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
-        //         DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
-        //         DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
-        //     }
-        // }
-       
         ArrayList<Flight> flights = new ArrayList<Flight>();
+        int start = 0;
+        for (int end = 1; end < timestamps.size(); end++) {
+            // 1 minute delay -> new flight.
+            if (timestamps.get(end).getTime() - timestamps.get(end - 1).getTime() > 60000
+                || end == localTimeSeries.size() - 1) {
+                if (end == localTimeSeries.size() - 1) {
+                  end += 1;
+                }
+
+                if (end - start < 10) {
+                    start = end;
+                    continue;
+                }
+
+                StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+                StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+                StringTimeSeries offset = utcOfstSeries.subSeries(connection, start, end);
+                DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
+                DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
+                DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
+                DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
+
+                
+                HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
+                doubleSeries.put("GndSpd", nspd);
+                doubleSeries.put("Longitude", nlon);
+                doubleSeries.put("Latitude", nlat);
+                doubleSeries.put("AltMSL", nmsl);
+
+                HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
+                stringSeries.put("Lcl Date", localDate);
+                stringSeries.put("Lcl Time", localTime);
+                stringSeries.put("UTCOfst", offset);
+
+                flights.add(new Flight(fleetId, filename + "-" + start + "-" + end, serialNumber, airframeName, doubleSeries, stringSeries, connection));
+                start = end;
+            }
+        }
+       
         return flights;
     }
 
@@ -2600,11 +2706,10 @@ public class Flight {
             message += ".";
 
             //should be initialized to false, but lets make sure
-            hasCoords = false;
+            LOG.info("Flight has no coordinates.");
             throw new MalformedFlightFileException(message);
         }
         hasCoords = true;
-
 
         itinerary.clear();
 

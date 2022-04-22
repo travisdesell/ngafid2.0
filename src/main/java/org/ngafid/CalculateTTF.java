@@ -41,7 +41,6 @@ public class CalculateTTF {
                         TurnToFinal.calculateFlightTurnToFinals(connection, flight);
                         flights_processed += 1;
                     }
-
                 } catch (SQLException | IOException e) {
                     e.printStackTrace();
                     System.exit(1);

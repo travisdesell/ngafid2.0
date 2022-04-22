@@ -48,11 +48,15 @@ public class DoubleTimeSeries {
     private double max = -Double.MAX_VALUE;
 
     public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
+        this(connection, name, dataType, 16);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
         this.name = name;
         this.nameId = SeriesNames.getDoubleNameId(connection, name);
         this.dataType = dataType;
         this.typeId = TypeNames.getId(connection, dataType);
-        this.data = new double[16];
+        this.data = new double[sizeHint];
 
         min = Double.NaN;
         avg = Double.NaN;
@@ -60,6 +64,7 @@ public class DoubleTimeSeries {
 
         validCount = 0;
     }
+
 
     public DoubleTimeSeries(Connection connection, String name, String dataType, boolean cache) throws SQLException {
         this(connection, name, dataType);
@@ -307,7 +312,7 @@ public class DoubleTimeSeries {
         // Need to resize
         if (this.size == data.length) {
             // Create a new buffer then copy the data to the new buffer.
-            double[] oldData = this.data;
+            double[] oldData = this.data; 
             this.data = new double[data.length * 2];
             System.arraycopy(oldData, 0, this.data, 0, oldData.length);
         }
@@ -513,6 +518,12 @@ public class DoubleTimeSeries {
 
         return leadingSeries;
     }
-
+    // Creates a new DoubleTimeSeries from a slice in the range [from, until)
+    public DoubleTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
+        DoubleTimeSeries newSeries = new DoubleTimeSeries(connection, name, dataType, until - from);
+        newSeries.size = until - from;
+        System.arraycopy(data, from, newSeries.data, 0, until - from);
+        return newSeries;
+    }
 }
 
