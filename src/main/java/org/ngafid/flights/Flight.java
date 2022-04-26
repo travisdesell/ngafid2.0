@@ -2082,8 +2082,12 @@ public class Flight {
         }
 
         try {
-            if (!airframeName.equals("ScanEagle") && hasCoords && hasAGL && doubleTimeSeries.containsKey("E1 RPM"))
-                calculateItinerary("GndSpd", "E1 RPM");
+            if (!airframeName.equals("ScanEagle") && hasCoords && hasAGL) {
+                if (doubleTimeSeries.containsKey("E1 RPM"))
+                    calculateItinerary("GndSpd", "E1 RPM");
+                else
+                    calculateItineraryNoRPM("GndSpd");
+            }
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
@@ -2758,6 +2762,90 @@ public class Flight {
             }
 
         }
+    }
+
+    public void calculateItineraryNoRPM(String groundSpeedColumnName) throws MalformedFlightFileException {
+        //cannot calculate the itinerary without airport/runway calculate, which requires
+        //lat and longs
+        if (!hasCoords) return;
+
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
+
+        StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
+        DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
+        DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
+
+        StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
+        DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+
+        if (groundSpeed == null) {
+            String message = "Cannot calculate itinerary, flight file had empty or missing ";
+
+            message += "'" + groundSpeedColumnName + "'";
+
+            message += " column";
+            //should be initialized to false, but lets make sure
+            LOG.info("Flight has no ground speed.");
+            throw new MalformedFlightFileException(message);
+        }
+
+        hasCoords = true;
+
+        itinerary.clear();
+
+        Itinerary currentItinerary = null;
+        for (int i = 1; i < nearestAirportTS.size(); i++) {
+            String airport = nearestAirportTS.get(i);
+            String runway = nearestRunwayTS.get(i);
+
+            if (airport != null && !airport.equals("")) {
+                //We've gotten close to an airport, so create a stop if there
+                //isn't one.  If there is one, update the runway being visited.
+                //If the airport is a new airport (this shouldn't happen really),
+                //then create a new stop.
+                if (currentItinerary == null) {
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
+                } else if (airport.equals(currentItinerary.getAirport())) {
+                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
+                } else {
+                    currentItinerary.selectBestRunway();
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
+                }
+
+            } else {
+                //aiport is null, so if there was an airport being visited
+                //then we can determine it's runway and add it to the itinerary
+                if (currentItinerary != null) {
+                    currentItinerary.selectBestRunway();
+                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                }
+
+                //set the currentItinerary to null until we approach another
+                //airport
+                currentItinerary = null;
+            }
+        }
+
+        //dont forget to add the last stop in the itinerary if it wasn't set to null
+        if (currentItinerary != null) {
+            currentItinerary.selectBestRunway();
+            if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+        }
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // setting and determining itinerary type
+        int itinerary_size = itinerary.size();
+        for (int i = 0; i < itinerary_size; i++) {
+            itinerary.get(i).determineType();
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        System.err.println("Itinerary:");
+        for (int i = 0; i < itinerary.size(); i++) {
+            System.err.println(itinerary.get(i));
+        }
+     
     }
 
     public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
