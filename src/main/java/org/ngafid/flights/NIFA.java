@@ -200,7 +200,7 @@ public class NIFA implements Serializable {
                     // do nothing here I guess until we can add final approach event
                     // because other events do not require duration
 
-                } else if (70 <= bDiff && bDiff < 110) {
+                } else if (70 <= bDiff && bDiff < 110 && !isFinalTurn && !isSecondTurn) {
                     // tracking crosswind (both times for now...)
                     if (!isCrosswind) {
                         isCrosswind = true;
@@ -226,7 +226,7 @@ public class NIFA implements Serializable {
                             // TODO mark 'DEBUG SECOND TURN' event here!
                         }
                     }
-                } else {
+                } else if (bDiff <= 160 && !isThirdTurn){
                     // tracking downwind
                     if (!isDownwind) {
                         isDownwind = true;
@@ -237,6 +237,9 @@ public class NIFA implements Serializable {
                     // TODO event: Wide Downwind
                     //  count number of consecutive positions aircraft was out of bounds
                     //  at end, if counter > 5, trigger the event
+
+                } else {
+                    // TODO mark 'something went wrong' event maybe?
                 }
             }
 
