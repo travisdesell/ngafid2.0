@@ -17,9 +17,12 @@ import static org.ngafid.flights.Parameters.PARAM_LOSS_OF_CONTROL_PROBABILITY;
 
 public class NIFA implements Serializable {
 
+
     private static final Logger LOG = Logger.getLogger(NIFA.class.getName());
 
     private static final double FEET_PER_MILE = 5280;
+
+    private final String[] dates, times;
 
     private final double[] latitude, longitude, altitude, altMSL, distanceFromRunway;
 
@@ -30,15 +33,21 @@ public class NIFA implements Serializable {
     public final String airportIataCode;
     public final String flightStartDate;
 
-    private int nTimesteps;
+    private final int nTimesteps, fleetId, flightId;
 
-    public NIFA(double[] latitude, double[] longitude, double[] altitude, double[] altMSL, Runway runway, String flightId, String airportIataCode, String flightStartDate) {
+    public NIFA(int fleetId, int flightId, String[] dates, String[] times, double[] latitude, double[] longitude, double[] altitude, double[] altMSL, Runway runway, String flightId, String airportIataCode, String flightStartDate) {
         // TODO pass in speed?
         this.latitude = latitude;
         this.longitude = longitude;
         this.altitude = altitude;
         this.altMSL = altMSL;
         this.runway = runway;
+
+        this.dates = dates;
+        this.times = times;
+
+        this.fleetId = fleetId;
+        this.flightId = flightId;
 
         this.flightId = flightId;
         this.airportIataCode = airportIataCode;
@@ -50,6 +59,16 @@ public class NIFA implements Serializable {
         int last = this.longitude.length;
         for (int i = 0; i < last - 1; i++)
             this.distanceFromRunway[i] = Airports.calculateDistanceInFeet(latitude[i], longitude[i], latitude[last - 1], longitude[last - 1]);
+    }
+   
+
+    // Creates event of a given type between the given index range and inserts it into the database.
+    void createEvent(int eventDefinitionId, int startIndex, int endIndex) {
+        String startTimestamp = dates[startIndex] + " " + times[startIndex];
+        String endTimestamp = dates[endIndex] + " " + times[endIndex];
+        
+        Event e = new Event(0, fleetId, flightId, eventDefinitionId, startIndex, endIndex, startTimestamp, endTimestamp, 1.0, -1);
+        e.updateDatabase(fleetId, flightId, eventDefinitionId);
     }
 
     private double[] getExtendedRunwayCenterLine() {
@@ -79,7 +98,7 @@ public class NIFA implements Serializable {
         return (Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
     }
 
-    public static ArrayList<NIFA> calculateNIFAFlight(Connection connection, Flight flight) throws SQLException {
+    public static ArrayList<NIFA> processFlight(Connection connection, Flight flight) throws SQLException {
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
@@ -113,19 +132,6 @@ public class NIFA implements Serializable {
             if (!it.wasApproach())
                 continue;
 
-            int from = to;
-
-            // Grab the start and end indices for the time series
-            // (taken from TTF so probably inaccurate)
-            if (to < 0 || altitude[to] <= 15) {
-                to = 0;
-            }
-            if (from < 0 || altitude[from] <= 300) {
-                from = 0;
-            }
-            if (to == from)
-                continue;
-
             // Need airport/runway
             Airport airport = Airports.getAirport(it.getAirport());
             Runway runway = airport.getRunway(it.getRunway());
@@ -134,8 +140,6 @@ public class NIFA implements Serializable {
             // Finding takeoff: (given runway)
             // Need altitude to increase (maybe > 100ft)
             // Ideally, heading should remain +/-10 degrees
-
-
 
 
             // FIXME mark beginning index of each state only? seems hacky
@@ -149,6 +153,44 @@ public class NIFA implements Serializable {
             double[] bears = new double[60];
             double[] bearDiffs = new double[60];
             // ^^ will be cheeky ~ overwrite this index equal to i mod 60
+
+            int i = 0;
+
+            // TODO: Make sure runway bearing faces in the direction the plane takes off from.
+            // 20 degrees, as per Ryans advice
+            
+            // Step through flight until the aircraft bearning is 20 degrees off from the runway. At this point we should
+            // be able to assume the plane is turning.
+            while (Math.abs(bears[i] - runwayBearing) < 20) {
+                // Ensure we are within corridor, some other event detection
+                i++;
+            }
+
+
+            // TODO: Determine which direction we turned. Use this to calculate bearing perpindicular to runway bearing
+            double firstEndBearing = 1 / 0; 
+            // Step through flight until plane is lined up roughly the bearing perpindicular to the runway.
+            while (Math.abs(bears[i] - firstEndBearing) > 20) i++;
+
+            // Aircraft should now be within 20 degrees of the first end bearing
+
+            // Step through flight until the next turn.
+            double downwindBearing = -runwayBearing;
+            while (Math.abs(bears[i] - downwindBearing) > 30) i++;
+
+            while (Math.abs(bears[i] - downwindBearning) < 20) {
+                // Do some event detection...
+                i++;
+            }
+            
+            double secondEndBearing = -firstEndBearing;
+            while (Math.abs(bears[i] - secondEndBearing) > 20) i++;
+
+            // Aircraft now roughly lined up within 20 degrees of second end bearing
+
+            // At this point, we should be starting turn to final.
+
+
 
 
             // Path tracing:

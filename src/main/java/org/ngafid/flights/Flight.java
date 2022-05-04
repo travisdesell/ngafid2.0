@@ -126,6 +126,10 @@ public class Flight {
     //events in the database (so we can recalculate or calculate new things
     //as needed):
     public final static long CHT_DIVERGENCE_CALCULATED = 0b1;
+    
+    // This flag will only ever be set for flights with BE-GPS-2200 airframe ID.
+    public final static long NIFA_EVENTS_CALCULATED = 0b10;
+
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
