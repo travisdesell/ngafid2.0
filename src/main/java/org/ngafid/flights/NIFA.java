@@ -82,6 +82,15 @@ public class NIFA implements Serializable {
         return new double[] {lat1, lon1, lat2, lon2};
     }
 
+    // spooky equation taken from wikipedia - https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
+    public double getDistanceFromRunwayCenterline(double alat, double alon) {
+        double rlatdiff = runway.lat1 - runway.lat2;
+        double rlondiff = runway.lon1 - runway.lon2;
+        double numerator = Math.abs(rlatdiff*(runway.lon2 - alon) - (runway.lat2 - alat)*rlondiff);
+        double denominator = Math.sqrt(rlatdiff*rlatdiff + rlondiff*rlondiff);
+        return numerator / denominator;
+    }
+
     public double[] getPosition(int timestep) {
         assert timestep < this.nTimesteps;
         return new double[] { latitude[timestep], longitude[timestep] };
@@ -174,6 +183,8 @@ public class NIFA implements Serializable {
                     //  check (lat, long) of aircraft to make sure it fits corridor
                     //  if not, flip arbitrary boolean flag for as long as aircraft is outside corridor,
                     //  create event once it re-enters
+
+                    // TODO: use getDistanceFromRunwayCenterline(lat[i],lon[i] maybe?
 
                     // FIXME ^^ this event will definitely blow up on a go-around
 
