@@ -3,6 +3,8 @@ package org.ngafid.flights;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
+import org.ngafid.events.EventDefinition;
+import org.ngafid.events.Event;
 
 import java.io.Serializable;
 import java.sql.Connection;
@@ -17,6 +19,52 @@ import static org.ngafid.flights.Parameters.PARAM_LOSS_OF_CONTROL_PROBABILITY;
 
 public class NIFA implements Serializable {
 
+    static class NIFAEventDefinition {
+        public final int id;
+        public final String name;
+        public final String columnNames = "";
+        public final int startBuffer = -1;
+        public final int stopBuffer = -1;
+        public final String conditionJson = "";
+        public final String severityColumnNames = "";
+        public final String severityType = "max";
+        public final String color = null;
+
+        public NIFAEventDefinition(int id, String name) {
+            this.id = id;
+            this.name = name;
+        }
+    }
+
+    private static ArrayList<NIFAEventDefinition> nifaEventDefinitions = new ArrayList<>();
+
+    static {
+        nifaEventDefinitions.add(
+            new NIFAEventDefinition(-100, "Flight Start"));
+        nifaEventDefinitions.add(
+            new NIFAEventDefinition(-101, "First Turn Start"));
+        nifaEventDefinitions.add(
+            new NIFAEventDefinition(-102, "First Turn End"));
+        nifaEventDefinitions.add(
+            new NIFAEventDefinition(-103, "Second Turn Start"));
+        nifaEventDefinitions.add(
+            new NIFAEventDefinition(-104, "Second Turn End"));
+
+        // ... etc
+    }
+
+    static boolean initialized = false;
+    // Insert NIFA events
+    static void init(Connection connection) {
+        if (initialized)
+            return;
+
+        initialized = true;
+        for (NIFAEventDefinition e : nifaEventDefinitions) {
+            EventDefinition.insert(connection, 
+                0, e.name, e.startBuffer, e.stopBuffer, "", "{}", "{}", "");
+        }
+    }
 
     private static final Logger LOG = Logger.getLogger(NIFA.class.getName());
 
@@ -28,14 +76,13 @@ public class NIFA implements Serializable {
 
     private double runwayAltitude;
     private final Runway runway;
-    private final String flightId;
 
     public final String airportIataCode;
     public final String flightStartDate;
 
     private final int nTimesteps, fleetId, flightId;
 
-    public NIFA(int fleetId, int flightId, String[] dates, String[] times, double[] latitude, double[] longitude, double[] altitude, double[] altMSL, Runway runway, String flightId, String airportIataCode, String flightStartDate) {
+    public NIFA(int fleetId, int flightId, String[] dates, String[] times, double[] latitude, double[] longitude, double[] altitude, double[] altMSL, Runway runway, String airportIataCode, String flightStartDate) {
         // TODO pass in speed?
         this.latitude = latitude;
         this.longitude = longitude;
@@ -49,7 +96,6 @@ public class NIFA implements Serializable {
         this.fleetId = fleetId;
         this.flightId = flightId;
 
-        this.flightId = flightId;
         this.airportIataCode = airportIataCode;
         this.flightStartDate = flightStartDate;
 
@@ -63,12 +109,12 @@ public class NIFA implements Serializable {
    
 
     // Creates event of a given type between the given index range and inserts it into the database.
-    void createEvent(int eventDefinitionId, int startIndex, int endIndex) {
+    void createEvent(Connection connection, int eventDefinitionId, int startIndex, int endIndex) {
         String startTimestamp = dates[startIndex] + " " + times[startIndex];
         String endTimestamp = dates[endIndex] + " " + times[endIndex];
         
         Event e = new Event(0, fleetId, flightId, eventDefinitionId, startIndex, endIndex, startTimestamp, endTimestamp, 1.0, -1);
-        e.updateDatabase(fleetId, flightId, eventDefinitionId);
+        e.updateDatabase(connection, fleetId, flightId, eventDefinitionId);
     }
 
     private double[] getExtendedRunwayCenterLine() {
@@ -99,6 +145,8 @@ public class NIFA implements Serializable {
     }
 
     public static ArrayList<NIFA> processFlight(Connection connection, Flight flight) throws SQLException {
+        init(connection);
+
         DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
         DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
@@ -178,7 +226,7 @@ public class NIFA implements Serializable {
             double downwindBearing = -runwayBearing;
             while (Math.abs(bears[i] - downwindBearing) > 30) i++;
 
-            while (Math.abs(bears[i] - downwindBearning) < 20) {
+            while (Math.abs(bears[i] - downwindBearing) < 20) {
                 // Do some event detection...
                 i++;
             }
