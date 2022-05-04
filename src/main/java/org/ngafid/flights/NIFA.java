@@ -136,12 +136,112 @@ public class NIFA implements Serializable {
             Airport airport = Airports.getAirport(it.getAirport());
             Runway runway = airport.getRunway(it.getRunway());
             double runwayAltitude = altitude[0];
+            double runwayBearing = bearing(runway.lat1, runway.lon1, runway.lat2, runway.lon2);
 
             // Finding takeoff: (given runway)
             // Need altitude to increase (maybe > 100ft)
             // Ideally, heading should remain +/-10 degrees
 
+            // TODO MVP New process:
+            //  loop through lat,long
+            //  acquire bearing relative to runway per recorded position
+            //  mark transition points in array for later
+            //  keep track of state (which leg plane is on) when processing
+            //  for each state, check additional exceedences with if statements
+            boolean isUpwind = true, isDownwind = false, isCrosswind = false,
+                    isFirstTurn = false, isFinalTurn = false, isSecondTurn = false, isThirdTurn = false;
+            for (int i = 1; i < lat.length; i++) {
+                double b = bearing(lat[i-1], lon[i-1], lat[i], lon[i]);
+                double normDeg = (runwayBearing - b) % 360;
+                // 0-180 degrees, difference between runway and aircraft bearing, used to find flight phase
+                double bDiff = Math.min(360-normDeg, normDeg);
 
+                if (bDiff < 20 && !isFirstTurn) {
+                    // within 20 degrees of runway --> tracking upwind
+                    if (!isUpwind) {
+                        // exiting turn to final
+                        isUpwind = true;
+                        isFinalTurn = false;
+                        // TODO mark 'DEBUG EXIT FINAL TURN' event here!
+
+                        // TODO event: Low Turn to Final
+                        //  trigger if altitude is below 200 feet
+                        //  slideshow also mentions checking this anytime after aircraft climbs to 400 feet,
+                        //  ^ will need to double check if that is necessary
+                    }
+
+                    // TODO event: Poor Tracking on Upwind
+                    //  check (lat, long) of aircraft to make sure it fits corridor
+                    //  if not, flip arbitrary boolean flag for as long as aircraft is outside corridor,
+                    //  create event once it re-enters
+
+                    // FIXME ^^ this event will definitely blow up on a go-around
+
+                } else if ((20 <= bDiff && bDiff < 70) || isFirstTurn || isFinalTurn) {
+                    // turning from or into upwind
+                    if (!isFirstTurn && !isFinalTurn) { // FIXME we can consolidate booleans if we want
+                        if (isUpwind) {
+                            // exiting upwind tracking
+                            isFirstTurn = true;
+                            isUpwind = false;
+                            // TODO mark 'DEBUG FIRST TURN' event here!
+
+                            // TODO event: Low Turn to Crosswind
+                            //  trigger if altitude is below 400 feet
+                        } else {
+                            // entering turn to final
+                            isFinalTurn = true;
+                            isCrosswind = false;
+                            // TODO mark 'DEBUG ENTER FINAL TURN' event here!
+
+                            // TODO: overshoot/undershoot final approach too complex for this implementation
+                        }
+                    }
+                    // do nothing here I guess until we can add final approach event
+                    // because other events do not require duration
+
+                } else if (70 <= bDiff && bDiff < 110) {
+                    // tracking crosswind (both times for now...)
+                    if (!isCrosswind) {
+                        isCrosswind = true;
+                        isFirstTurn = false;
+                        isThirdTurn = false;
+                        // TODO mark 'DEBUG ENTER CROSSWIND' event here!
+                    }
+
+                    // TODO: Constant Turn events too complex for this implementation
+
+                } else if ((110 <= bDiff && bDiff < 160) || isSecondTurn || isThirdTurn) {
+                    // turning from or into downwind
+                    if (!isSecondTurn && !isThirdTurn) { // FIXME we can consolidate booleans if we want
+                        if (isDownwind) {
+                            // exiting downwind tracking
+                            isThirdTurn = true;
+                            isDownwind = false;
+                            // TODO mark 'DEBUG THIRD TURN' event here!
+                        } else {
+                            // entering turn to downwind
+                            isSecondTurn = true;
+                            isCrosswind = false;
+                            // TODO mark 'DEBUG SECOND TURN' event here!
+                        }
+                    }
+                } else {
+                    // tracking downwind
+                    if (!isDownwind) {
+                        isDownwind = true;
+                        isSecondTurn = false;
+                        // TODO mark 'DEBUG EXIT SECOND TURN' event here!
+                    }
+
+                    // TODO event: Wide Downwind
+                    //  count number of consecutive positions aircraft was out of bounds
+                    //  at end, if counter > 5, trigger the event
+                }
+            }
+
+
+            /*
             // FIXME mark beginning index of each state only? seems hacky
             ArrayList<Integer> upwindTracking = new ArrayList<>();
             ArrayList<Integer> downwindTracking = new ArrayList<>();
@@ -153,45 +253,6 @@ public class NIFA implements Serializable {
             double[] bears = new double[60];
             double[] bearDiffs = new double[60];
             // ^^ will be cheeky ~ overwrite this index equal to i mod 60
-
-            int i = 0;
-
-            // TODO: Make sure runway bearing faces in the direction the plane takes off from.
-            // 20 degrees, as per Ryans advice
-            
-            // Step through flight until the aircraft bearning is 20 degrees off from the runway. At this point we should
-            // be able to assume the plane is turning.
-            while (Math.abs(bears[i] - runwayBearing) < 20) {
-                // Ensure we are within corridor, some other event detection
-                i++;
-            }
-
-
-            // TODO: Determine which direction we turned. Use this to calculate bearing perpindicular to runway bearing
-            double firstEndBearing = 1 / 0; 
-            // Step through flight until plane is lined up roughly the bearing perpindicular to the runway.
-            while (Math.abs(bears[i] - firstEndBearing) > 20) i++;
-
-            // Aircraft should now be within 20 degrees of the first end bearing
-
-            // Step through flight until the next turn.
-            double downwindBearing = -runwayBearing;
-            while (Math.abs(bears[i] - downwindBearing) > 30) i++;
-
-            while (Math.abs(bears[i] - downwindBearning) < 20) {
-                // Do some event detection...
-                i++;
-            }
-            
-            double secondEndBearing = -firstEndBearing;
-            while (Math.abs(bears[i] - secondEndBearing) > 20) i++;
-
-            // Aircraft now roughly lined up within 20 degrees of second end bearing
-
-            // At this point, we should be starting turn to final.
-
-
-
 
             // Path tracing:
             // Precondition - assume index 0 is aircraft beginning takeoff
@@ -255,6 +316,8 @@ public class NIFA implements Serializable {
 
             }
 
+
+             */
         }
 
 
