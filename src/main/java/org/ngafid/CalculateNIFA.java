@@ -15,7 +15,7 @@ import java.util.ArrayList;
 public class CalculateNIFA {
     private static Connection connection = Database.getConnection();
 
-    public static void main(String[] arguments) {
+    public static void main(String[] arguments) throws SQLException {
         int nifaAirframeID = Airframes.getNameId(connection, "BE-GPS-2200");
         String condition =
                 "insert_completed = 1 AND airframe_id = " + nifaAirframeID + " AND processing_status & " + Flight.NIFA_EVENTS_CALCULATED + " != 0";
@@ -36,7 +36,7 @@ public class CalculateNIFA {
                         NIFA.processFlight(connection, flight);
                     }
 
-                } catch (SQLException | IOException e) {
+                } catch (SQLException e) {
                     e.printStackTrace();
                     System.exit(1);
                 }
