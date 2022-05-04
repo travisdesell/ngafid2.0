@@ -2,6 +2,8 @@ package org.ngafid;
 
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.TurnToFinal;
+import org.ngafid.flights.Airframes;
+import org.ngafid.flights.NIFA;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -14,6 +16,10 @@ public class CalculateNIFA {
     private static Connection connection = Database.getConnection();
 
     public static void main(String[] arguments) {
+        int nifaAirframeID = Airframes.getNameId(connection, "BE-GPS-2200");
+        String condition =
+                "insert_completed = 1 AND airframe_id = " + nifaAirframeID + " AND processing_status & " + Flight.NIFA_EVENTS_CALCULATED + " != 0";
+
         while (true) {
             connection = Database.resetConnection();
 
@@ -23,19 +29,11 @@ public class CalculateNIFA {
             while (flights_processed > 0) {
                 flights_processed = 0;
                 try {
-                    // Grab flights that have not been inserted at all, or flights that have an old version of TTF
-                    String condition =
-                            "insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM turn_to_final where flight_id = id)";
-                    // FIXME replace above with condition to get NIFA flights
                     ArrayList<Flight> flights = Flight.getFlights(connection, condition, 100);
 
                     while (flights.size() > 0) {
                         Flight flight = flights.remove(flights.size() - 1);
-                        // This function automatically saves the calculated TTF object to the database
-                        TurnToFinal.calculateFlightTurnToFinals(connection, flight);
-                        // FIXME replace above with code to identify tracking and turns based off itinerary and flight path
-
-                        flights_processed += 1;
+                        NIFA.processFlight(connection, flight);
                     }
 
                 } catch (SQLException | IOException e) {
