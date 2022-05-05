@@ -7,7 +7,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$update_2022_02_17 = true;
+$update_2022_02_17 = false;
 $update_turn_to_final = true;
 
 //need to drop and reload these tables for 2020_05_16 changes
@@ -456,7 +456,8 @@ if (!$update_2022_02_17) {
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `fleet_id` INT(11) NOT NULL,
         `flight_id` INT(11) NOT NULL,
-        `event_definition_id` INT(11) NOT NULL, 
+        `event_definition_id` INT(11) NOT NULL,
+        `other_flight_id` INT(11) DEFAULT -1,
 
         `start_line` INT(11),
         `end_line` INT(11),
@@ -468,6 +469,7 @@ if (!$update_2022_02_17) {
         PRIMARY KEY(`id`),
         FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
         FOREIGN KEY(`flight_id`) REFERENCES flights(`id`),
+        FOREIGN KEY(`other_flight_id`) REFERENCES flights(`id`),
         INDEX(`start_time`),
         INDEX(`end_time`),
         FOREIGN KEY(`event_definition_id`) REFERENCES event_definitions(`id`)

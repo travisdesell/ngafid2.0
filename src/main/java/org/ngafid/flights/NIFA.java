@@ -5,6 +5,7 @@ import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.Event;
+import org.ngafid.Database;
 
 import java.util.Set;
 import java.util.stream.*;
@@ -18,7 +19,6 @@ import java.util.logging.Logger;
 import java.util.stream.Stream;
 
 import static org.ngafid.flights.Parameters.*;
-import static org.ngafid.flights.Parameters.PARAM_LOSS_OF_CONTROL_PROBABILITY;
 
 public class NIFA implements Serializable {
 
@@ -45,33 +45,43 @@ public class NIFA implements Serializable {
     private static ArrayList<NIFAEventDefinition> nifaEventDefinitions = new ArrayList<>();
     private static HashMap<Integer, NIFAEventDefinition> nifaEventDefinitionMap = new HashMap<>();
 
-    private static final int DEBUG_EXIT_FINAL_TURN = -100;
-    private static final int DEBUG_ENTER_FINAL_TURN = -101;
-    private static final int DEBUG_ENTER_CROSSWIND = -102;
-    private static final int DEBUG_ENTER_THIRD_TURN = -103;
-    private static final int DEBUG_ENTER_SECOND_TURN = -104;
-    private static final int DEBUG_EXIT_SECOND_TURN = -105;
-    private static final int DEBUG_NIFA_TRACKING_ERROR = -106;
-    static {
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_EXIT_FINAL_TURN, "DEBUG EXIT FINAL TURN"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_ENTER_FINAL_TURN, "DEBUG ENTER FINAL TURN"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_ENTER_CROSSWIND, "DEBUG ENTER CROSSWIND"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_ENTER_THIRD_TURN, "DEBUG ENTER THIRD TURN"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_ENTER_SECOND_TURN, "DEBUG ENTER SECOND TURN"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_EXIT_SECOND_TURN, "DEBUG EXIT SECOND TURN"));
-        nifaEventDefinitions.add(
-            new NIFAEventDefinition(DEBUG_NIFA_TRACKING_ERROR, "NIFA TRACKING ERROR"));
+    private static int _BASE = -100;
+    private static final int DEBUG_ENTER_CROSSWIND = _BASE--;
+    private static final int DEBUG_ENTER_FIRST_TURN = _BASE--;
+    private static final int DEBUG_ENTER_SECOND_TURN = _BASE--;
+    private static final int DEBUG_ENTER_THIRD_TURN = _BASE--;
+    private static final int DEBUG_ENTER_FINAL_TURN = _BASE--;
+    private static final int DEBUG_EXIT_CROSSWIND = _BASE--;
+    private static final int DEBUG_EXIT_FIRST_TURN = _BASE--;
+    private static final int DEBUG_EXIT_SECOND_TURN = _BASE--;
+    private static final int DEBUG_EXIT_THIRD_TURN = _BASE--;
+    private static final int DEBUG_EXIT_FINAL_TURN = _BASE--;
+    private static final int DEBUG_NIFA_TRACKING_ERROR = _BASE--;
 
+    static {
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_ENTER_CROSSWIND, "DEBUG_ENTER_CROSSWIND"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_ENTER_FIRST_TURN, "DEBUG_ENTER_FIRST_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_ENTER_SECOND_TURN, "DEBUG_ENTER_SECOND_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_ENTER_THIRD_TURN, "DEBUG_ENTER_THIRD_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_ENTER_FINAL_TURN, "DEBUG_ENTER_FINAL_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_CROSSWIND, "DEBUG_EXIT_CROSSWIND"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_FIRST_TURN, "DEBUG_EXIT_FIRST_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_SECOND_TURN, "DEBUG_EXIT_SECOND_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_THIRD_TURN, "DEBUG_EXIT_THIRD_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_EXIT_FINAL_TURN, "DEBUG_EXIT_FINAL_TURN"));
+        nifaEventDefinitions.add(new NIFAEventDefinition(DEBUG_NIFA_TRACKING_ERROR, "DEBUG_NIFA_TRACKING_ERROR"));
+   
         // ... etc
         // Create map
         for (NIFAEventDefinition def : nifaEventDefinitions)
             nifaEventDefinitionMap.put(def.id, def);
+        
+        try {
+            init(Database.getConnection());
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Failed to initialized NIFA event definitions. This wont be a problem unless you plan on using thme");
+        }
     }
 
     static boolean initialized = false;
@@ -88,7 +98,7 @@ public class NIFA implements Serializable {
         for (NIFAEventDefinition e : nifaEventDefinitions) {
             if (!eventIds.contains(e.id))
                 EventDefinition.insert(connection, 
-                    0, e.name, e.startBuffer, e.stopBuffer, "", "{}", "{}", "");
+                    e.id, e.name, e.startBuffer, e.stopBuffer, 0);
         }
     }
 
@@ -96,54 +106,72 @@ public class NIFA implements Serializable {
 
     private static final double FEET_PER_MILE = 5280;
 
-    private final String[] dates, times;
+    private StringTimeSeries dates, times;
 
-    private final double[] latitude, longitude, altitude, altMSL, distanceFromRunway;
+    private double[] lat, lon, altitude, altMSL, velocity;
 
     private double runwayAltitude;
-    private final Runway runway;
 
-    public final String airportIataCode;
-    public final String flightStartDate;
+    public String airportIataCode;
+    public String flightStartDate;
 
-    private final int nTimesteps, fleetId, flightId;
+    private int nTimesteps, fleetId, flightId;
+    private final Flight flight;
 
-    public NIFA(int fleetId, int flightId, String[] dates, String[] times, double[] latitude, double[] longitude, double[] altitude, double[] altMSL, Runway runway, String airportIataCode, String flightStartDate) {
-        // TODO pass in speed?
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.altitude = altitude;
-        this.altMSL = altMSL;
-        this.runway = runway;
+    public NIFA(Connection connection, Flight flight) throws SQLException {
+        this.flight = flight;
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
+        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
+        StringTimeSeries timeSeries = flight.getStringTimeSeries(connection, "Lcl Time");
+        StringTimeSeries dateSeries = flight.getStringTimeSeries(connection, "Lcl Date");
 
-        this.dates = dates;
-        this.times = times;
+        LOG.info("TIME SERIES 0 = " + timeSeries.get(0));
+        LOG.info("DATE SERIES 0 = " + dateSeries.get(0));
 
-        this.fleetId = fleetId;
-        this.flightId = flightId;
+        int flightId = flight.getId();
+        Object[] a =  {latTimeSeries, lonTimeSeries, altTimeSeries, altMSLTimeSeries, timeSeries, dateSeries, velocityTimeSeries};
+        for (int i = 0; i < a.length; i++) {
+            if (a[i] == null) {
+                System.out.println("null at " + i);
+            }
+        }
 
-        this.airportIataCode = airportIataCode;
-        this.flightStartDate = flightStartDate;
+        if (!Stream.of(latTimeSeries, lonTimeSeries, altTimeSeries, altMSLTimeSeries, timeSeries, dateSeries, velocityTimeSeries).anyMatch(Objects::isNull)) {
 
-        this.nTimesteps = this.altitude.length;
+            lat = latTimeSeries.innerArray();
+            lon = lonTimeSeries.innerArray();
+            altitude = altTimeSeries.innerArray();
+            velocity = velocityTimeSeries.innerArray();
+            assert lat.length == lon.length;
 
-        this.distanceFromRunway = new double[this.latitude.length];
-        int last = this.longitude.length;
-        for (int i = 0; i < last - 1; i++)
-            this.distanceFromRunway[i] = Airports.calculateDistanceInFeet(latitude[i], longitude[i], latitude[last - 1], longitude[last - 1]);
+            this.dates = dateSeries;
+            this.times = timeSeries;
+
+            this.fleetId = flight.getFleetId();
+            this.flightId = flight.getId();
+
+            this.nTimesteps = this.altitude.length;
+
+            process(connection);
+        } else {
+            LOG.info("Could not process flight " + flight.getId());
+        }
     }
    
 
     // Creates event of a given type between the given index range and inserts it into the database.
     void createEvent(Connection connection, int eventDefinitionId, int startIndex, int endIndex) {
-        String startTimestamp = dates[startIndex] + " " + times[startIndex];
-        String endTimestamp = dates[endIndex] + " " + times[endIndex];
+        String startTimestamp = dates.get(startIndex)+ " " + times.get(startIndex);
+        String endTimestamp = dates.get(endIndex) + " " + times.get(endIndex);
         
-        Event e = new Event(0, fleetId, flightId, eventDefinitionId, startIndex, endIndex, startTimestamp, endTimestamp, 1.0, -1);
+        Event e = new Event(0, fleetId, flightId, eventDefinitionId, startIndex, endIndex, startTimestamp, endTimestamp, 1.0, null);
         e.updateDatabase(connection, fleetId, flightId, eventDefinitionId);
     }
 
-    private double[] getExtendedRunwayCenterLine() {
+    private double[] getExtendedRunwayCenterLine(Runway runway) {
         final double LEN = 2.0;
         double dlat = runway.lat1 - runway.lat2;
         double dlon = runway.lon1 - runway.lon2;
@@ -155,7 +183,7 @@ public class NIFA implements Serializable {
     }
 
     // spooky equation taken from wikipedia - https://en.wikipedia.org/wiki/Distance_from_a_point_to_a_line
-    public double getDistanceFromRunwayCenterline(double alat, double alon) {
+    public double getDistanceFromRunwayCenterline(Runway runway, double alat, double alon) {
         double rlatdiff = runway.lat1 - runway.lat2;
         double rlondiff = runway.lon1 - runway.lon2;
         double numerator = Math.abs(rlatdiff*(runway.lon2 - alon) - (runway.lat2 - alat)*rlondiff);
@@ -165,7 +193,7 @@ public class NIFA implements Serializable {
 
     public double[] getPosition(int timestep) {
         assert timestep < this.nTimesteps;
-        return new double[] { latitude[timestep], longitude[timestep] };
+        return new double[] { lat[timestep], lon[timestep] };
     }
 
     // Shamelessly taken from https://stackoverflow.com/questions/9457988/bearing-from-one-coordinate-to-another
@@ -179,30 +207,9 @@ public class NIFA implements Serializable {
         return (Math.toDegrees(Math.atan2(y, x)) + 360) % 360;
     }
 
-    public static ArrayList<NIFA> processFlight(Connection connection, Flight flight) throws SQLException {
-        init(connection);
-
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
-        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
-        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
-
-        int flightId = flight.getId();
-
-        if (Stream.of(latTimeSeries, lonTimeSeries, altTimeSeries, velocityTimeSeries).anyMatch(Objects::isNull)) {
-            ArrayList<NIFA> n = new ArrayList<>();
-            return n;
-        }
-
-        double[] lat = latTimeSeries.innerArray();
-        double[] lon = lonTimeSeries.innerArray();
-        double[] altitude = altTimeSeries.innerArray();
-        double[] velocity = velocityTimeSeries.innerArray();
-        assert lat.length == lon.length;
-
+    private void process(Connection connection) throws SQLException {
         ArrayList<Itinerary> itineraries = Itinerary.getItinerary(connection, flightId);
-        ArrayList<NIFA> n = new ArrayList<>(itineraries.size());
+        LOG.info("Itinerary length: " + itineraries.size());
 
         // Getting normal distance from Runway heading (at least I think)
 //        double normal = Runway.getDistanceFt(lat, lon);
@@ -249,7 +256,7 @@ public class NIFA implements Serializable {
                         isUpwind = true;
                         isFinalTurn = false;
                         // TODO mark 'DEBUG EXIT FINAL TURN' event here!
-
+                        createEvent(connection, DEBUG_EXIT_FINAL_TURN, i, i + 1);
                         // TODO event: Low Turn to Final
                         //  trigger if altitude is below 200 feet
                         //  slideshow also mentions checking this anytime after aircraft climbs to 400 feet,
@@ -273,6 +280,7 @@ public class NIFA implements Serializable {
                             isFirstTurn = true;
                             isUpwind = false;
                             // TODO mark 'DEBUG FIRST TURN' event here!
+                            createEvent(connection, DEBUG_ENTER_FIRST_TURN, i, i + 1);
 
                             // TODO event: Low Turn to Crosswind
                             //  trigger if altitude is below 400 feet
@@ -281,7 +289,8 @@ public class NIFA implements Serializable {
                             isFinalTurn = true;
                             isCrosswind = false;
                             // TODO mark 'DEBUG ENTER FINAL TURN' event here!
-
+                            createEvent(connection, DEBUG_ENTER_FINAL_TURN, i, i + 1);
+                            
                             // TODO: overshoot/undershoot final approach too complex for this implementation
                         }
                     }
@@ -295,6 +304,7 @@ public class NIFA implements Serializable {
                         isFirstTurn = false;
                         isThirdTurn = false;
                         // TODO mark 'DEBUG ENTER CROSSWIND' event here!
+                        createEvent(connection, DEBUG_ENTER_CROSSWIND, i, i + 1);
                     }
 
                     // TODO: Constant Turn events too complex for this implementation
@@ -307,11 +317,13 @@ public class NIFA implements Serializable {
                             isThirdTurn = true;
                             isDownwind = false;
                             // TODO mark 'DEBUG THIRD TURN' event here!
+                            createEvent(connection, DEBUG_ENTER_THIRD_TURN, i, i + 1);
                         } else {
                             // entering turn to downwind
                             isSecondTurn = true;
                             isCrosswind = false;
                             // TODO mark 'DEBUG SECOND TURN' event here!
+                            createEvent(connection, DEBUG_ENTER_SECOND_TURN, i, i + 1);
                         }
                     }
                 } else if (bDiff <= 160 && !isThirdTurn){
@@ -346,8 +358,6 @@ public class NIFA implements Serializable {
             double[] bearDiffs = new double[60];
             // ^^ will be cheeky ~ overwrite this index equal to i mod 60
 
-=======
->>>>>>> 35e4ac31d34269894dc795b0018746d53349f399
             // Path tracing:
             // Precondition - assume index 0 is aircraft beginning takeoff
             // 1. derive heading of aircraft for every adjacent point
@@ -413,8 +423,5 @@ public class NIFA implements Serializable {
 
              */
         }
-
-
-        return n;
     }
 }

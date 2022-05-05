@@ -1,5 +1,6 @@
 package org.ngafid;
 
+import org.ngafid.events.Event;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.TurnToFinal;
 import org.ngafid.flights.Airframes;
@@ -8,6 +9,7 @@ import org.ngafid.flights.NIFA;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.PreparedStatement;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -18,10 +20,12 @@ public class CalculateNIFA {
     public static void main(String[] arguments) throws SQLException {
         int nifaAirframeID = Airframes.getNameId(connection, "BE-GPS-2200");
         String condition =
-                "insert_completed = 1 AND airframe_id = " + nifaAirframeID + " AND processing_status & " + Flight.NIFA_EVENTS_CALCULATED + " != 0";
+                "insert_completed = 1 AND airframe_id = " + nifaAirframeID + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = -100 AND flight_processed.flight_id = flights.id)";
 
         while (true) {
             connection = Database.resetConnection();
+            
+            System.out.println("SIZE : " + Event.getAll(connection, 1).size());
 
             Instant start = Instant.now();
             int total = 0;
@@ -33,7 +37,14 @@ public class CalculateNIFA {
 
                     while (flights.size() > 0) {
                         Flight flight = flights.remove(flights.size() - 1);
-                        NIFA.processFlight(connection, flight);
+                        new NIFA(connection, flight);
+                        PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = -100, count = 0, had_error = 1");
+                        stmt.setInt(1, flight.getFleetId());
+                        stmt.setInt(2, flight.getId());
+                        //System.out.println(stmt.toString());
+                        stmt.executeUpdate();
+                        stmt.close();
+                        flights_processed++;
                     }
 
                 } catch (SQLException e) {
