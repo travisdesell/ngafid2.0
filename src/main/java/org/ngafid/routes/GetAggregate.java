@@ -115,14 +115,28 @@ public class GetAggregate implements Route {
 
             LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
+            LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
             HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
 
+            //create a filter to grab things 
+            String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
+            String yearQuery = "start_time >= '" + firstOfYear.toString() + "'";
+
+            System.out.println("monthly flight query: " + lastThirtyDaysQuery);
+
             long startTime = System.currentTimeMillis();
             String fleetInfo =
-                "var numberFlights = " + Flight.getNumFlights(connection, null) + ";\n" +
-                "var flightHours = " + Flight.getTotalFlightHours(connection, null) + ";\n" +
+                "var numberFlights = " + Flight.getNumFlights(connection) + ";\n" +
+                "var flightHours = " + Flight.getTotalFlightHours(connection) + ";\n" +
                 "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
+
+                "var yearNumberFlights = " + Flight.getNumFlights(connection, yearQuery) + ";\n" +
+                "var yearFlightHours = " + Flight.getTotalFlightHours(connection, yearQuery) + ";\n" +
+
+                "var monthNumberFlights = " + Flight.getNumFlights(connection, lastThirtyDaysQuery) + ";\n" +
+                "var monthFlightHours = " + Flight.getTotalFlightHours(connection, lastThirtyDaysQuery) + ";\n" +
+
                 "var totalEvents = " + EventStatistics.getEventCount(connection, null, null) + ";\n" +
                 "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
                 "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +

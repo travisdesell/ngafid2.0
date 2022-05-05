@@ -260,7 +260,35 @@ class AggregatePage extends React.Component {
                                     </div>
 
                                     <hr></hr>
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(yearFlightHours / (60 * 60)).toLocaleString('en')}</h3> Flight Hours This Year<br></br>
+                                        </div>
 
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(yearNumberFlights).toLocaleString('en')}</h3> Flights This Year<br></br>
+                                        </div>
+                                    </div>
+
+                                    <hr></hr>
+                                    <div className="row">
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(monthFlightHours / (60 * 60)).toLocaleString('en')}</h3> Flight Hours (Last 30 Days)<br></br>
+                                        </div>
+
+                                        <div className = "col-sm-4">
+                                            <h3>{Number(monthNumberFlights).toLocaleString('en')}</h3> Flights (Last 30 Days)<br></br>
+                                        </div>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
+                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Events</h4>
+                                <div className="card-body">
                                     <div className="row">
                                         <div className = "col-sm-4">
                                             <h3>{Number(totalEvents).toLocaleString('en')}</h3> Total Events<br></br>
@@ -277,9 +305,7 @@ class AggregatePage extends React.Component {
                                     </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
                             <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                                 <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
                                 <div className="card-body">
@@ -287,11 +313,7 @@ class AggregatePage extends React.Component {
                                         <div className = "col-sm-4">
                                             <h3>{numberFleets}</h3> Fleets <br></br>
                                         </div>
-                                    </div>
 
-                                    <hr></hr>
-
-                                    <div className="row">
                                         <div className = "col-sm-4">
                                             <h3>{numberUsers}</h3> Users<br></br>
                                         </div>
