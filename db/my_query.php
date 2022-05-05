@@ -35,13 +35,17 @@ function mysqli_error_msg($db, $query) {
 function query_ngafid_db($query) {
     global $ngafid_db;
 
-    if (!$ngafid_db or !$ngafid_db->ping()) connect_ngafid_db();
+    try {
+        if (!$ngafid_db or !$ngafid_db->ping()) connect_ngafid_db();
 
-    $result = $ngafid_db->query($query);
+        $result = $ngafid_db->query($query);
 
-    if (!$result) mysqli_error_msg($ngafid_db, $query);
-
-    return $result;
+        if (!$result) mysqli_error_msg($ngafid_db, $query);
+        
+        return $result;
+    } catch (Exception $e) {
+        echo 'Caught exception: ',  $e->getMessage(), "\n";
+    }
 }
 
 function get_number_rows($table) {
