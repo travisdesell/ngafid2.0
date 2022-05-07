@@ -338,6 +338,18 @@ public class Flight {
     }
 
     /**
+     *  Gets the total number of flights for the entire NGAFID.
+     *
+     *  @param connection is the database connection
+     *
+     *  @return the number of flights in the NGAFID
+     */
+    public static int getNumFlights(Connection connection) throws SQLException {
+        return getNumFlights(connection, 0, null);
+    }
+
+
+    /**
      *  Gets the total number of flights for the entire NGAFID with a given filter. If the filter is null it returns 
      *  the total number of flights in the NGAFID
      *
@@ -379,8 +391,6 @@ public class Flight {
             }
         }
 
-        LOG.info(queryString);
-
         PreparedStatement query = connection.prepareStatement(queryString);
         if (fleetId > 0) query.setInt(1, fleetId);
         if (filter != null) {
@@ -409,6 +419,32 @@ public class Flight {
         query.close();
 
         return count;
+    } 
+
+    /**
+     *  Gets the total number of flights for a given fleet and queryString.
+     *
+     *  @param connection is the database connection
+     *  @param queryString is the what gets put into the WHERE clause of the query
+     *
+     *  @return the number of flights for the fleet, given the specified queryString
+     */
+    public static int getNumFlights(Connection connection, String queryString) throws SQLException {
+        String fullQueryString = "SELECT count(id) FROM flights WHERE (" + queryString + ")";
+        LOG.info("getting number of flights with query string: '" + fullQueryString + "'");
+
+        PreparedStatement query = connection.prepareStatement(fullQueryString);
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        resultSet.next();
+        int count = resultSet.getInt(1);
+        System.out.println("COUNT IS: "+count);
+
+        resultSet.close();
+        query.close();
+
+        return count;
     }
 
     public static HashMap<String, Integer> getAirframeFlightHours(Connection connection) throws SQLException {
@@ -420,10 +456,20 @@ public class Flight {
             String airframe = airframeResult.getString(1);
         }
 
-
         airframeQuery.close();
 
         return null;
+    }
+
+    /**
+     *  Gets the total number of flight hours in the NGAFID.
+     *
+     *  @param connection is the database connection
+     *
+     *  @return the number of flight hours for the entire NGAFID.
+     */
+    public static long getTotalFlightHours(Connection connection) throws SQLException {
+        return getTotalFlightHours(connection, 0, null);
     }
 
     /**
@@ -468,9 +514,6 @@ public class Flight {
             }
         }
 
-
-        LOG.info(queryString);
-
         PreparedStatement query = connection.prepareStatement(queryString);
         if (fleetId > 0) query.setInt(1, fleetId);
 
@@ -488,6 +531,34 @@ public class Flight {
             }
         }
 
+        LOG.info(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        resultSet.next();
+        long diffSeconds = resultSet.getLong(1);
+        System.out.println("total time is: " + diffSeconds);
+
+        resultSet.close();
+        query.close();
+
+        return diffSeconds;
+    }
+
+
+    /**
+     *  Gets the total number of flight hours for a given fleet and WHERE clause query string
+     *  for the fleet.
+     *
+     *  @param connection is the database connection
+     *  @param queryString is the string to put into the query's WHERE clause
+     *
+     *  @return the number of flight hours for the fleet, given the specified queryString
+     */
+    public static long getTotalFlightHours(Connection connection, String queryString) throws SQLException {
+        String fullQueryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
+        LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
+
+        PreparedStatement query = connection.prepareStatement(fullQueryString);
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
