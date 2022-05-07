@@ -2273,8 +2273,10 @@ public class Flight {
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
-        NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
-        String serialNumber = serialNumberNodes.item(0).getTextContent();
+        // NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
+        // String serialNumber = serialNumberNodes.item(0).getTextContent();
+        NodeList nicknameNodes = doc.getElementsByTagName("badelf:modelNickname");
+        String nickname = nicknameNodes.item(0).getTextContent();
 
         NodeList fdrModel = doc.getElementsByTagName("badelf:modelName");
         String airframeName = fdrModel.item(0).getTextContent();
@@ -2341,7 +2343,7 @@ public class Flight {
                   end += 1;
                 }
 
-                if (end - start < 10) {
+                if (end - start < 60) {
                     start = end;
                     continue;
                 }
@@ -2366,7 +2368,7 @@ public class Flight {
                 stringSeries.put("Lcl Time", localTime);
                 stringSeries.put("UTCOfst", offset);
 
-                flights.add(new Flight(fleetId, filename + "-" + start + "-" + end, serialNumber, airframeName, doubleSeries, stringSeries, connection));
+                flights.add(new Flight(fleetId, filename + "-" + start + "-" + end, nickname, airframeName, doubleSeries, stringSeries, connection));
                 start = end;
             }
         }
@@ -2768,6 +2770,20 @@ public class Flight {
         }
     }
 
+    private static int indexOfMin(double[] a, int i, int n) {
+        double v = Double.POSITIVE_INFINITY;
+        int mindex = i;
+
+        for (int j = i; j < i + n; j++) {
+            if (v > a[j]) {
+                mindex = j;
+                v = a[j];
+            }
+        }
+
+        return mindex;
+    }
+
     public void calculateItineraryNoRPM(String groundSpeedColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
@@ -2798,44 +2814,61 @@ public class Flight {
         itinerary.clear();
 
         Itinerary currentItinerary = null;
-        for (int i = 1; i < nearestAirportTS.size(); i++) {
-            String airport = nearestAirportTS.get(i);
-            String runway = nearestRunwayTS.get(i);
 
-            if (airport != null && !airport.equals("")) {
-                //We've gotten close to an airport, so create a stop if there
-                //isn't one.  If there is one, update the runway being visited.
-                //If the airport is a new airport (this shouldn't happen really),
-                //then create a new stop.
-                if (currentItinerary == null) {
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
-                } else if (airport.equals(currentItinerary.getAirport())) {
-                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
-                } else {
-                    currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i), runwayDistanceTS.get(i), groundSpeed.get(i));
+        ArrayList<int[]> lowPoints = new ArrayList<int[]>();
+        ArrayList<String> runways = new ArrayList<>();
+
+        // Find a list of points where the aircraft has a sustained low altitude (low being defined as < 40).
+        // Insert itinerary entires between these boundries since they almost certainly indicate the aircraft being at an airport.
+        int lowStartIndex = -1;
+        for (int i = 0; i < altitudeAGL.size(); i++) {
+            if (lowStartIndex != -1) {
+                System.err.println("diff = " + (i - lowStartIndex));
+            }
+            if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
+                if (lowStartIndex < 0) {
+                    lowStartIndex = i;
                 }
-
             } else {
-                //aiport is null, so if there was an airport being visited
-                //then we can determine it's runway and add it to the itinerary
-                if (currentItinerary != null) {
-                    currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+                // ignore short durations of low altitude.
+                if (lowStartIndex >= 0 && i - lowStartIndex >= 5) {
+                    lowPoints.add(new int[]{lowStartIndex, i, indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex)});
+                    System.err.println("Adding lowPoints entry");
+                    HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
+                    for (int j = lowStartIndex; j <= i; j++) {
+                        String nearest = nearestRunwayTS.get(j);
+                        runwayCounts.putIfAbsent(nearest, 0);
+                        runwayCounts.put(nearest, runwayCounts.get(nearest) + 1);
+                    }
+                    
+                    String bestRunway = "";
+                    int count = 0;
+                    for (Map.Entry<String, Integer> e : runwayCounts.entrySet()) {
+                        if (e.getValue() > count) {
+                            count = e.getValue();
+                            bestRunway = e.getKey();
+                        }
+                    }
+                    runways.add(bestRunway);
                 }
-
-                //set the currentItinerary to null until we approach another
-                //airport
-                currentItinerary = null;
+                lowStartIndex = -1;
             }
         }
+        
 
-        //dont forget to add the last stop in the itinerary if it wasn't set to null
-        if (currentItinerary != null) {
-            currentItinerary.selectBestRunway();
-            if (currentItinerary.wasApproach()) itinerary.add(currentItinerary);
+        for (int i = 0; i < lowPoints.size() - 1; i++) {
+            int[] indices0 = lowPoints.get(i);
+            int startLow0 = indices0[0], endLow0 = indices0[1], lowest0 = indices0[2];
+            String runway0 = runways.get(i);
+
+            int[] indices1 = lowPoints.get(i + 1);
+            int startLow1 = indices1[0], endLow1 = indices1[1], lowest1 = indices1[2];
+            String runway1 = runways.get(i + 1);
+            
+            Itinerary it = new Itinerary(lowest0, endLow0, startLow1, lowest1, nearestAirportTS.get(lowest0), runway0);
+            itinerary.add(it);
         }
+
 
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
         // setting and determining itinerary type
@@ -2845,7 +2878,7 @@ public class Flight {
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        System.err.println("Itinerary:");
+        System.err.println("Flight " + id + " Itinerary (" + itinerary.size() + ")");
         for (int i = 0; i < itinerary.size(); i++) {
             System.err.println(itinerary.get(i));
         }

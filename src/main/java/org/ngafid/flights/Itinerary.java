@@ -235,6 +235,15 @@ public class Itinerary {
         update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed);
     }
 
+    public Itinerary(int startTakeoff, int endTakeoff, int startApproach, int endApproach, String airport, String runway) {
+        this.startOfTakeoff = startTakeoff;
+        this.endOfTakeoff = endTakeoff;
+        this.startOfApproach = startApproach;
+        this.endOfApproach = endApproach;
+        this.airport = airport;
+        this.runway = runway;
+    }
+
     public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed) {
         // track finalIndex
         finalIndex = index;

@@ -222,6 +222,10 @@ public class NIFA implements Serializable {
             if (!it.wasApproach())
                 continue;
 
+            System.out.println( "start approach: " + it.startOfApproach + ", end approach: " + it.endOfApproach + "\n" 
+                              + "start takeoff:  " + it.startOfTakeoff + ", end takeoff  : " + it.endOfTakeoff + "\n"
+                              + "final index:    " + it.finalIndex);
+
             // Need airport/runway
             Airport airport = Airports.getAirport(it.getAirport());
             Runway runway = airport.getRunway(it.getRunway());
