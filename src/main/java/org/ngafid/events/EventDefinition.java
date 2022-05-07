@@ -127,17 +127,24 @@ public class EventDefinition {
         this.startBuffer = resultSet.getInt(4);
         this.stopBuffer = resultSet.getInt(5);
         this.airframeNameId = resultSet.getInt(6);
-        try {
-        this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
-        } catch (Exception e) {
-            System.err.println("Error with filter: " + e);
-            System.err.println(resultSet.getString(7));
+        if (id >= 0) {
+            try {
+                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+            } catch (Exception e) {
+                System.err.println("Error with filter: " + e);
+                System.err.println(resultSet.getString(7));
 
-            e.printStackTrace();
-            System.exit(1);
+                e.printStackTrace();
+                System.exit(1);
+            }
+            this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
+            this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
+        } else {
+            this.filter = null;
+            this.columnNames = new TreeSet<String>();
+            this.severityColumnNames = new TreeSet<String>();
         }
-        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
-        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
+
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
@@ -156,8 +163,6 @@ public class EventDefinition {
     public int getFleetId() {
         return fleetId;
     }
-
-
 
     /**
      * @return the name of the event definition
@@ -456,6 +461,38 @@ public class EventDefinition {
             preparedStatement.close();
         }
     }
+
+    /**
+     * Inserts this event definition into the database.
+     * This is meant for special events (those that have a negative ID).
+     *
+     * @param connection is the connection to the database.
+     */
+    public static void insert(Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId) throws SQLException {
+        if (id > 0) {
+            LOG.info("Passed a positive ID to special event insertion.");
+            System.exit(0);
+        }
+
+        String query = "INSERT INTO event_definitions SET fleet_id = ?, flight_id = 0, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?, id = ?";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, 0);
+        preparedStatement.setString(2, name);
+        preparedStatement.setInt(3, startBuffer);
+        preparedStatement.setInt(4, stopBuffer);
+        preparedStatement.setInt(5, airframeId);
+        preparedStatement.setString(6, "{}");
+        preparedStatement.setString(7, "{}");
+        preparedStatement.setString(8, "{}");
+        preparedStatement.setString(9, "max");
+        preparedStatement.setInt(10, id);
+
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
 
     /**
      * Gets all  event definitions from the database with a query.

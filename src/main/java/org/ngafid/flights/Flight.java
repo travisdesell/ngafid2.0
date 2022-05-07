@@ -14,9 +14,25 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Iterator;
+import java.sql.Timestamp;
+import java.time.DateTimeException;
+import java.text.SimpleDateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Calendar;
 
+// XML stuff.
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.DocumentBuilder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
+import org.w3c.dom.Document;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+import org.w3c.dom.Node;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -110,6 +126,10 @@ public class Flight {
     //events in the database (so we can recalculate or calculate new things
     //as needed):
     public final static long CHT_DIVERGENCE_CALCULATED = 0b1;
+    
+    // This flag will only ever be set for flights with BE-GPS-2200 airframe ID.
+    public final static long NIFA_EVENTS_CALCULATED = 0b10;
+
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
@@ -1996,7 +2016,9 @@ public class Flight {
 
     private void process(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
         initialize(connection, inputStream);
-
+        process(connection);
+    }
+    private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
         //we should specify these.
@@ -2121,7 +2143,8 @@ public class Flight {
 
             } else {
                 LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeName + "'");
-                System.exit(1);
+                LOG.severe("Skipping...");
+                // System.exit(1);
             }
 
             if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
@@ -2134,11 +2157,11 @@ public class Flight {
         }
 
         try {
-            if (!airframeName.equals("ScanEagle")) {
-                //TODO: need to calculate itinerary differently for UAS
-                if (hasCoords && hasAGL) {
+            if (!airframeName.equals("ScanEagle") && hasCoords && hasAGL) {
+                if (doubleTimeSeries.containsKey("E1 RPM"))
                     calculateItinerary("GndSpd", "E1 RPM");
-                }
+                else
+                    calculateItineraryNoRPM("GndSpd");
             }
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
@@ -2188,6 +2211,50 @@ public class Flight {
         }
     }
 
+    // Used for GPX files. May also be re-used for other flights where the processing occurs outside of the
+    // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
+    // separate flights.
+    public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
+                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection) 
+        throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+        this.doubleTimeSeries = doubleTimeSeries;
+        this.stringTimeSeries = stringTimeSeries;
+        this.airframeName = airframeName;
+        this.fleetId = fleetId;
+        this.filename = filename;
+        this.tailConfirmed = false;
+        this.suggestedTailNumber = suggestedTailNumber;
+        this.airframeType = "Fixed Wing";
+        this.systemId = suggestedTailNumber;
+        this.hasCoords = true;
+
+        dataTypes = new ArrayList<String>();
+        headers = new ArrayList<String>();
+
+        for (DoubleTimeSeries v : doubleTimeSeries.values()) {
+            dataTypes.add(v.getDataType());
+            headers.add(v.getName());
+            this.numberRows = v.size();
+        }
+
+        for (StringTimeSeries v : stringTimeSeries.values()) {
+            headers.add(v.getName());
+            dataTypes.add(v.getDataType());
+        }
+
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(filename.getBytes());
+            md5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
+            LOG.info("HASH = " + md5Hash); 
+            process(connection);
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+        this.status =  "SUCCESS";
+    }
+
     public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
         this.fleetId = fleetId;
         this.filename = zipEntryName;
@@ -2231,6 +2298,153 @@ public class Flight {
         }
 
         checkExceptions();
+    }
+
+    // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
+    private Flight(Connection connection, ArrayList<DoubleTimeSeries> doubleTimeSeries, ArrayList<StringTimeSeries> stringTimeSeries, Timestamp startTime, Timestamp endTime) {
+         
+    }
+
+    /**
+     * GPX is an XML file that follows the schema found here http://www.topografix.com/GPX/1/1/
+     *
+     * Multiple flights may be found in the same file, but can be separated by large delays in timestamp (large being > 5 minutes or so).
+     *
+     * So, this function parses all of the data, converts it to proper units, and creates separated flight objects. They need to be inserted into the database manually
+     *
+     * @return
+     */
+    public static ArrayList<Flight> processGPXFile(int fleetId, Connection connection, InputStream is, String filename) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, ParserConfigurationException, SAXException, SQLException, ParseException {
+        // BE-GPS-2200
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        DocumentBuilder db = dbf.newDocumentBuilder();
+        Document doc = db.parse(is);
+
+        NodeList l = doc.getElementsByTagName("trkseg");
+        if (l.getLength() == 0)
+          throw new FatalFlightFileException("could not parse GPX data file: failed to find data node.");
+
+        if (l.getLength() != 1)
+          throw new FatalFlightFileException("could not parse GPX data file: found multiple data nodes.");
+
+        Node dataNode = l.item(0);
+        int len = dataNode.getChildNodes().getLength();
+
+        DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
+        DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft", len); 
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
+        ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
+        // ss.SSSSSSXXX
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        // NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
+        // String serialNumber = serialNumberNodes.item(0).getTextContent();
+        NodeList nicknameNodes = doc.getElementsByTagName("badelf:modelNickname");
+        String nickname = nicknameNodes.item(0).getTextContent();
+
+        NodeList fdrModel = doc.getElementsByTagName("badelf:modelName");
+        String airframeName = fdrModel.item(0).getTextContent();
+        LOG.info("Airframe name: " + airframeName);
+
+        NodeList dates = doc.getElementsByTagName("time");
+        NodeList datanodes = doc.getElementsByTagName("trkpt");
+        NodeList elenodes = doc.getElementsByTagName("ele");
+        NodeList spdnodes = doc.getElementsByTagName("badelf:speed");
+        
+        if (!(dates.getLength() == datanodes.getLength() &&
+              dates.getLength() == elenodes.getLength() &&
+              dates.getLength() == spdnodes.getLength())) {
+            throw new FatalFlightFileException("Mismatching number of data tags in GPX file");
+        }
+
+        for (int i = 0; i < dates.getLength(); i++) {
+            Date parsedDate = dateFormat.parse(dates.item(i).getTextContent());
+            timestamps.add(new Timestamp(parsedDate.getTime()));
+            Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
+            
+            int offsetMS = cal.getTimeZone().getOffset(parsedDate.getTime());
+            String sign = offsetMS < 0 ? "-" : "+";
+            offsetMS = offsetMS < 0 ? -offsetMS : offsetMS;
+
+            int offsetSEC = offsetMS / 1000;
+            int offsetMIN = offsetSEC / 60;
+            int offsetHRS = offsetMIN / 60;
+            offsetMIN %= 60;
+            
+            String offsetHrsStr = (offsetHRS < 10 ? "0" : "") + offsetHRS;
+            String offsetMinStr = (offsetMIN < 10 ? "0" : "") + offsetMIN;
+            // This should look like +HH:mm
+            utcOfstSeries.add(sign + offsetHrsStr + ":" + offsetMinStr);
+
+            localDateSeries.add(lclDateFormat.format(parsedDate));
+            localTimeSeries.add(lclTimeFormat.format(parsedDate));
+
+            Node spdNode = spdnodes.item(i);
+            // Convert m / s to knots
+            spd.add(Double.parseDouble(spdNode.getTextContent()) * 1.94384);
+
+            Node eleNode = elenodes.item(i);
+            // Convert meters to feet.
+            msl.add(Double.parseDouble(eleNode.getTextContent()) * 3.28084);
+
+            Node d = datanodes.item(i);
+            NamedNodeMap attrs = d.getAttributes();
+            
+            Node latNode = attrs.getNamedItem("lat");
+            lat.add(Double.parseDouble(latNode.getTextContent()));
+            
+            Node lonNode = attrs.getNamedItem("lon");
+            lon.add(Double.parseDouble(lonNode.getTextContent()));
+        }
+
+        ArrayList<Flight> flights = new ArrayList<Flight>();
+        int start = 0;
+        for (int end = 1; end < timestamps.size(); end++) {
+            // 1 minute delay -> new flight.
+            if (timestamps.get(end).getTime() - timestamps.get(end - 1).getTime() > 60000
+                || end == localTimeSeries.size() - 1) {
+                if (end == localTimeSeries.size() - 1) {
+                  end += 1;
+                }
+
+                if (end - start < 60) {
+                    start = end;
+                    continue;
+                }
+
+                StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+                StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+                StringTimeSeries offset = utcOfstSeries.subSeries(connection, start, end);
+                DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
+                DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
+                DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
+                DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
+
+                
+                HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
+                doubleSeries.put("GndSpd", nspd);
+                doubleSeries.put("Longitude", nlon);
+                doubleSeries.put("Latitude", nlat);
+                doubleSeries.put("AltMSL", nmsl);
+
+                HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
+                stringSeries.put("Lcl Date", localDate);
+                stringSeries.put("Lcl Time", localTime);
+                stringSeries.put("UTCOfst", offset);
+
+                flights.add(new Flight(fleetId, filename + "-" + start + "-" + end, nickname, airframeName, doubleSeries, stringSeries, connection));
+                start = end;
+            }
+        }
+       
+        return flights;
     }
 
     /**
@@ -2627,6 +2841,121 @@ public class Flight {
         }
     }
 
+    private static int indexOfMin(double[] a, int i, int n) {
+        double v = Double.POSITIVE_INFINITY;
+        int mindex = i;
+
+        for (int j = i; j < i + n; j++) {
+            if (v > a[j]) {
+                mindex = j;
+                v = a[j];
+            }
+        }
+
+        return mindex;
+    }
+
+    public void calculateItineraryNoRPM(String groundSpeedColumnName) throws MalformedFlightFileException {
+        //cannot calculate the itinerary without airport/runway calculate, which requires
+        //lat and longs
+        if (!hasCoords) return;
+
+        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
+
+        StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
+        DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
+        DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
+
+        StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
+        DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+
+        if (groundSpeed == null) {
+            String message = "Cannot calculate itinerary, flight file had empty or missing ";
+
+            message += "'" + groundSpeedColumnName + "'";
+
+            message += " column";
+            //should be initialized to false, but lets make sure
+            LOG.info("Flight has no ground speed.");
+            throw new MalformedFlightFileException(message);
+        }
+
+        hasCoords = true;
+
+        itinerary.clear();
+
+        Itinerary currentItinerary = null;
+
+        ArrayList<int[]> lowPoints = new ArrayList<int[]>();
+        ArrayList<String> runways = new ArrayList<>();
+
+        // Find a list of points where the aircraft has a sustained low altitude (low being defined as < 40).
+        // Insert itinerary entires between these boundries since they almost certainly indicate the aircraft being at an airport.
+        int lowStartIndex = -1;
+        for (int i = 0; i < altitudeAGL.size(); i++) {
+            if (lowStartIndex != -1) {
+                System.err.println("diff = " + (i - lowStartIndex));
+            }
+            if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
+                if (lowStartIndex < 0) {
+                    lowStartIndex = i;
+                }
+            } else {
+                // ignore short durations of low altitude.
+                if (lowStartIndex >= 0 && i - lowStartIndex >= 5) {
+                    lowPoints.add(new int[]{lowStartIndex, i, indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex)});
+                    System.err.println("Adding lowPoints entry");
+                    HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
+                    for (int j = lowStartIndex; j <= i; j++) {
+                        String nearest = nearestRunwayTS.get(j);
+                        runwayCounts.putIfAbsent(nearest, 0);
+                        runwayCounts.put(nearest, runwayCounts.get(nearest) + 1);
+                    }
+                    
+                    String bestRunway = "";
+                    int count = 0;
+                    for (Map.Entry<String, Integer> e : runwayCounts.entrySet()) {
+                        if (e.getValue() > count) {
+                            count = e.getValue();
+                            bestRunway = e.getKey();
+                        }
+                    }
+                    runways.add(bestRunway);
+                }
+                lowStartIndex = -1;
+            }
+        }
+        
+
+        for (int i = 0; i < lowPoints.size() - 1; i++) {
+            int[] indices0 = lowPoints.get(i);
+            int startLow0 = indices0[0], endLow0 = indices0[1], lowest0 = indices0[2];
+            String runway0 = runways.get(i);
+
+            int[] indices1 = lowPoints.get(i + 1);
+            int startLow1 = indices1[0], endLow1 = indices1[1], lowest1 = indices1[2];
+            String runway1 = runways.get(i + 1);
+            
+            Itinerary it = new Itinerary(lowest0, endLow0, startLow1, lowest1, nearestAirportTS.get(lowest0), runway0);
+            itinerary.add(it);
+        }
+
+
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+        // setting and determining itinerary type
+        int itinerary_size = itinerary.size();
+        for (int i = 0; i < itinerary_size; i++) {
+            itinerary.get(i).determineType();
+        }
+        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+        System.err.println("Flight " + id + " Itinerary (" + itinerary.size() + ")");
+        for (int i = 0; i < itinerary.size(); i++) {
+            System.err.println(itinerary.get(i));
+        }
+     
+    }
+
     public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
@@ -2664,11 +2993,10 @@ public class Flight {
             message += ".";
 
             //should be initialized to false, but lets make sure
-            hasCoords = false;
+            LOG.info("Flight has no coordinates.");
             throw new MalformedFlightFileException(message);
         }
         hasCoords = true;
-
 
         itinerary.clear();
 

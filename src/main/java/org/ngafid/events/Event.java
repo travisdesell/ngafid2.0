@@ -33,7 +33,7 @@ public class Event {
 
     public double severity;
 
-    private Integer otherFlightId;
+    private Integer otherFlightId = null;
 
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
         this.startTime = startTime;
