@@ -230,6 +230,85 @@ public class Itinerary {
         }
     }
 
+    public Itinerary(String airport, String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed) {
+        this.airport = airport;
+        update(runway, index, altitudeAGL, airportDistance, runwayDistance, groundSpeed);
+    }
+
+    public Itinerary(int startTakeoff, int endTakeoff, int startApproach, int endApproach, String airport, String runway) {
+        this.startOfTakeoff = startTakeoff;
+        this.endOfTakeoff = endTakeoff;
+        this.startOfApproach = startApproach;
+        this.endOfApproach = endApproach;
+        this.airport = airport;
+        this.runway = runway;
+    }
+
+    public void update(String runway, int index, double altitudeAGL, double airportDistance, double runwayDistance, double groundSpeed) {
+        // track finalIndex
+        finalIndex = index;
+
+        // track takeoff criteria
+        if (groundSpeed > 14.5 && groundSpeed < 80) {
+            // set start index in case of takeoff event
+            if (startOfTakeoff == -1) {
+                startOfTakeoff = index;
+            } else if ( takeoffCounter >= 15) {                                  // if takeoff started and sustained for 15 seconds
+                endOfTakeoff = index;
+            }
+
+            // increment counter to ensure criteria sustained for 15 seconds
+            takeoffCounter++;
+        } else {
+            // reset counter
+            takeoffCounter = 0;
+
+            // reset takeoff start if criteria not sustained
+            if (endOfTakeoff == -1) {
+                startOfTakeoff = -1;
+            }
+
+        }
+
+        if (!Double.isNaN(altitudeAGL)) {
+            if (minAltitude > altitudeAGL) {
+                minAltitude = altitudeAGL;
+                minAltitudeIndex = index;
+            }
+
+
+            if (altitudeAGL <= 5) {                      // if grounded
+                // end approach phase
+                if (startOfApproach != -1) {
+                    endOfApproach = index;
+                }
+            } else if (altitudeAGL > 6) {
+                // log beginning of approach phase
+                if (startOfApproach == -1) {                        // if first update & not initial takeoff
+                    startOfApproach = index;
+                }
+            }
+        }
+
+        if (!Double.isNaN(airportDistance)) {
+            if (minAirportDistance > airportDistance) minAirportDistance = airportDistance;
+        }
+
+        if (!Double.isNaN(runwayDistance)) {
+            if (minRunwayDistance > runwayDistance) minRunwayDistance = runwayDistance;
+        }
+
+        if (runway == null || runway.equals("")) return;
+
+        Integer count = runwayCounts.get(runway);
+
+        if (count == null) {
+            runwayCounts.put(runway, 1);
+        } else {
+            runwayCounts.put(runway, count + 1);
+        }
+    }
+
     public void selectBestRunway() {
         runway = null;
         int maxCount = 0;

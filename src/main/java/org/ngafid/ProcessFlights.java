@@ -7,8 +7,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
-
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -16,7 +15,10 @@ import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.ngafid.flights.*;
+import org.xml.sax.SAXException;
 
 public class ProcessFlights {
     private static Connection connection = Database.getConnection();
@@ -92,7 +94,7 @@ public class ProcessFlights {
 
                                     System.err.println("PROCESSING: " + name);
 
-                                    if (entry.getName().contains(".csv")) {
+                                    if (entry.getName().endsWith(".csv")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
                                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
@@ -118,6 +120,28 @@ public class ProcessFlights {
                                             errorFlights++;
                                         }
 
+                                    } else if (entry.getName().endsWith(".gpx")) {
+                                        try {
+                                            InputStream stream = zipFile.getInputStream(entry);
+                                            ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
+
+                                            if (connection != null) {
+                                                System.out.println("FIND ME");
+                                                for (Flight flight : flights) {
+                                                    System.out.println(flight.getFilename());
+                                                }
+                                                for (Flight flight : flights) {
+                                                    System.out.println("INSERTING");
+                                                    flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                                    if (flight.getStatus().equals("WARNING")) warningFlights++;
+                                                    validFlights++;
+                                                }
+                                            }
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | ParserConfigurationException | SAXException | SQLException | ParseException e) {
+                                            System.err.println(e.getMessage());
+                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                            errorFlights++;
+                                        }
                                     } else {
                                         flightErrors.add(new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                                         errorFlights++;
