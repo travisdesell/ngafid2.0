@@ -11,11 +11,16 @@ import java.time.LocalDateTime;
 import java.lang.Thread;
 import java.lang.Runnable;
 
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+
 
 public class Database {
     private static Connection connection;
     private static boolean connectionInitiated;
     private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+
+    private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     private static final long HOUR = 3600000;
 
@@ -119,22 +124,7 @@ public class Database {
         if (!connectionInitiated) {
             connectionInitiated = true; 
 
-            File logFile = null;
-            final String logFilePath = "/var/log/ngafid/poker.log";
-            try {
-                logFile = new File(logFilePath);
-
-                if (!logFile.exists()) {
-                    if (logFile.createNewFile()) {
-                        System.out.println("Created new file");
-                    }
-                }
-
-            } catch (IOException ie) {
-                ie.printStackTrace();
-            }
-
-            writeToLogFile(logFilePath, "Logfile for SQL server poker, starting at: " + LocalDateTime.now().toString());
+            LOG.info("Log for SQL server poker, starting at: " + LocalDateTime.now().toString());
 
             new Thread(() -> {
                 while (true) {
@@ -147,7 +137,7 @@ public class Database {
                         ResultSet rs = preparedStatement.executeQuery();
                         rs.close();
 
-                        writeToLogFile(logFilePath, "Performed query: " + dummyQuery + " at " + LocalDateTime.now().toString());
+                        LOG.info("Performed dummy query: " + dummyQuery + " at " + LocalDateTime.now().toString());
                     } catch (Throwable t) {
                         t.printStackTrace();
                     }
@@ -158,17 +148,5 @@ public class Database {
 
     static {
         setConnection();
-    }
-
-    private static synchronized void writeToLogFile(String logFilePath, String message) {
-        try {
-            File file = new File(logFilePath);
-            PrintWriter pw = new PrintWriter(file);
-
-            pw.println(message);
-            pw.close();
-        } catch (IOException ie) {
-            ie.printStackTrace();
-        }
     }
 }
