@@ -99,7 +99,7 @@ public class UploadProcessedEmail {
                     }
                 } else {
                     for (String message : errorMessages) {
-                        body.append("&emsp; " + message + "<br>");
+                        body.append("&emsp; &emsp; " + message + "<br>");
                     }
                 }
                 return;
