@@ -2,7 +2,6 @@ import 'bootstrap';
 
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import ReactTooltip from 'react-tooltip';
 
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
@@ -12,9 +11,6 @@ import  TimeHeader from "./time_header.js";
 import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
 import {OverlayTrigger} from "react-bootstrap";
-import {Overlay} from "ol";
-import Button from "react-bootstrap/Button";
-
 
 airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
@@ -626,18 +622,16 @@ class TrendsPage extends React.Component {
                                                 return (
                                                     <div key={index} className="form-check">
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
-                                                        {/*<label className="form-check-label" htmlFor={"event-check-" + index}>*/}
-                                                        {/*    {eventName}*/}
-                                                        {/*</label>*/}
+
+                                                        <OverlayTrigger overlay={(props) => (
+                                                            <Tooltip {...props}>Tooltip test</Tooltip>)}
+                                                                        placement="bottom">
+                                                            <label className="form-check-label">
+                                                                {eventName}
+                                                            </label>
 
 
-                                                        <OverlayTrigger overlay={(props) => (<Tooltip {...props}>Tooltip test</Tooltip>)} placement="bottom">
-                                                        <label className="form-check-label">
-                                                            {eventName}
-                                                        </label>
-
-
-                                                      </OverlayTrigger>
+                                                        </OverlayTrigger>
                                                             
 
                                                     </div>
