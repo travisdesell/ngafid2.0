@@ -26,14 +26,19 @@ public class GetEventDescription implements Route {
         String expectedName = request.params("name");
 
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = " + expectedName;
-        Logger.log("query: " + query);
+        LOG.info("query: " + query);
 
         PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
+        LOG.info("preparedStatement: " + preparedStatement);
+
         ResultSet resultSet = preparedStatement.executeQuery();
+        LOG.info("resultSet: " + resultSet);
+
         EventDefinition eventDefinition = new EventDefinition(resultSet);
+        LOG.info("eventDefinition: " + eventDefinition);
 
         String text = eventDefinition.toHumanReadable();
-
+        LOG.info("text: " + text);
 
         return gson.toJson(text);
     }
