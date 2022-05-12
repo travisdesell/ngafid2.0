@@ -209,7 +209,7 @@ class MetricViewerSettings extends React.Component {
                                     <label htmlFor="selectedMetricsNames" style={labelStyle}>Decimal Precision:</label>
                                 </div>
                                 <div className="p-2 d-flex">
-                                    <select id="columnNames" className="form-control" onChange={this.changePrecision.bind(this)}>
+                                    <select id="columnNames" className="form-control" onChange={this.changePrecision.bind(this)} value={this.state.decimalPrecision}>
                                         <option key={0}>0</option>
                                         <option key={1}>1</option>
                                         <option key={2}>2</option>
