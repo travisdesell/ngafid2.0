@@ -582,10 +582,14 @@ class TrendsPage extends React.Component {
 
 
     getDescription(eventName) {
+        let request_data = {
+            eventName : eventName + ""
+        };
+
         $.ajax({
                 type: 'GET',
                 url: '/protected/get_event_description',
-                data : eventName,
+                data : request_data,
                 dataType : 'json',
                 success : function(response) {
                     console.log("received response: ");

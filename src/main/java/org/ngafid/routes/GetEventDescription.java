@@ -6,6 +6,7 @@ import org.ngafid.events.EventDefinition;
 import spark.Request;
 import spark.Response;
 import spark.Route;
+import spark.Session;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -23,7 +24,8 @@ public class GetEventDescription implements Route {
 
     @Override
     public Object handle(Request request, Response response) throws Exception {
-        String expectedName = request.params("name");
+        String expectedName = request.queryParams("eventName");
+        LOG.info("expectedName: " + expectedName);
 
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = " + expectedName;
         LOG.info("query: " + query);
