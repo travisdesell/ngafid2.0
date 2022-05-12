@@ -44,6 +44,8 @@ var eventCounts = {};
 var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
 
+var tooltipText = "";
+
 class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
@@ -578,6 +580,34 @@ class TrendsPage extends React.Component {
         this.displayPlots(airframe);
     }
 
+
+    getDescription(eventName) {
+        $.ajax({
+                type: 'GET',
+                url: '/protected/get_event_description',
+                data : eventName,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
+
+                    $('#loading').hide();
+
+                    if (response.err_msg) {
+                        errorModal.show(response.err_title, response.err_msg);
+                        return;
+                    }
+
+
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Getting Event Description", errorThrown);
+                },
+                async: true
+            });
+
+    }
+
     render() {
         //console.log(systemIds);
 
@@ -624,7 +654,7 @@ class TrendsPage extends React.Component {
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
-                                                            <Tooltip {...props}>Tooltip test</Tooltip>)}
+                                                            <Tooltip {...props} onMouseOver={() => this.getDescription(eventName)}>{tooltipText}</Tooltip>)}
                                                                         placement="bottom">
                                                             <label className="form-check-label">
                                                                 {eventName}

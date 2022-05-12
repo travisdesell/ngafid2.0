@@ -2,30 +2,16 @@ package org.ngafid;
 
 
 
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
-import org.ngafid.accounts.PasswordAuthentication;
 
 import spark.Spark;
 import spark.Service;
-import spark.Session;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.Random;
 
 
 import com.google.gson.Gson;
@@ -283,6 +269,7 @@ public final class WebServer {
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
+        Spark.get("/protected/get_event_description", new GetEventDescription(gson));
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
