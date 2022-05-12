@@ -36,6 +36,7 @@ public class GetEventDescription implements Route {
         ResultSet resultSet = preparedStatement.executeQuery();
         LOG.info("resultSet: " + resultSet);
 
+        resultSet.next();
         EventDefinition eventDefinition = new EventDefinition(resultSet);
         LOG.info("eventDefinition: " + eventDefinition);
 
