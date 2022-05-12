@@ -126,12 +126,10 @@ public class ProcessFlights {
                                             ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
 
                                             if (connection != null) {
-                                                System.out.println("FIND ME");
                                                 for (Flight flight : flights) {
                                                     System.out.println(flight.getFilename());
                                                 }
                                                 for (Flight flight : flights) {
-                                                    System.out.println("INSERTING");
                                                     flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
                                                     if (flight.getStatus().equals("WARNING")) warningFlights++;
                                                     validFlights++;

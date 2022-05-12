@@ -2,17 +2,21 @@ package org.ngafid;
 
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.Console;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+
+import org.xml.sax.SAXException;
+import javax.xml.parsers.ParserConfigurationException;
+import java.text.ParseException;
 
 import java.util.Arrays;
 import java.util.ArrayList;
@@ -30,6 +34,7 @@ import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
+import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
 public class ProcessUpload {
@@ -41,9 +46,13 @@ public class ProcessUpload {
 
         connection = Database.getConnection();
 
-        if (arguments.length == 1) {
-            int uploadId = Integer.parseInt(arguments[0]);
-            processUpload(uploadId);
+        if (arguments.length >= 1) {
+            if (arguments[0].equals("--fleet")) {
+                processFleetUploads(Integer.parseInt(arguments[1]));
+            } else {
+                int uploadId = Integer.parseInt(arguments[0]);
+                processUpload(uploadId);
+            }
         } else {
             operateAsDaemon();
         }
@@ -104,9 +113,31 @@ public class ProcessUpload {
         }
     }
 
+    public static void processFleetUploads(int fleetId) {
+        System.out.println("processing uploads from fleet with id: " + fleetId);
+        try {
+            Fleet fleet = Fleet.get(connection, fleetId);
+            String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
+            ArrayList<Upload> uploads = Upload.getUploads(connection, fleetId);
+            System.out.print("Found " + uploads.size() + " uploads from fleet " + f + ". Would you like to reimport them? [Y/n] ");
+            Console con = System.console();
+            String s = con.readLine("");
+            if (s.toLowerCase().startsWith("y")) {
+                for (Upload upload : uploads) {
+                    if (upload == null) {
+                        System.err.println("Encountered a null upload. this should never happen, but moving on to the next upload");
+                        continue;
+                    }
+                    processUpload(upload);
+                }
+            }
+        } catch (SQLException e) {
+            System.err.println("Encountered error");
+            e.printStackTrace();
+        }
+    }
 
     public static void processUpload(int uploadId) {
-
         System.out.println("processing upload with id: " + uploadId);
         try {
             Upload upload = Upload.getUploadById(connection, uploadId);
@@ -116,9 +147,15 @@ public class ProcessUpload {
                 System.err.println("ERROR: attempted to importing an upload with upload id " + uploadId + ", but the upload did not exist. This should never happen.");
                 System.exit(1);
             }
-
-            //send email to me and uploader that an import is starting at a particular time
-
+            processUpload(upload);
+        } catch (SQLException e) {
+            System.err.println("ERROR processing upload: " + e);
+            e.printStackTrace();
+        }
+    }
+    public static void processUpload(Upload upload) {
+        try {
+            int uploadId = upload.getId();
             int uploaderId = upload.getUploaderId();
             int fleetId = upload.getFleetId();
             String filename = upload.getFilename();
@@ -230,7 +267,9 @@ public class ProcessUpload {
 
                     System.err.println("PROCESSING: " + name);
 
-                    if (entry.getName().contains(".csv")) {
+                    String entryName = entry.getName();
+
+                    if (entryName.contains(".csv")) {
                         try {
                             InputStream stream = zipFile.getInputStream(entry);
                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
@@ -258,6 +297,26 @@ public class ProcessUpload {
                             errorFlights++;
                         }
 
+                    } else if (entryName.contains(".gpx")) {
+                        try {
+                            InputStream stream = zipFile.getInputStream(entry);
+                            ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
+
+                            if (connection != null) {
+                                for (Flight flight : flights) {
+                                    flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+                                }
+                                for (Flight flight : flights) {
+                                    flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                    if (flight.getStatus().equals("WARNING")) warningFlights++;
+                                    validFlights++;
+                                }
+                            }
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | ParserConfigurationException | SAXException | SQLException | ParseException e) {
+                            System.err.println(e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        }
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
