@@ -274,12 +274,9 @@ public class Flight {
      * @return
      */
     public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
-        System.out.println("Start date = " + startDate);
-        System.out.println("End date = " + endDate);
         String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
                                 + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
         List<Flight> flights = getFlights(connection, extraCondition);
-        System.out.println("Number flights = " + flights.size());
         return flights;
     }
     /**
@@ -413,7 +410,6 @@ public class Flight {
 
         resultSet.next();
         int count = resultSet.getInt(1);
-        System.out.println("COUNT IS: "+count);
 
         resultSet.close();
         query.close();
@@ -439,7 +435,6 @@ public class Flight {
 
         resultSet.next();
         int count = resultSet.getInt(1);
-        System.out.println("COUNT IS: "+count);
 
         resultSet.close();
         query.close();
@@ -2893,9 +2888,6 @@ public class Flight {
         // Insert itinerary entires between these boundries since they almost certainly indicate the aircraft being at an airport.
         int lowStartIndex = -1;
         for (int i = 0; i < altitudeAGL.size(); i++) {
-            if (lowStartIndex != -1) {
-                System.err.println("diff = " + (i - lowStartIndex));
-            }
             if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
                 if (lowStartIndex < 0) {
                     lowStartIndex = i;
@@ -2949,7 +2941,6 @@ public class Flight {
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        System.err.println("Flight " + id + " Itinerary (" + itinerary.size() + ")");
         for (int i = 0; i < itinerary.size(); i++) {
             System.err.println(itinerary.get(i));
         }
