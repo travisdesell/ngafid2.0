@@ -602,7 +602,8 @@ class TrendsPage extends React.Component {
                         return;
                     }
 
-
+                    tooltipText = response + "";
+                    return response + "";
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Getting Event Description", errorThrown);
