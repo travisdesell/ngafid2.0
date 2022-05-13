@@ -231,11 +231,11 @@ public class Airports {
             ArrayList<Airport> hashedAirports = geoHashToAirport.get(geoHashes[i]);
 
             if (hashedAirports != null) {
-                //System.out.println("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
+                // System.out.println("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (int j = 0; j < hashedAirports.size(); j++) {
                     Airport airport = hashedAirports.get(j);
                     double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude, airport.longitude);
-                    //System.out.println("\t\t" + airport + ", distanceFt: " + distanceFt);
+                    // System.out.println("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {
                         nearestAirport = airport;
@@ -253,7 +253,6 @@ public class Airports {
             System.out.println("nearest airport: NULL");
         }
         */
-
 
         return nearestAirport;
     }

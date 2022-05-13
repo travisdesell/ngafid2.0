@@ -2863,6 +2863,8 @@ public class Flight {
 
         StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
         DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+        DoubleTimeSeries lat = doubleTimeSeries.get("Latitude");
+        DoubleTimeSeries lon = doubleTimeSeries.get("Longitude");
 
         if (groundSpeed == null) {
             String message = "Cannot calculate itinerary, flight file had empty or missing ";
@@ -2887,6 +2889,7 @@ public class Flight {
         // Find a list of points where the aircraft has a sustained low altitude (low being defined as < 40).
         // Insert itinerary entires between these boundries since they almost certainly indicate the aircraft being at an airport.
         int lowStartIndex = -1;
+outer:
         for (int i = 0; i < altitudeAGL.size(); i++) {
             if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
                 if (lowStartIndex < 0) {
@@ -2895,6 +2898,13 @@ public class Flight {
             } else {
                 // ignore short durations of low altitude.
                 if (lowStartIndex >= 0 && i - lowStartIndex >= 5) {
+                    int minAltIndex = indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex);
+                    while (nearestAirportTS.get(minAltIndex).equals("")) {
+                        minAltIndex++;
+                        if (minAltIndex == i) {
+                            continue outer;
+                        }
+                    }
                     lowPoints.add(new int[]{lowStartIndex, i, indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex)});
                     System.err.println("Adding lowPoints entry");
                     HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
@@ -2928,6 +2938,8 @@ public class Flight {
             int startLow1 = indices1[0], endLow1 = indices1[1], lowest1 = indices1[2];
             String runway1 = runways.get(i + 1);
             
+            String airport = nearestAirportTS.get(lowest0);
+            String runway = runway0;
             Itinerary it = new Itinerary(lowest0, endLow0, startLow1, lowest1, nearestAirportTS.get(lowest0), runway0);
             itinerary.add(it);
         }
