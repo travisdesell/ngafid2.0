@@ -44,8 +44,6 @@ var eventCounts = {};
 var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
 
-var tooltipText = "";
-
 class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
