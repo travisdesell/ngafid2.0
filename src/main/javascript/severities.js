@@ -6,7 +6,8 @@ import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import  TimeHeader from "./time_header.js";
+import TimeHeader from "./time_header.js";
+import GetDescription from "./get_description.js";
 
 import Plotly from 'plotly.js';
 import {OverlayTrigger} from "react-bootstrap";
@@ -309,35 +310,6 @@ class SeveritiesPage extends React.Component {
         this.displayPlot(airframe);
     }
 
-    getDescription(eventName) {
-        var text = "";
-
-        $.ajax({
-                type: 'GET',
-                url: '/protected/get_event_description',
-                data : {eventName : eventName},
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: " + response);
-
-                    $('#loading').hide();
-
-                    if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
-                    }
-
-                    text = response + "";
-                },
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Getting Event Description", errorThrown);
-                },
-                async: false
-            });
-
-        console.log("returning text: " + text);
-        return text;
-    }
-
     render() {
         //console.log(systemIds);
 
@@ -384,7 +356,7 @@ class SeveritiesPage extends React.Component {
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
-                                                            <Tooltip {...props}>{this.getDescription(eventName)}</Tooltip>)}
+                                                            <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
                                                             <label className="form-check-label">
                                                                 {eventName}
