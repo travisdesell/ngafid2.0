@@ -568,6 +568,17 @@ if (!$update_2022_02_17) {
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
+
+    $query = "CREATE TABLE `turn_to_final` (
+        `flight_id` INT(11) NOT NULL,
+        `version` BIGINT(11) NOT NULL,
+        data MEDIUMBLOB,
+
+        PRIMARY KEY(`flight_id`),
+            FOREIGN KEY(`flight_id`) REFERENCES flights(`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+    query_ngafid_db($query);
 }
 
 

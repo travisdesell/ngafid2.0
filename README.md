@@ -126,6 +126,8 @@ export AIRPORTS_FILE=$NGAFID_DATA_FOLDER/airports/airports_parsed.csv
 export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
 export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
 export SPARK_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
+export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
+export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
 ```
 
 and run
