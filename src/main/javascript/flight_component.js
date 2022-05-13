@@ -60,16 +60,13 @@ class Flight extends React.Component {
             eventLayer : null,
             itineraryLayer : null,
             eventOutlines : [],
-            eventOutlineLayer : null,
-            maintenanceProbability : 0.0
+            eventOutlineLayer : null
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
         this.displayParameters = this.displayParameters.bind(this);
         this.closeParamDisplay = this.closeParamDisplay.bind(this);
         this.zoomChanged = this.zoomChanged.bind(this);
-
-        this.getMaintenance();
     }
 
     fetchEvents() {
@@ -616,87 +613,6 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    drawLociLayers(lowerConstraint, upperConstraint) {
-        console.log(map);
-        //timer here?
-        const lociData = this.state.seriesData.get('LOC-I Index');
-        const spData = this.state.seriesData.get('Stall Index');
-
-        generateStallLayer(spData, this.state.layers, this, lowerConstraint, upperConstraint);
-        generateLOCILayer(lociData, this.state.layers, this, lowerConstraint, upperConstraint);
-
-        console.log("drawing loci layers!");
-        console.log(this.state.layers);
-
-        this.replaceMapLayers();
-        map.updateSize();
-    }
-
-    mapLayerIndexOf(layerName) {
-        let mapLayers = map.getLayers().getArray();
-
-        for (let i = 0; i < mapLayers.length; i++) {
-            if (mapLayers[i].get('name') === layerName) {
-                return i;
-            }
-        }
-
-        return -1;
-    }
-
-    replaceMapLayers() {
-        let mapLayers = map.getLayers().getArray();
-        for (let i = 0; i < this.state.layers.length; i++) {
-            let layer = this.state.layers[i];
-
-            let description = layer.get('description');
-            let name = layer.get('name');
-            let index = this.mapLayerIndexOf(name);
-
-            //if (index != -1 && description === this.getSelectedLayer()) {
-                console.log(name + " " + description);
-                mapLayers[index] = layer;
-            //}
-        }
-    }
-
-    selectLayer(selectedLayer) {
-        console.log("setting selected layer ");
-        console.log(selectedLayer);
-
-        for (let i = 0; i < this.state.layers.length; i++) {
-            let layer = this.state.layers[i];
-            layer.setVisible(layer.get('name').includes(selectedLayer));
-            console.log("setting layer: ");
-            console.log(layer);
-        }
-
-        this.setState(this.state);
-    }
-
-    setDefaultLayer() {
-        let defaultLayerName = 'Itinerary'; //changeme if we want the default layer to be something different
-
-        this.selectLayer(defaultLayerName);
-    }
-
-    getSelectedLayer() {
-        console.log("gsl called");
-        console.log(this.state);
-        let layers = this.state.layers;
-
-        for (let i = 0; i < layers.length; i++) {
-            let layer = layers[i];
-            console.log(layer);
-            if (layer.get('visible') && !layer.get('nMap')) {
-                return layer.get('description');
-            }
-        }
-
-        this.setDefaultLayer();
-        return 'Itinerary with Phases';
-    }
-
     globeClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
@@ -759,8 +675,6 @@ class Flight extends React.Component {
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
             };
-
-            const drawLociLayers = (lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint);
 
             $.ajax({
                 type: 'POST',
@@ -893,7 +807,6 @@ class Flight extends React.Component {
                     let baseLayer = thisFlight.state.baseLayer;
 
                     baseLayer.flightState = thisFlight;
-                    let flightInfo = thisFlight.props.flightInfo;
 
                     thisFlight.state.pathVisible = true;
                     thisFlight.state.itineraryVisible = true;
@@ -903,17 +816,20 @@ class Flight extends React.Component {
 
                     // toggle visibility of itinerary
                     layers.push(baseLayer, phaseLayer);
+                    
+                    const lociData = thisFlight.state.seriesData.get('LOC-I Index');
+                    const spData = thisFlight.state.seriesData.get('Stall Index');
 
-                    //TODO fix here
-                    drawLociLayers(0, flightInfo.numberRows);
-
+                    generateStallLayer(spData, layers, thisFlight);
+                    generateLOCILayer(lociData, layers, thisFlight);
+                    
                     console.log("adding layers!");
-                    for(let i = 0; i < layers.length; i++) {
+                    for(let i = 0; i < layers.length; i++){
                         let layer = layers[i];
                         console.log(layer);
                         if(layer.get('name').includes('Itinerary')) {
                             //Itinerary will be the default layer
-                            thisFlight.state.selectedPlot = layer.get('name');
+                            thisFlight.state.selectedPlot = layer.values_.name;
                             layer.setVisible(true);
                         } else {
                             layer.setVisible(false);
@@ -1033,69 +949,6 @@ class Flight extends React.Component {
           }
     }
 
-    getMaintenance() {
-        var thisFlight = this;
-
-        var submissionData = {
-            flightId : this.props.flightInfo.id,
-        };
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/maintenance',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("got maintenance stats:");
-                console.log(response);
-                thisFlight.state.maintenanceRating = response.maintenanceRating;
-                thisFlight.state.maintenanceProbability = response.maintenanceProbability;
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                console.log("Error getting upset data:");
-                console.log(errorThrown);
-            },   
-            async: false 
-        });  
-    }
-
-    updateMaintenanceRating() {
-        var thisFlight = this;
-
-        var submissionData = {
-            flightId : this.props.flightInfo.id,
-            rating : this.state.maintenanceRating
-        };
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/maintenance_rate',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log(response);
-
-                if (response == "SUCCESS") {
-                    $('#submit_button_rate_' + thisFlight.props.flightInfo.id).tooltip('show');
-                    setTimeout(function() { //show resolution tooltip for a max 10s
-                        $('#submit_button_rate_' + thisFlight.props.flightInfo.id).tooltip('hide');
-                     }.bind(this), 5000)
-                }
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                console.log("Error getting upset data:");
-                console.log(errorThrown);
-            },   
-            async: false 
-        });  
-    }
-
-    setMaintenanceRating(event) {
-        this.setState({
-            maintenanceRating : event.target.value
-        });
-    }
-    
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1135,7 +988,7 @@ class Flight extends React.Component {
         let itineraryRow = "";
         if (this.state.itineraryVisible) {
             itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} drawLociLayers={(lowerConstraint, upperConstraint) => this.drawLociLayers(lowerConstraint, upperConstraint)} layers={this.state.layers} itinerary={flightInfo.itinerary} numberRows={flightInfo.numberRows} events={this.state.events} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange} getSelectedLayer={() => this.getSelectedLayer()} selectLayer={(layer) => this.selectLayer(layer)} setDefaultLayer={() => this.setDefaultLayer()}/>
+                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
@@ -1162,8 +1015,6 @@ class Flight extends React.Component {
                 );
         }
 
-        let submitButtonId = "submit_button_rate_" + this.props.flightInfo.id;
-
         let tagPills = "";
         if (this.props.flightInfo.tags != null && this.props.flightInfo.tags.length > 0) {
             tagPills = 
@@ -1183,45 +1034,6 @@ class Flight extends React.Component {
                 );
             });
         }
-
-        let maintenanceProbabilityBadge = (
-            <span className="badge badge-success m-1">
-                <div className="row">
-                    <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
-                    <div className="col-sm mr-1">
-                        {this.state.maintenanceProbability}
-                    </div>
-                </div>
-            </span>
-        );
-                    
-        if (this.state.maintenanceProbability > 0.5) {
-                maintenanceProbabilityBadge = (
-                <span className="badge badge-warning m-1">
-                    <div className="row">
-                        <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
-                        <div className="col-sm mr-1">
-                            {this.state.maintenanceProbability}
-                        </div>
-                    </div>
-                </span>
-            );
-        }
-
-        if (this.state.maintenanceProbability >= 0.75) {
-                maintenanceProbabilityBadge = (
-                <span className="badge badge-danger m-1">
-                    <div className="row">
-                        <i className="fa fa-wrench col-sm ml-1" aria-hidden="true"></i>
-                        <div className="col-sm mr-1">
-                            {this.state.maintenanceProbability}
-                        </div>
-                    </div>
-                </span>
-            );
-        }
-
-        
 
         return (
             <div className="card mb-1">
@@ -1256,31 +1068,12 @@ class Flight extends React.Component {
                         </div>
 
                         <div className={cellClasses} style={{flexBasis:"80px", flexShrink:0, flexGrow:0}}>
+
                             {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
                         </div>
 
                         <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
                             {visitedAirports.join(", ")}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
-                            {maintenanceProbabilityBadge}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-                            <div className="input-group input-group-sm">
-                                <div className="input-group-prepend">
-                                    <span className="input-group-text" id="inputGroup-sizing-sm">Rating</span>
-                                 </div>
-                                <button type="button" className="btn btn-outline-secondary btn-sm dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                    Select...
-                                </button>
-                                <div className="dropdown-menu">
-                                    <a className="dropdown-item" href="#">Accurate</a>
-                                    <a className="dropdown-item" href="#">Inaccurate</a>
-                                    <a className="dropdown-item" href="#">Unsure</a>
-                                </div>
-                            </div>
                         </div>
 
                         <div className={cellClasses} style={{
