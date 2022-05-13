@@ -582,35 +582,32 @@ class TrendsPage extends React.Component {
 
 
     getDescription(eventName) {
-        let request_data = {
-            eventName : eventName + ""
-        };
+        var text = "";
 
         $.ajax({
                 type: 'GET',
                 url: '/protected/get_event_description',
-                data : request_data,
+                data : {eventName : eventName},
                 dataType : 'json',
                 success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
+                    console.log("received response: " + response);
 
                     $('#loading').hide();
 
                     if (response.err_msg) {
                         errorModal.show(response.err_title, response.err_msg);
-                        return;
                     }
 
-                    tooltipText = response + "";
-                    return response + "";
+                    text = response + "";
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Getting Event Description", errorThrown);
                 },
-                async: true
+                async: false
             });
 
+        console.log("returning text: " + text);
+        return text;
     }
 
     render() {
@@ -659,7 +656,7 @@ class TrendsPage extends React.Component {
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
-                                                            <Tooltip {...props} onMouseOver={() => this.getDescription(eventName)}>{tooltipText}</Tooltip>)}
+                                                            <Tooltip {...props}>{this.getDescription(eventName)} {tooltipText}</Tooltip>)}
                                                                         placement="bottom">
                                                             <label className="form-check-label">
                                                                 {eventName}
