@@ -9,6 +9,8 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import  TimeHeader from "./time_header.js";
 
 import Plotly from 'plotly.js';
+import {OverlayTrigger} from "react-bootstrap";
+import Tooltip from "react-bootstrap/Tooltip";
 
 
 airframes.unshift("All Airframes");
@@ -307,6 +309,35 @@ class SeveritiesPage extends React.Component {
         this.displayPlot(airframe);
     }
 
+    getDescription(eventName) {
+        var text = "";
+
+        $.ajax({
+                type: 'GET',
+                url: '/protected/get_event_description',
+                data : {eventName : eventName},
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: " + response);
+
+                    $('#loading').hide();
+
+                    if (response.err_msg) {
+                        errorModal.show(response.err_title, response.err_msg);
+                    }
+
+                    text = response + "";
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Getting Event Description", errorThrown);
+                },
+                async: false
+            });
+
+        console.log("returning text: " + text);
+        return text;
+    }
+
     render() {
         //console.log(systemIds);
 
@@ -351,13 +382,23 @@ class SeveritiesPage extends React.Component {
                                                 return (
                                                     <div key={index} className="form-check">
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
-                                                        <label className="form-check-label" htmlFor={"event-check-" + index}>
-                                                            {eventName}
-                                                        </label>
+
+                                                        <OverlayTrigger overlay={(props) => (
+                                                            <Tooltip {...props}>{this.getDescription(eventName)}</Tooltip>)}
+                                                                        placement="bottom">
+                                                            <label className="form-check-label">
+                                                                {eventName}
+                                                            </label>
+
+
+                                                        </OverlayTrigger>
+
+
                                                     </div>
                                                 );
                                             })
                                         }
+
 
                                     </div>
 

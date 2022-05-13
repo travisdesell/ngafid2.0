@@ -656,7 +656,7 @@ class TrendsPage extends React.Component {
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
-                                                            <Tooltip {...props}>{this.getDescription(eventName)} {tooltipText}</Tooltip>)}
+                                                            <Tooltip {...props}>{this.getDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
                                                             <label className="form-check-label">
                                                                 {eventName}
