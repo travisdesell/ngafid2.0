@@ -274,12 +274,9 @@ public class Flight {
      * @return
      */
     public static List<Flight> getFlightsWithinDateRange(Connection connection, String startDate, String endDate) throws SQLException {
-        System.out.println("Start date = " + startDate);
-        System.out.println("End date = " + endDate);
         String extraCondition = "((start_time BETWEEN '" + startDate + "' AND '" + endDate
                                 + "') OR (end_time BETWEEN '" + startDate + "' AND '" + endDate + "'))";
         List<Flight> flights = getFlights(connection, extraCondition);
-        System.out.println("Number flights = " + flights.size());
         return flights;
     }
     /**
@@ -413,7 +410,6 @@ public class Flight {
 
         resultSet.next();
         int count = resultSet.getInt(1);
-        System.out.println("COUNT IS: "+count);
 
         resultSet.close();
         query.close();
@@ -439,7 +435,6 @@ public class Flight {
 
         resultSet.next();
         int count = resultSet.getInt(1);
-        System.out.println("COUNT IS: "+count);
 
         resultSet.close();
         query.close();
@@ -2922,6 +2917,8 @@ public class Flight {
 
         StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
         DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
+        DoubleTimeSeries lat = doubleTimeSeries.get("Latitude");
+        DoubleTimeSeries lon = doubleTimeSeries.get("Longitude");
 
         if (groundSpeed == null) {
             String message = "Cannot calculate itinerary, flight file had empty or missing ";
@@ -2946,10 +2943,8 @@ public class Flight {
         // Find a list of points where the aircraft has a sustained low altitude (low being defined as < 40).
         // Insert itinerary entires between these boundries since they almost certainly indicate the aircraft being at an airport.
         int lowStartIndex = -1;
+outer:
         for (int i = 0; i < altitudeAGL.size(); i++) {
-            if (lowStartIndex != -1) {
-                System.err.println("diff = " + (i - lowStartIndex));
-            }
             if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
                 if (lowStartIndex < 0) {
                     lowStartIndex = i;
@@ -2957,6 +2952,13 @@ public class Flight {
             } else {
                 // ignore short durations of low altitude.
                 if (lowStartIndex >= 0 && i - lowStartIndex >= 5) {
+                    int minAltIndex = indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex);
+                    while (nearestAirportTS.get(minAltIndex).equals("")) {
+                        minAltIndex++;
+                        if (minAltIndex == i) {
+                            continue outer;
+                        }
+                    }
                     lowPoints.add(new int[]{lowStartIndex, i, indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex)});
                     System.err.println("Adding lowPoints entry");
                     HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
@@ -2990,6 +2992,8 @@ public class Flight {
             int startLow1 = indices1[0], endLow1 = indices1[1], lowest1 = indices1[2];
             String runway1 = runways.get(i + 1);
             
+            String airport = nearestAirportTS.get(lowest0);
+            String runway = runway0;
             Itinerary it = new Itinerary(lowest0, endLow0, startLow1, lowest1, nearestAirportTS.get(lowest0), runway0);
             itinerary.add(it);
         }
@@ -3003,7 +3007,6 @@ public class Flight {
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        System.err.println("Flight " + id + " Itinerary (" + itinerary.size() + ")");
         for (int i = 0; i < itinerary.size(); i++) {
             System.err.println(itinerary.get(i));
         }
