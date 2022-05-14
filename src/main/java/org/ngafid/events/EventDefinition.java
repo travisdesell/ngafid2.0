@@ -637,10 +637,17 @@ public class EventDefinition {
      */
     public String toHumanReadable() {
         String text = "";
-        if (startBuffer == 1) {
-            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+
+        if (name.matches("^[AEIOU].*")) {
+            text = "An ";
         } else {
-            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+            text = "A ";
+        }
+
+        if (startBuffer == 1) {
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+        } else {
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
         }
         return text;
     }
