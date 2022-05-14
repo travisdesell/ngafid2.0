@@ -636,11 +636,12 @@ public class EventDefinition {
      * @return a string of a human readable description of this event definition.
      */
     public String toHumanReadable() {
-        String text = "";
+        String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
+
         if (startBuffer == 1) {
-            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
         } else {
-            text = "A " + name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
         }
         return text;
     }
