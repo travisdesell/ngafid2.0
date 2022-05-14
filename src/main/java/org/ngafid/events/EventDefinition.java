@@ -636,13 +636,7 @@ public class EventDefinition {
      * @return a string of a human readable description of this event definition.
      */
     public String toHumanReadable() {
-        String text = "";
-
-        if (name.matches("^[AEIOU].*")) {
-            text = "An ";
-        } else {
-            text = "A ";
-        }
+        String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
 
         if (startBuffer == 1) {
             text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
