@@ -14,6 +14,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
+import com.sun.source.tree.Tree;
 import org.ngafid.filters.Filter;
 
 import org.ngafid.flights.Airframes;
@@ -140,7 +141,12 @@ public class EventDefinition {
             this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
-            this.filter = null;
+            if (id == -1) {
+                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+            } else {
+                this.filter = null;
+            }
+
             this.columnNames = new TreeSet<String>();
             this.severityColumnNames = new TreeSet<String>();
         }
@@ -636,13 +642,17 @@ public class EventDefinition {
      * @return a string of a human readable description of this event definition.
      */
     public String toHumanReadable() {
-        String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
+        if (this.id < 0) {
+            return ((filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + filter.toHumanReadable();
+        }
 
+        String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
         if (startBuffer == 1) {
             text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
         } else {
             text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
         }
+
         return text;
     }
 
