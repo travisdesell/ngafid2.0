@@ -567,7 +567,7 @@ class UploadsPage extends React.Component {
                         this.state.pending_uploads.map((uploadInfo, index) => {
                             uploadInfo.position = index;
                             return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}} />
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.position} removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}} />
                             );
                         })
                     }
@@ -591,7 +591,7 @@ class UploadsPage extends React.Component {
                         this.state.uploads.map((uploadInfo, index) => {
                             uploadInfo.position = index;
                             return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                <Upload uploadInfo={uploadInfo} key={uploadInfo.position} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
                             );
                         })
                     }
