@@ -14,7 +14,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
 
-import com.sun.source.tree.Tree;
 import org.ngafid.filters.Filter;
 
 import org.ngafid.flights.Airframes;
