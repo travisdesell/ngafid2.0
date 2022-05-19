@@ -120,6 +120,18 @@ public class ProcessFlights {
                                             errorFlights++;
                                         }
 
+                                    }  else if (entry.getName().endsWith(".json")) {
+                                        try {
+                                            InputStream stream = zipFile.getInputStream(entry);
+                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+                                            if (connection != null) {
+                                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                            }
+
+                                        } catch (FatalFlightFileException | FlightAlreadyExistsException e) {
+
+                                        }
+
                                     } else if (entry.getName().endsWith(".gpx")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
