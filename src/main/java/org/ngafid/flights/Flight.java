@@ -2053,6 +2053,8 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
+            } else if (airframeName.equals("")) {
+
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
@@ -2293,6 +2295,24 @@ public class Flight {
         }
 
         checkExceptions();
+    }
+
+    public Flight(String entryName, int fleetId, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
+
+    }
+
+
+    public Flight(int fleetId, String entryName, InputStream inputStream, Connection connection, String fileType) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+        switch (fileType) {
+            case "csv":
+                new Flight(fleetId, entryName, inputStream, connection);
+                break;
+            case "json":
+                new Flight(entryName, fleetId, inputStream, connection);
+                break;
+            default:
+                throw new FatalFlightFileException("Unknown file type: " + fileType);
+        }
     }
 
     // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
