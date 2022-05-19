@@ -30,6 +30,8 @@ public interface CalculationParameters {
     public static final String LAG_SUFFIX = "_lag";
     public static final String LEAD_SUFFIX = "_lead";
     public static final String HDG = "HDG";
+    public static final String NORM_AC = "NormAc";
+    public static final String LAT_AC = "LatAc";
     public static final String IAS = "IAS";
     public static final String VSPD = "VSPD";
     public static final String DENSITY_RATIO = "DensityRatio";
