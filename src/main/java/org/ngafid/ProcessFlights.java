@@ -123,7 +123,7 @@ public class ProcessFlights {
                                     }  else if (entry.getName().endsWith(".json")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
-                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection, "json");
                                             if (connection != null) {
                                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
                                             }

@@ -27,6 +27,9 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.DocumentBuilder;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.NoSuchFileException;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -1998,6 +2001,10 @@ public class Flight {
         }
     }
 
+    private void initializeJson() {
+
+    }
+
     private InputStream getReusableInputStream(InputStream inputStream) throws IOException {
         if (inputStream.markSupported() == false) {
             InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
@@ -2013,6 +2020,12 @@ public class Flight {
         initialize(connection, inputStream);
         process(connection);
     }
+
+    private void processJson(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
+        initialize(connection, inputStream);
+        process(connection);
+    }
+
     private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
@@ -2166,6 +2179,10 @@ public class Flight {
 
     }
 
+    private void processJSON() throws MalformedFlightFileException {
+
+    }
+
     private void checkExceptions() {
         if (exceptions.size() > 0) {
             status = "WARNING";
@@ -2297,11 +2314,74 @@ public class Flight {
         checkExceptions();
     }
 
+    /**
+     * Flight Class constructor for json files
+     * @param entryName
+     * @param fleetId
+     * @param inputStream
+     * @param connection
+     * @throws IOException
+     * @throws FatalFlightFileException
+     * @throws FlightAlreadyExistsException
+     * @throws SQLException
+     */
     public Flight(String entryName, int fleetId, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
+        this.fleetId = fleetId;
+        this.filename = entryName;
+        this.tailConfirmed = false;
+
+        String[] parts = zipEntryName.split("/");
+        if (parts.length <= 1) {
+            suggestedTailNumber = null;
+        } else {
+            this.suggestedTailNumber = parts[0];
+            if (suggestedTailNumber.equals("")) suggestedTailNumber = null;
+        }
+        System.out.println("suggestedTailNumber: " + suggestedTailNumber);
+
+        try {
+            inputStream = getReusableInputStream(inputStream);
+
+            int length = inputStream.available();
+            inputStream.mark(length);
+            setMD5Hash(inputStream);
+
+            //check to see if a flight with this MD5 hash already exists in the database
+            if (connection != null) checkIfExists(connection);
+
+            inputStream.reset();
+            processJson(connection, inputStream);
+
+        } catch (FatalFlightFileException | IOException e) {
+            status = "WARNING";
+            throw e;
+        } catch (SQLException e) {
+            System.out.println(e);
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        checkExceptions();
+
+
+
+
 
     }
 
 
+    /**
+     * Flight constructor that can be used to specify a certain file type
+     * @param fleetId
+     * @param entryName
+     * @param inputStream
+     * @param connection
+     * @param fileType
+     * @throws IOException
+     * @throws FatalFlightFileException
+     * @throws FlightAlreadyExistsException
+     * @throws SQLException
+     */
     public Flight(int fleetId, String entryName, InputStream inputStream, Connection connection, String fileType) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         switch (fileType) {
             case "csv":
@@ -3262,5 +3342,7 @@ outer:
 
         printWriter.close();
     }
+
+
 
 }
