@@ -1,20 +1,8 @@
 package org.ngafid.flights;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.FileInputStream;
-import java.io.FileWriter;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
+import java.sql.*;
 import java.util.Iterator;
-import java.sql.Timestamp;
 import java.time.DateTimeException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -30,6 +18,7 @@ import java.nio.file.NoSuchFileException;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
+import com.google.gson.stream.JsonReader;
 import org.w3c.dom.Document;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
@@ -39,12 +28,6 @@ import org.w3c.dom.NamedNodeMap;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
 
 import java.time.DateTimeException;
 import java.time.LocalDateTime;
@@ -1727,12 +1710,15 @@ public class Flight {
 
     private void initialize(Connection connection, InputStream inputStream) throws FatalFlightFileException, IOException, SQLException {
         numberRows = 0;
-        ArrayList<ArrayList<String>> csvValues;
+        ArrayList<ArrayList<String>> csvValues = null;
 
         BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
 
-        dataTypes = new ArrayList<String>();
-        headers = new ArrayList<String>();
+        dataTypes = new ArrayList<>();
+
+        if (headers == null) {
+            headers = new ArrayList<>();
+        }
 
         //file information -- this is the first line
         fileInformation = bufferedReader.readLine();
@@ -1765,6 +1751,14 @@ public class Flight {
 
            System.out.println("suggested tail number: '" + suggestedTailNumber + "'");
            System.out.println("system id: '" + systemId + "'");
+
+        } else if (headers.size() > 0) {
+            System.out.println("JSON detected");
+
+            Gson gson = new Gson();
+            JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+            Map jsonMap = gson.fromJson(reader, Map.class);
+            csvValues = (ArrayList<ArrayList<String>>) jsonMap.get("details_data");
 
         } else {
             //grab the airframe info from the header for other file types
@@ -1889,7 +1883,10 @@ public class Flight {
         }
 
         //initialize a sub-ArrayList for each column
-        csvValues = new ArrayList<ArrayList<String>>();
+        if (csvValues == null) {
+            csvValues = new ArrayList<ArrayList<String>>();
+        }
+
         for (int i = 0; i < headers.size(); i++) {
             csvValues.add(new ArrayList<String>());
         }
@@ -2022,6 +2019,12 @@ public class Flight {
     }
 
     private void processJson(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        Map jsonMap = gson.fromJson(reader, Map.class);
+        this.headers = (ArrayList<String>) jsonMap.get("details_headers");
+        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+
         initialize(connection, inputStream);
         process(connection);
     }
@@ -2330,7 +2333,7 @@ public class Flight {
         this.filename = entryName;
         this.tailConfirmed = false;
 
-        String[] parts = zipEntryName.split("/");
+        String[] parts = entryName.split("/");
         if (parts.length <= 1) {
             suggestedTailNumber = null;
         } else {
@@ -2362,11 +2365,6 @@ public class Flight {
         }
 
         checkExceptions();
-
-
-
-
-
     }
 
 
@@ -3341,6 +3339,57 @@ outer:
         }
 
         printWriter.close();
+    }
+
+    public static String jsonToCSV(InputStream inputStream, String filename) throws IOException {
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        Map jsonMap = gson.fromJson(reader, Map.class);
+        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
+        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+
+        File file = new File(inputStream.toString());
+        PrintWriter printWriter = new PrintWriter(new FileWriter(file), false);
+
+        file.renameTo(new File(filename.replace(".json", ".csv")));
+
+
+//        String csvFileName = filename.replace(".json", ".csv");
+//        System.out.println(csvFileName);
+//        FileWriter fileWriter = new FileWriter(csvFileName);
+//        PrintWriter printWriter = new PrintWriter(fileWriter, true);
+
+
+        for (Object header : headers) {
+            printWriter.print(header);
+            if (header != headers.get(headers.size() - 1)) printWriter.print(",");
+        }
+
+        printWriter.println();
+
+        for (Object line : lines) {
+            for (Object value : (ArrayList<Object>) line) {
+                printWriter.print(value);
+
+                if (value != ((ArrayList<Object>) line).get(((ArrayList<Object>) line).size() - 1)) {
+                    printWriter.print(",");
+                } else {
+                    printWriter.println();
+                }
+            }
+
+
+        }
+
+
+
+        printWriter.close();
+
+        return filename.replace(".json", ".csv");
+    }
+
+    public static void main(String[] args) throws IOException {
+        jsonToCSV(new FileInputStream("/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json"), "/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json");
     }
 
 
