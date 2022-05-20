@@ -3620,7 +3620,7 @@ outer:
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
 
-        PrintWriter printWriter = new PrintWriter(new FileWriter("/home/aaron/Documents/test/" + "hello.csv"), true);
+        PrintWriter printWriter = new PrintWriter(new FileWriter(filename.replace(".json", ".csv")), true);
 
         for (Object header : headers) {
             printWriter.print(header);
