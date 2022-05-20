@@ -115,7 +115,12 @@ public class ProcessFlights {
                                     }  else if (entry.getName().endsWith(".json")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
-                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection, "json");
+//                                            String csvName = Flight.jsonToCSV(stream, entry.getName());
+//                                            System.out.println("JSON converted to CSV: " + csvName);
+//
+//                                            Flight flight = new Flight(fleetId, csvName, stream, connection);
+
+                                            Flight flight = Flight.processJSON(fleetId, connection, stream, entry.getName());
 
                                             if (connection != null) {
                                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);

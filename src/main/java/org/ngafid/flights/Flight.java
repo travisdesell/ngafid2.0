@@ -46,6 +46,9 @@ import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.bind.DatatypeConverter;
 
@@ -2783,6 +2786,32 @@ public class Flight {
         return flights;
     }
 
+    public static Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        Map jsonMap = gson.fromJson(reader, Map.class);
+        List<String> jsonMapKeys = new ArrayList<>(jsonMap.keySet());
+
+
+        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
+        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+
+        // Get index of header
+        int indexOfTime = headers.indexOf("time");
+        int indexOfLat = headers.indexOf("product_gps_longitude");
+        int indexOfLon = headers.indexOf("product_gps_latitude");
+        int indexOfAlt = headers.indexOf("altitude");
+        int indexOfSpdX = headers.indexOf("speed_vx");
+        int indexOfSpdY = headers.indexOf("speed_vy");
+        int indexOfSpdZ = headers.indexOf("speed_vz");
+        int indexOfAngPhi = headers.indexOf("angle_phi");
+        int indexOfAngTheta = headers.indexOf("angle_theta");
+        int indexOfAngPsi = headers.indexOf("angle_psi");
+
+
+        return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), null, null, connection);
+    }
+
     /**
      * Runs the Loss of Control/Stall Index calculations
      *
@@ -3591,10 +3620,7 @@ outer:
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
 
-        File file = new File(inputStream.toString());
-        PrintWriter printWriter = new PrintWriter(new FileWriter(file), false);
-
-        file.renameTo(new File(filename.replace(".json", ".csv")));
+        PrintWriter printWriter = new PrintWriter(new FileWriter("/home/aaron/Documents/test/" + "hello.csv"), true);
 
         for (Object header : headers) {
             printWriter.print(header);
@@ -3618,5 +3644,9 @@ outer:
         printWriter.close();
 
         return filename.replace(".json", ".csv");
+    }
+
+    public static void main(String[] args) throws IOException {
+        System.out.println(jsonToCSV(new FileInputStream("/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json"), "/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json"));
     }
 }
