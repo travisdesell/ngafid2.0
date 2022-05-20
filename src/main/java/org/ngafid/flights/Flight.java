@@ -1723,7 +1723,7 @@ public class Flight {
         //file information -- this is the first line
         fileInformation = bufferedReader.readLine();
         //LOG.info("fileInformation line is: " + fileInformation);
-        if (fileInformation == null || fileInformation.length() == 0) throw new FatalFlightFileException("The flight file was empty.");
+        if (fileInformation == null || fileInformation.length() == 0 && headers.size() == 0) throw new FatalFlightFileException("The flight file was empty.");
         if (fileInformation.charAt(0) != '#' && fileInformation.charAt(0) != '{') {
             if (fileInformation.substring(0, 4).equals("DID_")) {
                 System.out.println("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
@@ -1998,6 +1998,251 @@ public class Flight {
         }
     }
 
+//    private void initializeJson(Connection connection, InputStream inputStream)  {
+//        numberRows = 0;
+//        dataTypes = new ArrayList<>();
+//
+//        Gson gson = new Gson();
+//        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+//        Map jsonMap = gson.fromJson(reader, Map.class);
+//
+//            //grab the airframe info from the header for other file types
+//            String[] infoParts = null;
+//            airframeName = null;
+//
+//            try {
+//                for (int i = 1; i < infoParts.length; i++) {
+//                    //process everything else (G1000 data)
+//                    if (infoParts[i].trim().length() == 0) continue;
+//
+//                    //System.err.println("splitting key/value: '" + infoParts[i] + "'");
+//                    String subParts[] = infoParts[i].trim().split("=");
+//                    String key = subParts[0];
+//                    String value = subParts[1];
+//
+//                    //System.err.println("key: '" + key + "'");
+//                    //System.err.println("value: '" + value + "'");
+//
+//                    if (key.equals("airframe_name")) {
+//                        airframeName = value.substring(1, value.length() - 1);
+//
+//                        //throw an error for 'Unknown Aircraft'
+//                        if (airframeName.equals("Unknown Aircraft")) {
+//                            throw new FatalFlightFileException("Flight airframe name was 'Unknown Aircraft', please fix and re-upload so the flight can be properly identified and processed.");
+//                        }
+//
+//
+//                        if (airframeName.equals("Diamond DA 40")) {
+//                            airframeName = "Diamond DA40";
+//
+//                        } else if ((airframeName.equals("Garmin Flight Display") || airframeName.equals("Robinson R44 Raven I")) && fleetId == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
+//                            airframeName = "R44";
+//                        } else if (airframeName.equals("Garmin Flight Display")) {
+//                            throw new FatalFlightFileException("Flight airframe name was 'Garmin Flight Display' which does not specify what airframe type the flight was, please fix and re-upload so the flight can be properly identified and processed.");
+//
+//                        }
+//
+//                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+//                            airframeName = "Cirrus SR22";
+//                        }
+//
+//                        if (airframeName.equals("Cessna 172R") ||
+//                                airframeName.equals("Cessna 172S") ||
+//                                airframeName.equals("Cessna 172T") ||
+//                                airframeName.equals("Cessna 182T") ||
+//                                airframeName.equals("Cessna T182T") ||
+//                                airframeName.equals("Cessna Model 525") ||
+//                                airframeName.equals("Cirrus SR20") ||
+//                                airframeName.equals("Cirrus SR22") ||
+//                                airframeName.equals("Diamond DA40") ||
+//                                airframeName.equals("Diamond DA 40 F") ||
+//                                airframeName.equals("Diamond DA40NG") ||
+//                                airframeName.equals("Diamond DA42NG") ||
+//                                airframeName.equals("PA-28-181") ||
+//                                airframeName.equals("PA-44-180") ||
+//                                airframeName.equals("Piper PA-46-500TP Meridian") ||
+//                                airframeName.contains("Garmin") ||
+//                                airframeName.equals("Quest Kodiak 100") ||
+//                                airframeName.equals("Cessna 400") ||
+//                                airframeName.equals("Beechcraft A36/G36")) {
+//                            airframeType = "Fixed Wing";
+//                        } else if (airframeName.equals("R44")) {
+//                            airframeType = "Rotorcraft";
+//                        } else {
+//                            System.err.println("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
+//                            System.err.println("Please add this to the the `airframe_type` table in the database and update this method.");
+//                            System.exit(1);
+//                        }
+//
+//                    } else if (key.equals("system_id")) {
+//                        systemId = value.substring(1, value.length() - 1);
+//                    }
+//                }
+//            } catch (Exception e) {
+//                //LOG.info("parsting flight information threw exception: " + e);
+//                //e.printStackTrace();
+//                throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
+//            }
+//
+//
+//        if (airframeName == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
+//        System.err.println("detected airframe type: '" + airframeName + "'");
+//
+//        if (systemId == null)  throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'system_id' key/value pair.");
+//        System.err.println("detected airframe type: '" + systemId + "'");
+//
+//        if (airframeName.equals("ScanEagle")) {
+//            //for the ScanEagle, the first line is the headers of the columns
+//            String headersLine = fileInformation;
+//            //System.out.println("Headers line is: " + headersLine);
+//            headers.addAll( Arrays.asList( headersLine.split("\\,", -1) ) );
+//            headers.replaceAll(String::trim);
+//            System.out.println("headers are:\n" + headers.toString());
+//
+//            //scan eagle files have no data types, set all to ""
+//            for (int i = 0; i < headers.size(); i++) {
+//                dataTypes.add("none");
+//            }
+//
+//        } else {
+//            //the next line is the column data types
+//            String dataTypesLine = bufferedReader.readLine();
+//            if (dataTypesLine.charAt(0) != '#') throw new FatalFlightFileException("Second line of the flight file should begin with a '#' and contain column data types.");
+//            dataTypesLine = dataTypesLine.substring(1);
+//
+//            dataTypes.addAll( Arrays.asList( dataTypesLine.split("\\,", -1) ) );
+//            dataTypes.replaceAll(String::trim);
+//
+//            //the next line is the column headers
+//            String headersLine = bufferedReader.readLine();
+//            System.out.println("Headers line is: " + headersLine);
+//            headers.addAll( Arrays.asList( headersLine.split("\\,", -1) ) );
+//            headers.replaceAll(String::trim);
+//
+//            //if (airframeName.equals("Cessna T182T")) System.exit(1);
+//
+//            if (dataTypes.size() != headers.size()) {
+//                throw new FatalFlightFileException("Number of columns in the header line (" + headers.size() + ") != number of columns in the dataTypes line (" + dataTypes.size() + ")");
+//            }
+//        }
+//
+//        //initialize a sub-ArrayList for each column
+//        if (csvValues == null) {
+//            csvValues = new ArrayList<ArrayList<String>>();
+//        }
+//
+//        for (int i = 0; i < headers.size(); i++) {
+//            csvValues.add(new ArrayList<String>());
+//        }
+//
+//        int lineNumber = 1;
+//        boolean lastLineWarning = false;
+//
+//        String line;
+//        String lastWarning = "";
+//        while ((line = bufferedReader.readLine()) != null) {
+//
+//            if (line.contains("Lcl Time")) {
+//                System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
+//                continue;
+//            }
+//
+//            //if the line is empty, skip it
+//            if (line.trim().length() == 0) continue;
+//            //this line is a comment, skip it
+//            if (line.charAt(0) == '#') continue;
+//
+//            //split up the values by commas into our array of strings
+//            String[] values = line.split("\\,", -1);
+//
+//            if (lastLineWarning) {
+//                if (values.length != headers.size()) {
+//                    String newWarning = "ERROR: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file (" + headers.size() + ").";
+//                    System.err.println(newWarning);
+//                    System.err.println("ERROR: Two line errors in a row means the flight file is corrupt.");
+//                    lastLineWarning = true;
+//
+//                    String errorMessage = "Multiple lines the flight file had extra or missing values, which means the flight file is corrupt:\n";
+//                    errorMessage += lastWarning + "\n";
+//                    errorMessage += newWarning;
+//
+//                    throw new FatalFlightFileException(errorMessage);
+//                } else {
+//                    throw new FatalFlightFileException("A line in the middle of the flight file was missing values, which means the flight file is corrupt:\n" + lastWarning);
+//                }
+//            } else {
+//                if (values.length != headers.size()) {
+//                    lastWarning = "WARNING: line " + lineNumber + " had a different number of values (" + values.length + ") than the number of columns in the file. Not an error if it was the last line in the file.";
+//                    System.err.println(lastWarning);
+//                    lastLineWarning = true;
+//                    continue;
+//                }
+//            }
+//
+//            //for each CSV value
+//            for (int i = 0; i < values.length; i++) {
+//                //add this to the respective column in the csvValues ArrayList, trimming the whitespace around it
+//                csvValues.get(i).add( values[i].trim() );
+//            }
+//
+//            lineNumber++;
+//            numberRows++;
+//        }
+//
+//        //ignore flights that are too short (they didn't actually take off)
+//        if (numberRows < 180)  throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+//
+//
+//        if (lastLineWarning) {
+//            System.err.println("WARNING: last line of the file was cut short and ignored.");
+//        }
+//
+//        System.out.println("parsed " + lineNumber + " lines.");
+//
+//        for (int i = 0; i < csvValues.size(); i++) {
+//            //check to see if each column is a column of doubles or a column of strings
+//
+//            //for each column, find the first non empty value and check to see if it is a double
+//            boolean isDoubleList = false;
+//            ArrayList<String> current = csvValues.get(i);
+//
+//            for (int j = 0; j < current.size(); j++) {
+//                String currentValue = current.get(j);
+//                if (currentValue.length() > 0) {
+//                    try {
+//                        Double.parseDouble(currentValue);
+//                        isDoubleList = true;
+//                    } catch (NumberFormatException e) {
+//                        isDoubleList = false;
+//                        break;
+//                    }
+//                }
+//            }
+//
+//            if (isDoubleList) {
+//                //System.out.println(headers.get(i) + " is a DOUBLE column, ArrayList size: " + current.size());
+//                //System.out.println(current);
+//                DoubleTimeSeries dts = new DoubleTimeSeries(connection, headers.get(i), dataTypes.get(i), current);
+//                if (dts.validCount() > 0) {
+//                    doubleTimeSeries.put(headers.get(i), dts);
+//                } else {
+//                    System.err.println("WARNING: dropping double column '" + headers.get(i) + "' because all entries were empty.");
+//                }
+//
+//            } else {
+//                //System.out.println(headers.get(i) + " is a STRING column, ArrayList size: " + current.size());
+//                //System.out.println(current);
+//                StringTimeSeries sts = new StringTimeSeries(connection, headers.get(i), dataTypes.get(i), current);
+//                if (sts.validCount() > 0) {
+//                    stringTimeSeries.put(headers.get(i), sts);
+//                } else {
+//                    System.err.println("WARNING: dropping string column '" + headers.get(i) + "' because all entries were empty.");
+//                }
+//            }
+//        }
+//
+//    }
+
     private InputStream getReusableInputStream(InputStream inputStream) throws IOException {
         if (inputStream.markSupported() == false) {
             InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
@@ -2019,8 +2264,6 @@ public class Flight {
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
         this.headers = (ArrayList<String>) jsonMap.get("details_headers");
-
-        System.out.println(headers.size());
 
         initialize(connection, inputStream);
         process(connection);
@@ -2326,7 +2569,6 @@ public class Flight {
      * @throws SQLException
      */
     public Flight(String entryName, int fleetId, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
-        System.out.println("JSON File");
         this.fleetId = fleetId;
         this.filename = entryName;
         this.tailConfirmed = false;
@@ -2384,7 +2626,10 @@ public class Flight {
                 new Flight(fleetId, entryName, inputStream, connection);
                 break;
             case "json":
-                new Flight(entryName, fleetId, inputStream, connection);
+                String csvName = jsonToCSV(inputStream, entryName);
+                System.out.println("Converted to json: " + csvName);
+
+                new Flight(fleetId, csvName, inputStream, connection);
                 break;
             default:
                 throw new FatalFlightFileException("Unknown file type: " + fileType);
@@ -3337,5 +3582,41 @@ outer:
         }
 
         printWriter.close();
+    }
+
+    public static String jsonToCSV(InputStream inputStream, String filename) throws IOException {
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        Map jsonMap = gson.fromJson(reader, Map.class);
+        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
+        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+
+        File file = new File(inputStream.toString());
+        PrintWriter printWriter = new PrintWriter(new FileWriter(file), false);
+
+        file.renameTo(new File(filename.replace(".json", ".csv")));
+
+        for (Object header : headers) {
+            printWriter.print(header);
+            if (header != headers.get(headers.size() - 1)) printWriter.print(",");
+        }
+
+        printWriter.println();
+
+        for (Object line : lines) {
+            for (Object value : (ArrayList<Object>) line) {
+                printWriter.print(value);
+
+                if (value != ((ArrayList<Object>) line).get(((ArrayList<Object>) line).size() - 1)) {
+                    printWriter.print(",");
+                } else {
+                    printWriter.println();
+                }
+            }
+        }
+
+        printWriter.close();
+
+        return filename.replace(".json", ".csv");
     }
 }
