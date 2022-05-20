@@ -2019,7 +2019,8 @@ public class Flight {
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
         this.headers = (ArrayList<String>) jsonMap.get("details_headers");
-        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+
+        System.out.println(headers.size());
 
         initialize(connection, inputStream);
         process(connection);
@@ -2325,6 +2326,7 @@ public class Flight {
      * @throws SQLException
      */
     public Flight(String entryName, int fleetId, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException  {
+        System.out.println("JSON File");
         this.fleetId = fleetId;
         this.filename = entryName;
         this.tailConfirmed = false;
