@@ -1724,7 +1724,7 @@ public class Flight {
         fileInformation = bufferedReader.readLine();
         //LOG.info("fileInformation line is: " + fileInformation);
         if (fileInformation == null || fileInformation.length() == 0) throw new FatalFlightFileException("The flight file was empty.");
-        if (fileInformation.charAt(0) != '#') {
+        if (fileInformation.charAt(0) != '#' && fileInformation.charAt(0) != '{') {
             if (fileInformation.substring(0, 4).equals("DID_")) {
                 System.out.println("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
 
@@ -1996,10 +1996,6 @@ public class Flight {
                 }
             }
         }
-    }
-
-    private void initializeJson() {
-
     }
 
     private InputStream getReusableInputStream(InputStream inputStream) throws IOException {
@@ -3340,58 +3336,4 @@ outer:
 
         printWriter.close();
     }
-
-    public static String jsonToCSV(InputStream inputStream, String filename) throws IOException {
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
-        Map jsonMap = gson.fromJson(reader, Map.class);
-        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
-        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
-
-        File file = new File(inputStream.toString());
-        PrintWriter printWriter = new PrintWriter(new FileWriter(file), false);
-
-        file.renameTo(new File(filename.replace(".json", ".csv")));
-
-
-//        String csvFileName = filename.replace(".json", ".csv");
-//        System.out.println(csvFileName);
-//        FileWriter fileWriter = new FileWriter(csvFileName);
-//        PrintWriter printWriter = new PrintWriter(fileWriter, true);
-
-
-        for (Object header : headers) {
-            printWriter.print(header);
-            if (header != headers.get(headers.size() - 1)) printWriter.print(",");
-        }
-
-        printWriter.println();
-
-        for (Object line : lines) {
-            for (Object value : (ArrayList<Object>) line) {
-                printWriter.print(value);
-
-                if (value != ((ArrayList<Object>) line).get(((ArrayList<Object>) line).size() - 1)) {
-                    printWriter.print(",");
-                } else {
-                    printWriter.println();
-                }
-            }
-
-
-        }
-
-
-
-        printWriter.close();
-
-        return filename.replace(".json", ".csv");
-    }
-
-    public static void main(String[] args) throws IOException {
-        jsonToCSV(new FileInputStream("/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json"), "/home/aaron/Documents/d2s2/data/0914_2019-03-18T105839-0400_D87A6D_0002.json");
-    }
-
-
-
 }

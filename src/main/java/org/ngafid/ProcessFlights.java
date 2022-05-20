@@ -106,15 +106,7 @@ public class ProcessFlights {
                                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                                             validFlights++;
-                                        } catch (IOException e) {
-                                            System.err.println(e.getMessage());
-                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                            errorFlights++;
-                                        } catch (FatalFlightFileException e) {
-                                            System.err.println(e.getMessage());
-                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                            errorFlights++;
-                                        } catch (FlightAlreadyExistsException e) {
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
                                             System.err.println(e.getMessage());
                                             flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                             errorFlights++;
@@ -123,14 +115,21 @@ public class ProcessFlights {
                                     }  else if (entry.getName().endsWith(".json")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
-                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection, "json");
+                                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+
                                             if (connection != null) {
                                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
                                             }
 
-                                        } catch (FatalFlightFileException | FlightAlreadyExistsException e) {
+                                            if (flight.getStatus().equals("WARNING")) warningFlights++;
 
+                                            validFlights++;
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                                            System.err.println(e.getMessage());
+                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                            errorFlights++;
                                         }
+
 
                                     } else if (entry.getName().endsWith(".gpx")) {
                                         try {
