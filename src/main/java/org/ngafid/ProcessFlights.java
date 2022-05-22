@@ -1,8 +1,10 @@
 package org.ngafid;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 
+import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -115,12 +118,13 @@ public class ProcessFlights {
                                     }  else if (entry.getName().endsWith(".json")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
-//                                            String csvName = Flight.jsonToCSV(stream, entry.getName());
-//                                            System.out.println("JSON converted to CSV: " + csvName);
-//
-//                                            Flight flight = new Flight(fleetId, csvName, stream, connection);
 
-                                            Flight flight = Flight.processJSON(fleetId, connection, stream, entry.getName());
+                                            String csvName = Flight.jsonToCSV(stream, entry.getName());
+                                            System.out.println("JSON converted to CSV: " + csvName);
+
+                                            Flight flight = new Flight(fleetId, csvName, stream, connection);
+
+//                                            Flight flight = Flight.processJSON(fleetId, connection, stream, entry.getName());
 
                                             if (connection != null) {
                                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
@@ -130,7 +134,7 @@ public class ProcessFlights {
 
                                             validFlights++;
                                         } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
-                                            System.err.println(e.getMessage());
+                                            System.err.println("ERROR: " + e.getMessage());
                                             flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                             errorFlights++;
                                         }
