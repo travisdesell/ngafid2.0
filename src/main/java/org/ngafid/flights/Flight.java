@@ -3460,6 +3460,11 @@ public class Flight {
 
         printWriter.close();
 
+        BufferedReader br = new BufferedReader(new FileReader(filename.replace(".json", ".csv")));
+        String line;
+        while ((line = br.readLine()) != null) {
+            System.out.println(line);
+        }
 
         return filename.replace(".json", ".csv");
 
