@@ -2496,6 +2496,10 @@ public class Flight {
         Map jsonMap = gson.fromJson(reader, Map.class);
         List<String> jsonMapKeys = new ArrayList<>(jsonMap.keySet());
 
+        String dateString = (String) jsonMap.get("date");
+        String date = dateString.substring(0, dateString.indexOf("T"));
+        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.indexOf("-"));
+        String timezone = dateString.substring(dateString.indexOf("-") + 1);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<String>> lines = (ArrayList<ArrayList<String>>) jsonMap.get("details_data");
@@ -2506,7 +2510,10 @@ public class Flight {
         DoubleTimeSeries alt = new DoubleTimeSeries(connection, "Altitude", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "Speed", "kt", len);
 
-        StringTimeSeries time = new StringTimeSeries(connection, "Time", ""); // TODO: Figure out time format.
+        ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
 
         int latIndex = headers.indexOf("product_gps_latitude");
         int lonIndex = headers.indexOf("product_gps_longitude");
