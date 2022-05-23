@@ -2045,16 +2045,6 @@ public class Flight {
         process(connection);
     }
 
-    private void processJson(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException {
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
-        Map jsonMap = gson.fromJson(reader, Map.class);
-        this.headers = (ArrayList<String>) jsonMap.get("details_headers");
-
-        initialize(connection, inputStream);
-        process(connection);
-    }
-
     private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
