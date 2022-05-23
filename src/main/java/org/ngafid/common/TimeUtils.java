@@ -150,6 +150,42 @@ public class TimeUtils {
         return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
+    public static String addSeconds(String time, int seconds) {
+        int hours = Integer.parseInt(time.substring(0, 2));
+        int minutes = Integer.parseInt(time.substring(2, 4));
+        int secondsInt = Integer.parseInt(time.substring(4, 6));
+        secondsInt += seconds;
+        if (secondsInt >= 60) {
+            minutes += secondsInt / 60;
+            secondsInt = secondsInt % 60;
+        }
 
+        if (minutes >= 60) {
+            hours += minutes / 60;
+            minutes = minutes % 60;
+        }
+
+        String hoursString = String.valueOf(hours);
+
+        if (hours < 10) {
+            hoursString = "0" + hoursString;
+        } else if (hours > 23) {
+            hoursString = "00";
+        }
+
+        String minutesString = String.valueOf(minutes);
+
+        if (minutes < 10) {
+            minutesString = "0" + minutesString;
+        }
+
+        String secondsString = String.valueOf(secondsInt);
+
+        if (secondsInt < 10) {
+            secondsString = "0" + secondsString;
+        }
+
+        return hoursString + minutesString + secondsString;
+    }
 
 }

@@ -2515,6 +2515,10 @@ public class Flight {
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
 
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
         int latIndex = headers.indexOf("product_gps_latitude");
         int lonIndex = headers.indexOf("product_gps_longitude");
         int altIndex = headers.indexOf("altitude");
@@ -2527,7 +2531,8 @@ public class Flight {
             lon.add(Double.parseDouble(line.get(lonIndex)));
             alt.add(Double.parseDouble(line.get(altIndex)));
             spd.add(Double.parseDouble(line.get(spdIndex)));
-            time.add(line.get(timeIndex));
+
+
         }
 
 
