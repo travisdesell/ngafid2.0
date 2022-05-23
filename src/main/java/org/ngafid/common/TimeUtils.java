@@ -150,6 +150,12 @@ public class TimeUtils {
         return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
+    /**
+     * Add seconds to a time string in the format "HHMMSS
+     * @param time
+     * @param seconds
+     * @return
+     */
     public static String addSeconds(String time, int seconds) {
         int hours = Integer.parseInt(time.substring(0, 2));
         int minutes = Integer.parseInt(time.substring(2, 4));
