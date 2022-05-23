@@ -2607,19 +2607,26 @@ public class Flight {
 
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
-        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
+        ArrayList<ArrayList<String>> lines = (ArrayList<ArrayList<String>>) jsonMap.get("details_data");
+        int len = headers.size();
 
-        // Get index of header
-        int indexOfTime = headers.indexOf("time");
-        int indexOfLat = headers.indexOf("product_gps_longitude");
-        int indexOfLon = headers.indexOf("product_gps_latitude");
-        int indexOfAlt = headers.indexOf("altitude");
-        int indexOfSpdX = headers.indexOf("speed_vx");
-        int indexOfSpdY = headers.indexOf("speed_vy");
-        int indexOfSpdZ = headers.indexOf("speed_vz");
-        int indexOfAngPhi = headers.indexOf("angle_phi");
-        int indexOfAngTheta = headers.indexOf("angle_theta");
-        int indexOfAngPsi = headers.indexOf("angle_psi");
+        DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
+        DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "Altitude", "ft", len);
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "Speed", "kt", len);
+
+        int latIndex = headers.indexOf("product_gps_latitude");
+        int lonIndex = headers.indexOf("product_gps_longitude");
+        int altIndex = headers.indexOf("altitude");
+        int spdIndex = headers.indexOf("speed");
+
+        for (ArrayList<String> line : lines) {
+            lat.add(Double.parseDouble(line.get(latIndex)));
+            lon.add(Double.parseDouble(line.get(lonIndex)));
+            msl.add(Double.parseDouble(line.get(altIndex)));
+            spd.add(Double.parseDouble(line.get(spdIndex)));
+        }
+
 
 
         return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), null, null, connection);
