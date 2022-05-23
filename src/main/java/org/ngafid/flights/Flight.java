@@ -2343,115 +2343,6 @@ public class Flight {
         checkExceptions();
     }
 
-    /**
-     * Flight Class constructor for json files
-     *
-     * @param entryName
-     * @param fleetId
-     * @param inputStream
-     * @param connection
-     * @throws IOException
-     * @throws FatalFlightFileException
-     * @throws FlightAlreadyExistsException
-     * @throws SQLException
-     */
-    public Flight(String entryName, int fleetId, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
-        Map jsonMap = gson.fromJson(reader, Map.class);
-
-        this.fleetId = fleetId;
-        this.filename = entryName;
-        this.tailConfirmed = false;
-        this.tailNumber = (String) jsonMap.get("uuid");
-        this.suggestedTailNumber = (String) (jsonMap.get("uuid"));
-        this.headers = (ArrayList<String>) jsonMap.get("details_headers");
-
-        // TODO: Figure out what data can be inserted into class fields and handling for init and process
-
-//        this.airframeNameId = airframeNameId;
-//        this.airframeName = airframeName;
-//        this.airframeTypeId = airframeTypeId;
-//        this.airframeType = airframeType;
-        this.systemId = systemId;
-        this.calculationEndpoint = calculationEndpoint;
-        this.md5Hash = md5Hash;
-        this.startDateTime = (String) jsonMap.get("date");
-        this.endDateTime = (String) jsonMap.get("date");
-        this.hasCoords = true;
-        this.hasAGL = true;
-        this.numberRows = ((ArrayList<ArrayList<Object>>) jsonMap.get("details_data")).size();
-
-        ArrayList<ArrayList<Object>> data = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
-        ArrayList<DoubleTimeSeries> dtsArr = new ArrayList<>();
-        ArrayList<StringTimeSeries> stsArr = new ArrayList<>();
-
-
-//        DoubleTimeSeries latitude = new DoubleTimeSeries(); // product_gps_latitude
-//        DoubleTimeSeries longitude = new DoubleTimeSeries(); // product_gps_longitude
-//        DoubleTimeSeries altitude = new DoubleTimeSeries(); // altitude
-//        DoubleTimeSeries speed = new DoubleTimeSeries(); // speed
-
-
-        for (int i = 0; i < headers.size(); i++) {
-            try {
-                Integer.parseInt((String) data.get(0).get(i));
-//                DoubleTimeSeries dts = new DoubleTimeSeries(connection, this.headers.get(i), );
-
-
-            } catch (NumberFormatException e) {
-//                StringTimeSeries sts = new StringTimeSeries(connection, this.headers.get(i), );
-            }
-        }
-
-//        this.insertCompleted = insertCompleted;
-//        this.processingStatus = processingStatus;
-
-//
-//        this.status = status;
-//        this.exceptions = exceptions;
-//        this.fileInformation = fileInformation;
-//        this.dataTypes = dataTypes;
-//        this.tags = tags;
-//
-//        this.calculationCriticalValues = calculationCriticalValues;
-//        this.itinerary = itinerary;
-
-
-    }
-
-
-
-
-    /**
-     * Flight constructor that can be used to specify a certain file type
-     *
-     * @param fleetId
-     * @param entryName
-     * @param inputStream
-     * @param connection
-     * @param fileType
-     * @throws IOException
-     * @throws FatalFlightFileException
-     * @throws FlightAlreadyExistsException
-     * @throws SQLException
-     */
-    public Flight(int fleetId, String entryName, InputStream inputStream, Connection connection, String fileType) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
-        switch (fileType) {
-            case "csv":
-                new Flight(fleetId, entryName, inputStream, connection);
-                break;
-            case "json":
-                String csvName = jsonToCSV(inputStream, entryName);
-                System.out.println("Converted to json: " + csvName);
-
-                new Flight(fleetId, csvName, inputStream, connection);
-                break;
-            default:
-                throw new FatalFlightFileException("Unknown file type: " + fileType);
-        }
-    }
-
     // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
     private Flight(Connection connection, ArrayList<DoubleTimeSeries> doubleTimeSeries, ArrayList<StringTimeSeries> stringTimeSeries, Timestamp startTime, Timestamp endTime) {
 
@@ -2612,24 +2503,37 @@ public class Flight {
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
-        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "Altitude", "ft", len);
+        DoubleTimeSeries alt = new DoubleTimeSeries(connection, "Altitude", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "Speed", "kt", len);
+
+        StringTimeSeries time = new StringTimeSeries(connection, "Time", ""); // TODO: Figure out time format.
 
         int latIndex = headers.indexOf("product_gps_latitude");
         int lonIndex = headers.indexOf("product_gps_longitude");
         int altIndex = headers.indexOf("altitude");
         int spdIndex = headers.indexOf("speed");
+        int timeIndex = headers.indexOf("time");
+
 
         for (ArrayList<String> line : lines) {
             lat.add(Double.parseDouble(line.get(latIndex)));
             lon.add(Double.parseDouble(line.get(lonIndex)));
-            msl.add(Double.parseDouble(line.get(altIndex)));
+            alt.add(Double.parseDouble(line.get(altIndex)));
             spd.add(Double.parseDouble(line.get(spdIndex)));
+            time.add(line.get(timeIndex));
         }
 
 
+        HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
+        doubleSeries.put("Speed", spd);
+        doubleSeries.put("Longitude", lon);
+        doubleSeries.put("Latitude", lat);
+        doubleSeries.put("Altitude", alt);
 
-        return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), null, null, connection);
+        HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
+        // TODO: Figure out time data to add
+
+        return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
     }
 
     /**
