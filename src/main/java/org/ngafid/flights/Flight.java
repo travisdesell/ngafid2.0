@@ -3350,46 +3350,4 @@ public class Flight {
 
         printWriter.close();
     }
-
-    public static String jsonToCSV(InputStream inputStream, String filename) throws IOException {
-        Gson gson = new Gson();
-        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
-        Map jsonMap = gson.fromJson(reader, Map.class);
-        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
-        ArrayList<ArrayList<Object>> lines = (ArrayList<ArrayList<Object>>) jsonMap.get("details_data");
-
-        // TODO: Figure out issue with file not being found/created
-
-        PrintWriter printWriter = new PrintWriter(new FileWriter(filename.replace(".json", ".csv")), true);
-
-        for (Object header : headers) {
-            printWriter.print(header);
-            if (header != headers.get(headers.size() - 1)) printWriter.print(",");
-        }
-
-        printWriter.println();
-
-        for (Object line : lines) {
-            for (Object value : (ArrayList<Object>) line) {
-                printWriter.print(value);
-
-                if (value != ((ArrayList<Object>) line).get(((ArrayList<Object>) line).size() - 1)) {
-                    printWriter.print(",");
-                } else {
-                    printWriter.println();
-                }
-            }
-        }
-
-        printWriter.close();
-
-        BufferedReader br = new BufferedReader(new FileReader(filename.replace(".json", ".csv")));
-        String line;
-        while ((line = br.readLine()) != null) {
-            System.out.println(line);
-        }
-
-        return filename.replace(".json", ".csv");
-
-    }
 }
