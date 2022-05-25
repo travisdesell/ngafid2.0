@@ -130,6 +130,8 @@ public class ProcessFlights {
                                             System.err.println("ERROR: " + e.getMessage());
                                             flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                             errorFlights++;
+                                        } catch (ParseException e) {
+                                            throw new RuntimeException(e);
                                         }
 
 
