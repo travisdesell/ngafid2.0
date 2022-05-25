@@ -2170,6 +2170,8 @@ public class Flight {
                 LOG.warning("Cannot calculate engine divergences because airframe data recorder does not track CHT and/or EGT: '" + airframeName + "'");
                 exceptions.add(new MalformedFlightFileException("Cannot calculate engine variances because airframe '" + airframeName + " does not track CHT and/or EGT"));
 
+            } else if (airframeName.contains("RC")) {
+                // This is a RC/UAS, divergences can't be calculated
             } else {
                 LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeName + "'");
                 LOG.severe("Skipping...");
@@ -2483,7 +2485,6 @@ public class Flight {
 
         String dateString = (String) jsonMap.get("date");
         String date = dateString.substring(0, dateString.indexOf("T"));
-        String timezoneSymbol = dateString.charAt(dateString.length() - 5) + "";
         String time = dateString.substring(dateString.indexOf("T") + 1, dateString.length() - 5);
         String timezone = dateString.substring(dateString.length() - 5);
 
@@ -2493,10 +2494,10 @@ public class Flight {
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
-        DoubleTimeSeries alt = new DoubleTimeSeries(connection, "Altitude", "ft", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "Altitude", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "Speed", "kt", len);
 
-        ArrayList<Timestamp> timestamps = new ArrayList<Timestamp>(len);
+        ArrayList<Timestamp> timestamps = new ArrayList<>(len);
         StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
@@ -2515,17 +2516,16 @@ public class Flight {
         for (ArrayList<T> line : lines) {
             lat.add((Double) line.get(latIndex));
             lon.add((Double) line.get(lonIndex));
-            alt.add((Double) line.get(altIndex));
+            msl.add((Double) line.get(altIndex));
             spd.add((Double) line.get(spdIndex));
 
-            System.out.println(line.get(timeIndex));
             time = TimeUtils.addSeconds(time, (Double) line.get(timeIndex));
             Date parsedDate = dateFormat.parse(date + "T" + TimeUtils.insertColons(time));
             timestamps.add(new Timestamp(parsedDate.getTime()));
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
             localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add(TimeUtils.toUTC(date, TimeUtils.insertColons(time), timezone));
+            utcOfstSeries.add(timezone);
         }
 
         int start = 0;
@@ -2535,13 +2535,13 @@ public class Flight {
         DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
         DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
         DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
-        DoubleTimeSeries nalt = alt.subSeries(connection, start, end);
+        DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
 
         HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
         doubleSeries.put("Speed", nspd);
         doubleSeries.put("Longitude", nlon);
         doubleSeries.put("Latitude", nlat);
-        doubleSeries.put("Altitude", nalt);
+        doubleSeries.put("AltMsl", nmsl);
 
 
         StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);

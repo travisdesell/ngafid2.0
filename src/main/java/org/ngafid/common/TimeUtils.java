@@ -205,8 +205,6 @@ public class TimeUtils {
             }
         }
 
-        System.out.println(sb.toString());
-
         return sb.toString();
     }
 

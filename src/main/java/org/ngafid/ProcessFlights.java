@@ -126,15 +126,11 @@ public class ProcessFlights {
                                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                                             validFlights++;
-                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | ParseException e) {
                                             System.err.println("ERROR: " + e.getMessage());
                                             flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                             errorFlights++;
-                                        } catch (ParseException e) {
-                                            throw new RuntimeException(e);
                                         }
-
-
                                     } else if (entry.getName().endsWith(".gpx")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
