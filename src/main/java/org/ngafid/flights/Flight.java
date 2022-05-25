@@ -2485,7 +2485,7 @@ public class Flight {
         String date = dateString.substring(0, dateString.indexOf("T"));
         String timezoneSymbol = dateString.charAt(dateString.length() - 5) + "";
         String time = dateString.substring(dateString.indexOf("T") + 1, dateString.length() - 5);
-        String timezone = dateString.substring(dateString.indexOf(timezoneSymbol) + 1);
+        String timezone = dateString.substring(dateString.length() - 5);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
@@ -2525,7 +2525,7 @@ public class Flight {
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
             localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add(TimeUtils.toUTC(date, time, timezone));
+            utcOfstSeries.add(TimeUtils.toUTC(date, TimeUtils.insertColons(time), timezone));
         }
 
         int start = 0;
