@@ -2482,9 +2482,12 @@ public class Flight {
         Map jsonMap = gson.fromJson(reader, Map.class);
 
         String dateString = (String) jsonMap.get("date");
+        System.out.println(dateString);
         String date = dateString.substring(0, dateString.indexOf("T"));
+        System.out.println(date);
         String timezoneSymbol = dateString.charAt(dateString.length() - 5) + "";
-        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.indexOf(timezoneSymbol));
+        System.out.println(dateString.indexOf(timezoneSymbol));
+        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.length() - 5);
         String timezone = dateString.substring(dateString.indexOf(timezoneSymbol) + 1);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
