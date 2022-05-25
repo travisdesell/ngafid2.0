@@ -2476,22 +2476,19 @@ public class Flight {
         return flights;
     }
 
-    public static Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
+    public static <T> Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
 
         String dateString = (String) jsonMap.get("date");
-        System.out.println(dateString);
         String date = dateString.substring(0, dateString.indexOf("T"));
-        System.out.println(date);
         String timezoneSymbol = dateString.charAt(dateString.length() - 5) + "";
-        System.out.println(dateString.indexOf(timezoneSymbol));
         String time = dateString.substring(dateString.indexOf("T") + 1, dateString.length() - 5);
         String timezone = dateString.substring(dateString.indexOf(timezoneSymbol) + 1);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
-        ArrayList<ArrayList<String>> lines = (ArrayList<ArrayList<String>>) jsonMap.get("details_data");
+        ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
         int len = headers.size();
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
@@ -2515,13 +2512,13 @@ public class Flight {
         int timeIndex = headers.indexOf("time");
 
 
-        for (ArrayList<String> line : lines) {
-            lat.add(Double.parseDouble(line.get(latIndex)));
-            lon.add(Double.parseDouble(line.get(lonIndex)));
-            alt.add(Double.parseDouble(line.get(altIndex)));
-            spd.add(Double.parseDouble(line.get(spdIndex)));
+        for (ArrayList<T> line : lines) {
+            lat.add((Double) line.get(latIndex));
+            lon.add((Double) line.get(lonIndex));
+            alt.add((Double) line.get(altIndex));
+            spd.add((Double) line.get(spdIndex));
 
-            time = TimeUtils.addSeconds(time, Integer.parseInt(line.get(timeIndex)));
+            time = TimeUtils.addSeconds(time, Integer.parseInt((String) line.get(timeIndex)));
             Date parsedDate = dateFormat.parse(time);
             timestamps.add(new Timestamp(parsedDate.getTime()));
 
