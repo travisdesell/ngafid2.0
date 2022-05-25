@@ -194,4 +194,20 @@ public class TimeUtils {
         return hoursString + minutesString + secondsString;
     }
 
+    public static String insertColons(String time) {
+        StringBuilder sb = new StringBuilder();
+
+        for (int i = 0; i < time.length(); i += 2) {
+            sb.append(time.substring(i, i + 2));
+
+            if (i < time.length() - 2) {
+                sb.append(":");
+            }
+        }
+
+        System.out.println(sb.toString());
+
+        return sb.toString();
+    }
+
 }
