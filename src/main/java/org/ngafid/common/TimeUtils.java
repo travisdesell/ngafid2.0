@@ -156,7 +156,7 @@ public class TimeUtils {
      * @param seconds
      * @return
      */
-    public static String addSeconds(String time, int seconds) {
+    public static String addSeconds(String time, double seconds) {
         int hours = Integer.parseInt(time.substring(0, 2));
         int minutes = Integer.parseInt(time.substring(2, 4));
         int secondsInt = Integer.parseInt(time.substring(4, 6));

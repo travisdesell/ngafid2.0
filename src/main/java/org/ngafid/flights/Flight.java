@@ -2518,7 +2518,8 @@ public class Flight {
             alt.add((Double) line.get(altIndex));
             spd.add((Double) line.get(spdIndex));
 
-            time = TimeUtils.addSeconds(time, Integer.parseInt((String) line.get(timeIndex)));
+            System.out.println(line.get(timeIndex));
+            time = TimeUtils.addSeconds(time, (Double) line.get(timeIndex));
             Date parsedDate = dateFormat.parse(time);
             timestamps.add(new Timestamp(parsedDate.getTime()));
 
