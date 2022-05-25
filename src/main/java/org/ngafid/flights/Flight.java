@@ -2520,7 +2520,7 @@ public class Flight {
 
             System.out.println(line.get(timeIndex));
             time = TimeUtils.addSeconds(time, (Double) line.get(timeIndex));
-            Date parsedDate = dateFormat.parse(date + "'" + TimeUtils.insertColons(time));
+            Date parsedDate = dateFormat.parse(date + "T" + TimeUtils.insertColons(time));
             timestamps.add(new Timestamp(parsedDate.getTime()));
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
