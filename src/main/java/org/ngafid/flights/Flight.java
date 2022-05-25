@@ -2198,10 +2198,6 @@ public class Flight {
 
     }
 
-    private void processJSON() throws MalformedFlightFileException {
-
-    }
-
     private void checkExceptions() {
         if (exceptions.size() > 0) {
             status = "WARNING";
@@ -2248,8 +2244,8 @@ public class Flight {
     // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
     // separate flights.
     public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
-                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection) 
-        throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection)
+            throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.doubleTimeSeries = doubleTimeSeries;
         this.stringTimeSeries = stringTimeSeries;
         this.airframeName = airframeName;
@@ -2480,16 +2476,16 @@ public class Flight {
         return flights;
     }
 
-    public static Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public static Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
-        List<String> jsonMapKeys = new ArrayList<>(jsonMap.keySet());
 
         String dateString = (String) jsonMap.get("date");
         String date = dateString.substring(0, dateString.indexOf("T"));
-        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.indexOf("-"));
-        String timezone = dateString.substring(dateString.indexOf("-") + 1);
+        String timezoneSymbol = dateString.charAt(dateString.length() - 5) + "";
+        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.indexOf(timezoneSymbol));
+        String timezone = dateString.substring(dateString.indexOf(timezoneSymbol) + 1);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<String>> lines = (ArrayList<ArrayList<String>>) jsonMap.get("details_data");
@@ -2505,7 +2501,7 @@ public class Flight {
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
@@ -2522,18 +2518,39 @@ public class Flight {
             alt.add(Double.parseDouble(line.get(altIndex)));
             spd.add(Double.parseDouble(line.get(spdIndex)));
 
+            time = TimeUtils.addSeconds(time, Integer.parseInt(line.get(timeIndex)));
+            Date parsedDate = dateFormat.parse(time);
+            timestamps.add(new Timestamp(parsedDate.getTime()));
 
+            localDateSeries.add(lclDateFormat.format(parsedDate));
+            localTimeSeries.add(lclTimeFormat.format(parsedDate));
+            utcOfstSeries.add(TimeUtils.toUTC(date, time, timezone));
         }
 
+        int start = 0;
+        int end = timestamps.size() - 1;
+
+
+        DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
+        DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
+        DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
+        DoubleTimeSeries nalt = alt.subSeries(connection, start, end);
 
         HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
-        doubleSeries.put("Speed", spd);
-        doubleSeries.put("Longitude", lon);
-        doubleSeries.put("Latitude", lat);
-        doubleSeries.put("Altitude", alt);
+        doubleSeries.put("Speed", nspd);
+        doubleSeries.put("Longitude", nlon);
+        doubleSeries.put("Latitude", nlat);
+        doubleSeries.put("Altitude", nalt);
+
+
+        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+        StringTimeSeries offset = utcOfstSeries.subSeries(connection, start, end);
 
         HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
-        // TODO: Figure out time data to add
+        stringSeries.put("Lcl Date", localDate);
+        stringSeries.put("Lcl Time", localTime);
+        stringSeries.put("UTCOfst", offset);
 
         return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
     }
