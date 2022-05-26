@@ -64,6 +64,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.*;
+import org.ngafid.events.Event;
 import org.ngafid.Database;
 import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
@@ -251,9 +252,9 @@ public class Flight {
      *
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    private void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException {
+    private void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param)) {
+            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
@@ -2147,8 +2148,9 @@ public class Flight {
                 // System.exit(1);
             }
 
-            if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
+            if (!airframeName.equals("ScanEagle")) {
                 //LOCI doesn't apply to UAS
+
                 runLOCICalculations(connection);
             }
 
@@ -2447,6 +2449,74 @@ public class Flight {
         return flights;
     }
 
+    public void findSpinEvents(Connection connection) throws MalformedFlightFileException, SQLException, IOException {
+        this.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
+
+        List<Event> spinStarts = new ArrayList<>();
+
+        DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
+        DoubleTimeSeries dVSI = getDoubleTimeSeries(VSPD_CALCULATED);
+        DoubleTimeSeries normAc = getDoubleTimeSeries(NORM_AC);
+
+        StringTimeSeries dateSeries = getStringTimeSeries(LCL_DATE);
+
+        boolean airspeedIsLow = false;
+        boolean spinStartFound = false;
+
+        double maxNormAc = 0.d;
+
+        int lowAirspeedIndex = -1, maxNormAcIndex = -1;
+
+        Event currentEvent = null;
+
+        for (int i = 0; i < this.getNumberRows(); i++) {
+            double instIAS = ias.get(i);
+            double instVSI = dVSI.get(i);
+            double normAcRel = Math.abs(normAc.get(i));
+
+            if (!airspeedIsLow && instIAS < 50) {
+                airspeedIsLow = true;
+                lowAirspeedIndex = i;
+            }
+
+            if (airspeedIsLow) {
+
+                // check for severity
+                if (normAcRel > maxNormAc) {
+                    System.out.println("norm gt");
+                    maxNormAc = normAcRel;
+                    maxNormAcIndex = i;
+                }
+
+                if (i - lowAirspeedIndex <= 3 && instVSI <= -3500) {
+                    if (!spinStartFound) {
+                        currentEvent = new Event(dateSeries.get(lowAirspeedIndex), dateSeries.get(i), lowAirspeedIndex, i, normAc.get(maxNormAcIndex));
+                        spinStarts.add(currentEvent);
+                        System.out.println("Spin event found!");
+
+                        spinStartFound = true;
+                    } 
+
+                } else if (spinStartFound) {
+                    currentEvent.updateEnd(dateSeries.get(i), i);
+
+                    spinStartFound = false;
+                    airspeedIsLow = false;
+
+                    lowAirspeedIndex = -1;
+                    maxNormAcIndex = -1;
+
+                    maxNormAc = 0.d;
+                }
+            }
+        }
+
+        LOG.info("Updating database with Spin Events.");
+        for (Event event : spinStarts) {
+            event.updateDatabase(connection, this.fleetId, this.id, -2);
+        }
+    }
+
     /**
      * Runs the Loss of Control/Stall Index calculations
      *
@@ -2469,7 +2539,7 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
