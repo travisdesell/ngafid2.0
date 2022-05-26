@@ -6,6 +6,8 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Calendar;
+import java.util.Date;
 
 
 public class TimeUtils {
@@ -194,18 +196,10 @@ public class TimeUtils {
         return hoursString + minutesString + secondsString;
     }
 
-    public static String insertColons(String time) {
-        StringBuilder sb = new StringBuilder();
-
-        for (int i = 0; i < time.length(); i += 2) {
-            sb.append(time.substring(i, i + 2));
-
-            if (i < time.length() - 2) {
-                sb.append(":");
-            }
-        }
-
-        return sb.toString();
+    public static Date addSeconds(Date date, Integer seconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.SECOND, seconds);
+        return cal.getTime();
     }
-
 }

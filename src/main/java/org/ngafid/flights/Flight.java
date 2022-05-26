@@ -2,6 +2,7 @@ package org.ngafid.flights;
 
 import java.io.*;
 import java.sql.*;
+import java.text.DateFormat;
 import java.util.Iterator;
 import java.time.DateTimeException;
 import java.text.SimpleDateFormat;
@@ -2478,15 +2479,16 @@ public class Flight {
         return flights;
     }
 
+    @SuppressWarnings("deprecation")
     public static <T> Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
 
-        String dateString = (String) jsonMap.get("date");
-        String date = dateString.substring(0, dateString.indexOf("T"));
-        String time = dateString.substring(dateString.indexOf("T") + 1, dateString.length() - 5);
-        String timezone = dateString.substring(dateString.length() - 5);
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
+        Date parsedDate = dateFormat.parse((String) jsonMap.get("date"));
+        Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
+        int timezoneOffset = cal.getTimeZone().getOffset(parsedDate.getTime());
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
@@ -2502,7 +2504,6 @@ public class Flight {
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
@@ -2519,18 +2520,13 @@ public class Flight {
             msl.add((Double) line.get(altIndex));
             spd.add((Double) line.get(spdIndex));
 
-            time = TimeUtils.addSeconds(time, (Double) line.get(timeIndex));
-            Date parsedDate = dateFormat.parse(date + "T" + TimeUtils.insertColons(time));
-            timestamps.add(new Timestamp(parsedDate.getTime()));
-
             localDateSeries.add(lclDateFormat.format(parsedDate));
             localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add(timezone);
+            utcOfstSeries.add(parsedDate.getTimezoneOffset() / 60 / 60 + ":" + (parsedDate.getTimezoneOffset() / 60) % 60);
         }
 
         int start = 0;
         int end = timestamps.size() - 1;
-
 
         DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
         DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
