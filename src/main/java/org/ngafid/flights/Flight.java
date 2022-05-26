@@ -2495,7 +2495,7 @@ public class Flight {
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
         DoubleTimeSeries msl = new DoubleTimeSeries(connection, "Altitude", "ft", len);
-        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "Speed", "kt", len);
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
 
         ArrayList<Timestamp> timestamps = new ArrayList<>(len);
         StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
@@ -2538,7 +2538,7 @@ public class Flight {
         DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
 
         HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
-        doubleSeries.put("Speed", nspd);
+        doubleSeries.put("GndSpd", nspd);
         doubleSeries.put("Longitude", nlon);
         doubleSeries.put("Latitude", nlat);
         doubleSeries.put("AltMsl", nmsl);
