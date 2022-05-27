@@ -2522,13 +2522,22 @@ public class Flight {
             prevSeconds = (double) line.get(timeIndex);
             parsedDate = TimeUtils.addSeconds(parsedDate, (int) seconds);
 
-            if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90 || (double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
-                LOG.severe("Invalid latitude or longitude: " + line.get(latIndex) + ", " + line.get(lonIndex));
+            if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
+                LOG.severe("Invalid latitude: " + line.get(latIndex));
                 status = "WARNING";
+                lat.add(Double.NaN);
+            } else {
+                lat.add((Double) line.get(latIndex));
             }
 
-            lat.add((Double) line.get(latIndex));
-            lon.add((Double) line.get(lonIndex));
+            if((double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
+                LOG.severe("Invalid longitude: " + line.get(lonIndex));
+                status = "WARNING";
+                lon.add(Double.NaN);
+            } else {
+                lon.add((Double) line.get(lonIndex));
+            }
+
             msl.add((Double) line.get(altIndex));
             spd.add((Double) line.get(spdIndex));
 
