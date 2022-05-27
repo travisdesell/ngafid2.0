@@ -2487,8 +2487,9 @@ public class Flight {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
         Date parsedDate = dateFormat.parse((String) jsonMap.get("date"));
-        Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
-        int timezoneOffset = cal.getTimeZone().getOffset(parsedDate.getTime());
+//        Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
+        int timezoneOffset = parsedDate.getTimezoneOffset() / 60;
+        String timezoneOffsetString = (timezoneOffset >= 0 ? "+" : "-") + String.format("%02d:00", timezoneOffset);
 
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
@@ -2523,7 +2524,7 @@ public class Flight {
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
             localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add( + timezoneOffset + ":00");
+            utcOfstSeries.add(timezoneOffsetString);
             timestamps.add(new Timestamp(parsedDate.getTime()));
         }
 
