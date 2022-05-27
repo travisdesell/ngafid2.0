@@ -2481,6 +2481,7 @@ public class Flight {
 
     @SuppressWarnings("deprecation")
     public static <T> Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
+        String status = "";
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
@@ -2521,13 +2522,9 @@ public class Flight {
             prevSeconds = (double) line.get(timeIndex);
             parsedDate = TimeUtils.addSeconds(parsedDate, (int) seconds);
 
-
-
-//            System.out.println("Latitude: " + line.get(latIndex));
-//            System.out.println("Longitude: " + line.get(lonIndex));
-
             if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90 || (double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
-                throw new FatalFlightFileException("Invalid latitude or longitude value: " + line.get(latIndex) + ", " + line.get(lonIndex));
+                LOG.severe("Invalid latitude or longitude: " + line.get(latIndex) + ", " + line.get(lonIndex));
+                status = "WARNING";
             }
 
             lat.add((Double) line.get(latIndex));
@@ -2565,7 +2562,10 @@ public class Flight {
         stringSeries.put("Lcl Time", localTime);
         stringSeries.put("UTCOfst", offset);
 
-        return new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
+        Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
+        flight.status = status;
+
+        return flight;
     }
 
     /**
