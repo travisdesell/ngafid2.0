@@ -2517,6 +2517,14 @@ public class Flight {
 
         for (ArrayList<T> line : lines) {
             parsedDate.setSeconds((int) (parsedDate.getSeconds() + Math.round((double) line.get(timeIndex))));
+
+//            System.out.println("Latitude: " + line.get(latIndex));
+//            System.out.println("Longitude: " + line.get(lonIndex));
+
+            if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90 || (double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
+                throw new FatalFlightFileException("Invalid latitude or longitude value: " + line.get(latIndex) + ", " + line.get(lonIndex));
+            }
+
             lat.add((Double) line.get(latIndex));
             lon.add((Double) line.get(lonIndex));
             msl.add((Double) line.get(altIndex));
