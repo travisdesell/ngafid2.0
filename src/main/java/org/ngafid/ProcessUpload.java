@@ -285,15 +285,7 @@ public class ProcessUpload {
                             flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
                             validFlights++;
-                        } catch (IOException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        } catch (FatalFlightFileException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        } catch (FlightAlreadyExistsException e) {
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
