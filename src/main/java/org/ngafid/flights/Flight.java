@@ -2486,6 +2486,8 @@ public class Flight {
         JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
         Map jsonMap = gson.fromJson(reader, Map.class);
 
+
+
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
         Date parsedDate = dateFormat.parse((String) jsonMap.get("date"));
 
@@ -2514,6 +2516,10 @@ public class Flight {
         int altIndex = headers.indexOf("altitude");
         int spdIndex = headers.indexOf("speed");
         int timeIndex = headers.indexOf("time");
+
+        double timeDiff = ((double) lines.get(lines.size() - 1).get(timeIndex)) - ((double) lines.get(0).get(timeIndex));
+        if (timeDiff < 180) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+
 
         double prevSeconds = 0;
 
