@@ -2515,6 +2515,7 @@ public class Flight {
 
 
         for (ArrayList<T> line : lines) {
+            parsedDate.setSeconds((int) (parsedDate.getSeconds() + Math.round((double) line.get(timeIndex))));
             lat.add((Double) line.get(latIndex));
             lon.add((Double) line.get(lonIndex));
             msl.add((Double) line.get(altIndex));
@@ -2522,7 +2523,8 @@ public class Flight {
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
             localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add(parsedDate.getTimezoneOffset() / 60 / 60 + ":" + (parsedDate.getTimezoneOffset() / 60) % 60);
+            utcOfstSeries.add( + timezoneOffset + ":00");
+            timestamps.add(new Timestamp(parsedDate.getTime()));
         }
 
         int start = 0;
@@ -2537,7 +2539,7 @@ public class Flight {
         doubleSeries.put("GndSpd", nspd);
         doubleSeries.put("Longitude", nlon);
         doubleSeries.put("Latitude", nlat);
-        doubleSeries.put("AltMsl", nmsl);
+        doubleSeries.put("AltMSL", nmsl);
 
 
         StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
