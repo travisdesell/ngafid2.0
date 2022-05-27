@@ -2519,10 +2519,9 @@ public class Flight {
         for (ArrayList<T> line : lines) {
             double seconds = (double) line.get(timeIndex) - prevSeconds;
             prevSeconds = (double) line.get(timeIndex);
-            parsedDate = TimeUtils.addSeconds(parsedDate, (int) ((double) line.get(timeIndex) - seconds));
+            parsedDate = TimeUtils.addSeconds(parsedDate, (int) seconds);
 
-            System.out.println(seconds);
-            System.out.println(parsedDate);
+
 
 //            System.out.println("Latitude: " + line.get(latIndex));
 //            System.out.println("Longitude: " + line.get(lonIndex));
