@@ -2487,7 +2487,7 @@ public class Flight {
 
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
         Date parsedDate = dateFormat.parse((String) jsonMap.get("date"));
-//        Calendar cal = new Calendar.Builder().setInstant(parsedDate).build();
+
         int timezoneOffset = parsedDate.getTimezoneOffset() / 60;
         String timezoneOffsetString = (timezoneOffset >= 0 ? "+" : "-") + String.format("%02d:00", timezoneOffset);
 
@@ -2497,7 +2497,7 @@ public class Flight {
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
-        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "Altitude", "ft", len);
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
 
         ArrayList<Timestamp> timestamps = new ArrayList<>(len);
@@ -2514,9 +2514,15 @@ public class Flight {
         int spdIndex = headers.indexOf("speed");
         int timeIndex = headers.indexOf("time");
 
+        double prevSeconds = 0;
 
         for (ArrayList<T> line : lines) {
-            parsedDate.setSeconds((int) (parsedDate.getSeconds() + Math.round((double) line.get(timeIndex))));
+            double seconds = (double) line.get(timeIndex) - prevSeconds;
+            prevSeconds = (double) line.get(timeIndex);
+            parsedDate = TimeUtils.addSeconds(parsedDate, (int) ((double) line.get(timeIndex) - seconds));
+
+            System.out.println(seconds);
+            System.out.println(parsedDate);
 
 //            System.out.println("Latitude: " + line.get(latIndex));
 //            System.out.println("Longitude: " + line.get(lonIndex));
