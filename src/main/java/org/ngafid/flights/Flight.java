@@ -2479,6 +2479,21 @@ public class Flight {
         return flights;
     }
 
+    /**
+     * Creates a flight object from a JSON file
+     *
+     * @param fleetId
+     * @param connection
+     * @param inputStream
+     * @param filename
+     * @return
+     * @param <T>
+     * @throws SQLException
+     * @throws IOException
+     * @throws FatalFlightFileException
+     * @throws FlightAlreadyExistsException
+     * @throws ParseException
+     */
     @SuppressWarnings("deprecation")
     public static <T> Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
         String status = "";
