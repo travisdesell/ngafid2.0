@@ -61,7 +61,7 @@ public class GetNgafidCesium implements Route {
 
     public GetNgafidCesium(Gson gson) {
         this.gson = gson;
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override
@@ -143,7 +143,7 @@ public class GetNgafidCesium implements Route {
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
 
-                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
                         }
                     }
@@ -153,7 +153,7 @@ public class GetNgafidCesium implements Route {
                 for (int i = 0; i < altAgl.size(); i++) {
 
                     if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
 
                             if (takeoffCounter <= 15) {
                                 flightGeoAglTakeOff.add(longitude.get(i));
@@ -174,7 +174,7 @@ public class GetNgafidCesium implements Route {
                 for (int i = 0; i < altAgl.size(); i++) {
 
                     if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
-                        if (rpm.get(i) >= 2100 && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
+                        if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
 
                             if (countPostTakeoff >= 15) {
                                 flightGeoAglClimb.add(longitude.get(i));
