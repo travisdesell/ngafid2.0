@@ -2591,6 +2591,12 @@ public class Flight {
         Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
         flight.status = status;
 
+        try {
+            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
+        } catch (MalformedFlightFileException e) {
+            flight.exceptions.add(e);
+        }
+
         return flight;
     }
 
@@ -2873,6 +2879,8 @@ public class Flight {
             try {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
 
+//                System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
+
                 altitudeAGLTS.add(altitudeAGL);
 
                 //the terrain cache will not be able to find the file if the lat/long is outside of the USA
@@ -2883,7 +2891,6 @@ public class Flight {
                 throw new MalformedFlightFileException("Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
             }
 
-            //System.out.println("msl: " + altitudeMSL + ", agl: " + altitudeAGL);
         }
 
         doubleTimeSeries.put(altitudeAGLColumnName, altitudeAGLTS);
