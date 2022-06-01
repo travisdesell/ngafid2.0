@@ -56,6 +56,7 @@ public interface CalculationParameters {
     public static final String WIND_SPEED = "WndSpd";
     public static final String WIND_DIRECTION = "WndDr";
     public static final String LCL_DATE = "Lcl Date";
+    public static final String LCL_TIME = "Lcl Time";
 
     /**
      * {@link Airframes} id's
