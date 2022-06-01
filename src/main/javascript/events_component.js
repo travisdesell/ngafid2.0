@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import Plotly from 'plotly.js';
 import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
+import GetDescription from "./get_description";
 
 
 // establish set of RGB values to combine //
@@ -209,7 +210,9 @@ class Events extends React.Component {
                                                     }
                                                 }
                                             }
-                                        }>
+                                        }
+                                    title={GetDescription(event.eventDefinition.name)}>
+
                                 <b>{event.eventDefinition.name}</b>
                             </button>
                         );
