@@ -59,6 +59,7 @@ public class FindSpinEvents {
         DoubleTimeSeries altAGL = flight.getDoubleTimeSeries(connection, ALT_AGL);
 
         StringTimeSeries dateSeries = flight.getStringTimeSeries(connection, LCL_DATE);
+        StringTimeSeries timeSeries = flight.getStringTimeSeries(connection, LCL_TIME);
 
         boolean airspeedIsLow = false;
         boolean spinStartFound = false;
@@ -93,7 +94,10 @@ public class FindSpinEvents {
                     if (i - lowAirspeedIndex <= 3 && instVSI <= -3500) {
                         System.out.println("Spin start found!");
                         if (!spinStartFound) {
-                            currentEvent = new CustomEvent(dateSeries.get(lowAirspeedIndex), dateSeries.get(i), lowAirspeedIndex, i, maxNormAc, flight, CustomEvent.SPIN_START);
+                            String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
+                            String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
+
+                            currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight, CustomEvent.SPIN_START);
                             spinStarts.add(currentEvent);
 
                             spinStartFound = true;
@@ -101,7 +105,8 @@ public class FindSpinEvents {
 
                     } else {
                         if (spinStartFound) {
-                            currentEvent.updateEnd(dateSeries.get(i), i);
+                            String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
+                            currentEvent.updateEnd(endTime, i);
                         }
 
                         spinStartFound = false;
