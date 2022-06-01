@@ -126,7 +126,7 @@ public class FindSpinEvents {
     }
 
     static void setFlightProcessed(Flight flight, int hadError, int count) throws SQLException {
-        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = ?";
+        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         PreparedStatement stmt = connection.prepareStatement(queryString);
 
