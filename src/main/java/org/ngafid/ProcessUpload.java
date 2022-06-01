@@ -183,6 +183,8 @@ public class ProcessUpload {
 
             //only progress if the upload ingestion was successful
             if (success) {
+                FindSpinEvents.findSpinEventsInUpload(upload);
+
                 CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
 
                 CalculateProximity.calculateProximity(connection, uploadId, uploadProcessedEmail);
