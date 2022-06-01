@@ -64,6 +64,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.*;
+import org.ngafid.events.*;
 import org.ngafid.Database;
 import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
@@ -251,9 +252,9 @@ public class Flight {
      *
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    private void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException {
+    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param)) {
+            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
@@ -2142,8 +2143,9 @@ public class Flight {
                 // System.exit(1);
             }
 
-            if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
+            if (!airframeName.equals("ScanEagle")) {
                 //LOCI doesn't apply to UAS
+
                 runLOCICalculations(connection);
             }
 
@@ -2464,7 +2466,7 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
@@ -3149,12 +3151,21 @@ outer:
 
                 for (String key : doubleTimeSeries.keySet()) {
                     System.out.println("double time series key: '" + key);
-                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                    try {
+                        System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                    } catch (NullPointerException ne) {
+                        System.out.println("NPEX:  " + key);
+                        System.out.println(doubleTimeSeries.toString());
+                        System.out.println(doubleTimeSeries.get(key));
+                        ne.printStackTrace();
+                    }
                 }
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    System.out.println(series);
-                    series.updateDatabase(connection, flightId);
+                    if (series != null) {
+                        System.out.println(series);
+                        series.updateDatabase(connection, flightId);
+                    }
                 }
 
                 for (StringTimeSeries series : stringTimeSeries.values()) {

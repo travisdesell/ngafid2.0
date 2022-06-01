@@ -46,6 +46,7 @@ public interface CalculationParameters {
     public static final String E1_RPM = "E1 RPM";
     public static final String TAS_FTMIN = "True Airspeed(ft/min)";
     public static final String STALL_PROB = "Stall Index";
+    public static final String SPIN = "Spin Event(s)";
     public static final String LOCI = "LOC-I Index";
     public static final String PRO_SPIN_FORCE = "Coordination Index";
     public static final String YAW_RATE = "Yaw Rate";
@@ -54,6 +55,7 @@ public interface CalculationParameters {
     public static final String GND_SPD = "GndSpd";
     public static final String WIND_SPEED = "WndSpd";
     public static final String WIND_DIRECTION = "WndDr";
+    public static final String LCL_DATE = "Lcl Date";
 
     /**
      * {@link Airframes} id's
@@ -74,6 +76,7 @@ public interface CalculationParameters {
     public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL};
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
+    public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
