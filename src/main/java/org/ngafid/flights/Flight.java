@@ -64,7 +64,7 @@ import java.util.logging.Logger;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.*;
-import org.ngafid.events.Event;
+import org.ngafid.events.*;
 import org.ngafid.Database;
 import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
@@ -252,7 +252,7 @@ public class Flight {
      *
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    private void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
+    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
@@ -2444,74 +2444,6 @@ public class Flight {
         return flights;
     }
 
-    public void findSpinEvents(Connection connection) throws MalformedFlightFileException, SQLException, IOException {
-        this.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
-
-        List<Event> spinStarts = new ArrayList<>();
-
-        DoubleTimeSeries ias = getDoubleTimeSeries(IAS);
-        DoubleTimeSeries dVSI = getDoubleTimeSeries(VSPD_CALCULATED);
-        DoubleTimeSeries normAc = getDoubleTimeSeries(NORM_AC);
-
-        StringTimeSeries dateSeries = getStringTimeSeries(LCL_DATE);
-
-        boolean airspeedIsLow = false;
-        boolean spinStartFound = false;
-
-        double maxNormAc = 0.d;
-
-        int lowAirspeedIndex = -1, maxNormAcIndex = -1;
-
-        Event currentEvent = null;
-
-        for (int i = 0; i < this.getNumberRows(); i++) {
-            double instIAS = ias.get(i);
-            double instVSI = dVSI.get(i);
-            double normAcRel = Math.abs(normAc.get(i));
-
-            if (!airspeedIsLow && instIAS < 50) {
-                airspeedIsLow = true;
-                lowAirspeedIndex = i;
-            }
-
-            if (airspeedIsLow) {
-
-                // check for severity
-                if (normAcRel > maxNormAc) {
-                    System.out.println("norm gt");
-                    maxNormAc = normAcRel;
-                    maxNormAcIndex = i;
-                }
-
-                if (i - lowAirspeedIndex <= 3 && instVSI <= -3500) {
-                    if (!spinStartFound) {
-                        currentEvent = new Event(dateSeries.get(lowAirspeedIndex), dateSeries.get(i), lowAirspeedIndex, i, normAc.get(maxNormAcIndex));
-                        spinStarts.add(currentEvent);
-                        System.out.println("Spin event found!");
-
-                        spinStartFound = true;
-                    } 
-
-                } else if (spinStartFound) {
-                    currentEvent.updateEnd(dateSeries.get(i), i);
-
-                    spinStartFound = false;
-                    airspeedIsLow = false;
-
-                    lowAirspeedIndex = -1;
-                    maxNormAcIndex = -1;
-
-                    maxNormAc = 0.d;
-                }
-            }
-        }
-
-        LOG.info("Updating database with Spin Events.");
-        for (Event event : spinStarts) {
-            event.updateDatabase(connection, this.fleetId, this.id, -2);
-        }
-    }
-
     /**
      * Runs the Loss of Control/Stall Index calculations
      *
@@ -3219,12 +3151,21 @@ outer:
 
                 for (String key : doubleTimeSeries.keySet()) {
                     System.out.println("double time series key: '" + key);
-                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                    try {
+                        System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                    } catch (NullPointerException ne) {
+                        System.out.println("NPEX:  " + key);
+                        System.out.println(doubleTimeSeries.toString());
+                        System.out.println(doubleTimeSeries.get(key));
+                        ne.printStackTrace();
+                    }
                 }
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    System.out.println(series);
-                    series.updateDatabase(connection, flightId);
+                    if (series != null) {
+                        System.out.println(series);
+                        series.updateDatabase(connection, flightId);
+                    }
                 }
 
                 for (StringTimeSeries series : stringTimeSeries.values()) {

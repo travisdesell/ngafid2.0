@@ -155,23 +155,27 @@ public class EventDefinition {
         initializeSeverity();
     }
 
-    public static EventDefinition getEventDefinition(Connection connection, String eventName) throws SQLException {
+    public static EventDefinition getEventDefinition(Connection connection, String eventName) {
+        EventDefinition eventDef = null;
+
         eventName = "name = '" + eventName + "'";
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        System.out.println(preparedStatement.toString());
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            System.out.println(preparedStatement.toString());
 
-        ResultSet resultSet = preparedStatement.executeQuery();
+            ResultSet resultSet = preparedStatement.executeQuery();
 
-        EventDefinition eventDef = null;
- 
-        if (resultSet.next()) {
-            eventDef = new EventDefinition(resultSet);
+            if (resultSet.next()) {
+                eventDef = new EventDefinition(resultSet);
+            }
+
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
         }
-
-        preparedStatement.close();
-        resultSet.close();
 
         return eventDef;
     }
