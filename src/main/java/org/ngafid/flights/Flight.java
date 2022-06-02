@@ -2513,7 +2513,7 @@ public class Flight {
 
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
-        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft", len);
+        DoubleTimeSeries agl = new DoubleTimeSeries(connection, "AltAGL", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
 
         ArrayList<Timestamp> timestamps = new ArrayList<>(len);
@@ -2534,6 +2534,7 @@ public class Flight {
         if (timeDiff < 180) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
 
         double prevSeconds = 0;
+        double metersToFeet = 3.28084;
 
         for (ArrayList<T> line : lines) {
             double seconds = (double) line.get(timeIndex) - prevSeconds;
@@ -2556,7 +2557,7 @@ public class Flight {
                 lon.add((Double) line.get(lonIndex));
             }
 
-            msl.add((Double) line.get(altIndex));
+            agl.add((Double) line.get(altIndex) * metersToFeet);
             spd.add((Double) line.get(spdIndex));
 
             localDateSeries.add(lclDateFormat.format(parsedDate));
@@ -2571,13 +2572,13 @@ public class Flight {
         DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
         DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
         DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
-        DoubleTimeSeries nmsl = msl.subSeries(connection, start, end);
+        DoubleTimeSeries nagl = agl.subSeries(connection, start, end);
 
         HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
         doubleSeries.put("GndSpd", nspd);
         doubleSeries.put("Longitude", nlon);
         doubleSeries.put("Latitude", nlat);
-        doubleSeries.put("AltMSL", nmsl);
+        doubleSeries.put("AltAGL", nagl); // Parrot data is stored as AGL and most likely in meters
 
         StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
         StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
@@ -2591,11 +2592,11 @@ public class Flight {
         Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
         flight.status = status;
 
-        try {
-            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
-        } catch (MalformedFlightFileException e) {
-            flight.exceptions.add(e);
-        }
+//        try {
+//            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
+//        } catch (MalformedFlightFileException e) {
+//            flight.exceptions.add(e);
+//        }
 
         return flight;
     }
