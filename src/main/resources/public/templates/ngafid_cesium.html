@@ -137,12 +137,15 @@
 
     </div>
 
+<!--        <script src = "src/main/javascript/cesium_page.js">-->
+
+<!--    SCRIPT HAS TO BE EMBEDDED IN HTML FILE -->
     <script>
-    
+
         // Access Cesium Ion Token here
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
 
-        // Creates the Viewer 
+        // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
             selectionIndicator: false,
@@ -151,9 +154,13 @@
 
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
-        var scopes = {{{ cesium_data }}};                
+        var scopes = {{{ cesium_data }}};
         var keys = Object.keys(scopes);
         var today = new Date();
+        const airplaneURI = (async() => {
+            console.log("Airplane loaded")
+            return await Cesium.IonResource.fromAssetId(1084423);
+        })
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
@@ -167,7 +174,8 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
                         material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundEntireDemo = viewer.entities.add({
@@ -183,6 +191,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
         }
 
@@ -194,14 +203,15 @@
                 let taxiing = scopes[flightId].flightGeoAglTaxiing;
 
                 var geoFlightLoadAGLTaxi = viewer.entities.add({
-                    
+
                     name: "NGAFID CESIUM FLIGHT TAXIING ",
                     description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
                     wall: {
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(taxiing),
                         material: Cesium.Color.BLUE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
 
                 });
 
@@ -219,6 +229,7 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundTaxi = viewer.entities.add({
@@ -235,6 +246,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
 
                 // Setting viewer points and direction based on phase
@@ -243,7 +255,7 @@
                 var skyAtmosphere = scene.skyAtmosphere;
                 var globe = scene.globe;
             }
-        }        
+        }
 
         // Setting a takeOff-liftOff phase
         function applyNgafidStyleTakeoff() {
@@ -260,7 +272,8 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(TakeOff),
                         material: Cesium.Color.PURPLE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineTakeoff = viewer.entities.add({
@@ -275,6 +288,7 @@
                             outlineWidth: 2,
                             outlineColor: Cesium.Color.BLACK,
                         }),
+                        model: {uri: airplaneURI},
                     },
                 });
 
@@ -292,6 +306,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
 
             }
@@ -303,7 +318,7 @@
             for (var i = 0; i < keys.length; i++) {
 
                 let flightId = keys[i];
-                let Climb = scopes[flightId].flightGeoAglClimb;                
+                let Climb = scopes[flightId].flightGeoAglClimb;
 
                 var geoFlightLoadAGLClimb = viewer.entities.add({
 
@@ -313,7 +328,8 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(Climb),
                         material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineClimb = viewer.entities.add({
@@ -329,6 +345,7 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundClimb = viewer.entities.add({
@@ -345,6 +362,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
 
             }
@@ -355,7 +373,7 @@
             for (var i = 0; i < keys.length; i++) {
 
                 let flightId = keys[i];
-                let Cruise = scopes[flightId].flightGeoAglCruise;                
+                let Cruise = scopes[flightId].flightGeoAglCruise;
 
                 var geoFlightLoadAGLRest = viewer.entities.add({
 
@@ -365,7 +383,8 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(Cruise),
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineRest = viewer.entities.add({
@@ -381,6 +400,7 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundRest = viewer.entities.add({
@@ -397,6 +417,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
 
             }
@@ -418,7 +439,8 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAgl),
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineEntire = viewer.entities.add({
@@ -434,6 +456,7 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
+                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundEntire = viewer.entities.add({
@@ -450,6 +473,7 @@
                         }),
                         clampToGround: true,
                     },
+                    model: {uri: airplaneURI},
                 });
 
             }
@@ -483,7 +507,7 @@
             if (item && typeof item.onselect === "function") {
                 item.onselect();
             }
-        };    
+        };
 
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
@@ -496,13 +520,13 @@
         //     brightnessShift: 0.0
         // };
 
-        // Convert view into  observables model 
+        // Convert view into  observables model
         Cesium.knockout.track(viewModel);
-        // Model bind to the DOM elements 
+        // Model bind to the DOM elements
         var toolbar = document.getElementById('toolbar');
         Cesium.knockout.applyBindings(viewModel, toolbar);
 
-        // Make globe view to 3D skyAtmosphere with HSB parameters. 
+        // Make globe view to 3D skyAtmosphere with HSB parameters.
         // This can be use in ngafid flight on different altitutes
         function subscribeParameter(name, globeName) {
             Cesium.knockout.getObservable(viewModel, name).subscribe(
@@ -518,12 +542,12 @@
 
         // cesium default globe layer removed for better view
         viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
-        
+
         // Added world asset with globe ID for better sentinel imagery view
         viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
     </script>
 
-    <script src="/js/ngafid_cesium-bundle.js"></script>
+<!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
 
 </body>
 </html>
