@@ -1,6 +1,13 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
+import Dropdown from 'react-bootstrap/Dropdown';
+import Popover from 'react-bootstrap/Popover';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import Button from 'react-bootstrap/Button';
+import Table from 'react-bootstrap/Table';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 
 import Plotly from 'plotly.js';
 import { map } from "./map.js";
@@ -50,7 +57,8 @@ class Events extends React.Component {
 
         this.state = {
             events : props.events,
-            definitions : definitionsPresent
+            definitions : definitionsPresent,
+            lociAnnotations : this.getAnnotationTypes(),
         };
     }
 
@@ -150,6 +158,48 @@ class Events extends React.Component {
         }
     }
 
+    getAnnotationTypes() {
+        var thisFlight = this;
+        let types = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/event_classes',
+            dataType : 'json',
+            success : function(response) {
+                types = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: false
+        });
+
+        return types;
+    }
+
+    setEventAnnotation(name, eventId) {
+        var thisFlight = this;
+        let submissionData = {
+            className: name,
+            eventId : eventId,
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/create_annotation',
+            data: submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("create annotation response:");
+                console.log(response);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: false
+        });
+
+    }
+
     changeColor(e, index) {
         this.state.events[index].color = e.target.value;
         this.setState({
@@ -165,7 +215,7 @@ class Events extends React.Component {
 
     render() {
         let cellClasses = "d-flex flex-row p-1";
-        let cellStyle = { "overflowX" : "auto" };
+        let cellStyle = { "overflowX" : "auto", "overflowY" : "visible" };
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 0 10em"
@@ -239,9 +289,73 @@ class Events extends React.Component {
                         let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         let otherFlightText = "";
                         let otherFlightURL = "";
+                        let lociLabel = "";
+                        let lociLabelStatus = "";
+
                         if (event.eventDefinitionId == -1) { 
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+                        }
+
+                        if (event.eventDefinitionId >= 50 && event.eventDefinitionId <= 53) {
+                            const lociAnnotationPopover = (
+                                <Popover
+                                    id="popover-basic"
+                                >
+                                    <Popover.Title as="h2"> 
+                                        User Annotations
+                                    </Popover.Title>
+                                    <Popover.Content> 
+                                        <Table striped bordered hover size="sm">
+                                            <thead>
+                                                <tr>
+                                                    <th></th>
+                                                    <th>User</th>
+                                                    <th>Timestamp</th>
+                                                </tr>
+                                            </thead>
+                            
+                                            <tbody>
+                                                <tr>
+                                                    <td>
+                                                        <i className="fa fa-check" aria-hidden="true" style={{color : 'green'}}></i>
+                                                    </td>
+                                                    <td>Aidan LaBella</td>
+                                                    <td>6/3/2022 11:59:01 AM EST</td>
+                                                </tr>
+                                            </tbody>
+
+                                        </Table>
+                                    </Popover.Content>
+                                </Popover>
+                            );
+
+                            lociLabel = (
+                                <div>
+                                    <button className="m-1 btn btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                        <i className="fa fa-object-group p-1"></i>
+                                        LOC-I/Stall Class
+                                    </button>
+                                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    {
+                                        this.state.lociAnnotations.map((name, index) => {
+                                            return (
+                                                <button key={index} className="dropdown-item" type="button" >{name}</button>
+                                            );
+                                        })
+                                    }
+                                    </div>
+                                </div>
+                            );
+
+                            lociLabelStatus = (
+                                <OverlayTrigger trigger="click" placement="right-end" overlay={lociAnnotationPopover}>
+                                    <Button className="m-1" toggle="button" variant="outline-success">
+                                        <i className="fa fa-users" aria-hidden="true"></i>
+                                    </Button>
+                                </OverlayTrigger>
+                            );
+
                         }
 
                         return (
@@ -252,7 +366,13 @@ class Events extends React.Component {
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
+
                                 </button>
+
+                                {lociLabel}
+
+                                {lociLabelStatus}
+
                             </div>
                         );
                     })

@@ -264,6 +264,9 @@ public final class WebServer {
 
         Spark.post("/protected/events", new PostEvents(gson));
         Spark.post("/protected/event_stat", new PostEventStatistics(gson));
+        
+        //For LOC-I Classification project
+        Spark.get("/protected/event_classes", new GetAnnotationClasses(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
