@@ -161,8 +161,19 @@ if ($set_airframes) {
     query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
 }
 
-$add_loci_annotations = false;
+$add_loci_annotations = true;
 if ($add_loci_annotations) {
+    $query = "CREATE TABLE loci_event_classes
+        (
+            id    INT AUTO_INCREMENT
+                PRIMARY KEY,
+            name VARCHAR(2048) NOT NULL,
+            fleet_id INT           NULL,
+            CONSTRAINT loci_event_classes_fleet_id_fk
+            FOREIGN KEY (fleet_id) REFERENCES fleet (id)
+        );";
+    query_ngafid_db($query);
+
     $query = "CREATE TABLE event_annotations
             (
                 fleet_id  INT      NOT NULL,
@@ -181,19 +192,6 @@ if ($add_loci_annotations) {
                     FOREIGN KEY (user_id) REFERENCES user (id)
             );
     ";
-
-    query_ngafid_db($query);
-
-    $query = "CREATE TABLE loci_event_classes
-        (
-            id    INT AUTO_INCREMENT
-                PRIMARY KEY,
-            name VARCHAR(2048) NOT NULL,
-            fleet_id INT           NULL,
-            CONSTRAINT loci_event_classes_fleet_id_fk
-            FOREIGN KEY (fleet_id) REFERENCES fleet (id)
-        );";
-
     query_ngafid_db($query);
 
 }
