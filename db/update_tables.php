@@ -169,7 +169,7 @@ if ($add_loci_annotations) {
                 user_id   INT      NOT NULL,
                 event_id  INT      NOT NULL,
                 class_id  INT      NOT NULL,
-                timestamp DATETIME NULL,
+                timestamp TIMESTAMP NULL,
                 PRIMARY KEY (fleet_id, user_id, event_id),
                 CONSTRAINT event_annotations_events_id_fk
                     FOREIGN KEY (event_id) REFERENCES events (id),

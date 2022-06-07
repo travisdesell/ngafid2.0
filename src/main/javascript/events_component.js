@@ -13,6 +13,8 @@ import Plotly from 'plotly.js';
 import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
+import { errorModal } from './error_modal.js';
+import { confirmModal } from './confirm_modal.js';
 
 
 // establish set of RGB values to combine //
@@ -58,7 +60,7 @@ class Events extends React.Component {
         this.state = {
             events : props.events,
             definitions : definitionsPresent,
-            lociAnnotations : this.getAnnotationTypes(),
+            lociClasses : this.getAnnotationTypes(),
         };
     }
 
@@ -167,7 +169,7 @@ class Events extends React.Component {
             url: '/protected/event_classes',
             dataType : 'json',
             success : function(response) {
-                types = response;
+                types = new Map(Object.entries(response));
             },
             error : function(jqXHR, textStatus, errorThrown) {
             },
@@ -177,11 +179,37 @@ class Events extends React.Component {
         return types;
     }
 
-    setEventAnnotation(name, eventId) {
+    getAnnotations(eventId) {
+        var thisFlight = this;
+        let annotations = [];
+
+        let submissionData = {
+            eventId : eventId,
+        }
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/event_annotations',
+            dataType : 'json',
+            data : submissionData,
+            success : function(response) {
+                annotations = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: false
+        });
+
+        return annotations;
+    }
+
+    setEventAnnotation(name, eventId, override = false) {
+        console.log("Setting annotation for event " + eventId + " using: " + name);
         var thisFlight = this;
         let submissionData = {
             className: name,
             eventId : eventId,
+            override : override,
         };
 
         $.ajax({
@@ -192,6 +220,15 @@ class Events extends React.Component {
             success : function(response) {
                 console.log("create annotation response:");
                 console.log(response);
+
+                if (response == "ALREADY_EXISTS") {
+                    confirmModal.show("Error", "You have already assigned a class to this event, are you sure you would like to change it to: " + name + "?", () => thisFlight.setEventAnnotation(name, eventId, true));
+                } else if (response == "INVALID_PERMISSION") {
+                    errorModal.show("Error", "You do not have permission to annotate this flight. Please contact the site admin for more information.")
+                } else if (response == "OK") {
+                    thisFlight.setState(thisFlight.state);
+                }
+
             },
             error : function(jqXHR, textStatus, errorThrown) {
             },
@@ -291,6 +328,10 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let lociLabel = "";
                         let lociLabelStatus = "";
+                        let lociLabelComplete = "";
+                        let lociAnnotationNames = Array.from(this.state.lociClasses.values());
+                        let hasCompletedAnnotation = false;
+
 
                         if (event.eventDefinitionId == -1) { 
                             otherFlightText = ", other flight id: ";
@@ -298,34 +339,58 @@ class Events extends React.Component {
                         }
 
                         if (event.eventDefinitionId >= 50 && event.eventDefinitionId <= 53) {
+                            let annotations = this.getAnnotations(event.id);
+
+                            annotations.forEach(element => {
+                                if (element.eventId != -1) {
+                                    hasCompletedAnnotation = true;
+                                }
+                            });
+
                             const lociAnnotationPopover = (
                                 <Popover
                                     id="popover-basic"
+                                    style={{maxWidth: '1200px'}}
                                 >
-                                    <Popover.Title as="h2"> 
-                                        User Annotations
+                                    <Popover.Title> 
+                                        <Row>
+                                            <Col style={{ display: "flex" }}>Annotation Log</Col>
+                                        </Row>
+
                                     </Popover.Title>
                                     <Popover.Content> 
-                                        <Table striped bordered hover size="sm">
+                                        <table className="table-striped table-bordered table-sm">
                                             <thead>
                                                 <tr>
-                                                    <th></th>
-                                                    <th>User</th>
-                                                    <th>Timestamp</th>
+                                                    <th colSpan={3}>Event {event.id}</th>
                                                 </tr>
                                             </thead>
                             
                                             <tbody>
-                                                <tr>
-                                                    <td>
-                                                        <i className="fa fa-check" aria-hidden="true" style={{color : 'green'}}></i>
-                                                    </td>
-                                                    <td>Aidan LaBella</td>
-                                                    <td>6/3/2022 11:59:01 AM EST</td>
-                                                </tr>
+                                                {
+                                                    annotations.map((eventAnnotation, index) => {
+                                                        let timestamp = eventAnnotation.timestamp;
+                                                        let status = (<i className="fa fa-check" aria-hidden="true" style={{color : 'green'}}></i>);
+                                                        
+                                                        if (eventAnnotation.classId != -1) {
+                                                            status = this.state.lociClasses.get(eventAnnotation.classId.toString());
+                                                        }
+
+                                                        let dateTime = timestamp.date.month + "/" + timestamp.date.day + "/" + timestamp.date.year;
+                                                        dateTime = dateTime + " " + timestamp.time.hour + ":" + timestamp.time.minute + "." + timestamp.time.second;
+                                                        return (
+                                                            <tr key={index}>
+                                                                <td>{status}</td>
+                                                                <td>{eventAnnotation.user.firstName + " " + eventAnnotation.user.lastName}</td>
+                                                                <td>{dateTime}</td>
+                                                            </tr>
+
+                                                        )}
+                                                    )
+                                                }
                                             </tbody>
 
-                                        </Table>
+                                        </table>
                                     </Popover.Content>
                                 </Popover>
                             );
@@ -338,9 +403,9 @@ class Events extends React.Component {
                                     </button>
                                     <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
                                     {
-                                        this.state.lociAnnotations.map((name, index) => {
+                                        lociAnnotationNames.map((name, index) => {
                                             return (
-                                                <button key={index} className="dropdown-item" type="button" >{name}</button>
+                                                <button key={index} className="dropdown-item" type="button" onClick={() => this.setEventAnnotation(name, event.id)}>{name}</button>
                                             );
                                         })
                                     }
@@ -350,11 +415,31 @@ class Events extends React.Component {
 
                             lociLabelStatus = (
                                 <OverlayTrigger trigger="click" placement="right-end" overlay={lociAnnotationPopover}>
-                                    <Button className="m-1" toggle="button" variant="outline-success">
-                                        <i className="fa fa-users" aria-hidden="true"></i>
+                                    <Button className="m-1" data-toggle="button" variant="outline-danger" title="No log available." disabled>
+                                        <i className="fa fa-users" aria-hidden="true"></i> Nobody has annotated this event yet!
                                     </Button>
                                 </OverlayTrigger>
                             );
+
+                            if (annotations.length > 0) {
+                                lociLabelStatus = (
+                                    <OverlayTrigger trigger="click" placement="right-end" overlay={lociAnnotationPopover}>
+                                        <Button className="m-1" data-toggle="button" variant="outline-warning" title="Click to see the annotation log.">
+                                            <i className="fa fa-users" aria-hidden="true"></i> You have not yet rated this event.
+                                        </Button>
+                                    </OverlayTrigger>
+                                );
+                            }
+
+                            if (hasCompletedAnnotation) {
+                                lociLabelStatus = (
+                                    <OverlayTrigger trigger="click" placement="right-end" overlay={lociAnnotationPopover}>
+                                        <Button className="m-1" data-toggle="button" variant="outline-success" title="Click to see the annotation log.">
+                                            <i className="fa fa-users" aria-hidden="true"></i> You have rated this event!
+                                        </Button>
+                                    </OverlayTrigger>
+                                )
+                            }
 
                         }
 
@@ -372,6 +457,8 @@ class Events extends React.Component {
                                 {lociLabel}
 
                                 {lociLabelStatus}
+
+                                {lociLabelComplete}
 
                             </div>
                         );
