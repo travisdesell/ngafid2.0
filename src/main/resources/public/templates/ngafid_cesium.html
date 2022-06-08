@@ -161,6 +161,13 @@
             console.log("Airplane loaded")
             return await Cesium.IonResource.fromAssetId(1084423);
         })
+        // var firstFlightId = scopes[keys[0]];
+
+        // Initialize viewer clock
+        var timeStepInSeconds = scopes[keys[0]].timeStepInSeconds;
+        var totalSeconds = scopes[keys[0]].totalSeconds;
+        console.log(timeStepInSeconds);
+        console.log(totalSeconds);
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
@@ -546,10 +553,7 @@
         // Added world asset with globe ID for better sentinel imagery view
         viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
 
-        // Initialize viewer clock
-        const timeStepInSeconds = cesium_data.timeStepInSeconds;
-        const totalSeconds = cesium_data.total_time;
-        console.log(timeStepInSeconds, totalSeconds);
+
 
     </script>
 
