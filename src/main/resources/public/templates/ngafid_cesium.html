@@ -170,17 +170,6 @@
         const startTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].startTime);
         const endTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].endTime);
         const positionProperty = new Cesium.SampledPositionProperty();
-        const airframeEntity = viewer.entities.add({
-            availability: new Cesium.TimeIntervalCollection([
-                new Cesium.TimeInterval({
-                    start: startTime,
-                    stop: endTime
-                }),
-            ]),
-            position: positionProperty,
-            point: { pixelSize: 30, color: Cesium.Color.GREEN },
-            path: new Cesium.PathGraphics({ width: 3 }),
-        });
 
 
         viewer.clock.startTime = startTime.clone();
@@ -189,7 +178,6 @@
         viewer.clock.shouldAnimate = true; //  Autostart flight replay
         viewer.clock.multiplier = 2; // Set playback speed
         viewer.timeline.zoomTo(startTime, endTime);
-        viewer.trackedEntity = airframeEntity;
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
@@ -222,6 +210,41 @@
                     },
                     model: {uri: airplaneURI},
                 });
+
+                for (let i = 0; i < InfoAglDemo.length; i += 3) {
+                    const dataPoint = {
+                        longitude: InfoAglDemo[i],
+                        latitude: InfoAglDemo[i + 1],
+                        altitude: InfoAglDemo[i + 2]
+                    }
+
+                    const time = Cesium.JulianDate.addSeconds(startTime, i * timeStepInSeconds, new Cesium.JulianDate());
+                    const position = Cesium.Cartesian3.fromDegrees(dataPoint.longitude, dataPoint.latitude, dataPoint.altitude);
+
+                    positionProperty.addSample(time, position);
+
+                    viewer.entities.add({
+                        postion: position,
+                        point: {
+                            pixelSize: 10,
+                            color: Cesium.Color.RED
+                        },
+                    });
+                }
+
+                const airframeEntity = viewer.entities.add({
+                    availability: new Cesium.TimeIntervalCollection([
+                        new Cesium.TimeInterval({
+                            start: startTime,
+                            stop: endTime
+                        }),
+                    ]),
+                    position: positionProperty,
+                    point: {pixelSize: 30, color: Cesium.Color.GREEN},
+                    path: new Cesium.PathGraphics({width: 3}),
+                });
+
+                viewer.trackedEntity = airframeEntity;
         }
 
         // Setting taxiing phase
@@ -542,6 +565,8 @@
         var scene = viewer.scene;
         var skyAtmosphere = scene.skyAtmosphere;
         var globe = scene.globe;
+
+
 
         // var viewModel = {
         //     hueShift: 0.0,
