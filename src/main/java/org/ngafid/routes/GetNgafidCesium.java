@@ -45,18 +45,34 @@ public class GetNgafidCesium implements Route {
     private static String CESIUM_DATA = "cesium_data";
 
     public static class CesiumResponse {
-        ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
-        ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
-        ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
-        ArrayList<Double> flightGeoAglCruise = new ArrayList<>();
-        ArrayList<Double> flightGeoInfoAgl = new ArrayList<>();
+        ArrayList<Double> flightGeoAglTaxiing;
+        ArrayList<Double> flightGeoAglTakeOff;
+        ArrayList<Double> flightGeoAglClimb;
+        ArrayList<Double> flightGeoAglCruise;
+        ArrayList<Double> flightGeoInfoAgl;
 
-        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff, ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise, ArrayList<Double> flightGeoInfoAgl) {
+        ArrayList<String> flightTaxiingTimes;
+        ArrayList<String> flightTakeOffTimes;
+        ArrayList<String> flightClimbTimes;
+        ArrayList<String> flightCruiseTime;
+        ArrayList<String> flightAglTimes;
+
+        public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff,
+                              ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
+                              ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
+                              ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
+                              ArrayList<String> flightCruiseTime, ArrayList<String> flightAglTimes) {
+
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
             this.flightGeoAglClimb = flightGeoAglClimb;
             this.flightGeoAglCruise = flightGeoAglCruise;
             this.flightGeoInfoAgl = flightGeoInfoAgl;
+            this.flightTaxiingTimes = flightTaxiingTimes;
+            this.flightTakeOffTimes = flightTakeOffTimes;
+            this.flightClimbTimes = flightClimbTimes;
+            this.flightCruiseTime = flightCruiseTime;
+            this.flightAglTimes = flightAglTimes;
         }
     }
 
@@ -230,7 +246,6 @@ public class GetNgafidCesium implements Route {
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
                         flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                        System.out.println(date.get(i) + "T" + time.get(i) + "Z");
                     }
                 }
 
@@ -239,7 +254,7 @@ public class GetNgafidCesium implements Route {
                     Spark.halt(401, "User did not have access to this flight.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl);
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTime, flightAglTimes);
 
                 flights.put(flightIdNew, cr);
 
