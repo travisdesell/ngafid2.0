@@ -20,6 +20,7 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
+import org.ngafid.flights.StringTimeSeries;
 import spark.Route;
 import spark.Request;
 import spark.Response;
@@ -122,11 +123,20 @@ public class GetNgafidCesium implements Route {
                 DoubleTimeSeries rpm = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "E1 RPM");
                 DoubleTimeSeries groundSpeed = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "GndSpd");
 
+                StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
+                StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
+
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
                 ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
                 ArrayList<Double> flightGeoAglCruise = new ArrayList<>();
                 ArrayList<Double> flightGeoInfoAgl = new ArrayList<>();
+
+                ArrayList<String> flightTaxiingTimes = new ArrayList<>();
+                ArrayList<String> flightTakeOffTimes = new ArrayList<>();
+                ArrayList<String> flightClimbTimes = new ArrayList<>();
+                ArrayList<String> flightCruiseTime = new ArrayList<>();
+                ArrayList<String> flightAglTimes = new ArrayList<>();
 
                 int initCounter = 0;
                 int takeoffCounter = 0;
@@ -142,6 +152,7 @@ public class GetNgafidCesium implements Route {
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
+                        flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
                         if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
@@ -159,6 +170,8 @@ public class GetNgafidCesium implements Route {
                                 flightGeoAglTakeOff.add(longitude.get(i));
                                 flightGeoAglTakeOff.add(latitude.get(i));
                                 flightGeoAglTakeOff.add(altAgl.get(i));
+                                flightTakeOffTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+
                                 initCounter++;
                             } else if (takeoffCounter > 15) {
                                 break;
@@ -180,6 +193,8 @@ public class GetNgafidCesium implements Route {
                                 flightGeoAglClimb.add(longitude.get(i));
                                 flightGeoAglClimb.add(latitude.get(i));
                                 flightGeoAglClimb.add(altAgl.get(i));
+                                flightClimbTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+
                                 initCounter++;
                             }
                             if (altAgl.get(i) >= 500) {
@@ -201,6 +216,7 @@ public class GetNgafidCesium implements Route {
                             flightGeoAglCruise.add(longitude.get(i));
                             flightGeoAglCruise.add(latitude.get(i));
                             flightGeoAglCruise.add(altAgl.get(i));
+                            flightCruiseTime.add(date.get(i) + "T" + time.get(i) + "Z");
                         }
                         countPostCruise++;
                     }
@@ -213,6 +229,8 @@ public class GetNgafidCesium implements Route {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
+                        flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
+                        System.out.println(date.get(i) + "T" + time.get(i) + "Z");
                     }
                 }
 

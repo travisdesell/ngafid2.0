@@ -545,6 +545,11 @@
 
         // Added world asset with globe ID for better sentinel imagery view
         viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
+
+        // Initialize viewer clock
+        const timeStepInSeconds = 30; // TODO: Assuming 30 for now. Might do calculation in future
+        const totalSeconds = timeStepInSeconds * (cesium_data.length - 1);
+
     </script>
 
 <!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
