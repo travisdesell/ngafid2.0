@@ -166,17 +166,30 @@
         // Initialize viewer clock
         const timeStepInSeconds = scopes[keys[0]].timeStepInSeconds;
         const totalSeconds = scopes[keys[0]].totalTime;
-        // console.log(timeStepInSeconds);
-        // console.log(totalSeconds);
 
         const startTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].startTime);
         const endTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].endTime);
-        // console.log(startTime);
-        // console.log(endTime);
+        const positionProperty = new Cesium.SampledPositionProperty();
+        const airframeEntity = viewer.entities.add({
+            availability: new Cesium.TimeIntervalCollection([
+                new Cesium.TimeInterval({
+                    start: startTime,
+                    stop: endTime
+                }),
+            ]),
+            position: positionProperty,
+            point: { pixelSize: 30, color: Cesium.Color.GREEN },
+            path: new Cesium.PathGraphics({ width: 3 }),
+        });
+
 
         viewer.clock.startTime = startTime.clone();
         viewer.clock.currentTime = startTime.clone();
         viewer.clock.stopTime = endTime.clone();
+        viewer.clock.shouldAnimate = true; //  Autostart flight replay
+        viewer.clock.multiplier = 2; // Set playback speed
+        viewer.timeline.zoomTo(startTime, endTime);
+        viewer.trackedEntity = airframeEntity;
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
