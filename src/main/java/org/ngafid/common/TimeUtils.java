@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
 
 
 public class TimeUtils {
@@ -150,6 +151,10 @@ public class TimeUtils {
         return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime) {
+        LocalDateTime start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        LocalDateTime end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
-
+        return ChronoUnit.SECONDS.between(start, end);
+    }
 }
