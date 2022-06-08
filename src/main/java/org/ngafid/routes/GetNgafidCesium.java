@@ -55,6 +55,8 @@ public class GetNgafidCesium implements Route {
         ArrayList<String> flightAglTimes;
         double totalTime;
         long timeStepInSeconds;
+        String startTime;
+        String endTime;
 
         public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff,
                               ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
@@ -75,9 +77,9 @@ public class GetNgafidCesium implements Route {
             this.flightAglTimes = flightAglTimes;
 
             this.totalTime = TimeUtils.calculateDurationInSeconds(flightAglTimes.get(0), flightAglTimes.get(flightAglTimes.size() - 1));
-            System.out.println(totalTime);
             this.timeStepInSeconds = Math.round(totalTime / flightAglTimes.size());
-            System.out.println(timeStepInSeconds);
+            this.startTime = flightAglTimes.get(0);
+            this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
         }
     }
 
