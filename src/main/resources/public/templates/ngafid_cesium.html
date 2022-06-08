@@ -143,8 +143,8 @@
     <script>
 
         // Access Cesium Ion Token here
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
-
+        // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
         // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
@@ -157,10 +157,8 @@
         var scopes = {{{ cesium_data }}};
         var keys = Object.keys(scopes);
         var today = new Date();
-        const airplaneURI = (async() => {
-            console.log("Airplane loaded")
-            return await Cesium.IonResource.fromAssetId(1084423);
-        })
+        // const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
+
         // var firstFlightId = scopes[keys[0]];
 
         // Initialize viewer clock
@@ -176,8 +174,21 @@
         viewer.clock.currentTime = startTime.clone();
         viewer.clock.stopTime = endTime.clone();
         viewer.clock.shouldAnimate = true; //  Autostart flight replay
-        viewer.clock.multiplier = 2; // Set playback speed
+        viewer.clock.multiplier = 50; // Set playback speed
         viewer.timeline.zoomTo(startTime, endTime);
+
+        async function loadModel() {
+            const airplaneUri = await Cesium.IonResource.fromAssetId(1084423);
+            const airplaneEntity = viewer.entities.add({
+                availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
+                position: positionProperty,
+                model: {uri: airplaneUri},
+                orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+                path: new Cesium.PathGraphics({width: 3}),
+            });
+
+            viewer.trackedEntity = airplaneEntity;
+        }
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
@@ -192,7 +203,6 @@
                         material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundEntireDemo = viewer.entities.add({
@@ -208,7 +218,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 for (let i = 0; i < InfoAglDemo.length; i += 3) {
@@ -232,19 +241,7 @@
                     });
                 }
 
-                const airframeEntity = viewer.entities.add({
-                    availability: new Cesium.TimeIntervalCollection([
-                        new Cesium.TimeInterval({
-                            start: startTime,
-                            stop: endTime
-                        }),
-                    ]),
-                    position: positionProperty,
-                    point: {pixelSize: 30, color: Cesium.Color.GREEN},
-                    path: new Cesium.PathGraphics({width: 3}),
-                });
-
-                viewer.trackedEntity = airframeEntity;
+                loadModel();
         }
 
         // Setting taxiing phase
@@ -263,7 +260,6 @@
                         material: Cesium.Color.BLUE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
 
                 });
 
@@ -281,7 +277,6 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundTaxi = viewer.entities.add({
@@ -298,7 +293,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 // Setting viewer points and direction based on phase
@@ -325,7 +319,6 @@
                         material: Cesium.Color.PURPLE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineTakeoff = viewer.entities.add({
@@ -340,7 +333,6 @@
                             outlineWidth: 2,
                             outlineColor: Cesium.Color.BLACK,
                         }),
-                        model: {uri: airplaneURI},
                     },
                 });
 
@@ -358,7 +350,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
             }
@@ -381,7 +372,6 @@
                         material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineClimb = viewer.entities.add({
@@ -397,7 +387,6 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundClimb = viewer.entities.add({
@@ -414,7 +403,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
             }
@@ -436,7 +424,6 @@
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineRest = viewer.entities.add({
@@ -452,7 +439,6 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundRest = viewer.entities.add({
@@ -469,7 +455,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
             }
@@ -492,7 +477,6 @@
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightlineEntire = viewer.entities.add({
@@ -508,7 +492,6 @@
                             outlineColor: Cesium.Color.BLACK,
                         }),
                     },
-                    model: {uri: airplaneURI},
                 });
 
                 var geoFlightKeepGroundEntire = viewer.entities.add({
@@ -525,7 +508,6 @@
                         }),
                         clampToGround: true,
                     },
-                    model: {uri: airplaneURI},
                 });
 
             }
