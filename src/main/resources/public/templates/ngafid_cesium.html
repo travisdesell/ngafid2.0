@@ -12,7 +12,7 @@
         integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    
+
     <script>
         var plotMapHidden = true;
         {{{navbar_js}}}
@@ -31,7 +31,7 @@
             /* font-family: sans-serif;
                     background: #000; */
         }
-    
+
         .backdrop {
             display: inline-block;
             background: rgba(42, 42, 42, 0.7);
@@ -42,18 +42,18 @@
             line-height: 150%;
             font-size: small;
         }
-    
+
         #heightSliderLabel,
         #heightValue {
             vertical-align: top;
         }
-    
+
         .backdrop a:link,
         .backdrop a:visited,
         .backdrop a:hover {
             color: #fff
         }
-    
+
         .loadingIndicator {
             display: none;
             position: absolute;
@@ -65,7 +65,7 @@
             height: 66px;
             background: url(Source/Images/ajax-loader.gif) center no-repeat;
         }
-    
+
         .one {
             display: none;
             position: absolute;
@@ -77,7 +77,7 @@
             height: 66px;
             background: url(Source/Images/ajax-loader.gif) center no-repeat;
         }
-    
+
         .cover {
             display: none;
             position: absolute;
@@ -87,25 +87,25 @@
             right: 0;
             bottom: 0;
         }
-    
+
         #menu {
             position: absolute;
             left: 10px;
             top: 10px;
         }
-    
+
         .nowrap {
             white-space: nowrap;
         }
-    
+
         button.cesium-infoBox-camera {
             display: none;
         }
-    
+
         #3DTiles {
             padding-top: 0px;
         }
-    
+
         #toolbar {
             z-index: 0;
             position: absolute;
@@ -513,8 +513,17 @@
             }
         }
 
+        function toggleAirframeLockCamera() {
+            if (viewer.trackedEntity != null) {
+                viewer.trackedEntity = null;
+            } else {
+                loadModel();
+            }
+        }
+
         // Set menu options
-        var menu = document.getElementById("dropdown");
+        const menu = document.getElementById("dropdown");
+        const bar = document.querySelector("div.cesium-viewer-toolbar");
 
         menu.options[1].onselect = function () {
             applyNgafidStyleTaxi();
@@ -542,6 +551,19 @@
                 item.onselect();
             }
         };
+
+        const modeButton = document.querySelector("span.cesium-sceneModePicker-wrapper");
+
+        const toggleAirframeLockButton = document.createElement("button");
+        toggleAirframeLockButton.onclick = function () {
+            toggleAirframeLockCamera();
+        };
+        toggleAirframeLockButton.textContent = "LOCK"
+        toggleAirframeLockButton.classList.add("cesium-button", "cesium-toolbar-button");
+        toggleAirframeLockButton.innerHTML = "";
+        bar.insertBefore(toggleAirframeLockButton, modeButton);
+
+
 
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
