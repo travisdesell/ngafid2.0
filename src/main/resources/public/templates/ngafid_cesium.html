@@ -160,22 +160,15 @@
         // const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
 
         // var firstFlightId = scopes[keys[0]];
+        var timeStepInSeconds = 0;
+        var totalSeconds = 0;
+        var startTime = Number.POSITIVE_INFINITY;
+        var endTime = Number.NEGATIVE_INFINITY;
+        var positionPropertyList = [];
+        var trackedEntities = [];
 
-        // Initialize viewer clock
-        const timeStepInSeconds = scopes[keys[0]].timeStepInSeconds;
-        const totalSeconds = scopes[keys[0]].totalTime;
-
-        const startTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].startTime);
-        const endTime = Cesium.JulianDate.fromIso8601(scopes[keys[0]].endTime);
-        const positionProperty = new Cesium.SampledPositionProperty();
-
-
-        viewer.clock.startTime = startTime.clone();
-        viewer.clock.currentTime = startTime.clone();
-        viewer.clock.stopTime = endTime.clone();
-        viewer.clock.shouldAnimate = true; //  Autostart flight replay
-        viewer.clock.multiplier = 50; // Set playback speed
-        viewer.timeline.zoomTo(startTime, endTime);
+        viewer.clock.startTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
+        viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel() {
             const airplaneUri = await Cesium.IonResource.fromAssetId(1084423);
@@ -188,60 +181,100 @@
             });
 
             viewer.trackedEntity = airplaneEntity;
+            trackedEntities.push(airplaneEntity);
+            console.log("Model loaded")
+        }
+
+        function initializeReplay(keyIndex) {
+            console.log("Initializing replay of flight at index " + keyIndex);
+
+            // Initialize viewer clock
+            timeStepInSeconds = scopes[keys[keyIndex]].timeStepInSeconds;
+            totalSeconds = scopes[keys[keyIndex]].totalTime;
+
+            startTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].startTime);
+            endTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].endTime);
+            positionProperty = new Cesium.SampledPositionProperty();
+            positionPropertyList.push(positionProperty);
+
+            console.log({
+                "Timestep" : timeStepInSeconds,
+                "Total Seconds" : totalSeconds,
+                "Start Time" : startTime,
+                "End Time" : endTime
+            })
+
+            if (Cesium.JulianDate.compare(startTime, viewer.clock.startTime) < 0) {
+                console.log("Earlier time detected. Setting start time to " + startTime)
+                viewer.clock.startTime = startTime.clone();
+                viewer.clock.currentTime = startTime.clone();
+            }
+
+            if (Cesium.JulianDate.compare(viewer.clock.stopTime, endTime) > 0) {
+                console.log("Later time detected. Setting end time to " + endTime);
+                viewer.clock.stopTime = endTime.clone();
+            }
+
+            viewer.clock.shouldAnimate = true; //  Autostart flight replay
+            viewer.clock.multiplier = 50; // Set playback speed
+            viewer.timeline.zoomTo(startTime, endTime);
+
+            loadModel();
         }
 
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
+            initializeReplay(i);
 
-                let flightId = keys[i];
-                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
-                var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
-                    name: "NGAFID CESIUM DEMO: " + keys[i],
-                    wall: {
-                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
-                        material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
-                        cornerType: Cesium.CornerType.BEVELED,
-                    },
-                });
+            let flightId = keys[i];
+            let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+            var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
-                var geoFlightKeepGroundEntireDemo = viewer.entities.add({
+                name: "NGAFID CESIUM DEMO: " + keys[i],
+                wall: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
+                    material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
+                    cornerType: Cesium.CornerType.BEVELED,
+                },
+            });
 
-                    name: "NGAFID CESIUM DEMO: " + keys[i],
-                    polyline: {
-                        positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
-                        width: 1,
-                        material: new Cesium.PolylineOutlineMaterialProperty({
-                            color: Cesium.Color.LEMONCHIFFON,
-                            outlineWidth: 2,
-                            outlineColor: Cesium.Color.BLACK,
-                        }),
-                        clampToGround: true,
-                    },
-                });
+            var geoFlightKeepGroundEntireDemo = viewer.entities.add({
 
-                for (let i = 0; i < InfoAglDemo.length; i += 3) {
-                    const dataPoint = {
-                        longitude: InfoAglDemo[i],
-                        latitude: InfoAglDemo[i + 1],
-                        altitude: InfoAglDemo[i + 2]
-                    }
+                name: "NGAFID CESIUM DEMO: " + keys[i],
+                polyline: {
+                    positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
+                    width: 1,
+                    material: new Cesium.PolylineOutlineMaterialProperty({
+                        color: Cesium.Color.LEMONCHIFFON,
+                        outlineWidth: 2,
+                        outlineColor: Cesium.Color.BLACK,
+                    }),
+                    clampToGround: true,
+                },
+            });
 
-                    const time = Cesium.JulianDate.addSeconds(startTime, i * timeStepInSeconds, new Cesium.JulianDate());
-                    const position = Cesium.Cartesian3.fromDegrees(dataPoint.longitude, dataPoint.latitude, dataPoint.altitude);
-
-                    positionProperty.addSample(time, position);
-
-                    viewer.entities.add({
-                        postion: position,
-                        point: {
-                            pixelSize: 10,
-                            color: Cesium.Color.RED
-                        },
-                    });
+            for (let j = 0; j < InfoAglDemo.length; j += 3) {
+                const dataPoint = {
+                    longitude: InfoAglDemo[j],
+                    latitude: InfoAglDemo[j + 1],
+                    altitude: InfoAglDemo[j + 2]
                 }
 
-                loadModel();
+                const time = Cesium.JulianDate.addSeconds(startTime, j * timeStepInSeconds, new Cesium.JulianDate());
+                const position = Cesium.Cartesian3.fromDegrees(dataPoint.longitude, dataPoint.latitude, dataPoint.altitude);
+
+                positionPropertyList[i].addSample(time, position);
+
+                viewer.entities.add({
+                    postion: position,
+                    point: {
+                        pixelSize: 10,
+                        color: Cesium.Color.RED
+                    },
+                });
+            }
+
         }
 
         // Setting taxiing phase
