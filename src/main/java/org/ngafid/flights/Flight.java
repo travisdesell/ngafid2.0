@@ -2591,6 +2591,8 @@ public class Flight {
 
         Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
         flight.status = status;
+        flight.airframeType = "UAS Rotorcraft";
+        flight.airframeTypeId = 4;
 
 //        try {
 //            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
