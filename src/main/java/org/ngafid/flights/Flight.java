@@ -2013,6 +2013,7 @@ public class Flight {
         initialize(connection, inputStream);
         process(connection);
     }
+
     private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
@@ -2153,10 +2154,12 @@ public class Flight {
 
         try {
             if (!airframeName.equals("ScanEagle") && hasCoords && hasAGL) {
-                if (doubleTimeSeries.containsKey("E1 RPM"))
+               if (doubleTimeSeries.containsKey("E1 RPM")) {
                     calculateItinerary("GndSpd", "E1 RPM");
-                else
-                    calculateItineraryNoRPM("GndSpd");
+              } else {
+                    // Disable this itinerary calculation since it is defective...
+                    // calculateItineraryNoRPM("GndSpd");
+              }
             }
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
