@@ -29,7 +29,7 @@ public class EventDefinition {
     public static final int MIN_ABS_SEVERITY = 3;
     public static final int MAX_ABS_SEVERITY = 4;
 
-    private int id = 0;
+    private int id = -1;
     private int fleetId;
     private String name;
     private int startBuffer;
@@ -140,7 +140,7 @@ public class EventDefinition {
             this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
-            if (id == -1) {
+            if (id <= -1) {
                 this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
             } else {
                 this.filter = null;
@@ -667,7 +667,7 @@ public class EventDefinition {
      */
     public String toHumanReadable() {
         if (this.id < 0) {
-            return ((filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + filter.toHumanReadable();
+            return ((this.filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + this.filter.toHumanReadable();
         }
 
         String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
