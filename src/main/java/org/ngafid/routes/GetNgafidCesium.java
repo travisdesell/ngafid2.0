@@ -57,12 +57,14 @@ public class GetNgafidCesium implements Route {
         long timeStepInSeconds;
         String startTime;
         String endTime;
+        String airframeType;
 
         public CesiumResponse(ArrayList<Double> flightGeoAglTaxiing, ArrayList<Double> flightGeoAglTakeOff,
                               ArrayList<Double> flightGeoAglClimb, ArrayList<Double> flightGeoAglCruise,
                               ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
                               ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
-                              ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes) {
+                              ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes,
+                              String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -80,6 +82,7 @@ public class GetNgafidCesium implements Route {
             this.timeStepInSeconds = Math.round(totalTime / flightAglTimes.size());
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
+            this.airframeType =
         }
     }
 
@@ -138,6 +141,8 @@ public class GetNgafidCesium implements Route {
 
                 Flight incomingFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightIdNew));
                 int flightIdNewInteger = Integer.parseInt(flightIdNew);
+
+                String airframeType = incomingFlight.getAirframeType();
 
                 DoubleTimeSeries altMsl = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "AltMSL");
                 DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightIdNewInteger, "Latitude");
@@ -261,7 +266,7 @@ public class GetNgafidCesium implements Route {
                     Spark.halt(401, "User did not have access to this flight.");
                 }
 
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes);
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
 
                 flights.put(flightIdNew, cr);
 
