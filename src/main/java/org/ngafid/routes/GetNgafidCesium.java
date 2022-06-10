@@ -82,7 +82,7 @@ public class GetNgafidCesium implements Route {
             this.timeStepInSeconds = Math.round(totalTime / flightAglTimes.size());
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
-            this.airframeType =
+            this.airframeType = airframeType;
         }
     }
 

@@ -152,6 +152,17 @@
             baseLayerPicker: false
         });
 
+        var airframeModels = {};
+
+        async function loadAirframes() {
+            const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
+            airframeModels.put("Airplane", airplaneURI);
+
+            // TODO: Add drone model
+        }
+
+        loadAirframes();
+
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
         var scopes = {{{ cesium_data }}};
@@ -170,12 +181,12 @@
         viewer.clock.startTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
-        async function loadModel() {
-            const airplaneUri = await Cesium.IonResource.fromAssetId(1084423);
+        async function loadModel(airframe) {
+            // const airplaneUri = await Cesium.IonResource.fromAssetId(1084423);
             const airplaneEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
-                model: {uri: airplaneUri},
+                model: {uri: airframeModels[airframe]},
                 orientation: new Cesium.VelocityOrientationProperty(positionProperty),
                 path: new Cesium.PathGraphics({width: 3}),
             });
@@ -219,7 +230,19 @@
             viewer.clock.multiplier = 50; // Set playback speed
             viewer.timeline.zoomTo(startTime, endTime);
 
-            loadModel();
+            var airframeModelUsed = "";
+            switch (cesium_data.airframeType) {
+                case "Fixed Wing":
+                    airframeModelUsed = "Airplane";
+
+                case "UAS Rotorcraft":
+                    airframeModelUsed = "Drone"
+
+                default:
+                    airframeModelUsed = "Airplane"; // TODO: Maybe just make it a green dot
+            }
+
+            loadModel(airframeModelUsed);
         }
 
         // Setting default phase
@@ -550,7 +573,7 @@
             if (viewer.trackedEntity != null) {
                 viewer.trackedEntity = null;
             } else {
-                loadModel();
+                loadModel("Airplane"); // TODO: Make a function to determine model to use
             }
         }
 
