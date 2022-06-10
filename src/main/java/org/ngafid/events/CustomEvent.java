@@ -17,13 +17,26 @@ public class CustomEvent extends Event {
     private static final Connection connection = Database.getConnection();
     private Flight flight;
 
-    public static final EventDefinition SPIN_START = EventDefinition.getEventDefinition(connection, "Spin Start");
+    public static final EventDefinition HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
+    public static final EventDefinition LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
 
-    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight, EventDefinition customEventDefinition) {
+    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight, EventDefinition eventDefinition) {
         super(startTime, endTime, startLine, endLine, severity);
 
         this.flight = flight;
-        this.customEventDefinition = customEventDefinition;
+        this.customEventDefinition = eventDefinition;
+    }
+
+    public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight) {
+        this(startTime, endTime, startLine, endLine, severity, flight, null);
+    }
+
+    public void setDefinition(EventDefinition eventDefinition) {
+        this.customEventDefinition = eventDefinition;
+    }
+
+    public EventDefinition getDefinition() {
+        return this.customEventDefinition;
     }
 
     public void updateDatabase(Connection connection) {
