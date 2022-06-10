@@ -2345,9 +2345,13 @@ public class Flight {
         // NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
         // String serialNumber = serialNumberNodes.item(0).getTextContent();
         NodeList nicknameNodes = doc.getElementsByTagName("badelf:modelNickname");
+        if (nicknameNodes.item(0) == null)
+          throw new FatalFlightFileException("GPX file is missing necessary metadata (modelNickname).");
         String nickname = nicknameNodes.item(0).getTextContent();
 
         NodeList fdrModel = doc.getElementsByTagName("badelf:modelName");
+        if (fdrModel.item(0) == null)
+          throw new FatalFlightFileException("GPX file is missing necessary metadata (modelName).");
         String airframeName = fdrModel.item(0).getTextContent();
         LOG.info("Airframe name: " + airframeName);
 
@@ -2355,6 +2359,9 @@ public class Flight {
         NodeList datanodes = doc.getElementsByTagName("trkpt");
         NodeList elenodes = doc.getElementsByTagName("ele");
         NodeList spdnodes = doc.getElementsByTagName("badelf:speed");
+
+        if (spdnodes.item(0) == null)
+          throw new FatalFlightFileException("GPX file is missing GndSpd.");
         
         if (!(dates.getLength() == datanodes.getLength() &&
               dates.getLength() == elenodes.getLength() &&
