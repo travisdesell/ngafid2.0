@@ -138,7 +138,6 @@ public class GetNgafidCesium implements Route {
             Map<String, Object> flights = new HashMap<String, Object>();
 
             for (String flightIdNew : flightIdsAll) {
-
                 Flight incomingFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightIdNew));
                 int flightIdNewInteger = Integer.parseInt(flightIdNew);
 

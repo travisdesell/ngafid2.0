@@ -158,7 +158,8 @@
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
             airframeModels.Airplane = airplaneURI;
 
-            // TODO: Add drone model
+            const droneURI = await Cesium.IonResource.fromAssetId(1117220);
+            airframeModels.Drone = droneURI;
         }
 
         loadAirframes();
@@ -182,7 +183,7 @@
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel(airframe) {
-            const airplaneEntity = viewer.entities.add({
+            const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
                 model: {uri: airframeModels[airframe]},
@@ -190,8 +191,8 @@
                 path: new Cesium.PathGraphics({width: 3}),
             });
 
-            viewer.trackedEntity = airplaneEntity;
-            trackedEntities.push(airplaneEntity);
+            viewer.trackedEntity = airframeEntity;
+            trackedEntities.push(airframeEntity);
             console.log("Model loaded")
         }
 
@@ -230,15 +231,20 @@
             viewer.timeline.zoomTo(startTime, endTime);
 
             var airframeModelUsed = "";
+            console.log(scopes[keys[keyIndex]].airframeType);
             switch (scopes[keys[keyIndex]].airframeType) {
                 case "Fixed Wing":
+                    console.log("Using airplane airframe");
                     airframeModelUsed = "Airplane";
-
+                    break;
                 case "UAS Rotorcraft":
+                    console.log("Using drone airframe");
                     airframeModelUsed = "Drone"
-
+                    break;
                 default:
+                    console.log("Could not detect airframe. Set to default.")
                     airframeModelUsed = "Airplane"; // TODO: Maybe just make it a green dot
+                    break;
             }
 
             loadModel(airframeModelUsed);
@@ -247,7 +253,6 @@
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
             initializeReplay(i);
-
 
             let flightId = keys[i];
             let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
@@ -596,6 +601,16 @@
         menu.options[5].onselect = function () {
             applyNgafidStyleEntire();
         };
+
+        // menu.options[6].onselect = function () {
+        //     toggleAirframeLockCamera();
+        // };
+        //
+        // for (let i = 0; i < trackedEntities.length; i++) {
+        //     menu.options[6 + i].onselect = function() {
+        //         viewer.trackedEntity = trackedEntities[i];
+        //     }
+        // }
 
         menu.onchange = function () {
             var item = menu.options[menu.selectedIndex];
