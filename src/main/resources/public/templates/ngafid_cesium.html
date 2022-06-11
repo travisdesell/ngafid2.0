@@ -156,7 +156,7 @@
 
         async function loadAirframes() {
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
-            airframeModels.put("Airplane", airplaneURI);
+            airframeModels.Airplane = airplaneURI;
 
             // TODO: Add drone model
         }
@@ -182,7 +182,6 @@
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel(airframe) {
-            // const airplaneUri = await Cesium.IonResource.fromAssetId(1084423);
             const airplaneEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -231,7 +230,7 @@
             viewer.timeline.zoomTo(startTime, endTime);
 
             var airframeModelUsed = "";
-            switch (cesium_data.airframeType) {
+            switch (scopes[keys[keyIndex]].airframeType) {
                 case "Fixed Wing":
                     airframeModelUsed = "Airplane";
 
@@ -252,6 +251,7 @@
 
             let flightId = keys[i];
             let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+            let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
             var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
                 name: "NGAFID CESIUM DEMO: " + keys[i],
@@ -277,15 +277,13 @@
                 },
             });
 
-            for (let j = 0; j < InfoAglDemo.length; j += 3) {
-                const dataPoint = {
-                    longitude: InfoAglDemo[j],
-                    latitude: InfoAglDemo[j + 1],
-                    altitude: InfoAglDemo[j + 2]
-                }
 
-                const time = Cesium.JulianDate.addSeconds(startTime, j * timeStepInSeconds, new Cesium.JulianDate());
-                const position = Cesium.Cartesian3.fromDegrees(dataPoint.longitude, dataPoint.latitude, dataPoint.altitude);
+            var timestep = 0;
+            var positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
+
+            for (let j = 0; j < positions.length; j++) {
+                const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
+                const position = positions[j];
 
                 positionPropertyList[i].addSample(time, position);
 
@@ -296,6 +294,8 @@
                         color: Cesium.Color.RED
                     },
                 });
+
+                timestep++;
             }
 
         }
