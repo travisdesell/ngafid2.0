@@ -169,11 +169,7 @@
         var scopes = {{{ cesium_data }}};
         var keys = Object.keys(scopes);
         var today = new Date();
-        // const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
 
-        // var firstFlightId = scopes[keys[0]];
-        var timeStepInSeconds = 0;
-        var totalSeconds = 0;
         var startTime = Number.POSITIVE_INFINITY;
         var endTime = Number.NEGATIVE_INFINITY;
         var positionPropertyList = [];
@@ -199,21 +195,10 @@
         function initializeReplay(keyIndex) {
             console.log("Initializing replay of flight at index " + keyIndex);
 
-            // Initialize viewer clock
-            timeStepInSeconds = scopes[keys[keyIndex]].timeStepInSeconds;
-            totalSeconds = scopes[keys[keyIndex]].totalTime;
-
             startTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].startTime);
             endTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].endTime);
             positionProperty = new Cesium.SampledPositionProperty();
             positionPropertyList.push(positionProperty);
-
-            console.log({
-                "Timestep" : timeStepInSeconds,
-                "Total Seconds" : totalSeconds,
-                "Start Time" : startTime,
-                "End Time" : endTime
-            })
 
             if (Cesium.JulianDate.compare(startTime, viewer.clock.startTime) < 0) {
                 console.log("Earlier time detected. Setting start time to " + startTime)
