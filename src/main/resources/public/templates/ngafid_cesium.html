@@ -278,7 +278,6 @@
             });
 
 
-            var timestep = 0;
             var positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
 
             for (let j = 0; j < positions.length; j++) {
@@ -294,10 +293,7 @@
                         color: Cesium.Color.RED
                     },
                 });
-
-                timestep++;
             }
-
         }
 
         // Setting taxiing phase
