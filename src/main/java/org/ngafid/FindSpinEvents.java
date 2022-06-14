@@ -50,7 +50,8 @@ public class FindSpinEvents {
     public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
         flight.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
 
-        List<CustomEvent> spinEvents = new ArrayList<>();
+        List<CustomEvent> lowAltitudeSpins = new ArrayList<>();
+        List<CustomEvent> highAltitudeSpins = new ArrayList<>();
 
         int hadError = 0;
 
@@ -118,7 +119,7 @@ public class FindSpinEvents {
 
 
                     if (spinStartFound && (lowAirspeedIndexDiff > 3 && lowAirspeedIndexDiff <= 30)) {
-                        System.out.println("Looking for end of spin");
+                        //System.out.println("Looking for end of spin");
 
                         if (instIAS > 50 && normAcRel < AC_NORMAL && latAcRel < AC_NORMAL) {
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
@@ -134,9 +135,13 @@ public class FindSpinEvents {
 
                     if (endSpinSeconds >= 1 || currentEvent == null) {
                         if (currentEvent != null) {
-                            currentEvent.setDefinition(altCstrViolated ? LOW_ALTITUDE_SPIN : HIGH_ALTITUDE_SPIN);
-
-                            spinEvents.add(currentEvent);
+                            if (altCstrViolated) {
+                                currentEvent.setDefinition(LOW_ALTITUDE_SPIN);
+                                lowAltitudeSpins.add(currentEvent);
+                            } else {
+                                currentEvent.setDefinition(HIGH_ALTITUDE_SPIN);
+                                highAltitudeSpins.add(currentEvent);
+                            }
                         }
 
                         spinStartFound = false;
@@ -153,30 +158,35 @@ public class FindSpinEvents {
             }
         }
 
-        LOG.info("Updating database with Spin Events." + spinEvents.size());
-        for (CustomEvent event : spinEvents) {
+        LOG.info("Updating database with Spin Events.");
+
+        for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
         }
 
-        // Set both to processed regardless
-        setFlightProcessed(flight, HIGH_ALTITUDE_SPIN.getId(), hadError, spinEvents.size());
-        setFlightProcessed(flight, LOW_ALTITUDE_SPIN.getId(), hadError, spinEvents.size());
+        for (CustomEvent event : highAltitudeSpins) {
+            event.updateDatabase(connection);
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
+        }
+
+        setFlightProcessed(flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
+        setFlightProcessed(flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
     }
 
     static void setFlightProcessed(Flight flight, int eventDefinitonId, int hadError, int count) throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
-        PreparedStatement stmt = connection.prepareStatement(queryString);
+        PreparedStatement query = connection.prepareStatement(queryString);
 
-        stmt.setInt(1, flight.getFleetId());
-        stmt.setInt(2, flight.getId());
-        stmt.setInt(3, eventDefinitonId);
-        stmt.setInt(4, count);
-        stmt.setInt(5, hadError);
+        query.setInt(1, flight.getFleetId());
+        query.setInt(2, flight.getId());
+        query.setInt(3, eventDefinitonId);
+        query.setInt(4, count);
+        query.setInt(5, hadError);
 
-        stmt.executeUpdate();
-        stmt.close();
+        query.executeUpdate();
+        query.close();
     }
 
     /**
