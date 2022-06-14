@@ -99,7 +99,7 @@ public class FindSpinEvents {
                         maxNormAcIndex = i;
                     }
 
-                    if (instIAS < ALT_CONSTRAINT) {
+                    if (instAlt < ALT_CONSTRAINT) {
                         altCstrViolated = true;
                     }
 
