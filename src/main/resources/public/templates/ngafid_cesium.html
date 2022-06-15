@@ -572,7 +572,9 @@
 
         function toggleAirframeLockCamera() {
             // Will intentionally go to trackedEntities.length + 1 to set to null
-            viewer.trackedEntity = trackedEntities[entityToggleIndex++]
+            viewer.trackedEntity = trackedEntities[entityToggleIndex++];
+
+            console.log("Locked onto " + trackedEntities[entityToggleIndex]);
 
             if (entityToggleIndex > trackedEntities.length) {
                 entityToggleIndex = 0;
