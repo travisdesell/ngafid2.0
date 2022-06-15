@@ -465,7 +465,13 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
+        let URL = "/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id;
+        window.open(URL);
+
+        let httpReq = new XMLHttpRequest();
+        httpReq.open("GET", URL, false);
+        httpReq.send(null);
+
     }
 
     closeParamDisplay() {
