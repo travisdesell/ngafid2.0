@@ -172,9 +172,6 @@
         // Load airframe models in before initializing replays
         async function loadAirframeModels() {
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
-            const airplaneEntity = new Cesium.Entity();
-            airplaneEntity.model = {uri: airplaneURI}
-
             airframeModels["Airplane"] = new Cesium.ModelGraphics({
                 uri: airplaneURI,
                 minimumPixelSize: 128,
@@ -183,10 +180,12 @@
             });
 
             const droneURI = await Cesium.IonResource.fromAssetId(1117220);
-            const droneEntity = new Cesium.Entity();
-            droneEntity.model = {uri: droneURI}
-
-            airframeModels["Drone"] = droneEntity;
+            airframeModels["Drone"] = new Cesium.ModelGraphics({
+                uri: droneURI,
+                minimumPixelSize: 128,
+                maximumScale: 20000,
+                scale: 1,
+            });;
 
             initializeReplays();
         }
