@@ -157,15 +157,15 @@
         async function loadAirframes() {
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
             const airplaneEntity = new Cesium.Entity();
-            airplaneEntity.model = {uri: airplaneEntity}
+            airplaneEntity.model = {uri: airplaneURI}
 
-            airframeModels.Airplane = airplaneURI;
+            airframeModels['Airplane'] = airplaneURI;
 
             const droneURI = await Cesium.IonResource.fromAssetId(1117220);
             const droneEntity = new Cesium.Entity();
             droneEntity.model = {uri: droneURI}
 
-            airframeModels.Drone = droneEntity;
+            airframeModels["Drone"] = droneEntity;
         }
 
         loadAirframes();
@@ -186,7 +186,7 @@
 
         async function loadModel(airframe) {
             const pathColor = Cesium.Color.fromRandom();
-            console.log(pathColor);
+
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -196,8 +196,6 @@
                         width: 5,
                         material: new Cesium.PolylineOutlineMaterialProperty({
                             color: pathColor,
-                            // glowPower: .99,
-                            // taperPower: .99
                             outlineColor: pathColor,
                             outlineWidth: 5
                         })
@@ -208,9 +206,9 @@
                     },
             });
 
-
             viewer.trackedEntity = airframeEntity;
             trackedEntities.push(airframeEntity);
+
             console.log("Model loaded")
         }
 
