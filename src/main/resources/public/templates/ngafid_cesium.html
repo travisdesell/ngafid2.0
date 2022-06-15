@@ -156,10 +156,16 @@
 
         async function loadAirframes() {
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
+            const airplaneEntity = new Cesium.Entity();
+            airplaneEntity.model = {uri: airplaneEntity}
+
             airframeModels.Airplane = airplaneURI;
 
             const droneURI = await Cesium.IonResource.fromAssetId(1117220);
-            airframeModels.Drone = droneURI;
+            const droneEntity = new Cesium.Entity();
+            droneEntity.model = {uri: droneURI}
+
+            airframeModels.Drone = droneEntity;
         }
 
         loadAirframes();
@@ -179,13 +185,21 @@
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel(airframe) {
+
+
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
-                model: {uri: airframeModels[airframe]},
+                // model: {uri: airframeModels[airframe]},
                 orientation: new Cesium.VelocityOrientationProperty(positionProperty),
                 path: new Cesium.PathGraphics({width: 3}),
+                point: {
+                    pixelSize: 30,
+                    color: Cesium.Color.RED
+                    },
             });
+
+            airframeEntity.merge(airframeModels[airframe]);
 
             viewer.trackedEntity = airframeEntity;
             trackedEntities.push(airframeEntity);
@@ -212,10 +226,10 @@
             }
 
             viewer.clock.shouldAnimate = true; //  Autostart flight replay
-            viewer.clock.multiplier = 50; // Set playback speed
+            viewer.clock.multiplier = 25; // Set playback speed
             viewer.timeline.zoomTo(startTime, endTime);
 
-            var airframeModelUsed = "";
+            var airframeModelUsed;
             console.log(scopes[keys[keyIndex]].airframeType);
             switch (scopes[keys[keyIndex]].airframeType) {
                 case "Fixed Wing":
@@ -247,7 +261,7 @@
                 name: "NGAFID CESIUM DEMO: " + keys[i],
                 wall: {
                     positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
-                    material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
+                    material: Cesium.Color.WHITESMOKE.withAlpha(0),
                     cornerType: Cesium.CornerType.BEVELED,
                 },
             });
@@ -268,7 +282,7 @@
             });
 
 
-            var positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
+            const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
 
             for (let j = 0; j < positions.length; j++) {
                 const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
@@ -280,7 +294,7 @@
                     postion: position,
                     point: {
                         pixelSize: 10,
-                        color: Cesium.Color.RED
+
                     },
                 });
             }
@@ -306,7 +320,6 @@
                 });
 
                 var geoFlightlineTaxi = viewer.entities.add({
-
                     name: "NGAFID CESIUM FLIGHT TAXIING ",
                     description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
 
@@ -559,7 +572,7 @@
             if (viewer.trackedEntity != null) {
                 viewer.trackedEntity = null;
             } else {
-                loadModel("Airplane"); // TODO: Make a function to determine model to use
+                loadModel("Airplane");
             }
         }
 
