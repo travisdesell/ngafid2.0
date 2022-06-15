@@ -67,6 +67,7 @@ class Flight extends React.Component {
         this.displayParameters = this.displayParameters.bind(this);
         this.closeParamDisplay = this.closeParamDisplay.bind(this);
         this.zoomChanged = this.zoomChanged.bind(this);
+        this.cesiumFlightsSelected = [];
     }
 
     fetchEvents() {
@@ -465,13 +466,27 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        let URL = "/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id;
+        let flightStoreIndex = this.cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
+
+        if (flightStoreIndex === -1) {
+            this.cesiumFlightsSelected.push(this.props.flightInfo.id)
+        } else {
+            this.cesiumFlightsSelected.splice(flightStoreIndex, 1);
+        }
+
+        console.log(this.cesiumFlightsSelected);
+    }
+
+    replayClicked() {
+        let URL = "/protected/ngafid_cesium?flight_id=";
+        console.log(this.props.flightInfo.id);
+        if (this.cesiumFlightsSelected.length > 0 ){
+            URL += this.cesiumFlightsSelected.join("&flight_id=");
+        } else {
+            URL += (this.props.flightInfo.id).toString();
+        }
+
         window.open(URL);
-
-        let httpReq = new XMLHttpRequest();
-        httpReq.open("GET", URL, false);
-        httpReq.send(null);
-
     }
 
     closeParamDisplay() {
@@ -1113,7 +1128,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.replayClicked()}>
+                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
