@@ -185,21 +185,27 @@
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel(airframe) {
-
-
+            const pathColor = Cesium.Color.fromRandom();
+            console.log(pathColor);
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
-                // model: {uri: airframeModels[airframe]},
+                model: {uri: airframeModels[airframe]},
                 orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-                path: new Cesium.PathGraphics({width: 3}),
+                path: new Cesium.PathGraphics({
+                        width: 5,
+                        material: new Cesium.PolylineGlowMaterialProperty({
+                            color: pathColor,
+                            glowPower: .99,
+                            taperPower: .99
+                        })
+                    }),
                 point: {
                     pixelSize: 30,
                     color: Cesium.Color.RED
                     },
             });
 
-            airframeEntity.merge(airframeModels[airframe]);
 
             viewer.trackedEntity = airframeEntity;
             trackedEntities.push(airframeEntity);
@@ -241,8 +247,7 @@
                     airframeModelUsed = "Drone"
                     break;
                 default:
-                    console.log("Could not detect airframe. Set to default.")
-                    airframeModelUsed = "Airplane"; // TODO: Maybe just make it a green dot
+                    console.log("Could not detect airframe. No model will be used.")
                     break;
             }
 
@@ -283,20 +288,13 @@
 
 
             const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
+            const color = Cesium.Color.fromRandom();
 
             for (let j = 0; j < positions.length; j++) {
                 const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
                 const position = positions[j];
 
                 positionPropertyList[i].addSample(time, position);
-
-                viewer.entities.add({
-                    postion: position,
-                    point: {
-                        pixelSize: 10,
-
-                    },
-                });
             }
         }
 
