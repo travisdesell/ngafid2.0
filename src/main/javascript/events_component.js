@@ -328,7 +328,7 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let lociLabel = "";
                         let lociLabelStatus = "";
-                        let lociLabelComplete = "";
+                        let lociLabelNotes = "";
                         let lociAnnotationNames = Array.from(this.state.lociClasses.values());
                         let hasCompletedAnnotation = false;
 
@@ -362,7 +362,10 @@ class Events extends React.Component {
                                         <table className="table-striped table-bordered table-sm">
                                             <thead>
                                                 <tr>
-                                                    <th colSpan={3}>Event {event.id}</th>
+                                                    <th colSpan={3}>
+                                                        <span className='m-1'> Event {event.id}: </span>
+                                                        <span className="badge m-1" style={{backgroundColor: event.color, color: 'white'}}>{event.eventDefinition.name}</span>
+                                                    </th>
                                                 </tr>
                                             </thead>
                             
@@ -395,6 +398,25 @@ class Events extends React.Component {
                                 </Popover>
                             );
 
+                            const additionalNotesPopover = (
+                                <Popover
+                                    id="popover-basic"
+                                    style={{maxWidth: '1200px'}}
+                                >
+                                    <Popover.Title> 
+                                        <Row>
+                                            <Col style={{ display: "flex" }}>Annotator's Notes:</Col>
+                                        </Row>
+
+                                    </Popover.Title>
+                                    <Popover.Content> 
+                                        <div className="input-group">
+                                            <textarea className="form-control" aria-label="textarea"></textarea>
+                                        </div>
+                                    </Popover.Content>
+                                </Popover>
+                            );
+
                             lociLabel = (
                                 <div>
                                     <button className="m-1 btn btn-outline-primary dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -420,6 +442,14 @@ class Events extends React.Component {
                                     </Button>
                                 </OverlayTrigger>
                             );
+
+                            lociLabelNotes = (
+                                <OverlayTrigger trigger="click" placement="right-end" overlay={additionalNotesPopover}>
+                                    <Button className="m-1" data-toggle="button" variant="outline-info" title="Click to comment this annotation">
+                                        <i className="fa fa-commenting" aria-hidden="true"></i>
+                                    </Button>
+                                </OverlayTrigger>
+                            )
 
                             if (annotations.length > 0) {
                                 lociLabelStatus = (
@@ -458,7 +488,7 @@ class Events extends React.Component {
 
                                 {lociLabelStatus}
 
-                                {lociLabelComplete}
+                                {lociLabelNotes}
 
                             </div>
                         );
