@@ -194,10 +194,12 @@
                 orientation: new Cesium.VelocityOrientationProperty(positionProperty),
                 path: new Cesium.PathGraphics({
                         width: 5,
-                        material: new Cesium.PolylineGlowMaterialProperty({
+                        material: new Cesium.PolylineOutlineMaterialProperty({
                             color: pathColor,
-                            glowPower: .99,
-                            taperPower: .99
+                            // glowPower: .99,
+                            // taperPower: .99
+                            outlineColor: pathColor,
+                            outlineWidth: 5
                         })
                     }),
                 point: {
