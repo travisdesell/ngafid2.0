@@ -145,6 +145,7 @@
         // Access Cesium Ion Token here
         // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
+        Cesium.Math.setRandomNumberSeed(2);
         // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
@@ -159,7 +160,7 @@
             const airplaneEntity = new Cesium.Entity();
             airplaneEntity.model = {uri: airplaneURI}
 
-            airframeModels['Airplane'] = airplaneURI;
+            airframeModels["Airplane"] = airplaneEntity;
 
             const droneURI = await Cesium.IonResource.fromAssetId(1117220);
             const droneEntity = new Cesium.Entity();
@@ -186,11 +187,11 @@
 
         async function loadModel(airframe) {
             const pathColor = Cesium.Color.fromRandom();
-
+            const model = Cesium.clone(airframeModels[airframe]);
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
-                model: {uri: airframeModels[airframe]},
+                model: model,
                 orientation: new Cesium.VelocityOrientationProperty(positionProperty),
                 path: new Cesium.PathGraphics({
                         width: 5,
@@ -206,7 +207,7 @@
                     },
             });
 
-            viewer.trackedEntity = airframeEntity;
+
             trackedEntities.push(airframeEntity);
 
             console.log("Model loaded")
@@ -633,7 +634,7 @@
         bar.insertBefore(toggleAirframeLockButton, modeButton);
 
 
-
+        viewer.trackedEntity = null;
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
         var skyAtmosphere = scene.skyAtmosphere;
