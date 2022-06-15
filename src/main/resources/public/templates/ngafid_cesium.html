@@ -153,9 +153,24 @@
             baseLayerPicker: false
         });
 
+        viewer.scene.globe.depthTestAgainstTerrain = true;
+
+        var scopes = {{{ cesium_data }}};
+        var keys = Object.keys(scopes);
+        var today = new Date();
+
+        var startTime = Number.POSITIVE_INFINITY;
+        var endTime = Number.NEGATIVE_INFINITY;
+        var positionPropertyList = [];
+        var trackedEntities = [];
+
+        viewer.clock.startTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
+        viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
+
         var airframeModels = {};
 
-        async function loadAirframes() {
+        // Load airframe models in before initializing replays
+        async function loadAirframeModels() {
             const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
             const airplaneEntity = new Cesium.Entity();
             airplaneEntity.model = {uri: airplaneURI}
@@ -176,53 +191,26 @@
             initializeReplays();
         }
 
-        loadAirframes();
+        loadAirframeModels();
 
 
-        viewer.scene.globe.depthTestAgainstTerrain = true;
+        function initializeReplays() {
+            for (let i = 0; i < keys.length; i++) {
+                let flightId = keys[i];
+                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+                let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
 
-        var scopes = {{{ cesium_data }}};
-        var keys = Object.keys(scopes);
-        var today = new Date();
+                initializeReplay(i);
 
-        var startTime = Number.POSITIVE_INFINITY;
-        var endTime = Number.NEGATIVE_INFINITY;
-        var positionPropertyList = [];
-        var trackedEntities = [];
+                const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
 
-        viewer.clock.startTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
-        viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
+                for (let j = 0; j < positions.length; j++) {
+                    const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
+                    const position = positions[j];
 
-        async function loadModel(airframe) {
-            console.log("Airframe Models: " + Object.keys(airframeModels));
-
-            const pathColor = Cesium.Color.fromRandom();
-            const model = airframeModels[airframe];
-            console.log("models: " + airframeModels[airframe] + " " + model);
-
-            const airframeEntity = viewer.entities.add({
-                availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
-                position: positionProperty,
-                model: model,
-                orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-                path: new Cesium.PathGraphics({
-                        width: 5,
-                        material: new Cesium.PolylineOutlineMaterialProperty({
-                            color: pathColor,
-                            outlineColor: pathColor,
-                            outlineWidth: 5
-                        })
-                    }),
-                point: {
-                    pixelSize: 10,
-                    color: Cesium.Color.RED
-                    },
-            });
-
-
-            trackedEntities.push(airframeEntity);
-
-            console.log("Model loaded");
+                    positionPropertyList[i].addSample(time, position);
+                }
+            }
         }
 
         function initializeReplay(keyIndex) {
@@ -269,23 +257,30 @@
             loadModel(airframeModelUsed);
         }
 
-        function initializeReplays() {
-            for (let i = 0; i < keys.length; i++) {
-                let flightId = keys[i];
-                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
-                let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
+        async function loadModel(airframe) {
+            const pathColor = Cesium.Color.fromRandom();
+            const model = airframeModels[airframe];
 
-                initializeReplay(i);
+            const airframeEntity = viewer.entities.add({
+                availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
+                position: positionProperty,
+                model: model,
+                orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+                path: new Cesium.PathGraphics({
+                        width: 5,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: pathColor,
+                            outlineColor: pathColor,
+                            outlineWidth: 5
+                        })
+                    }),
+                point: {
+                    pixelSize: 10,
+                    color: Cesium.Color.RED
+                    },
+            });
 
-                const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
-
-                for (let j = 0; j < positions.length; j++) {
-                    const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
-                    const position = positions[j];
-
-                    positionPropertyList[i].addSample(time, position);
-                }
-            }
+            trackedEntities.push(airframeEntity);
         }
 
         // Setting default phase
