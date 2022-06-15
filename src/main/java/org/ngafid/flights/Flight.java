@@ -2537,9 +2537,9 @@ public class Flight {
         double metersToFeet = 3.28084;
 
         for (ArrayList<T> line : lines) {
-            double seconds = (double) line.get(timeIndex) - prevSeconds;
+            double milliseconds = (double) line.get(timeIndex) - prevSeconds;
             prevSeconds = (double) line.get(timeIndex);
-            parsedDate = TimeUtils.addSeconds(parsedDate, (int) seconds);
+            parsedDate = TimeUtils.addMilliseconds(parsedDate, (int) milliseconds);
 
             if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
                 LOG.severe("Invalid latitude: " + line.get(latIndex));

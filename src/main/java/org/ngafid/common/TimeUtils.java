@@ -165,4 +165,11 @@ public class TimeUtils {
         cal.add(Calendar.SECOND, seconds);
         return cal.getTime();
     }
+
+    public static Date addMilliseconds(Date date, Integer milliseconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.MILLISECOND, milliseconds);
+        return cal.getTime();
+    }
 }
