@@ -619,7 +619,7 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    globeClicked() {
+    mapClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
         if (!this.state.mapLoaded) {
@@ -1101,7 +1101,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
+                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
