@@ -568,12 +568,16 @@
             }
         }
 
+        var entityToggleIndex = 0;
+
         function toggleAirframeLockCamera() {
-            if (viewer.trackedEntity != null) {
-                viewer.trackedEntity = null;
-            } else {
-                loadModel("Airplane");
+            // Will intentionally go to trackedEntities.length + 1 to set to null
+            viewer.trackedEntity = trackedEntities[entityToggleIndex++]
+
+            if (entityToggleIndex > trackedEntities.length) {
+                entityToggleIndex = 0;
             }
+
         }
 
         // Set menu options
