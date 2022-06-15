@@ -160,7 +160,12 @@
             const airplaneEntity = new Cesium.Entity();
             airplaneEntity.model = {uri: airplaneURI}
 
-            airframeModels["Airplane"] = airplaneEntity;
+            airframeModels["Airplane"] = new Cesium.ModelGraphics({
+                uri: airplaneURI,
+                minimumPixelSize: 128,
+                maximumScale: 20000,
+                scale: 1,
+            });
 
             const droneURI = await Cesium.IonResource.fromAssetId(1117220);
             const droneEntity = new Cesium.Entity();
@@ -186,8 +191,12 @@
         viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
         async function loadModel(airframe) {
+            console.log("Airframe Models: " + Object.keys(airframeModels));
+
             const pathColor = Cesium.Color.fromRandom();
-            const model = Cesium.clone(airframeModels[airframe]);
+            const model = Cesium.clone(airframeModels[airframe], true);
+            console.log("models: " + airframeModels[airframe] + " " + model);
+
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
