@@ -645,9 +645,10 @@
         toggleAirframeLockButton.onclick = function () {
             toggleAirframeLockCamera();
         };
-        toggleAirframeLockButton.textContent = "LOCK"
+        toggleAirframeLockButton.textContent = "CAM"
         toggleAirframeLockButton.classList.add("cesium-button", "cesium-toolbar-button");
-        toggleAirframeLockButton.innerHTML = "";
+        // Set image from file path
+        toggleAirframeLockButton.innerHTML = "<img src='../images/cam_icon.jpg' width='30' height='30'/>";
         bar.insertBefore(toggleAirframeLockButton, modeButton);
 
         viewer.trackedEntity = null;
