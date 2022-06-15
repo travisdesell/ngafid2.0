@@ -312,9 +312,9 @@
                         clampToGround: true,
                     },
                 });
+            }
         }
-
-        }
+        applyNgafidStyleDefaultPhase(); // Used to delay for zoom to properly be set
 
         // Setting taxiing phase
         function applyNgafidStyleTaxi() {
@@ -650,15 +650,11 @@
         toggleAirframeLockButton.innerHTML = "";
         bar.insertBefore(toggleAirframeLockButton, modeButton);
 
-
         viewer.trackedEntity = null;
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
         var skyAtmosphere = scene.skyAtmosphere;
         var globe = scene.globe;
-
-
-
         var viewModel = {
             hueShift: 0.0,
             saturationShift: 0.0,
