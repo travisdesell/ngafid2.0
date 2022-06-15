@@ -172,9 +172,12 @@
             droneEntity.model = {uri: droneURI}
 
             airframeModels["Drone"] = droneEntity;
+
+            initializeReplays();
         }
 
         loadAirframes();
+
 
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
@@ -194,7 +197,7 @@
             console.log("Airframe Models: " + Object.keys(airframeModels));
 
             const pathColor = Cesium.Color.fromRandom();
-            const model = Cesium.clone(airframeModels[airframe], true);
+            const model = airframeModels[airframe];
             console.log("models: " + airframeModels[airframe] + " " + model);
 
             const airframeEntity = viewer.entities.add({
@@ -211,7 +214,7 @@
                         })
                     }),
                 point: {
-                    pixelSize: 30,
+                    pixelSize: 15,
                     color: Cesium.Color.RED
                     },
             });
@@ -219,7 +222,7 @@
 
             trackedEntities.push(airframeEntity);
 
-            console.log("Model loaded")
+            console.log("Model loaded");
         }
 
         function initializeReplay(keyIndex) {
@@ -246,7 +249,9 @@
             viewer.timeline.zoomTo(startTime, endTime);
 
             var airframeModelUsed;
+
             console.log(scopes[keys[keyIndex]].airframeType);
+
             switch (scopes[keys[keyIndex]].airframeType) {
                 case "Fixed Wing":
                     console.log("Using airplane airframe");
@@ -264,10 +269,27 @@
             loadModel(airframeModelUsed);
         }
 
+        function initializeReplays() {
+            for (let i = 0; i < keys.length; i++) {
+                let flightId = keys[i];
+                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+                let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
+
+                initializeReplay(i);
+
+                const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
+
+                for (let j = 0; j < positions.length; j++) {
+                    const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
+                    const position = positions[j];
+
+                    positionPropertyList[i].addSample(time, position);
+                }
+            }
+        }
+
         // Setting default phase
         for (var i = 0; i < keys.length; i++) {
-            initializeReplay(i);
-
             let flightId = keys[i];
             let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
             let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
@@ -295,17 +317,6 @@
                     clampToGround: true,
                 },
             });
-
-
-            const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
-            const color = Cesium.Color.fromRandom();
-
-            for (let j = 0; j < positions.length; j++) {
-                const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
-                const position = positions[j];
-
-                positionPropertyList[i].addSample(time, position);
-            }
         }
 
         // Setting taxiing phase
