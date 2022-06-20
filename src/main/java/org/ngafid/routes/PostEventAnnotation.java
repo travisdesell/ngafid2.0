@@ -50,13 +50,14 @@ public class PostEventAnnotation implements Route {
         User user = session.attribute("user");
 
         String className = request.queryParams("className");
+        String notes = request.queryParams("notes");
         int eventId = Integer.parseInt(request.queryParams("eventId"));
 
         //used to indicate that the user wants to change their annotation after being prompted with a message modal
         boolean override = Boolean.parseBoolean(request.queryParams("override"));
 
         try {
-            EventAnnotation annotation = new EventAnnotation(eventId, className, user, LocalDateTime.now());
+            EventAnnotation annotation = new EventAnnotation(eventId, className, user, LocalDateTime.now(), notes);
 
             if (!annotation.userIsAdmin()) {
                 return gson.toJson(INVALID_PERMISSION);

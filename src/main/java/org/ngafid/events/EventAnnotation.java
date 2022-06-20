@@ -15,14 +15,16 @@ import org.ngafid.accounts.User;
  */
 public class EventAnnotation extends Annotation {
     private int eventId, classId;
+    private String notes;
 
     private static Connection connection = Database.getConnection();
 
-    public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp) throws SQLException {
+    public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp, String notes) throws SQLException {
         super(user, timestamp);
 
         this.eventId = eventId;
         this.classId = this.getClassId(className);
+        this.notes = notes;
     }
 
     /**
@@ -36,6 +38,7 @@ public class EventAnnotation extends Annotation {
 
         this.eventId = resultSet.getInt(4);
         this.classId = resultSet.getInt(5);
+        this.notes = resultSet.getString(6);
     }
 
     /**
@@ -120,7 +123,7 @@ public class EventAnnotation extends Annotation {
     public static List<Annotation> getAnnotationsByEvent(int eventId, int currentUserId) throws SQLException {
         List<Annotation> annotations = new ArrayList<>();
 
-        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id FROM event_annotations WHERE event_id = ?";
+        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id, notes FROM event_annotations WHERE event_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, eventId);
