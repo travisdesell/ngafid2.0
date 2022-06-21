@@ -15,6 +15,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import org.xml.sax.SAXException;
+
 import javax.xml.parsers.ParserConfigurationException;
 import java.text.ParseException;
 
@@ -168,7 +169,7 @@ public class ProcessUpload {
             recipients.add(uploaderEmail);
             ArrayList<String> bccRecipients = SendEmail.getAdminEmails(); //always email admins to keep tabs on things
 
-            String formattedStartDateTime = ZonedDateTime.now().format( DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)") );
+            String formattedStartDateTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
@@ -190,7 +191,7 @@ public class ProcessUpload {
 
                 CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
 
-                String endTime = ZonedDateTime.now().format( DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)") );
+                String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
 
                 uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
 
@@ -284,15 +285,7 @@ public class ProcessUpload {
                             flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
                             validFlights++;
-                        } catch (IOException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        } catch (FatalFlightFileException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        } catch (FlightAlreadyExistsException e) {
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
@@ -313,8 +306,26 @@ public class ProcessUpload {
                                     validFlights++;
                                 }
                             }
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | ParserConfigurationException | SAXException | SQLException | ParseException e) {
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
+                                 ParserConfigurationException | SAXException | SQLException | ParseException e) {
                             System.err.println(e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        }
+                    } else if (entry.getName().endsWith(".json")) {
+                        try {
+                            Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
+
+                            if (connection != null) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                            }
+
+                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            validFlights++;
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
+                                 ParseException e) {
+                            System.err.println("ERROR: " + e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
                         }
@@ -322,10 +333,10 @@ public class ProcessUpload {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
                     }
-                } 
+                }
 
             } catch (java.nio.file.NoSuchFileException e) {
-                System.err.println("NoSuchFileException: " + e );
+                System.err.println("NoSuchFileException: " + e);
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload and re-upload.");
@@ -333,7 +344,7 @@ public class ProcessUpload {
                 uploadException = new Exception(e.toString() + ", broken upload: please delete this upload and re-upload.");
 
             } catch (IOException e) {
-                System.err.println("IOException: " + e );
+                System.err.println("IOException: " + e);
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
@@ -398,7 +409,7 @@ public class ProcessUpload {
 
             uploadProcessedEmail.setErrorFlights(errorFlights);
 
-            for (Map.Entry<String,UploadException> entry : flightErrors.entrySet()) {
+            for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {
                 UploadException exception = entry.getValue();
 
                 uploadProcessedEmail.flightImportError(exception.getFilename(), exception.getMessage());

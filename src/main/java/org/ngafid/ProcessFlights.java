@@ -1,8 +1,10 @@
 package org.ngafid;
 
+import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.IOException;
 
+import java.io.OutputStream;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -106,20 +109,28 @@ public class ProcessFlights {
                                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                                             validFlights++;
-                                        } catch (IOException e) {
-                                            System.err.println(e.getMessage());
-                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                            errorFlights++;
-                                        } catch (FatalFlightFileException e) {
-                                            System.err.println(e.getMessage());
-                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
-                                            errorFlights++;
-                                        } catch (FlightAlreadyExistsException e) {
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
                                             System.err.println(e.getMessage());
                                             flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
                                             errorFlights++;
                                         }
 
+                                    }  else if (entry.getName().endsWith(".json")) {
+                                        try {
+                                            Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
+
+                                            if (connection != null) {
+                                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                            }
+
+                                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                                            validFlights++;
+                                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | ParseException e) {
+                                            System.err.println("ERROR: " + e.getMessage());
+                                            flightErrors.add(new UploadException(e.getMessage(), e, entry.getName()));
+                                            errorFlights++;
+                                        }
                                     } else if (entry.getName().endsWith(".gpx")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
