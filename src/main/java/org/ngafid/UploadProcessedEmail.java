@@ -232,6 +232,10 @@ public class UploadProcessedEmail {
     }
 
     public void addExceedenceError(String filename, String message) {
+        if (flightInfoMap.get(filename) == null) {
+            flightInfoMap.put(filename, new FlightInfo(filename));
+        }
+
         flightInfoMap.get(filename).addExceedenceError(message);
         numberEventErrors++;
     }

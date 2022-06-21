@@ -6,6 +6,9 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.temporal.ChronoUnit;
+import java.util.Calendar;
+import java.util.Date;
 
 
 public class TimeUtils {
@@ -154,5 +157,31 @@ public class TimeUtils {
     }
 
 
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime) {
+        LocalDateTime start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        LocalDateTime end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
 
+        return ChronoUnit.SECONDS.between(start, end);
+    }
+
+    /**
+     * Add seconds to a Date object
+     *
+     * @param date
+     * @param seconds
+     * @return date with added seconds
+     */
+    public static Date addSeconds(Date date, Integer seconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.SECOND, seconds);
+        return cal.getTime();
+    }
+
+    public static Date addMilliseconds(Date date, Integer milliseconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.MILLISECOND, milliseconds);
+        return cal.getTime();
+    }
 }
