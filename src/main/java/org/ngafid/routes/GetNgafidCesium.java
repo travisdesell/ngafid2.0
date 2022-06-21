@@ -48,6 +48,7 @@ public class GetNgafidCesium implements Route {
         ArrayList<Double> flightGeoAglCruise;
         ArrayList<Double> flightGeoInfoAgl;
 
+
         ArrayList<String> flightTaxiingTimes;
         ArrayList<String> flightTakeOffTimes;
         ArrayList<String> flightClimbTimes;
