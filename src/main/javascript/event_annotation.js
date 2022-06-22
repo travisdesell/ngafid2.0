@@ -17,31 +17,11 @@ class EventAnnotation extends React.Component {
         super(props);
 
         this.state = {
-            annotationTypes : this.getAnnotationTypes(),
+            annotationNotes : "",
         };
     }
 
-    getAnnotationTypes() {
-        var thisAnnotation = this;
-        let types = [];
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/event_classes',
-            dataType : 'json',
-            success : function(response) {
-                types = new Map(Object.entries(response));
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-            },
-            async: false
-        });
-
-        return types;
-    }
-
     getAnnotations() {
-        var thisAnnotation = this;
         let annotations = [];
 
         let submissionData = {
@@ -113,8 +93,10 @@ class EventAnnotation extends React.Component {
             data: submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("update notes response");
-                console.log(response);
+                if (response == 'SUCCESS') {
+                    thisAnnotation.state.annotationNotes = notes;
+                    thisAnnotation.setState(thisAnnotation.state);
+                }
             },
             error : function(jqXHR, textStatus, errorThrown) {
             },
@@ -138,7 +120,7 @@ class EventAnnotation extends React.Component {
         const cellStyle = { "overflowX" : "auto", "overflowY" : "visible" };
 
         const annotations = this.getAnnotations();
-        let lociAnnotationNames = Array.from(this.state.annotationTypes.values());
+        let lociAnnotationNames = Array.from(this.props.annotationTypes.values());
         let hasCompletedAnnotation = false;
 
         const event = this.props.event;
@@ -146,6 +128,10 @@ class EventAnnotation extends React.Component {
         annotations.forEach(element => {
             if (element.eventId != -1) {
                 hasCompletedAnnotation = true;
+
+                if (element.notes != null && element.notes != "") {
+                    this.state.annotationNotes = element.notes;
+                }
             }
         });
 
@@ -184,9 +170,9 @@ class EventAnnotation extends React.Component {
                                 annotations.map((eventAnnotation, index) => {
                                     let timestamp = eventAnnotation.timestamp;
                                     let status = (<i className="fa fa-check" aria-hidden="true" style={{color : 'green'}}></i>);
-                                    
+
                                     if (eventAnnotation.classId != -1) {
-                                        status = this.state.annotationTypes.get(eventAnnotation.classId.toString());
+                                        status = this.props.annotationTypes.get(eventAnnotation.classId.toString());
                                     }
 
                                     let dateTime = timestamp.date.month + "/" + timestamp.date.day + "/" + timestamp.date.year;
@@ -221,7 +207,7 @@ class EventAnnotation extends React.Component {
                 </Popover.Title>
                 <Popover.Content> 
                     <div className="input-group">
-                        <textarea id={event.id + "-notes"} className="form-control" aria-label="textarea"></textarea>
+                        <textarea id={event.id + "-notes"} className="form-control" defaultValue={this.state.annotationNotes} aria-label="textarea"></textarea>
                     </div>
 
                     <Button 

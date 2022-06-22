@@ -173,6 +173,24 @@ class Events extends React.Component {
         this.updateEventDisplay(index, true);
     }
 
+    getAnnotationTypes() {
+        let types = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/event_classes',
+            dataType : 'json',
+            success : function(response) {
+                types = new Map(Object.entries(response));
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            async: false
+        });
+
+        return types;
+    }
+
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflow" : "visible" };
@@ -186,6 +204,8 @@ class Events extends React.Component {
         let eventTypeSet = new Set();
         let eventTypeButtons = [];
         let thisFlight = this.props.parent;
+
+        const eventAnnotationTypes = this.getAnnotationTypes();
 
         this.state.events.map((event, index) => {
             if (!eventTypeSet.has(event.eventDefinitionId)) {
@@ -262,6 +282,7 @@ class Events extends React.Component {
                                 <EventAnnotation style={cellStyle}
                                     id={event.id}
                                     event={event}
+                                    annotationTypes={eventAnnotationTypes}
                                 >
                                 </EventAnnotation>
                             );
