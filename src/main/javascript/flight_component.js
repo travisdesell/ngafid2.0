@@ -26,6 +26,8 @@ import Plotly from 'plotly.js';
 
 var moment = require('moment');
 
+const cesiumFlightsSelected = [];
+
 class Flight extends React.Component {
     constructor(props) {
         super(props);
@@ -465,7 +467,27 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
+        let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
+
+        if (flightStoreIndex === -1) {
+            cesiumFlightsSelected.push(this.props.flightInfo.id)
+        } else {
+            cesiumFlightsSelected.splice(flightStoreIndex, 1);
+        }
+
+        console.log(cesiumFlightsSelected);
+    }
+
+    replayClicked() {
+        let URL = "/protected/ngafid_cesium?flight_id=";
+        console.log(this.props.flightInfo.id);
+        if (cesiumFlightsSelected.length > 0 ){
+            URL += cesiumFlightsSelected.join("&flight_id=");
+        } else {
+            URL += (this.props.flightInfo.id).toString();
+        }
+
+        window.open(URL);
     }
 
     closeParamDisplay() {
@@ -613,7 +635,7 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    globeClicked() {
+    mapClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
         if (!this.state.mapLoaded) {
@@ -1095,7 +1117,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
+                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1103,11 +1125,11 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.replayClicked()}>
+                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
