@@ -123,6 +123,8 @@ class EventAnnotation extends React.Component {
         let lociAnnotationNames = Array.from(this.props.annotationTypes.values());
         let hasCompletedAnnotation = false;
 
+        var disableComments = true;
+
         const event = this.props.event;
 
         annotations.forEach(element => {
@@ -229,6 +231,7 @@ class EventAnnotation extends React.Component {
                     </Button>
                 </OverlayTrigger>
             );
+
         }
 
         if (hasCompletedAnnotation) {
@@ -239,6 +242,8 @@ class EventAnnotation extends React.Component {
                     </Button>
                 </OverlayTrigger>
             )
+
+            disableComments = false;
         }
 
         return (
@@ -262,7 +267,7 @@ class EventAnnotation extends React.Component {
                 {log}
 
                 <OverlayTrigger trigger="click" placement="right-end" overlay={additionalNotesPopover}>
-                    <Button id={event.id + '-comment-button'} className="m-1" variant="outline-info" title="Click to comment this annotation">
+                    <Button id={event.id + '-comment-button'} className="m-1" variant="outline-info" title="Click to comment this annotation" disabled={disableComments}>
                         <i className="fa fa-commenting" aria-hidden="true"></i>
                     </Button>
                 </OverlayTrigger>
