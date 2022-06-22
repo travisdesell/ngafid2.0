@@ -98,33 +98,39 @@ class EventAnnotation extends React.Component {
 
     }
 
-    updateAnnotationNotes(notes) {
+    updateAnnotationNotes(eventId, notes) {
+        console.log("update event notes: " + notes);
+
         var thisAnnotation = this;
         let submissionData = {
+            notes : notes,
+            eventId : eventId,
         };
 
         $.ajax({
             type: 'POST',
-            url: '/protected/create_annotation',
+            url: '/protected/event_annotation_notes',
             data: submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("create annotation response:");
+                console.log("update notes response");
                 console.log(response);
-
-                if (response == "ALREADY_EXISTS") {
-                    confirmModal.show("Error", "You have already assigned a class to this event, are you sure you would like to change it to: " + name + "?", () => thisAnnotation.setEventAnnotation(name, eventId, true));
-                } else if (response == "INVALID_PERMISSION") {
-                    errorModal.show("Error", "You do not have permission to annotate this flight. Please contact the site admin for more information.")
-                } else if (response == "OK") {
-                    thisAnnotation.setState(thisAnnotation.state);
-                }
-
             },
             error : function(jqXHR, textStatus, errorThrown) {
             },
             async: false
         });
+    }
+
+    notesFloppyClicked(eventId) {
+        const textInputId = '#' + eventId + '-notes';
+        const popoverId = '#' + eventId + '-popover';
+
+        const noteString = $(textInputId).val();
+
+        $(popoverId).hide();
+
+        this.updateAnnotationNotes(eventId, noteString);
     }
 
     render() {
@@ -204,28 +210,30 @@ class EventAnnotation extends React.Component {
 
         const additionalNotesPopover = (
             <Popover
-                id="popover-basic"
+                id={event.id + "-popover"}
                 style={{maxWidth: '1200px'}}
             >
                 <Popover.Title> 
                     <Row>
-                        <Col sm={9} style={{ display: "flex" }}>Annotator's Notes:</Col>
-                        <Col style={{ display: "flex" }}>
-                            <Button className="" data-toggle="button" variant="outline-success" title="Submit" onClick={() => this.updateAnnotationNotes()}>
-                                <i className="fa fa-check" aria-hidden="true"></i>
-                            </Button>
-                        </Col>
+                        <Col style={{ display: "flex" }}>Annotator's Notes:</Col>
                     </Row>
 
                 </Popover.Title>
                 <Popover.Content> 
                     <div className="input-group">
-                        <textarea className="form-control" aria-label="textarea"></textarea>
+                        <textarea id={event.id + "-notes"} className="form-control" aria-label="textarea"></textarea>
                     </div>
+
+                    <Button 
+                        className="mt-1 btn-block btn-sm" variant="outline-success" title="Submit" 
+                        onClick={() => this.notesFloppyClicked(event.id)} >
+                            <i className="fa fa-floppy-o" aria-hidden="true"></i> Save & Close
+                    </Button>
+
                 </Popover.Content>
+
             </Popover>
         );
-
         
         if (annotations.length > 0) {
             log = (
@@ -268,7 +276,7 @@ class EventAnnotation extends React.Component {
                 {log}
 
                 <OverlayTrigger trigger="click" placement="right-end" overlay={additionalNotesPopover}>
-                    <Button className="m-1" data-toggle="button" variant="outline-info" title="Click to comment this annotation">
+                    <Button id={event.id + '-comment-button'} className="m-1" variant="outline-info" title="Click to comment this annotation">
                         <i className="fa fa-commenting" aria-hidden="true"></i>
                     </Button>
                 </OverlayTrigger>
