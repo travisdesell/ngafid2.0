@@ -221,6 +221,7 @@ public class User {
 
         //get the access level of the user for this fleet
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
+        user.fleet = Fleet.get(connection, fleetId);
 
         //do not need to get the fleet as this is called from populateUsers
 
