@@ -1,7 +1,5 @@
 package org.ngafid;
 
-
-
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
@@ -193,7 +191,6 @@ public final class WebServer {
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
 
-        Spark.get("/protected/import_event_stats", new GetImportEventStats(gson));
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
@@ -237,10 +234,6 @@ public final class WebServer {
         Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
         Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
         Spark.post("/protected/edit_tag", new PostEditTag(gson));
-
-        //For maintenance statistics
-        Spark.post("/protected/maintenance", new PostMaintenanceStatistics(gson));
-        Spark.post("/protected/maintenance_rate", new PostMaintenanceRating(gson));
         
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
