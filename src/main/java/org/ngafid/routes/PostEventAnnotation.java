@@ -56,7 +56,7 @@ public class PostEventAnnotation implements Route {
         boolean override = Boolean.parseBoolean(request.queryParams("override"));
 
         try {
-            EventAnnotation annotation = new EventAnnotation(eventId, className, user, LocalDateTime.now());
+            EventAnnotation annotation = new EventAnnotation(eventId, className, user, LocalDateTime.now(), new String());
 
             if (!annotation.userIsAdmin()) {
                 return gson.toJson(INVALID_PERMISSION);

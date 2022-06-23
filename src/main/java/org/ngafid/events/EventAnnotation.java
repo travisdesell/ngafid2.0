@@ -15,14 +15,16 @@ import org.ngafid.accounts.User;
  */
 public class EventAnnotation extends Annotation {
     private int eventId, classId;
+    private String notes;
 
     private static Connection connection = Database.getConnection();
 
-    public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp) throws SQLException {
+    public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp, String notes) throws SQLException {
         super(user, timestamp);
 
         this.eventId = eventId;
         this.classId = this.getClassId(className);
+        this.notes = notes;
     }
 
     /**
@@ -36,6 +38,7 @@ public class EventAnnotation extends Annotation {
 
         this.eventId = resultSet.getInt(4);
         this.classId = resultSet.getInt(5);
+        this.notes = resultSet.getString(6);
     }
 
     /**
@@ -109,6 +112,41 @@ public class EventAnnotation extends Annotation {
         return query.executeUpdate() == 1;
     }
 
+    public boolean updateNotes(String notes) throws SQLException {
+        String queryString = "UPDATE event_annotations SET notes = ? WHERE user_id = ? AND fleet_id = ? AND event_id = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setString(1, notes);
+
+        query.setInt(2, this.getUserId());
+        query.setInt(3, this.getFleetId());
+        query.setInt(4, this.getEventId());
+
+        return query.executeUpdate() == 1;
+    }
+
+    /**
+     * Gets an EventAnnotation from its primary key
+     */
+    public static EventAnnotation getEventAnnotation(User user, int eventId) throws SQLException {
+        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id, notes FROM event_annotations WHERE event_id = ? AND user_id = ? AND fleet_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, eventId);
+        query.setInt(2, user.getId());
+        query.setInt(3, user.getFleetId());
+
+        ResultSet resultSet = query.executeQuery();
+
+        EventAnnotation eventAnnotation = null;
+
+        if (resultSet.next()) {
+            eventAnnotation = new EventAnnotation(resultSet);
+        }
+
+        return eventAnnotation;
+    }
+
     /**
      * Gets a list of the current event annotations associated with an event
      *
@@ -120,7 +158,7 @@ public class EventAnnotation extends Annotation {
     public static List<Annotation> getAnnotationsByEvent(int eventId, int currentUserId) throws SQLException {
         List<Annotation> annotations = new ArrayList<>();
 
-        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id FROM event_annotations WHERE event_id = ?";
+        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id, notes FROM event_annotations WHERE event_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, eventId);
