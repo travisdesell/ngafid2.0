@@ -33,7 +33,6 @@ class Flight extends React.Component {
         super(props);
 
         let color = Colors.randomValue();
-        console.log("flight color: " );
         console.log(color);
 
         this.state = {
