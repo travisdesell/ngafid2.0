@@ -241,7 +241,7 @@ public class Flight {
      * @param seriesNames     is the names of the series to check for
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    private void checkCalculationParameters(String calculationName, String... seriesNames) throws MalformedFlightFileException {
+    public void checkCalculationParameters(String calculationName, String... seriesNames) throws MalformedFlightFileException {
         for (String param : seriesNames) {
             if (!this.doubleTimeSeries.keySet().contains(param)) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
