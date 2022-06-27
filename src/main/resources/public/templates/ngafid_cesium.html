@@ -610,6 +610,10 @@
 
         }
 
+        function togglePathColor(color) {
+            viewer.trackedEntity.path.material.color = color;
+        }
+
         // Set menu options
         const menu = document.getElementById("dropdown");
         const bar = document.querySelector("div.cesium-viewer-toolbar");
