@@ -112,6 +112,13 @@
             top: 10px;
             left: 10px;
         }
+
+        #toggle-path-color {
+            z-index: 0;
+            position: absolute;
+            top: 55px;
+            left: 10px;
+        }
     </style>
 
     <!-- Cesium css file -->
@@ -630,9 +637,13 @@
         for (let i = 0; i < CESIUM_COLOR_NAMES.length; i++) {
             let color = CESIUM_COLOR_NAMES[i];
             let option = document.createElement(color);
+
             option.value = color;
             pathMenu.append(option);
-            pathMenu.options[i + 1].onselect = togglePathColor(CESIUM_COLORS[i]);
+
+            // pathMenu.options[i + 1].onselect = function () {
+            //     togglePathColor(CESIUM_COLORS[i]);
+            // };
         }
 
 
