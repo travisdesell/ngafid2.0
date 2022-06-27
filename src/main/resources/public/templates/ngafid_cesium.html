@@ -146,6 +146,19 @@
         // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
         Cesium.Math.setRandomNumberSeed(9);
+
+        const CESIUM_COLORS = {
+            "RED": Cesium.Color.ORANGE,
+            "ORANGE": Cesium.Color.ORANGE,
+            "YELLOW": Cesium.Color.YELLOW,
+            "GREEN": Cesium.Color.GREEN,
+            "BLUE": Cesium.Color.BLUE,
+            "INDIGO": Cesium.Color.INDIGO,
+            "VIOLET": Cesium.Color.VIOLET,
+            "WHITE": Cesium.Color.WHITE,
+            "BLACK": Cesium.Color.BLACK,
+        }
+
         // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
