@@ -636,17 +636,10 @@
             Cesium.Color.RED, Cesium.Color.ORANGE, Cesium.Color.YELLOW, Cesium.Color.GREEN, Cesium.Color.BLUE,
             Cesium.Color.INDIGO, Cesium.Color.VIOLET, Cesium.Color.BLACK, Cesium.Color.WHITE,
         ]
-        let CESIUM_COLOR_NAMES = ["RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "INDIGO", "VIOLET", "BLACK", "WHITE"];
 
-        for (let i = 0; i < CESIUM_COLOR_NAMES.length; i++) {
-            CESIUM_COLORS.push(Cesium.Color + "." + CESIUM_COLOR_NAMES[i]);
-        }
-
-        for (let i = 0; i < CESIUM_COLOR_NAMES.length; i++) {
-            let color = CESIUM_COLOR_NAMES[i];
-            let option = document.createElement(color);
-
-            option.text = option.value = color;
+        for (let i = 0; i < CESIUM_COLORS.length; i++) {
+            let color = CESIUM_COLORS[i];
+            let option = document.createElement("color");
 
             pathMenu.options[i + 1].onselect = function () {
                 togglePathColor(CESIUM_COLORS[i]);
