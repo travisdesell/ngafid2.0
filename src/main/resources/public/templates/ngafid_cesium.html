@@ -621,10 +621,10 @@
         }
 
         function togglePathColor(color) {
-            viewer.trackedEntity.path.material.color = color
-            viewer.trackedEntity.path.material.outlineColor = color;
-
-            console.log(viewer.trackedEntity + " set to " + color);
+            if (viewer.trackedEntity) {
+                viewer.trackedEntity.path.material.color = color
+                viewer.trackedEntity.path.material.outlineColor = color;
+            }
         }
 
         // Set menu options
