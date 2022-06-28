@@ -639,9 +639,6 @@
         ]
 
         for (let i = 0; i < CESIUM_COLORS.length; i++) {
-            let color = CESIUM_COLORS[i];
-            let option = document.createElement("color");
-
             pathMenu.options[i + 1].onselect = function () {
                 togglePathColor(CESIUM_COLORS[i]);
             };
