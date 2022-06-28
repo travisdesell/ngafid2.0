@@ -116,8 +116,8 @@
         #toggle-path-color {
             z-index: 0;
             position: absolute;
-            top: 55px;
-            left: 10px;
+            top: 8px;
+            left: 215px;
         }
     </style>
 
@@ -140,8 +140,6 @@
             <option value="4">Show Cruise to Final</option>
             <option value="5">Show Full Flight</option>
         </select>
-        <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
-
     </div>
 
     <div id="toggle-path-color">
@@ -157,6 +155,9 @@
             <option value="8">Black</option>
             <option value="9">White</option>
         </select>
+         <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
+                <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
+
     </div>
 
 <!--        <script src = "src/main/javascript/cesium_page.js">-->
@@ -695,10 +696,6 @@
         toggleAirframeLockButton.onclick = function () {
             toggleAirframeLockCamera();
         };
-        toggleAirframeLockButton.textContent = "CAM"
-        toggleAirframeLockButton.classList.add("cesium-button", "cesium-toolbar-button");
-        toggleAirframeLockButton.innerHTML = "<img src='../images/cam_icon.jpg' width='30' height='30'/>";
-        bar.insertBefore(toggleAirframeLockButton, modeButton);
 
         viewer.trackedEntity = null;
         viewer.zoomTo(viewer.entities);
