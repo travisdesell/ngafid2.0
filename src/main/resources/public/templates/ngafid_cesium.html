@@ -146,9 +146,16 @@
 
     <div id="toggle-path-color">
         <select class="cesium-button" id="color-options">
-            <option value="0">Select Current Flight Color</option>
-
-
+            <option value="0">Select Current Flight Path Color</option>
+            <option value="1">Red</option>
+            <option value="2">Orange</option>
+            <option value="3">Yellow</option>
+            <option value="4">Green</option>
+            <option value="5">Blue</option>
+            <option value="6">Indigo</option>
+            <option value="7">Violet</option>
+            <option value="8">Black</option>
+            <option value="9">White</option>
         </select>
     </div>
 
@@ -616,18 +623,19 @@
         function togglePathColor(color) {
             viewer.trackedEntity.path.material.color = color
             viewer.trackedEntity.path.material.outlineColor = color;
+
+            console.log(viewer.trackedEntity + " set to " + color);
         }
 
         // Set menu options
         const menu = document.getElementById("dropdown");
-        const pathMenu = document.getElementById("toggle-path-color");
+        const pathMenu = document.getElementById("color-options");
         const bar = document.querySelector("div.cesium-viewer-toolbar");
 
         let CESIUM_COLORS = [
             Cesium.Color.ORANGE, Cesium.Color.ORANGE, Cesium.Color.YELLOW, Cesium.Color.GREEN, Cesium.Color.BLUE,
             Cesium.Color.INDIGO, Cesium.Color.VIOLET, Cesium.Color.WHITE, Cesium.Color.BLACK,
         ]
-
         let CESIUM_COLOR_NAMES = ["RED", "ORANGE", "YELLOW", "GREEN", "BLUE", "INDIGO", "VIOLET", "WHITE", "BLACK"];
 
         for (let i = 0; i < CESIUM_COLOR_NAMES.length; i++) {
@@ -638,12 +646,11 @@
             let color = CESIUM_COLOR_NAMES[i];
             let option = document.createElement(color);
 
-            option.value = color;
-            pathMenu.append(option);
+            option.text = option.value = color;
 
-            // pathMenu.options[i + 1].onselect = function () {
-            //     togglePathColor(CESIUM_COLORS[i]);
-            // };
+            pathMenu.options[i + 1].onselect = function () {
+                togglePathColor(CESIUM_COLORS[i]);
+            };
         }
 
 
