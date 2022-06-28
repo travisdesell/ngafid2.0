@@ -691,6 +691,13 @@
             }
         };
 
+        pathMenu.onchange = function () {
+            var item = pathMenu.options[pathMenu.selectedIndex];
+            if (item && typeof item.onselect === "function") {
+                item.onselect();
+            }
+        };
+
         const modeButton = document.querySelector("span.cesium-sceneModePicker-wrapper");
 
         const toggleAirframeLockButton = document.createElement("button");
