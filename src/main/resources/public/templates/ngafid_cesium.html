@@ -112,6 +112,13 @@
             top: 10px;
             left: 10px;
         }
+
+        #toggle-path-color {
+            z-index: 0;
+            position: absolute;
+            top: 8px;
+            left: 215px;
+        }
     </style>
 
     <!-- Cesium css file -->
@@ -133,7 +140,23 @@
             <option value="4">Show Cruise to Final</option>
             <option value="5">Show Full Flight</option>
         </select>
-        <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
+    </div>
+
+    <div id="toggle-path-color">
+        <select class="cesium-button" id="color-options">
+            <option value="0">Select Current Flight Path Color</option>
+            <option value="1">Red</option>
+            <option value="2">Orange</option>
+            <option value="3">Yellow</option>
+            <option value="4">Green</option>
+            <option value="5">Blue</option>
+            <option value="6">Indigo</option>
+            <option value="7">Violet</option>
+            <option value="8">Black</option>
+            <option value="9">White</option>
+        </select>
+         <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
+                <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
 
     </div>
 
@@ -146,6 +169,7 @@
         // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
         Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
         Cesium.Math.setRandomNumberSeed(9);
+
         // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
@@ -595,11 +619,32 @@
                 entityToggleIndex = 0;
             }
 
+            pathMenu.selectedIndex = 0;
+        }
+
+        function togglePathColor(color) {
+            if (viewer.trackedEntity) {
+                viewer.trackedEntity.path.material.color = color
+                viewer.trackedEntity.path.material.outlineColor = color;
+            }
         }
 
         // Set menu options
         const menu = document.getElementById("dropdown");
+        const pathMenu = document.getElementById("color-options");
         const bar = document.querySelector("div.cesium-viewer-toolbar");
+
+        let CESIUM_COLORS = [
+            Cesium.Color.RED, Cesium.Color.ORANGE, Cesium.Color.YELLOW, Cesium.Color.GREEN, Cesium.Color.BLUE,
+            Cesium.Color.INDIGO, Cesium.Color.VIOLET, Cesium.Color.BLACK, Cesium.Color.WHITE,
+        ]
+
+        for (let i = 0; i < CESIUM_COLORS.length; i++) {
+            pathMenu.options[i + 1].onselect = function () {
+                togglePathColor(CESIUM_COLORS[i]);
+            };
+        }
+
 
         menu.options[1].onselect = function () {
             applyNgafidStyleTaxi();
@@ -638,16 +683,19 @@
             }
         };
 
+        pathMenu.onchange = function () {
+            var item = pathMenu.options[pathMenu.selectedIndex];
+            if (item && typeof item.onselect === "function") {
+                item.onselect();
+            }
+        };
+
         const modeButton = document.querySelector("span.cesium-sceneModePicker-wrapper");
 
         const toggleAirframeLockButton = document.createElement("button");
         toggleAirframeLockButton.onclick = function () {
             toggleAirframeLockCamera();
         };
-        toggleAirframeLockButton.textContent = "CAM"
-        toggleAirframeLockButton.classList.add("cesium-button", "cesium-toolbar-button");
-        toggleAirframeLockButton.innerHTML = "<img src='../images/cam_icon.jpg' width='30' height='30'/>";
-        bar.insertBefore(toggleAirframeLockButton, modeButton);
 
         viewer.trackedEntity = null;
         viewer.zoomTo(viewer.entities);
