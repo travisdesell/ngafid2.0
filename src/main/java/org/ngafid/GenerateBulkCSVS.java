@@ -172,7 +172,7 @@ public class GenerateBulkCSVS {
                     File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
                     FileWriter fw = new FileWriter(file);
 
-                    fw.write(csvWriter.write());
+                    fw.write(csvWriter.getFileContents());
                     fw.close();
                 } else {
                     zipOut.putNextEntry(csvWriter.getZipEntry());
