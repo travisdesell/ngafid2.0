@@ -1561,10 +1561,17 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
-    public void calculateScanEagleStartEndTime(String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException {
+    public void calculateScanEagleStartEndTime(Connection connection, String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException, SQLException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
         DoubleTimeSeries longitudes = doubleTimeSeries.get(lonColumnName);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
+
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
         System.out.println("times: " + times + ", latitudes: " + latitudes + ", longitudes: " + longitudes);
 
@@ -1591,23 +1598,36 @@ public class Flight {
         System.out.println("\tstart time: " + startDateTime);
         System.out.println("\tend time: " + endDateTime);
 
+        int start = 0;
         String firstTime = null;
         for (int i = 0; i < times.size(); i++) {
             if (times.get(i) != null && !times.get(i).equals("")) {
                 firstTime = times.get(i);
+                start = i;
                 break;
             }
         }
         System.out.println("\tfirst time: '" + firstTime + "'");
 
+        int end = 0;
         String lastTime = null;
         for (int i = times.size() - 1; i >= 0; i--) {
             if (times.get(i) != null) {
                 lastTime = times.get(i);
+                end = i;
                 break;
             }
         }
         System.out.println("\tlast time: '" + lastTime + "'");
+
+
+        for (int i = start; i < end; i++) {
+            if (times.get(i) != null) {
+                System.out.println(times.get(i));
+                localTimeSeries.add(lclTimeFormat.format(times.get(i)));
+            }
+        }
+
 
         double firstLat = 0.0;
         for (int i = 0; i < latitudes.size(); i++) {
@@ -2080,7 +2100,7 @@ public class Flight {
 
                 System.out.println("Calculating start and end time for ScanEagle!");
                 calculateScanEagleLatLon(connection, "DID_GPS_LAT", "DID_GPS_LON", "Latitude", "Longitude");
-                calculateScanEagleStartEndTime("DID_GPS_TIME", "Latitude", "Longitude");
+                calculateScanEagleStartEndTime(connection, "DID_GPS_TIME", "Latitude", "Longitude");
                 calculateScanEagleAltMSL(connection, "AltMSL", "DID_GPS_ALT");
 
                 //this is all we can do with the scan eagle data until we
