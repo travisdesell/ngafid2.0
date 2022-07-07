@@ -1561,15 +1561,14 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
-    public void calculateScanEagleStartEndTime(Connection connection, String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException, SQLException {
+    public void calculateScanEagleStartEndTime(Connection connection, String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException, SQLException, ParseException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
         StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
         DoubleTimeSeries longitudes = doubleTimeSeries.get(lonColumnName);
 
-        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSXXX");
-
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-ddHH:mm:ss");
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
@@ -1602,6 +1601,8 @@ public class Flight {
         String firstTime = null;
         for (int i = 0; i < times.size(); i++) {
             if (times.get(i) != null && !times.get(i).equals("")) {
+                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
+                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
                 firstTime = times.get(i);
                 start = i;
                 break;
@@ -1613,6 +1614,8 @@ public class Flight {
         String lastTime = null;
         for (int i = times.size() - 1; i >= 0; i--) {
             if (times.get(i) != null) {
+                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
+                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
                 lastTime = times.get(i);
                 end = i;
                 break;
@@ -1623,8 +1626,8 @@ public class Flight {
 
         for (int i = start; i < end; i++) {
             if (times.get(i) != null) {
-                System.out.println(times.get(i));
-                localTimeSeries.add(lclTimeFormat.format(times.get(i)));
+                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
+                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
             }
         }
 
@@ -2113,6 +2116,8 @@ public class Flight {
             }
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
+        } catch (ParseException e) {
+            LOG.warning("ParseException");
         }
 
         try {
