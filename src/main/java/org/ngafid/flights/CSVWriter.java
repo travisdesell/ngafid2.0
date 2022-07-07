@@ -22,6 +22,7 @@ import org.ngafid.Database;
  */
 public abstract class CSVWriter {
     protected Flight flight;
+    protected Connection connection = Database.getConnection();
 
     public CSVWriter(Flight flight) {
         this.flight = flight;
@@ -31,6 +32,8 @@ public abstract class CSVWriter {
      * Gets what the contents of the file will be as a String
      *
      * @return a String containing the CSV file's contents
+     *
+     * @throws IOException as there will be file read/write operations occuring
      */
-    public abstract String getFileContents();
+    public abstract String getFileContents() throws IOException;
 }

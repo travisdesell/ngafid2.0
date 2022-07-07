@@ -1,6 +1,9 @@
 package org.ngafid.flights;
 
+import java.sql.SQLException;
 import java.util.*;
+
+import java.sql.Connection;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private Map<String, DoubleTimeSeries> timeSeriesColumns;
@@ -12,7 +15,7 @@ public class GeneratedCSVWriter extends CSVWriter {
 
         try {
             for (String columnName : timeSeriesColumnNames) {
-                timeSeriesColumns.put(columnName, super.flight.getDoubleTimeSeries(Database.getConnection(), columnName));
+                timeSeriesColumns.put(columnName, super.flight.getDoubleTimeSeries(connection, columnName));
             }
         } catch (SQLException se) {
             se.printStackTrace();
@@ -33,6 +36,6 @@ public class GeneratedCSVWriter extends CSVWriter {
      * @return a String containing the CSV file's contents
      */
     public String getFileContents(int startLine, int stopLine) {
-
+        return "";
     }
 }
