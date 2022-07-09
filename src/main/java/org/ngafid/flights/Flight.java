@@ -1625,16 +1625,20 @@ public class Flight {
         }
         System.out.println("\tlast time: '" + lastTime + "'");
 
+        int count = 0;
         for (int i = start; i < end; i++) {
             if (times.get(i) != null) {
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
                 localDateSeries.add(lclDateFormat.format(parsedDate));
                 localTimeSeries.add(lclTimeFormat.format(parsedDate));
+                count++;
             }
         }
 
-        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
-        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+        System.out.println("Start: " + start + " End: " + end + " Count: " + count);
+        // TODO: Figure out what to set until variable. GetNGAFIDCesium getting bad index still?
+        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, count - 1);
+        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, count - 1);
 
         stringTimeSeries.put("Lcl Date", localDate);
         stringTimeSeries.put("Lcl Time", localTime);
