@@ -1626,7 +1626,7 @@ public class Flight {
         System.out.println("\tlast time: '" + lastTime + "'");
 
         int count = 0;
-        for (int i = start; i < end; i++) {
+        for (int i = start + 1; i < end - 1; i++) {
             if (times.get(i) != null) {
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
                 localDateSeries.add(lclDateFormat.format(parsedDate));
@@ -1640,14 +1640,14 @@ public class Flight {
         System.err.println("Local Time Series Size: " + localTimeSeries.size());
 
         // TODO: Figure out what to set until variable. GetNGAFIDCesium getting bad index still?
-        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end - count);
-        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end - count);
+//        StringTimeSeries localDate = localDateSeries.subSeries(connection, 0, count);
+//        StringTimeSeries localTime = localTimeSeries.subSeries(connection, 0, count);
+//
+//        System.err.println("Local Date SubSeries Size: " + localDate.size());
+//        System.err.println("Local Time SubSeries Size: " + localTime.size());
 
-        System.err.println("Local Date SubSeries Size: " + localDate.size());
-        System.err.println("Local Time SubSeries Size: " + localTime.size());
-
-        stringTimeSeries.put("Lcl Date", localDate);
-        stringTimeSeries.put("Lcl Time", localTime);
+        stringTimeSeries.put("Lcl Date", localDateSeries);
+        stringTimeSeries.put("Lcl Time", localTimeSeries);
 
         double firstLat = 0.0;
         for (int i = 0; i < latitudes.size(); i++) {

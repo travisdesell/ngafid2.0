@@ -150,6 +150,9 @@ public class GetNgafidCesium implements Route {
                 StringTimeSeries date = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Date");
                 StringTimeSeries time = StringTimeSeries.getStringTimeSeries(connection, flightIdNewInteger, "Lcl Time");
 
+                System.out.println(date.size());
+                System.out.println(time.size());
+
                 ArrayList<Double> flightGeoAglTaxiing = new ArrayList<>();
                 ArrayList<Double> flightGeoAglTakeOff = new ArrayList<>();
                 ArrayList<Double> flightGeoAglClimb = new ArrayList<>();
