@@ -1626,15 +1626,18 @@ public class Flight {
         System.out.println("\tlast time: '" + lastTime + "'");
 
         for (int i = start; i < end; i++) {
-            System.out.print("Before: ");
             if (times.get(i) != null) {
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
                 localDateSeries.add(lclDateFormat.format(parsedDate));
                 localTimeSeries.add(lclTimeFormat.format(parsedDate));
             }
-            System.out.println();
         }
 
+        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+
+        stringTimeSeries.put("Lcl Date", localDate);
+        stringTimeSeries.put("Lcl Time", localTime);
 
         double firstLat = 0.0;
         for (int i = 0; i < latitudes.size(); i++) {
