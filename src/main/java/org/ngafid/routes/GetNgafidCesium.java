@@ -176,11 +176,7 @@ public class GetNgafidCesium implements Route {
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
                         flightGeoAglTaxiing.add(altAgl.get(i));
-                        try {
-                            flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                        } catch (IndexOutOfBoundsException e) {
-                            break;
-                        }
+                        flightTaxiingTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
                         if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
                             break;
@@ -198,11 +194,7 @@ public class GetNgafidCesium implements Route {
                                 flightGeoAglTakeOff.add(longitude.get(i));
                                 flightGeoAglTakeOff.add(latitude.get(i));
                                 flightGeoAglTakeOff.add(altAgl.get(i));
-                                try {
-                                    flightTakeOffTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                                } catch (IndexOutOfBoundsException e) {
-                                    break;
-                                }
+                                flightTakeOffTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
                                 initCounter++;
                             } else if (takeoffCounter > 15) {
@@ -225,11 +217,7 @@ public class GetNgafidCesium implements Route {
                                 flightGeoAglClimb.add(longitude.get(i));
                                 flightGeoAglClimb.add(latitude.get(i));
                                 flightGeoAglClimb.add(altAgl.get(i));
-                                try {
-                                    flightClimbTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                                } catch (IndexOutOfBoundsException e) {
-                                    break;
-                                }
+                                flightClimbTimes.add(date.get(i) + "T" + time.get(i) + "Z");
 
                                 initCounter++;
                             }
@@ -252,11 +240,7 @@ public class GetNgafidCesium implements Route {
                             flightGeoAglCruise.add(longitude.get(i));
                             flightGeoAglCruise.add(latitude.get(i));
                             flightGeoAglCruise.add(altAgl.get(i));
-                            try {
-                                flightCruiseTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                            } catch (IndexOutOfBoundsException e) {
-                                break;
-                            }
+                            flightCruiseTimes.add(date.get(i) + "T" + time.get(i) + "Z");
                         }
                         countPostCruise++;
                     }
@@ -269,11 +253,7 @@ public class GetNgafidCesium implements Route {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));
-                        try {
-                            flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
-                        } catch (IndexOutOfBoundsException e) {
-                                break;
-                        }
+                        flightAglTimes.add(date.get(i) + "T" + time.get(i) + "Z");
                     }
                 }
 
