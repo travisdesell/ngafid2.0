@@ -1601,8 +1601,9 @@ public class Flight {
         String firstTime = null;
         for (int i = 0; i < times.size(); i++) {
             if (times.get(i) != null && !times.get(i).equals("")) {
-                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
-                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
+                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
+                localDateSeries.add(lclDateFormat.format(parsedDate));
+                localTimeSeries.add(lclTimeFormat.format(parsedDate));
                 firstTime = times.get(i);
                 start = i;
                 break;
@@ -1614,8 +1615,9 @@ public class Flight {
         String lastTime = null;
         for (int i = times.size() - 1; i >= 0; i--) {
             if (times.get(i) != null) {
-                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
-                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
+                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
+                localDateSeries.add(lclDateFormat.format(parsedDate));
+                localTimeSeries.add(lclTimeFormat.format(parsedDate));
                 lastTime = times.get(i);
                 end = i;
                 break;
@@ -1623,12 +1625,16 @@ public class Flight {
         }
         System.out.println("\tlast time: '" + lastTime + "'");
 
-
+        System.out.println("Process in between");
         for (int i = start; i < end; i++) {
+            System.out.print("Before: ");
             if (times.get(i) != null) {
-                localDateSeries.add(String.valueOf(lclDateFormat.parse(startDateTime + times.get(i))));
-                localTimeSeries.add(String.valueOf(lclTimeFormat.parse(startDateTime + times.get(i))));
+                System.out.println("Not null");
+                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
+                localDateSeries.add(lclDateFormat.format(parsedDate));
+                localTimeSeries.add(lclTimeFormat.format(parsedDate));
             }
+            System.out.println();
         }
 
 
@@ -2424,7 +2430,7 @@ public class Flight {
 
         if (spdnodes.item(0) == null)
           throw new FatalFlightFileException("GPX file is missing GndSpd.");
-        
+
         if (!(dates.getLength() == datanodes.getLength() &&
                 dates.getLength() == elenodes.getLength() &&
                 dates.getLength() == spdnodes.getLength())) {
@@ -3344,13 +3350,13 @@ public class Flight {
                 int flightId = resultSet.getInt(1);
                 this.id = flightId;
 
-                for (String key : doubleTimeSeries.keySet()) {
-                    System.out.println("double time series key: '" + key);
-                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
-                }
+//                for (String key : doubleTimeSeries.keySet()) {
+//                    System.out.println("double time series key: '" + key);
+//                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+//                }
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    System.out.println(series);
+//                    System.out.println(series);
                     series.updateDatabase(connection, flightId);
                 }
 
