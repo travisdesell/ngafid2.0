@@ -1601,9 +1601,6 @@ public class Flight {
         String firstTime = null;
         for (int i = 0; i < times.size(); i++) {
             if (times.get(i) != null && !times.get(i).equals("")) {
-                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
-                localDateSeries.add(lclDateFormat.format(parsedDate));
-                localTimeSeries.add(lclTimeFormat.format(parsedDate));
                 firstTime = times.get(i);
                 start = i;
                 break;
@@ -1615,9 +1612,6 @@ public class Flight {
         String lastTime = null;
         for (int i = times.size() - 1; i >= 0; i--) {
             if (times.get(i) != null) {
-                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
-                localDateSeries.add(lclDateFormat.format(parsedDate));
-                localTimeSeries.add(lclTimeFormat.format(parsedDate));
                 lastTime = times.get(i);
                 end = i;
                 break;
@@ -1625,26 +1619,36 @@ public class Flight {
         }
         System.out.println("\tlast time: '" + lastTime + "'");
 
-        int count = 0;
-        for (int i = start + 1; i < end - 1; i++) {
+//        int count = 0;
+//        for (int i = start + 1; i < end - 1; i++) {
+//            if (times.get(i) != null) {
+//                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
+//                localDateSeries.add(lclDateFormat.format(parsedDate));
+//                localTimeSeries.add(lclTimeFormat.format(parsedDate));
+//                count++;
+//            }
+//        }
+
+        for (int i = 0; i < times.size(); i++) {
             if (times.get(i) != null) {
+                System.out.println("DateTime: " + startDateTime + times.get(i));
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
+                System.out.println(parsedDate);
                 localDateSeries.add(lclDateFormat.format(parsedDate));
                 localTimeSeries.add(lclTimeFormat.format(parsedDate));
-                count++;
             }
         }
 
-        System.err.println("Start: " + start + " End: " + end + " Count: " + count);
+        System.err.println("Start: " + start + " End: " + end + " Count: " );
         System.err.println("Local Date Series Size: " + localDateSeries.size());
         System.err.println("Local Time Series Size: " + localTimeSeries.size());
 
         // TODO: Figure out what to set until variable. GetNGAFIDCesium getting bad index still?
-//        StringTimeSeries localDate = localDateSeries.subSeries(connection, 0, count);
-//        StringTimeSeries localTime = localTimeSeries.subSeries(connection, 0, count);
-//
-//        System.err.println("Local Date SubSeries Size: " + localDate.size());
-//        System.err.println("Local Time SubSeries Size: " + localTime.size());
+        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+
+        System.err.println("Local Date SubSeries Size: " + localDate.size());
+        System.err.println("Local Time SubSeries Size: " + localTime.size());
 
         stringTimeSeries.put("Lcl Date", localDateSeries);
         stringTimeSeries.put("Lcl Time", localTimeSeries);
