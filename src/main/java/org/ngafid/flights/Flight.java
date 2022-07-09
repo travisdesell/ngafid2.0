@@ -2083,17 +2083,17 @@ public class Flight {
                         System.out.println(header + " -- DATE OR TIME!");
                         StringTimeSeries sts = stringTimeSeries.get(header);
                         if (sts != null) {
-                            for (int i = 0; i < sts.size(); i++) {
-                                System.out.print(" " + sts.get(i));
-                            }
+//                            for (int i = 0; i < sts.size(); i++) {
+//                                System.out.print(" " + sts.get(i));
+//                            }
                             System.out.println();
                             System.out.println();
                         } else {
                             DoubleTimeSeries dts = doubleTimeSeries.get(header);
                             if (dts != null) {
-                                for (int i = 0; i < dts.size(); i++) {
-                                    System.out.print(" " + dts.get(i));
-                                }
+//                                for (int i = 0; i < dts.size(); i++) {
+//                                    System.out.print(" " + dts.get(i));
+//                                }
                             }
                             System.out.println();
                             System.out.println();
