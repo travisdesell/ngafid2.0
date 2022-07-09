@@ -1625,11 +1625,9 @@ public class Flight {
         }
         System.out.println("\tlast time: '" + lastTime + "'");
 
-        System.out.println("Process in between");
         for (int i = start; i < end; i++) {
             System.out.print("Before: ");
             if (times.get(i) != null) {
-                System.out.println("Not null");
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
                 localDateSeries.add(lclDateFormat.format(parsedDate));
                 localTimeSeries.add(lclTimeFormat.format(parsedDate));
