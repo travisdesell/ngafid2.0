@@ -1619,23 +1619,13 @@ public class Flight {
         }
         System.out.println("\tlast time: '" + lastTime + "'");
 
-//        int count = 0;
-//        for (int i = start + 1; i < end - 1; i++) {
-//            if (times.get(i) != null) {
-//                Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
-//                localDateSeries.add(lclDateFormat.format(parsedDate));
-//                localTimeSeries.add(lclTimeFormat.format(parsedDate));
-//                count++;
-//            }
-//        }
-
-        for (int i = 0; i < times.size(); i++) {
+        int count = 0;
+        for (int i = start; i < end; i++) {
             if (times.get(i) != null) {
-                System.out.println("DateTime: " + startDateTime + times.get(i));
                 Date parsedDate = dateFormat.parse(startDateTime + times.get(i));
-                System.out.println(parsedDate);
                 localDateSeries.add(lclDateFormat.format(parsedDate));
                 localTimeSeries.add(lclTimeFormat.format(parsedDate));
+                count++;
             }
         }
 
@@ -1644,11 +1634,11 @@ public class Flight {
         System.err.println("Local Time Series Size: " + localTimeSeries.size());
 
         // TODO: Figure out what to set until variable. GetNGAFIDCesium getting bad index still?
-        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
-        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+//        StringTimeSeries localDate = localDateSeries.subSeries(connection, 0, count);
+//        StringTimeSeries localTime = localTimeSeries.subSeries(connection, 0, count);
 
-        System.err.println("Local Date SubSeries Size: " + localDate.size());
-        System.err.println("Local Time SubSeries Size: " + localTime.size());
+//        System.err.println("Local Date SubSeries Size: " + localDate.size());
+//        System.err.println("Local Time SubSeries Size: " + localTime.size());
 
         stringTimeSeries.put("Lcl Date", localDateSeries);
         stringTimeSeries.put("Lcl Time", localTimeSeries);
