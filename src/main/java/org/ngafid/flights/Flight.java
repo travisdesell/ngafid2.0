@@ -1633,7 +1633,6 @@ public class Flight {
         System.err.println("Local Date Series Size: " + localDateSeries.size());
         System.err.println("Local Time Series Size: " + localTimeSeries.size());
 
-        // TODO: Figure out what to set until variable. GetNGAFIDCesium getting bad index still?
         StringTimeSeries localDate = localDateSeries.subSeries(connection, 0, count);
         StringTimeSeries localTime = localTimeSeries.subSeries(connection, 0, count);
 
