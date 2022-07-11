@@ -1636,9 +1636,6 @@ public class Flight {
         StringTimeSeries localDate = localDateSeries.subSeries(connection, 0, count);
         StringTimeSeries localTime = localTimeSeries.subSeries(connection, 0, count);
 
-        System.err.println("Local Date SubSeries Size: " + localDate.size());
-        System.err.println("Local Time SubSeries Size: " + localTime.size());
-
         stringTimeSeries.put("Lcl Date", localDate);
         stringTimeSeries.put("Lcl Time", localTime);
 
