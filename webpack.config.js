@@ -44,7 +44,8 @@ module.exports = {
         event_definition: __dirname + "/src/main/javascript/event_definition.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
         time_zones: __dirname + "/src/main/javascript/time_zones.js",
-        user_preferences : __dirname + "/src/main/javascript/preferences_page.js",
+        user_preferences: __dirname + "/src/main/javascript/preferences_page.js",
+        event_definitions_display: __dirname + "/src/main/javascript/event_definitions.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
         ttf: __dirname + "/src/main/javascript/ttf.js"
