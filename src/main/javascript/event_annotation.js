@@ -127,15 +127,15 @@ class EventAnnotation extends React.Component {
 
         const event = this.props.event;
 
-        annotations.forEach(element => {
-            if (element.eventId != -1) {
-                hasCompletedAnnotation = true;
+        //annotations.forEach(element => {
+            //if (element.eventId != -1) {
+                //hasCompletedAnnotation = true;
 
-                if (element.notes != null && element.notes != "") {
-                    this.state.annotationNotes = element.notes;
-                }
-            }
-        });
+                //if (element.notes != null && element.notes != "") {
+                    //this.state.annotationNotes = element.notes;
+                //}
+            //}
+        //});
 
         let log = (
             <OverlayTrigger trigger="click" placement="right-end" overlay={lociAnnotationPopover}>
