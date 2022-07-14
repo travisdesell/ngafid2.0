@@ -2,40 +2,92 @@ package org.ngafid.flights;
 
 import java.sql.SQLException;
 import java.util.*;
-
+import java.io.*;
 import java.sql.Connection;
 
+import org.ngafid.flights.*;
+
 public class GeneratedCSVWriter extends CSVWriter {
-    private Map<String, DoubleTimeSeries> timeSeriesColumns;
+    private List<DoubleTimeSeries> timeSeries;
 
-    public GeneratedCSVWriter(Flight flight, List<String> timeSeriesColumnNames) {
-        super(flight);
+    public GeneratedCSVWriter(Flight flight, List<String> timeSeriesColumnNames, File outputCSVFile) {
+        super(flight, outputCSVFile);
 
-        this.timeSeriesColumns = new HashMap<>();
+        this.timeSeries = new ArrayList<>();
 
         try {
             for (String columnName : timeSeriesColumnNames) {
-                timeSeriesColumns.put(columnName, super.flight.getDoubleTimeSeries(connection, columnName));
+                timeSeries.add(super.flight.getDoubleTimeSeries(connection, columnName));
             }
         } catch (SQLException se) {
             se.printStackTrace();
         }
     }
 
-    public String getFileContents() {
-        return "";
+    public String getHeader() {
+        StringBuilder header = new StringBuilder();
+
+        int nColumns = timeSeries.size();
+        for (int i = 0; i < nColumns; i++) {
+            DoubleTimeSeries column = timeSeries.get(i);
+            String columnName = column.getName();
+
+            String toAppend = (i == nColumns - 1 ? columnName : columnName + ", ");
+
+            header.append(toAppend);
+        }
+
+        return header.toString();
     }
 
-    /**
-     * Gets what the contents of the file will be as a String for the given
-     * interval
-     *
-     * @param startLine the start index for the file
-     * @param stopLine the stop index for the file
-     *
-     * @return a String containing the CSV file's contents
-     */
+    public String getLine(int line) {
+        StringBuilder lineString = new StringBuilder();
+
+        int nColumns = timeSeries.size();
+        for (int i = 0; i < nColumns; i++) {
+            DoubleTimeSeries column = timeSeries.get(i);
+            String value = String.valueOf(column.get(line));
+
+            String toAppend = (i == nColumns - 1 ? value : value + ", ");
+
+            lineString.append(toAppend);
+        }
+
+        return lineString.toString();
+    }
+
+    public String getFileContents() {
+        return this.getFileContents(0, this.flight.getNumberRows());
+    }
+
     public String getFileContents(int startLine, int stopLine) {
-        return "";
+        StringBuilder stringBuilder = new StringBuilder(this.getHeader());
+
+        for (int i = startLine; i < stopLine; i++) {
+            stringBuilder.append(getLine(i));
+        }
+
+        return stringBuilder.toString();
+    }
+
+    @Override
+    public void writeToFile() {
+        this.writeToFile(0, super.flight.getNumberRows());
+    }
+
+    public void writeToFile(int startLine, int stopLine) {
+        try {
+            FileWriter fileWriter = new FileWriter(this.outputCSVFile);
+
+            fileWriter.write(this.getHeader());
+
+            for (int i = startLine; i < stopLine; i++) {
+                fileWriter.write(this.getLine(i));
+            }
+
+            fileWriter.close();
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
     }
 }

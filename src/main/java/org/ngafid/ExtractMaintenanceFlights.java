@@ -472,13 +472,8 @@ public class ExtractMaintenanceFlights {
 
                         String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId() + "/";
 
-                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight);
-                        String contents = csvWriter.getFileContents();
-                        //System.out.println(contents);
-
-                        bw = new BufferedWriter(new FileWriter(new File(outfile).getAbsoluteFile()));
-                        bw.write(contents);
-                        bw.close();
+                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, new File(outfile));
+                        csvWriter.writeToFile();
 
                         if (ac.getFlightsSincePrevious() == 4) System.out.println();
                     }

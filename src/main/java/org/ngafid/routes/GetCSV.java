@@ -69,18 +69,14 @@ public class GetCSV implements Route {
             String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
                 uploaderId + "/";
             
-            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight);
+            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, null);
 
-            LOG.info("Got file path for flight #"+flightId);
+            LOG.info("Got file path for flight #" + flightId);
             LOG.info(csvWriter.toString());
 
             return csvWriter.getFileContents();
-
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
-        return "";
     }
 }

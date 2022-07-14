@@ -1,6 +1,8 @@
 package org.ngafid.flights;
 
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
 
@@ -27,8 +29,8 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight) throws SQLException {
-        super(flight);
+    public CachedCSVWriter(String directoryRoot, Flight flight, File outputCSVFile) throws SQLException {
+        super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
 
@@ -102,10 +104,16 @@ public class CachedCSVWriter extends CSVWriter {
     /**
      * {@inheritDoc}
      */
-    public String getFileContents() throws IOException {
+    public String getFileContents() {
         String fileOut = "";
-        fileOut = new String(toBinaryData());
-        zipArchive.close();
+
+        try {
+            fileOut = new String(toBinaryData());
+            zipArchive.close();
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
+
         return fileOut;
     }
 
@@ -120,6 +128,7 @@ public class CachedCSVWriter extends CSVWriter {
         ZipFile zipArchive = new ZipFile(this.zipFile);
         String filename = flight.getFilename();
         Enumeration<? extends ZipEntry> entries = zipArchive.entries();
+
         while (entries.hasMoreElements()) {
             ZipEntry entry = entries.nextElement();
 
@@ -128,8 +137,20 @@ public class CachedCSVWriter extends CSVWriter {
                 return entry;
             } 
         } 
+
         zipArchive.close();
         return null;
+    }
+
+    public void writeToFile() {
+        try {
+            FileOutputStream fos = new FileOutputStream(this.outputCSVFile);
+
+            fos.write(toBinaryData());
+            fos.close();
+        } catch (IOException ie) {
+            ie.printStackTrace();
+        }
     }
 
     /**
