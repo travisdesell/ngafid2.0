@@ -5,7 +5,7 @@ import ReactDOM from "react-dom";
 import {Paginator} from "./paginator_component";
 import SignedInNavbar from "./signed_in_navbar";
 
-class EventDefinitionsPage extends React.Component {
+class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
         let events = {};
@@ -40,6 +40,6 @@ class EventDefinitionsPage extends React.Component {
 }
 
 
-var eventDefinitionsPage = ReactDOM.render(
-    <EventDefinitionsPage/>, document.querySelector('#event-definitions-page')
+var eventDefinitionsDisplayPage = ReactDOM.render(
+    <EventDefinitionsDisplayPage/>, document.querySelector('#event-definitions-page')
 )
