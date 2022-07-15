@@ -1,7 +1,12 @@
 package org.ngafid.flights;
 
+import java.io.BufferedOutputStream;
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.FileWriter;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.IOException;
 
 import java.sql.Connection;
@@ -16,142 +21,33 @@ import spark.utils.IOUtils;
 import org.ngafid.Database;
 
 /**
- * Generates/Copies CSV files for flights in the NGAFID
+ * Creates CSV files for flights in the NGAFID
  *
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
  */
-public class CSVWriter {
-    private File file;
-    private Flight flight;
-    private ZipEntry entry;
-    private ZipFile zipArchive;
+public abstract class CSVWriter {
+    protected Flight flight;
+    protected File outputCSVFile;
+    protected Connection connection = Database.getConnection();
 
     /**
-     * Constructor
-     * Finds the zip file with the filght requested
+     * Creates a CSVWriter object
      *
-     * @param directoryRoot the root directory of the zipped files
-     * @param flight the {@link Flight} to write data for
+     * @param flight the flight to write the CSV file for
+     * @param outputCSVFile the output CSV file to use for writing
      */
-    public CSVWriter(String directoryRoot, Flight flight) throws SQLException {
-        System.out.println("creating file from: '" + directoryRoot + "'");
-
-        //File root = new File(directoryRoot);
-        //File[] dirs = root.listFiles();
-
+    public CSVWriter(Flight flight, File outputCSVFile) {
         this.flight = flight;
-
-        int uploadId = flight.getUploadId();
-        System.out.println("target upload id is: " + uploadId);
-
-        //TODO: Probably better to pass the connection in as an argument to the constructor
-        Connection connection = Database.getConnection();
-        Upload upload = Upload.getUploadById(connection, uploadId);
-
-        System.out.println("got an upload with filename: '" + upload.getFilename() + "'");
-
-        String archiveFilename = directoryRoot + uploadId + "__" + upload. getFilename();
-        System.out.println("archive filename will be: '" + archiveFilename + "'");
-
-        this.file = new File(archiveFilename);
-
-        if (!this.file.exists()) {
-            //TODO: reconstruct from database instead of existing on error
-            System.err.println("ERROR: archive file did not exist!");
-            System.exit(1);
-        } else {
-            System.out.println("file exists!");
-        }
-
-        if (!this.file.canRead()) {
-            System.err.println("ERROR: do not have read access to this file!");
-            System.exit(1);
-        } else {
-            System.out.println("file is readable!");
-        }
-
-        try {
-            //this.zipArchive = new ZipFile(this.file);
-            this.zipArchive = new ZipFile(archiveFilename);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        String filename = flight.getFilename();
-        Enumeration<? extends ZipEntry> entries = zipArchive.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-
-            if (entry.getName().equals(filename)) {
-                this.entry = entry;
-            } 
-        } 
+        this.outputCSVFile = outputCSVFile;
     }
 
     /**
-     * Gets the CSV file as primitive (binary) data
-     *
-     * @return a primitive array of bytes 
+     * Write to a string and return it to the method caller
      */
-    public byte [] toBinaryData() throws IOException {
-        InputStream inputStream = zipArchive.getInputStream(this.entry);
-        return IOUtils.toByteArray(inputStream);
-    }
-        
-    /**
-     * Accessor method for the {@link ZipEntry} associated with this flight
-     *
-     * @return an instance of {@link ZipEntry}
-     */
-    public ZipEntry getFlightEntry() {
-        return this.entry;
-    }
+    public abstract String getFileContents();
 
     /**
-     * Writes to a file and gets the zip archive first
-     *
-     * @return a String with the file contents
-     *
-     * @throws IOException if there is a problem with file i/o
+     * Write to the file provided in the constructor
      */
-    public String write() throws IOException {
-        String fileOut = "";
-        fileOut = new String(toBinaryData());
-        zipArchive.close();
-        return fileOut;
-    }
-
-    /**
-     * Writes to a file and gets the zip archive first
-     *
-     * @return a String with the file contents
-     *
-     * @throws IOException if there is a problem with file i/o
-     */
-    public ZipEntry getZipEntry() throws IOException {
-        ZipFile zipArchive = new ZipFile(this.file);
-        String filename = flight.getFilename();
-        Enumeration<? extends ZipEntry> entries = zipArchive.entries();
-        while (entries.hasMoreElements()) {
-            ZipEntry entry = entries.nextElement();
-
-            if (entry.getName().equals(filename)) {
-                zipArchive.close();
-                return entry;
-            } 
-        } 
-        zipArchive.close();
-        return null;
-    }
-
-    /**
-     * Gets a string representation of a CSV Writer object
-     *
-     * @return a {@link String} with the zip file and archive paths
-     */
-    @Override
-    public String toString() {
-        return this.zipArchive.toString() + " " + this.entry.toString();
-    }
+    public abstract void writeToFile();
 }

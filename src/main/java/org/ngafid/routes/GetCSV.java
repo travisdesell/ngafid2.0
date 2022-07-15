@@ -19,6 +19,7 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.CSVWriter;
+import org.ngafid.flights.CachedCSVWriter;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
@@ -68,18 +69,14 @@ public class GetCSV implements Route {
             String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
                 uploaderId + "/";
             
-            CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
+            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, null);
 
-            LOG.info("Got file path for flight #"+flightId);
+            LOG.info("Got file path for flight #" + flightId);
             LOG.info(csvWriter.toString());
 
-            return csvWriter.write();
-
+            return csvWriter.getFileContents();
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
-        return "";
     }
 }
