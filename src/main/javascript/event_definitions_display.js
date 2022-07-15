@@ -31,8 +31,7 @@ class EventDefinitionsDisplayPage extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    {/*<div className={textClasses} {events}></div>*/}
-                    {/*<div className={textClasses} {descriptions}></div>*/}
+                    <h1>Hello, World!</h1>
                 </div>
             </div>
         )
@@ -41,5 +40,5 @@ class EventDefinitionsDisplayPage extends React.Component {
 
 
 var eventDefinitionsDisplayPage = ReactDOM.render(
-    <EventDefinitionsDisplayPage/>, document.querySelector('#event-definitions-page')
+    <EventDefinitionsDisplayPage/>, document.querySelector('#event-definitions-display-page')
 )
