@@ -3,6 +3,7 @@ import {EventDefinitionCard} from "./event_definition";
 import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
 import {Paginator} from "./paginator_component";
+import SignedInNavbar from "./signed_in_navbar";
 
 class EventDefinitionsPage extends React.Component {
     constructor(props) {
@@ -30,8 +31,8 @@ class EventDefinitionsPage extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className={textClasses} {events}></div>
-                    <div className={textClasses} {descriptions}></div>
+                    {/*<div className={textClasses} {events}></div>*/}
+                    {/*<div className={textClasses} {descriptions}></div>*/}
                 </div>
             </div>
         )

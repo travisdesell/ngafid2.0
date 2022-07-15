@@ -40,7 +40,7 @@ public class GetEventDefinitions implements Route {
         LOG.info("Handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "event_definitions.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "event_definitions_display.html";
         LOG.severe("Template File: '" + templateFile + "'");
 
         try {
