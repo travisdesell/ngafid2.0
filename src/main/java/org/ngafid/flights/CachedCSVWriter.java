@@ -12,6 +12,7 @@ import java.sql.SQLException;
 import java.util.zip.*;
 
 import java.util.Enumeration;
+import java.util.Optional;
 
 import spark.utils.IOUtils;
 
@@ -29,7 +30,7 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight, File outputCSVFile) throws SQLException {
+    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException {
         super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
@@ -126,7 +127,7 @@ public class CachedCSVWriter extends CSVWriter {
      */
     public ZipEntry getZipEntry() throws IOException {
         ZipFile zipArchive = new ZipFile(this.zipFile);
-        String filename = flight.getFilename();
+        String filename = super.flight.getFilename();
         Enumeration<? extends ZipEntry> entries = zipArchive.entries();
 
         while (entries.hasMoreElements()) {
@@ -142,14 +143,22 @@ public class CachedCSVWriter extends CSVWriter {
         return null;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public void writeToFile() {
-        try {
-            FileOutputStream fos = new FileOutputStream(this.outputCSVFile);
+        if (super.outputCSVFile.isPresent()) {
+            try {
+                FileOutputStream fos = new FileOutputStream(this.outputCSVFile.get());
 
-            fos.write(toBinaryData());
-            fos.close();
-        } catch (IOException ie) {
-            ie.printStackTrace();
+                fos.write(toBinaryData());
+                fos.close();
+            } catch (IOException ie) {
+                ie.printStackTrace();
+            }
+        } else {
+            // This should not happen!
+            return;
         }
     }
 

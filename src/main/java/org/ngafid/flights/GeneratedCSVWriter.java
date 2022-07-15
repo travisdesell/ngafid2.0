@@ -5,12 +5,13 @@ import java.util.*;
 import java.io.*;
 import java.sql.Connection;
 
+import org.ngafid.events.Event;
 import org.ngafid.flights.*;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;
 
-    public GeneratedCSVWriter(Flight flight, List<String> timeSeriesColumnNames, File outputCSVFile) {
+    public GeneratedCSVWriter(Flight flight, List<String> timeSeriesColumnNames, Optional<File> outputCSVFile) {
         super(flight, outputCSVFile);
 
         this.timeSeries = new ArrayList<>();
@@ -22,6 +23,12 @@ public class GeneratedCSVWriter extends CSVWriter {
         } catch (SQLException se) {
             se.printStackTrace();
         }
+    }
+
+    public GeneratedCSVWriter(Flight flight, Optional<File> outputCSVFile, List<DoubleTimeSeries> timeSeries) {
+        super(flight, outputCSVFile);
+
+        this.timeSeries = timeSeries;
     }
 
     public String getHeader() {
@@ -37,6 +44,7 @@ public class GeneratedCSVWriter extends CSVWriter {
             header.append(toAppend);
         }
 
+        header.append("\n");
         return header.toString();
     }
 
@@ -53,15 +61,19 @@ public class GeneratedCSVWriter extends CSVWriter {
             lineString.append(toAppend);
         }
 
+        lineString.append("\n");
         return lineString.toString();
     }
 
     public String getFileContents() {
-        return this.getFileContents(0, this.flight.getNumberRows());
+        return this.getFileContents(0, super.flight.getNumberRows());
     }
 
     public String getFileContents(int startLine, int stopLine) {
-        StringBuilder stringBuilder = new StringBuilder(this.getHeader());
+        String header = this.getHeader();
+
+        StringBuilder stringBuilder = new StringBuilder("#" + header);
+        stringBuilder.append(header);
 
         for (int i = startLine; i < stopLine; i++) {
             stringBuilder.append(getLine(i));
@@ -70,24 +82,44 @@ public class GeneratedCSVWriter extends CSVWriter {
         return stringBuilder.toString();
     }
 
+    public void writeToFile(Event event, int padding) {
+        assert event.getFlightId() == super.flight.getId();
+        int flightLength = flight.getNumberRows();
+
+        int startLine = event.getStartLine() - padding;
+        int stopLine = event.getEndLine() + padding;
+
+        if (startLine < 0) startLine = 0;
+        if (stopLine > flightLength) stopLine = flightLength;
+
+        writeToFile(startLine, stopLine);
+    }
+
     @Override
     public void writeToFile() {
         this.writeToFile(0, super.flight.getNumberRows());
     }
 
     public void writeToFile(int startLine, int stopLine) {
-        try {
-            FileWriter fileWriter = new FileWriter(this.outputCSVFile);
+        if (super.outputCSVFile.isPresent()) {
+            try {
+                FileWriter fileWriter = new FileWriter(this.outputCSVFile.get());
 
-            fileWriter.write(this.getHeader());
+                String header = this.getHeader();
+                fileWriter.write("#" + header);
+                fileWriter.write(header);
 
-            for (int i = startLine; i < stopLine; i++) {
-                fileWriter.write(this.getLine(i));
+                for (int i = startLine; i < stopLine; i++) {
+                    fileWriter.write(this.getLine(i));
+                }
+
+                fileWriter.close();
+            } catch (IOException ie) {
+                ie.printStackTrace();
             }
-
-            fileWriter.close();
-        } catch (IOException ie) {
-            ie.printStackTrace();
+        } else {
+            // This should not happen!
+            return;
         }
     }
 }

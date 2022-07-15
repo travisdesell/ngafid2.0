@@ -15,6 +15,7 @@ import java.sql.SQLException;
 import java.util.zip.*;
 
 import java.util.Enumeration;
+import java.util.Optional;
 
 import spark.utils.IOUtils;
 
@@ -27,7 +28,7 @@ import org.ngafid.Database;
  */
 public abstract class CSVWriter {
     protected Flight flight;
-    protected File outputCSVFile;
+    protected Optional<File> outputCSVFile;
     protected Connection connection = Database.getConnection();
 
     /**
@@ -36,7 +37,7 @@ public abstract class CSVWriter {
      * @param flight the flight to write the CSV file for
      * @param outputCSVFile the output CSV file to use for writing
      */
-    public CSVWriter(Flight flight, File outputCSVFile) {
+    public CSVWriter(Flight flight, Optional<File> outputCSVFile) {
         this.flight = flight;
         this.outputCSVFile = outputCSVFile;
     }
