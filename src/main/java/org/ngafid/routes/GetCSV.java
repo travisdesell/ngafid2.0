@@ -1,9 +1,9 @@
 package org.ngafid.routes;
 
 import java.io.IOException;
-
+import java.util.Optional;
 import java.util.logging.Logger;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -18,11 +18,15 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
+import org.ngafid.flights.GeneratedCSVWriter;
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.CachedCSVWriter;
+import org.ngafid.flights.DoubleTimeSeries;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
+    private static final Connection connection = Database.getConnection();
+
     private Gson gson;
 
     public GetCSV(Gson gson) {
@@ -40,8 +44,9 @@ public class GetCSV implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String flightIdStr = request.queryParams("flight_id");
+        boolean generated = Boolean.parseBoolean(request.queryParams("generated"));
 
-        LOG.info("getting csv for flight id: " + flightIdStr);
+        LOG.info("getting csv for flight id: " + flightIdStr + ", generating: " + generated);
 
         int flightId = Integer.parseInt(flightIdStr);
 
@@ -69,13 +74,19 @@ public class GetCSV implements Route {
             String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
                 uploaderId + "/";
             
-            CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, null);
+            CSVWriter csvWriter;
+
+            if (generated) {
+                csvWriter = new GeneratedCSVWriter(flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
+            } else {
+                csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty());
+            }
 
             LOG.info("Got file path for flight #" + flightId);
             LOG.info(csvWriter.toString());
 
             return csvWriter.getFileContents();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             return gson.toJson(new ErrorResponse(e));
         }
     }

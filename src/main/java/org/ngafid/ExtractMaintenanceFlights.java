@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 
 
@@ -472,7 +473,7 @@ public class ExtractMaintenanceFlights {
 
                         String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId() + "/";
 
-                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, new File(outfile));
+                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile)));
                         csvWriter.writeToFile();
 
                         if (ac.getFlightsSincePrevious() == 4) System.out.println();
