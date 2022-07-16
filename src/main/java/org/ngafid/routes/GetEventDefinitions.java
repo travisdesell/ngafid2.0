@@ -61,8 +61,7 @@ public class GetEventDefinitions implements Route {
 
             scopes.put("events_js",
                     //"var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventDef = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
-                            "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n"
+                    "var eventDefs = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n"
             );
 
             long endTime = System.currentTimeMillis();

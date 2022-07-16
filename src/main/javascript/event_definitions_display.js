@@ -3,8 +3,7 @@ import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar";
 
-console.log(eventDefinitions);
-console.log(airframeMap);
+console.log(eventDefs);
 
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
