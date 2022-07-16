@@ -48,24 +48,11 @@ class EventDefinitionsDisplayPage extends React.Component {
     }
 
     render() {
-        let textClasses = "p-1 mr-1 card bg-light";
-        let names = [];
-        let definitions = [];
+        let rows = [];
 
         for (let key in this.events) {
-            names.push(key);
-            definitions.push(this.events[key]);
+            rows.push(<EventDefinition eventName={key} eventDef={this.events[key]} />)
         }
-
-        console.log(names);
-        console.log(definitions);
-
-        let rows = [];
-        for (let i = 0; i < names.length; i++) {
-            console.log("Pushing" + names[i]);
-            rows.push(<EventDefinition eventName={names[i]} eventDef={definitions[i]} />)
-        }
-        console.log(rows);
 
         return (
             <div>
