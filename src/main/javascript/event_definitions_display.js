@@ -3,7 +3,7 @@ import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar";
 
-console.log(eventDefs);
+console.log(eventNames);
 
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
