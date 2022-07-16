@@ -16,7 +16,6 @@ class EventDefinitionsDisplayPage extends React.Component {
     }
 
 
-
     render() {
         let textClasses = "p-1 mr-1 card bg-light";
         let events = [];
@@ -29,9 +28,13 @@ class EventDefinitionsDisplayPage extends React.Component {
 
 
         return (
-            <div className="m-1">
-                <div className="d-flex flex-row">
-                    <h1>Hello, World!</h1>
+            <div>
+                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+
+                <div className="m-1">
+                    <div className="d-flex flex-row">
+                        <h1>Hello, World!</h1>
+                    </div>
                 </div>
             </div>
         )
