@@ -8,12 +8,19 @@ console.log(eventNames);
 class EventNameCard extends React.Component {
     constructor(props) {
         super(props);
+
+        this.eventName = props.eventName;
     }
 
     render() {
+        const style = { flex : "0 0 11em" };
+
+        let textClasses = "p-1 mr-1 card bg-light";
+        let eventNameText = this.eventName;
+
         return (
             <div>
-
+                <div className={textClasses + " flex-fill"} style={style}>{eventNameText}</div>
             </div>
         )
     }
@@ -22,13 +29,21 @@ class EventNameCard extends React.Component {
 class EventDefinitionCard extends React.Component {
     constructor(props) {
         super(props);
+
+        this.eventDef = props.eventDef;
     }
 
     render() {
-        return (
-            <div>
+        const style = { };
 
+        let textClasses = "p-1 mr-1 card bg-light";
+        let eventDefText = this.eventDef;
+
+        return (
+            <div className="m-1">
+                <div className={textClasses + " flex-fill"} style={style}>{eventDefText}</div>
             </div>
+
         )
     }
 }
@@ -62,12 +77,6 @@ class EventDefinitionsDisplayPage extends React.Component {
 
                 <div className="m-1">
                     <div className="row" style={{padding:"0 15 0 15"}}>
-
-                        {
-                            for (let i = 0; i < events; i++) {
-
-                        }
-                        }
                     </div>
                 </div>
             </div>
