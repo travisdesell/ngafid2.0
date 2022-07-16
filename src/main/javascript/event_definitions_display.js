@@ -26,7 +26,7 @@ class EventDefinition extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className={textClasses + " flex-fill"} style={styleName}>{eventNameText}</div>
+                    <div className={textClasses} style={styleName}>{eventNameText}</div>
                     <div className={textClasses + " flex-fill"} style={styleDefinition}>{eventDefText}</div>
                 </div>
             </div>
