@@ -5,43 +5,27 @@ import SignedInNavbar from "./signed_in_navbar";
 
 console.log(eventNames);
 
-class EventNameCard extends React.Component {
+class EventDefinition extends React.Component {
     constructor(props) {
         super(props);
 
         this.eventName = props.eventName;
-    }
-
-    render() {
-        const style = { flex : "0 0 11em" };
-
-        let textClasses = "p-1 mr-1 card bg-light";
-        let eventNameText = this.eventName;
-
-        return (
-            <div>
-                <div className={textClasses + " flex-fill"} style={style}>{eventNameText}</div>
-            </div>
-        )
-    }
-}
-
-class EventDefinitionCard extends React.Component {
-    constructor(props) {
-        super(props);
-
         this.eventDef = props.eventDef;
     }
 
     render() {
-        const style = { };
+        const styleName = {flex: "0 0 11em"};
+        const styleDefinition = {};
 
         let textClasses = "p-1 mr-1 card bg-light";
         let eventDefText = this.eventDef;
 
         return (
             <div className="m-1">
-                <div className={textClasses + " flex-fill"} style={style}>{eventDefText}</div>
+                <div className="d-flex flex-row">
+                    <div className={textClasses + " flex-fill"} style={styleName}>{eventNameText}</div>
+                    <div className={textClasses + " flex-fill"} style={styleDefinition}>{eventDefText}</div>
+                </div>
             </div>
 
         )
@@ -73,10 +57,12 @@ class EventDefinitionsDisplayPage extends React.Component {
 
         return (
             <div>
-                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
+                                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
+                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="m-1">
-                    <div className="row" style={{padding:"0 15 0 15"}}>
+                    <div className="row" style={{padding: "0 15 0 15"}}>
                     </div>
                 </div>
             </div>
