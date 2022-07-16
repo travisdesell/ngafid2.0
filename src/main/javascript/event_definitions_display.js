@@ -1,11 +1,9 @@
 import React from "react";
-import {EventDefinitionCard} from "./event_definition";
 import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
-import {Paginator} from "./paginator_component";
 import SignedInNavbar from "./signed_in_navbar";
 
-console.log(eventDef);
+console.log(eventDefinitions);
 console.log(airframeMap);
 
 class EventDefinitionsDisplayPage extends React.Component {
@@ -20,14 +18,14 @@ class EventDefinitionsDisplayPage extends React.Component {
 
 
     render() {
-        let textClasses = "p-1 mr-1 card bg-light";
-        let events = [];
-        let descriptions = [];
-
-        for (let key in this.props.events) {
-            events.push(key);
-            descriptions.push(this.props.events[key]);
-        }
+        // let textClasses = "p-1 mr-1 card bg-light";
+        // let events = [];
+        // let descriptions = [];
+        //
+        // for (let key in this.props.events) {
+        //     events.push(key);
+        //     descriptions.push(this.props.events[key]);
+        // }
 
 
         return (
