@@ -11,6 +11,8 @@ class EventDefinition extends React.Component {
 
         this.eventName = props.eventName;
         this.eventDef = props.eventDef;
+
+        console.log(this.eventName + " - " + this.eventDef)
     }
 
     render() {
@@ -18,6 +20,7 @@ class EventDefinition extends React.Component {
         const styleDefinition = {};
 
         let textClasses = "p-1 mr-1 card bg-light";
+        let eventNameText = this.eventName;
         let eventDefText = this.eventDef;
 
         return (
@@ -36,26 +39,31 @@ class EventDefinition extends React.Component {
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
-        let events = {};
+        this.events = {};
 
         for (let i = 0; i < eventNames.length; i++) {
-            events[eventNames[i]] = GetDescription(eventNames[i]);
+            this.events[eventNames[i]] = GetDescription(eventNames[i]);
         }
+
     }
 
     render() {
         let textClasses = "p-1 mr-1 card bg-light";
-        let eventNames = [];
+        let names = [];
         let definitions = [];
 
-        for (let key in this.props.events) {
-            eventNames.push(key);
-            definitions.push(this.props.events[key]);
+        for (let key in this.events) {
+            names.push(key);
+            definitions.push(this.events[key]);
         }
 
+        console.log(names);
+        console.log(definitions);
+
         let rows = [];
-        for (let i = 0; i < eventNames.length; i++) {
-            rows.push(<EventDefinition eventName={eventNames[i]} eventDef={definitions[i]}></EventDefinition>)
+        for (let i = 0; i < names.length; i++) {
+            console.log("Pushing" + names[i]);
+            rows.push(<EventDefinition eventName={names[i]} eventDef={definitions[i]} />)
         }
         console.log(rows);
 
