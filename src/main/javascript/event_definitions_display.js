@@ -43,28 +43,28 @@ class EventDefinitionsDisplayPage extends React.Component {
         }
     }
 
-
     render() {
         let textClasses = "p-1 mr-1 card bg-light";
-        let events = [];
-        let descriptions = [];
+        let eventNames = [];
+        let definitions = [];
 
         for (let key in this.props.events) {
-            events.push(key);
-            descriptions.push(this.props.events[key]);
+            eventNames.push(key);
+            definitions.push(this.props.events[key]);
         }
 
+        let rows = [];
+        for (let i = 0; i < eventNames.length; i++) {
+            rows.push(<EventDefinition eventName={eventNames[i]} eventDef={definitions[i]}></EventDefinition>)
+        }
+        console.log(rows);
 
         return (
             <div>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                 modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-
-                <div className="m-1">
-                    <div className="row" style={{padding: "0 15 0 15"}}>
-                    </div>
-                </div>
+                {rows}
             </div>
         )
     }
