@@ -3,16 +3,12 @@ import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar";
 
-console.log(eventNames);
-
 class EventDefinition extends React.Component {
     constructor(props) {
         super(props);
 
         this.eventName = props.eventName;
         this.eventDef = props.eventDef;
-
-        console.log(this.eventName + " - " + this.eventDef)
     }
 
     render() {
@@ -44,7 +40,6 @@ class EventDefinitionsDisplayPage extends React.Component {
         for (let i = 0; i < eventNames.length; i++) {
             this.events[eventNames[i]] = GetDescription(eventNames[i]);
         }
-
     }
 
     render() {
