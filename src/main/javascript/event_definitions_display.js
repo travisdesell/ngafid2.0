@@ -5,6 +5,9 @@ import ReactDOM from "react-dom";
 import {Paginator} from "./paginator_component";
 import SignedInNavbar from "./signed_in_navbar";
 
+console.log(eventDef);
+console.log(airframeMap);
+
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
