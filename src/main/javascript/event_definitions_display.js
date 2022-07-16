@@ -5,6 +5,35 @@ import SignedInNavbar from "./signed_in_navbar";
 
 console.log(eventNames);
 
+class EventNameCard extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <div>
+
+            </div>
+        )
+    }
+}
+
+class EventDefinitionCard extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <div>
+
+            </div>
+        )
+    }
+}
+
+
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
@@ -17,14 +46,14 @@ class EventDefinitionsDisplayPage extends React.Component {
 
 
     render() {
-        // let textClasses = "p-1 mr-1 card bg-light";
-        // let events = [];
-        // let descriptions = [];
-        //
-        // for (let key in this.props.events) {
-        //     events.push(key);
-        //     descriptions.push(this.props.events[key]);
-        // }
+        let textClasses = "p-1 mr-1 card bg-light";
+        let events = [];
+        let descriptions = [];
+
+        for (let key in this.props.events) {
+            events.push(key);
+            descriptions.push(this.props.events[key]);
+        }
 
 
         return (
@@ -32,8 +61,13 @@ class EventDefinitionsDisplayPage extends React.Component {
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="m-1">
-                    <div className="d-flex flex-row">
-                        <h1>Hello, World!</h1>
+                    <div className="row" style={{padding:"0 15 0 15"}}>
+
+                        {
+                            for (let i = 0; i < events; i++) {
+
+                        }
+                        }
                     </div>
                 </div>
             </div>
