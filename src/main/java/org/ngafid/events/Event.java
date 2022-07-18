@@ -106,6 +106,10 @@ public class Event {
         endLine = newEndLine;
     }
 
+    public int getId() {
+        return this.id;
+    }
+
     public int getFlightId() {
         return flightId;
     }
@@ -223,6 +227,23 @@ public class Event {
             e.printStackTrace();
             System.exit(1);
         }
+    }
+
+    public static Event getEvent(Connection connection, int eventId) throws SQLException {
+        String sql = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, eventId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        Event event = null;
+
+        if (resultSet.next()) {
+            event = new Event(resultSet);
+        }
+
+        return event;
     }
 
     /**

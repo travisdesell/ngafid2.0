@@ -36,6 +36,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.TreeSet;
 
 
@@ -44,6 +45,7 @@ import org.ngafid.WebServer;
 import org.ngafid.common.TimeUtils;
 
 import org.ngafid.flights.CSVWriter;
+import org.ngafid.flights.CachedCSVWriter;
 import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.FatalFlightFileException;
 
@@ -471,13 +473,8 @@ public class ExtractMaintenanceFlights {
 
                         String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + flight.getUploaderId() + "/";
 
-                        CSVWriter csvWriter = new CSVWriter(zipRoot, flight);
-                        String contents = csvWriter.write();
-                        //System.out.println(contents);
-
-                        bw = new BufferedWriter(new FileWriter(new File(outfile).getAbsoluteFile()));
-                        bw.write(contents);
-                        bw.close();
+                        CSVWriter csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.of(new File(outfile)));
+                        csvWriter.writeToFile();
 
                         if (ac.getFlightsSincePrevious() == 4) System.out.println();
                     }

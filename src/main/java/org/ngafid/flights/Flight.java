@@ -250,6 +250,28 @@ public class Flight {
             }
         }
     }
+    /**
+     * Checks references to {@link DoubleTimeSeries} for this flight and if there are not required referenece(s) present it returns the 
+     * missing column name(s)
+     *
+     * @pre the doubleTimeSeries array is populated
+     * @param seriesNames     is the names of the series to check for
+     *
+     * @return a {@link List} of the missing column names, an empty list if there are none.
+     */
+
+    public List<String> checkCalculationParameters(String ... seriesNames) {
+        List<String> missingColumns = new ArrayList<>();
+
+        for (String param : seriesNames) {
+            DoubleTimeSeries parameter = this.doubleTimeSeries.get(param);
+            if (parameter == null) {
+                missingColumns.add(param);
+            }
+        }
+
+        return missingColumns;
+    }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
@@ -970,7 +992,7 @@ public class Flight {
      * @param connection the database connection
      * @param flightId   the id of the flight that the tags are retrieved for
      * @return a List of tags
-     *
+     *;
      * @throws SQLException if there is an error with the database query
      */
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException {
