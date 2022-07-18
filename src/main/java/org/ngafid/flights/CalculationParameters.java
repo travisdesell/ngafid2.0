@@ -79,4 +79,5 @@ public interface CalculationParameters {
     public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
     public static final String [] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
 
+    public static final String [] eventRecognitionColumns = {ROLL, PITCH, AOA_SIMPLE, E1_RPM, VSPD_CALCULATED, WIND_SPEED, WIND_DIRECTION, IAS};
 }
