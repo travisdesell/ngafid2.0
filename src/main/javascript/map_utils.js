@@ -52,15 +52,6 @@ function paletteAt(loc_probability) {
     }
 }
 
-function mapLayerIndexOf(layers, layerName) {
-    for (var i = 0; i < layers.length; i++) {
-        if (layers[i].get('name') == layerName) {
-            return i;
-        }
-    }
-    return -1;
-}
-
 
 function paletteGenerator(colors, pos) {
     return function (p) {
@@ -89,11 +80,10 @@ function paletteGenerator(colors, pos) {
  * @param layers the collection of layers to add this new layer to
  * @param flight the flight object that has data pertaining to the flight
  */
-function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstraint) {
-    console.log("generating LOCI layer");
+function generateStallLayer(spData, layers, flight) {
     var spPhases = [], spOutlinePhases = [];
     if (spData != null) {
-        for(let i = lowerConstraint; i < upperConstraint; i++){
+        for(let i = 0; i < spData.length; i++){
             let val = spData[i];
             var feat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
@@ -153,7 +143,7 @@ function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstr
     });
 
     spLayer.flightState = flight;
-    flight.state.layers.push(spLayerOutline, spLayer);
+    layers.push(spLayerOutline, spLayer);
 }
 
 /**
@@ -163,11 +153,10 @@ function generateStallLayer(spData, layers, flight, lowerConstraint, upperConstr
  * @param layers the collection of layers to add this new layer to
  * @param flight the flight object that has data pertaining to the flight
  */
-function generateLOCILayer(lociData, layers, flight, lowerConstraint, upperConstraint) {
-    console.log("generating LOCI layer from " + lowerConstraint + " to " + upperConstraint);
+function generateLOCILayer(lociData, layers, flight) {
     var lociPhases = [], lociOutlinePhases = [];
     if (lociData != null) {
-        for(let i = lowerConstraint; i < upperConstraint; i++){
+        for(let i = 0; i < lociData.length; i++){
             let val = lociData[i];
             var feat = new Feature({
                 geometry : new LineString(flight.state.points.slice(i, i+2)),
@@ -229,31 +218,7 @@ function generateLOCILayer(lociData, layers, flight, lowerConstraint, upperConst
 
 
     lociLayer.flightState = flight;
-
-    for (let i = 0; i < flight.state.layers.length; i++) {
-        if (flight.state.layers[i].get('name').includes("LOC-I")) {
-            flight.state.layers.splice(i, 1);
-        }
-    }
-    // let lociOutlineIndex = mapLayerIndexOf(layers, lociLayerOutline.get('name'));
-    // if (lociOutlineIndex >= 0) {
-    //     layers[lociOutlineIndex] = lociLayerOutline;
-    //     console.log("setting layer as it already exists!");
-    // } else {
-    //     layers.push(lociLayerOutline);
-    // }
-
-    // let lociLayerIndex = mapLayerIndexOf(layers, lociLayer.get('name'));
-    // if (lociLayerIndex >= 0) {
-    //     console.log(layers);
-    //     layers[lociLayerIndex] = lociLayerOutline;
-    //     console.log("setting layer as it already exists!");
-    //     console.log(layers);
-    // } else {
-    //     flight.state.layers.push(lociLayer);
-    // }
-    flight.state.layers.push(lociLayerOutline);
-    flight.state.layers.push(lociLayer);
+    layers.push(lociLayerOutline, lociLayer);
 }
 
 export {generateStallLayer, generateLOCILayer, paletteAt, paletteGenerator };
