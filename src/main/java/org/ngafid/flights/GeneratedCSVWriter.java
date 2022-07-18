@@ -11,7 +11,7 @@ import org.ngafid.flights.*;
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;
 
-    public GeneratedCSVWriter(Flight flight, List<String> timeSeriesColumnNames, Optional<File> outputCSVFile) {
+    public GeneratedCSVWriter(Flight flight, String [] timeSeriesColumnNames, Optional<File> outputCSVFile) {
         super(flight, outputCSVFile);
 
         this.timeSeries = new ArrayList<>();
@@ -37,6 +37,7 @@ public class GeneratedCSVWriter extends CSVWriter {
         int nColumns = timeSeries.size();
         for (int i = 0; i < nColumns; i++) {
             DoubleTimeSeries column = timeSeries.get(i);
+            System.out.println(column);
             String columnName = column.getName();
 
             String toAppend = (i == nColumns - 1 ? columnName : columnName + ", ");
