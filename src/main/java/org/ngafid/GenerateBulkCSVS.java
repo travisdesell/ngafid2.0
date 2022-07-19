@@ -7,6 +7,7 @@
 package org.ngafid;
 
 import org.ngafid.flights.CSVWriter;
+import org.ngafid.flights.CachedCSVWriter;
 import org.ngafid.flights.Flight;
 import org.ngafid.filters.Filter;
 
@@ -164,16 +165,13 @@ public class GenerateBulkCSVS {
         for (Flight flight : flights) {
             try{
                 int uploaderId = flight.getUploaderId(); 
-                this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" +
-                    uploaderId + "/";
+                this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + this.fleetId + "/" + uploaderId + "/";
 
-                CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
-                if(!this.useZip){
-                    File file = new File(this.outDirectoryRoot+"flight_"+flight.getId()+".csv");
-                    FileWriter fw = new FileWriter(file);
+                File file = new File(this.outDirectoryRoot + "flight_" + flight.getId() + ".csv");
+                CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.of(file));
 
-                    fw.write(csvWriter.write());
-                    fw.close();
+                if(!this.useZip) {
+                    csvWriter.writeToFile();
                 } else {
                     zipOut.putNextEntry(csvWriter.getZipEntry());
                 }
@@ -211,7 +209,7 @@ public class GenerateBulkCSVS {
 					this.uploadDirectoryRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + flight.getFleetId() + "/" +
 						uploaderId + "/";
 
-					CSVWriter csvWriter = new CSVWriter(this.uploadDirectoryRoot, flight);
+					CachedCSVWriter csvWriter = new CachedCSVWriter(this.uploadDirectoryRoot, flight, Optional.empty());
 					ZipEntry zipEntry = csvWriter.getFlightEntry();
 
 					zipOut.putNextEntry(zipEntry);
