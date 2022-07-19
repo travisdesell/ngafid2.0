@@ -5,9 +5,18 @@ var path = require('path');
 module.exports = {
     watch: true,
 
-    node: {
-          fs: 'empty'
+    resolve: {
+        fallback: {
+            fs: false,
+            path: false,
+        }
     },
+
+    /*
+    node: {
+        fs: 'empty'
+    },
+    */
 
     watchOptions: {
         aggregateTimeout: 300,
