@@ -449,9 +449,12 @@ class Flight extends React.Component {
             selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);    
         } else if (type === 'XPL11') {
             selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);    
-        } else if(type === 'CSV') {
-            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
+        } else if(type === 'CSV-IMP') {
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id + "&generated=false");
+        } else if(type === 'CSV-GEN') {
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id + "&generated=true");
         }
+
     }
 
     /**
@@ -1057,6 +1060,10 @@ class Flight extends React.Component {
             });
         }
 
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
@@ -1138,7 +1145,14 @@ class Flight extends React.Component {
                             </button>
 
                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
+                                    Export to CSV (Original)
+                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                </button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
+                                    Export to CSV (Generated)
+                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                </button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
