@@ -1041,6 +1041,7 @@ class FlightsPage extends React.Component {
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
                         rules={sortableColumns}
+                        setClearButton={() => this.clearCesiumFlights()}
                         setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
                         getSortingColumn={() => this.getSortingColumn()}
                         setSortingOrder={(order) => this.setSortingOrder(order)}
