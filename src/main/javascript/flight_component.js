@@ -481,6 +481,8 @@ class Flight extends React.Component {
         console.log(cesiumFlightsSelected);
     }
 
+
+
     replayClicked() {
         let URL = "/protected/ngafid_cesium?flight_id=";
         console.log(this.props.flightInfo.id);

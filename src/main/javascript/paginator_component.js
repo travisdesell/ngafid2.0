@@ -78,14 +78,13 @@ class Paginator extends React.Component {
         this.props.submitFilter(true);
     }
 
-    /**
-     * Clears flights selected for multi-flight replay
+     /**
+     * Handles clearing all selected flights for multiple flight replays
      */
-    clearCesiumSelected() {
-        console.log("Cesium Flights Selected: " + cesiumFlightsSelected);
-        console.log("Clearing Cesium Flights Selected");
-        cesiumFlightsSelected = [];
-        console.log("Cesium Flights Selected (Post-Clear): " + cesiumFlightsSelected);
+    clearCesiumFlights() {
+        while (cesiumFlightsSelected.length !== 0) {
+            console.log("Removed " + cesiumFlightsSelected.pop());
+        }
     }
 
     render() {
@@ -172,7 +171,7 @@ class Paginator extends React.Component {
                                 <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
                             </div>
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
-                            <button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumSelected()}>Clear Selected Replays</button>
+                            <button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>
                         </div>
 
 
