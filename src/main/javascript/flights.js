@@ -964,10 +964,16 @@ class FlightsPage extends React.Component {
     /**
      * Handles clearing all selected flights for multiple flight replays
      */
-    clearCesiumFlights() {
-        while (cesiumFlightsSelected.length !== 0) {
-            console.log("Removed " + cesiumFlightsSelected.pop());
-        }
+     clearCesiumFlights() {
+         cesiumFlightsSelected.forEach((removedFlight) => {
+             console.log("Removed " + removedFlight);
+             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+             toggleButton.click();
+         });
+
+         if (cesiumFlightsSelected.length > 0) {
+             this.clearCesiumFlights();
+         }
     }
 
     render() {
