@@ -130,10 +130,6 @@ class EventAnnotation extends React.Component {
         annotations.forEach(element => {
             if (element.eventId != -1) {
                 hasCompletedAnnotation = true;
-
-                if (element.notes != null && element.notes != "") {
-                    this.state.annotationNotes = element.notes;
-                }
             }
         });
 
