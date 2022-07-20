@@ -19,6 +19,7 @@ import { FlightsCard } from './flights_card_component.js';
 import Plotly from 'plotly.js';
 
 import { timeZones } from "./time_zones.js";
+import {cesiumFlightsSelected} from "./flight_component";
 
 
 function invalidString(str){
@@ -958,6 +959,13 @@ class FlightsPage extends React.Component {
     clearTags(flightId) {
         confirmModal.show("Confirm action", "Are you sure you would like to remove all the tags from flight #" + flightId + "?",
                           () => {this.removeTag(flightId, -2, false)});
+    }
+
+    /**
+     * Handles clearing all selected flights for multiple flight replays
+     */
+    clearCesiumFlights() {
+        cesiumFlightsSelected = [];
     }
 
     render() {

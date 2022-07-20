@@ -26,7 +26,7 @@ import Plotly from 'plotly.js';
 
 var moment = require('moment');
 
-const cesiumFlightsSelected = [];
+export let cesiumFlightsSelected = [];
 
 class Flight extends React.Component {
     constructor(props) {
