@@ -17,7 +17,7 @@ class Paginator extends React.Component {
         this.state = {
             goto_active : false,
             goto_value : 1,
-            clear_flights_active: cesiumFlightsSelected.length === 0,
+            // clear_flights_active: cesiumFlightsSelected.length === 0,
         };
 
         this.previousPage = this.previousPage.bind(this);
@@ -86,9 +86,9 @@ class Paginator extends React.Component {
         while (cesiumFlightsSelected.length !== 0) {
             let removedFlight = cesiumFlightsSelected.pop()
             console.log("Removed " + removedFlight);
-            document.getElementById("cesiumToggled" + cesiumFlightsSelected.pop()).setAttribute("aria-pressed", "false");
+            document.getElementById("cesiumToggled" + removedFlight).setAttribute("aria-pressed", "false");
         }
-        this.state.clear_flights_active = false;
+        // this.state.clear_flights_active = false;
     }
 
     render() {
@@ -175,7 +175,7 @@ class Paginator extends React.Component {
                                 <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
                             </div>
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
-                            <button className="btn btn-sm btn-primary" disabled={!this.state.clear_flights_active} onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>
+                            <button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>
                         </div>
 
 
