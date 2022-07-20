@@ -86,9 +86,12 @@ class Paginator extends React.Component {
          cesiumFlightsSelected.forEach((removedFlight) => {
              console.log("Removed " + removedFlight);
              let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
-             console.log(toggleButton);
              toggleButton.click();
          });
+
+         if (cesiumFlightsSelected.length > 0) {
+             this.clearCesiumFlights();
+         }
     }
 
     render() {
