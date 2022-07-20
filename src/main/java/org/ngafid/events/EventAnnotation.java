@@ -273,7 +273,7 @@ public class EventAnnotation extends Annotation {
 
                 label = label.replaceAll("\\s", "_");
 
-                String outputCSVFileName = directoryRoot + (isTestFile(pctTest) ? "/test_" : "/train_") + "event_" + event.getId() + "_" + label + ".csv";
+                String outputCSVFileName = directoryRoot + (isTestFile(pctTest) ? "/test_" : "/train_") + "event_" + event.getId() + "." + label + ".csv";
                 File outputCSVFile = new File(outputCSVFileName);
 
                 GeneratedCSVWriter csvWriter = new GeneratedCSVWriter(flight, eventRecognitionColumns, Optional.of(outputCSVFile));
