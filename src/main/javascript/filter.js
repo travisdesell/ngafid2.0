@@ -18,6 +18,7 @@ import { Colors } from "./map.js";
 
 import { timeZones } from "./time_zones.js";
 import { confirmModal } from "./confirm_modal.js";
+import {cesiumFlightsSelected} from "./flight_component";
 
 //Used to check names for filter validation
 function isEmptyOrSpaces(str){
@@ -430,6 +431,7 @@ class Group extends React.Component {
 
         setTimeout(function() { //show resolution tooltip for a max 10s
             this.props.submitFilter();
+            this.clearCesiumFlights();
          }.bind(this), 50)
     }
 
@@ -622,6 +624,15 @@ class Group extends React.Component {
         //});
 
         //this.state.loadPopoverTarget = target;
+    }
+
+    /**
+     * Handles clearing all selected flights for multiple flight replays
+     */
+    clearCesiumFlights() {
+        while (cesiumFlightsSelected.length !== 0) {
+            console.log("Removed " + cesiumFlightsSelected.pop());
+        }
     }
 
     setStoredFilters(filters) {

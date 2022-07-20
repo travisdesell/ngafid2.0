@@ -965,7 +965,7 @@ class FlightsPage extends React.Component {
      * Handles clearing all selected flights for multiple flight replays
      */
     clearCesiumFlights() {
-        for (let i = 0; i < cesiumFlightsSelected.length; i++) {
+        while (cesiumFlightsSelected.length !== 0) {
             console.log("Removed " + cesiumFlightsSelected.pop());
         }
     }

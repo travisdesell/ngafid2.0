@@ -1134,7 +1134,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} data-toggle="button" aria-pressed={cesiumFlightsSelected.includes(this.props.flightInfo.id)} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
