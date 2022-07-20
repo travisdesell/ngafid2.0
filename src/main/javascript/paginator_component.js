@@ -82,13 +82,13 @@ class Paginator extends React.Component {
      /**
      * Handles clearing all selected flights for multiple flight replays
      */
-    clearCesiumFlights() {
-        while (cesiumFlightsSelected.length !== 0) {
-            let removedFlight = cesiumFlightsSelected.pop()
-            console.log("Removed " + removedFlight);
-            document.getElementById("cesiumToggled" + removedFlight).setAttribute("aria-pressed", "false");
-        }
-        // this.state.clear_flights_active = false;
+     clearCesiumFlights() {
+         cesiumFlightsSelected.forEach((removedFlight) => {
+             console.log("Removed " + removedFlight);
+             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+             console.log(toggleButton);
+             toggleButton.click();
+         });
     }
 
     render() {
