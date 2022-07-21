@@ -599,6 +599,9 @@ if (!$update_turn_to_final) {
 if (!$update_visited_airports) {
     $query = "alter table visited_airports drop primary key, add primary key (`fleet_id`, `airport`);";
     query_ngafid_db($query);
+
+    $query = "alter table visited_runways drop primary key, add primary key (`fleet_id`, `runway`);";
+    query_ngafid_db($query);
 }
 
 ?>
