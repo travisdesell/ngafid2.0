@@ -32,8 +32,5 @@ while (NULL != ($row = $result->fetch_assoc())) {
             query_ngafid_db("INSERT IGNORE INTO visited_runways SET fleet_id = $fleet_id, runway = '$runway'");
         }
     }
-
-
-    exit(1);
 }
 
