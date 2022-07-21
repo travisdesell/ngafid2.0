@@ -26,7 +26,7 @@ import Plotly from 'plotly.js';
 
 var moment = require('moment');
 
-const cesiumFlightsSelected = [];
+export let cesiumFlightsSelected = [];
 
 class Flight extends React.Component {
     constructor(props) {
@@ -62,7 +62,8 @@ class Flight extends React.Component {
             eventLayer : null,
             itineraryLayer : null,
             eventOutlines : [],
-            eventOutlineLayer : null
+            eventOutlineLayer : null,
+            replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -480,6 +481,8 @@ class Flight extends React.Component {
 
         console.log(cesiumFlightsSelected);
     }
+
+
 
     replayClicked() {
         let URL = "/protected/ngafid_cesium?flight_id=";
@@ -1132,7 +1135,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
