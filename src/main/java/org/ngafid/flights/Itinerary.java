@@ -136,6 +136,11 @@ public class Itinerary {
         for (String iataCode : airports) {
             Airport airport = Airports.getAirport(iataCode);
             List<Runway> rws = new ArrayList<>();
+
+            if (airport == null) {
+                LOG.info("Airport '" + iataCode + "' is null!");
+            }
+
             for (Runway rw : airport.getRunways())
                 if (rw.hasCoordinates)
                     rws.add(rw);
