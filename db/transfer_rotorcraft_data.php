@@ -35,7 +35,9 @@ if (!$sftp->login('service_ngafid_dto_upload@ngafid.org', $raise_password)) {
 echo "Login succeded!\n";
 
 $result = query_ngafid_db("SELECT fleet_id, system_id, tail, confirmed FROM tails");
-$tail_filename = "./system_ids_to_tails__" . $date = date('Y-m-d') . ".csv";
+$source_tail_filename = "./system_ids_to_tails__" . $date = date('Y-m-d') . ".csv";
+$target_tail_filename = "system_ids_to_tails__" . $date = date('Y-m-d') . ".csv";
+
 echo "system ids to tails filename is '$tail_filename'\n";
 
 $file_contents = "#fleet_id, system_id, tail number, confirmed\n";
