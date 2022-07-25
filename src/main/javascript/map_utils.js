@@ -59,13 +59,8 @@ function paletteGenerator(colors, pos) {
         for (var i = 0; i < length - 1; i++) {
             if (p <= pos[i + 1]) {
                 let diff = pos[i + 1] - pos[i];
-                console.log(i);
-                console.log(pos);
-                console.log(diff);
                 let w0 = 1 - (p - pos[i]) / diff;
                 let w1 = 1 - (pos[i + 1] - p) / diff;
-                console.log(w0);
-                console.log(w1);
                 return interpolateColors(colors[i], w0, colors[i + 1], w1);
             }
         }
