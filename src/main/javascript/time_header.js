@@ -155,13 +155,17 @@ class TurnToFinalHeaderComponents extends React.Component {
     }
 
     makeDropdown(currentItem, items, onChange) {
+        let dropdownStyle = {
+          maxHeight: "200px",
+          overflowY: "auto"
+        };
         return (
             <div className="col-auto">
                 <div className="dropdown">
                     <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                         {currentItem}
                     </button>
-                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <div className="dropdown-menu" aria-labelledby="dropdownMenuButton" style={dropdownStyle}>
                         {
                             items.map((itemName, index) => {
                                 return (
