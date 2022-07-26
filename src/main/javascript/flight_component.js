@@ -26,6 +26,8 @@ import Plotly from 'plotly.js';
 
 var moment = require('moment');
 
+export let cesiumFlightsSelected = [];
+
 class Flight extends React.Component {
     constructor(props) {
         super(props);
@@ -60,7 +62,8 @@ class Flight extends React.Component {
             eventLayer : null,
             itineraryLayer : null,
             eventOutlines : [],
-            eventOutlineLayer : null
+            eventOutlineLayer : null,
+            replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -447,9 +450,12 @@ class Flight extends React.Component {
             selectAircraftModal.show('10', this.submitXPlanePath, this.props.flightInfo.id);    
         } else if (type === 'XPL11') {
             selectAircraftModal.show('11', this.submitXPlanePath, this.props.flightInfo.id);    
-        } else if(type === 'CSV') {
-            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id);
+        } else if(type === 'CSV-IMP') {
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id + "&generated=false");
+        } else if(type === 'CSV-GEN') {
+            window.open("/protected/get_csv?flight_id=" + this.props.flightInfo.id + "&generated=true");
         }
+
     }
 
     /**
@@ -465,7 +471,29 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        window.open("/protected/ngafid_cesium?flight_id=" + this.props.flightInfo.id);
+        let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
+
+        if (flightStoreIndex === -1) {
+            cesiumFlightsSelected.push(this.props.flightInfo.id)
+        } else {
+            cesiumFlightsSelected.splice(flightStoreIndex, 1);
+        }
+
+        console.log(cesiumFlightsSelected);
+    }
+
+
+
+    replayClicked() {
+        let URL = "/protected/ngafid_cesium?flight_id=";
+        console.log(this.props.flightInfo.id);
+        if (cesiumFlightsSelected.length > 0 ){
+            URL += cesiumFlightsSelected.join("&flight_id=");
+        } else {
+            URL += (this.props.flightInfo.id).toString();
+        }
+
+        window.open(URL);
     }
 
     closeParamDisplay() {
@@ -613,7 +641,7 @@ class Flight extends React.Component {
         this.setState(this.state);
     }
 
-    globeClicked() {
+    mapClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
         if (!this.state.mapLoaded) {
@@ -1035,6 +1063,10 @@ class Flight extends React.Component {
             });
         }
 
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+
         return (
             <div className="card mb-1">
                 <div className="card-body m-0 p-0">
@@ -1095,7 +1127,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.globeClicked()}>
+                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1103,11 +1135,11 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} disabled={traceDisabled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + " disabled"} style={styleButton} onClick={() => this.replayClicked()}>
+                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
@@ -1116,7 +1148,14 @@ class Flight extends React.Component {
                             </button>
 
                             <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV')}>Export to CSV</button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
+                                    Export to CSV (Original)
+                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                </button>
+                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
+                                    Export to CSV (Generated)
+                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                </button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
                                 <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>

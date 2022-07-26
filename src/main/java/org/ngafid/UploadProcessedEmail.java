@@ -99,7 +99,7 @@ public class UploadProcessedEmail {
                     }
                 } else {
                     for (String message : errorMessages) {
-                        body.append("&emsp; " + message + "<br>");
+                        body.append("&emsp; &emsp; " + message + "<br>");
                     }
                 }
                 return;
@@ -232,6 +232,10 @@ public class UploadProcessedEmail {
     }
 
     public void addExceedenceError(String filename, String message) {
+        if (flightInfoMap.get(filename) == null) {
+            flightInfoMap.put(filename, new FlightInfo(filename));
+        }
+
         flightInfoMap.get(filename).addExceedenceError(message);
         numberEventErrors++;
     }

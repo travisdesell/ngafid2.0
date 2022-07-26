@@ -12,7 +12,7 @@
         integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">
     <link rel='stylesheet' href='/css/main.css'>
     <link rel='stylesheet' href='/css/font-awesome.min.css'>
-    
+
     <script>
         var plotMapHidden = true;
         {{{navbar_js}}}
@@ -31,7 +31,7 @@
             /* font-family: sans-serif;
                     background: #000; */
         }
-    
+
         .backdrop {
             display: inline-block;
             background: rgba(42, 42, 42, 0.7);
@@ -42,18 +42,18 @@
             line-height: 150%;
             font-size: small;
         }
-    
+
         #heightSliderLabel,
         #heightValue {
             vertical-align: top;
         }
-    
+
         .backdrop a:link,
         .backdrop a:visited,
         .backdrop a:hover {
             color: #fff
         }
-    
+
         .loadingIndicator {
             display: none;
             position: absolute;
@@ -65,7 +65,7 @@
             height: 66px;
             background: url(Source/Images/ajax-loader.gif) center no-repeat;
         }
-    
+
         .one {
             display: none;
             position: absolute;
@@ -77,7 +77,7 @@
             height: 66px;
             background: url(Source/Images/ajax-loader.gif) center no-repeat;
         }
-    
+
         .cover {
             display: none;
             position: absolute;
@@ -87,30 +87,37 @@
             right: 0;
             bottom: 0;
         }
-    
+
         #menu {
             position: absolute;
             left: 10px;
             top: 10px;
         }
-    
+
         .nowrap {
             white-space: nowrap;
         }
-    
+
         button.cesium-infoBox-camera {
             display: none;
         }
-    
+
         #3DTiles {
             padding-top: 0px;
         }
-    
+
         #toolbar {
             z-index: 0;
             position: absolute;
             top: 10px;
             left: 10px;
+        }
+
+        #toggle-path-color {
+            z-index: 0;
+            position: absolute;
+            top: 8px;
+            left: 215px;
         }
     </style>
 
@@ -133,16 +140,37 @@
             <option value="4">Show Cruise to Final</option>
             <option value="5">Show Full Flight</option>
         </select>
-        <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
+    </div>
+
+    <div id="toggle-path-color">
+        <select class="cesium-button" id="color-options">
+            <option value="0">Select Current Flight Path Color</option>
+            <option value="1">Red</option>
+            <option value="2">Orange</option>
+            <option value="3">Yellow</option>
+            <option value="4">Green</option>
+            <option value="5">Blue</option>
+            <option value="6">Indigo</option>
+            <option value="7">Violet</option>
+            <option value="8">Black</option>
+            <option value="9">White</option>
+        </select>
+         <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
+                <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
 
     </div>
 
-    <script>
-    
-        // Access Cesium Ion Token here
-        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
+<!--        <script src = "src/main/javascript/cesium_page.js">-->
 
-        // Creates the Viewer 
+<!--    SCRIPT HAS TO BE EMBEDDED IN HTML FILE -->
+    <script>
+
+        // Access Cesium Ion Token here
+        // Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI1ZWY3N2EwMi1kZDBlLTQ0MzMtYWFhYi0wZGYxMjA3MmI2YmMiLCJpZCI6MTY3NzIsInNjb3BlcyI6WyJhc3IiLCJnYyJdLCJpYXQiOjE1NzExODM0NDl9.zmhbWpPCHT8kONpntN_Y2XCsV07Yep-kdIHfhOcPC5A';
+        Cesium.Ion.defaultAccessToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA'
+        Cesium.Math.setRandomNumberSeed(9);
+
+        // Creates the Viewer
         var viewer = new Cesium.Viewer('cesiumContainer', {
             scene3DOnly: true,
             selectionIndicator: false,
@@ -151,23 +179,158 @@
 
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
-        var scopes = {{{ cesium_data }}};                
+        var scopes = {{{ cesium_data }}};
         var keys = Object.keys(scopes);
         var today = new Date();
 
-        // Setting default phase
-        for (var i = 0; i < keys.length; i++) {
+        var startTime = Number.POSITIVE_INFINITY;
+        var endTime = Number.NEGATIVE_INFINITY;
+        var positionPropertyList = [];
+        var trackedEntities = [];
 
+        viewer.clock.startTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
+        viewer.clock.endTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
+
+        var airframeModels = {};
+
+        // Load airframe models in before initializing replays
+        async function loadAirframeModels() {
+            const airplaneURI = await Cesium.IonResource.fromAssetId(1084423);
+            airframeModels["Airplane"] = new Cesium.ModelGraphics({
+                uri: airplaneURI,
+                minimumPixelSize: 128,
+                maximumScale: 20000,
+                scale: 1,
+            });
+
+            const droneURI = await Cesium.IonResource.fromAssetId(1117220);
+            airframeModels["Drone"] = new Cesium.ModelGraphics({
+                uri: droneURI,
+                minimumPixelSize: 128,
+                maximumScale: 20000,
+                scale: 1,
+            });
+
+            const scanEagleURI = await Cesium.IonResource.fromAssetId(1196119);
+            airframeModels["ScanEagle"] = new Cesium.ModelGraphics({
+                uri: scanEagleURI,
+                minimumPixelSize: 128,
+                maximumScale: 20000,
+                scale: 1,
+            });
+
+            initializeReplays();
+        }
+
+        loadAirframeModels();
+
+        function initializeReplays() {
+            for (let i = 0; i < keys.length; i++) {
                 let flightId = keys[i];
                 let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+                let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
+
+                initializeReplay(i);
+
+                const positions = Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo);
+
+                for (let j = 0; j < positions.length; j++) {
+                    const time = Cesium.JulianDate.fromIso8601(InfoAglDemoTimes[j]);
+                    const position = positions[j];
+
+                    positionPropertyList[i].addSample(time, position);
+                }
+            }
+        }
+
+        function initializeReplay(keyIndex) {
+            console.log("Initializing replay of flight at index " + keyIndex);
+
+            startTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].startTime);
+            endTime = Cesium.JulianDate.fromIso8601(scopes[keys[keyIndex]].endTime);
+            positionProperty = new Cesium.SampledPositionProperty();
+            positionPropertyList.push(positionProperty);
+
+            if (Cesium.JulianDate.compare(startTime, viewer.clock.startTime) < 0) {
+                console.log("Earlier time detected. Setting start time to " + startTime)
+                viewer.clock.startTime = startTime.clone();
+                viewer.clock.currentTime = startTime.clone();
+            }
+
+            if (Cesium.JulianDate.compare(viewer.clock.stopTime, endTime) > 0) {
+                console.log("Later time detected. Setting end time to " + endTime);
+                viewer.clock.stopTime = endTime.clone();
+            }
+
+            viewer.clock.shouldAnimate = true; //  Autostart flight replay
+            viewer.clock.multiplier = 25; // Set playback speed
+            viewer.timeline.zoomTo(startTime, endTime);
+
+            var airframeModelUsed;
+
+            console.log(scopes[keys[keyIndex]].airframeType);
+
+            switch (scopes[keys[keyIndex]].airframeType) {
+                case "Fixed Wing":
+                    console.log("Using airplane airframe");
+                    airframeModelUsed = "Airplane";
+                    break;
+                case "UAS Rotorcraft":
+                    console.log("Using drone airframe");
+                    airframeModelUsed = "Drone"
+                    break;
+                case "UAS Fixed Wing":
+                    console.log("Using ScanEagle airframe");
+                    airframeModelUsed = "Airplane"; // ScanEagle is an option, but currently not aligned with flight path :/
+                    break;
+                default:
+                    console.log("Could not detect airframe. No model will be used.")
+                    break;
+            }
+
+            loadModel(airframeModelUsed);
+        }
+
+        async function loadModel(airframe) {
+            const pathColor = Cesium.Color.fromRandom();
+            const model = airframeModels[airframe];
+
+            const airframeEntity = viewer.entities.add({
+                availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
+                position: positionProperty,
+                model: model,
+                orientation: new Cesium.VelocityOrientationProperty(positionProperty),
+                path: new Cesium.PathGraphics({
+                        width: 5,
+                        material: new Cesium.PolylineOutlineMaterialProperty({
+                            color: pathColor,
+                            outlineColor: pathColor,
+                            outlineWidth: 5
+                        })
+                    }),
+                point: {
+                    pixelSize: 10,
+                    color: Cesium.Color.RED
+                    },
+            });
+
+            trackedEntities.push(airframeEntity);
+        }
+
+        // Setting default phase
+        function applyNgafidStyleDefaultPhase() {
+            for (var i = 0; i < keys.length; i++) {
+                let flightId = keys[i];
+                let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
+                let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
                 var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
                     name: "NGAFID CESIUM DEMO: " + keys[i],
                     wall: {
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAglDemo),
-                        material: Cesium.Color.WHITESMOKE.withAlpha(0.8),
+                        material: Cesium.Color.WHITESMOKE.withAlpha(0),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
                 });
 
                 var geoFlightKeepGroundEntireDemo = viewer.entities.add({
@@ -184,7 +347,9 @@
                         clampToGround: true,
                     },
                 });
+            }
         }
+        applyNgafidStyleDefaultPhase(); // Used to delay for zoom to properly be set
 
         // Setting taxiing phase
         function applyNgafidStyleTaxi() {
@@ -194,19 +359,18 @@
                 let taxiing = scopes[flightId].flightGeoAglTaxiing;
 
                 var geoFlightLoadAGLTaxi = viewer.entities.add({
-                    
+
                     name: "NGAFID CESIUM FLIGHT TAXIING ",
                     description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
                     wall: {
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(taxiing),
                         material: Cesium.Color.BLUE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
 
                 });
 
                 var geoFlightlineTaxi = viewer.entities.add({
-
                     name: "NGAFID CESIUM FLIGHT TAXIING ",
                     description: "<a><h3> NGAFID Flight ID: " + keys[i] + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Taxiing</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
 
@@ -243,7 +407,7 @@
                 var skyAtmosphere = scene.skyAtmosphere;
                 var globe = scene.globe;
             }
-        }        
+        }
 
         // Setting a takeOff-liftOff phase
         function applyNgafidStyleTakeoff() {
@@ -260,7 +424,7 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(TakeOff),
                         material: Cesium.Color.PURPLE.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
                 });
 
                 var geoFlightlineTakeoff = viewer.entities.add({
@@ -303,7 +467,7 @@
             for (var i = 0; i < keys.length; i++) {
 
                 let flightId = keys[i];
-                let Climb = scopes[flightId].flightGeoAglClimb;                
+                let Climb = scopes[flightId].flightGeoAglClimb;
 
                 var geoFlightLoadAGLClimb = viewer.entities.add({
 
@@ -313,7 +477,7 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(Climb),
                         material: Cesium.Color.SADDLEBROWN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
                 });
 
                 var geoFlightlineClimb = viewer.entities.add({
@@ -355,7 +519,7 @@
             for (var i = 0; i < keys.length; i++) {
 
                 let flightId = keys[i];
-                let Cruise = scopes[flightId].flightGeoAglCruise;                
+                let Cruise = scopes[flightId].flightGeoAglCruise;
 
                 var geoFlightLoadAGLRest = viewer.entities.add({
 
@@ -365,7 +529,7 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(Cruise),
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
                 });
 
                 var geoFlightlineRest = viewer.entities.add({
@@ -418,7 +582,7 @@
                         positions: Cesium.Cartesian3.fromDegreesArrayHeights(InfoAgl),
                         material: Cesium.Color.LIGHTCYAN.withAlpha(0.8),
                         cornerType: Cesium.CornerType.BEVELED,
-                    }
+                    },
                 });
 
                 var geoFlightlineEntire = viewer.entities.add({
@@ -455,8 +619,44 @@
             }
         }
 
+        var entityToggleIndex = 0;
+
+        function toggleAirframeLockCamera() {
+            // Will intentionally go to trackedEntities.length + 1 to set to null
+            viewer.trackedEntity = trackedEntities[entityToggleIndex++];
+
+            console.log("Locked onto " + trackedEntities[entityToggleIndex]);
+
+            if (entityToggleIndex > trackedEntities.length) {
+                entityToggleIndex = 0;
+            }
+
+            pathMenu.selectedIndex = 0;
+        }
+
+        function togglePathColor(color) {
+            if (viewer.trackedEntity) {
+                viewer.trackedEntity.path.material.color = color
+                viewer.trackedEntity.path.material.outlineColor = color;
+            }
+        }
+
         // Set menu options
-        var menu = document.getElementById("dropdown");
+        const menu = document.getElementById("dropdown");
+        const pathMenu = document.getElementById("color-options");
+        const bar = document.querySelector("div.cesium-viewer-toolbar");
+
+        let CESIUM_COLORS = [
+            Cesium.Color.RED, Cesium.Color.ORANGE, Cesium.Color.YELLOW, Cesium.Color.GREEN, Cesium.Color.BLUE,
+            Cesium.Color.INDIGO, Cesium.Color.VIOLET, Cesium.Color.BLACK, Cesium.Color.WHITE,
+        ]
+
+        for (let i = 0; i < CESIUM_COLORS.length; i++) {
+            pathMenu.options[i + 1].onselect = function () {
+                togglePathColor(CESIUM_COLORS[i]);
+            };
+        }
+
 
         menu.options[1].onselect = function () {
             applyNgafidStyleTaxi();
@@ -478,31 +678,55 @@
             applyNgafidStyleEntire();
         };
 
+        // menu.options[6].onselect = function () {
+        //     toggleAirframeLockCamera();
+        // };
+        //
+        // for (let i = 0; i < trackedEntities.length; i++) {
+        //     menu.options[6 + i].onselect = function() {
+        //         viewer.trackedEntity = trackedEntities[i];
+        //     }
+        // }
+
         menu.onchange = function () {
             var item = menu.options[menu.selectedIndex];
             if (item && typeof item.onselect === "function") {
                 item.onselect();
             }
-        };    
+        };
 
+        pathMenu.onchange = function () {
+            var item = pathMenu.options[pathMenu.selectedIndex];
+            if (item && typeof item.onselect === "function") {
+                item.onselect();
+            }
+        };
+
+        const modeButton = document.querySelector("span.cesium-sceneModePicker-wrapper");
+
+        const toggleAirframeLockButton = document.createElement("button");
+        toggleAirframeLockButton.onclick = function () {
+            toggleAirframeLockCamera();
+        };
+
+        viewer.trackedEntity = null;
         viewer.zoomTo(viewer.entities);
         var scene = viewer.scene;
         var skyAtmosphere = scene.skyAtmosphere;
         var globe = scene.globe;
+        var viewModel = {
+            hueShift: 0.0,
+            saturationShift: 0.0,
+            brightnessShift: 0.0
+        };
 
-        // var viewModel = {
-        //     hueShift: 0.0,
-        //     saturationShift: 0.0,
-        //     brightnessShift: 0.0
-        // };
-
-        // Convert view into  observables model 
+        // Convert view into  observables model
         Cesium.knockout.track(viewModel);
-        // Model bind to the DOM elements 
+        // Model bind to the DOM elements
         var toolbar = document.getElementById('toolbar');
         Cesium.knockout.applyBindings(viewModel, toolbar);
 
-        // Make globe view to 3D skyAtmosphere with HSB parameters. 
+        // Make globe view to 3D skyAtmosphere with HSB parameters.
         // This can be use in ngafid flight on different altitutes
         function subscribeParameter(name, globeName) {
             Cesium.knockout.getObservable(viewModel, name).subscribe(
@@ -517,13 +741,16 @@
         subscribeParameter('brightnessShift', 'atmosphereBrightnessShift');
 
         // cesium default globe layer removed for better view
-        viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
-        
-        // Added world asset with globe ID for better sentinel imagery view
-        viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
+        // viewer.imageryLayers.remove(viewer.imageryLayers.get(0));
+        //
+        // // Added world asset with globe ID for better sentinel imagery view
+        // viewer.imageryLayers.addImageryProvider(new Cesium.IonImageryProvider({ assetId: 3954 }));
+
+
+
     </script>
 
-    <script src="/js/ngafid_cesium-bundle.js"></script>
+<!--    <script src="/js/ngafid_cesium-bundle.js"></script>-->
 
 </body>
 </html>

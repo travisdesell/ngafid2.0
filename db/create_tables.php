@@ -8,7 +8,9 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
 $update_2022_02_17 = false;
-$update_turn_to_final = true;
+$update_turn_to_final = false;
+$update_visited_airports = true;
+$update_uploads_for_raise = true;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
@@ -595,4 +597,18 @@ if (!$update_turn_to_final) {
     query_ngafid_db($query);
 }
 
+if (!$update_visited_airports) {
+    $query = "alter table visited_airports drop primary key, add primary key (`fleet_id`, `airport`);";
+    query_ngafid_db($query);
+
+    $query = "alter table visited_runways drop primary key, add primary key (`fleet_id`, `runway`);";
+    query_ngafid_db($query);
+}
+
+if (!$update_uploads_for_raise) {
+    $query = "ALTER TABLE uploads ADD COLUMN `contains_rotorcraft` TINYINT(1) NOT NULL DEFAULT 0 AFTER `n_error_flights`, ADD COLUMN `sent_to_raise` TINYINT(1) NOT NULL DEFAULT 0 AFTER `contains_rotorcraft`";
+    query_ngafid_db($query);
+}
+
 ?>
+
