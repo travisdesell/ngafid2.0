@@ -194,6 +194,8 @@ public final class WebServer {
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
+        Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
+
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
         Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 

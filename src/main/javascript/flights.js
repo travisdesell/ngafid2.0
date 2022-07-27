@@ -19,6 +19,7 @@ import { FlightsCard } from './flights_card_component.js';
 import Plotly from 'plotly.js';
 
 import { timeZones } from "./time_zones.js";
+import {cesiumFlightsSelected} from "./flight_component";
 
 
 function invalidString(str){
@@ -960,6 +961,21 @@ class FlightsPage extends React.Component {
                           () => {this.removeTag(flightId, -2, false)});
     }
 
+    /**
+     * Handles clearing all selected flights for multiple flight replays
+     */
+     clearCesiumFlights() {
+         cesiumFlightsSelected.forEach((removedFlight) => {
+             console.log("Removed " + removedFlight);
+             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+             toggleButton.click();
+         });
+
+         if (cesiumFlightsSelected.length > 0) {
+             this.clearCesiumFlights();
+         }
+    }
+
     render() {
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
@@ -1033,6 +1049,7 @@ class FlightsPage extends React.Component {
                         numberPages={this.state.numberPages}
                         pageSize={this.state.pageSize}
                         rules={sortableColumns}
+                        setClearButton={() => this.clearCesiumFlights()}
                         setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
                         getSortingColumn={() => this.getSortingColumn()}
                         setSortingOrder={(order) => this.setSortingOrder(order)}
