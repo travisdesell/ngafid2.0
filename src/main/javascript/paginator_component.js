@@ -8,6 +8,7 @@ import Form from 'react-bootstrap/Form';
 import FormCheck from 'react-bootstrap/FormCheck';
 import { PaginationSorter } from './sorter_component.js';
 import {cesiumFlightsSelected} from "./flight_component";
+import {CesiumButtons} from "./cesium_buttons";
 
 
 class Paginator extends React.Component {
@@ -178,8 +179,10 @@ class Paginator extends React.Component {
                                 <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
                             </div>
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
-                            <button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>
+                            {/*<button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>*/}
+
                         </div>
+                            <CesiumButtons></CesiumButtons>
 
 
                         {sorter}
