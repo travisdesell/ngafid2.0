@@ -23,6 +23,7 @@ import { selectAircraftModal } from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
+import {updateCesiumButtonState} from "./cesium_buttons";
 
 var moment = require('moment');
 
@@ -478,6 +479,8 @@ class Flight extends React.Component {
         } else {
             cesiumFlightsSelected.splice(flightStoreIndex, 1);
         }
+
+        updateCesiumButtonState();
 
         console.log(cesiumFlightsSelected);
     }
