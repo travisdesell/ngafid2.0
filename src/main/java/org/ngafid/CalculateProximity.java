@@ -263,14 +263,8 @@ public class CalculateProximity {
         public void updateWithEvent(Connection connection, Event event, String startDateTime) throws SQLException {
 
             event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
-            if (event.getStartTime() != null) {
-                EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getStartTime(), event.getSeverity(), event.getDuration());
-            } else if (event.getEndTime() != null) {
-                EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getEndTime(), event.getSeverity(), event.getDuration());
-            } else {
-                System.out.println("WARNING: could not update event statistics for event: " + event);
-                System.out.println("WARNING: event start and end time were both null.");
-            }
+            event.updateStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId);
+
             double severity = event.getSeverity();
             double duration = event.getDuration();
 

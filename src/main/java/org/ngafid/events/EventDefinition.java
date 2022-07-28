@@ -29,7 +29,7 @@ public class EventDefinition {
     public static final int MIN_ABS_SEVERITY = 3;
     public static final int MAX_ABS_SEVERITY = 4;
 
-    private int id = -1;
+    private int id = 0;
     private int fleetId;
     private String name;
     private int startBuffer;
@@ -153,6 +153,31 @@ public class EventDefinition {
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
+    }
+
+    public static EventDefinition getEventDefinition(Connection connection, String eventName) {
+        EventDefinition eventDef = null;
+
+        eventName = "name = '" + eventName + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            System.out.println(preparedStatement.toString());
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                eventDef = new EventDefinition(resultSet);
+            }
+
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return eventDef;
     }
 
     /**
