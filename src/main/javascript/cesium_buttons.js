@@ -42,19 +42,24 @@ class CesiumButtons extends React.Component {
     }
 
     componentDidMount() {
-        updateCesiumButtonState();
+        let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
+        let viewButton = document.getElementById("cesiumViewButton" + this.props.location);
+        let clearButton = document.getElementById("cesiumClearButton" + this.props.location);
+
+        viewButton.disabled = cesiumButtonsDisabled;
+        clearButton.disabled = cesiumButtonsDisabled;
     }
 
     render() {
         return (
             <div className="col form-row input-group m-0 p-0">
                 <div className="input-group-prepend p-0">
-                    <button id="cesiumViewButton" className="btn btn-sm btn-primary"
+                    <button id={"cesiumViewButton" + this.props.location} className="btn btn-sm btn-primary"
                             onClick={() => this.viewCesiumFlights()}>
                         View Selected Replays
                     </button>
 
-                    <button id="cesiumClearButton" className="btn btn-sm btn-primary"
+                    <button id={"cesiumClearButton" + this.props.location} className="btn btn-sm btn-primary"
                             onClick={() => this.clearCesiumFlights()}>
                         Clear Selected Replays
                     </button>
@@ -72,11 +77,16 @@ export let cesiumFlightsSelected = [];
 export function updateCesiumButtonState() {
     let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
-    let viewButton = document.getElementById("cesiumViewButton");
-    viewButton.disabled = cesiumButtonsDisabled;
+    let viewButtonTop = document.getElementById("cesiumViewButtonTop");
+    let viewButtonBot = document.getElementById("cesiumViewButtonBottom");
+    viewButtonTop.disabled = cesiumButtonsDisabled;
+    viewButtonBot.disabled = cesiumButtonsDisabled;
 
-    let clearButton = document.getElementById("cesiumClearButton")
-    clearButton.disabled = cesiumButtonsDisabled;
+
+    let clearButtonTop = document.getElementById("cesiumClearButtonTop");
+    let clearButtonBot = document.getElementById("cesiumClearButtonBottom");
+    clearButtonTop.disabled = cesiumButtonsDisabled;
+    clearButtonBot.disabled = cesiumButtonsDisabled;
 }
 
 

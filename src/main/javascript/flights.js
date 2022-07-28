@@ -1060,6 +1060,7 @@ class FlightsPage extends React.Component {
                         updateItemsPerPage={(pageSize) => {
                             this.state.pageSize = pageSize;
                         }}
+                        location="Top"
                     />
 
                     <FlightsCard
@@ -1110,6 +1111,7 @@ class FlightsPage extends React.Component {
                         updateItemsPerPage={(pageSize) => {
                             this.state.pageSize = pageSize;
                         }}
+                        location="Bottom"
                     />
 
                 </div>

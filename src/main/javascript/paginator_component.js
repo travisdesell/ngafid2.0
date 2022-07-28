@@ -163,7 +163,7 @@ class Paginator extends React.Component {
 
                         </div>
 
-                        <CesiumButtons></CesiumButtons>
+                        <CesiumButtons location={this.props.location}></CesiumButtons>
 
 
                         {sorter}
