@@ -1,5 +1,3 @@
-import {cesiumFlightsSelected} from "./flight_component";
-
 console.log('importing stuff!');
 
 import 'bootstrap';
