@@ -46,8 +46,6 @@ class CesiumButtons extends React.Component {
     }
 
     render() {
-        console.log("Disabled state: " + this.state.disabled);
-        console.log("Arr status: " + cesiumFlightsSelected.length + " " + cesiumFlightsSelected.length > 0);
         return (
             <div className="col form-row input-group m-0 p-0">
                 <div className="input-group-prepend p-0">
@@ -75,12 +73,9 @@ export function updateCesiumButtonState() {
     let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
     let viewButton = document.getElementById("cesiumViewButton");
-    let clearButton = document.getElementById("cesiumClearButton")
-
-    console.log(viewButton);
-    console.log(clearButton);
-
     viewButton.disabled = cesiumButtonsDisabled;
+
+    let clearButton = document.getElementById("cesiumClearButton")
     clearButton.disabled = cesiumButtonsDisabled;
 }
 
