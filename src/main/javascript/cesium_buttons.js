@@ -9,9 +9,6 @@ class CesiumButtons extends React.Component {
         this.state = {
             disabled: cesiumFlightsSelected.length <= 0
         };
-
-        updateCesiumButtonState();
-
     }
 
     /**
@@ -43,13 +40,10 @@ class CesiumButtons extends React.Component {
             this.clearCesiumFlights();
         }
 
-        cesiumButtonsDisabled = true;
     }
 
-    updateState() {
-        this.setState({
-            disabled: cesiumFlightsSelected.length <= 0
-        })
+    componentDidMount() {
+        updateCesiumButtonState();
     }
 
     render() {
@@ -58,28 +52,35 @@ class CesiumButtons extends React.Component {
         return (
             <div className="col form-row input-group m-0 p-0">
                 <div className="input-group-prepend p-0">
-                    <button className="btn btn-sm btn-primary" disabled={cesiumButtonsDisabled}
+                    <button id="cesiumViewButton" className="btn btn-sm btn-primary"
                             onClick={() => this.viewCesiumFlights()}>
                         View Selected Replays
                     </button>
 
-                    <button className="btn btn-sm btn-primary" disabled={cesiumButtonsDisabled}
+                    <button id="cesiumClearButton" className="btn btn-sm btn-primary"
                             onClick={() => this.clearCesiumFlights()}>
                         Clear Selected Replays
                     </button>
                 </div>
             </div>
+
         )
     }
 
+
 }
 
-export let cesiumButtonsDisabled = true;
-
 export function updateCesiumButtonState() {
-    console.log("Updating state to be " + cesiumFlightsSelected.length <= 0);
-    cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
-    console.log("cesiumbutton state: " + cesiumButtonsDisabled);
+    let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
+
+    let viewButton = document.getElementById("cesiumViewButton");
+    let clearButton = document.getElementById("cesiumClearButton")
+
+    console.log(viewButton);
+    console.log(clearButton);
+
+    viewButton.disabled = cesiumButtonsDisabled;
+    clearButton.disabled = cesiumButtonsDisabled;
 }
 
 export {CesiumButtons}
