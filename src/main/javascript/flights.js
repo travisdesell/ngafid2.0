@@ -19,7 +19,6 @@ import { FlightsCard } from './flights_card_component.js';
 import Plotly from 'plotly.js';
 
 import { timeZones } from "./time_zones.js";
-import {cesiumFlightsSelected} from "./flight_component";
 
 
 function invalidString(str){
@@ -1061,6 +1060,7 @@ class FlightsPage extends React.Component {
                         updateItemsPerPage={(pageSize) => {
                             this.state.pageSize = pageSize;
                         }}
+                        location="Top"
                     />
 
                     <FlightsCard
@@ -1111,6 +1111,7 @@ class FlightsPage extends React.Component {
                         updateItemsPerPage={(pageSize) => {
                             this.state.pageSize = pageSize;
                         }}
+                        location="Bottom"
                     />
 
                 </div>
