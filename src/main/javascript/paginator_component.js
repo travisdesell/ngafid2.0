@@ -182,7 +182,8 @@ class Paginator extends React.Component {
                             {/*<button className="btn btn-sm btn-primary" onClick={() => this.clearCesiumFlights()}>Clear Selected Replays</button>*/}
 
                         </div>
-                            <CesiumButtons></CesiumButtons>
+
+                        <CesiumButtons></CesiumButtons>
 
 
                         {sorter}
