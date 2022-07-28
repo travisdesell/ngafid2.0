@@ -1,5 +1,4 @@
 import React from "react";
-import {cesiumFlightsSelected} from "./flight_component";
 
 
 class CesiumButtons extends React.Component {
@@ -70,6 +69,8 @@ class CesiumButtons extends React.Component {
 
 }
 
+export let cesiumFlightsSelected = [];
+
 export function updateCesiumButtonState() {
     let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
@@ -83,4 +84,6 @@ export function updateCesiumButtonState() {
     clearButton.disabled = cesiumButtonsDisabled;
 }
 
+
 export {CesiumButtons}
+

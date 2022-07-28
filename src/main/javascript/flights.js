@@ -19,7 +19,6 @@ import { FlightsCard } from './flights_card_component.js';
 import Plotly from 'plotly.js';
 
 import { timeZones } from "./time_zones.js";
-import {cesiumFlightsSelected} from "./flight_component";
 
 
 function invalidString(str){

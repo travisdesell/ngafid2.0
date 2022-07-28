@@ -23,11 +23,10 @@ import { selectAircraftModal } from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
-import {updateCesiumButtonState} from "./cesium_buttons";
+import {cesiumFlightsSelected, updateCesiumButtonState} from "./cesium_buttons";
 
 var moment = require('moment');
 
-export let cesiumFlightsSelected = [];
 
 class Flight extends React.Component {
     constructor(props) {
