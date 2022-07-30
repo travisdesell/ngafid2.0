@@ -25,8 +25,8 @@ public class FindLowFuelAvgEvents {
 
     static {
         FUEL_THRESHOLDS.put(1, 8.25);
-        FUEL_THRESHOLDS.put(1, 8.00);
-        FUEL_THRESHOLDS.put(1, 17.56);
+        FUEL_THRESHOLDS.put(2, 8.00);
+        FUEL_THRESHOLDS.put(3, 17.56);
     }
 
     public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
