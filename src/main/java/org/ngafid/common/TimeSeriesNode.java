@@ -1,5 +1,11 @@
 package org.ngafid.common;
 
+/**
+ * Node designed to store Time Series Data
+ *
+ * @author Aaron Chan
+ */
+
 public class TimeSeriesNode<ValueType> {
     private final double time;
     private final ValueType value;
@@ -24,5 +30,11 @@ public class TimeSeriesNode<ValueType> {
 
     public void setNext(TimeSeriesNode<ValueType> next) {
         this.next = next;
+    }
+
+    @Override
+    public String toString() {
+        String timeValPair = "(" + this.time + ", " + this.value + ")";
+        return this.next != null ? timeValPair + " -> " + this.next : timeValPair;
     }
 }

@@ -1,5 +1,11 @@
 package org.ngafid.common;
 
+/**
+ * Queue designed for Time Series Data
+ *
+ * @author Aaron Chan
+ */
+
 public class TimeSeriesQueue<ValueType> {
     private TimeSeriesNode<ValueType> front;
     private TimeSeriesNode<ValueType> back;
@@ -51,5 +57,10 @@ public class TimeSeriesQueue<ValueType> {
 
     public int getSize() {
         return size;
+    }
+
+    @Override
+    public String toString() {
+        return "TimeSeriesQueue{" + this.front + "}";
     }
 }
