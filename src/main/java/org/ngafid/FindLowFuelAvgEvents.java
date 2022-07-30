@@ -11,6 +11,8 @@ import org.ngafid.flights.StringTimeSeries;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -27,7 +29,7 @@ public class FindLowFuelAvgEvents {
         FUEL_THRESHOLDS.put(1, 17.56);
     }
 
-    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException {
+    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         double threshold = FUEL_THRESHOLDS.get(flight.getAirframeTypeId());
         TimeSeriesQueue<Double> timeSeriesQueue = new TimeSeriesQueue<Double>();
 
@@ -40,13 +42,13 @@ public class FindLowFuelAvgEvents {
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
-        // TODO: Setup date time parsing and have it convert to seconds
-
         timeSeriesQueue.enqueue(0, fuel.get(0));
+        String startDateTimeStr = date.get(0) + time.get(0);
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
-            // TODO: parsinnngg
-            timeSeriesQueue.enqueue(TimeUtils.calculateDurationInSeconds(), fuel.get(i));
+            String currentDateTimeStr = date.get(i) + time.get(i);
+
+            timeSeriesQueue.enqueue(TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr), fuel.get(i));
 
             // TODO: Maybe make it millis?
             timeSeriesQueue.purge(15);
