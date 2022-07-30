@@ -1,5 +1,7 @@
 package org.ngafid.common;
 
+import com.sun.jdi.Value;
+
 import java.util.Iterator;
 
 /**
@@ -36,8 +38,8 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         size++;
     }
 
-    public ValueType dequeue() {
-        ValueType popped = this.front.getValue();
+    public TimeSeriesNode<ValueType> dequeue() {
+        TimeSeriesNode<ValueType> popped = this.front;
 
         this.front = this.front.getNext();
 
@@ -47,6 +49,26 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         }
 
         return popped;
+    }
+
+    public void purge(double timeDiff) {
+        double diff = this.back.getTime() - this.front.getTime();;
+
+        while (!isEmpty() && diff > timeDiff) {
+            this.dequeue();
+
+            diff = this.back.getTime() - this.front.getTime();
+        }
+    }
+
+    public void clear() {
+        this.front = null;
+        this.back = null;
+        this.size = 0;
+    }
+
+    public boolean isEmpty() {
+        return size == 0;
     }
 
     public TimeSeriesNode<ValueType> getFront() {
