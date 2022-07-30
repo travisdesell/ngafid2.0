@@ -43,16 +43,17 @@ public class FindLowFuelAvgEvents {
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
         String startDateTimeStr = date.get(0) + time.get(0);
-        timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr});
+        timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr, 0});
         int queueFuelIndex = 0;
         int queueDateTimeIndex = 1;
+        int queueLineIndex = 2;
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
             String currentDateTimeStr = date.get(i) + time.get(i);
 
             // TODO: Check if the strings are formatted correctly
             double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr);
-            Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr};
+            Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr, i};
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
 
@@ -69,9 +70,12 @@ public class FindLowFuelAvgEvents {
             if (avg <= threshold) {
                 LOG.info("Low Fuel Average Event Detected");
 
-                // TODO: Pass in correct params when date/time setup
+                int startLine = (int) timeSeriesQueue.getFront().getValue()[queueLineIndex];
+                String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
+                String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
-                lowFuelEvents.add(new CustomEvent("", currentDateTimeStr, 0, i, 0, flight, CustomEvent.LOW_FUEL))
+                // TODO: Figure out severity value
+                lowFuelEvents.add(new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL));
             }
         }
 
