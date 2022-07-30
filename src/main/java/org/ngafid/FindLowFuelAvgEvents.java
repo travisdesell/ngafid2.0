@@ -1,4 +1,5 @@
-import org.ngafid.Database;
+package org.ngafid;
+
 import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
