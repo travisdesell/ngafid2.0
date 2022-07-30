@@ -16,6 +16,8 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static org.ngafid.FindSpinEvents.setFlightProcessed;
+import static org.ngafid.events.CustomEvent.SPIN_START;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowFuelAvgEvents {
@@ -57,7 +59,6 @@ public class FindLowFuelAvgEvents {
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
 
-
             double sum = 0;
 
             for (TimeSeriesNode<Object[]> node : timeSeriesQueue) {
@@ -79,6 +80,14 @@ public class FindLowFuelAvgEvents {
             }
         }
 
+        LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
+
+        for (CustomEvent event : lowFuelEvents) {
+            event.updateDatabase(connection);
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), SPIN_START.getId());
+        }
+
+        setFlightProcessed(flight, hadError, lowFuelEvents.size());
     }
 
     public static void main(String[] args) {
