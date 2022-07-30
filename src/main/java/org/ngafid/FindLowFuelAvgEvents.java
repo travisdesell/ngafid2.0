@@ -44,19 +44,23 @@ public class FindLowFuelAvgEvents {
 
         String startDateTimeStr = date.get(0) + time.get(0);
         timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr});
+        int queueFuelIndex = 0;
+        int queueDateTimeIndex = 1;
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
             String currentDateTimeStr = date.get(i) + time.get(i);
 
             // TODO: Check if the strings are formatted correctly
-            timeSeriesQueue.enqueue(TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr), new Object[]{fuel.get(i), currentDateTimeStr});
-            // TODO: Maybe make it millis?
-            timeSeriesQueue.purge(15);
+            double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr);
+            Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr};
+            timeSeriesQueue.enqueue(currentTimeInSec, indexData);
+            timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
+
 
             double sum = 0;
 
             for (TimeSeriesNode<Object[]> node : timeSeriesQueue) {
-                sum += (double) node.getValue()[0];
+                sum += (double) node.getValue()[queueFuelIndex];
             }
 
             double avg = sum / timeSeriesQueue.getSize();
