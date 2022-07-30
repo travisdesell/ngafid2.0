@@ -1,12 +1,14 @@
 package org.ngafid.common;
 
+import java.util.Iterator;
+
 /**
  * Queue designed for Time Series Data
  *
  * @author Aaron Chan
  */
 
-public class TimeSeriesQueue<ValueType> {
+public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<ValueType>> {
     private TimeSeriesNode<ValueType> front;
     private TimeSeriesNode<ValueType> back;
     private int size;
@@ -62,5 +64,10 @@ public class TimeSeriesQueue<ValueType> {
     @Override
     public String toString() {
         return "TimeSeriesQueue{" + this.front + "}";
+    }
+
+    @Override
+    public Iterator<TimeSeriesNode<ValueType>> iterator() {
+        return new TSNIterator<>(this.front);
     }
 }
