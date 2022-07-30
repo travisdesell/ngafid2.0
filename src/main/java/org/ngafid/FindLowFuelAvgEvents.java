@@ -31,7 +31,7 @@ public class FindLowFuelAvgEvents {
 
     public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         double threshold = FUEL_THRESHOLDS.get(flight.getAirframeTypeId());
-        TimeSeriesQueue<Double> timeSeriesQueue = new TimeSeriesQueue<Double>();
+        TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<Object[]>();
 
         flight.checkCalculationParameters(LOW_FUEL, LOW_FUEL);
 
@@ -42,33 +42,32 @@ public class FindLowFuelAvgEvents {
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
-        timeSeriesQueue.enqueue(0, fuel.get(0));
         String startDateTimeStr = date.get(0) + time.get(0);
+        timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr});
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
             String currentDateTimeStr = date.get(i) + time.get(i);
 
-            timeSeriesQueue.enqueue(TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr), fuel.get(i));
-
+            // TODO: Check if the strings are formatted correctly
+            timeSeriesQueue.enqueue(TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr), new Object[]{fuel.get(i), currentDateTimeStr});
             // TODO: Maybe make it millis?
             timeSeriesQueue.purge(15);
 
             double sum = 0;
 
-            for (TimeSeriesNode<Double> node : timeSeriesQueue) {
-                sum += node.getValue();
+            for (TimeSeriesNode<Object[]> node : timeSeriesQueue) {
+                sum += (double) node.getValue()[0];
             }
 
             double avg = sum / timeSeriesQueue.getSize();
+
 
             if (avg <= threshold) {
                 LOG.info("Low Fuel Average Event Detected");
 
                 // TODO: Pass in correct params when date/time setup
 
-                lowFuelEvents.add(new CustomEvent("", "", 0, 0, 0, flight, CustomEvent.LOW_FUEL))
-
-
+                lowFuelEvents.add(new CustomEvent("", currentDateTimeStr, 0, i, 0, flight, CustomEvent.LOW_FUEL))
             }
         }
 
