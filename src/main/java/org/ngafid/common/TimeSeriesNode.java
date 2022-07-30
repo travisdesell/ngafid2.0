@@ -1,11 +1,11 @@
 package org.ngafid.common;
 
-public class TimeSeriesNode<valueType> {
+public class TimeSeriesNode<ValueType> {
     private final double time;
-    private final valueType value;
-    private TimeSeriesNode<valueType> next;
+    private final ValueType value;
+    private TimeSeriesNode<ValueType> next;
 
-    public TimeSeriesNode(double time, valueType value) {
+    public TimeSeriesNode(double time, ValueType value) {
         this.time = time;
         this.value = value;
     }
@@ -14,15 +14,15 @@ public class TimeSeriesNode<valueType> {
         return time;
     }
 
-    public valueType getValue() {
+    public ValueType getValue() {
         return value;
     }
 
-    public TimeSeriesNode<valueType> getNext() {
+    public TimeSeriesNode<ValueType> getNext() {
         return next;
     }
 
-    public void setNext(TimeSeriesNode<valueType> next) {
+    public void setNext(TimeSeriesNode<ValueType> next) {
         this.next = next;
     }
 }
