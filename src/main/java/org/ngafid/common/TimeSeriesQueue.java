@@ -157,19 +157,19 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
 
         System.out.println("QUEUE TEST: " + queue);
         System.out.println("FRONT/BACK TEST: " );
-        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL:" + queue.getFront());
-        System.out.println("\tEXPECTED: (3.0, 7) ACTUAL:" + queue.getBack());
+        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL: " + queue.getFront());
+        System.out.println("\tEXPECTED: (3.0, 7) ACTUAL: " + queue.getBack());
 
         System.out.println("DEQUEUE TEST: ");
-        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL:" + queue.dequeue());
-        System.out.println("\tEXPECTED: (0.5, 2) ACTUAL:" + queue.dequeue());
-        System.out.println("\tEXPECTED: (1.0, 3) ACTUAL:" + queue.dequeue());
-        System.out.println("\tEXPECTED: (1.5, 4) ACTUAL:" + queue.dequeue());
-        System.out.println("\tEXPECTED: (2.0, 5) ACTUAL:" + queue.dequeue());
+        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL: " + queue.dequeue());
+        System.out.println("\tEXPECTED: (0.5, 2) ACTUAL: " + queue.dequeue());
+        System.out.println("\tEXPECTED: (1.0, 3) ACTUAL: " + queue.dequeue());
+        System.out.println("\tEXPECTED: (1.5, 4) ACTUAL: " + queue.dequeue());
+        System.out.println("\tEXPECTED: (2.0, 5) ACTUAL: " + queue.dequeue());
 
         queue.purge(1.0);
         System.out.println("PURGE TEST: ");
-        System.out.println("EXPECTED: (3.5, 8) ACTUAL: " + queue);
+        System.out.println("\tEXPECTED: (3.5, 8) ACTUAL: " + queue);
 
         queue.clear();
         System.out.println("CLEAR TEST: " + queue);
