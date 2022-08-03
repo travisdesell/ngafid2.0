@@ -10,11 +10,9 @@ import org.ngafid.flights.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.FindSpinEvents.findSpinEvents;
 import static org.ngafid.FindSpinEvents.setFlightProcessed;
 import static org.ngafid.events.CustomEvent.SPIN_START;
 import static org.ngafid.flights.CalculationParameters.*;
