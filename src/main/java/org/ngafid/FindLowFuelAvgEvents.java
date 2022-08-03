@@ -4,10 +4,7 @@ import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.flights.*;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -16,6 +13,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static org.ngafid.FindSpinEvents.findSpinEvents;
 import static org.ngafid.FindSpinEvents.setFlightProcessed;
 import static org.ngafid.events.CustomEvent.SPIN_START;
 import static org.ngafid.flights.CalculationParameters.*;
@@ -29,6 +27,29 @@ public class FindLowFuelAvgEvents {
         FUEL_THRESHOLDS.put(1, 8.25);
         FUEL_THRESHOLDS.put(2, 8.00);
         FUEL_THRESHOLDS.put(3, 17.56);
+    }
+
+    public static void findLowFuelAvgEventsInUpload(Upload upload) {
+        try {
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -2";
+
+            List<Flight> flights = Flight.getFlights(connection, whereClause);
+
+            for (Flight flight : flights) {
+                try {
+                    findLowFuelAvgEvents(flight);
+                } catch (MalformedFlightFileException e) {
+                    System.out.println("Could not process flight " + flight.getId());
+                } catch (ParseException e) {
+                    System.out.println("Error parsing date");
+                    e.printStackTrace();
+                }
+            }
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
     }
 
     public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
@@ -87,6 +108,7 @@ public class FindLowFuelAvgEvents {
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), SPIN_START.getId());
         }
 
+        // Function from Spin Events class
         setFlightProcessed(flight, hadError, lowFuelEvents.size());
     }
 
