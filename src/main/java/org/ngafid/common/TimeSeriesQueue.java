@@ -106,7 +106,7 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
      * @return First Element in Queue
      */
     public TimeSeriesNode<ValueType> getFront() {
-        return front;
+        return new TimeSeriesNode<>(front.getTime(), front.getValue());
     }
 
     /**
@@ -115,7 +115,7 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
      * @return Last Element In Queue
      */
     public TimeSeriesNode<ValueType> getBack() {
-        return back;
+        return new TimeSeriesNode<>(back.getTime(), back.getValue());
     }
 
     /**
@@ -153,6 +153,9 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         queue.enqueue(3.0, 7);
 
         System.out.println("QUEUE TEST: " + queue);
+        System.out.println("FRONT/BACK TEST: " );
+        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL:" + queue.getFront());
+        System.out.println("\tEXPECTED: (3.0, 7) ACTUAL:" + queue.getBack());
 
         System.out.println("DEQUEUE TEST: ");
         System.out.println("\tEXPECTED: (0.0, 1) ACTUAL:" + queue.dequeue());
