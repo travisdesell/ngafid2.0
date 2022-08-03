@@ -151,6 +151,9 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         queue.enqueue(2.0, 5);
         queue.enqueue(2.5, 6);
         queue.enqueue(3.0, 7);
+        queue.enqueue(3.5, 8);
+        queue.enqueue(4.0, 9);
+        queue.enqueue(4.5, 10);
 
         System.out.println("QUEUE TEST: " + queue);
         System.out.println("FRONT/BACK TEST: " );
@@ -163,6 +166,11 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         System.out.println("\tEXPECTED: (1.0, 3) ACTUAL:" + queue.dequeue());
         System.out.println("\tEXPECTED: (1.5, 4) ACTUAL:" + queue.dequeue());
         System.out.println("\tEXPECTED: (2.0, 5) ACTUAL:" + queue.dequeue());
+
+        queue.purge(1.0);
+        System.out.println("PURGE TEST: ");
+        System.out.println("EXPECTED: (3.5, 8) ACTUAL: " + queue);
+
 
 
 
