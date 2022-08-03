@@ -1,5 +1,6 @@
 package org.ngafid;
 
+import org.ngafid.accounts.Fleet;
 import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
@@ -113,6 +114,41 @@ public class FindLowFuelAvgEvents {
     }
 
     public static void main(String[] args) {
+        List<Fleet> fleets = null;
+
+        if (args.length == 1) {
+            try {
+                fleets = List.of(Fleet.get(connection, Integer.parseInt(args[0])));
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        } else {
+            fleets = Fleet.getAllFleets(connection);
+        }
+
+        if (fleets == null) {
+            System.out.println("Fleets is null");
+            System.exit(1);
+        }
+
+        for (Fleet fleet : fleets) {
+            int fleetID = fleet.getId();
+
+            LOG.info("Processing low fuel average events for fleet " + fleetID);
+
+            try {
+                List<Upload> uploads = Upload.getUploads(connection, fleetID);
+
+                for (Upload upload : uploads) {
+                    findLowFuelAvgEventsInUpload(upload);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+
+        LOG.info("Finished processing low fuel average events for all fleets");
+        System.exit(0);
 
     }
 
