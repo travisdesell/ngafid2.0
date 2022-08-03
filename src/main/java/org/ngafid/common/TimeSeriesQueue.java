@@ -171,6 +171,9 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         System.out.println("PURGE TEST: ");
         System.out.println("EXPECTED: (3.5, 8) ACTUAL: " + queue);
 
+        queue.clear();
+        System.out.println("CLEAR TEST: " + queue);
+        System.out.println("IS EMPTY TEST: " + queue.isEmpty());
 
 
 
