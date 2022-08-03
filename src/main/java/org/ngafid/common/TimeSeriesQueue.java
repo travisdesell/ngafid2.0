@@ -2,6 +2,7 @@ package org.ngafid.common;
 
 import com.sun.jdi.Value;
 
+import java.sql.Time;
 import java.util.Iterator;
 
 /**
@@ -64,7 +65,7 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
             this.back = null;
         }
 
-        return popped;
+        return new TimeSeriesNode<>(popped.getTime(), popped.getValue());
     }
 
     /**
@@ -134,5 +135,35 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
     @Override
     public Iterator<TimeSeriesNode<ValueType>> iterator() {
         return new TSNIterator<>(this.front);
+    }
+
+    /**
+     * Testing
+     * @param args
+     */
+    public static void main(String[] args) {
+        TimeSeriesQueue<Integer> queue = new TimeSeriesQueue<>();
+
+        queue.enqueue(0, 1);
+        queue.enqueue(.5, 2);
+        queue.enqueue(1.0, 3);
+        queue.enqueue(1.5, 4);
+        queue.enqueue(2.0, 5);
+        queue.enqueue(2.5, 6);
+        queue.enqueue(3.0, 7);
+
+        System.out.println("QUEUE TEST: " + queue);
+
+        System.out.println("DEQUEUE TEST: ");
+        System.out.println("\tEXPECTED: (0.0, 1) ACTUAL:" + queue.dequeue());
+        System.out.println("\tEXPECTED: (0.5, 2) ACTUAL:" + queue.dequeue());
+        System.out.println("\tEXPECTED: (1.0, 3) ACTUAL:" + queue.dequeue());
+        System.out.println("\tEXPECTED: (1.5, 4) ACTUAL:" + queue.dequeue());
+        System.out.println("\tEXPECTED: (2.0, 5) ACTUAL:" + queue.dequeue());
+
+
+
+
+
     }
 }
