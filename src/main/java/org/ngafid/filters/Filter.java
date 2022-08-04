@@ -390,12 +390,12 @@ public class Filter {
 
 
     /**
-     * Recursively returns a human readable representation of this filter (for display on webpages)
+     * Recursively returns a human-readable representation of this filter (for display on webpages)
      *
-     * @return A string of the human readable version of this filter
+     * @return A string of the human-readable version of this filter
      */
     public String toHumanReadable() {
-        // Catch Proximity event definition JSON, which uses
+        // Catch custom event definition JSON, which uses
         // text instead of type for its value
         if(text != null) {
             return text;
