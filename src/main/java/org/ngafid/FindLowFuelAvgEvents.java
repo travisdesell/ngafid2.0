@@ -30,7 +30,7 @@ public class FindLowFuelAvgEvents {
 
     public static void findLowFuelAvgEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -2";
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -2)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
 

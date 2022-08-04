@@ -174,10 +174,5 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         queue.clear();
         System.out.println("CLEAR TEST: " + queue);
         System.out.println("IS EMPTY TEST: " + queue.isEmpty());
-
-
-
-
-
     }
 }
