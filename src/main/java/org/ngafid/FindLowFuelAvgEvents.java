@@ -90,7 +90,7 @@ public class FindLowFuelAvgEvents {
             index++;
         }
 
-        timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr, 0});
+        timeSeriesQueue.enqueue(0, new Object[]{fuel.get(index), startDateTimeStr, index});
         int queueFuelIndex = 0;
         int queueDateTimeIndex = 1;
         int queueLineIndex = 2;
