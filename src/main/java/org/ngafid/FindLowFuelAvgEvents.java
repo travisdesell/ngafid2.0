@@ -5,6 +5,7 @@ import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
+import org.ngafid.events.Event;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
@@ -70,6 +71,7 @@ public class FindLowFuelAvgEvents {
 
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
+        TimeSeriesQueue<Event> recentEvents = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(TOTAL_FUEL, TOTAL_FUEL);
 
@@ -98,7 +100,11 @@ public class FindLowFuelAvgEvents {
         for (int i = 1; i < flight.getNumberRows(); i++) {
             String currentDateTimeStr = date.get(i) + " " + time.get(i);
 
+            if (currentDateTimeStr.equals(" ")) {
+                continue;
+            }
             // TODO: Check if the strings are formatted correctly
+
             double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr, "yyyy-MM-dd HH:mm:ss");
             Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr, i};
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
@@ -121,10 +127,21 @@ public class FindLowFuelAvgEvents {
                 String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
                 // TODO: Figure out severity value
-                lowFuelEvents.add(new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL));
+                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL);
+                recentEvents.enqueue(currentTimeInSec, lowFuelEvent);
 
-                // TODO: Maybe finish execution early after detecting X amount of Low Fuel Events
                 timeSeriesQueue.purge(.01);
+
+                // Positive it is a low fuel average
+                if (recentEvents.getSize() > 5) {
+                    lowFuelEvents.add(lowFuelEvent);
+                    recentEvents.clear();
+
+                    // Finish going through loop to prevent spamming lowFuelEvents on page
+                    if (lowFuelEvents.size() > 5) {
+                        break;
+                    }
+                }
             }
 
         }
