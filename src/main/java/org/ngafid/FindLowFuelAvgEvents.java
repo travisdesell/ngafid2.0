@@ -8,12 +8,14 @@ import org.ngafid.events.CustomEvent;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.FindSpinEvents.setFlightProcessed;
+import static org.ngafid.events.CustomEvent.LOW_FUEL;
 import static org.ngafid.events.CustomEvent.SPIN_START;
 import static org.ngafid.flights.CalculationParameters.*;
 
@@ -119,10 +121,14 @@ public class FindLowFuelAvgEvents {
 
                 // TODO: Figure out severity value
                 lowFuelEvents.add(new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL));
+
+                // TODO: Maybe finish execution early after detecting X amount of Low Fuel Events
+                timeSeriesQueue.purge(.01);
             }
 
-            System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
         }
+
+        System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
 
         LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
 
@@ -131,8 +137,22 @@ public class FindLowFuelAvgEvents {
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), SPIN_START.getId());
         }
 
-        // Function from Spin Events class
         setFlightProcessed(flight, hadError, lowFuelEvents.size());
+    }
+
+    static void setFlightProcessed(Flight flight, int hadError, int count) throws SQLException {
+        String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
+
+        PreparedStatement stmt = connection.prepareStatement(queryString);
+
+        stmt.setInt(1, flight.getFleetId());
+        stmt.setInt(2, flight.getId());
+        stmt.setInt(3, LOW_FUEL .getId());
+        stmt.setInt(4, count);
+        stmt.setInt(5, hadError);
+
+        stmt.executeUpdate();
+        stmt.close();
     }
 
     public static void main(String[] args) {
