@@ -83,30 +83,27 @@ public class FindLowFuelAvgEvents {
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
 
-        // TODO: Band-aid fix. Will ignore some flights. Need to figure out missing date times
-        if (date.get(0).equals("")) {
-            System.out.println("Ignoring flight " + flight.getId() + ". No date provided.");
-
-            return;
+        int index = 0;
+        String startDateTimeStr = " ";
+        while (startDateTimeStr.equals(" ")) {
+            startDateTimeStr = date.get(index) + " " + time.get(index);
+            index++;
         }
-
-        String startDateTimeStr = date.get(0) + " " + time.get(0);
 
         timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr, 0});
         int queueFuelIndex = 0;
         int queueDateTimeIndex = 1;
         int queueLineIndex = 2;
 
-        for (int i = 1; i < flight.getNumberRows(); i++) {
-            String currentDateTimeStr = date.get(i) + " " + time.get(i);
+        for (; index < flight.getNumberRows(); index++) {
+            String currentDateTimeStr = date.get(index) + " " + time.get(index);
 
             if (currentDateTimeStr.equals(" ")) {
                 continue;
             }
-            // TODO: Check if the strings are formatted correctly
 
             double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr, "yyyy-MM-dd HH:mm:ss");
-            Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr, i};
+            Object[] indexData = new Object[]{fuel.get(index), currentDateTimeStr, index};
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
 
@@ -127,7 +124,7 @@ public class FindLowFuelAvgEvents {
                 String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
                 // TODO: Figure out severity value
-                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL);
+                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, 0, flight, CustomEvent.LOW_FUEL);
                 recentEvents.enqueue(currentTimeInSec, lowFuelEvent);
 
                 timeSeriesQueue.purge(.01);
