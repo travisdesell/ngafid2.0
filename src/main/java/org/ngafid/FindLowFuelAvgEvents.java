@@ -37,6 +37,7 @@ public class FindLowFuelAvgEvents {
             for (Flight flight : flights) {
                 try {
                     findLowFuelAvgEvents(flight);
+                    System.out.println("Processed flight " + flight.getId() + " for low fuel average events.");
                 } catch (MalformedFlightFileException e) {
                     System.out.println("Could not process flight " + flight.getId());
                 } catch (ParseException e) {
@@ -51,9 +52,9 @@ public class FindLowFuelAvgEvents {
         }
     }
 
-    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
+    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException, NullPointerException {
         double threshold = FUEL_THRESHOLDS.get(flight.getAirframeTypeId());
-        TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<Object[]>();
+        TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(LOW_FUEL, LOW_FUEL);
 
