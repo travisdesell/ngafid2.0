@@ -44,6 +44,9 @@ public class FindLowFuelAvgEvents {
                 } catch (ParseException e) {
                     System.out.println("Error parsing date");
                     e.printStackTrace();
+                } catch (SQLException e) { // TODO: Another issue is updating database and getting IntegrityConstraintViolation with duplicate keys
+                    System.out.println("SQL Exception. Database my not have been updated");
+                    e.printStackTrace();
                 }
             }
 
@@ -80,7 +83,8 @@ public class FindLowFuelAvgEvents {
 
         // TODO: Band-aid fix. Will ignore some flights. Need to figure out missing date times
         if (date.get(0).equals("")) {
-            System.out.println("No date");
+            System.out.println("Ignoring flight " + flight.getId() + ". No date provided.");
+
             return;
         }
 
@@ -92,7 +96,6 @@ public class FindLowFuelAvgEvents {
         int queueLineIndex = 2;
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
-            System.out.println("time: " + time.get(0));
             String currentDateTimeStr = date.get(i) + " " + time.get(i);
 
             // TODO: Check if the strings are formatted correctly
@@ -132,7 +135,7 @@ public class FindLowFuelAvgEvents {
 
         for (CustomEvent event : lowFuelEvents) {
             event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), SPIN_START.getId());
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), LOW_FUEL.getId());
         }
 
         setFlightProcessed(flight, hadError, lowFuelEvents.size());
@@ -145,7 +148,7 @@ public class FindLowFuelAvgEvents {
 
         stmt.setInt(1, flight.getFleetId());
         stmt.setInt(2, flight.getId());
-        stmt.setInt(3, LOW_FUEL .getId());
+        stmt.setInt(3, LOW_FUEL.getId());
         stmt.setInt(4, count);
         stmt.setInt(5, hadError);
 
