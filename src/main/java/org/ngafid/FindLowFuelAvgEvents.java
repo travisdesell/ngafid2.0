@@ -107,6 +107,8 @@ public class FindLowFuelAvgEvents {
                 // TODO: Figure out severity value
                 lowFuelEvents.add(new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, i, 0, flight, CustomEvent.LOW_FUEL));
             }
+
+            System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
         }
 
         LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
