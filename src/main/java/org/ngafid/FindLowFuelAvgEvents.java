@@ -60,6 +60,9 @@ public class FindLowFuelAvgEvents {
             return;
         }
 
+
+        System.out.println("Processing flight " + flight.getId());
+
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
 
@@ -71,6 +74,13 @@ public class FindLowFuelAvgEvents {
         DoubleTimeSeries fuel = flight.getDoubleTimeSeries(connection, TOTAL_FUEL);
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
+
+
+        // TODO: Band-aid fix. Will ignore some flights. Need to figure out missing date times
+        if (date.get(0).equals("")) {
+            System.out.println("No date");
+            return;
+        }
 
         String startDateTimeStr = date.get(0) + "T" + time.get(0) + "Z";
         System.out.println("date: " + date.get(0));
