@@ -54,8 +54,10 @@ public class FindLowFuelAvgEvents {
 
     public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         int airframeTypeID = flight.getAirframeTypeId();
-        if (FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
+
+        if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
             System.out.println("Ignoring flight " + flight.getId() + ". No low fuel data for given airframe.");
+
             return;
         }
 
