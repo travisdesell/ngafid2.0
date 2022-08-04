@@ -84,9 +84,7 @@ public class FindLowFuelAvgEvents {
             return;
         }
 
-        String startDateTimeStr = date.get(0) + "T" + time.get(0) + "Z";
-        System.out.println("date: " + date.get(0));
-                System.out.println("time: " + time.get(0));
+        String startDateTimeStr = date.get(0) + " " + time.get(0);
 
         timeSeriesQueue.enqueue(0, new Object[]{fuel.get(0), startDateTimeStr, 0});
         int queueFuelIndex = 0;
