@@ -95,10 +95,10 @@ public class FindLowFuelAvgEvents {
 
         for (int i = 1; i < flight.getNumberRows(); i++) {
             System.out.println("time: " + time.get(0));
-            String currentDateTimeStr = date.get(i) + "T" + time.get(i) + "Z";
+            String currentDateTimeStr = date.get(i) + " " + time.get(i);
 
             // TODO: Check if the strings are formatted correctly
-            double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr);
+            double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr, "yyyy-MM-dd HH:mm:ss");
             Object[] indexData = new Object[]{fuel.get(i), currentDateTimeStr, i};
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
