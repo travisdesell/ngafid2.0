@@ -52,8 +52,14 @@ public class FindLowFuelAvgEvents {
         }
     }
 
-    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException, NullPointerException {
-        double threshold = FUEL_THRESHOLDS.get(flight.getAirframeTypeId());
+    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
+        int airframeTypeID = flight.getAirframeTypeId();
+        if (FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
+            System.out.println("Ignoring flight " + flight.getId() + ". No low fuel data for given airframe.");
+            return;
+        }
+
+        double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(LOW_FUEL, LOW_FUEL);
