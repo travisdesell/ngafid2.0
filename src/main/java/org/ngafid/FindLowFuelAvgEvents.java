@@ -61,7 +61,7 @@ public class FindLowFuelAvgEvents {
         int airframeTypeID = flight.getAirframeTypeId();
 
         if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
-            System.out.println("Ignoring flight " + flight.getId() + ". No low fuel data for given airframe.");
+            System.out.println("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
 
             return;
         }
