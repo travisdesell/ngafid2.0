@@ -1,8 +1,6 @@
 package org.ngafid.common;
 
-import com.sun.jdi.Value;
 
-import java.sql.Time;
 import java.util.Iterator;
 
 /**
@@ -73,6 +71,10 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
      * @param timeDiff
      */
     public void purge(double timeDiff) {
+        if (!(size > 0)) {
+            return;
+        }
+
         double diff = this.back.getTime() - this.front.getTime();;
 
         while (!isEmpty() && diff > timeDiff) {
