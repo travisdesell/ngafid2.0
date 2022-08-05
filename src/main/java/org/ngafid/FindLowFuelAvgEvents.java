@@ -15,9 +15,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.FindSpinEvents.setFlightProcessed;
 import static org.ngafid.events.CustomEvent.LOW_FUEL;
-import static org.ngafid.events.CustomEvent.SPIN_START;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowFuelAvgEvents {
@@ -71,7 +69,7 @@ public class FindLowFuelAvgEvents {
 
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
-        TimeSeriesQueue<Event> recentEvents = new TimeSeriesQueue<>();
+        TimeSeriesQueue<String> recentEvents = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(TOTAL_FUEL, TOTAL_FUEL);
 
@@ -106,6 +104,7 @@ public class FindLowFuelAvgEvents {
             Object[] indexData = new Object[]{fuel.get(index), currentDateTimeStr, index};
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
+            recentEvents.purge(60);
 
             double sum = 0;
 
@@ -120,22 +119,23 @@ public class FindLowFuelAvgEvents {
                 LOG.info("Low Fuel Average Event Detected");
 
                 int startLine = (int) timeSeriesQueue.getFront().getValue()[queueLineIndex];
-                String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
-                String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
                 // TODO: Figure out severity value
-                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, 0, flight, CustomEvent.LOW_FUEL);
-                recentEvents.enqueue(currentTimeInSec, lowFuelEvent);
+                recentEvents.enqueue(currentTimeInSec, currentDateTimeStr);
 
-                timeSeriesQueue.purge(.01);
+                timeSeriesQueue.clear();
 
                 // Positive it is a low fuel average
                 if (recentEvents.getSize() > 5) {
+                    String eventStartDateTimeStr = recentEvents.getFront().getValue();
+                    String eventEndDateTimeStr = recentEvents.getBack().getValue();
+                    CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, 0, flight, CustomEvent.LOW_FUEL);
+
                     lowFuelEvents.add(lowFuelEvent);
                     recentEvents.clear();
 
                     // Finish going through loop to prevent spamming lowFuelEvents on page
-                    if (lowFuelEvents.size() > 5) {
+                    if (lowFuelEvents.size() >= 5) {
                         break;
                     }
                 }
