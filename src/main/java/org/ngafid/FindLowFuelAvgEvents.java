@@ -5,7 +5,6 @@ import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
-import org.ngafid.events.Event;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
@@ -59,17 +58,17 @@ public class FindLowFuelAvgEvents {
         int airframeTypeID = flight.getAirframeTypeId();
 
         if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
-            System.out.println("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
+//            System.out.println("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
 
             return;
         }
 
 
-        System.out.println("Processing flight " + flight.getId());
+//        System.out.println("Processing flight " + flight.getId());
 
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
-        TimeSeriesQueue<String> recentEvents = new TimeSeriesQueue<>();
+//        TimeSeriesQueue<String> recentEvents = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(TOTAL_FUEL, TOTAL_FUEL);
 
@@ -89,9 +88,9 @@ public class FindLowFuelAvgEvents {
         }
 
         timeSeriesQueue.enqueue(0, new Object[]{fuel.get(index), startDateTimeStr, index});
-        int queueFuelIndex = 0;
-        int queueDateTimeIndex = 1;
-        int queueLineIndex = 2;
+        final int queueFuelIndex = 0;
+        final int queueDateTimeIndex = 1;
+        final int queueLineIndex = 2;
 
         for (; index < flight.getNumberRows(); index++) {
             String currentDateTimeStr = date.get(index) + " " + time.get(index);
@@ -102,43 +101,53 @@ public class FindLowFuelAvgEvents {
 
             double currentTimeInSec = TimeUtils.calculateDurationInSeconds(startDateTimeStr, currentDateTimeStr, "yyyy-MM-dd HH:mm:ss");
             Object[] indexData = new Object[]{fuel.get(index), currentDateTimeStr, index};
+
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
-            timeSeriesQueue.purge(15); // TODO: Maybe make it millis?
-            recentEvents.purge(60);
+            timeSeriesQueue.purge(15);
+//            recentEvents.purge(60);
 
             double sum = 0;
+            double lowestFuelRecorded = Double.POSITIVE_INFINITY;
 
             for (TimeSeriesNode<Object[]> node : timeSeriesQueue) {
-                sum += (double) node.getValue()[queueFuelIndex];
+                double fuelValue = (double) node.getValue()[queueFuelIndex];
+
+                sum += fuelValue;
+                lowestFuelRecorded = Math.min(fuelValue, lowestFuelRecorded);
             }
 
             double avg = sum / timeSeriesQueue.getSize();
 
-
             if (avg <= threshold) {
-                LOG.info("Low Fuel Average Event Detected");
+                LOG.info("Low Fuel Average Detected" + timeSeriesQueue);
 
                 int startLine = (int) timeSeriesQueue.getFront().getValue()[queueLineIndex];
 
-                // TODO: Figure out severity value
-                recentEvents.enqueue(currentTimeInSec, currentDateTimeStr);
-
-                timeSeriesQueue.clear();
+//                recentEvents.enqueue(currentTimeInSec, currentDateTimeStr);
 
                 // Positive it is a low fuel average
-                if (recentEvents.getSize() > 5) {
-                    String eventStartDateTimeStr = recentEvents.getFront().getValue();
-                    String eventEndDateTimeStr = recentEvents.getBack().getValue();
-                    CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, 0, flight, CustomEvent.LOW_FUEL);
+//                if (recentEvents.getSize() > 5) {
+                    LOG.info("Low Fuel Average Event Confirmed. Adding to events. Currently at " + lowFuelEvents.size() + " events.");
+//                    LOG.info("Recent Events: " + recentEvents);
+
+//                    String eventStartDateTimeStr = recentEvents.getFront().getValue();
+//                    String eventEndDateTimeStr = recentEvents.getBack().getValue();
+
+                    String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
+                    String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
+
+                    CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, lowestFuelRecorded, flight, CustomEvent.LOW_FUEL);
 
                     lowFuelEvents.add(lowFuelEvent);
-                    recentEvents.clear();
+                    timeSeriesQueue.clear();
+
+//                    recentEvents.clear();
 
                     // Finish going through loop to prevent spamming lowFuelEvents on page
-                    if (lowFuelEvents.size() >= 5) {
+                    if (lowFuelEvents.size() > 4) {
                         break;
                     }
-                }
+//                }
             }
 
         }
