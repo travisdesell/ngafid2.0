@@ -127,7 +127,7 @@ public class FindLowFuelAvgEvents {
 
                 // Positive it is a low fuel average
 //                if (recentEvents.getSize() > 5) {
-                    LOG.info("Low Fuel Average Event Confirmed. Adding to events. Currently at " + lowFuelEvents.size() + " events.");
+                System.out.println(flight.getId() + ": Low Fuel Average Event Confirmed. Adding to events. Currently at " + lowFuelEvents.size() + " events.");
 //                    LOG.info("Recent Events: " + recentEvents);
 
 //                    String eventStartDateTimeStr = recentEvents.getFront().getValue();
@@ -145,17 +145,19 @@ public class FindLowFuelAvgEvents {
 
                     // Finish going through loop to prevent spamming lowFuelEvents on page
                     if (lowFuelEvents.size() > 4) {
+                        System.out.println(flight.getId() + ": Reached greater than 4. Finishing processing");
                         break;
                     }
 //                }
             }
 
         }
+//
+//        System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
+//
+//        LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
 
-        System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
-
-        LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
-
+        System.out.println("Updating database with " +lowFuelEvents.size());
         for (CustomEvent event : lowFuelEvents) {
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), LOW_FUEL.getId());
@@ -196,7 +198,7 @@ public class FindLowFuelAvgEvents {
             System.out.println("Fleets is null");
             System.exit(1);
         }
-
+        int uploadSize = 0;
         for (Fleet fleet : fleets) {
             int fleetID = fleet.getId();
 
@@ -204,6 +206,7 @@ public class FindLowFuelAvgEvents {
 
             try {
                 List<Upload> uploads = Upload.getUploads(connection, fleetID);
+                uploadSize = uploads.size();
 
                 for (Upload upload : uploads) {
                     findLowFuelAvgEventsInUpload(upload);
@@ -214,6 +217,8 @@ public class FindLowFuelAvgEvents {
         }
 
         LOG.info("Finished processing low fuel average events for all fleets");
+        LOG.info("Upload size is " + uploadSize);
+
         System.exit(0);
 
     }
