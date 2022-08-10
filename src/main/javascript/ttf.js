@@ -8,7 +8,9 @@ import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import { paletteAt, paletteGenerator } from "./map_utils.js";
 
+import View from 'ol/View';
 import Overlay from 'ol/Overlay';
+import Coordinate from 'ol/coordinate';
 import {fromLonLat, toLonLat} from 'ol/proj.js';
 import {Group, Vector as VectorLayer} from 'ol/layer.js';
 import {Vector as VectorSource} from 'ol/source.js';
@@ -34,10 +36,13 @@ class RollSlider extends React.Component {
     makeRollSlider(min, max, onChange, getValue) {
         
         return (
-            <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}>
+            <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}
+                  >
                 Minimum Roll Value = {getValue()}&deg;  <br/>
-                {min}&deg; <input  id="rollSlider" type="range" min={min} max={max} value={getValue()} className="slider" id="rollSlider" onInput={(val) => onChange(val)} onChange={console.log('AAAA asdjalskjdklasjldk')}
+                {min}&deg; <input  id="rollSlider" type="range" min={min} max={max} value={getValue()} className="slider" id="rollSlider" onInput={(val) => onChange(val)}
                         style={{margin: 'auto', verticalAlign: 'middle'}}/> {max}&deg;
+                <br/>
+                <div style={{ margin: "auto", width: "83%", backgroundImage: "linear-gradient(90deg, rgb(0, 255, 0), 55%, rgb(255, 255, 0), 66%, rgb(255, 0, 0))", height: "4px" }}></div>
             </div>
         );
     }
@@ -153,7 +158,6 @@ const plotlyConfig = {responsive: true};
 class TTFCard extends React.Component {
     constructor(props) {
         super(props);
-        console.log(airports);
         var date = new Date();
         this.state = {
             // The start of the date range that this.state.data corresponds to.
@@ -265,9 +269,7 @@ class TTFCard extends React.Component {
                 var geometry = f.getGeometry();
                 var coord = geometry.getCoordinates();
                 console.log("selected feature " + f.get('name'));
-                content.innerHTML = '<p>Flight ' + f.get('ttf').flightId + '</p>, <a href="#" class="btn btn-info">Open Flight Page</a>';
-                overlay.setPosition(coordinate);
-                container.style.display = "block";
+                window.open("/protected/flight?flight_id=4228", '_blank').focus();
             } else {
                 container.style.display = 'none';
             }
@@ -435,20 +437,8 @@ class TTFCard extends React.Component {
         ttf.layer = layer;
         map.addLayer(layer);
         layer.setVisible(false);
-
-
-        // Create a layer of the optimalDescentExceedences
-
-        // let odeFeatures = this.rangesToFeatures(points, this.rangeExtraction(ttf.locExceedences));
-        // let optimalDescentExceedencesLayer = new VectorLayer({
-        //     style: this.state.optimalDescentExceedencesStyle,
-        //     source: new VectorSource({ features: odeFeatures }),
-        // });
-
-        // ttf.optimalDescentExceedencesLayer = optimalDescentExceedencesLayer;
-        // map.addLayer(optimalDescentExceedencesLayer);
-        // optimalDescentExceedencesLayer.setVisible(false);
-
+        ttf.enabled = true;
+        return ttf.layer;
     }
 
     getStyle(ttf) {
@@ -470,6 +460,21 @@ class TTFCard extends React.Component {
         })
     }
 
+    updateDisplay() {
+        if (this.state.data != null) {
+            this.plotTTFs();
+            this.plotCharts(this.state.data.ttfs) 
+        }
+    }
+
+    plotTTFs() {
+        for (const ttf of this.state.data.ttfs) {
+            if (this.shouldDisplay(ttf))
+                this.plotTTF(ttf);
+            else
+                this.hideTTF(ttf);
+        }
+    }
     plotTTF(ttf) {
         this.makeTTFLayers(ttf);
 
@@ -496,33 +501,38 @@ class TTFCard extends React.Component {
     // setMaximumRoll will move the roll slider to the maximum roll found in the set of ttfs so that
     // all flights will be displayed
     plotCharts(ttfs, setMaximumRoll = false) {
+        console.log("Plotting charts");
         if (setMaximumRoll) {
             let minRoll = Math.min(...ttfs.map(ttf => ttf.maxRoll));
             this.onRollSliderChanged(minRoll, true);
         }
 
-        console.log(ttfs.length);
-
         let max = Math.max(...ttfs.map(ttf => ttf.AltMSL.length));
-        console.log(max);
+        let ttfIndex = -1;
         let curves = ttfs
             .map(ttf => {
+                ttfIndex += 1;
                 let glideAngle = ttf.selfDefinedGlideAngle;
-                console.log(glideAngle);
                 let alt = ttf.AltAGL;
 
                 // This is what applies the roll filter
                 if (this.shouldDisplay(ttf)) {
                     return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.selfDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
                              alt: { name: ttf.flightId, x: ttf.distanceFromRunway, y: alt, type: 'scatter', mode: 'lines' },
-                             maxGlideAngle: glideAngle };
+                             maxGlideAngle: glideAngle, _ttfIndex: ttfIndex };
                 } else
                     return null;
             })
             .filter(curve => curve != null);
+        let curveMap = {};
+        for (var i = 0; i < curves.length; i++) {
+            curveMap[i] = curves[i]._ttfIndex;
+        }
         let deviationsCurves = curves.map(x => x.deviations);
-
+        
+        let devPlot = document.getElementById('deviations-plot');
         Plotly.newPlot('deviations-plot', deviationsCurves, deviationsPlotlyLayout, this.state.plotlyConfig);
+        console.log(devPlot);
 
         let maxGlideAngles = curves.map(x => x.maxGlideAngle);
         var glideAngleTrace = {
@@ -535,10 +545,37 @@ class TTFCard extends React.Component {
             }
         };
 
-        Plotly.newPlot('glide-angle-hist', [glideAngleTrace], glideAngleHistLayout)
+        Plotly.newPlot('glide-angle-hist', [glideAngleTrace], glideAngleHistLayout);
+        let this_ = this;
+        function onLegendClick(data) {
+            // Disable this single item and re-draw map and charts.
+            ttfs[curveMap[data.curveNumber]].enabled = !ttfs[curveMap[data.curveNumber]].enabled;
+            Plotly.restyle('myDiv', update,[data.curveNumber]);
+            this_.updateDisplay();
+            return true;
+        }
+
+        function onLegendDoubleClick(data) {
+            for (const ttf of ttfs) {
+                ttf.enabled = false;
+            }
+            ttfs[curveMap[data.curveNumber]].enabled = true;
+            this_.updateDisplay();
+            return true;
+        }
+
+        // devPlot.on('plotly_legendclick', onLegendClick);
 
         let altCurves = curves.map(x => x.alt);
         Plotly.newPlot('alt-plot', altCurves, altitudePlotlyLayout, this.state.plotlyConfig);
+
+        let airport = this.state.selectedAirport;
+        let lat = runways[airport][0]['lat1'];
+        let lon = runways[airport][0]['lon1'];
+        let view = map.getView();
+        view.setCenter(fromLonLat([lon, lat]));
+        view.setZoom(12);
+        map.setView(view);
     }
 
     getRunwayValue() {
@@ -556,11 +593,10 @@ class TTFCard extends React.Component {
     }
 
     shouldDisplay(ttf) {
-        let runway = this.state.selectedRunway
-        let should = (this.state.selectedRunway == null || ['Any Runway', ttf.runway].includes(runway))
+        let runway = this.state.selectedRunway;
+        let should = ttf.enabled && (this.state.selectedRunway == null || ['Any Runway', ttf.runway.name].includes(runway))
                 && this.dateWithinRange(this.parseDate(ttf.flightStartDate), this.state.startDateObject, this.state.endDateObject)
                 && ttf.maxRoll >= this.state.minRoll;
-
         return should;
     }
 
@@ -592,6 +628,7 @@ class TTFCard extends React.Component {
     }
 
     onFetchClicked() {
+        this.setDates();
         var startDateString = this.state.startDate;
         var endDateString = this.state.endDate;
         var airport = this.state.selectedAirport;
@@ -604,8 +641,6 @@ class TTFCard extends React.Component {
         };
         var thisTTF = this;
 
-
-
         var startDate = this.parseDate(startDateString);
         var endDate = this.parseDate(endDateString);
 
@@ -616,26 +651,19 @@ class TTFCard extends React.Component {
         var dataStartDate = this.parseDate(this.state.dataStartDate);
         var dataEndDate = this.parseDate(this.state.dataEndDate);
 
-
-
         // This will show TTFs in the specified date range and hide every other TTF.
         // If the TTFs have already been plotted it will use the previous layer.
         function responseFunction(response) {
-            console.log("Executing response function");
             var ttfs = [];
             for (var i = 0; i < response.ttfs.length; i++) {
                 let ttf = response.ttfs[i];
 
-                // if (thisTTF.shouldDisplay(ttf)) {
-                    ttfs.push(ttf);
-                    thisTTF.plotTTF(ttf);
-                // } else {
-                //    thisTTF.hideTTF(ttf);
-                // }
+                ttfs.push(ttf);
+                thisTTF.plotTTF(ttf);
             }
 
-            thisTTF.plotCharts(ttfs, true);
             thisTTF.setState({data: response})
+            thisTTF.plotCharts(ttfs, true);
         }
 
         this.setState({ datesChanged: false })
@@ -647,15 +675,17 @@ class TTFCard extends React.Component {
             this.dateWithinRange(startDate, dataStartDate, dataEndDate) &&
             this.dateWithinRange(endDate,   dataStartDate, dataEndDate) &&
             airport == this.state.dataAirport) {
-            responseFunction(this.state.data);
+            console.log("Used cached data");
+            for (const ttf of this.state.data.ttfs) {
+                ttf.enabled = true;
+            }
+            this.updateDisplay();
         } else {
             // Remove all old layers
             if (this.state.data != null) {
-                console.log("Removing old layers");
                 for (var ttf of this.state.data.ttfs) {
                     map.removeLayer(ttf.layer);
                     // map.removeLayer(ttf.optimalDescentExceedencesLayer);
-                    console.log(ttf.layer);
                 }
             }
             this.setState({disableFetching: true})
@@ -674,7 +704,7 @@ class TTFCard extends React.Component {
                     thisTTF.state.dataStartDate = submissionData.startDate;
                     thisTTF.state.dataEndDate = submissionData.endDate;
 
-                    thisTTF.setState({disableFetching: false})
+                    thisTTF.setState({disableFetching: false, dataEndDate: submissionData.endDate, dataStartDate: submissionData.startDate})
                     responseFunction(response);
                 },
                 error : function(jqXHR, textStatus, errorThrown) {
@@ -697,11 +727,9 @@ class TTFCard extends React.Component {
         var airports = [];
 
         for (let [name, ap] of Object.entries(this.state.data.airports)) {
-            console.log(ap);
             airports.push(ap.iataCode);
         }
 
-        console.log(airports);
         return airports;
     }
 
@@ -747,15 +775,14 @@ class TTFCard extends React.Component {
         } else {
             startDate = "" + this.state.startYear + "-" + this.state.startMonth + "-01";
         }
-        let startDateObject = this.parseDate(this.state.startDate)
-
+        let startDateObject = this.parseDate(startDate)
         let finalDayOfMonth = getDaysInMonth(this.state.endYear, this.state.endMonth)
         if (this.state.endMonth < 10) {
             endDate = "" + this.state.endYear + "-0" + this.state.endMonth + "-" + finalDayOfMonth;
         } else {
             endDate = "" + this.state.endYear + "-" + this.state.endMonth + "-" + finalDayOfMonth;
         }
-        let endDateObject = this.parseDate(this.state.endDate);
+        let endDateObject = this.parseDate(endDate);
 
         this.setState({
             dateChanged: true,
@@ -765,7 +792,6 @@ class TTFCard extends React.Component {
             startDateObject: startDateObject
         });
 
-        console.log(this.state);
     }
 
     onRunwayFilterChanged(runway) {
@@ -774,6 +800,7 @@ class TTFCard extends React.Component {
         }
 
         this.state.selectedRunway = runway;
+        this.forceUpdate();
 
         if (this.state.data != null)
             for (const ttf of this.state.data.ttfs) {
@@ -783,33 +810,24 @@ class TTFCard extends React.Component {
                     this.hideTTF(ttf);
         }
 
-        this.forceUpdate();
     }
 
     onRollSliderChanged(value, override=false) {
-        console.log(value);
         let slider = document.getElementById('rollSlider')
         if (!override) {
             this.setState({minRoll: slider.value});
+            if (this.state.data != null) {
+                this.updateDisplay();
+            }
         } else {
             this.setState({minRoll: value});
         }
-        console.log(slider.value);
-        if (this.state.data != null) {
-            console.log(this.state.data);
-            for (const ttf of this.state.data.ttfs) {
-                if (this.shouldDisplay(ttf))
-                    this.plotTTF(ttf);
-                else
-                    this.hideTTF(ttf);
-            }
-            this.plotCharts(this.state.data.ttfs);
-        }
     }
+
+    
 
     render() {
         let runwaySelect;
-        console.log(this.state);
 
         if (this.state.data == null) {
             runwaySelect = ( <div> </div> );
@@ -827,8 +845,6 @@ class TTFCard extends React.Component {
                 </div>
             );
         }
-        // console.log(this.state);
-        console.log(runways);
         let runwayList = runways[this.state.selectedAirport].map(runway => runway.name);
         let rollSlider =
             <RollSlider
