@@ -3,7 +3,6 @@ package org.ngafid.events;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -160,6 +159,31 @@ public class EventDefinition {
 
         eventName = "name = '" + eventName + "'";
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            System.out.println(preparedStatement.toString());
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                eventDef = new EventDefinition(resultSet);
+            }
+
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return eventDef;
+    }
+
+    public static EventDefinition getEventDefinition(Connection connection, int eventID) {
+        EventDefinition eventDef = null;
+
+        String eventIDStr = "id = '" + eventID + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventIDStr;
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);

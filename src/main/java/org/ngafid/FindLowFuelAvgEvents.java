@@ -5,6 +5,7 @@ import org.ngafid.common.TimeSeriesNode;
 import org.ngafid.common.TimeSeriesQueue;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
@@ -14,7 +15,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.events.CustomEvent.LOW_FUEL;
+import static org.ngafid.events.CustomEvent.getLowFuelDefinition;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowFuelAvgEvents {
@@ -42,8 +43,7 @@ public class FindLowFuelAvgEvents {
                 } catch (ParseException e) {
                     LOG.info("Error parsing date");
                     e.printStackTrace();
-                } catch (
-                        SQLException e) { // TODO: Another issue is updating database and getting IntegrityConstraintViolation with duplicate keys
+                } catch (SQLException e) {
                     LOG.info("SQL Exception. Database my not have been updated");
                     e.printStackTrace();
                 }
@@ -63,6 +63,8 @@ public class FindLowFuelAvgEvents {
 
             return;
         }
+
+        EventDefinition eventDef = getLowFuelDefinition(flight.getAirframeNameId());
 
         LOG.info("Processing flight " + flight.getId());
 
@@ -125,7 +127,7 @@ public class FindLowFuelAvgEvents {
                 String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
                 String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
-                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, lowestFuelRecorded, flight, CustomEvent.LOW_FUEL);
+                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, lowestFuelRecorded, flight, eventDef);
 
                 lowFuelEvents.add(lowFuelEvent);
                 timeSeriesQueue.clear();
@@ -144,7 +146,7 @@ public class FindLowFuelAvgEvents {
 
         for (CustomEvent event : lowFuelEvents) {
             event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), LOW_FUEL.getId());
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
         }
 
         setFlightProcessed(flight, hadError, lowFuelEvents.size());
@@ -157,7 +159,7 @@ public class FindLowFuelAvgEvents {
 
         stmt.setInt(1, flight.getFleetId());
         stmt.setInt(2, flight.getId());
-        stmt.setInt(3, LOW_FUEL.getId());
+        stmt.setInt(3, getLowFuelDefinition(flight.getAirframeNameId()).getId());
         stmt.setInt(4, count);
         stmt.setInt(5, hadError);
 

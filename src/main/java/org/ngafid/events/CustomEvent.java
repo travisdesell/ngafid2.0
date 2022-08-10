@@ -18,8 +18,6 @@ public class CustomEvent extends Event {
     private Flight flight;
 
     public static final EventDefinition SPIN_START = EventDefinition.getEventDefinition(connection, "Spin Start");
-    public static final EventDefinition LOW_FUEL = EventDefinition.getEventDefinition(connection, "Low Average Fuel");
-
 
     public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight, EventDefinition customEventDefinition) {
         super(startTime, endTime, startLine, endLine, severity);
@@ -30,5 +28,9 @@ public class CustomEvent extends Event {
 
     public void updateDatabase(Connection connection) {
         super.updateDatabase(connection, flight.getFleetId(), flight.getId(), customEventDefinition.getId());
+    }
+
+    public static EventDefinition getLowFuelDefinition(int airframeID) {
+        return EventDefinition.getEventDefinition(connection, -10 - airframeID);
     }
 }
