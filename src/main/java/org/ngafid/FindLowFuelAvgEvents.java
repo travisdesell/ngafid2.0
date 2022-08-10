@@ -64,7 +64,6 @@ public class FindLowFuelAvgEvents {
             return;
         }
 
-
         LOG.info("Processing flight " + flight.getId());
 
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
@@ -134,7 +133,7 @@ public class FindLowFuelAvgEvents {
 
                 // Finish going through loop to prevent spamming lowFuelEvents on page
                 if (lowFuelEvents.size() >= 5) {
-                    LOG.info(flight.getId() + ": Reached greater than 4. Finishing processing");
+                    LOG.info(flight.getId() + ": Reached 5 or more low fuel events. Ending processing.");
                     break;
                 }
             }
