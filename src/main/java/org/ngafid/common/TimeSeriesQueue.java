@@ -66,6 +66,16 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
         return new TimeSeriesNode<>(popped.getTime(), popped.getValue());
     }
 
+
+    /**
+     * Gets the time difference from the start and end of the queue
+     *
+     * @return Time Difference of Queue
+     */
+    public double getTimeDiff() {
+        return this.back.getTime() - this.front.getTime();
+    }
+
     /**
      * Removes elements in the queue based on time difference of the latest element
      * @param timeDiff
@@ -75,7 +85,7 @@ public class TimeSeriesQueue<ValueType> implements Iterable<TimeSeriesNode<Value
             return;
         }
 
-        double diff = this.back.getTime() - this.front.getTime();;
+        double diff = this.getTimeDiff();
 
         while (!isEmpty() && diff > timeDiff) {
             this.dequeue();

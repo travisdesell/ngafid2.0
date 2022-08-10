@@ -40,10 +40,11 @@ public class FindLowFuelAvgEvents {
                 } catch (MalformedFlightFileException e) {
                     System.out.println("Could not process flight " + flight.getId());
                 } catch (ParseException e) {
-                    System.out.println("Error parsing date");
+                    LOG.info("Error parsing date");
                     e.printStackTrace();
-                } catch (SQLException e) { // TODO: Another issue is updating database and getting IntegrityConstraintViolation with duplicate keys
-                    System.out.println("SQL Exception. Database my not have been updated");
+                } catch (
+                        SQLException e) { // TODO: Another issue is updating database and getting IntegrityConstraintViolation with duplicate keys
+                    LOG.info("SQL Exception. Database my not have been updated");
                     e.printStackTrace();
                 }
             }
@@ -58,17 +59,16 @@ public class FindLowFuelAvgEvents {
         int airframeTypeID = flight.getAirframeTypeId();
 
         if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
-//            System.out.println("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
+            LOG.info("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
 
             return;
         }
 
 
-//        System.out.println("Processing flight " + flight.getId());
+        LOG.info("Processing flight " + flight.getId());
 
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
-//        TimeSeriesQueue<String> recentEvents = new TimeSeriesQueue<>();
 
         flight.checkCalculationParameters(TOTAL_FUEL, TOTAL_FUEL);
 
@@ -104,7 +104,6 @@ public class FindLowFuelAvgEvents {
 
             timeSeriesQueue.enqueue(currentTimeInSec, indexData);
             timeSeriesQueue.purge(15);
-//            recentEvents.purge(60);
 
             double sum = 0;
             double lowestFuelRecorded = Double.POSITIVE_INFINITY;
@@ -118,46 +117,32 @@ public class FindLowFuelAvgEvents {
 
             double avg = sum / timeSeriesQueue.getSize();
 
-            if (avg <= threshold) {
-                LOG.info("Low Fuel Average Detected" + timeSeriesQueue);
+            // Check if average is below threshold and average is based on at least 10 seconds
+            if (avg <= threshold && timeSeriesQueue.getTimeDiff() >= 10) {
+                LOG.info("Low Fuel Average Detected: " + timeSeriesQueue);
 
                 int startLine = (int) timeSeriesQueue.getFront().getValue()[queueLineIndex];
 
-//                recentEvents.enqueue(currentTimeInSec, currentDateTimeStr);
+                String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
+                String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
-                // Positive it is a low fuel average
-//                if (recentEvents.getSize() > 5) {
-                System.out.println(flight.getId() + ": Low Fuel Average Event Confirmed. Adding to events. Currently at " + lowFuelEvents.size() + " events.");
-//                    LOG.info("Recent Events: " + recentEvents);
+                CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, lowestFuelRecorded, flight, CustomEvent.LOW_FUEL);
 
-//                    String eventStartDateTimeStr = recentEvents.getFront().getValue();
-//                    String eventEndDateTimeStr = recentEvents.getBack().getValue();
+                lowFuelEvents.add(lowFuelEvent);
+                timeSeriesQueue.clear();
 
-                    String eventStartDateTimeStr = (String) timeSeriesQueue.getFront().getValue()[queueDateTimeIndex];
-                    String eventEndDateTimeStr = (String) timeSeriesQueue.getBack().getValue()[queueDateTimeIndex];
 
-                    CustomEvent lowFuelEvent = new CustomEvent(eventStartDateTimeStr, eventEndDateTimeStr, startLine, index, lowestFuelRecorded, flight, CustomEvent.LOW_FUEL);
-
-                    lowFuelEvents.add(lowFuelEvent);
-                    timeSeriesQueue.clear();
-
-//                    recentEvents.clear();
-
-                    // Finish going through loop to prevent spamming lowFuelEvents on page
-                    if (lowFuelEvents.size() > 4) {
-                        System.out.println(flight.getId() + ": Reached greater than 4. Finishing processing");
-                        break;
-                    }
-//                }
+                // Finish going through loop to prevent spamming lowFuelEvents on page
+                if (lowFuelEvents.size() >= 5) {
+                    LOG.info(flight.getId() + ": Reached greater than 4. Finishing processing");
+                    break;
+                }
             }
 
         }
-//
-//        System.out.println("Successfully processed flight " + flight.getId() + " for low fuel average events.");
-//
-//        LOG.info("Updating database with Low Average Fuel events: " + lowFuelEvents.size());
 
-        System.out.println("Updating database with " +lowFuelEvents.size());
+        LOG.info("Successfully processed flight " + flight.getId() + " with " + lowFuelEvents.size() + " events.");
+
         for (CustomEvent event : lowFuelEvents) {
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), LOW_FUEL.getId());
@@ -195,7 +180,7 @@ public class FindLowFuelAvgEvents {
         }
 
         if (fleets == null) {
-            System.out.println("Fleets is null");
+            LOG.info("Fleets is null");
             System.exit(1);
         }
         int uploadSize = 0;
