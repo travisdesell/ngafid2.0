@@ -139,11 +139,13 @@ public class EventDefinition {
             this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
-            try {
+          try {
+            if (id <= -1) {
                 this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
             } catch (NullPointerException e) {
                 this.filter = null;
             }
+          }
 
             this.columnNames = new TreeSet<String>();
             this.severityColumnNames = new TreeSet<String>();
@@ -692,6 +694,7 @@ public class EventDefinition {
     public String toHumanReadable() {
         if (this.id < 0) {
             String humanReadableStr = filter.toHumanReadable();
+            
             return (humanReadableStr.matches("^[AEIOU].*") ? "An " : "A ") + humanReadableStr;
         }
 

@@ -28,16 +28,17 @@ public class FindSpinEvents {
 
     public static void findSpinEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -2)"; //change this to include spin ends eventually
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id IN (-2, -3))";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
 
             for (Flight flight : flights) {
                 try {
+                    calculateVSPDDerived(flight);
                     findSpinEvents(flight, 250);
                 } catch (MalformedFlightFileException mffe) {
-                    System.out.println("Can't process flight " + flight.getId());
+                    LOG.severe("Can't process flight " + flight.getId());
                 }
             }
         } catch (Exception e)  {
@@ -46,27 +47,47 @@ public class FindSpinEvents {
         } 
     }
 
-    public static void findSpinEvents(Flight flight, double altAglLimit) throws MalformedFlightFileException, SQLException, IOException {
+    public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
         flight.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
 
-        List<CustomEvent> spinStarts = new ArrayList<>();
+        List<CustomEvent> lowAltitudeSpins = new ArrayList<>();
+        List<CustomEvent> highAltitudeSpins = new ArrayList<>();
 
         int hadError = 0;
 
-        DoubleTimeSeries ias = flight.getDoubleTimeSeries(connection, IAS);
-        DoubleTimeSeries dVSI = flight.getDoubleTimeSeries(connection, VSPD_CALCULATED);
-        DoubleTimeSeries normAc = flight.getDoubleTimeSeries(connection, NORM_AC);
-        DoubleTimeSeries altAGL = flight.getDoubleTimeSeries(connection, ALT_AGL);
+        final int STOP_DELAY = 1;
+        final double ALT_CONSTRAINT = 4000.d;
+        final double AC_NORMAL = 0.1d;
+
+        DoubleTimeSeries ias = flight.getDoubleTimeSeries(IAS);
+        DoubleTimeSeries dVSI = flight.getDoubleTimeSeries(VSPD_CALCULATED);
+        DoubleTimeSeries normAc = flight.getDoubleTimeSeries(NORM_AC);
+        DoubleTimeSeries latAc = flight.getDoubleTimeSeries(LAT_AC);
+        DoubleTimeSeries altAGL = flight.getDoubleTimeSeries(ALT_AGL);
 
         StringTimeSeries dateSeries = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries timeSeries = flight.getStringTimeSeries(connection, LCL_TIME);
 
+        // Manually check the String Time Series
+        if (dateSeries == null) {
+            String errMsg = "Cannot calculate '" + "Spin Events" + "' as parameter '" + "LCL Date" + "' was missing.";
+            LOG.severe("WARNING: " + errMsg);
+
+            throw new MalformedFlightFileException(errMsg);
+        } else if (timeSeries == null) {
+            String errMsg = "Cannot calculate '" + "Spin Events" + "' as parameter '" + "LCL Time" + "' was missing.";
+            LOG.severe("WARNING: " + errMsg);
+
+            throw new MalformedFlightFileException(errMsg);
+        }
+
         boolean airspeedIsLow = false;
         boolean spinStartFound = false;
+        boolean altCstrViolated = false;
 
         double maxNormAc = 0.d;
 
-        int lowAirspeedIndex = -1, maxNormAcIndex = -1;
+        int lowAirspeedIndex = -1, maxNormAcIndex = -1, endSpinSeconds = 0;
 
         CustomEvent currentEvent = null;
 
@@ -76,6 +97,7 @@ public class FindSpinEvents {
             double instVSI = dVSI.get(i);
             double instAlt = altAGL.get(i);
             double normAcRel = Math.abs(normAc.get(i));
+            double latAcRel = Math.abs(latAc.get(i));
 
             if (instAlt > altAglLimit) {
                 if (!airspeedIsLow && instIAS < 50) {
@@ -84,6 +106,7 @@ public class FindSpinEvents {
                 }
 
                 if (airspeedIsLow) {
+                    int lowAirspeedIndexDiff = i - lowAirspeedIndex;
 
                     // check for severity
                     if (normAcRel > maxNormAc) {
@@ -91,58 +114,110 @@ public class FindSpinEvents {
                         maxNormAcIndex = i;
                     }
 
-                    if (i - lowAirspeedIndex <= 3 && instVSI <= -3500) {
-                        System.out.println("Spin start found!");
+                    if (instAlt < ALT_CONSTRAINT) {
+                        altCstrViolated = true;
+                    }
+
+                    if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
+                        LOG.info("Spin start found!");
+
                         if (!spinStartFound) {
                             String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-
-                            currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight, CustomEvent.SPIN_START);
-                            spinStarts.add(currentEvent);
+                            
+                            currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
                         } 
+                    } 
 
-                    } else {
-                        if (spinStartFound) {
+
+                    if (spinStartFound && (lowAirspeedIndexDiff > 3 && lowAirspeedIndexDiff <= 30)) {
+                        //System.out.println("Looking for end of spin");
+
+                        if (instIAS > 50 && normAcRel < AC_NORMAL && latAcRel < AC_NORMAL) {
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
                             currentEvent.updateEnd(endTime, i);
+
+                            ++endSpinSeconds;
+                        }
+                    }
+
+                    if (!spinStartFound && lowAirspeedIndexDiff >= 4) {
+                        currentEvent = null;
+                    }
+
+                    if (endSpinSeconds >= 1 || currentEvent == null) {
+                        if (currentEvent != null) {
+                            if (altCstrViolated) {
+                                currentEvent.setDefinition(LOW_ALTITUDE_SPIN);
+                                lowAltitudeSpins.add(currentEvent);
+                            } else {
+                                currentEvent.setDefinition(HIGH_ALTITUDE_SPIN);
+                                highAltitudeSpins.add(currentEvent);
+                            }
                         }
 
                         spinStartFound = false;
                         airspeedIsLow = false;
+                        altCstrViolated = false;
 
                         lowAirspeedIndex = -1;
                         maxNormAcIndex = -1;
-
+                        endSpinSeconds = 0;
                         maxNormAc = 0.d;
                     }
                 }
             }
         }
+        
+        LOG.info("Updating database with Spin Events.");
 
-        LOG.info("Updating database with Spin Events." + spinStarts.size());
-        for (CustomEvent event : spinStarts) {
+        for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), SPIN_START.getId());
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
         }
 
-        setFlightProcessed(flight, hadError, spinStarts.size());
+        for (CustomEvent event : highAltitudeSpins) {
+            event.updateDatabase(connection);
+            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
+        }
+
+        setFlightProcessed(flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
+        setFlightProcessed(flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
     }
 
-    static void setFlightProcessed(Flight flight, int hadError, int count) throws SQLException {
+    /**
+     * Calculates the derived vertical speed if it has not already been calculateds and caches it in the db.
+     *
+     * @param flight the Flight to calculate dVSI for
+     */
+    static void calculateVSPDDerived(Flight flight) throws IOException, SQLException, MalformedFlightFileException {
+        int flightId = flight.getId();
+        DoubleTimeSeries dts = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, VSPD_CALCULATED);
+
+        if (dts == null) {
+            flight.checkCalculationParameters(VSPD_CALCULATED, ALT_B);
+            CalculatedDoubleTimeSeries dVSI = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, flight);
+            dVSI.create(new VSPDRegression(connection, flight));
+            dVSI.updateDatabase(connection, flightId);
+        }
+    }
+
+    static void setFlightProcessed(Flight flight, int eventDefinitonId, int hadError, int count) throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
-        PreparedStatement stmt = connection.prepareStatement(queryString);
+        PreparedStatement query = connection.prepareStatement(queryString);
 
-        stmt.setInt(1, flight.getFleetId());
-        stmt.setInt(2, flight.getId());
-        stmt.setInt(3, SPIN_START.getId());
-        stmt.setInt(4, count);
-        stmt.setInt(5, hadError);
+        query.setInt(1, flight.getFleetId());
+        query.setInt(2, flight.getId());
+        query.setInt(3, eventDefinitonId);
+        query.setInt(4, count);
+        query.setInt(5, hadError);
 
-        stmt.executeUpdate();
-        stmt.close();
+        query.executeUpdate();
+        query.close();
+
     }
 
     /**
@@ -160,6 +235,9 @@ public class FindSpinEvents {
             }
         } else {
             fleets = Fleet.getAllFleets(connection);
+
+            //Print to the console in yellow...
+            System.err.println("\u001B[33mCAUTION: PROCESSING SPIN EVENTS FOR ALL FLEETS: THIS MAY TAKE SOME TIME... \u001B[0m");
         }
 
         for (Fleet fleet : fleets) {
