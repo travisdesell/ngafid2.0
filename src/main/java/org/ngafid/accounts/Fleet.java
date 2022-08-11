@@ -7,6 +7,7 @@ import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 
@@ -148,6 +149,33 @@ public class Fleet {
         fleet.name = name;
 
         return fleet;
+    }
+
+    /**
+     * Gets all the fleets in this database
+     *
+     * @param connection the database connection
+     *
+     * @return a {@link List} of all the Fleets
+     */
+    public static List<Fleet> getAllFleets(Connection connection) {
+        String queryString = "SELECT id FROM fleet";
+
+        List<Fleet> fleets = new ArrayList<>();
+        
+        try {
+            PreparedStatement ps = connection.prepareStatement(queryString);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                fleets.add(get(connection, rs.getInt(1)));
+            }
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return fleets;
     }
 
     /**
