@@ -1,7 +1,6 @@
 package org.ngafid.events;
 
 import org.ngafid.*;
-import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.Flight;
 
 import java.sql.Connection;
@@ -37,7 +36,7 @@ public class CustomEvent extends Event {
     }
     
     public static EventDefinition getLowFuelDefinition(int airframeID) {
-        return EventDefinition.getEventDefinition(connection, -10 - airframeID);
+        return EventDefinition.getEventDefinition(connection, "Low Average Fuel", airframeID);
     }
 
     public EventDefinition getDefinition() {

@@ -156,29 +156,36 @@ public class EventDefinition {
         initializeSeverity();
     }
 
+    /**
+     * Get an event definition by specifying the event name
+     *
+     * @param connection is the DB session
+     * @param eventName is the event name being retrieved
+     * @return Event Definition matching the name passed in
+     */
     public static EventDefinition getEventDefinition(Connection connection, String eventName) {
-        EventDefinition eventDef = null;
-
         eventName = "name = '" + eventName + "'";
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
 
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            System.out.println(preparedStatement.toString());
+        return getEventDefinitionFromDB(connection, query);
+    }
 
-            ResultSet resultSet = preparedStatement.executeQuery();
+    /**
+     * Get an event definition by specifying the name and airframe ID it is for
+     * Useful for events that vary based on airframe ID
+     *
+     * @param connection is the DB session
+     * @param eventName is the event name being retrieved
+     * @param airframeID is the airframe ID that goes with the event
+     * @return Event Definition matching name and ID passed in
+     */
+    public static EventDefinition getEventDefinition(Connection connection, String eventName, int airframeID) {
+        String airframeIDStr = " aiframe_id = " + airframeID;
 
-            if (resultSet.next()) {
-                eventDef = new EventDefinition(resultSet);
-            }
+        eventName = "name = '" + eventName + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + airframeIDStr;
 
-            preparedStatement.close();
-            resultSet.close();
-        } catch (SQLException se) {
-            se.printStackTrace();
-        }
-
-        return eventDef;
+        return getEventDefinitionFromDB(connection, query);
     }
 
     public static EventDefinition getEventDefinition(Connection connection, int eventID) {
@@ -186,6 +193,19 @@ public class EventDefinition {
 
         String eventIDStr = "id = '" + eventID + "'";
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventIDStr;
+
+        return getEventDefinitionFromDB(connection, query);
+    }
+
+    /**
+     * Helper method for retrieving the EventDefinition from server
+     *
+     * @param connection is the DB session
+     * @param query is the query to execute to the DB
+     * @return Event Definition result from DB
+     */
+    private static EventDefinition getEventDefinitionFromDB(Connection connection, String query) {
+        EventDefinition eventDef = null;
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
