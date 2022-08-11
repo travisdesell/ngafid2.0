@@ -3321,25 +3321,8 @@ public class Flight {
                 int flightId = resultSet.getInt(1);
                 this.id = flightId;
 
-                for (String key : doubleTimeSeries.keySet()) {
+               for (String key : doubleTimeSeries.keySet()) {
                     System.out.println("double time series key: '" + key);
-
-                    try {
-                        System.out.println("\tis " + doubleTimeSeries.get(key).toString());
-                    } catch (NullPointerException ne) {
-                        System.out.println("NPEX:  " + key);
-                        System.out.println(doubleTimeSeries.toString());
-                        System.out.println(doubleTimeSeries.get(key));
-                        ne.printStackTrace();
-                    }
-                }
-
-                for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    if (series != null) {
-                        System.out.println(series);
-                        series.updateDatabase(connection, flightId);
-                    }
-
                     System.out.println("\tis " + doubleTimeSeries.get(key).toString());
                 }
 
