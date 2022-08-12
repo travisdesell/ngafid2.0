@@ -180,10 +180,10 @@ public class EventDefinition {
      * @return Event Definition matching name and ID passed in
      */
     public static EventDefinition getEventDefinition(Connection connection, String eventName, int airframeID) {
-        String airframeIDStr = " aiframe_id = " + airframeID;
+        String airframeIDStr = "airframe_id = " + airframeID;
 
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + airframeIDStr;
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
 
         return getEventDefinitionFromDB(connection, query);
     }
