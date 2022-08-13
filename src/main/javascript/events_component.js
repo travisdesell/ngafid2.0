@@ -15,9 +15,11 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 // populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
-const LOWEST_EVENT_ID = -7
+const LOWEST_EVENT_ID = -7;
+const HIGHEST_EVENT_ID = 70;
 const ABS_EVENT_ID = Math.abs(LOWEST_EVENT_ID);
-for (let d = LOWEST_EVENT_ID; d < 70; d++) {
+
+for (let d = LOWEST_EVENT_ID; d < HIGHEST_EVENT_ID; d++) {
     // iterate through RGB permutations (up to 64)
     let green = (d + ABS_EVENT_ID) % 4;
     let blue = Math.trunc((d + ABS_EVENT_ID) / 4) % 4;
