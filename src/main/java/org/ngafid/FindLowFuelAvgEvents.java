@@ -71,7 +71,7 @@ public class FindLowFuelAvgEvents {
         double threshold = FUEL_THRESHOLDS.get(airframeTypeID);
         TimeSeriesQueue<Object[]> timeSeriesQueue = new TimeSeriesQueue<>();
 
-        flight.checkCalculationParameters(TOTAL_FUEL, TOTAL_FUEL);
+        flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
 
         List<CustomEvent> lowFuelEvents = new ArrayList<>();
         int hadError = 0;

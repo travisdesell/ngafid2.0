@@ -80,6 +80,9 @@ public interface CalculationParameters {
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
     public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
 
+    // Used to determine average fuel
+    public static final String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
+
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
