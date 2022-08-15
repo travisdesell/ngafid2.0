@@ -55,7 +55,7 @@ public interface CalculationParameters {
     public static final String GND_SPD = "GndSpd";
     public static final String WIND_SPEED = "WndSpd";
     public static final String WIND_DIRECTION = "WndDr";
-    public static final String TOTAL_FUEL = "TOTAL FUEL";
+    public static final String TOTAL_FUEL = "Total Fuel";
     public static final String LCL_DATE = "Lcl Date";
     public static final String LCL_TIME = "Lcl Time";
 
