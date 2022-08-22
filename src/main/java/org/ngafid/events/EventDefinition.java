@@ -140,7 +140,7 @@ public class EventDefinition {
             this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
-            if (id == -1) {
+            if (id <= -1) {
                 this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
             } else {
                 this.filter = null;
@@ -153,6 +153,31 @@ public class EventDefinition {
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
+    }
+
+    public static EventDefinition getEventDefinition(Connection connection, String eventName) {
+        EventDefinition eventDef = null;
+
+        eventName = "name = '" + eventName + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+
+        try {
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            System.out.println(preparedStatement.toString());
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+
+            if (resultSet.next()) {
+                eventDef = new EventDefinition(resultSet);
+            }
+
+            preparedStatement.close();
+            resultSet.close();
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return eventDef;
     }
 
     /**
@@ -642,7 +667,7 @@ public class EventDefinition {
      */
     public String toHumanReadable() {
         if (this.id < 0) {
-            return ((filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + filter.toHumanReadable();
+            return ((this.filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + this.filter.toHumanReadable();
         }
 
         String text = (name.matches("^[AEIOU].*") ? "An " : "A ");

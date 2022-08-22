@@ -23,10 +23,10 @@ import { selectAircraftModal } from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
+import {cesiumFlightsSelected, updateCesiumButtonState} from "./cesium_buttons";
 
 var moment = require('moment');
 
-const cesiumFlightsSelected = [];
 
 class Flight extends React.Component {
     constructor(props) {
@@ -62,7 +62,8 @@ class Flight extends React.Component {
             eventLayer : null,
             itineraryLayer : null,
             eventOutlines : [],
-            eventOutlineLayer : null
+            eventOutlineLayer : null,
+            replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -478,17 +479,13 @@ class Flight extends React.Component {
             cesiumFlightsSelected.splice(flightStoreIndex, 1);
         }
 
+        updateCesiumButtonState();
+
         console.log(cesiumFlightsSelected);
     }
 
     replayClicked() {
-        let URL = "/protected/ngafid_cesium?flight_id=";
-        console.log(this.props.flightInfo.id);
-        if (cesiumFlightsSelected.length > 0 ){
-            URL += cesiumFlightsSelected.join("&flight_id=");
-        } else {
-            URL += (this.props.flightInfo.id).toString();
-        }
+        let URL = "/protected/ngafid_cesium?flight_id=" + (this.props.flightInfo.id).toString();
 
         window.open(URL);
     }
@@ -1132,7 +1129,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 

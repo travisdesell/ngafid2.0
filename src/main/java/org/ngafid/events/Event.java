@@ -166,6 +166,17 @@ public class Event {
         return (endLine - startLine) + 1;
     }
 
+    public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId) throws SQLException {
+        if (this.getStartTime() != null) {
+            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId, this.getStartTime(), this.getSeverity(), this.getDuration());
+        } else if (this.getEndTime() != null) {
+            EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId, this.getEndTime(), this.getSeverity(), this.getDuration());
+        } else {
+            System.out.println("WARNING: could not update event statistics for event: " + this);
+            System.out.println("WARNING: event start and end time were both null.");
+        }
+    }
+
     public void updateDatabase(Connection connection, int fleetId, int flightId, int eventDefinitionId) {
         this.flightId = flightId;
         this.eventDefinitionId = eventDefinitionId;
