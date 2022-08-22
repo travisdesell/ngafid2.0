@@ -49,11 +49,11 @@ LOCK TABLES `event_definitions` WRITE;
 /*!40000 ALTER TABLE `event_definitions`
     DISABLE KEYS */;
 INSERT INTO `event_definitions`
-VALUES (-6, 0, 3, 'Low Average Fuel', 1, 30, '[\"Low Fuel\"]',
-        '{\"text\" : \"Average fuel the past 15 seconds was less than 17.56\"}', '[\"Low Fuel\"]', 'min', 'null'),
-       (-5, 0, 2, 'Low Average Fuel', 1, 30, '[\"Low Fuel\"]',
-        '{\"text\" : \"Average fuel the past 15 seconds was less than 8.00\"}', '[\"Low Fuel\"]', 'min', 'null'),
-       (-4, 0, 1, 'Low Average Fuel', 1, 30, '[\"Low Fuel\"]',
+VALUES (-6, 0, 3, 'Low Ending Fuel', 1, 30, '[\"Low Fuel\"]',
+        '{\"text\" : \"Ending fuel the past 15 seconds was less than 17.56\"}', '[\"Low Fuel\"]', 'min', 'null'),
+       (-5, 0, 2, 'Low Ending Fuel', 1, 30, '[\"Low Fuel\"]',
+        '{\"text\" : \"Ending fuel the past 15 seconds was less than 8.00\"}', '[\"Low Fuel\"]', 'min', 'null'),
+       (-4, 0, 1, 'Low Ending Fuel', 1, 30, '[\"Low Fuel\"]',
         '{\"text\" : \"Average fuel the past 15 seconds was less than 8.25\"}', '[\"Low Fuel\"]', 'min', 'null'),
        (-3, 0, 0, 'High Altitude Spin', 1, 30, '[\"NormAc\", \"AltAGL\", \"VSpd\", \"IAS\"]',
         '{\"text\" : \"Spin at or above 4,000\' AGL\"}', '[\"NormAc\"]', 'min', NULL),
