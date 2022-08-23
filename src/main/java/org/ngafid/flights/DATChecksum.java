@@ -1,6 +1,11 @@
 package org.ngafid.flights;
 
-public class DATConverter {
+/**
+ * Handles checksums for DJI Binary Data
+ *
+ * @author Aaron Chan
+ */
+public class DATChecksum {
 
     // TODO: Figure out meaning of 2A103
     static final short[] arr2A103 = new short[]{0x00, 0x5E, 0xBC, 0xE2, 0x61, 0x3F,
@@ -28,7 +33,7 @@ public class DATConverter {
             0x14, 0xF6, 0xA8, 0x74, 0x2A, 0xC8, 0x96, 0x15, 0x4B, 0xA9, 0xF7,
             0xB6, 0xE8, 0x0A, 0x54, 0xD7, 0x89, 0x6B, 0x35};
 
-    static final int[] crc = new int[] { 0x0000, 0x1189, 0x2312, 0x329b, 0x4624,
+    static final int[] crc = new int[]{0x0000, 0x1189, 0x2312, 0x329b, 0x4624,
             0x57ad, 0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c,
             0xdbe5, 0xe97e, 0xf8f7, 0x1081, 0x0108, 0x3393, 0x221a, 0x56a5,
             0x472c, 0x75b7, 0x643e, 0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed,
@@ -60,23 +65,33 @@ public class DATConverter {
             0xb0a3, 0x8238, 0x93b1, 0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62,
             0x3ceb, 0x0e70, 0x1ff9, 0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab,
             0xa022, 0x92b9, 0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3,
-            0x2c6a, 0x1ef1, 0x0f78 };
+            0x2c6a, 0x1ef1, 0x0f78};
 
     static final short NAZA_SEED = 0x1012;
     static final short P2_SEED = 0x1013;
     static final short NAZA_V2_SEED = 0x7000;
     static final short P3_4_MAVIC_SEED = 0x3692;
 
-    // TODO: Figure out meaning of pkt55 HDR
-    public static int calculateChecksum(short[] shortPacket, byte[] bytePacket, short packetLength, short seed) {
-        int result = seed;
+    // TODO: Figure out meaning of pkt55 and pkt55 HDR. See if bytepacket is necessary here and shortpacket in HDR
+    public static int calculateChecksumPKT55(short[] shortPacket, byte[] bytePacket, short packetLength, short seed) {
+        int checksum = seed;
+
         for (int i = 0; i < packetLength; i++) {
             int bitshiftSeed = seed >> 8;
-            result = bitshiftSeed ^ crc[((shortPacket[i] ^ result) & 0xFF)];
+            checksum = bitshiftSeed ^ crc[((shortPacket[i] ^ checksum) & 0xFF)];
         }
 
-        return result;
+        return checksum;
     }
 
+    public static short calculateChecksumPKT55HDR(short[] shortPacket, byte[] bytePacket, short packetLength, short seed) {
+        short checksum = seed;
+
+        for (int i = 0; i < packetLength; i++) {
+            checksum = arr2A103[((bytePacket[i] ^ checksum) & 0xFF)];
+        }
+
+        return checksum;
+    }
 
 }
