@@ -2,6 +2,7 @@ package org.ngafid.flights;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * Writes a CSV file based on a flight NOT in the database
@@ -14,12 +15,14 @@ public class CSVFileWriter {
     private final String filename;
     private File file;
     private boolean fileInitialized;
+    private Map<String, String> fields;
 
     public CSVFileWriter(String path, String filename) {
         this.path = path;
         this.filename = filename;
         this.fileInitialized = false;
         this.file = null;
+        this.fields = null;
     }
 
     public void initFile() throws IOException {
@@ -30,7 +33,6 @@ public class CSVFileWriter {
         this.file = file;
         this.fileInitialized = true;
     }
-
 
 
     public String getFilename() {
