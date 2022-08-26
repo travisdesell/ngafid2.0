@@ -24,12 +24,15 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 
 // populate hashmap of event definition IDs to RGB values
-var eventColorScheme = {};
-for (let d = -4; d < 70; d++){
+const LOWEST_EVENT_ID = -7;
+const HIGHEST_EVENT_ID = 70;
+const ABS_EVENT_ID = Math.abs(LOWEST_EVENT_ID);
+
+for (let d = LOWEST_EVENT_ID; d < HIGHEST_EVENT_ID; d++) {
     // iterate through RGB permutations (up to 64)
-    let green = (d + 4) % 4;
-    let blue = Math.trunc((d + 4)/4) % 4;
-    let red = Math.trunc((d + 4)/16) % 4;
+    let green = (d + ABS_EVENT_ID) % 4;
+    let blue = Math.trunc((d + ABS_EVENT_ID) / 4) % 4;
+    let red = Math.trunc((d + ABS_EVENT_ID) / 16) % 4;
 
     eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
 }
@@ -247,6 +250,8 @@ class Events extends React.Component {
                             </button>
                         );
                 eventTypeButtons.push(type);
+
+                console.log(eventColorScheme);
             }
         })
 

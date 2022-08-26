@@ -1,10 +1,10 @@
 package org.ngafid.events;
 
 import org.ngafid.*;
-import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.Flight;
 
 import java.sql.Connection;
+
 
 /** 
  * A CustomEvent is an Event that is not able to be calculated by the NGAFID's
@@ -16,7 +16,7 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private static final Connection connection = Database.getConnection();
     private Flight flight;
-
+   
     public static final EventDefinition HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
     public static final EventDefinition LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
 
@@ -33,6 +33,10 @@ public class CustomEvent extends Event {
 
     public void setDefinition(EventDefinition eventDefinition) {
         this.customEventDefinition = eventDefinition;
+    }
+    
+    public static EventDefinition getLowFuelDefinition(int airframeID) {
+        return EventDefinition.getEventDefinition(connection, "Low Average Fuel", airframeID);
     }
 
     public EventDefinition getDefinition() {

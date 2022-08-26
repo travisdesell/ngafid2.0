@@ -107,6 +107,7 @@ public class FindSpinEvents {
 
                 if (airspeedIsLow) {
                     int lowAirspeedIndexDiff = i - lowAirspeedIndex;
+
                     // check for severity
                     if (normAcRel > maxNormAc) {
                         maxNormAc = normAcRel;
@@ -119,15 +120,15 @@ public class FindSpinEvents {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         LOG.info("Spin start found!");
+
                         if (!spinStartFound) {
                             String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-
+                            
                             currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
                         } 
-
                     } 
 
 
@@ -164,13 +165,12 @@ public class FindSpinEvents {
                         lowAirspeedIndex = -1;
                         maxNormAcIndex = -1;
                         endSpinSeconds = 0;
-
                         maxNormAc = 0.d;
                     }
                 }
             }
         }
-
+        
         LOG.info("Updating database with Spin Events.");
 
         for (CustomEvent event : lowAltitudeSpins) {
@@ -217,6 +217,7 @@ public class FindSpinEvents {
 
         query.executeUpdate();
         query.close();
+
     }
 
     /**

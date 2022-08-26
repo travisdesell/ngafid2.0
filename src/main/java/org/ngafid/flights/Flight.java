@@ -238,39 +238,18 @@ public class Flight {
      * detailing which parameter is missing and for what calculation
      *
      * @param calculationName is the name of the calculation for which the method is checking for parameters
-     * @param seriesNames     is the names of the series to check for
+     * @param seriesNames is the names of the series to check for
+     *
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    public void checkCalculationParameters(String calculationName, String... seriesNames) throws MalformedFlightFileException {
+    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param)) {
+            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
             }
         }
-    }
-    /**
-     * Checks references to {@link DoubleTimeSeries} for this flight and if there are not required referenece(s) present it returns the 
-     * missing column name(s)
-     *
-     * @pre the doubleTimeSeries array is populated
-     * @param seriesNames     is the names of the series to check for
-     *
-     * @return a {@link List} of the missing column names, an empty list if there are none.
-     */
-
-    public List<String> checkCalculationParameters(String [] seriesNames) {
-        List<String> missingColumns = new ArrayList<>();
-
-        for (String param : seriesNames) {
-            DoubleTimeSeries parameter = this.doubleTimeSeries.get(param);
-            if (parameter == null) {
-                missingColumns.add(param);
-            }
-        }
-
-        return missingColumns;
     }
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
@@ -280,7 +259,6 @@ public class Flight {
     /**
      * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
      * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
-     *
      * @param connection
      * @param startDate
      * @param endDate
@@ -992,7 +970,7 @@ public class Flight {
      * @param connection the database connection
      * @param flightId   the id of the flight that the tags are retrieved for
      * @return a List of tags
-     *;
+     *
      * @throws SQLException if there is an error with the database query
      */
     public static List<FlightTag> getTags(Connection connection, int flightId) throws SQLException {
@@ -2657,7 +2635,7 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);

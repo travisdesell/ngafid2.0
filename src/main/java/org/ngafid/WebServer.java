@@ -87,7 +87,7 @@ public final class WebServer {
             Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
 
             // Make sure we redirect all HTTP traffic to HTTPS now
-            Service http = Service.ignite().port(8080);
+            Service http = Service.ignite().port(8082);
             http.before(((request, response) -> {
                 final String url = request.url();
                 if (url.startsWith("http://")) {
