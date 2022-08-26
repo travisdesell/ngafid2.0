@@ -23,10 +23,10 @@ import { selectAircraftModal } from './select_acft_modal.js';
 import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
+import {cesiumFlightsSelected, updateCesiumButtonState} from "./cesium_buttons";
 
 var moment = require('moment');
 
-export let cesiumFlightsSelected = [];
 
 class Flight extends React.Component {
     constructor(props) {
@@ -479,19 +479,13 @@ class Flight extends React.Component {
             cesiumFlightsSelected.splice(flightStoreIndex, 1);
         }
 
+        updateCesiumButtonState();
+
         console.log(cesiumFlightsSelected);
     }
 
-
-
     replayClicked() {
-        let URL = "/protected/ngafid_cesium?flight_id=";
-        console.log(this.props.flightInfo.id);
-        if (cesiumFlightsSelected.length > 0 ){
-            URL += cesiumFlightsSelected.join("&flight_id=");
-        } else {
-            URL += (this.props.flightInfo.id).toString();
-        }
+        let URL = "/protected/ngafid_cesium?flight_id=" + (this.props.flightInfo.id).toString();
 
         window.open(URL);
     }
