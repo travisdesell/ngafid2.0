@@ -29,7 +29,6 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Locale;
 
 public class DATDJIFile {
@@ -96,7 +95,7 @@ public class DATDJIFile {
 
     private HashMap<Integer, RecSpec> recsInDat = new HashMap<>();
 
-    public long _tickNo = 0;
+    public long tickNo = 0;
 
     public int type = 0;
     private int numErrorCRC = 0;
@@ -126,11 +125,11 @@ public class DATDJIFile {
     }
 
     public static DATDJIFile createDatFile(String datFileName) throws NotDATException, IOException {
-        byte arra[] = new byte[256];
+        byte[] arra = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
 //        DatConLog.Log(" ");
 //        DatConLog.Log("createDatFile " + datFileName);
-        FileInputStream bfr = new FileInputStream(new File(datFileName));
+        FileInputStream bfr = new FileInputStream(datFileName);
         bfr.read(arra, 0, 256); // TODO: Might remove
         bfr.close();
         String headerString = new String(arra, 0, 21);
@@ -141,7 +140,7 @@ public class DATDJIFile {
                 DATDJIFile.setStartOfRecords(256);
                 return DATDJIFile;
             }
-            if (headerString.substring(0, 4).equals("LOGH")) {
+            if (headerString.startsWith("LOGH")) {
                 throw new NotDATException("Probably an encrypted .DAT");
             }
 
@@ -161,7 +160,7 @@ public class DATDJIFile {
         byte arra[] = new byte[256];
         try {
             // TODO: Try With resources
-            FileInputStream bfr = new FileInputStream(new File(datFileName));
+            FileInputStream bfr = new FileInputStream(datFileName);
             bfr.read(arra, 0, 256);
             bfr.close();
             if ((new String(arra, 16, 5).equals("BUILD"))) {
@@ -172,7 +171,7 @@ public class DATDJIFile {
         return false;
     }
 
-    public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException {
+    public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException, NotDATException {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
                 try {
@@ -255,7 +254,7 @@ public class DATDJIFile {
     public void setPosition(final long pos) throws FileEnd, IOException {
         filePos = pos;
         if (filePos > fileLength)
-            throw (new FileEnd());
+            throw (new EOFException());
         channel.position(pos);
     }
 
@@ -271,9 +270,9 @@ public class DATDJIFile {
         return memory.get((int) filePos);
     }
 
-    public int getByte(long fp) throws FileEnd {
+    public int getByte(long fp) throws EOFException {
         if (fp >= fileLength)
-            throw (new FileEnd());
+            throw (new EOFException());
         return memory.get((int) fp);
     }
 
@@ -404,10 +403,8 @@ public class DATDJIFile {
     }
 
     public void printTypes() {
-        Iterator<RecSpec> iter = recsInDat.values().iterator();
-        while (iter.hasNext()) {
-            RecSpec tst = iter.next();
-//            DatConLog.Log(tst.getDescription() + " Type " + tst.getId());
+        for (RecSpec tst : recsInDat.values()) {
+            //            DatConLog.Log(tst.getDescription() + " Type " + tst.getId());
         }
     }
 
