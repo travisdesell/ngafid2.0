@@ -3,9 +3,9 @@ package org.ngafid.flights.DJIBinary;
 import java.io.UnsupportedEncodingException;
 
 public class AttrValuePair {
-    public String attr;
+    private String attr;
 
-    public String value;
+    private String value;
 
     public AttrValuePair(String attr, String value) {
         this.attr = attr;
