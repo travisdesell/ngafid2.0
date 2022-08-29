@@ -412,9 +412,9 @@ public class DATDJIFile {
         return this.numBatteryCells;
     }
 
-    public String getFirmwareDate() {
-        return datHeader.getFirmwareDate();
-    }
+//    public String getFirmwareDate() {
+//        return datHeader.getFirmwareDate();
+//    }
 
     public String getDroneModelStr() {
         return droneModelStr;

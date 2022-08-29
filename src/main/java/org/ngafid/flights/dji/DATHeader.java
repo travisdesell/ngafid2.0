@@ -9,11 +9,11 @@ public class DATHeader {
     }
 
     private final DATDJIFile DATDJIFile;
-    private final String firmwareDate;
+//    private final String firmwareDate;
 
     public DATHeader(DATDJIFile DATDJIFile) {
         this.DATDJIFile = DATDJIFile;
-        this.firmwareDate = calculateFWDate();
+//        this.firmwareDate = calculateFWDate();
     }
 
     public DroneModel getDroneModel() {
@@ -60,9 +60,9 @@ public class DATHeader {
         return DATDJIFile;
     }
 
-    public String getFirmwareDate() {
-        return firmwareDate;
-    }
+//    public String getFirmwareDate() {
+//        return firmwareDate;
+//    }
 
     public static String toString(DroneModel droneModel) {
         String str;
