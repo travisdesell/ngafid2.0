@@ -1,6 +1,5 @@
 package org.ngafid.flights.dji;
 
-import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 public class DATHeader {
@@ -9,25 +8,25 @@ public class DATHeader {
         P3I1, P3AP, P3S, I1, P4, MavicPro, P4P, P4A, I2, M200, M600, M100, SPARK, UNKNOWN, MavicAir, S900
     }
 
-    private final DatFile datFile;
+    private final DATDJIFile DATDJIFile;
     private final String firmwareDate;
 
-    public DATHeader(DatFile datFile) {
-        this.datFile = datFile;
+    public DATHeader(DATDJIFile DATDJIFile) {
+        this.DATDJIFile = DATDJIFile;
         this.firmwareDate = calculateFWDate();
     }
 
     public DroneModel getDroneModel() {
         DroneModel droneModel;
-        datFile.setClockRate(4500000.0);
-        switch (datFile.memory.get(0)) {
+        DATDJIFile.setClockRate(4500000.0);
+        switch (DATDJIFile.memory.get(0)) {
             case 5 -> {
                 droneModel = DroneModel.M100;
-                datFile.setClockRate(85000000.0);
+                DATDJIFile.setClockRate(85000000.0);
             }
             case 6 -> {
                 droneModel = DroneModel.P3I1;
-                datFile.setClockRate(600.0);
+                DATDJIFile.setClockRate(600.0);
             }
             case 11 -> droneModel = DroneModel.P4;
             case 14, 23 -> droneModel = DroneModel.M600;
@@ -51,14 +50,14 @@ public class DATHeader {
         byte[] fwDateByteArr = new byte[13];
         int j = 0;
         for (int i = 21; i < 33; i++) {
-            fwDateByteArr[j++] = datFile.memory.get(i);
+            fwDateByteArr[j++] = DATDJIFile.memory.get(i);
         }
 
         return new String(fwDateByteArr, StandardCharsets.UTF_8);
     }
 
-    public DatFile getDatFile() {
-        return datFile;
+    public DATDJIFile getDatFile() {
+        return DATDJIFile;
     }
 
     public String getFirmwareDate() {

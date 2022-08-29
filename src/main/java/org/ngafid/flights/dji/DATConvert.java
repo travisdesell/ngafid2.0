@@ -22,10 +22,7 @@ package org.ngafid.flights.dji;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
-import java.util.Dictionary;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Vector;
+import java.util.*;
 
 public class DATConvert {
     public enum KmlType {

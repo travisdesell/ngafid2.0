@@ -30,7 +30,7 @@ import java.text.DecimalFormatSymbols;
 
 import java.util.Locale;
 
-public class DatFile {
+public class DATDJIFile {
 
     protected final static int headerLength = 10;
 
@@ -86,7 +86,7 @@ public class DatFile {
 
     public static final DecimalFormat timeFormat = new DecimalFormat("###.000", new DecimalFormatSymbols(Locale.US));
 
-    private static DatFile datFile;
+    private static DATDJIFile DATDJIFile;
 
     double clockRate = 600;
 
@@ -113,11 +113,11 @@ public class DatFile {
         recsInDat.clear();
     }
 
-    public DatFile(String fileName) throws IOException, NotDatFile {
+    public DATDJIFile(String fileName) throws IOException, NotDatFile {
         this(new File(fileName));
     }
 
-    public static DatFile createDatFile(String datFileName)
+    public static DATDJIFile createDatFile(String datFileName)
             throws NotDatFile, IOException {
         byte arra[] = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
@@ -130,9 +130,9 @@ public class DatFile {
         if (!(headerString.substring(16, 21).equals("BUILD"))) {
             if (Persist.invalidStructOK) {
 //                DatConLog.Log("createDatFile invalid header - proceeding");
-                datFile = new DatFileV3(datFileName);
-                datFile.setStartOfRecords(256);
-                return datFile;
+                DATDJIFile = new DatFileV3(datFileName);
+                DATDJIFile.setStartOfRecords(256);
+                return DATDJIFile;
             }
             if (headerString.substring(0, 4).equals("LOGH")) {
 //                throw new NotDatFile("Probably an encrypted .DAT");
@@ -140,13 +140,13 @@ public class DatFile {
 //            throw new NotDatFile();
         }
         if ((new String(arra, 242, 10).equals("DJI_LOG_V3"))) {
-            datFile = new DatFileV3(datFileName);
-            datFile.setStartOfRecords(256);
+            DATDJIFile = new DatFileV3(datFileName);
+            DATDJIFile.setStartOfRecords(256);
         } else {
-            datFile = new DatFileV1(datFileName);
-            datFile.setStartOfRecords(128);
+            DATDJIFile = new DatFileV1(datFileName);
+            DATDJIFile.setStartOfRecords(128);
         }
-        return datFile;
+        return DATDJIFile;
     }
 
     public static boolean isDatFile(String datFileName) {
@@ -164,7 +164,7 @@ public class DatFile {
         return false;
     }
 
-    public static DatFile createDatFile(String datFileName, final DatCon datCon) throws IOException {
+    public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
                 int lastSlash = datFileName.lastIndexOf("\\");
@@ -176,28 +176,29 @@ public class DatFile {
         return createDatFile(datFileName);
     }
 
-    public DatFile(File _file) throws FileNotFoundException {
-        datHeader = new DATHeader(this);
-        file = _file;
-        results = new AnalyzeDatResults();
-        fileLength = file.length();
-        inputStream = new FileInputStream(file);
-        channel = inputStream.getChannel();
+    public DATDJIFile(File file) throws FileNotFoundException {
+        this.datHeader = new DATHeader(this);
+        this.file = file;
+        this.results = new AnalyzeDatResults();
+        this.fileLength = file.length();
+        this.inputStream = new FileInputStream(file);
+        this.channel = inputStream.getChannel();
+
         try {
             memory = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
         } catch (IOException e) {
             e.printStackTrace();
         }
         memory.order(ByteOrder.LITTLE_ENDIAN);
-        droneModelStr = datHeader.getDroneModel();
+        droneModel = datHeader.getDroneModel();
         //acTypeName = DatHeader.toString(acType);
     }
 
-    public DatFile() {
+    public DATDJIFile() {
     }
 
-    public ConvertDat createConVertDat() {
-        return (new ConvertDat(this));
+    public DATConvert createConVertDat() {
+        return (new DATConvert(this));
     }
 
     public void close() {
