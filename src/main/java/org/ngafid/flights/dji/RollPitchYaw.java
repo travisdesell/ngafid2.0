@@ -24,11 +24,11 @@ import java.text.DecimalFormat;
 public class RollPitchYaw {
     static DecimalFormat df = new DecimalFormat("0.####");
 
-    double roll = 0.0;
+    private double roll = 0.0;
 
-    double pitch = 0.0;
+    private double pitch = 0.0;
 
-    public double yaw = 0.0;
+    private double yaw = 0.0;
 
     public RollPitchYaw(double roll, double pitch, double yaw) {
         this.roll = roll;
