@@ -21,21 +21,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 import java.text.DecimalFormat;
 
-/******************************************************************************
- * Compilation: javac Quaternion.java Execution: java Quaternion
- *
- * Data type for quaternions.
- *
- * http://mathworld.wolfram.com/Quaternion.html
- *
- * The data type is "immutable" so once you create and initialize a Quaternion,
- * you cannot change it.
- *
- * % java Quaternion
- *
- ******************************************************************************/
-
-public class    Quaternion {
+public class Quaternion {
     static DecimalFormat df = new DecimalFormat("0.####");
 
     private final double SCALAR; // scalar
@@ -56,13 +42,13 @@ public class    Quaternion {
         y *= 0.5d;
         z *= 0.5d;
 
-        double c1 = (double) Math.cos(z);
-        double c2 = (double) Math.cos(y);
-        double c3 = (double) Math.cos(x);
+        double c1 = Math.cos(z);
+        double c2 = Math.cos(y);
+        double c3 = Math.cos(x);
 
-        double s1 = (double) Math.sin(z);
-        double s2 = (double) Math.sin(y);
-        double s3 = (double) Math.sin(x);
+        double s1 = Math.sin(z);
+        double s2 = Math.sin(y);
+        double s3 = Math.sin(x);
 
         this.SCALAR = c1 * c2 * c3 - s1 * s2 * s3;
         this.X = c1 * s2 * c3 - s1 * c2 * s3;
@@ -71,54 +57,46 @@ public class    Quaternion {
     }
 
     public static Quaternion fromAngles(double pitch, double roll, double yaw) {
-        // x=pitch, y=roll, z=yaw??????
         pitch *= 0.5d;
         roll *= 0.5d;
         yaw *= 0.5d;
 
-        double c1 = (double) Math.cos(yaw);
-        double c2 = (double) Math.cos(roll);
-        double c3 = (double) Math.cos(pitch);
+        double c1 = Math.cos(yaw);
+        double c2 = Math.cos(roll);
+        double c3 = Math.cos(pitch);
 
-        double s1 = (double) Math.sin(yaw);
-        double s2 = (double) Math.sin(roll);
-        double s3 = (double) Math.sin(pitch);
+        double s1 = Math.sin(yaw);
+        double s2 = Math.sin(roll);
+        double s3 = Math.sin(pitch);
 
-        return new Quaternion(c1 * c2 * c3 - s1 * s2 * s3,
-                c1 * s2 * c3 - s1 * c2 * s3, s1 * s2 * c3 + c1 * c2 * s3,
-                s1 * c2 * c3 + c1 * s2 * s3);
+        return new Quaternion(c1 * c2 * c3 - s1 * s2 * s3, c1 * s2 * c3 - s1 * c2 * s3, s1 * s2 * c3 + c1 * c2 * s3, s1 * c2 * c3 + c1 * s2 * s3);
     }
 
     public static Quaternion fromVector(double x, double y, double z) {
         double xy = Math.atan2(y, x);
         double xz = Math.atan2(z, x);
         double yz = Math.atan2(y, z);
-        Quaternion retv = new Quaternion(yz, xz, xy);
-        return retv;
+        return new Quaternion(yz, xz, xy);
     }
 
     public static Quaternion fromXYVector(double x, double y) {
         double xy = Math.atan2(y, x);
-        Quaternion retv = new Quaternion(0.0, 0.0, xy);
-        return retv;
+        return new Quaternion(0.0, 0.0, xy);
     }
 
     public static Quaternion fromZYVector(double z, double y) {
         double zy = Math.atan2(z, y);
-        Quaternion retv = new Quaternion(0.0, zy, 0.0);
-        return retv;
+        return new Quaternion(0.0, zy, 0.0);
     }
 
     public static Quaternion fromZXVector(double z, double x) {
         double zx = Math.atan2(z, x);
-        Quaternion retv = new Quaternion(zx, 0.0, 0.0);
-        return retv;
+        return new Quaternion(zx, 0.0, 0.0);
     }
 
     // return a string representation of the invoking object
     public String toString() {
-        return df.format(SCALAR) + " + " + df.format(X) + "i + " + df.format(Y)
-                + "j + " + df.format(Z) + "k";
+        return df.format(SCALAR) + " + " + df.format(X) + "i + " + df.format(Y) + "j + " + df.format(Z) + "k";
     }
 
     // return the quaternion norm
@@ -134,23 +112,24 @@ public class    Quaternion {
     // return a new Quaternion whose value is (this + b)
     public Quaternion plus(Quaternion b) {
         Quaternion a = this;
-        return new Quaternion(a.SCALAR + b.SCALAR, a.X + b.X, a.Y + b.Y,
-                a.Z + b.Z);
+        return new Quaternion(a.SCALAR + b.SCALAR, a.X + b.X, a.Y + b.Y, a.Z + b.Z);
     }
 
     // return a new Quaternion whose value is (this * b)
     public Quaternion times(Quaternion b) {
         Quaternion a = this;
         double y0 = a.SCALAR * b.SCALAR - a.X * b.X - a.Y * b.Y - a.Z * b.Z;
-        double y1 = a.SCALAR * b.X + a.X * b.SCALAR + a.Y * b.Z - a.Z * b.Y;
-        double y2 = a.SCALAR * b.Y - a.X * b.Z + a.Y * b.SCALAR + a.Z * b.X;
-        double y3 = a.SCALAR * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.SCALAR;
-        return new Quaternion(y0, y1, y2, y3);
+        double x1 = a.SCALAR * b.X + a.X * b.SCALAR + a.Y * b.Z - a.Z * b.Y;
+        double x2 = a.SCALAR * b.Y - a.X * b.Z + a.Y * b.SCALAR + a.Z * b.X;
+        double x3 = a.SCALAR * b.Z + a.X * b.Y - a.Y * b.X + a.Z * b.SCALAR;
+
+        return new Quaternion(y0, x1, x2, x3);
     }
 
     // return a new Quaternion whose value is the inverse of this
     public Quaternion inverse() {
         double d = SCALAR * SCALAR + X * X + Y * Y + Z * Z;
+
         return new Quaternion(SCALAR / d, -X / d, -Y / d, -Z / d);
     }
 
@@ -158,6 +137,7 @@ public class    Quaternion {
     // we use the definition a * b^-1 (as opposed to b^-1 a)
     public Quaternion divides(Quaternion b) {
         Quaternion a = this;
+
         return a.times(b.inverse());
     }
 
@@ -170,7 +150,7 @@ public class    Quaternion {
         double pitch = 0.0;
         double roll = 0.0;
         double unit = sqX + sqY + sqZ + sqW; // if normalised is one, otherwise
-                                             // is correction factor
+        // is correction factor
         double test = SCALAR * X + Y * Z;
         if (test > 0.499 * unit) { // singularity at north pole
             yaw = 2 * Math.atan2(Y, SCALAR);
@@ -181,14 +161,9 @@ public class    Quaternion {
             pitch = -Math.PI / 2;
             roll = 0;
         } else {
-            yaw = Math.atan2(2.0 * (SCALAR * Z - X * Y),
-                    1.0 - 2.0 * (sqZ + sqX));
-            // pitch = Math.asin(2.0 * test / unit);
-            // roll = Math.atan2(2.0 * (W * Y - X * Z), 1.0 - 2.0 * (sqY +
-            // sqX));
+            yaw = Math.atan2(2.0 * (SCALAR * Z - X * Y), 1.0 - 2.0 * (sqZ + sqX));
             roll = Math.asin(2.0 * test / unit);
-            pitch = Math.atan2(2.0 * (SCALAR * Y - X * Z),
-                    1.0 - 2.0 * (sqY + sqX));
+            pitch = Math.atan2(2.0 * (SCALAR * Y - X * Z), 1.0 - 2.0 * (sqY + sqX));
         }
         return (new RollPitchYaw(roll, pitch, yaw));
     }
@@ -203,7 +178,7 @@ public class    Quaternion {
         double pitch = 0.0;
         double[] retv = new double[3];
         double unit = sqX + sqY + sqZ + sqW; // if normalised is one, otherwise
-                                             // is correction factor
+        // is correction factor
         double test = SCALAR * X + Y * Z;
         if (test > 0.499 * unit) { // singularity at north pole
             yaw = 2 * Math.atan2(Y, SCALAR);
@@ -214,11 +189,9 @@ public class    Quaternion {
             pitch = -Math.PI / 2;
             roll = 0;
         } else {
-            yaw = Math.atan2(2.0 * (SCALAR * Z - X * Y),
-                    1.0 - 2.0 * (sqZ + sqX));
+            yaw = Math.atan2(2.0 * (SCALAR * Z - X * Y), 1.0 - 2.0 * (sqZ + sqX));
             roll = Math.asin(2.0 * test / unit);
-            pitch = Math.atan2(2.0 * (SCALAR * Y - X * Z),
-                    1.0 - 2.0 * (sqY + sqX));
+            pitch = Math.atan2(2.0 * (SCALAR * Y - X * Z), 1.0 - 2.0 * (sqY + sqX));
         }
         retv[0] = pitch;
         retv[1] = roll;
