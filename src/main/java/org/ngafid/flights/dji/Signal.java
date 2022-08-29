@@ -9,13 +9,9 @@ public class Signal {
         FLOAT4, DOUBLE, INT, UNDEFINED
     }
 
-    ;
-
     public enum SigType {
         SERIES, STATE, TIMEAXIS, UNDEFINED
     }
-
-    ;
 
     String name = "";
 
@@ -116,13 +112,11 @@ public class Signal {
     }
 
     public static Signal SeriesInt(String name, String description, Axis axis, Units units) {
-        Signal retv = new Signal(name, description, axis, SigType.SERIES, NumType.INT, units);
-        return retv;
+        return new Signal(name, description, axis, SigType.SERIES, NumType.INT, units);
     }
 
     public static Signal SeriesInt(String name, int index, String description, Axis axis, Units units) {
-        Signal retv = new Signal(name + "(" + index + ")", description, axis, SigType.SERIES, NumType.INT, units);
-        return retv;
+        return new Signal(name + "(" + index + ")", description, axis, SigType.SERIES, NumType.INT, units);
     }
 
     public static Signal SeriesIntExperimental(String name, String description, Axis axis, Units units) {
