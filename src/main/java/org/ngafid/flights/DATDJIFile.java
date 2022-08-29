@@ -55,4 +55,8 @@ public class DATDJIFile {
         this.recordStart = recordStart;
     }
 
+
+    public DroneModel getModel() {
+        return model;
+    }
 }
