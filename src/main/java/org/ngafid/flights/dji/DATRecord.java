@@ -50,7 +50,7 @@ public abstract class DATRecord extends RecSpec {
     }
 
     public void process(Payload record) {
-        payloadBB = record.getBB();
+        payloadBB = record.getByteBuffer();
     }
 
     public void printCols(lineType lineT) {
@@ -62,13 +62,13 @@ public abstract class DATRecord extends RecSpec {
             printXmlSig(signal.getName(), suffix, signal);
             return;
         }
-        if (Persist.EXPERIMENTAL_FIELDS || !signal.isExperimental()) {
+        if (DATPersist.EXPERIMENTAL_FIELDS || !signal.isExperimental()) {
             if (lineT == lineType.HEADER) {
                 csvWriter.print("," + signal.getName());
                 if (suffix != null && !suffix.isEmpty()) {
                     csvWriter.print(":" + suffix);
                 }
-                if (Persist.showUnits && signal.hasUnits()) {
+                if (DATPersist.showUnits && signal.hasUnits()) {
                     csvWriter.print("[" + signal.getUnitsNoComma() + "]");
                 }
             } else if (lineT == lineType.LINE) {
@@ -83,13 +83,13 @@ public abstract class DATRecord extends RecSpec {
             printXmlSig(signal.getName(), suffix, signal);
             return;
         }
-        if (Persist.EXPERIMENTAL_FIELDS || !signal.isExperimental()) {
+        if (DATPersist.EXPERIMENTAL_FIELDS || !signal.isExperimental()) {
             if (lineT == lineType.HEADER) {
                 csvWriter.print("," + signal.getName());
                 if (!Objects.equals(suffix, "")) {
                     csvWriter.print(":" + suffix);
                 }
-                if (Persist.showUnits && signal.hasUnits()) {
+                if (DATPersist.showUnits && signal.hasUnits()) {
                     csvWriter.print("[" + signal.getUnitsNoComma() + "]");
                 }
             } else if (lineT == lineType.LINE) {
@@ -102,7 +102,7 @@ public abstract class DATRecord extends RecSpec {
     protected void RecordException(Exception e) {
         if (numRecExceptions == 0) {
             String errMsg = "RecException filePos()=" + datFile.getPos() + " tickNo " + datFile.tickNo + " type =" + datFile.type;
-            if (Persist.EXPERIMENTAL_DEV) {
+            if (DATPersist.EXPERIMENTAL_DEV) {
                 System.out.println(errMsg);
                 e.printStackTrace();
             } else {
