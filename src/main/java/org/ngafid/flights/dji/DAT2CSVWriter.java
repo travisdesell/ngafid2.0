@@ -5,7 +5,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 public class DAT2CSVWriter extends FileWriter {
-    File file = null;
+    File file;
 
     public DAT2CSVWriter(String name) throws IOException {
         this(new File(name));

@@ -198,7 +198,7 @@ public class DATDJIFile {
         }
         memory.order(ByteOrder.LITTLE_ENDIAN);
         droneModel = datHeader.getDroneModel();
-        //acTypeName = DatHeader.toString(acType);
+        droneModelStr = droneModel.toString();
     }
 
     public DATDJIFile() {
@@ -296,9 +296,8 @@ public class DATDJIFile {
                 + 256 * (0xff & memory.get((int) (filePos + 1)));
     }
 
-    protected int getUnsignedShort(long fp) throws FileEnd {
-        if (fp > fileLength - 2)
-            throw (new FileEnd());
+    protected int getUnsignedShort(long fp) throws EOFException {
+        if (fp > fileLength - 2) throw (new EOFException());
         return (0xff & memory.get((int) fp))
                 + 256 * (int) (0xff & memory.get((int) (fp + 1)));
     }
@@ -307,13 +306,12 @@ public class DATDJIFile {
         return memory.getInt((int) filePos);
     }
 
-    public long getUnsignedInt() throws FileEnd {
+    public long getUnsignedInt() throws EOFException {
         return getUnsignedInt(filePos);
     }
 
-    public long getUnsignedInt(long fp) throws FileEnd {
-        if (fp > fileLength - 4)
-            throw (new FileEnd());
+    public long getUnsignedInt(long fp) throws EOFException {
+        if (fp > fileLength - 4) throw (new EOFException());
         return (long) (0xff & memory.get((int) fp))
                 + (256 * (long) (0xff & memory.get((int) (fp + 1))))
                 + (65536 * (long) (0xff & memory.get((int) (fp + 2))))
@@ -399,9 +397,7 @@ public class DATDJIFile {
 
     public RecSpec getRecId(int _type) {
         RecSpec retv = null;
-        Iterator<RecSpec> iter = recsInDat.values().iterator();
-        while (iter.hasNext()) {
-            RecSpec tst = iter.next();
+        for (RecSpec tst : recsInDat.values()) {
             if (tst.getId() == _type) {
                 if (retv != null) {
                     return null;
