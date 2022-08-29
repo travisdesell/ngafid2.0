@@ -417,7 +417,7 @@ public class DATConvert {
     public void setCsvWriter(DAT2CSVWriter writer) {
         csvWriter = writer;
         for (int i = 0; i < DATRecords.size(); i++) {
-            ((DATRecord) DATRecords.get(i)).setCsvWriter(writer);
+            ((DATRecord) DATRecords.get(i)).setCSVWriter(writer);
         }
     }
 
