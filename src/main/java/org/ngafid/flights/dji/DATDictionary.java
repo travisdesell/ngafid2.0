@@ -2,13 +2,15 @@ package org.ngafid.flights.dji;
 
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Vector;
 import java.util.logging.Logger;
 
 public class DATDictionary {
 
-    public static Vector<RecClassSpec> entries = new Vector<>();
+    public static List<RecClassSpec> entries = new ArrayList<>();
     public static final Logger LOG = Logger.getLogger(DATDictionary.class.getName());
 
     static {
@@ -17,7 +19,7 @@ public class DATDictionary {
         entries.add(new RecSpec(svn_info_65534.class, 65534, -1));
     }
 
-    public static Vector<Integer> defaultOrder = new Vector<Integer>();
+    public static List<Integer> defaultOrder = new ArrayList<>();
 
     static {
         defaultOrder.add(1);
@@ -70,7 +72,7 @@ public class DATDictionary {
     }
 
     public static Record getRecordInst(Vector<RecClassSpec> entries,
-            RecSpec recInDat, ConvertDat convertDat, boolean strictLength) {
+            RecSpec recInDat, DATConvert convertDat, boolean strictLength) {
         Record retv = null;
         for (RecClassSpec recClassSpec : entries) {
             if (recClassSpec.getId() == recInDat.getId()) {
@@ -90,7 +92,7 @@ public class DATDictionary {
                         }
                     }
                 } else {
-                    DatConLog.Log("getRecordInst can't use " + recClassSpec + "/" + recClassSpec.getLength() + " wrong length RecInDat " + recInDat);
+                    LOG.info("getRecordInst can't use " + recClassSpec + "/" + recClassSpec.getLength() + " wrong length RecInDat " + recInDat);
                 }
             }
         }
