@@ -18,7 +18,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.dji;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -45,7 +44,7 @@ public class DatFile {
 
     protected MappedByteBuffer memory = null;
 
-    private String acTypeName = "";
+    private String droneModelStr;
 
     protected long filePos = 0;
 
@@ -53,11 +52,11 @@ public class DatFile {
 
     protected FileInputStream inputStream = null;
 
-    protected FileChannel _channel = null;
+    protected FileChannel channel = null;
 
     protected long fileLength = 0;
 
-    public static String firmwareDate = "";
+    public static String firmwareDate;
 
     protected int numCorrupted = 0;
 
@@ -85,8 +84,7 @@ public class DatFile {
 
     protected long lastRecordTickNo = 0;
 
-    public static DecimalFormat timeFormat = new DecimalFormat("###.000",
-            new DecimalFormatSymbols(Locale.US));
+    public static final DecimalFormat timeFormat = new DecimalFormat("###.000", new DecimalFormatSymbols(Locale.US));
 
     private static DatFile datFile;
 
@@ -105,7 +103,7 @@ public class DatFile {
     }
 
     public void addRecInDat(int type, int length) {
-        Integer key = Integer.valueOf(type);
+        Integer key = type;
         if (!recsInDat.containsKey(key)) {
             recsInDat.put(key, new RecSpec(type, length));
         }
@@ -123,23 +121,23 @@ public class DatFile {
             throws NotDatFile, IOException {
         byte arra[] = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
-        DatConLog.Log(" ");
-        DatConLog.Log("createDatFile " + datFileName);
+//        DatConLog.Log(" ");
+//        DatConLog.Log("createDatFile " + datFileName);
         FileInputStream bfr = new FileInputStream(new File(datFileName));
         bfr.read(arra, 0, 256);
         bfr.close();
         String headerString = new String(arra, 0, 21);
         if (!(headerString.substring(16, 21).equals("BUILD"))) {
             if (Persist.invalidStructOK) {
-                DatConLog.Log("createDatFile invalid header - proceeding");
+//                DatConLog.Log("createDatFile invalid header - proceeding");
                 datFile = new DatFileV3(datFileName);
                 datFile.setStartOfRecords(256);
                 return datFile;
             }
             if (headerString.substring(0, 4).equals("LOGH")) {
-                throw new NotDatFile("Probably an encrypted .DAT");
+//                throw new NotDatFile("Probably an encrypted .DAT");
             }
-            throw new NotDatFile();
+//            throw new NotDatFile();
         }
         if ((new String(arra, 242, 10).equals("DJI_LOG_V3"))) {
             datFile = new DatFileV3(datFileName);
@@ -154,6 +152,7 @@ public class DatFile {
     public static boolean isDatFile(String datFileName) {
         byte arra[] = new byte[256];
         try {
+            // TODO: Try With resources
             FileInputStream bfr = new FileInputStream(new File(datFileName));
             bfr.read(arra, 0, 256);
             bfr.close();
@@ -165,68 +164,32 @@ public class DatFile {
         return false;
     }
 
-    public static DatFile createDatFile(String datFileName, final DatCon datCon)
-            throws NotDatFile, IOException {
+    public static DatFile createDatFile(String datFileName, final DatCon datCon) throws IOException {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
                 int lastSlash = datFileName.lastIndexOf("\\");
-                String tempDirName = datFileName.substring(0, lastSlash + 1);
-                Color bgColor = datCon.goButton.getBackground();
-                Color fgColor = datCon.goButton.getForeground();
-                boolean enabled = datCon.goButton.isEnabled();
-                String text = datCon.goButton.getText();
-                datCon.goButton.setBackground(Color.BLUE);
-                datCon.goButton.setForeground(Color.WHITE);
-                datCon.goButton.setEnabled(false);
-                datCon.goButton.setText("Extracting .DAT");
                 try {
-                    DatConLog.Log("DJIAssistantFile.extractFirst(" + datFileName
-                            + ", " + tempDirName + ")");
-                    DJIAssistantFile.ExtractResult result = DJIAssistantFile
-                            .extractFirst(datFileName, tempDirName);
-                    if (result.moreThanOne()) {
-                        //                    if (true) {
-                        DatConLog.Log(
-                                "DJIAssistantFile.extractFirst:moreThanOne");
-                        boolean moreThanOnePopup = DatConPopups
-                                .moreThanOne(DatCon.frame);
-                        if (moreThanOnePopup) {
-                            return new DatFileV3(result.getFile());
-                        } else {
-                            return null;
-                        }
-                    } else if (result.none()) {
-                        DatConLog.Log("DJIAssistantFile.extractFirst:none");
-                        DatConPopups.none(DatCon.frame);
-                        return null;
-                    }
-                    DatConLog.Log("DJIAssistantFile.extractFirst:one");
                     return new DatFileV3(result.getFile());
-                } finally {
-                    datCon.goButton.setBackground(bgColor);
-                    datCon.goButton.setForeground(fgColor);
-                    datCon.goButton.setEnabled(enabled);
-                    datCon.goButton.setText(text);
                 }
             }
         }
         return createDatFile(datFileName);
     }
 
-    public DatFile(File _file) throws NotDatFile, FileNotFoundException {
+    public DatFile(File _file) throws FileNotFoundException {
         datHeader = new DATHeader(this);
         file = _file;
         results = new AnalyzeDatResults();
         fileLength = file.length();
         inputStream = new FileInputStream(file);
-        _channel = inputStream.getChannel();
+        channel = inputStream.getChannel();
         try {
-            memory = _channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
+            memory = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
         } catch (IOException e) {
             e.printStackTrace();
         }
         memory.order(ByteOrder.LITTLE_ENDIAN);
-        droneModel = datHeader.getAcType();
+        droneModelStr = datHeader.getDroneModel();
         //acTypeName = DatHeader.toString(acType);
     }
 
@@ -410,7 +373,7 @@ public class DatFile {
     }
 
     public void preAnalyze() throws NotDatFile {
-        switch (droneModel) {
+        switch (droneModelStr) {
         case I1:
             case M600:
             case I2:
@@ -446,14 +409,15 @@ public class DatFile {
     }
 
     public String getFirmwareDate() {
-        return datHeader.getFWDate();
+        return datHeader.getFirmwareDate();
     }
 
     public String getACTypeString() {
         if (droneModel != DATHeader.DroneModel.UNKNOWN) {
-            return droneModel.toString();
+            return droneModelStr.toString();
         }
-        return acTypeName;
+
+        return droneModelStr;
     }
 
     public RecSpec getRecId(int _type) {
@@ -483,7 +447,7 @@ public class DatFile {
         return false;
     }
 
-    public AcType getACType() {
+    public DATHeader.DroneModel getDroneModel() {
         return droneModel;
     }
 

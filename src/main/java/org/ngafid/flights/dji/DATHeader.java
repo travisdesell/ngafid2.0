@@ -14,7 +14,7 @@ public class DATHeader {
 
     public DATHeader(DatFile datFile) {
         this.datFile = datFile;
-        this.firmwareDate = getFWDate();
+        this.firmwareDate = calculateFWDate();
     }
 
     public DroneModel getDroneModel() {
@@ -46,6 +46,25 @@ public class DATHeader {
         return droneModel;
     }
 
+
+    private String calculateFWDate() {
+        byte[] fwDateByteArr = new byte[13];
+        int j = 0;
+        for (int i = 21; i < 33; i++) {
+            fwDateByteArr[j++] = datFile.memory.get(i);
+        }
+
+        return new String(fwDateByteArr, StandardCharsets.UTF_8);
+    }
+
+    public DatFile getDatFile() {
+        return datFile;
+    }
+
+    public String getFirmwareDate() {
+        return firmwareDate;
+    }
+
     public static String toString(DroneModel droneModel) {
         String str;
 
@@ -69,15 +88,4 @@ public class DATHeader {
 
         return str;
     }
-
-    private String getFWDate() {
-        byte[] fwDateByteArr = new byte[13];
-        int j = 0;
-        for (int i = 21; i < 33; i++) {
-            fwDateByteArr[j++] = datFile.memory.get(i);
-        }
-
-        return new String(fwDateByteArr, StandardCharsets.UTF_8);
-    }
-
 }
