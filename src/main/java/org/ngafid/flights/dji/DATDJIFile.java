@@ -134,7 +134,7 @@ public class DATDJIFile {
         bfr.close();
         String headerString = new String(arra, 0, 21);
         if (!(headerString.startsWith("BUILD", 16))) {
-            if (Persist.invalidStructOK) {
+            if (DATPersist.invalidStructOK) {
 //                DatConLog.Log("createDatFile invalid header - proceeding");
 //                DATDJIFile = new DatFileV3(datFileName);
                 DATDJIFile.setStartOfRecords(256);
@@ -173,7 +173,7 @@ public class DATDJIFile {
 
     public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException, NotDATException {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
-            if (Persist.autoTransDJIAFiles) {
+            if (DATPersist.autoTransDJIAFiles) {
                 try {
                     return new DATDJIFile(result.getFile()); // Originally a V3
                 }

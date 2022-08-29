@@ -422,7 +422,7 @@ public class DATConvert {
     }
 
     public void setExperimentalFields(boolean experimental) {
-        Persist.EXPERIMENTAL_FIELDS = experimental;
+        DATPersist.EXPERIMENTAL_FIELDS = experimental;
     }
 
     public double getTime() {
