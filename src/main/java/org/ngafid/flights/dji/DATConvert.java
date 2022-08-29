@@ -17,23 +17,21 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.ngafid.flights.DJIBinary;
+package org.ngafid.flights.dji;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Dictionary;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Vector;
 
-import src.DatConRecs.*;
-import src.Files.DatHeader.AcType;
-import src.apps.DatCon;
-import src.DatConRecs.RecDef.RecordDef;
-
 public class DATConvert {
-        public static TSAGeoMag geoMag = new TSAGeoMag(); // Check out TSAGeoMag
-
+    public enum KmlType {
+        NONE, GROUNDTRACK, PROFILE
+    }
+    public static TSAGeoMag geoMag = new TSAGeoMag();
 
     public DATDJIFile datFile = null;
 
@@ -49,9 +47,6 @@ public class DATConvert {
 
     public Vector<Record> records = new Vector<Record>();
 
-    public enum KmlType {
-        NONE, GROUNDTRACK, PROFILE
-    }
 
     public KmlType kmlType = KmlType.NONE;
 
@@ -145,7 +140,6 @@ public class DATConvert {
     }
 
     private void printCsvValue(String header, String value, lineType lineT, boolean valid) throws IOException {
-        // TODO implement a csv writer
         if (lineT == lineType.HEADER) {
             csvWriter.print("," + header);
         } else {

@@ -1,4 +1,4 @@
-package org.ngafid.flights.DJIBinary;
+package org.ngafid.flights.dji;
 
 import java.io.UnsupportedEncodingException;
 

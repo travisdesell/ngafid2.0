@@ -1,4 +1,4 @@
-package org.ngafid.flights.DJIBinary;
+package org.ngafid.flights.dji;
 
 /*                PUBLIC DOMAIN NOTICE
 This program was prepared by Los Alamos National Security, LLC
