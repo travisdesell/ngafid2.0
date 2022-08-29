@@ -18,10 +18,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.dji;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
+import java.io.*;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
@@ -221,10 +218,7 @@ public class DATDJIFile {
         System.gc();
     }
 
-    public void reset() throws IOException, FileEnd {
-        // tickGroups[0].reset();
-        // tickGroups[1].reset();
-        // tgIndex = 1;
+    public void reset() throws IOException {
         numCorrupted = 0;
         if (inputStream == null) {
             inputStream = new FileInputStream(file);
@@ -248,10 +242,10 @@ public class DATDJIFile {
         return file.getName();
     }
 
-    public void setPosition(final long pos) throws FileEnd, IOException {
+    public void setPosition(final long pos) throws IOException {
         filePos = pos;
         if (filePos > fileLength)
-            throw (new EOFException());
+            throw new EOFException();
         channel.position(pos);
     }
 
