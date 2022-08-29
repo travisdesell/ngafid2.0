@@ -39,47 +39,32 @@ public class DATHeader {
             default -> droneModel = DroneModel.UNKNOWN;
 
         }
+
         return droneModel;
     }
 
     public static String toString(DroneModel droneModel) {
+        String str;
+
         switch (droneModel) {
-            case I1:
-                return "Inspire1";
-            case I2:
-                return "Inspire2";
-            case M100:
-                return "Matrice100";
-            case M200:
-                return "Matrice200";
-            case M600:
-                return "Matrice600";
-            case MavicPro:
-                return "MavicPro";
-            case MavicAir:
-                return "MavicAir";
-            case SPARK:
-                return "Spark";
-            case S900:
-                return "S900";
-            case P3AP:
-                return "P3Adv/Pro";
-            case P3I1:
-                break;
-            case P3S:
-                return "P3Standard";
-            case P4:
-                return "P4";
-            case P4P:
-                return "P4Pro";
-            case P4A:
-                return "P4Adv";
-            case UNKNOWN:
-                break;
-            default:
-                break;
+            case I1 -> str = "Inspire1";
+            case I2 -> str = "Inspire2";
+            case M100 -> str = "Matrice100";
+            case M200 -> str = "Matrice200";
+            case M600 -> str = "Matrice600";
+            case MavicPro -> str = "MavicPro";
+            case MavicAir -> str = "MavicAir";
+            case SPARK -> str = "Spark";
+            case S900 -> str = "S900";
+            case P3AP -> str = "P3Adv/Pro";
+            case P3S -> str = "P3Standard";
+            case P4 -> str = "P4";
+            case P4P -> str = "P4Pro";
+            case P4A -> str = "P4Adv";
+            default -> str = "Unknown";
         }
-        return "Unknown";
+
+        return str;
     }
 
     public String getFWDate() {
