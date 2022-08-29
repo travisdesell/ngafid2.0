@@ -1,7 +1,5 @@
 package org.ngafid.flights.dji;
 
-package src.Files;
-
 import java.util.LinkedList;
 
 public class Signal {
