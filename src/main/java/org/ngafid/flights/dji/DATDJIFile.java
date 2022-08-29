@@ -167,17 +167,6 @@ public class DATDJIFile {
         return false;
     }
 
-    public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException, NotDATException {
-        if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
-            if (DATPersist.autoTransDJIAFiles) {
-                try {
-                    return new DATDJIFile(result.getFile()); // Originally a V3
-                }
-            }
-        }
-        return createDatFile(datFileName);
-    }
-
     public DATDJIFile(File file) throws FileNotFoundException {
         this.datHeader = new DATHeader(this);
         this.file = file;
