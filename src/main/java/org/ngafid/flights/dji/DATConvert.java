@@ -228,10 +228,11 @@ public class DATConvert {
                 csvWriter.print(",Attribute|Value");
                 if (printVersion) {
                     printCsvValue(this.getClass().getSimpleName(), "", lineT, false);
+                    // TODO: Determine what this is for
                     if (datFile.isTablet()) {
-                        printCsvValue(DatCon.version + "-Tablet", "", lineT, false);
+                        printCsvValue("Tablet", "", lineT, false);
                     } else {
-                        printCsvValue(DatCon.version, "", lineT, false);
+                        printCsvValue("", "", lineT, false);
                     }
                 }
             } else {
