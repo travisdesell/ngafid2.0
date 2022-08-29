@@ -147,10 +147,10 @@ public class DATDJIFile {
             throw new NotDATException("");
         }
         if ((new String(arra, 242, 10).equals("DJI_LOG_V3"))) {
-            DATDJIFile = new DatFileV3(datFileName);
+            DATDJIFile = new DATDJIFile(datFileName); // Was V3
             DATDJIFile.setStartOfRecords(256);
         } else {
-            DATDJIFile = new DatFileV1(datFileName);
+            DATDJIFile = new DATDJIFile(datFileName); // Was V1
             DATDJIFile.setStartOfRecords(128);
         }
         return DATDJIFile;
@@ -175,7 +175,7 @@ public class DATDJIFile {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
                 try {
-                    return new DatFileV3(result.getFile());
+                    return new DATDJIFile(result.getFile()); // Originally a V3
                 }
             }
         }
