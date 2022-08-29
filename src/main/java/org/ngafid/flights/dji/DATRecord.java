@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
 import java.util.Objects;
+import org.ngafid.flights.dji.DATConvert.lineType;
 
 
 public abstract class DATRecord extends RecSpec {
@@ -105,7 +106,7 @@ public abstract class DATRecord extends RecSpec {
                 System.out.println(errMsg);
                 e.printStackTrace();
             } else {
-                DatConLog.Exception(e, errMsg);
+//                DatConLog.Exception(e, errMsg);
             }
         }
         numRecExceptions++;
