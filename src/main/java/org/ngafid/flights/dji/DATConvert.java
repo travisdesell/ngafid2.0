@@ -42,7 +42,7 @@ public class DATConvert {
 
     public long timeOffset = 0;
 
-    public Vector<Record> records = new Vector<Record>();
+    public Vector<DATRecord> DATRecords = new Vector<DATRecord>();
 
 
     public KmlType kmlType = KmlType.NONE;
@@ -167,7 +167,7 @@ public class DATConvert {
 
     public void createRecordParsers() {
         GoTxt50_12.current = null; // TODO Figure out GoTxt50_12
-        Vector<Record> rcrds = new Vector<Record>();
+        Vector<DATRecord> rcrds = new Vector<DATRecord>();
         try {
             int numNoRecParsers = 0;
             int numCreatedParsers = 0;
@@ -178,24 +178,24 @@ public class DATConvert {
             Iterator<RecSpec> recInDatIter = recsInDat.values().iterator();
             while (recInDatIter.hasNext()) {
                 RecSpec recInDat = recInDatIter.next();
-                Vector<Record> recordInstVec = getRecordInst(recInDat);
-                if (recordInstVec != null && recordInstVec.size() > 0) {
-                    for (int recordInstVecIndex = 0; recordInstVecIndex < recordInstVec
+                Vector<DATRecord> DATRecordInstVec = getRecordInst(recInDat);
+                if (DATRecordInstVec != null && DATRecordInstVec.size() > 0) {
+                    for (int recordInstVecIndex = 0; recordInstVecIndex < DATRecordInstVec
                             .size(); recordInstVecIndex++) {
-                        Record recordInst = recordInstVec
+                        DATRecord DATRecordInst = DATRecordInstVec
                                 .get(recordInstVecIndex);
-                        int recInstLength = recordInst.getLength();
+                        int recInstLength = DATRecordInst.getLength();
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
-                            rcrds.addElement(recordInst);
+                            rcrds.addElement(DATRecordInst);
                             numCreatedParsers++;
                             DatConLog.Log("Add RecParser #" + numCreatedParsers
-                                    + " " + recordInst.getClassDescription());
+                                    + " " + DATRecordInst.getClassDescription());
                         } else {
                             DatConLog.Log(" Wrong length RecParser #"
                                     + numNoRecParsers + " RecInDat Id/Length ="
                                     + recInDat.getId() + "/"
                                     + recInDat.getLength() + " RecInst/length ="
-                                    + recordInst.getName() + "//"
+                                    + DATRecordInst.getName() + "//"
                                     + recInstLength);
                         }
                     }
@@ -211,23 +211,23 @@ public class DATConvert {
             Iterator<Integer> iter = Dictionary.defaultOrder.iterator();
             while (iter.hasNext()) {
                 int recId = iter.next().intValue();
-                Record foundRecord = null;
-                Iterator<Record> recordIter = rcrds.iterator();
+                DATRecord foundDATRecord = null;
+                Iterator<DATRecord> recordIter = rcrds.iterator();
                 while (recordIter.hasNext()) {
-                    Record rcrd = recordIter.next();
+                    DATRecord rcrd = recordIter.next();
                     if (rcrd.getId() == recId && !(rcrd instanceof RecordDef)) {
-                        records.add(rcrd);
-                        foundRecord = rcrd;
+                        DATRecords.add(rcrd);
+                        foundDATRecord = rcrd;
                     }
                 }
-                if (foundRecord != null) {
-                    rcrds.remove(foundRecord);
+                if (foundDATRecord != null) {
+                    rcrds.remove(foundDATRecord);
                 }
             }
-            Iterator<Record> recordIter = rcrds.iterator();
+            Iterator<DATRecord> recordIter = rcrds.iterator();
             while (recordIter.hasNext()) {
-                Record rcrd = recordIter.next();
-                records.add(rcrd);
+                DATRecord rcrd = recordIter.next();
+                DATRecords.add(rcrd);
             }
 
         } catch (Exception e) {
@@ -235,7 +235,7 @@ public class DATConvert {
         }
     }
 
-    protected Vector<Record> getRecordInst(RecSpec recSpec) {
+    protected Vector<DATRecord> getRecordInst(RecSpec recSpec) {
         throw new RuntimeException("ConvertDat.getRecordInst(RecInDat  called");
     }
 
@@ -245,8 +245,8 @@ public class DATConvert {
 
     protected void printCsvLine(lineType lineT) throws Exception {
         try {
-            for (int i = 0; i < records.size(); i++) {
-                records.get(i).printCols(lineT);
+            for (int i = 0; i < DATRecords.size(); i++) {
+                DATRecords.get(i).printCols(lineT);
             }
             if (lineT == lineType.HEADER) {
                 csvWriter.print(",Attribute|Value");
@@ -398,8 +398,8 @@ public class DATConvert {
 
     public void createXMLGuts() throws IOException {
         axes.clear();
-        for (int i = 0; i < records.size(); i++) {
-            ((Record) records.get(i)).printCols(lineType.XML);
+        for (int i = 0; i < DATRecords.size(); i++) {
+            ((DATRecord) DATRecords.get(i)).printCols(lineType.XML);
         }
         Iterator<Axis> iter = axes.iterator();
         while (iter.hasNext()) {
@@ -416,8 +416,8 @@ public class DATConvert {
 
     public void setCsvWriter(DAT2CSVWriter writer) {
         csvWriter = writer;
-        for (int i = 0; i < records.size(); i++) {
-            ((Record) records.get(i)).setCsvWriter(writer);
+        for (int i = 0; i < DATRecords.size(); i++) {
+            ((DATRecord) DATRecords.get(i)).setCsvWriter(writer);
         }
     }
 
@@ -462,8 +462,8 @@ public class DATConvert {
         return longitudeHP;
     }
 
-    public void setRecords(Vector<Record> recs) {
-        records = recs;
+    public void setRecords(Vector<DATRecord> recs) {
+        DATRecords = recs;
     }
 
     public void setSampleRate(float sampleRate) {

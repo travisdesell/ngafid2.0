@@ -157,7 +157,7 @@ public class DATDJIFile {
     }
 
     public static boolean isDatFile(String datFileName) {
-        byte arra[] = new byte[256];
+        byte[] arra = new byte[256];
         try {
             // TODO: Try With resources
             FileInputStream bfr = new FileInputStream(datFileName);
@@ -237,7 +237,7 @@ public class DATDJIFile {
         }
         startOfRecord = startOfRecords;
         setPosition(startOfRecord);
-        Record.totalNumRecExceptions = 0;
+        DATRecord.totalNumRecExceptions = 0;
     }
 
     public void skipOver(int num) throws IOException {
