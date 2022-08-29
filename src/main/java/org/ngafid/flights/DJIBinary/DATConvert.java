@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Vector;
 
 import src.DatConRecs.*;
@@ -85,7 +86,7 @@ public class DATConvert {
     private double relativeHeight = 0.0;
 
     private boolean relativeHeightOK = false;
-    LinkedList<AttrValuePair> attrVaulePairs = new LinkedList<AttrValuePair>(); // TODO: Look at Attr Value Pair
+    LinkedList<AttrValuePair> attrVaulePairs = new LinkedList<>();
 
     public DATConvert(DATDJIFile datFile) {
         this.datFile = datFile;
@@ -133,45 +134,7 @@ public class DATConvert {
 
     private double latitudeHP = 0.0;
 
-    public double getHPLongDeg() {
-        return longitudeHPDegrees;
-    }
 
-    public double getHPLatDeg() {
-        return latitudeHPDegrees;
-    }
-
-    public boolean isHpValid() {
-        return validHP;
-    }
-
-    public double getGeoDeclination() {
-        return geoDeclination;
-    }
-
-    public double getGeoInclination() {
-        return geoInclination;
-    }
-
-    public float getHPHeight() {
-        return heightHP;
-    }
-
-    public double getHPLatRad() {
-        return latitudeHP;
-    }
-
-    public double getHPLongRad() {
-        return longitudeHP;
-    }
-
-    public void setRecords(Vector<Record> recs) {
-        records = recs;
-    }
-
-    public void setSampleRate(float sampleRate) {
-        this.sampleRate = sampleRate;
-    }
 
     public int getNumMotors() {
         if (datFile.getModel() == DATDJIFile.DroneModel.M600 || datFile.getModel() == DATDJIFile.DroneModel.S900) {
@@ -460,7 +423,7 @@ public class DATConvert {
         }
     }
 
-    public void setCsvWriter(CsvWriter writer) {
+    public void setCsvWriter(DAT2CSVWriter writer) {
         csvWriter = writer;
         for (int i = 0; i < records.size(); i++) {
             ((Record) records.get(i)).setCsvWriter(writer);
@@ -474,6 +437,46 @@ public class DATConvert {
     public double getTime() {
         double time = datFile.time(tickNo, 0);
         return time;
+    }
+
+    public double getHPLongDeg() {
+        return longitudeHPDegrees;
+    }
+
+    public double getHPLatDeg() {
+        return latitudeHPDegrees;
+    }
+
+    public boolean isHpValid() {
+        return validHP;
+    }
+
+    public double getGeoDeclination() {
+        return geoDeclination;
+    }
+
+    public double getGeoInclination() {
+        return geoInclination;
+    }
+
+    public float getHPHeight() {
+        return heightHP;
+    }
+
+    public double getHPLatRad() {
+        return latitudeHP;
+    }
+
+    public double getHPLongRad() {
+        return longitudeHP;
+    }
+
+    public void setRecords(Vector<Record> recs) {
+        records = recs;
+    }
+
+    public void setSampleRate(float sampleRate) {
+        this.sampleRate = sampleRate;
     }
 
 }
