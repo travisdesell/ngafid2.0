@@ -19,15 +19,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.dji;
 
+import org.ngafid.flights.Flight;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.*;
+import java.util.logging.Logger;
 
 public class DATConvert {
+    public static final Logger LOG = Logger.getLogger(DATConvert.class.getName());
+
     public enum KmlType {
         NONE, GROUNDTRACK, PROFILE
     }
+
     public static TSAGeoMag geoMag = new TSAGeoMag();
 
     public DATDJIFile datFile = null;
@@ -127,7 +133,6 @@ public class DATConvert {
     private double latitudeHP = 0.0;
 
 
-
     public int getNumMotors() {
         if (datFile.getDroneModel() == DATHeader.DroneModel.M600 || datFile.getDroneModel() == DATHeader.DroneModel.S900) {
             return 6;
@@ -188,10 +193,10 @@ public class DATConvert {
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
                             rcrds.addElement(DATRecordInst);
                             numCreatedParsers++;
-                            DatConLog.Log("Add RecParser #" + numCreatedParsers
+                            LOG.info("Add RecParser #" + numCreatedParsers
                                     + " " + DATRecordInst.getClassDescription());
                         } else {
-                            DatConLog.Log(" Wrong length RecParser #"
+                            LOG.info(" Wrong length RecParser #"
                                     + numNoRecParsers + " RecInDat Id/Length ="
                                     + recInDat.getId() + "/"
                                     + recInDat.getLength() + " RecInst/length ="
@@ -201,11 +206,11 @@ public class DATConvert {
                     }
                 } else {
                     numNoRecParsers++;
-                    DatConLog.Log("No RecParser #" + numNoRecParsers + " RecId "
+                    LOG.info("No RecParser #" + numNoRecParsers + " RecId "
                             + recInDat + "/" + recInDat.getLength());
                 }
             }
-            DatConLog.Log("Num of created parsers " + numCreatedParsers
+            LOG.info("Num of created parsers " + numCreatedParsers
                     + " Num of NoRecParsers " + numNoRecParsers);
             //now sort the records
             Iterator<Integer> iter = Dictionary.defaultOrder.iterator();
@@ -224,14 +229,12 @@ public class DATConvert {
                     rcrds.remove(foundDATRecord);
                 }
             }
-            Iterator<DATRecord> recordIter = rcrds.iterator();
-            while (recordIter.hasNext()) {
-                DATRecord rcrd = recordIter.next();
+            for (DATRecord rcrd : rcrds) {
                 DATRecords.add(rcrd);
             }
 
         } catch (Exception e) {
-            DatConLog.Exception(e);
+            LOG.warning(e.toString());
         }
     }
 
@@ -265,7 +268,7 @@ public class DATConvert {
             }
             csvWriter.print("\n");
         } catch (Exception e) {
-            DatConLog.Exception(e, "ConvertDat error in printCsvLine");
+            LOG.warning("ConvertDat error in printCsvLine");
             throw e;
         }
     }
