@@ -28,6 +28,8 @@ import java.nio.channels.FileChannel;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
+import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Locale;
 
 public class DATDJIFile {
@@ -372,35 +374,16 @@ public class DATDJIFile {
         return ((long) (clockRate * time.doubleValue())) + offset;
     }
 
-    public void preAnalyze() throws NotDatFile {
-        switch (droneModelStr) {
-        case I1:
-            case M600:
-            case I2:
-            case M100:
-            case M200:
-                numBattCells = 6;
-            break;
-            case MavicPro:
-            case MavicAir:
-            case SPARK:
-                numBattCells = 3;
-            break;
-            case P3AP:
-            case P3S:
-            case P4:
-            case P4A:
-            case P4P:
+    public void preAnalyze() {
+        switch (droneModel) {
+            case I1, M600, I2, M100, M200 -> numBattCells = 6;
+            case MavicPro, MavicAir, SPARK -> numBattCells = 3;
+            case P3AP, P3S, P4, P4A, P4P -> numBattCells = 4;
+
+            default -> {
                 numBattCells = 4;
-            break;
-            case UNKNOWN:
-            numBattCells = 4;
-            DatConLog.Log("Assuming 4 cellls per battery");
-            break;
-        default:
-            numBattCells = 4;
-            DatConLog.Log("Assuming 4 cellls per battery");
-            break;
+//                DatConLog.Log("Assuming 4 cells per battery");
+            }
         }
     }
 
@@ -439,7 +422,7 @@ public class DATDJIFile {
         Iterator<RecSpec> iter = recsInDat.values().iterator();
         while (iter.hasNext()) {
             RecSpec tst = iter.next();
-            DatConLog.Log(tst.getDescription() + " Type " + tst.getId());
+//            DatConLog.Log(tst.getDescription() + " Type " + tst.getId());
         }
     }
 
@@ -455,8 +438,8 @@ public class DATDJIFile {
         return (((double) numCorrupted) / ((double) numRecs)) / 100.0;
     }
 
-    public double getErrorRatio(Type _type) {
-        switch (_type) {
+    public double getErrorRatio(Type type) {
+        switch (type) {
         case CRC:
             return (double) Corrupted.getNum(Corrupted.Type.CRC)
                     / (double) numRecs;
