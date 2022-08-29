@@ -5,9 +5,18 @@ var path = require('path');
 module.exports = {
     watch: true,
 
-    node: {
-          fs: 'empty'
+    resolve: {
+        fallback: {
+            fs: false,
+            path: false,
+        }
     },
+
+    /*
+    node: {
+        fs: 'empty'
+    },
+    */
 
     watchOptions: {
         aggregateTimeout: 300,
@@ -44,8 +53,8 @@ module.exports = {
         event_definition: __dirname + "/src/main/javascript/event_definition.js",
         flight_display: __dirname + "/src/main/javascript/flight_display.js",
         time_zones: __dirname + "/src/main/javascript/time_zones.js",
-        user_preferences : __dirname + "/src/main/javascript/preferences_page.js",
-        event_annotations : __dirname + "/src/main/javascript/all_event_annotations.js",
+        user_preferences: __dirname + "/src/main/javascript/preferences_page.js",
+        event_definitions_display: __dirname + "/src/main/javascript/event_definitions_display.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
         ttf: __dirname + "/src/main/javascript/ttf.js"
