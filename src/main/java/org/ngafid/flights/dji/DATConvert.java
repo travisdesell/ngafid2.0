@@ -19,8 +19,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.dji;
 
-import org.ngafid.flights.Flight;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -48,7 +46,7 @@ public class DATConvert {
 
     public long timeOffset = 0;
 
-    public Vector<DATRecord> DATRecords = new Vector<DATRecord>();
+    public List<DATRecord> DATRecords = new ArrayList<DATRecord>();
 
 
     public KmlType kmlType = KmlType.NONE;
@@ -84,7 +82,7 @@ public class DATConvert {
     private double relativeHeight = 0.0;
 
     private boolean relativeHeightOK = false;
-    LinkedList<AttrValuePair> attrVaulePairs = new LinkedList<>();
+    List<AttrValuePair> attrValuePairs = new LinkedList<>();
 
     public DATConvert(DATDJIFile datFile) {
         this.datFile = datFile;
@@ -96,8 +94,6 @@ public class DATConvert {
     public enum lineType {
         HEADER, LINE, XML
     }
-
-    ;
 
     double lastLatRad = 0.0;
 
@@ -153,13 +149,13 @@ public class DATConvert {
 
 
     public void addAttrValuePair(String attr, String value) {
-        attrVaulePairs.add(new AttrValuePair(attr, value));
+        attrValuePairs.add(new AttrValuePair(attr, value));
     }
 
     protected void processAttrValuesPairs() throws IOException {
         csvWriter.print(",");
-        if (attrVaulePairs.size() > 0) {
-            AttrValuePair avp = attrVaulePairs.removeFirst();
+        if (attrValuePairs.size() > 0) {
+            AttrValuePair avp = attrValuePairs.removeFirst();
             csvWriter.print(avp.getAttr() + "|" + avp.getValue());
         }
     }
@@ -172,7 +168,7 @@ public class DATConvert {
 
     public void createRecordParsers() {
         GoTxt50_12.current = null; // TODO Figure out GoTxt50_12
-        Vector<DATRecord> rcrds = new Vector<DATRecord>();
+        List<DATRecord> recs = new ArrayList<>();
         try {
             int numNoRecParsers = 0;
             int numCreatedParsers = 0;
@@ -180,18 +176,13 @@ public class DATConvert {
             HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile
                     .getRecsInDat().clone();
 
-            Iterator<RecSpec> recInDatIter = recsInDat.values().iterator();
-            while (recInDatIter.hasNext()) {
-                RecSpec recInDat = recInDatIter.next();
+            for (RecSpec recInDat : recsInDat.values()) {
                 Vector<DATRecord> DATRecordInstVec = getRecordInst(recInDat);
                 if (DATRecordInstVec != null && DATRecordInstVec.size() > 0) {
-                    for (int recordInstVecIndex = 0; recordInstVecIndex < DATRecordInstVec
-                            .size(); recordInstVecIndex++) {
-                        DATRecord DATRecordInst = DATRecordInstVec
-                                .get(recordInstVecIndex);
+                    for (DATRecord DATRecordInst : DATRecordInstVec) {
                         int recInstLength = DATRecordInst.getLength();
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
-                            rcrds.addElement(DATRecordInst);
+                            recs.add(DATRecordInst);
                             numCreatedParsers++;
                             LOG.info("Add RecParser #" + numCreatedParsers
                                     + " " + DATRecordInst.getClassDescription());
@@ -217,29 +208,22 @@ public class DATConvert {
             while (iter.hasNext()) {
                 int recId = iter.next().intValue();
                 DATRecord foundDATRecord = null;
-                Iterator<DATRecord> recordIter = rcrds.iterator();
-                while (recordIter.hasNext()) {
-                    DATRecord rcrd = recordIter.next();
-                    if (rcrd.getId() == recId && !(rcrd instanceof RecordDef)) {
-                        DATRecords.add(rcrd);
-                        foundDATRecord = rcrd;
+                for (DATRecord rec : recs) {
+                    if (rec.getId() == recId && !(rec instanceof RecordDef)) {
+                        DATRecords.add(rec);
+                        foundDATRecord = rec;
                     }
                 }
                 if (foundDATRecord != null) {
-                    rcrds.remove(foundDATRecord);
+                    recs.remove(foundDATRecord);
                 }
             }
-            for (DATRecord rcrd : rcrds) {
-                DATRecords.add(rcrd);
-            }
+
+            DATRecords.addAll(recs);
 
         } catch (Exception e) {
             LOG.warning(e.toString());
         }
-    }
-
-    protected Vector<DATRecord> getRecordInst(RecSpec recSpec) {
-        throw new RuntimeException("ConvertDat.getRecordInst(RecInDat  called");
     }
 
     public DATDJIFile getDatFile() {
@@ -248,9 +232,10 @@ public class DATConvert {
 
     protected void printCsvLine(lineType lineT) throws Exception {
         try {
-            for (int i = 0; i < DATRecords.size(); i++) {
-                DATRecords.get(i).printCols(lineT);
+            for (DATRecord datRecord : DATRecords) {
+                datRecord.printCols(lineT);
             }
+
             if (lineT == lineType.HEADER) {
                 csvWriter.print(",Attribute|Value");
                 if (printVersion) {
@@ -282,17 +267,15 @@ public class DATConvert {
             this.relativeHeight = relativeHeight;
             this.relativeHeightOK = true;
         }
-        if (kmlType != KmlType.NONE && tickRangeLower <= tickNo) {
-            if (gpsCoordsOK) {
-                float alt = relativeHeight;
-                if (kmlType == KmlType.PROFILE) {
-                    alt += homePointElevation;
-                    absoluteHeight = alt;
-                    absoluteHeightValid = true;
-                }
-                kmlPS.println("              " + longitudeDegrees + ","
-                        + latitudeDegrees + "," + alt);
+        if (kmlType != KmlType.NONE && tickRangeLower <= tickNo &&) {
+            float alt = relativeHeight;
+            if (kmlType == KmlType.PROFILE) {
+                alt += homePointElevation;
+                absoluteHeight = alt;
+                absoluteHeightValid = true;
             }
+            kmlPS.println("              " + longitudeDegrees + ","
+                    + latitudeDegrees + "," + alt);
         }
     }
 
@@ -397,16 +380,15 @@ public class DATConvert {
         csvWriter.println("</timeAxis>");
     }
 
-    public HashSet<Axis> axes = new HashSet<Axis>();
+    public HashSet<Axis> axes = new HashSet<>();
 
     public void createXMLGuts() throws IOException {
         axes.clear();
-        for (int i = 0; i < DATRecords.size(); i++) {
-            ((DATRecord) DATRecords.get(i)).printCols(lineType.XML);
+        for (DATRecord datRecord : DATRecords) {
+            datRecord.printCols(lineType.XML);
         }
-        Iterator<Axis> iter = axes.iterator();
-        while (iter.hasNext()) {
-            Axis axis = iter.next();
+
+        for (Axis axis : axes) {
             csvWriter.println("  <axis>");
             csvWriter.println("   <name>" + axis.getName() + "</name>");
             csvWriter.println("   <label>" + axis.getLabel() + "</label>");
@@ -419,8 +401,8 @@ public class DATConvert {
 
     public void setCsvWriter(DAT2CSVWriter writer) {
         csvWriter = writer;
-        for (int i = 0; i < DATRecords.size(); i++) {
-            ((DATRecord) DATRecords.get(i)).setCSVWriter(writer);
+        for (DATRecord datRecord : DATRecords) {
+            datRecord.setCSVWriter(writer);
         }
     }
 
@@ -429,8 +411,7 @@ public class DATConvert {
     }
 
     public double getTime() {
-        double time = datFile.time(tickNo, 0);
-        return time;
+        return datFile.time(tickNo, 0);
     }
 
     public double getHPLongDeg() {
@@ -465,7 +446,7 @@ public class DATConvert {
         return longitudeHP;
     }
 
-    public void setRecords(Vector<DATRecord> recs) {
+    public void setRecords(List<DATRecord> recs) {
         DATRecords = recs;
     }
 
