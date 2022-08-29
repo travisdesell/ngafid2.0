@@ -13,7 +13,7 @@ public class DATDictionary {
     public static final Logger LOG = Logger.getLogger(DATDictionary.class.getName());
 
     static {
-        entries.add(new RecClassSpec(GoTxt50_12.class, 12, 50, 52, 53, 55));
+        entries.add(new RecClassSpec(goTxt5012.class, 12, 50, 52, 53, 55));
         entries.add(new RecClassSpec(RecBatt45_17.class, 17, 45));
         entries.add(new RecClassSpec(svn_info_65534.class, 65534, -1));
     }

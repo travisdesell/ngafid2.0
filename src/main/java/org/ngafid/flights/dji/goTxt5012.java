@@ -4,16 +4,15 @@ package org.ngafid.flights.dji;
 
 import java.util.logging.Logger;
 
-public class GoTxt50_12 extends DATRecord {
-        public static final Logger LOG = Logger.getLogger(GoTxt50_12.class.getName());
+public class goTxt5012 extends DATRecord {
+    public static final Logger LOG = Logger.getLogger(goTxt5012.class.getName());
 
-
-    public static enum NON_GPS_CAUSE {
+    public enum NON_GPS_CAUSE {
         ALREADY(0), FORBIN(1), GPSNUM_NONENOUGH(2), GPS_HDOP_LARGE(3), GPS_POSITION_NONMATCH(4), SPEED_ERROR_LARGE(5), YAW_ERROR_LARGE(6), COMPASS_ERROR_LARGE(7), UNKNOWN(8);
 
-        private int data = 0;
+        private final int data;
 
-        private NON_GPS_CAUSE(int n3) {
+        NON_GPS_CAUSE(int n3) {
             this.data = n3;
         }
 
@@ -21,36 +20,36 @@ public class GoTxt50_12 extends DATRecord {
             return this.data;
         }
 
-        public boolean _equals(int n2) {
+        public boolean dataEquals(int n2) {
             return this.data == n2;
         }
 
         public static NON_GPS_CAUSE find(int n2) {
-            NON_GPS_CAUSE nON_GPS_CAUSE = UNKNOWN;
-            for (int i2 = 0; i2 < NON_GPS_CAUSE.values().length; ++i2) {
-                if (!NON_GPS_CAUSE.values()[i2]._equals(n2)) continue;
-                nON_GPS_CAUSE = NON_GPS_CAUSE.values()[i2];
+            NON_GPS_CAUSE NON_GPS_CAUSE = UNKNOWN;
+            for (int i2 = 0; i2 < goTxt5012.NON_GPS_CAUSE.values().length; ++i2) {
+                if (!goTxt5012.NON_GPS_CAUSE.values()[i2].dataEquals(n2)) continue;
+                NON_GPS_CAUSE = goTxt5012.NON_GPS_CAUSE.values()[i2];
                 break;
             }
-            return nON_GPS_CAUSE;
+            return NON_GPS_CAUSE;
         }
     }
 
     public enum FLIGHT_ACTION {
         NONE(0), WARNING_POWER_GOHOME(1), WARNING_POWER_LANDING(2), SMART_POWER_GOHOME(3), SMART_POWER_LANDING(4), LOW_VOLTAGE_LANDING(5), LOW_VOLTAGE_GOHOME(6), SERIOUS_LOW_VOLTAGE_LANDING(7), RC_ONEKEY_GOHOME(8), RC_ASSISTANT_TAKEOFF(9), RC_AUTO_TAKEOFF(10), RC_AUTO_LANDING(11), APP_AUTO_GOHOME(12), APP_AUTO_LANDING(13), APP_AUTO_TAKEOFF(14), OUTOF_CONTROL_GOHOME(15), API_AUTO_TAKEOFF(16), API_AUTO_LANDING(17), API_AUTO_GOHOME(18), AVOID_GROUND_LANDING(19), AIRPORT_AVOID_LANDING(20), TOO_CLOSE_GOHOME_LANDING(21), TOO_FAR_GOHOME_LANDING(22), APP_WP_MISSION(23), WP_AUTO_TAKEOFF(24), GOHOME_AVOID(25), GOHOME_FINISH(26), VERT_LOW_LIMIT_LANDING(27), BATTERY_FORCE_LANDING(28), MC_PROTECT_GOHOME(29);
 
-        private int _value = 0;
+        private final int value;
 
         FLIGHT_ACTION(int paramInt) {
-            this._value = paramInt;
+            this.value = paramInt;
         }
 
         public int value() {
-            return this._value;
+            return this.value;
         }
 
         public boolean belongsTo(int paramInt) {
-            return this._value == paramInt;
+            return this.value == paramInt;
         }
 
         public static FLIGHT_ACTION find(int paramInt) {
@@ -123,9 +122,9 @@ public class GoTxt50_12 extends DATRecord {
         }
     }
 
-    public static GoTxt50_12 current = null;
+    public static goTxt5012 current = null;
 
-    public GoTxt50_12(DATConvert DATConvert) {
+    public goTxt5012(DATConvert DATConvert) {
         super(DATConvert, 12, 50);
         current = this;
     }
@@ -235,11 +234,11 @@ public class GoTxt50_12 extends DATRecord {
     public void setStateStrings() {
         NON_GPS_CAUSE ngc = NON_GPS_CAUSE.find(nonGPSError);
         NGPE = ngc.name();
-        GoTxt50_12.FLYC_STATE fs = GoTxt50_12.FLYC_STATE.find(flyc_state);
+        goTxt5012.FLYC_STATE fs = goTxt5012.FLYC_STATE.find(flyc_state);
         FLCS = fs.name();
-        GoTxt50_12.FLIGHT_ACTION fa = GoTxt50_12.FLIGHT_ACTION.find(flight_action);
+        goTxt5012.FLIGHT_ACTION fa = goTxt5012.FLIGHT_ACTION.find(flight_action);
         FLACTION = fa.name();
-        GoTxt50_12.FLYC_COMMAND fc = GoTxt50_12.FLYC_COMMAND.find(flycCommand);
+        goTxt5012.FLYC_COMMAND fc = goTxt5012.FLYC_COMMAND.find(flycCommand);
         FLYCCOMMAND = fc.name();
         ModeSwitch = "P";
         if (rcModeChannel == 1) {
@@ -294,7 +293,7 @@ public class GoTxt50_12 extends DATRecord {
     private static DATSignal attExpSig = DATSignal.SeriesFloatExperimental("attitudeExperimental", "AttitudeExp", null, Units.degrees);
 
     @Override
-    public void printCols(lineType lineT) {
+    public void printCols(DATConvert.lineType lineT) {
         try {
             setStateStrings();
             printCSVValue(FLCS, flyCStateSig, "", lineT, valid);

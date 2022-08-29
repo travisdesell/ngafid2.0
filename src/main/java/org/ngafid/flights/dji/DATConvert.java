@@ -91,7 +91,7 @@ public class DATConvert {
     public DATConvert() {
     }
 
-    public enum lineType {
+    public static enum lineType {
         HEADER, LINE, XML
     }
 
@@ -165,7 +165,7 @@ public class DATConvert {
 
 
     public void createRecordParsers() {
-        GoTxt50_12.current = null; // TODO Figure out GoTxt50_12
+        goTxt5012.current = null; // TODO Figure out GoTxt50_12
         List<DATRecord> recs = new ArrayList<>();
         try {
             int numNoRecParsers = 0;
