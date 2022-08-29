@@ -1,6 +1,7 @@
 package org.ngafid.flights.dji;
 
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 
 public class DATHeader {
 
@@ -9,9 +10,11 @@ public class DATHeader {
     }
 
     private final DatFile datFile;
+    private final String firmwareDate;
 
     public DATHeader(DatFile datFile) {
         this.datFile = datFile;
+        this.firmwareDate = getFWDate();
     }
 
     public DroneModel getDroneModel() {
@@ -67,19 +70,14 @@ public class DATHeader {
         return str;
     }
 
-    public String getFWDate() {
-        byte x[] = new byte[13];
+    private String getFWDate() {
+        byte[] fwDateByteArr = new byte[13];
         int j = 0;
         for (int i = 21; i < 33; i++) {
-            x[j++] = datFile.memory.get(i);
+            fwDateByteArr[j++] = datFile.memory.get(i);
         }
-        String retv;
-        try {
-            retv = new String(x, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            retv = "";
-        }
-        return retv;
+
+        return new String(fwDateByteArr, StandardCharsets.UTF_8);
     }
 
 }
