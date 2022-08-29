@@ -80,7 +80,7 @@ public class DATDJIFile {
 
     public long gpsLockTick = -1;
 
-    protected int numBattCells = 0;
+    protected int numBatteryCells = 0;
 
     public DATHeader.DroneModel droneModel = DATHeader.DroneModel.UNKNOWN;
 
@@ -94,11 +94,17 @@ public class DATDJIFile {
 
     private DATHeader datHeader;
 
-    private HashMap<Integer, RecSpec> recsInDat = new HashMap<Integer, RecSpec>();
+    private HashMap<Integer, RecSpec> recsInDat = new HashMap<>();
 
     public long _tickNo = 0;
 
-    public int _type = 0;
+    public int type = 0;
+    private int numErrorCRC = 0;
+    private int numErrorOther = 0;
+
+    public enum errorType {
+        CRC, Other
+    }
 
     public HashMap<Integer, RecSpec> getRecsInDat() {
         return recsInDat;
@@ -119,8 +125,7 @@ public class DATDJIFile {
         this(new File(fileName));
     }
 
-    public static DATDJIFile createDatFile(String datFileName)
-            throws NotDatFile, IOException {
+    public static DATDJIFile createDatFile(String datFileName) throws NotDatFile, IOException {
         byte arra[] = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
 //        DatConLog.Log(" ");
@@ -286,13 +291,6 @@ public class DATDJIFile {
         return memory.getShort((int) fp);
     }
 
-    //    protected short getShort(long fp) throws FileEnd {
-    //        if (fp > fileLength - 2)
-    //            throw (new FileEnd());
-    //        return (int) (0xff & memory.get((int) fp))
-    //                + 256 * (int) (0xff & memory.get((int) (fp + 1)));
-    //    }
-
     public int getUnsignedShort() {
         return (0xff & memory.get((int) filePos))
                 + 256 * (0xff & memory.get((int) (filePos + 1)));
@@ -376,19 +374,15 @@ public class DATDJIFile {
 
     public void preAnalyze() {
         switch (droneModel) {
-            case I1, M600, I2, M100, M200 -> numBattCells = 6;
-            case MavicPro, MavicAir, SPARK -> numBattCells = 3;
-            case P3AP, P3S, P4, P4A, P4P -> numBattCells = 4;
+            case I1, M600, I2, M100, M200 -> this.numBatteryCells = 6;
+            case MavicPro, MavicAir, SPARK -> this.numBatteryCells = 3;
+            default -> this.numBatteryCells = 4;
 
-            default -> {
-                numBattCells = 4;
-//                DatConLog.Log("Assuming 4 cells per battery");
-            }
         }
     }
 
-    public int getNumBattCells() {
-        return numBattCells;
+    public int getNumBatteryCells() {
+        return this.numBatteryCells;
     }
 
     public String getFirmwareDate() {
@@ -438,18 +432,12 @@ public class DATDJIFile {
         return (((double) numCorrupted) / ((double) numRecs)) / 100.0;
     }
 
-    public double getErrorRatio(Type type) {
-        switch (type) {
-        case CRC:
-            return (double) Corrupted.getNum(Corrupted.Type.CRC)
-                    / (double) numRecs;
-        case Other:
-            return (double) Corrupted.getNum(Corrupted.Type.Other)
-                    / (double) numRecs;
-        default:
-            return 0.0;
-
-        }
+    public double getErrorRatio(errorType type) {
+        return switch (type) {
+            case CRC -> (double) numErrorCRC / numRecs;
+            case Other -> (double) numErrorOther / numRecs;
+        };
     }
+
 
 }
