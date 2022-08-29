@@ -19,6 +19,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.dji;
 
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
@@ -135,6 +136,66 @@ public class DATConvert {
         }
 
         return 4;
+    }
+
+    public AnalyzeDatResults analyze(boolean printVersion) throws IOException {
+        insertFWDateStr();
+        boolean processedPayload = false;
+        this.printVersion = printVersion;
+        final int sampleSize = (int) (datFile.getClockRate() / sampleRate);
+
+        try {
+            datFile.reset();
+            // If there is a .csv being produced go ahead and output
+            // the first row containing the column headings
+            if (csvWriter != null) {
+                csvWriter.print("Tick#,offsetTime");
+                printCSVLine(lineType.HEADER);
+            }
+            long lastTickNoPrinted = -sampleSize;
+
+            while (datFile.getNextDatRec(true, true, true, false)) {
+                int payloadType = datFile.type;
+                long payloadStart = datFile.start;
+                int payloadLength = datFile.payloadLength;
+                tickNo = datFile.tickNo;
+                if (tickNo > tickRangeUpper) {
+                    throw new EOFException();
+                }
+                for (int i = 0; i < records.size(); i++) {
+                    if (records.get(i).isId(payloadType)) {
+                        Payload payload = new Payload(datFile, payloadStart, payloadLength, payloadType, tickNo);
+                        try {
+                            ((DATRecord) records.get(i)).process(payload);
+                            processedPayload = true;
+                        } catch (Exception e) {
+                            String errMsg = "Can't process record " + ((DATRecord) records.get(i)) + " tickNo=" + tickNo + " filePos=" + datFile.getPos();
+                            if (DATPersist.EXPERIMENTAL_DEV) {
+                                System.out.println(errMsg);
+                                e.printStackTrace();
+                            } else {
+                                LOG.warning(errMsg);
+                            }
+                            throw new RuntimeException(errMsg);
+                        }
+                    }
+                }
+                if (tickRangeLower <= tickNo && (csvWriter != null) && processedPayload && tickNo >= lastTickNoPrinted + sampleSize) {
+                    csvWriter.print(tickNo + "," + datFile.timeString(tickNo, timeOffset));
+                    printCSVLine(lineType.LINE);
+                    lastTickNoPrinted = tickNo;
+                    processedPayload = true;
+                }
+            }
+        } catch (Exception ex) {
+            throw new RuntimeException(ex);
+        } finally {
+            datFile.close();
+            LOG.info("CRC Error Ratio " + datFile.getErrorRatio(DATDJIFile.errorType.CRC));
+            LOG.info("Other Error Ratio " + datFile.getErrorRatio(DATDJIFile.errorType.Other));
+            LOG.info("TotalNumRecExceptions = " + DATRecord.totalNumRecExceptions);
+        }
+        return datFile.getResults();
     }
 
     private void printCsvValue(String header, String value, lineType lineT, boolean valid) throws IOException {
@@ -305,7 +366,7 @@ public class DATConvert {
         return datFile;
     }
 
-    protected void printCsvLine(lineType lineT) throws Exception {
+    protected void printCSVLine(lineType lineT) throws Exception {
         try {
             for (DATRecord datRecord : DATRecords) {
                 datRecord.printCols(lineT);
