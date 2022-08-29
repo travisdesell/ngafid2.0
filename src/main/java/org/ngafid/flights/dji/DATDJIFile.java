@@ -121,30 +121,31 @@ public class DATDJIFile {
         recsInDat.clear();
     }
 
-    public DATDJIFile(String fileName) throws IOException, NotDatFile {
+    public DATDJIFile(String fileName) throws IOException {
         this(new File(fileName));
     }
 
-    public static DATDJIFile createDatFile(String datFileName) throws NotDatFile, IOException {
+    public static DATDJIFile createDatFile(String datFileName) throws NotDATException, IOException {
         byte arra[] = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
 //        DatConLog.Log(" ");
 //        DatConLog.Log("createDatFile " + datFileName);
         FileInputStream bfr = new FileInputStream(new File(datFileName));
-        bfr.read(arra, 0, 256);
+        bfr.read(arra, 0, 256); // TODO: Might remove
         bfr.close();
         String headerString = new String(arra, 0, 21);
-        if (!(headerString.substring(16, 21).equals("BUILD"))) {
+        if (!(headerString.startsWith("BUILD", 16))) {
             if (Persist.invalidStructOK) {
 //                DatConLog.Log("createDatFile invalid header - proceeding");
-                DATDJIFile = new DatFileV3(datFileName);
+//                DATDJIFile = new DatFileV3(datFileName);
                 DATDJIFile.setStartOfRecords(256);
                 return DATDJIFile;
             }
             if (headerString.substring(0, 4).equals("LOGH")) {
-//                throw new NotDatFile("Probably an encrypted .DAT");
+                throw new NotDATException("Probably an encrypted .DAT");
             }
-//            throw new NotDatFile();
+
+            throw new NotDATException("");
         }
         if ((new String(arra, 242, 10).equals("DJI_LOG_V3"))) {
             DATDJIFile = new DatFileV3(datFileName);
@@ -174,7 +175,6 @@ public class DATDJIFile {
     public static DATDJIFile createDatFile(String datFileName, final DatCon datCon) throws IOException {
         if (DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
-                int lastSlash = datFileName.lastIndexOf("\\");
                 try {
                     return new DatFileV3(result.getFile());
                 }
@@ -298,8 +298,7 @@ public class DATDJIFile {
 
     protected int getUnsignedShort(long fp) throws EOFException {
         if (fp > fileLength - 2) throw (new EOFException());
-        return (0xff & memory.get((int) fp))
-                + 256 * (int) (0xff & memory.get((int) (fp + 1)));
+        return (0xff & memory.get((int) fp)) + 256 * (0xff & memory.get((int) (fp + 1)));
     }
 
     public int getInt() {
@@ -387,11 +386,7 @@ public class DATDJIFile {
         return datHeader.getFirmwareDate();
     }
 
-    public String getACTypeString() {
-        if (droneModel != DATHeader.DroneModel.UNKNOWN) {
-            return droneModelStr.toString();
-        }
-
+    public String getDroneModelStr() {
         return droneModelStr;
     }
 
