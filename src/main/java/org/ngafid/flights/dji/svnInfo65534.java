@@ -18,10 +18,8 @@ public class svnInfo65534 extends DATRecord {
         try {
             this.payload = payload.getByteBuffer();
             payloadString = payload.getString();
-            if (convertDat.cloPS != null) {
-                if (payloadString.length() > 0) {
-                    convertDat.cloPS.println(payload.getCleanString());
-                }
+            if (convertDat.cloPS != null && payloadString.length() > 0) {
+                convertDat.cloPS.println(payload.getCleanString());
             }
         } catch (Exception e) {
             RecordException(e);
