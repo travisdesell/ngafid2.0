@@ -238,13 +238,12 @@ public class Flight {
      * detailing which parameter is missing and for what calculation
      *
      * @param calculationName is the name of the calculation for which the method is checking for parameters
-     * @param seriesNames is the names of the series to check for
-     *
+     * @param seriesNames     is the names of the series to check for
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
+    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
+            if (!this.doubleTimeSeries.keySet().contains(param)) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
@@ -261,7 +260,7 @@ public class Flight {
      * @return a {@link List} of the missing column names, an empty list if there are none.
      */
 
-    public List<String> checkCalculationParameters(String ... seriesNames) {
+    public List<String> checkCalculationParameters(String [] seriesNames) {
         List<String> missingColumns = new ArrayList<>();
 
         for (String param : seriesNames) {
@@ -281,6 +280,7 @@ public class Flight {
     /**
      * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
      * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
+     *
      * @param connection
      * @param startDate
      * @param endDate
@@ -2657,7 +2657,7 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
