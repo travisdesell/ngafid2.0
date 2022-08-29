@@ -142,8 +142,7 @@ public class DATConvert {
             csvWriter.print("," + header);
         } else {
             csvWriter.print(",");
-            if (valid)
-                csvWriter.print("" + value.trim());
+            if (valid) csvWriter.print("" + value.trim());
         }
     }
 
@@ -160,8 +159,7 @@ public class DATConvert {
         }
     }
 
-    protected void printAttrValuePair(String attr, String value)
-            throws IOException {
+    protected void printAttrValuePair(String attr, String value) throws IOException {
         csvWriter.print("," + attr + "," + value);
     }
 
@@ -172,9 +170,7 @@ public class DATConvert {
         try {
             int numNoRecParsers = 0;
             int numCreatedParsers = 0;
-            @SuppressWarnings("unchecked")
-            HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile
-                    .getRecsInDat().clone();
+            @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
 
             for (RecSpec recInDat : recsInDat.values()) {
                 Vector<DATRecord> DATRecordInstVec = getRecordInst(recInDat);
@@ -184,25 +180,17 @@ public class DATConvert {
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
                             recs.add(DATRecordInst);
                             numCreatedParsers++;
-                            LOG.info("Add RecParser #" + numCreatedParsers
-                                    + " " + DATRecordInst.getClassDescription());
+                            LOG.info("Add RecParser #" + numCreatedParsers + " " + DATRecordInst.getClassDescription());
                         } else {
-                            LOG.info(" Wrong length RecParser #"
-                                    + numNoRecParsers + " RecInDat Id/Length ="
-                                    + recInDat.getId() + "/"
-                                    + recInDat.getLength() + " RecInst/length ="
-                                    + DATRecordInst.getName() + "//"
-                                    + recInstLength);
+                            LOG.info(" Wrong length RecParser #" + numNoRecParsers + " RecInDat Id/Length =" + recInDat.getId() + "/" + recInDat.getLength() + " RecInst/length =" + DATRecordInst.getName() + "//" + recInstLength);
                         }
                     }
                 } else {
                     numNoRecParsers++;
-                    LOG.info("No RecParser #" + numNoRecParsers + " RecId "
-                            + recInDat + "/" + recInDat.getLength());
+                    LOG.info("No RecParser #" + numNoRecParsers + " RecId " + recInDat + "/" + recInDat.getLength());
                 }
             }
-            LOG.info("Num of created parsers " + numCreatedParsers
-                    + " Num of NoRecParsers " + numNoRecParsers);
+            LOG.info("Num of created parsers " + numCreatedParsers + " Num of NoRecParsers " + numNoRecParsers);
             //now sort the records
             Iterator<Integer> iter = Dictionary.defaultOrder.iterator();
             while (iter.hasNext()) {
@@ -239,11 +227,9 @@ public class DATConvert {
             if (lineT == lineType.HEADER) {
                 csvWriter.print(",Attribute|Value");
                 if (printVersion) {
-                    printCsvValue(this.getClass().getSimpleName(), "", lineT,
-                            false);
+                    printCsvValue(this.getClass().getSimpleName(), "", lineT, false);
                     if (datFile.isTablet()) {
-                        printCsvValue(DatCon.version + "-Tablet", "", lineT,
-                                false);
+                        printCsvValue(DatCon.version + "-Tablet", "", lineT, false);
                     } else {
                         printCsvValue(DatCon.version, "", lineT, false);
                     }
@@ -258,11 +244,9 @@ public class DATConvert {
         }
     }
 
-    public void processCoords(double longitudeDegrees, double latitudeDegrees,
-                              float relativeHeight) {
+    public void processCoords(double longitudeDegrees, double latitudeDegrees, float relativeHeight) {
         if (!gpsCoordsOK) {
-            gpsCoordsOK = (longitudeDegrees != 0.0 && latitudeDegrees != 0.0
-                    && relativeHeight != 0.0f);
+            gpsCoordsOK = (longitudeDegrees != 0.0 && latitudeDegrees != 0.0 && relativeHeight != 0.0f);
         } else {
             this.relativeHeight = relativeHeight;
             this.relativeHeightOK = true;
@@ -274,13 +258,11 @@ public class DATConvert {
                 absoluteHeight = alt;
                 absoluteHeightValid = true;
             }
-            kmlPS.println("              " + longitudeDegrees + ","
-                    + latitudeDegrees + "," + alt);
+            kmlPS.println("              " + longitudeDegrees + "," + latitudeDegrees + "," + alt);
         }
     }
 
-    public void processCoordsNoGoTxt(double longitudeDegrees,
-                                     double latitudeDegrees, float baroRaw) {
+    public void processCoordsNoGoTxt(double longitudeDegrees, double latitudeDegrees, float baroRaw) {
         if (!gpsCoordsOK) {
             gpsCoordsOK = (longitudeDegrees != 0.0 && latitudeDegrees != 0.0);
         }
@@ -297,11 +279,9 @@ public class DATConvert {
                         absoluteHeight = alt;
                         absoluteHeightValid = true;
                     }
-                    kmlPS.println("              " + longitudeDegrees + ","
-                            + latitudeDegrees + "," + alt);
+                    kmlPS.println("              " + longitudeDegrees + "," + latitudeDegrees + "," + alt);
                 } else {
-                    kmlPS.println("              " + longitudeDegrees + ","
-                            + latitudeDegrees);
+                    kmlPS.println("              " + longitudeDegrees + "," + latitudeDegrees);
                 }
             }
         }
@@ -318,18 +298,12 @@ public class DATConvert {
         latitudeHP = Math.toRadians(latitudeHPDegrees);
         validHP = true;
         if (geoDeclination == 0.0) {
-            geoDeclination = geoMag.getDeclination(latitudeHPDegrees,
-                    longitudeHPDegrees);
-            addAttrValuePair("geoDeclination",
-                    String.format("%1$2.2f degrees", geoDeclination));
-            geoInclination = geoMag.getDipAngle(latitudeHPDegrees,
-                    longitudeHPDegrees);
-            addAttrValuePair("geoInclination",
-                    String.format("%1$2.2f degrees", geoInclination));
-            geoIntensity = geoMag.getIntensity(latitudeHPDegrees,
-                    longitudeHPDegrees);
-            addAttrValuePair("geoIntensity",
-                    String.format("%1$2.2f nanoTesla", geoIntensity));
+            geoDeclination = geoMag.getDeclination(latitudeHPDegrees, longitudeHPDegrees);
+            addAttrValuePair("geoDeclination", String.format("%1$2.2f degrees", geoDeclination));
+            geoInclination = geoMag.getDipAngle(latitudeHPDegrees, longitudeHPDegrees);
+            addAttrValuePair("geoInclination", String.format("%1$2.2f degrees", geoInclination));
+            geoIntensity = geoMag.getIntensity(latitudeHPDegrees, longitudeHPDegrees);
+            addAttrValuePair("geoIntensity", String.format("%1$2.2f nanoTesla", geoIntensity));
         }
     }
 
