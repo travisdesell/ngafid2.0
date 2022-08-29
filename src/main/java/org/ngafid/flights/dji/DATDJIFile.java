@@ -215,7 +215,6 @@ public class DATDJIFile {
         }
         memory = null;
         System.gc();
-        System.runFinalization();
     }
 
     public void reset() throws IOException, FileEnd {
@@ -226,8 +225,8 @@ public class DATDJIFile {
         results = new AnalyzeDatResults();
         if (inputStream == null) {
             inputStream = new FileInputStream(file);
-            _channel = inputStream.getChannel();
-            memory = _channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
+            channel = inputStream.getChannel();
+            memory = channel.map(FileChannel.MapMode.READ_ONLY, 0, fileLength);
             memory.order(ByteOrder.LITTLE_ENDIAN);
         }
         startOfRecord = startOfRecords;
@@ -239,7 +238,7 @@ public class DATDJIFile {
         filePos = filePos + num;
         if (filePos > fileLength)
             throw (new IOException());
-        _channel.position(filePos);
+        channel.position(filePos);
     }
 
     public String toString() {
@@ -250,7 +249,7 @@ public class DATDJIFile {
         filePos = pos;
         if (filePos > fileLength)
             throw (new FileEnd());
-        _channel.position(pos);
+        channel.position(pos);
     }
 
     public long getPos() {
@@ -293,14 +292,14 @@ public class DATDJIFile {
     //    }
 
     public int getUnsignedShort() {
-        return (int) (0xff & memory.get((int) filePos))
-                + 256 * (int) (0xff & memory.get((int) (filePos + 1)));
+        return (0xff & memory.get((int) filePos))
+                + 256 * (0xff & memory.get((int) (filePos + 1)));
     }
 
     protected int getUnsignedShort(long fp) throws FileEnd {
         if (fp > fileLength - 2)
             throw (new FileEnd());
-        return (int) (0xff & memory.get((int) fp))
+        return (0xff & memory.get((int) fp))
                 + 256 * (int) (0xff & memory.get((int) (fp + 1)));
     }
 

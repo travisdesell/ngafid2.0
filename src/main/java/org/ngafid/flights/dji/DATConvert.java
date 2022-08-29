@@ -129,7 +129,7 @@ public class DATConvert {
 
 
     public int getNumMotors() {
-        if (datFile.getModel() == DATDJIFile.DroneModel.M600 || datFile.getModel() == DATDJIFile.DroneModel.S900) {
+        if (datFile.getDroneModel() == DATHeader.DroneModel.M600 || datFile.getDroneModel() == DATHeader.DroneModel.S900) {
             return 6;
         }
 
