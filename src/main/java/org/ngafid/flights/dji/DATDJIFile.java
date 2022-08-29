@@ -26,6 +26,7 @@ import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Locale;
 
 public class DATDJIFile {
@@ -96,6 +97,8 @@ public class DATDJIFile {
     public int type = 0;
     private int numErrorCRC = 0;
     private int numErrorOther = 0;
+    private List<RecordDef> recordDefs;
+
 
     public enum errorType {
         CRC, Other
@@ -401,6 +404,10 @@ public class DATDJIFile {
             case CRC -> (double) numErrorCRC / numRecs;
             case Other -> (double) numErrorOther / numRecs;
         };
+    }
+
+    public List<RecordDef> getRecordDefs() {
+        return recordDefs;
     }
 
 
