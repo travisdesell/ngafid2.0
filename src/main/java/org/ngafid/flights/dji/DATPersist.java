@@ -155,8 +155,7 @@ public class DATPersist {
                 case ENGINEERED_AND_DAT -> ps.println("parsingMode:ENGINEERED_AND_DAT");
                 case JUST_DAT -> ps.println("parsingMode:JUST_DAT");
                 case JUST_ENGINEERED -> ps.println("parsingMode:JUST_DEFINED");
-                default -> {
-                }
+                default -> {}
             }
 
             if (invalidStructOK) {
@@ -202,8 +201,7 @@ public class DATPersist {
                 while ((line = br.readLine()) != null) {
                     if (line.indexOf("outputDir:") == 0) {
                         index = line.indexOf(":") + 1;
-                        String outDir = line.substring(index);
-                        outputDirName = outDir;
+                        outputDirName = line.substring(index);
                     }
                     if (line.indexOf("inputFile:") == 0) {
                         index = line.indexOf(":") + 1;

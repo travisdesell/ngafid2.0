@@ -63,7 +63,6 @@ public class DATDJIFile {
 
     protected long numRecs = 0;
 
-    protected AnalyzeDatResults results = null;
 
     public long startOfRecord = 0;
 
@@ -185,7 +184,6 @@ public class DATDJIFile {
     public DATDJIFile(File file) throws FileNotFoundException {
         this.datHeader = new DATHeader(this);
         this.file = file;
-        this.results = new AnalyzeDatResults();
         this.fileLength = file.length();
         this.inputStream = new FileInputStream(file);
         this.channel = inputStream.getChannel();
@@ -228,7 +226,6 @@ public class DATDJIFile {
         // tickGroups[1].reset();
         // tgIndex = 1;
         numCorrupted = 0;
-        results = new AnalyzeDatResults();
         if (inputStream == null) {
             inputStream = new FileInputStream(file);
             channel = inputStream.getChannel();
@@ -326,10 +323,6 @@ public class DATDJIFile {
 
     public double getDouble() {
         return memory.getDouble((int) filePos);
-    }
-
-    public AnalyzeDatResults getResults() {
-        return results;
     }
 
     public File getFile() {
