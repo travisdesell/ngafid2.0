@@ -1,22 +1,28 @@
 package org.ngafid;
 
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
+import java.lang.Thread;
+import java.lang.Runnable;
+
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
 
 
 public class Database {
     private static Connection connection;
+    private static boolean connectionInitiated;
     private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+
+    private static final Logger LOG = Logger.getLogger(Database.class.getName());
+
+    private static final long HOUR = 3600000;
 
     public static Connection getConnection() { 
         try {
@@ -113,6 +119,30 @@ public class Database {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
+        }
+
+        if (!connectionInitiated) {
+            connectionInitiated = true; 
+
+            LOG.info("Log for SQL server poker, starting at: " + LocalDateTime.now().toString());
+
+            new Thread(() -> {
+                while (true) {
+                    try {
+                        Thread.sleep(HOUR); 
+
+                        String dummyQuery = "SELECT id FROM event_definitions WHERE id <= 1";
+                        PreparedStatement preparedStatement = getConnection().prepareStatement(dummyQuery);
+
+                        ResultSet rs = preparedStatement.executeQuery();
+                        rs.close();
+
+                        LOG.info("Performed dummy query: " + dummyQuery + " at " + LocalDateTime.now().toString());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            }).start();
         }
     }
 
