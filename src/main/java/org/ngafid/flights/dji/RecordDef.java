@@ -1,7 +1,5 @@
 package org.ngafid.flights.dji;
 
-import sun.misc.DATSignal;
-
 import java.util.Vector;
 
 public class RecordDef extends DATRecord {
