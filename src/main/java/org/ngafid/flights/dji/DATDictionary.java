@@ -70,15 +70,15 @@ public class DATDictionary {
 
     }
 
-    public static Record getRecordInst(Vector<RecClassSpec> entries, RecClassSpec recInDat, DATConvert convertDat, boolean strictLength) {
-        Record retv = null;
+    public static DATRecord getRecordInst(Vector<RecClassSpec> entries, RecClassSpec recInDat, DATConvert convertDat, boolean strictLength) {
+        DATRecord retv = null;
         for (RecClassSpec recClassSpec : entries) {
             if (recClassSpec.getId() == recInDat.getId()) {
                 if ((recClassSpec.lengthOK(recInDat.getLength())) || (!strictLength && recClassSpec.getLength() < recInDat.getLength())) {
                     Class<?> recordClass = recClassSpec.getRecClass();
                     if (recordClass != null) {
                         try {
-                            retv = (Record) recordClass.getConstructor(DATConvert.class).newInstance(convertDat);
+                            retv = (DATRecord) recordClass.getConstructor(DATConvert.class).newInstance(convertDat);
                             return retv;
                         } catch (InstantiationException | IllegalAccessException | IllegalArgumentException |
                                  InvocationTargetException | NoSuchMethodException | SecurityException e) {

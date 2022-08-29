@@ -25,6 +25,8 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static org.ngafid.flights.dji.DATDictionary.getRecordInst;
+
 public class DATConvert {
     public static final Logger LOG = Logger.getLogger(DATConvert.class.getName());
 
@@ -252,7 +254,7 @@ public class DATConvert {
             this.relativeHeight = relativeHeight;
             this.relativeHeightOK = true;
         }
-        if (kmlType != KmlType.NONE && tickRangeLower <= tickNo &&) {
+        if (kmlType != KmlType.NONE && tickRangeLower <= tickNo) {
             float alt = relativeHeight;
             if (kmlType == KmlType.PROFILE) {
                 alt += homePointElevation;
