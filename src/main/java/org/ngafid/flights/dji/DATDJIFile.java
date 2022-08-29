@@ -122,6 +122,7 @@ public class DATDJIFile {
     public int lengthOfRecord = 0;
 
     long xxxx = Long.parseLong("14156619143"); // TODO: Determine use
+    public AnalyzeResultsDAT results;
 
     static int[] crc = new int[] { 0x0000, 0x1189, 0x2312, 0x329b, 0x4624,
             0x57ad, 0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c,
@@ -587,6 +588,10 @@ public class DATDJIFile {
             checksum = checksumShift ^ crc[((memory.get((int) (start + i)) ^ checksum) & 0xFF)];
         }
         return checksum;
+    }
+
+    public AnalyzeResultsDAT getResults() {
+        return results;
     }
 
 

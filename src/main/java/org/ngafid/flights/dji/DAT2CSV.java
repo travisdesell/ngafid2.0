@@ -15,10 +15,7 @@ public class DAT2CSV {
 
         datFile.reset();
 
-        results = datConvert.analyze(true);
-
-
-
+        AnalyzeResultsDAT results = datConvert.analyze(true);
     }
 
 

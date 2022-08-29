@@ -47,8 +47,7 @@ public class DATConvert {
 
     public long timeOffset = 0;
 
-    public List<DATRecord> datRecords = new ArrayList<DATRecord>();
-
+    public List<DATRecord> datRecords = new ArrayList<>();
 
     public KmlType kmlType = KmlType.NONE;
 
@@ -61,6 +60,7 @@ public class DATConvert {
     public boolean csvEventLogOutput = false;
 
     public PrintStream eloPS = null;
+
 
     public PrintStream cloPS = null;
 
@@ -139,7 +139,6 @@ public class DATConvert {
     }
 
     public AnalyzeResultsDAT analyze(boolean printVersion) throws IOException {
-        insertFWDateStr();
         boolean processedPayload = false;
         this.printVersion = printVersion;
         final int sampleSize = (int) (datFile.getClockRate() / sampleRate);
@@ -231,10 +230,7 @@ public class DATConvert {
         try {
             int numNoRecParsers = 0;
             int numCreatedParsers = 0;
-            @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recs    public src.Files.AnalyzeDatResults getResults() {
-        return results;
-    }
-InDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
+            @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
 
             for (RecSpec recInDat : recsInDat.values()) {
                 List<DATRecord> datRecordInstLst = getRecordInst(recInDat);
@@ -293,10 +289,7 @@ InDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
                 } else {
                     rec = getRecordInstEngineered(recInDat);
                     if (rec != null) {
-                        retv.add(rec);    public src.Files.AnalyzeDatResults getResults() {
-        return results;
-    }
-
+                        retv.add(rec);
                     }
                 }
                 break;
@@ -582,9 +575,7 @@ InDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
         this.sampleRate = sampleRate;
     }
 
-    public AnalyzeResultsDAT getResults() {
-        return results;
-    }
+
 
 
 }
