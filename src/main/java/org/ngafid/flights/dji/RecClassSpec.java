@@ -2,14 +2,14 @@ package org.ngafid.flights.dji;
 
 public class RecClassSpec extends RecSpec {
 
-    Class<Record> recClass = null;
+    Class<DATRecord> recClass;
 
     int[] lengths = null;
 
     @SuppressWarnings("unchecked")
     public RecClassSpec(Class<?> recClass, int id, int length) {
         super(id, length);
-        this.recClass = (Class<Record>) recClass;
+        this.recClass = (Class<DATRecord>) recClass;
         if (length == -1) {
             setRecType(RecType.STRING);
         }
@@ -18,7 +18,7 @@ public class RecClassSpec extends RecSpec {
     @SuppressWarnings("unchecked")
     public RecClassSpec(Class<?> recClass, int id, int... lengths) {
         super(id, -1);
-        this.recClass = (Class<Record>) recClass;
+        this.recClass = (Class<DATRecord>) recClass;
         this.lengths = new int[lengths.length];
         System.arraycopy(lengths, 0, this.lengths, 0, lengths.length);
     }
@@ -40,7 +40,7 @@ public class RecClassSpec extends RecSpec {
         return false;
     }
 
-    public Class<Record> getRecClass() {
+    public Class<DATRecord> getRecClass() {
         return recClass;
     }
 

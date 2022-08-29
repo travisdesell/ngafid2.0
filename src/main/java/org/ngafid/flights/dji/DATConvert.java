@@ -25,8 +25,6 @@ import java.io.PrintStream;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.dji.DATDictionary.getRecordInst;
-
 public class DATConvert {
     public static final Logger LOG = Logger.getLogger(DATConvert.class.getName());
 
@@ -175,9 +173,9 @@ public class DATConvert {
             @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
 
             for (RecSpec recInDat : recsInDat.values()) {
-                Vector<DATRecord> DATRecordInstVec = getRecordInst(recInDat);
-                if (DATRecordInstVec != null && DATRecordInstVec.size() > 0) {
-                    for (DATRecord DATRecordInst : DATRecordInstVec) {
+                List<DATRecord> datRecordInstLst = getRecordInst(recInDat);
+                if (datRecordInstLst != null && datRecordInstLst.size() > 0) {
+                    for (DATRecord DATRecordInst : datRecordInstLst) {
                         int recInstLength = DATRecordInst.getLength();
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
                             recs.add(DATRecordInst);
@@ -194,9 +192,8 @@ public class DATConvert {
             }
             LOG.info("Num of created parsers " + numCreatedParsers + " Num of NoRecParsers " + numNoRecParsers);
             //now sort the records
-            Iterator<Integer> iter = DATDictionary.defaultOrder.iterator();
-            while (iter.hasNext()) {
-                int recId = iter.next().intValue();
+            for (Integer integer : DATDictionary.defaultOrder) {
+                int recId = integer;
                 DATRecord foundDATRecord = null;
                 for (DATRecord rec : recs) {
                     if (rec.getId() == recId && !(rec instanceof RecordDef)) {
@@ -214,6 +211,94 @@ public class DATConvert {
         } catch (Exception e) {
             LOG.warning(e.toString());
         }
+    }
+
+    protected List<DATRecord> getRecordInst(RecSpec recInDat) {
+        List<DATRecord> retv = new ArrayList<>();
+        DATRecord rec;
+        rec = DATDictionary.getRecordInst(DATDictionary.entries, recInDat, this, true);
+        if (rec != null) {
+            retv.add(rec);
+            return retv;
+        }
+        switch (DATPersist.parsingMode) {
+            case DAT_THEN_ENGINEERED:
+                rec = getRecordInstFromDat(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                } else {
+                    rec = getRecordInstEngineered(recInDat);
+                    if (rec != null) {
+                        retv.add(rec);
+                    }
+                }
+                break;
+            case ENGINEERED_THEN_DAT:
+                rec = getRecordInstEngineered(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                } else {
+                    rec = getRecordInstFromDat(recInDat);
+                    if (rec != null) {
+                        retv.add(rec);
+                    }
+                }
+                break;
+            case JUST_DAT:
+                rec = getRecordInstFromDat(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                }
+                break;
+            case JUST_ENGINEERED:
+                rec = getRecordInstEngineered(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                }
+                break;
+            case ENGINEERED_AND_DAT:
+                rec = getRecordInstEngineered(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                }
+                rec = getRecordInstFromDat(recInDat);
+                if (rec != null) {
+                    retv.add(rec);
+                }
+                break;
+            default:
+                return retv;
+        }
+
+        return null;
+    }
+
+    private DATRecord getRecordInstEngineered(RecSpec recInDat) {
+        DATRecord retv;
+        retv = DATDictionary.getRecordInst(DATDictionary.entries, recInDat, this, true);
+        if (retv != null) {
+            return retv;
+        }
+        retv = DATDictionary.getRecordInst(DATDictionary.entries, recInDat, this, true);
+        return retv;
+    }
+
+    private DATRecord getRecordInstFromDat(RecSpec recInDat) {
+        List<RecordDef> recordDefs = datFile.getRecordDefs();
+        if (recordDefs != null) {
+            for (RecordDef recDef : recordDefs) {
+                if (recDef.getId() == recInDat.getId() && recDef.getLength() <= recInDat.getLength()) {
+                    recDef.init(this);
+                    return recDef;
+                }
+            }
+        }
+        DATRecord retv = null;
+        if (null != (retv = DATDictionary.getRecordInst(DATDictionary.entries, recInDat, this, false))) {
+            return retv;
+        }
+
+        return DATDictionary.getRecordInst(DATDictionary.entries, recInDat, this, false);
     }
 
     public DATDJIFile getDatFile() {

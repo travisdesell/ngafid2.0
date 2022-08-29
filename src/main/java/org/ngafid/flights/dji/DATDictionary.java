@@ -70,7 +70,7 @@ public class DATDictionary {
 
     }
 
-    public static DATRecord getRecordInst(Vector<RecClassSpec> entries, RecClassSpec recInDat, DATConvert convertDat, boolean strictLength) {
+    public static DATRecord getRecordInst(List<RecClassSpec> entries, RecSpec recInDat, DATConvert convertDat, boolean strictLength) {
         DATRecord retv = null;
         for (RecClassSpec recClassSpec : entries) {
             if (recClassSpec.getId() == recInDat.getId()) {
