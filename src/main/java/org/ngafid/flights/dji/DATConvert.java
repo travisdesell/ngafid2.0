@@ -47,7 +47,7 @@ public class DATConvert {
 
     public long timeOffset = 0;
 
-    public List<DATRecord> DATRecords = new ArrayList<DATRecord>();
+    public List<DATRecord> datRecords = new ArrayList<DATRecord>();
 
 
     public KmlType kmlType = KmlType.NONE;
@@ -138,7 +138,7 @@ public class DATConvert {
         return 4;
     }
 
-    public AnalyzeDatResults analyze(boolean printVersion) throws IOException {
+    public AnalyzeResultsDAT analyze(boolean printVersion) throws IOException {
         insertFWDateStr();
         boolean processedPayload = false;
         this.printVersion = printVersion;
@@ -162,14 +162,14 @@ public class DATConvert {
                 if (tickNo > tickRangeUpper) {
                     throw new EOFException();
                 }
-                for (int i = 0; i < records.size(); i++) {
-                    if (records.get(i).isId(payloadType)) {
+                for (DATRecord datRecord : datRecords) {
+                    if (datRecord.isId(payloadType)) {
                         Payload payload = new Payload(datFile, payloadStart, payloadLength, payloadType, tickNo);
                         try {
-                            ((DATRecord) records.get(i)).process(payload);
+                            datRecord.process(payload);
                             processedPayload = true;
                         } catch (Exception e) {
-                            String errMsg = "Can't process record " + ((DATRecord) records.get(i)) + " tickNo=" + tickNo + " filePos=" + datFile.getPos();
+                            String errMsg = "Can't process record " + datRecord + " tickNo=" + tickNo + " filePos=" + datFile.getPos();
                             if (DATPersist.EXPERIMENTAL_DEV) {
                                 System.out.println(errMsg);
                                 e.printStackTrace();
@@ -231,7 +231,10 @@ public class DATConvert {
         try {
             int numNoRecParsers = 0;
             int numCreatedParsers = 0;
-            @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recsInDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
+            @SuppressWarnings("unchecked") HashMap<Integer, RecSpec> recs    public src.Files.AnalyzeDatResults getResults() {
+        return results;
+    }
+InDat = (HashMap<Integer, RecSpec>) datFile.getRecsInDat().clone();
 
             for (RecSpec recInDat : recsInDat.values()) {
                 List<DATRecord> datRecordInstLst = getRecordInst(recInDat);
@@ -258,7 +261,7 @@ public class DATConvert {
                 DATRecord foundDATRecord = null;
                 for (DATRecord rec : recs) {
                     if (rec.getId() == recId && !(rec instanceof RecordDef)) {
-                        DATRecords.add(rec);
+                        datRecords.add(rec);
                         foundDATRecord = rec;
                     }
                 }
@@ -267,7 +270,7 @@ public class DATConvert {
                 }
             }
 
-            DATRecords.addAll(recs);
+            datRecords.addAll(recs);
 
         } catch (Exception e) {
             LOG.warning(e.toString());
@@ -290,7 +293,10 @@ public class DATConvert {
                 } else {
                     rec = getRecordInstEngineered(recInDat);
                     if (rec != null) {
-                        retv.add(rec);
+                        retv.add(rec);    public src.Files.AnalyzeDatResults getResults() {
+        return results;
+    }
+
                     }
                 }
                 break;
@@ -368,7 +374,7 @@ public class DATConvert {
 
     protected void printCSVLine(lineType lineT) throws Exception {
         try {
-            for (DATRecord datRecord : DATRecords) {
+            for (DATRecord datRecord : datRecords) {
                 datRecord.printCols(lineT);
             }
 
@@ -506,7 +512,7 @@ public class DATConvert {
 
     public void createXMLGuts() throws IOException {
         axes.clear();
-        for (DATRecord datRecord : DATRecords) {
+        for (DATRecord datRecord : datRecords) {
             datRecord.printCols(lineType.XML);
         }
 
@@ -523,7 +529,7 @@ public class DATConvert {
 
     public void setCsvWriter(DAT2CSVWriter writer) {
         csvWriter = writer;
-        for (DATRecord datRecord : DATRecords) {
+        for (DATRecord datRecord : datRecords) {
             datRecord.setCSVWriter(writer);
         }
     }
@@ -569,11 +575,16 @@ public class DATConvert {
     }
 
     public void setRecords(List<DATRecord> recs) {
-        DATRecords = recs;
+        datRecords = recs;
     }
 
     public void setSampleRate(float sampleRate) {
         this.sampleRate = sampleRate;
     }
+
+    public AnalyzeResultsDAT getResults() {
+        return results;
+    }
+
 
 }
