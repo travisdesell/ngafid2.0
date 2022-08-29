@@ -1,4 +1,4 @@
-package org.ngafid.flights;
+package org.ngafid.flights.DJIBinary;
 
 import java.io.File;
 import java.io.FileInputStream;

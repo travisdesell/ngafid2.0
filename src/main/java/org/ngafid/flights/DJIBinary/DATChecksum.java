@@ -1,4 +1,4 @@
-package org.ngafid.flights;
+package org.ngafid.flights.DJIBinary;
 
 /**
  * Handles checksums for DJI Binary Data

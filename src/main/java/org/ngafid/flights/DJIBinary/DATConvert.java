@@ -17,7 +17,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-package org.ngafid.flights;
+package org.ngafid.flights.DJIBinary;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,13 +25,14 @@ import java.io.PrintStream;
 import java.util.Iterator;
 import java.util.Vector;
 
-import org.ngafid.flights.DATDJIFile;
 import src.DatConRecs.*;
 import src.Files.DatHeader.AcType;
 import src.apps.DatCon;
 import src.DatConRecs.RecDef.RecordDef;
 
-public class ConvertDat {
+public class DATConvert {
+        public static TSAGeoMag geoMag = new TSAGeoMag(); // Check out TSAGeoMag
+
 
     public DATDJIFile datFile = null;
 
@@ -49,7 +50,7 @@ public class ConvertDat {
 
     public enum KmlType {
         NONE, GROUNDTRACK, PROFILE
-    };
+    }
 
     public KmlType kmlType = KmlType.NONE;
 
@@ -84,16 +85,93 @@ public class ConvertDat {
     private double relativeHeight = 0.0;
 
     private boolean relativeHeightOK = false;
+    LinkedList<AttrValuePair> attrVaulePairs = new LinkedList<AttrValuePair>(); // TODO: Look at Attr Value Pair
 
-    public ConvertDat(DATDJIFile datFile) {
+    public DATConvert(DATDJIFile datFile) {
         this.datFile = datFile;
     }
 
-    public ConvertDat() {}
+    public DATConvert() {
+    }
 
     public enum lineType {
         HEADER, LINE, XML
-    };
+    }
+
+    ;
+
+    double lastLatRad = 0.0;
+
+    double lastLongRad = 0.0;
+
+    long lastTickNo = 0;
+
+    public boolean gpsCoordsOK = false;
+
+    private double longitudeHPDegrees;
+
+
+    private double latitudeHPDegrees;
+
+
+    private boolean validHP = false;
+
+
+    private double geoDeclination = 0.0;
+
+
+    private double geoInclination = 0.0;
+
+
+    private double geoIntensity = 0.0;
+
+    private float heightHP = 0.0f;
+
+
+    private double longitudeHP = 0.0;
+
+
+    private double latitudeHP = 0.0;
+
+    public double getHPLongDeg() {
+        return longitudeHPDegrees;
+    }
+
+    public double getHPLatDeg() {
+        return latitudeHPDegrees;
+    }
+
+    public boolean isHpValid() {
+        return validHP;
+    }
+
+    public double getGeoDeclination() {
+        return geoDeclination;
+    }
+
+    public double getGeoInclination() {
+        return geoInclination;
+    }
+
+    public float getHPHeight() {
+        return heightHP;
+    }
+
+    public double getHPLatRad() {
+        return latitudeHP;
+    }
+
+    public double getHPLongRad() {
+        return longitudeHP;
+    }
+
+    public void setRecords(Vector<Record> recs) {
+        records = recs;
+    }
+
+    public void setSampleRate(float sampleRate) {
+        this.sampleRate = sampleRate;
+    }
 
     public int getNumMotors() {
         if (datFile.getModel() == DATDJIFile.DroneModel.M600 || datFile.getModel() == DATDJIFile.DroneModel.S900) {
@@ -103,8 +181,8 @@ public class ConvertDat {
         return 4;
     }
 
-    private void printCsvValue(String header, String value, lineType lineT,
-            boolean valid) throws IOException {
+    private void printCsvValue(String header, String value, lineType lineT, boolean valid) throws IOException {
+        // TODO implement a csv writer
         if (lineT == lineType.HEADER) {
             csvWriter.print("," + header);
         } else {
@@ -114,7 +192,6 @@ public class ConvertDat {
         }
     }
 
-    LinkedList<AttrValuePair> attrVaulePairs = new LinkedList<AttrValuePair>();
 
     public void addAttrValuePair(String attr, String value) {
         attrVaulePairs.add(new AttrValuePair(attr, value));
@@ -133,74 +210,9 @@ public class ConvertDat {
         csvWriter.print("," + attr + "," + value);
     }
 
-    double lastLatRad = 0.0;
-
-    double lastLongRad = 0.0;
-
-    long lastTickNo = 0;
-
-    public boolean gpsCoordsOK = false;
-
-    private double longitudeHPDegrees;
-
-    public double getHPLongDeg() {
-        return longitudeHPDegrees;
-    }
-
-    private double latitudeHPDegrees;
-
-    public double getHPLatDeg() {
-        return latitudeHPDegrees;
-    }
-
-    private boolean validHP = false;
-
-    public boolean isHpValid() {
-        return validHP;
-    }
-
-    private double geoDeclination = 0.0;
-
-    public double getGeoDeclination() {
-        return geoDeclination;
-    }
-
-    private double geoInclination = 0.0;
-
-    public double getGeoInclination() {
-        return geoInclination;
-    }
-
-    private double geoIntensity = 0.0;
-
-    private float heightHP = 0.0f;
-
-    public float getHPHeight() {
-        return heightHP;
-    }
-
-    private double longitudeHP = 0.0;
-
-    public double getHPLongRad() {
-        return longitudeHP;
-    }
-
-    private double latitudeHP = 0.0;
-
-    public double getHPLatRad() {
-        return latitudeHP;
-    }
-
-    public void setRecords(Vector<Record> recs) {
-        records = recs;
-    }
-
-    public void setSampleRate(float sampleRate) {
-        this.sampleRate = sampleRate;
-    }
 
     public void createRecordParsers() {
-        GoTxt50_12.current = null;
+        GoTxt50_12.current = null; // TODO Figure out GoTxt50_12
         Vector<Record> rcrds = new Vector<Record>();
         try {
             int numNoRecParsers = 0;
@@ -273,7 +285,7 @@ public class ConvertDat {
         throw new RuntimeException("ConvertDat.getRecordInst(RecInDat  called");
     }
 
-    public DatFile getDatFile() {
+    public DATDJIFile getDatFile() {
         return datFile;
     }
 
@@ -305,7 +317,7 @@ public class ConvertDat {
     }
 
     public void processCoords(double longitudeDegrees, double latitudeDegrees,
-            float relativeHeight) {
+                              float relativeHeight) {
         if (!gpsCoordsOK) {
             gpsCoordsOK = (longitudeDegrees != 0.0 && latitudeDegrees != 0.0
                     && relativeHeight != 0.0f);
@@ -328,7 +340,7 @@ public class ConvertDat {
     }
 
     public void processCoordsNoGoTxt(double longitudeDegrees,
-            double latitudeDegrees, float baroRaw) {
+                                     double latitudeDegrees, float baroRaw) {
         if (!gpsCoordsOK) {
             gpsCoordsOK = (longitudeDegrees != 0.0 && latitudeDegrees != 0.0);
         }
@@ -356,7 +368,6 @@ public class ConvertDat {
 
     }
 
-    public static TSAGeoMag geoMag = new TSAGeoMag();
 
     public void processHomePoint(/*Record255_1 record255_1,*/
             double latitudeHPDegrees, double longitudeHPDegrees, float height) {
