@@ -192,7 +192,7 @@ public class DATConvert {
             }
             LOG.info("Num of created parsers " + numCreatedParsers + " Num of NoRecParsers " + numNoRecParsers);
             //now sort the records
-            Iterator<Integer> iter = Dictionary.defaultOrder.iterator();
+            Iterator<Integer> iter = DATDictionary.defaultOrder.iterator();
             while (iter.hasNext()) {
                 int recId = iter.next().intValue();
                 DATRecord foundDATRecord = null;
