@@ -153,7 +153,10 @@ public class DATConvert {
             }
             long lastTickNoPrinted = -sampleSize;
 
+            System.out.println("before while loop");
+
             while (datFile.getNextDatRec(true, true, true, false)) {
+                System.out.println("while loop");
                 int payloadType = datFile.type;
                 long payloadStart = datFile.start;
                 int payloadLength = datFile.payloadLength;
@@ -179,6 +182,8 @@ public class DATConvert {
                         }
                     }
                 }
+
+                System.out.println("finished for loop");
                 if (tickRangeLower <= tickNo && (csvWriter != null) && processedPayload && tickNo >= lastTickNoPrinted + sampleSize) {
                     csvWriter.print(tickNo + "," + datFile.timeString(tickNo, timeOffset));
                     printCSVLine(lineType.LINE);
@@ -194,6 +199,8 @@ public class DATConvert {
             LOG.info("Other Error Ratio " + datFile.getErrorRatio(DATDJIFile.errorType.Other));
             LOG.info("TotalNumRecExceptions = " + DATRecord.totalNumRecExceptions);
         }
+
+        System.out.println("Skipped loop");
         return datFile.getResults();
     }
 
