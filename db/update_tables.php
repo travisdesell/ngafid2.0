@@ -196,6 +196,34 @@ if ($add_loci_annotations) {
 
 }
 
+$add_user_groups = true;
+
+if ($add_loci_annotations) {
+    $query = "CREATE TABLE user_group_names
+            (
+                 id   INT AUTO_INCREMENT
+                        PRIMARY KEY,
+                 name VARCHAR(2048) NULL
+            );
+    ";
+    query_ngafid_db($query);
+
+    $query = "
+        CREATE TABLE user_groups
+        (
+            user_id  INT NOT NULL,
+            group_id INT NOT NULL,
+            PRIMARY KEY (user_id, group_id),
+            CONSTRAINT user_groups_user_id_fk
+                FOREIGN KEY (user_id) REFERENCES user (id)
+        );
+
+        CREATE INDEX user_groups_user_group_names_id_fk
+            ON user_groups (group_id);
+    ";
+    query_ngafid_db($query);
+}
+
 
 /*
  * +-----------------------+--------------+------+-----+---------+----------------+

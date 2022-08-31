@@ -30,6 +30,8 @@ public class EventAnnotation extends Annotation {
     private static Connection connection = Database.getConnection();
     private static final Logger LOG = Logger.getLogger(EventAnnotation.class.getName());
 
+    private static final String DEFAULT_COLUMNS = "user_id, fleet_id, timestamp, event_id, class_id, notes";
+
     public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp, String notes) throws SQLException {
         super(user, timestamp);
 
@@ -136,11 +138,46 @@ public class EventAnnotation extends Annotation {
         return query.executeUpdate() == 1;
     }
 
+    public static List<EventAnnotation> getAllEventAnnotationsInSameGroup(User user) throws SQLException {
+        return getAllEventAnnotationsByGroup(user.getGroup(connection));
+    }
+
+    public static List<EventAnnotation> getAllEventAnnotationsByGroup(int groupId) throws SQLException {
+        String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        ResultSet resultSet = query.executeQuery();
+        query.setInt(1, groupId);
+
+        List<EventAnnotation> annotations = new LinkedList<>();
+
+        while (resultSet.next()) {
+            annotations.add(new EventAnnotation(resultSet));
+        }
+
+        return annotations;
+    }
+
+    public static List<EventAnnotation> getAllEventAnnotations() throws SQLException {
+        String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        ResultSet resultSet = query.executeQuery();
+
+        List<EventAnnotation> annotations = new LinkedList<>();
+
+        while (resultSet.next()) {
+            annotations.add(new EventAnnotation(resultSet));
+        }
+
+        return annotations;
+    }
+
     /**
      * Gets an EventAnnotation from its primary key
      */
     public static EventAnnotation getEventAnnotation(User user, int eventId) throws SQLException {
-        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id, notes FROM event_annotations WHERE event_id = ? AND user_id = ? AND fleet_id = ?";
+        String queryString = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE event_id = ? AND user_id = ? AND fleet_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, eventId);
@@ -169,7 +206,7 @@ public class EventAnnotation extends Annotation {
     public static List<Annotation> getAnnotationsByEvent(int eventId, int currentUserId) throws SQLException {
         List<Annotation> annotations = new ArrayList<>();
 
-        String queryString = "SELECT user_id, fleet_id, timestamp, event_id, class_id, notes FROM event_annotations WHERE event_id = ?";
+        String queryString = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE event_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, eventId);

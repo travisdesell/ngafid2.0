@@ -268,6 +268,7 @@ public final class WebServer {
         //For LOC-I Classification project
         Spark.get("/protected/event_classes", new GetAnnotationClasses(gson));
         Spark.get("/protected/event_annotations", new GetEventAnnotations(gson));
+        Spark.get("/protected/all_event_annotations", new GetAllEventAnnotations(gson));
         Spark.post("/protected/create_annotation", new PostEventAnnotation(gson));
         Spark.post("/protected/event_annotation_notes", new PostEventAnnotationNotes(gson));
 

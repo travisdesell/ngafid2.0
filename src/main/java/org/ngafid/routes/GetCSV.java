@@ -80,6 +80,7 @@ public class GetCSV implements Route {
                 csvWriter = new GeneratedCSVWriter(flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
             } else {
                 // TODO: Change to original file writer?
+
                 csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty());
             }
 
