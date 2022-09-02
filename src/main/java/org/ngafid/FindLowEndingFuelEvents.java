@@ -1,9 +1,6 @@
 package org.ngafid;
 
 import org.ngafid.accounts.Fleet;
-import org.ngafid.common.TimeSeriesNode;
-import org.ngafid.common.TimeSeriesQueue;
-import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.*;
@@ -22,7 +19,7 @@ public class FindLowEndingFuelEvents {
     public static final Connection connection = Database.getConnection();
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
 
-    public static void findLowFuelAvgEventsInUpload(Upload upload) {
+    public static void findLowEndFuelEventsInUpload(Upload upload) {
         try {
             String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -4 OR id = -5 OR id = -6)";
 
@@ -30,7 +27,7 @@ public class FindLowEndingFuelEvents {
 
             for (Flight flight : flights) {
                 try {
-                    findLowFuelAvgEvents(flight);
+                    findLowEndFuel(flight);
                 } catch (MalformedFlightFileException e) {
                     System.out.println("Could not process flight " + flight.getId());
                 } catch (ParseException e) {
@@ -48,7 +45,7 @@ public class FindLowEndingFuelEvents {
         }
     }
 
-    public static void findLowFuelAvgEvents(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
+    public static void findLowEndFuel(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         int airframeTypeID = flight.getAirframeTypeId();
 
 //        if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
@@ -133,7 +130,7 @@ public class FindLowEndingFuelEvents {
                 uploadSize = uploads.size();
 
                 for (Upload upload : uploads) {
-                    findLowFuelAvgEventsInUpload(upload);
+                    findLowEndFuelEventsInUpload(upload);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
