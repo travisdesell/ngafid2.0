@@ -18,9 +18,9 @@ import java.util.logging.Logger;
 import static org.ngafid.events.CustomEvent.getLowFuelDefinition;
 import static org.ngafid.flights.CalculationParameters.*;
 
-public class FindLowFuelAvgEvents {
+public class FindLowEndingFuelEvents {
     public static final Connection connection = Database.getConnection();
-    public static final Logger LOG = Logger.getLogger(FindLowFuelAvgEvents.class.getName());
+    public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
     private static final Map<Integer, Double> FUEL_THRESHOLDS = new HashMap<>();
 
     static {
