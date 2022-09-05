@@ -51,21 +51,26 @@ public class FindLowEndingFuelEvents {
     }
 
     public static void findLowEndFuel(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
-        int airframeTypeID = flight.getAirframeTypeId();
+        int airframeNameID = flight.getAirframeNameId();
 
-        if (!eventDefs.containsKey(airframeTypeID)) {
-            eventDefs.put(airframeTypeID, getLowEndFuelDefinition(flight.getAirframeNameId()));
-            thresholds.put(airframeTypeID, getThresholdValueFromText(eventDefs.get(airframeTypeID).toHumanReadable()));
+        if (!eventDefs.containsKey(airframeNameID)) {
+            EventDefinition lowEndEventDef = getLowEndFuelDefinition(flight.getAirframeNameId());
+
+            if (lowEndEventDef == null) {
+                return;
+            }
+
+            eventDefs.put(airframeNameID, lowEndEventDef);
+            thresholds.put(airframeNameID, getThresholdValueFromText(eventDefs.get(airframeNameID).toHumanReadable()));
         }
 
 
         LOG.info("Processing flight " + flight.getId());
 
-        EventDefinition eventDef = eventDefs.get(airframeTypeID);
-        double threshold = thresholds.get(airframeTypeID);
+        EventDefinition eventDef = eventDefs.get(airframeNameID);
+        double threshold = thresholds.get(airframeNameID);
 
         flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
-
 
         DoubleTimeSeries fuel = flight.getDoubleTimeSeries(connection, TOTAL_FUEL);
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
@@ -83,7 +88,6 @@ public class FindLowEndingFuelEvents {
             fuelVals++;
 
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
-            System.out.println(duration);
         }
 
         double average = (fuelSum / fuelVals);
