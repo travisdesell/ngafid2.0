@@ -4,6 +4,7 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.filters.Filter;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
@@ -19,6 +20,9 @@ import static org.ngafid.flights.CalculationParameters.*;
 public class FindLowEndingFuelEvents {
     public static final Connection connection = Database.getConnection();
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
+    private static Map<Integer, EventDefinition> eventDefs = new HashMap<>();
+    private static Map<Integer, Double> thresholds = new HashMap<>();
+
 
     public static void findLowEndFuelEventsInUpload(Upload upload) {
         try {
@@ -49,11 +53,17 @@ public class FindLowEndingFuelEvents {
     public static void findLowEndFuel(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         int airframeTypeID = flight.getAirframeTypeId();
 
-        EventDefinition eventDef = getLowEndFuelDefinition(flight.getAirframeNameId());
+        if (!eventDefs.containsKey(airframeTypeID)) {
+            eventDefs.put(airframeTypeID, getLowEndFuelDefinition(flight.getAirframeNameId()));
+            thresholds.put(airframeTypeID, getThresholdValueFromText(eventDefs.get(airframeTypeID).toHumanReadable()));
+        }
+
 
         LOG.info("Processing flight " + flight.getId());
 
-        double threshold = 0; // TODO: Update this
+        EventDefinition eventDef = eventDefs.get(airframeTypeID);
+        double threshold = thresholds.get(airframeTypeID);
+        System.out.println("Threshold: " + threshold);
 
         flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
 
@@ -86,6 +96,11 @@ public class FindLowEndingFuelEvents {
         }
 
         setFlightProcessed(flight, 0, 0); // TODO: Update this
+    }
+
+    private static double getThresholdValueFromText(String text) {
+
+        return Double.parseDouble(text.substring(text.lastIndexOf(" ") + 1));
     }
 
     static void setFlightProcessed(Flight flight, int hadError, int count) throws SQLException {
