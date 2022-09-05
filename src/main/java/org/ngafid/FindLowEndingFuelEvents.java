@@ -112,6 +112,7 @@ public class FindLowEndingFuelEvents {
         stmt.setInt(2, flight.getId());
         stmt.setInt(3, getLowEndFuelDefinition(flight.getAirframeNameId()).getId());
         stmt.setInt(4, count);
+        stmt.setInt(5, 0);
 
         stmt.executeUpdate();
         stmt.close();
