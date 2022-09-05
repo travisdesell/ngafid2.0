@@ -63,7 +63,6 @@ public class FindLowEndingFuelEvents {
 
         EventDefinition eventDef = eventDefs.get(airframeTypeID);
         double threshold = thresholds.get(airframeTypeID);
-        System.out.println("Threshold: " + threshold);
 
         flight.checkCalculationParameters(TOTAL_FUEL, AVG_FUEL_DEPENDENCIES);
 
@@ -78,12 +77,12 @@ public class FindLowEndingFuelEvents {
         double fuelSum = 0;
         int fuelVals = 0;
         int i;
-        for (i = flight.getNumberRows(); duration <= 15; i--) {
+        for (i = flight.getNumberRows() - 1; duration <= 15; i--) {
             currentTime = date.get(i) + " " + time.get(i);
             fuelSum += fuel.get(i);
             fuelVals++;
 
-            duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime);
+            duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
             System.out.println(duration);
         }
 
