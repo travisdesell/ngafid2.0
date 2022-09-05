@@ -77,7 +77,7 @@ public class FindLowEndingFuelEvents {
             System.out.println(duration);
         }
 
-        double average = (fuelSum / fuelVals)
+        double average = (fuelSum / fuelVals);
         if (average < threshold) {
             CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
 
