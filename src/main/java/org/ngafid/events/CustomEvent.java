@@ -35,7 +35,7 @@ public class CustomEvent extends Event {
         this.customEventDefinition = eventDefinition;
     }
     
-    public static EventDefinition getLowFuelDefinition(int airframeID) {
+    public static EventDefinition getLowEndFuelDefinition(int airframeID) {
         return EventDefinition.getEventDefinition(connection, "Low Average Fuel", airframeID);
     }
 

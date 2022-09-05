@@ -1,6 +1,7 @@
 package org.ngafid;
 
 import org.ngafid.accounts.Fleet;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.*;
@@ -12,7 +13,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.events.CustomEvent.getLowFuelDefinition;
+import static org.ngafid.events.CustomEvent.getLowEndFuelDefinition;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowEndingFuelEvents {
@@ -48,14 +49,7 @@ public class FindLowEndingFuelEvents {
     public static void findLowEndFuel(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         int airframeTypeID = flight.getAirframeTypeId();
 
-//        if (!FUEL_THRESHOLDS.containsKey(airframeTypeID)) {
-//            LOG.info("Ignoring flight " + flight.getId() + ". No total fuel data for given airframe.");
-//
-//            return;
-//        }
-
-
-        EventDefinition eventDef = getLowFuelDefinition(flight.getAirframeNameId());
+        EventDefinition eventDef = getLowEndFuelDefinition(flight.getAirframeNameId());
 
         LOG.info("Processing flight " + flight.getId());
 
@@ -68,21 +62,19 @@ public class FindLowEndingFuelEvents {
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
+        String endTime = flight.getEndDateTime();
+        double duration = 0;
 
-        // TODO: Loop from end to end - 15 sec
-        for (;;) {
+        for (int i = flight.getNumberRows(); duration <= 15; i--) {
+            String currentTime = date.get(i) + " " + time.get(i);
 
-
+            duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime);
+            System.out.println(duration);
         }
 
-
-
-
-
-
-            CustomEvent event = null; // TODO: update this
-            event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
+        CustomEvent event = null; // TODO: update this
+        event.updateDatabase(connection);
+        event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
 
         setFlightProcessed(flight, 0, 0); // TODO: Update this
     }
@@ -94,7 +86,7 @@ public class FindLowEndingFuelEvents {
 
         stmt.setInt(1, flight.getFleetId());
         stmt.setInt(2, flight.getId());
-        stmt.setInt(3, getLowFuelDefinition(flight.getAirframeNameId()).getId());
+        stmt.setInt(3, getLowEndFuelDefinition(flight.getAirframeNameId()).getId());
         stmt.setInt(4, count);
         stmt.setInt(5, hadError);
 
