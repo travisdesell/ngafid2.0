@@ -88,22 +88,23 @@ public class FindLowEndingFuelEvents {
         }
 
         double average = (fuelSum / fuelVals);
+        int hadEvent = 0;
         if (average < threshold) {
             CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
 
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
+            hadEvent++;
         }
 
-        setFlightProcessed(flight, 0, 0); // TODO: Update this
+        setFlightProcessed(flight, hadEvent);
     }
 
     private static double getThresholdValueFromText(String text) {
-
         return Double.parseDouble(text.substring(text.lastIndexOf(" ") + 1));
     }
 
-    static void setFlightProcessed(Flight flight, int hadError, int count) throws SQLException {
+    static void setFlightProcessed(Flight flight, int count) throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         PreparedStatement stmt = connection.prepareStatement(queryString);
@@ -112,7 +113,6 @@ public class FindLowEndingFuelEvents {
         stmt.setInt(2, flight.getId());
         stmt.setInt(3, getLowEndFuelDefinition(flight.getAirframeNameId()).getId());
         stmt.setInt(4, count);
-        stmt.setInt(5, hadError);
 
         stmt.executeUpdate();
         stmt.close();
