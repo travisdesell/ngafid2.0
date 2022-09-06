@@ -251,12 +251,21 @@ public class EventAnnotation extends Annotation {
     }
 
     public static List<Event> getLabeledEvents(int fleetId, int userId) throws SQLException {
-        String sql = "SELECT DISTINCT event_id FROM event_annotations WHERE user_id = ? AND fleet_id = ?";
+        String userClause = "";
 
+        if (userId != -1) {
+            User user = User.get(connection, userId, fleetId);
+            LOG.info("Selecting events annotated by " + user.getFullName());
+
+            userClause = "user_id = " + userId + " AND";
+        } else {
+            LOG.info("Selecting distinct events from all users...");
+        }
+
+        String sql = "SELECT DISTINCT event_id FROM event_annotations WHERE " + userClause + " fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
-        
-        query.setInt(1, userId);
-        query.setInt(2, fleetId);
+
+        query.setInt(1, fleetId);
 
         List<Event> events = new LinkedList<>();
 
@@ -292,7 +301,18 @@ public class EventAnnotation extends Annotation {
         LocalDateTime now = LocalDateTime.now();
 
         try {
-            File logFile = new File(directoryRoot + "/log/" + "log_" + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + now.getHour() + now.getMinute() + now.getSecond() + ".txt");
+            if (!new File(directoryRoot).exists()) {
+                System.err.println("ERROR: directory does not exist!");
+                System.exit(1);
+            }
+                
+            File logDirectory = new File(directoryRoot + "/log/"); 
+
+            if (!logDirectory.exists()) {
+                logDirectory.mkdirs();
+            }
+
+            File logFile = new File(logDirectory.getPath() + "/log_" + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + now.getHour() + now.getMinute() + now.getSecond() + ".txt");
 
             if (!logFile.exists()) {
                 logFile.createNewFile();
