@@ -22,6 +22,7 @@ class EventAnnotation extends React.Component {
     }
 
     getAnnotations() {
+        console.log("grabbing annoations");
         let annotations = [];
 
         let submissionData = {
@@ -128,8 +129,9 @@ class EventAnnotation extends React.Component {
         const event = this.props.event;
 
         annotations.forEach(element => {
-            if (element.eventId != -1) {
+            if (element.classId != -1) {
                 hasCompletedAnnotation = true;
+                this.state.annotationNotes = element.notes;
             }
         });
 
@@ -205,7 +207,7 @@ class EventAnnotation extends React.Component {
                 </Popover.Title>
                 <Popover.Content> 
                     <div className="input-group">
-                        <textarea id={event.id + "-notes"} className="form-control" defaultValue={this.state.annotationNotes} onInput={() => this.notesFloppyClicked(event.id)} aria-label="textarea"></textarea>
+                        <textarea id={event.id + "-notes"} className="form-control" value={this.state.annotationNotes} onInput={() => this.notesFloppyClicked(event.id)} aria-label="textarea"></textarea>
                     </div>
                 </Popover.Content>
 
