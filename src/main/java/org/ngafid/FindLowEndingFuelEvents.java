@@ -76,21 +76,22 @@ public class FindLowEndingFuelEvents {
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
-        String endTime = flight.getEndDateTime();
-        String currentTime = flight.getEndDateTime();
+        int i = flight.getNumberRows() - 1;
+        String endTime =  date.get(i) + " " + time.get(i);
+        String currentTime = endTime;
         double duration = 0;
         double fuelSum = 0;
-        int fuelVals = 0;
-        int i;
-        for (i = flight.getNumberRows() - 1; duration <= 15; i--) {
+        int fuelValues = 0;
+
+        for (; duration <= 15; i--) {
             currentTime = date.get(i) + " " + time.get(i);
             fuelSum += fuel.get(i);
-            fuelVals++;
+            fuelValues++;
 
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 
-        double average = (fuelSum / fuelVals);
+        double average = (fuelSum / fuelValues);
         int hadEvent = 0;
         if (average < threshold) {
             CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
