@@ -109,9 +109,12 @@ class EventAnnotation extends React.Component {
 
     notesFloppyClicked(eventId) {
         const textInputId = '#' + eventId + '-notes';
+        const popoverId = '#' + eventId + '-popover';
+
         const noteString = $(textInputId).val();
 
-        console.log("changing to: " + noteString);
+        $(popoverId).hide();
+
         this.updateAnnotationNotes(eventId, noteString);
     }
 
@@ -207,8 +210,15 @@ class EventAnnotation extends React.Component {
                 </Popover.Title>
                 <Popover.Content> 
                     <div className="input-group">
-                        <textarea id={event.id + "-notes"} className="form-control" value={this.state.annotationNotes} onInput={() => this.notesFloppyClicked(event.id)} aria-label="textarea"></textarea>
+                        <textarea id={event.id + "-notes"} className="form-control" defaultValue={this.state.annotationNotes} aria-label="textarea"></textarea>
                     </div>
+
+                    <Button 
+                        className="mt-1 btn-block btn-sm" variant="outline-success" title="Submit" 
+                        onClick={() => this.notesFloppyClicked(event.id)} >
+                            <i className="fa fa-floppy-o" aria-hidden="true"></i> Save & Close
+                    </Button>
+
                 </Popover.Content>
 
             </Popover>
@@ -258,7 +268,7 @@ class EventAnnotation extends React.Component {
                 {log}
 
                 <OverlayTrigger trigger="click" placement="right-end" overlay={additionalNotesPopover}>
-                    <Button id={event.id + '-comment-button'} className="m-1" variant="outline-info" title="Click to comment this annotation" disabled={disableComments} data-toggle='button'>
+                    <Button id={event.id + '-comment-button'} className="m-1" variant="outline-info" title="Click to comment this annotation" disabled={disableComments}>
                         <i className="fa fa-commenting" aria-hidden="true"></i>
                     </Button>
                 </OverlayTrigger>
