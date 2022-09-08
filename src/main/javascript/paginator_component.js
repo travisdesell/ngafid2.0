@@ -163,7 +163,9 @@ class Paginator extends React.Component {
 
                         </div>
 
-                        <CesiumButtons location={this.props.location}></CesiumButtons>
+                        {(window.location.pathname === "/protected/flights") &&
+                            <CesiumButtons location={this.props.location}></CesiumButtons>
+                        }
 
 
                         {sorter}
