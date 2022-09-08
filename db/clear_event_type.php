@@ -6,7 +6,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 
 require_once($cwd[__FILE__] . "/my_query.php");
 
-$event_id = -2;
+$event_id = 1;
 
 //delete and reset events
 query_ngafid_db("DELETE FROM event_statistics WHERE event_definition_id = $event_id");
