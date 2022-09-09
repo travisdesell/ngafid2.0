@@ -108,7 +108,8 @@ public class GeneratedCSVWriter extends CSVWriter {
 
                 String header = this.getHeader();
                 fileWriter.write("#" + header);
-                fileWriter.write(header);
+                //Some CSV readers do not like the uncommented header line
+                //fileWriter.write(header);
 
                 for (int i = startLine; i < stopLine; i++) {
                     fileWriter.write(this.getLine(i));
