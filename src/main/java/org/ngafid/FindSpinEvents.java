@@ -47,30 +47,37 @@ public class FindSpinEvents {
         } 
     }
 
-    public static void clearPreviousEvents(Flight flight) throws SQLException {
-        String sql = "DELETE FROM events WHERE flight_id = ? AND event_definition_id IN (?,?)";
+    public static void clearPreviousEvents(int fleetId) throws SQLException {
+        String sql = "DELETE FROM events WHERE event_definition_id IN (?,?) AND fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
-        query.setInt(1, flight.getId());
-        query.setInt(2, LOW_ALTITUDE_SPIN.getId());
-        query.setInt(3, HIGH_ALTITUDE_SPIN.getId());
+        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
+        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
+        query.setInt(3, fleetId);
 
         query.executeUpdate();
 
-        sql = "DELETE FROM flight_processed WHERE flight_id = ? AND event_definition_id IN (?,?)";
+        sql = "DELETE FROM flight_processed WHERE event_definition_id IN (?,?) AND fleet_id = ?";
         query = connection.prepareStatement(sql);
 
-        query.setInt(1, flight.getId());
-        query.setInt(2, LOW_ALTITUDE_SPIN.getId());
-        query.setInt(3, HIGH_ALTITUDE_SPIN.getId());
+        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
+        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
+        query.setInt(3, fleetId);
+
+        query.executeUpdate();
+
+        sql = "DELETE FROM event_statistics WHERE event_definition_id IN (?,?) AND fleet_id = ?";
+        query = connection.prepareStatement(sql);
+
+        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
+        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
+        query.setInt(3, fleetId);
 
         query.executeUpdate();
     }
 
     public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
         flight.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
-
-        clearPreviousEvents(flight);
 
         List<CustomEvent> lowAltitudeSpins = new ArrayList<>();
         List<CustomEvent> highAltitudeSpins = new ArrayList<>();
@@ -129,6 +136,7 @@ public class FindSpinEvents {
 
                 if (airspeedIsLow) {
                     int lowAirspeedIndexDiff = i - lowAirspeedIndex;
+
                     // check for severity
                     if (normAcRel > maxNormAc) {
                         maxNormAc = normAcRel;
@@ -141,15 +149,15 @@ public class FindSpinEvents {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         LOG.info("Spin start found!");
+
                         if (!spinStartFound) {
                             String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-
+                            
                             currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
                         } 
-
                     } 
 
 
@@ -186,15 +194,12 @@ public class FindSpinEvents {
                         lowAirspeedIndex = -1;
                         maxNormAcIndex = -1;
                         endSpinSeconds = 0;
-
                         maxNormAc = 0.d;
                     }
                 }
             }
         }
-
-        LOG.info("Updating database with Spin Events.");
-
+        
         for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
@@ -239,6 +244,7 @@ public class FindSpinEvents {
 
         query.executeUpdate();
         query.close();
+
     }
 
     /**
@@ -265,6 +271,15 @@ public class FindSpinEvents {
             int fleetId = fleet.getId();
 
             LOG.info("Processing spin events for fleet: " + fleetId);
+
+            try {
+                clearPreviousEvents(fleetId);
+
+                LOG.info("Cleared fleets previous events");
+            } catch (SQLException se) {
+                se.printStackTrace();
+                System.exit(1);
+            }
 
             try {
                 List<Upload> uploads = Upload.getUploads(connection, fleetId);
