@@ -284,7 +284,7 @@ public class EventAnnotation extends Annotation {
     }
 
     public static void main(String [] args) {
-        if (args.length != 4 || args[0].equals("-h")) {
+        if (args.length != 5 || args[0].equals("-h")) {
             displayUsage();
             System.exit(1);
         }
@@ -297,6 +297,8 @@ public class EventAnnotation extends Annotation {
         int userId = Integer.parseInt(args[2]);
 
         double pctTest = Double.parseDouble(args[3]);
+
+        int nTimeSteps = Integer.parseInt(args[4]);
         
         LocalDateTime now = LocalDateTime.now();
 
@@ -340,7 +342,7 @@ public class EventAnnotation extends Annotation {
                 if (!missingColumns.isEmpty()) {
                     pw.println("NOT GENERATED: Event id#" + event.getId() + ": " + label + " missing columns: " + missingColumns.toString());
                 } else {
-                    csvWriter.writeToFile();
+                    csvWriter.writeToFile(event, nTimeSteps);
                     pw.println(outputCSVFileName + ": Event id#" + event.getId() + ": " + label);
                 }
             }
