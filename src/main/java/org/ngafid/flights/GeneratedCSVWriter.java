@@ -83,17 +83,34 @@ public class GeneratedCSVWriter extends CSVWriter {
         return stringBuilder.toString();
     }
 
-    public void writeToFile(Event event, int padding) {
+    public void writeToFile(Event event, int nTimeSteps) {
         assert event.getFlightId() == super.flight.getId();
+
         int flightLength = flight.getNumberRows();
+        int eventLength = event.getDuration();
 
-        int startLine = event.getStartLine() - padding;
-        int stopLine = event.getEndLine() + padding;
+        if (nTimeSteps % 2 != 0) {
+            System.err.println("ERROR: Please use even numbers for the time step size!");
+            System.exit(1);
+        }
 
-        if (startLine < 0) startLine = 0;
-        if (stopLine > flightLength) stopLine = flightLength;
+        if (eventLength > flightLength) {
+            System.err.println("ERROR: event length for event " + event.getId() + " is too long");
+        }
 
-        writeToFile(startLine, stopLine);
+        int startLine = event.getStartLine(), endLine = event.getEndLine();
+
+        int padding = nTimeSteps - eventLength;
+
+        if (padding % 2 == 0) {
+            startLine -= padding / 2;
+            endLine += padding / 2;
+        } else {
+            startLine -= padding / 2;
+            endLine += (padding / 2) + 1;
+        }
+
+        writeToFile(startLine, endLine);
     }
 
     @Override
@@ -102,6 +119,12 @@ public class GeneratedCSVWriter extends CSVWriter {
     }
 
     public void writeToFile(int startLine, int stopLine) {
+        if (startLine < 0 || stopLine > super.flight.getNumberRows()) {
+            //TODO handle padding values
+            System.err.println("SKIPPING EVENT....");
+            return;
+        }
+
         if (super.outputCSVFile.isPresent()) {
             try {
                 FileWriter fileWriter = new FileWriter(this.outputCSVFile.get());
