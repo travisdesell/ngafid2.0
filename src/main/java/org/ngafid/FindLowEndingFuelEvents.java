@@ -154,7 +154,7 @@ public class FindLowEndingFuelEvents {
                     findLowEndFuelEventsInUpload(upload);
                 }
             } catch (SQLException e) {
-                e.printStackTrace();
+                System.exit(1);
             }
         }
 
