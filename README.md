@@ -132,7 +132,6 @@ export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
 # If you do set this to true the following 3 parameters do not need to be set
 export NGAFID_BACKUP_DIR=<path to where backups should be stored>
 export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
-# This is the number of days to wait to perform another backup
 ```
 
 and run
