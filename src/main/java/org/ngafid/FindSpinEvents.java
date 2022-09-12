@@ -28,7 +28,7 @@ public class FindSpinEvents {
 
     public static void findSpinEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id IN (-2, -3))";
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
@@ -47,8 +47,30 @@ public class FindSpinEvents {
         } 
     }
 
+    public static void clearPreviousEvents(Flight flight) throws SQLException {
+        String sql = "DELETE FROM events WHERE flight_id = ? AND event_definition_id IN (?,?)";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, flight.getId());
+        query.setInt(2, LOW_ALTITUDE_SPIN.getId());
+        query.setInt(3, HIGH_ALTITUDE_SPIN.getId());
+
+        query.executeUpdate();
+
+        sql = "DELETE FROM flight_processed WHERE flight_id = ? AND event_definition_id IN (?,?)";
+        query = connection.prepareStatement(sql);
+
+        query.setInt(1, flight.getId());
+        query.setInt(2, LOW_ALTITUDE_SPIN.getId());
+        query.setInt(3, HIGH_ALTITUDE_SPIN.getId());
+
+        query.executeUpdate();
+    }
+
     public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
         flight.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
+
+        clearPreviousEvents(flight);
 
         List<CustomEvent> lowAltitudeSpins = new ArrayList<>();
         List<CustomEvent> highAltitudeSpins = new ArrayList<>();
@@ -107,7 +129,6 @@ public class FindSpinEvents {
 
                 if (airspeedIsLow) {
                     int lowAirspeedIndexDiff = i - lowAirspeedIndex;
-
                     // check for severity
                     if (normAcRel > maxNormAc) {
                         maxNormAc = normAcRel;
@@ -120,15 +141,15 @@ public class FindSpinEvents {
 
                     if (lowAirspeedIndexDiff <= 2 && instVSI <= -3500) {
                         LOG.info("Spin start found!");
-
                         if (!spinStartFound) {
                             String startTime = dateSeries.get(lowAirspeedIndex) + " " + timeSeries.get(lowAirspeedIndex);
                             String endTime = dateSeries.get(i) + " " + timeSeries.get(i);
-                            
+
                             currentEvent = new CustomEvent(startTime, endTime, lowAirspeedIndex, i, maxNormAc, flight);
 
                             spinStartFound = true;
                         } 
+
                     } 
 
 
@@ -165,12 +186,13 @@ public class FindSpinEvents {
                         lowAirspeedIndex = -1;
                         maxNormAcIndex = -1;
                         endSpinSeconds = 0;
+
                         maxNormAc = 0.d;
                     }
                 }
             }
         }
-        
+
         LOG.info("Updating database with Spin Events.");
 
         for (CustomEvent event : lowAltitudeSpins) {
@@ -217,7 +239,6 @@ public class FindSpinEvents {
 
         query.executeUpdate();
         query.close();
-
     }
 
     /**
