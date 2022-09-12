@@ -1,0 +1,12 @@
+# Service for backing up the NGAFID
+
+[Unit]
+Description=Backup the database for the NGAFID
+Wants=ngafid-backup.timer
+
+[Service]
+Type=oneshot
+ExecStart=/<path_to_ngafid2.0_repo>/db/backup_database.sh
+
+[Install]
+WantedBy=multi-user.target
