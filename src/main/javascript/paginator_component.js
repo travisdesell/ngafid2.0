@@ -1,12 +1,10 @@
 import 'bootstrap';
 import React, { Component } from "react";
-import ReactDOM from "react-dom";
 import Dropdown from 'react-bootstrap/Dropdown';
 import DropdownButton from 'react-bootstrap/DropdownButton';
 import Pagination from 'react-bootstrap/Pagination';
-import Form from 'react-bootstrap/Form';
-import FormCheck from 'react-bootstrap/FormCheck';
 import { PaginationSorter } from './sorter_component.js';
+import {CesiumButtons} from "./cesium_buttons";
 
 
 class Paginator extends React.Component {
@@ -15,7 +13,8 @@ class Paginator extends React.Component {
 
         this.state = {
             goto_active : false,
-            goto_value : 1
+            goto_value : 1,
+            // clear_flights_active: cesiumFlightsSelected.length === 0,
         };
 
         this.previousPage = this.previousPage.bind(this);
@@ -161,7 +160,13 @@ class Paginator extends React.Component {
                                 <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
                             </div>
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
+
                         </div>
+
+                        {(window.location.pathname === "/protected/flights") &&
+                            <CesiumButtons location={this.props.location}></CesiumButtons>
+                        }
+
 
                         {sorter}
 

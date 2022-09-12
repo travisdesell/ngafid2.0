@@ -15,11 +15,11 @@ let R_values = ["FF", "D6", "AB", "80"];                            // heavier o
 
 // populate hashmap of event definition IDs to RGB values
 var eventColorScheme = {};
-for (let d = -3; d < 70; d++){
+for (let d = -4; d < 70; d++){
     // iterate through RGB permutations (up to 64)
-    let green = (d + 3) % 4;
-    let blue = Math.trunc((d + 3)/4) % 4;
-    let red = Math.trunc((d + 3)/16) % 4;
+    let green = (d + 4) % 4;
+    let blue = Math.trunc((d + 4)/4) % 4;
+    let red = Math.trunc((d + 4)/16) % 4;
 
     eventColorScheme[(d + 1)] = "#" + R_values[red] + BG_values[green] + BG_values[blue];
 }

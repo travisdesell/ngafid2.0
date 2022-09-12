@@ -89,6 +89,8 @@ public class Itinerary {
         while (resultSet.next()) {
             //airport existed in the database, return the id
             String airport = resultSet.getString(1);
+            // This is a fix for bugs caused by an empty IATA airport code being in the database. Not sure how that got there exactly.
+            if (airport.equals("")) continue;
             airports.add(airport);
         }
         LOG.info("airports.length: " + airports.size());
@@ -136,6 +138,12 @@ public class Itinerary {
         for (String iataCode : airports) {
             Airport airport = Airports.getAirport(iataCode);
             List<Runway> rws = new ArrayList<>();
+
+            if (airport == null) {
+                LOG.info("Airport '" + iataCode + "' is null!");
+                continue;
+            }
+
             for (Runway rw : airport.getRunways())
                 if (rw.hasCoordinates)
                     rws.add(rw);

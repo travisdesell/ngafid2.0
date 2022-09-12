@@ -108,13 +108,16 @@ public class CalculateProximity {
             Pair<Double,Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
             Pair<Double,Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
 
-            //if (minMaxRPM1 != null) System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
-            //if (minMaxRPM2 != null) System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
+            System.out.println("minMaxRPM1: " + minMaxRPM1);
+            System.out.println("minMaxRPM2: " + minMaxRPM2);
+
+            if (minMaxRPM1 != null) System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
+            if (minMaxRPM2 != null) System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
             
             if ((minMaxRPM1 == null && minMaxRPM2 == null)  //both RPM values are null, can't calculate exceedence
-                    || (minMaxRPM2 == null && (minMaxRPM1 != null && minMaxRPM1.second() < 800)) //RPM2 is null, RPM1 is < 800
-                    || (minMaxRPM1 == null && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) //RPM1 is null, RPM2 is < 800
-                    || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
+                    || (minMaxRPM2 == null && minMaxRPM1.second() < 800) //RPM2 is null, RPM1 is < 800 (RPM1 would not be null as well)
+                    || (minMaxRPM1 == null && minMaxRPM2.second() < 800) //RPM1 is null, RPM2 is < 800 (RPM2 would not be null as well)
+                    || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800 && minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
                 valid = false;
                 return;
@@ -263,14 +266,8 @@ public class CalculateProximity {
         public void updateWithEvent(Connection connection, Event event, String startDateTime) throws SQLException {
 
             event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
-            if (event.getStartTime() != null) {
-                EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getStartTime(), event.getSeverity(), event.getDuration());
-            } else if (event.getEndTime() != null) {
-                EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getEndTime(), event.getSeverity(), event.getDuration());
-            } else {
-                System.out.println("WARNING: could not update event statistics for event: " + event);
-                System.out.println("WARNING: event start and end time were both null.");
-            }
+            event.updateStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId);
+
             double severity = event.getSeverity();
             double duration = event.getDuration();
 

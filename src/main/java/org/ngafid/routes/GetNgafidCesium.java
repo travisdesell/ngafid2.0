@@ -167,11 +167,12 @@ public class GetNgafidCesium implements Route {
                 int countPostTakeoff = 0;
                 int sizePreClimb = 0;
                 int countPostCruise = 0;
+                int dateSize = date.size();
 
                 // Calculate the taxiing phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         initCounter++;
                         flightGeoAglTaxiing.add(longitude.get(i));
                         flightGeoAglTaxiing.add(latitude.get(i));
@@ -187,7 +188,7 @@ public class GetNgafidCesium implements Route {
                 // Calculate the takeoff-init phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) < 80) {
 
                             if (takeoffCounter <= 15) {
@@ -210,7 +211,7 @@ public class GetNgafidCesium implements Route {
                 // Calculate the climb phase
                 for (int i = 0; i < altAgl.size(); i++) {
 
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         if ((rpm != null && rpm.get(i) >= 2100) && groundSpeed.get(i) > 14.5 && groundSpeed.get(i) <= 80) {
 
                             if (countPostTakeoff >= 15) {
@@ -234,7 +235,7 @@ public class GetNgafidCesium implements Route {
                 sizePreClimb = preClimb / 3;
 
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
 
                         if (countPostCruise >= sizePreClimb) {
                             flightGeoAglCruise.add(longitude.get(i));
@@ -249,7 +250,7 @@ public class GetNgafidCesium implements Route {
                 // Calculate the full phase
                 // I am avoiding NaN here as well!
                 for (int i = 0; i < altAgl.size(); i++) {
-                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i))) {
+                    if (!Double.isNaN(longitude.get(i)) && !Double.isNaN(latitude.get(i)) && !Double.isNaN(altAgl.get(i)) && (i < dateSize)) {
                         flightGeoInfoAgl.add(longitude.get(i));
                         flightGeoInfoAgl.add(latitude.get(i));
                         flightGeoInfoAgl.add(altAgl.get(i));

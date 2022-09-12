@@ -238,12 +238,13 @@ public class Flight {
      * detailing which parameter is missing and for what calculation
      *
      * @param calculationName is the name of the calculation for which the method is checking for parameters
-     * @param seriesNames     is the names of the series to check for
+     * @param seriesNames is the names of the series to check for
+     *
      * @throws {@link MalformedFlightFileException} if a required column is missing
      */
-    private void checkCalculationParameters(String calculationName, String... seriesNames) throws MalformedFlightFileException {
+    public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param)) {
+            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
@@ -258,7 +259,6 @@ public class Flight {
     /**
      * Worth noting - if any portion of the flight occurs between startDate and endDate it will be grabbed - it doesn't
      * have to lie entirely within startDate and endDate. endDate is inclusive, as is startDate.
-     *
      * @param connection
      * @param startDate
      * @param endDate
@@ -2635,7 +2635,7 @@ public class Flight {
             });
         }
 
-        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", false, this);
+        CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);

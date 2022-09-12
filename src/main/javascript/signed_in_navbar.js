@@ -186,6 +186,7 @@ class SignedInNavbar extends React.Component {
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
+                                <DropdownLink name={"Definitions"} hidden={false} href="/protected/event_definitions"/>
                                 {admin
                                     ? <div className="dropdown-divider"></div>
                                     : ""
