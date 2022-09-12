@@ -185,6 +185,13 @@ public class TimeUtils {
         return cal.getTime();
     }
 
+    public static Date subtractSeconds(Date date, Integer seconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.SECOND, -seconds);
+        return cal.getTime();
+    }
+
     public static Date addMilliseconds(Date date, Integer milliseconds) {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);

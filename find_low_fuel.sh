@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.FindLowFuelAvgEvents" -Dexec.args="$*"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.FindLowEndingFuelEvents" -Dexec.args="$*"
