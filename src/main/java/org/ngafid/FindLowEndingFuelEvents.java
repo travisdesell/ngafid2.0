@@ -88,6 +88,8 @@ public class FindLowEndingFuelEvents {
             fuelSum += fuel.get(i);
             fuelValues++;
 
+            if (currentTime.equals(" ")) continue;
+
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 
