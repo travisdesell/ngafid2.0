@@ -3326,7 +3326,6 @@ public class Flight {
                 //}
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    System.out.println(series);
                     series.updateDatabase(connection, flightId);
                 }
 
