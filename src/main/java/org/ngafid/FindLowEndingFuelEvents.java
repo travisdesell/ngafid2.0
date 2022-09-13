@@ -76,8 +76,11 @@ public class FindLowEndingFuelEvents {
         StringTimeSeries date = flight.getStringTimeSeries(connection, LCL_DATE);
         StringTimeSeries time = flight.getStringTimeSeries(connection, LCL_TIME);
 
-        int i = flight.getNumberRows() - 1;
-        String endTime =  date.get(i) + " " + time.get(i);
+        String[] lastValidDateAndIndex = date.getLastValidAndIndex();
+        int i = Integer.parseInt(lastValidDateAndIndex[1]);
+
+        String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
+
         String currentTime = endTime;
         double duration = 0;
         double fuelSum = 0;
