@@ -2199,7 +2199,7 @@ public class Flight {
             //TODO: here grab the LCL_TIME StringTimeSeries object and iterate through to see if the separation is indeed within 1-2s.
             // if it is not throw a new MalformedFlightFileException
             //
-            StringTimeSeries lclDate = StringTimeSeries.getStringTimeSeries(connection, this.id, LCL_TIME);
+            StringTimeSeries lclDate = this.getStringTimeSeries(LCL_DATE);
 
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
