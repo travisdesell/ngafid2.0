@@ -38,10 +38,18 @@ public class AnalyzeResultsDAT {
     public String toString() {
         String str = "";
         switch (resultCode) {
-            case NO_ERRORS -> str += "";
-            case SOME_ERRORS -> str += "Warnings:\n";
-            case CORRUPTED -> str += "Corrupted File\n";
-            case NOT_DAT -> str += "Not a .DAT file\n";
+            case NO_ERRORS:
+                str += "";
+                break;
+            case SOME_ERRORS:
+                str += "Warnings:\n";
+                break;
+            case CORRUPTED:
+                str += "Corrupted File\n";
+                break;
+            case NOT_DAT:
+                str += "Not a .DAT file\n";
+                break;
         }
         str += messages;
         return str;

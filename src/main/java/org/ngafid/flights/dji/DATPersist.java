@@ -90,92 +90,103 @@ public class DATPersist {
 
     public static void save() {
         try {
-            PrintStream ps = new PrintStream(persistenceFile);
+            PrintStream printStream = new PrintStream(persistenceFile);
 
             if (outputDirName != null) {
-                ps.println("outputDir:" + outputDirName);
+                printStream.println("outputDir:" + outputDirName);
             }
             if (inputFileName != null) {
-                ps.println("inputFile:" + inputFileName);
+                printStream.println("inputFile:" + inputFileName);
             }
             if (checkUpdts) {
-                ps.println("checkUpdates:true");
+                printStream.println("checkUpdates:true");
             } else {
-                ps.println("checkUpdates:false");
+                printStream.println("checkUpdates:false");
             }
             if (showNewVerAvail) {
-                ps.println("showNewVerAvail:true");
+                printStream.println("showNewVerAvail:true");
             } else {
-                ps.println("showNewVerAvail:false");
+                printStream.println("showNewVerAvail:false");
             }
             if (loadLastOnStartup) {
-                ps.println("loadLastOnStartup:true");
+                printStream.println("loadLastOnStartup:true");
             } else {
-                ps.println("loadLastOnStartup:false");
+                printStream.println("loadLastOnStartup:false");
             }
             if (autoTransDJIAFiles) {
-                ps.println("autoExtractDJIAFiles:true");
+                printStream.println("autoExtractDJIAFiles:true");
             } else {
-                ps.println("autoExtractDJIAFiles:false");
+                printStream.println("autoExtractDJIAFiles:false");
             }
             if (EXPERIMENTAL_FIELDS) {
-                ps.println("experimentalFields:true");
+                printStream.println("experimentalFields:true");
             } else {
-                ps.println("experimentalFields:false");
+                printStream.println("experimentalFields:false");
             }
             if (showUnits) {
-                ps.println("showUnits:true");
+                printStream.println("showUnits:true");
             } else {
-                ps.println("showUnits:false");
+                printStream.println("showUnits:false");
             }
             if (motorPowerCalcs) {
-                ps.println("motorPowerCalcs:true");
+                printStream.println("motorPowerCalcs:true");
             } else {
-                ps.println("motorPowerCalcs:false");
+                printStream.println("motorPowerCalcs:false");
             }
             if (magCalcs) {
-                ps.println("magCalcs:true");
+                printStream.println("magCalcs:true");
             } else {
-                ps.println("magCalcs:false");
+                printStream.println("magCalcs:false");
             }
             if (airComp) {
-                ps.println("airComp:true");
+                printStream.println("airComp:true");
             } else {
-                ps.println("airComp:false");
+                printStream.println("airComp:false");
             }
             if (inertialOnlyCalcs) {
-                ps.println("inertialOnlyCalcs:true");
+                printStream.println("inertialOnlyCalcs:true");
             } else {
-                ps.println("inertialOnlyCalcs:false");
+                printStream.println("inertialOnlyCalcs:false");
             }
 
             switch (parsingMode) {
-                case DAT_THEN_ENGINEERED -> ps.println("parsingMode:DAT_THEN_DEFINED");
-                case ENGINEERED_THEN_DAT -> ps.println("parsingMode:DEFINED_THEN_DAT");
-                case ENGINEERED_AND_DAT -> ps.println("parsingMode:ENGINEERED_AND_DAT");
-                case JUST_DAT -> ps.println("parsingMode:JUST_DAT");
-                case JUST_ENGINEERED -> ps.println("parsingMode:JUST_DEFINED");
-                default -> {}
+                case DAT_THEN_ENGINEERED:
+                    printStream.println("parsingMode:DAT_THEN_DEFINED");
+                    break;
+                case ENGINEERED_THEN_DAT:
+                    printStream.println("parsingMode:DEFINED_THEN_DAT");
+                    break;
+                case ENGINEERED_AND_DAT:
+                    printStream.println("parsingMode:ENGINEERED_AND_DAT");
+                    break;
+                case JUST_DAT:
+                    printStream.println("parsingMode:JUST_DAT");
+                    break;
+                case JUST_ENGINEERED:
+                    printStream.println("parsingMode:JUST_DEFINED");
+                    break;
+                default:
+                    break;
             }
 
             if (invalidStructOK) {
-                ps.println("invalidStructOK:true");
+                printStream.println("invalidStructOK:true");
             } else {
-                ps.println("invalidStructOK:false");
+                printStream.println("invalidStructOK:false");
             }
             if (datConSize != null) {
-                ps.println(String.format("datConSize:%d,%d",
+                printStream.println(String.format("datConSize:%d,%d",
                         (long) datConSize.getWidth(),
                         (long) datConSize.getHeight()));
             }
-            ps.println("csvSampleRate:" + csvSampleRate);
+            printStream.println("csvSampleRate:" + csvSampleRate);
 
-            ps.println("logPanelEFB:" + logPanelEFB);
-            ps.println("logPanelCFB:" + logPanelCFB);
-            ps.println("logPanelRDFB:" + logPanelRDFB);
-            ps.println("smartTimeAxis:" + smartTimeAxis);
+            printStream.println("logPanelEFB:" + logPanelEFB);
+            printStream.println("logPanelCFB:" + logPanelCFB);
+            printStream.println("logPanelRDFB:" + logPanelRDFB);
+            printStream.println("smartTimeAxis:" + smartTimeAxis);
 
-            ps.close();
+            printStream.close();
         } catch (FileNotFoundException ignored) {
         }
     }

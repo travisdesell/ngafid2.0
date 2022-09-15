@@ -465,10 +465,11 @@ public class DATDJIFile {
     }
 
     public double getErrorRatio(errorType type) {
-        return switch (type) {
-            case CRC -> (double) numErrorCRC / numRecs;
-            case Other -> (double) numErrorOther / numRecs;
-        };
+        if (type == errorType.CRC) {
+            return (double) numErrorCRC / numRecs;
+        }
+
+        return (double) numErrorOther / numRecs;
     }
 
     public List<RecordDef> getRecordDefs() {
