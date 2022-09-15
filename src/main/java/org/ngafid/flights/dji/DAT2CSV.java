@@ -18,7 +18,10 @@ public class DAT2CSV {
         File file = new File(filePath);
         DATDJIFile datFile = DATDJIFile.createDatFile(filePath);
         DATConvert datConvert = datFile.createConvertDat();
+        datConvert.setCsvWriter(new DAT2CSVWriter("/home/aaron/Downloads/djiDatData/FLY001.csv"));
+
         datFile = DATDJIFile.createDatFile(file.getAbsolutePath(), datConvert);
+
         if (datFile != null) {
             String datFileName = datFile.getFile().getAbsolutePath();
             datFile.reset();
