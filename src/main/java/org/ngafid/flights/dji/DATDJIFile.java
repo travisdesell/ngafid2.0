@@ -485,9 +485,9 @@ public class DATDJIFile {
                 int calcChksum = calcChecksum(memory, startOfRecord, (short) (lengthOfRecord - 2));
                 int chksum = getUnsignedShort(startOfRecord + lengthOfRecord - 2);
                 System.out.println("Calculated Checksum: " + calcChksum + " Checksum: " + chksum);
-                if (calcChksum != chksum) {
-                    handleCorruptedChecksum(alwaysZero, thisRecordTickNo, offset, actualTickNo, eofProcessing, nextStartOfRecord, sequence);
-                }
+//                if (calcChksum != chksum) {
+                    return handleCorruptedChecksum(alwaysZero, thisRecordTickNo, offset, actualTickNo, eofProcessing, nextStartOfRecord, sequence);
+//                }
 
 //                done = true;
 

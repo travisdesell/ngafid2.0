@@ -18,20 +18,13 @@ public class DJIAssistantFile {
 
     public static boolean isDJIDat(File file) throws FileNotFoundException {
         byte arra[] = new byte[256];
-        FileInputStream bfr = new FileInputStream(file);
-        try {
-            bfr.read(arra, 0, 256);
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+            fileInputStream.read(arra, 0, 256);
             if ((arra[0] == (byte) 0x78) && (arra[1] == (byte) 0x9C)
-            /* && (arra[2] == (byte) 0xE4) */) {
-                bfr.close();
+                /* && (arra[2] == (byte) 0xE4) */) {
                 return true;
             }
         } catch (IOException e) {
-        } finally {
-            try {
-                bfr.close();
-            } catch (IOException e) {
-            }
         }
         return false;
     }
