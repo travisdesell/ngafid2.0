@@ -189,15 +189,6 @@ public class DATDJIFile {
                 String tempDirName = datFileName.substring(0, lastSlash + 1);
 
                     DJIAssistantFile.ExtractResult result = DJIAssistantFile.extractFirst(datFileName, tempDirName);
-                    if (result.moreThanOne()) {
-                        if (moreThanOnePopup) {
-                            return new DATDJIFile(result.getFile());
-                        } else {
-                            return null;
-                        }
-                    } else if (result.none()) {
-                        return null;
-                    }
                     return new DATDJIFile(result.getFile());
         }
         return createDatFile(datFileName);
@@ -498,7 +489,7 @@ public class DATDJIFile {
                     handleCorruptedChecksum(alwaysZero, thisRecordTickNo, offset, actualTickNo, eofProcessing, nextStartOfRecord, sequence);
                 }
 
-                done = true;
+//                done = true;
 
 
             } catch (CorruptedException c) {

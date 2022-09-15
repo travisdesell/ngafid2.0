@@ -11,25 +11,16 @@ public class DAT2CSV {
 //        System.out.println("Enter DAT file path");
 //        String filePath = scanner.nextLine();
 
-        DATPersist.save();
+        // Might be unncessary. probably just stores configuration
+//        DATPersist.save();
 
         String filePath = "/home/aaron/Downloads/djiDatData/FLY001.DAT";
-        System.out.println("Init Datfile");
+        File file = new File(filePath);
         DATDJIFile datFile = DATDJIFile.createDatFile(filePath);
-        datFile.reset();
-        datFile.preAnalyze();
-
-
         DATConvert datConvert = datFile.createConvertDat();
-
-        datFile.reset();
-
-        AnalyzeResultsDAT results = datConvert.analyze(true);
-
-        datFile = DATDJIFile.createDatFile(datFile.getAbsolutePath(), datConvert);
+        datFile = DATDJIFile.createDatFile(file.getAbsolutePath(), datConvert);
         if (datFile != null) {
             String datFileName = datFile.getFile().getAbsolutePath();
-            DATPersist.save();
             datFile.reset();
             datFile.preAnalyze();
 
