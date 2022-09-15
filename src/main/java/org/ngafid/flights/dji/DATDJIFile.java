@@ -124,7 +124,7 @@ public class DATDJIFile {
     long xxxx = Long.parseLong("14156619143"); // TODO: Determine use
     public AnalyzeResultsDAT results;
 
-    static int[] crc = new int[] { 0x0000, 0x1189, 0x2312, 0x329b, 0x4624,
+    static int[] crc = new int[]{0x0000, 0x1189, 0x2312, 0x329b, 0x4624,
             0x57ad, 0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c,
             0xdbe5, 0xe97e, 0xf8f7, 0x1081, 0x0108, 0x3393, 0x221a, 0x56a5,
             0x472c, 0x75b7, 0x643e, 0x9cc9, 0x8d40, 0xbfdb, 0xae52, 0xdaed,
@@ -156,7 +156,7 @@ public class DATDJIFile {
             0xb0a3, 0x8238, 0x93b1, 0x6b46, 0x7acf, 0x4854, 0x59dd, 0x2d62,
             0x3ceb, 0x0e70, 0x1ff9, 0xf78f, 0xe606, 0xd49d, 0xc514, 0xb1ab,
             0xa022, 0x92b9, 0x8330, 0x7bc7, 0x6a4e, 0x58d5, 0x495c, 0x3de3,
-            0x2c6a, 0x1ef1, 0x0f78 };
+            0x2c6a, 0x1ef1, 0x0f78};
 
 
     public enum errorType {
@@ -401,9 +401,22 @@ public class DATDJIFile {
 
     public void preAnalyze() {
         switch (droneModel) {
-            case I1, M600, I2, M100, M200 -> this.numBatteryCells = 6;
-            case MavicPro, MavicAir, SPARK -> this.numBatteryCells = 3;
-            default -> this.numBatteryCells = 4;
+            case I1:
+            case I2:
+            case M200:
+            case M100:
+            case M600:
+                this.numBatteryCells = 6;
+                break;
+
+            case MavicAir:
+            case SPARK:
+                this.numBatteryCells = 3;
+                break;
+
+            default:
+                this.numBatteryCells = 4;
+                break;
 
         }
     }
@@ -593,7 +606,6 @@ public class DATDJIFile {
     public AnalyzeResultsDAT getResults() {
         return results;
     }
-
 
 
 }
