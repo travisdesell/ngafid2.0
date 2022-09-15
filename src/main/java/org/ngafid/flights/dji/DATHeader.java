@@ -20,25 +20,51 @@ public class DATHeader {
         DroneModel droneModel;
         DATDJIFile.setClockRate(4500000.0);
         switch (DATDJIFile.memory.get(0)) {
-            case 5 -> {
+            case 5:
+
                 droneModel = DroneModel.M100;
                 DATDJIFile.setClockRate(85000000.0);
-            }
-            case 6 -> {
+                break;
+            case 6:
                 droneModel = DroneModel.P3I1;
                 DATDJIFile.setClockRate(600.0);
-            }
-            case 11 -> droneModel = DroneModel.P4;
-            case 14, 23 -> droneModel = DroneModel.M600;
-            case 16 -> droneModel = DroneModel.MavicPro;
-            case 17 -> droneModel = DroneModel.I2;
-            case 18 -> droneModel = DroneModel.P4P;
-            case 20 -> droneModel = DroneModel.S900;
-            case 21 -> droneModel = DroneModel.SPARK;
-            case 24 -> droneModel = DroneModel.MavicAir;
-            case 25 -> droneModel = DroneModel.M200;
-            case 27 -> droneModel = DroneModel.P4A;
-            default -> droneModel = DroneModel.UNKNOWN;
+                break;
+            case 11:
+                droneModel = DroneModel.P4;
+                break;
+            case 14:
+                droneModel = DroneModel.M600;
+                break;
+            case 23:
+                droneModel = DroneModel.M600;
+                break;
+            case 16:
+                droneModel = DroneModel.MavicPro;
+                break;
+            case 17:
+                droneModel = DroneModel.I2;
+                break;
+            case 18:
+                droneModel = DroneModel.P4P;
+                break;
+            case 20:
+                droneModel = DroneModel.S900;
+                break;
+            case 21:
+                droneModel = DroneModel.SPARK;
+                break;
+            case 24:
+                droneModel = DroneModel.MavicAir;
+                break;
+            case 25:
+                droneModel = DroneModel.M200;
+                break;
+            case 27:
+                droneModel = DroneModel.P4A;
+                break;
+            default:
+                droneModel = DroneModel.UNKNOWN;
+                break;
 
         }
 
