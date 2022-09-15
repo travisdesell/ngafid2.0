@@ -9,9 +9,9 @@ public class DAT2CSV {
         System.out.println("Enter DAT file path");
         String filePath = scanner.nextLine();
 
+        System.out.println("Init Datfile");
         DATDJIFile datFile = new DATDJIFile(filePath);
         DATConvert datConvert = datFile.createConvertDat();
-        System.out.println("Converting...");
 
         datFile.reset();
 

@@ -487,8 +487,9 @@ public class DATDJIFile {
                 // if positioned at a 0x00 then try to skip over the 0x00s , this from Spark .DAT
                 if (getByte(startOfRecord) == 0x00) {
                     while (getByte(startOfRecord) == 0x00) {
+                        System.out.println(startOfRecord);
                         startOfRecord++;
-                        if (startOfRecord > fileLength) throw (new EOFException());
+                        if (startOfRecord > fileLength) break;
                     }
                 }
                 // if not positioned at next 0x55, then its corrupted
@@ -496,75 +497,22 @@ public class DATDJIFile {
                     throw (new CorruptedException(actualTickNo, startOfRecord));
                 }
                 lengthOfRecord = (0xFF & getByte(startOfRecord + 1));
-                byte always0 = (byte) getByte(startOfRecord + 2);
+                byte alwaysZero = (byte) getByte(startOfRecord + 2);
                 nextStartOfRecord = startOfRecord + lengthOfRecord;
-                if (nextStartOfRecord > fileLength) throw (new EOFException());
+                if (nextStartOfRecord > fileLength) break;
                 int type = getUnsignedShort(startOfRecord + 4);
                 long thisRecordTickNo = getUnsignedInt(startOfRecord + 6);
                 int calcChksum = calcChecksum(memory, startOfRecord, (short) (lengthOfRecord - 2));
                 int chksum = getUnsignedShort(startOfRecord + lengthOfRecord - 2);
+                System.out.println("Calculated Checksum: " + calcChksum + " Checksum: " + chksum);
                 if (calcChksum != chksum) {
-                    numRecs++;
-                    if (always0 != 0) {
-                        throw (new CorruptedException(thisRecordTickNo, startOfRecord + 1));
-                    }
-
-                    if (!inRollover && lastRecordTickNo > upperTickLim && thisRecordTickNo < 2225000) {
-                        prevOffset = presentOffset;
-                        presentOffset += tickNoBoundary;
-                        inRollover = true;
-                        numRolloverRecs = 0;
-                    }
-
-                    offset = presentOffset;
-                    if (inRollover) {
-                        numRolloverRecs++;
-                        if (thisRecordTickNo > upperTickLim) {
-                            offset = prevOffset;
-                        }
-                        if (numRolloverRecs > 100) {
-                            inRollover = false;
-                            numRolloverRecs = 0;
-                        }
-                    }
-                    actualTickNo = thisRecordTickNo + offset;
-                    lastRecordTickNo = thisRecordTickNo;
-
-                    // look for large delta in tickNo
-                    if (Math.abs(lastActualTickNo - actualTickNo) > 22000000) {
-                        if (eofProcessing && !isTablet() && (fileLength - nextStartOfRecord < 40000)) { // the end of the file is corrupted
-                            throw (new EOFException());
-                        }
-                        // just this record is corrupted
-                        lastActualTickNo = actualTickNo;
-                        throw (new CorruptedException(thisRecordTickNo, startOfRecord + 1));
-                    }
-
-                    if (lengthOfRecord == 0) {
-                        throw (new CorruptedException(actualTickNo, startOfRecord + 1));
-                    }
-
-                    // if nextStartOfRecord not positioned at next 0x55, then this
-                    // is corrupted, but if it's 0x00 let it be handled by the
-                    // processing of the next record
-                    if (getByte(nextStartOfRecord) != 0x55 && getByte(nextStartOfRecord) != 0x00) {
-                        throw (new CorruptedException(actualTickNo, nextStartOfRecord));
-                    }
-                    if (!sequence || (actualTickNo > lastActualTickNo)) {
-                        lastActualTickNo = actualTickNo;
-                        this.type = type;
-                        payloadLength = lengthOfRecord - headerLength - chksumLength;
-                        tickNo = actualTickNo;
-                        start = startOfRecord + headerLength;
-                        startOfRecord = nextStartOfRecord;
-                        return true;
-                    }
-
-                    startOfRecord = nextStartOfRecord;
+                    handleCorruptedChecksum(alwaysZero, thisRecordTickNo, offset, actualTickNo, eofProcessing, nextStartOfRecord, sequence);
                 }
+
+
             } catch (CorruptedException c) {
                 if (getPos() > fileLength - 600) {
-                    throw (new EOFException());
+                    break;
                 }
                 numCorrupted++;
                 if ((numRecs > 1000) && ((float) numCorrupted / (float) numRecs) > 0.02) {
@@ -575,7 +523,7 @@ public class DATDJIFile {
                     byte fiftyFiveByte = readByte();
                     while (fiftyFiveByte != 0X55) {
                         if (getPos() > fileLength - 1000) {
-                            throw (new EOFException());
+                            break;
                         }
                         fiftyFiveByte = readByte();
                     }
@@ -593,6 +541,69 @@ public class DATDJIFile {
             }
         }
         return false;
+    }
+
+    private boolean handleCorruptedChecksum(int alwaysZero, long thisRecordTickNo, long offset, long actualTickNo, boolean eofProcessing, long nextStartOfRecord, boolean sequence) throws CorruptedException, EOFException {
+        numRecs++;
+        if (alwaysZero != 0) {
+            throw (new CorruptedException(thisRecordTickNo, startOfRecord + 1));
+        }
+
+        if (!inRollover && lastRecordTickNo > upperTickLim && thisRecordTickNo < 2225000) {
+            prevOffset = presentOffset;
+            presentOffset += tickNoBoundary;
+            inRollover = true;
+            numRolloverRecs = 0;
+        }
+
+        offset = presentOffset;
+        if (inRollover) {
+            numRolloverRecs++;
+            if (thisRecordTickNo > upperTickLim) {
+                offset = prevOffset;
+            }
+            if (numRolloverRecs > 100) {
+                inRollover = false;
+                numRolloverRecs = 0;
+            }
+        }
+        actualTickNo = thisRecordTickNo + offset;
+        lastRecordTickNo = thisRecordTickNo;
+
+        // look for large delta in tickNo
+        if (Math.abs(lastActualTickNo - actualTickNo) > 22000000) {
+            if (eofProcessing && !isTablet() && (fileLength - nextStartOfRecord < 40000)) { // the end of the file is corrupted
+//                break;
+            }
+            // just this record is corrupted
+            lastActualTickNo = actualTickNo;
+            throw (new CorruptedException(thisRecordTickNo, startOfRecord + 1));
+        }
+
+        if (lengthOfRecord == 0) {
+            throw (new CorruptedException(actualTickNo, startOfRecord + 1));
+        }
+
+        // if nextStartOfRecord not positioned at next 0x55, then this
+        // is corrupted, but if it's 0x00 let it be handled by the
+        // processing of the next record
+        if (getByte(nextStartOfRecord) != 0x55 && getByte(nextStartOfRecord) != 0x00) {
+            throw (new CorruptedException(actualTickNo, nextStartOfRecord));
+        }
+
+        System.out.println("Seq: " + sequence + " tickNo: " + actualTickNo + " lastTickNo:" + lastActualTickNo);
+        if (!sequence || (actualTickNo > lastActualTickNo)) {
+            lastActualTickNo = actualTickNo;
+            this.type = type;
+            payloadLength = lengthOfRecord - headerLength - chksumLength;
+            tickNo = actualTickNo;
+            start = startOfRecord + headerLength;
+            startOfRecord = nextStartOfRecord;
+            return true;
+        }
+
+        startOfRecord = nextStartOfRecord;
+
     }
 
     protected int calcChecksum(MappedByteBuffer memory, long start, short packetLen) {

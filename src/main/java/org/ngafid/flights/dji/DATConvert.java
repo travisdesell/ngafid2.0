@@ -183,7 +183,7 @@ public class DATConvert {
                     }
                 }
 
-                System.out.println("finished for loop");
+                System.out.println("finished while loop");
                 if (tickRangeLower <= tickNo && (csvWriter != null) && processedPayload && tickNo >= lastTickNoPrinted + sampleSize) {
                     csvWriter.print(tickNo + "," + datFile.timeString(tickNo, timeOffset));
                     printCSVLine(lineType.LINE);
