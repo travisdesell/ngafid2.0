@@ -13,7 +13,7 @@ import java.lang.Runnable;
 
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.Scanner;
+
 
 public class Database {
     private static Connection connection;
@@ -23,9 +23,6 @@ public class Database {
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     private static final long HOUR = 3600000;
-    private static final long DAY = 24 * HOUR;
-
-    private static final boolean isDevInstance = Boolean.parseBoolean(System.getenv("NGAFID_DEV_INSTANCE"));
 
     public static Connection getConnection() { 
         try {
@@ -141,53 +138,11 @@ public class Database {
                         rs.close();
 
                         LOG.info("Performed dummy query: " + dummyQuery + " at " + LocalDateTime.now().toString());
-                    } catch (Exception e) {
-                        LOG.severe(e.getMessage());
+                    } catch (Throwable t) {
+                        t.printStackTrace();
                     }
                 }
             }).start();
-
-            LOG.info("Log for SQL server backups, starting at: " + LocalDateTime.now().toString());
-
-            if (!isDevInstance) {
-                final int BACKUP_INTERVAL = Integer.parseInt(System.getenv("NGAFID_BACKUP_INTERVAL"));
-
-                final String BACKUP_DIRECTORY = System.getenv("NGAFID_BACKUP_DIR");
-                final String BACKUP_TABLES = System.getenv("NGAFID_BACKUP_TABLES");
-
-                // Only perform backups on prod!
-                new Thread(() -> {
-                    while (true) {
-                        try {
-                            Runtime rt = Runtime.getRuntime();
-
-                            LocalDateTime now = LocalDateTime.now();
-
-                            String backupSubDir = "ngafid_backup_" + now.getDayOfMonth() + "_" + now.getMonthValue() + "_" + now.getYear();
-                            String backupPrefix = BACKUP_DIRECTORY + "/" + backupSubDir;
-                            File backupFile = new File(backupPrefix + "/backup.sql");
-
-                            if (!backupFile.exists()) {
-                                new File(backupPrefix).mkdir();
-
-                                String dumpQueryString = "/usr/bin/mysqldump -u\'" + dbUser + "\' -p\'" + dbPassword + "\' -h\'" + dbHost + "\' " + dbName + " " + BACKUP_TABLES + " > " + backupFile.getPath();
-
-                                String [] cmdArr = {"/bin/sh", "-c", dumpQueryString};
-                                Process backup = rt.exec(cmdArr);
-
-                                backup.waitFor();
-
-                                LOG.info("Performed NGAFID backup with exit status " + backup.exitValue() + ", to file " + backupFile.getPath());
-                            }
-
-                            //Sleep for n days
-                            Thread.sleep(BACKUP_INTERVAL * DAY);
-                        } catch (Exception e) {
-                            LOG.severe(e.getMessage());
-                        }
-                    }
-                }).start();
-            }
         }
     }
 

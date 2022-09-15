@@ -130,11 +130,8 @@ export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info.txt
 export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
 # Set me to true if you dont want backups being made everytime you fire off the NGAFID
 # If you do set this to true the following 3 parameters do not need to be set
-export NGAFID_DEV_INSTANCE="true"
 export NGAFID_BACKUP_DIR=<path to where backups should be stored>
 export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads"
-# This is the number of days to wait to perform another backup
-export NGAFID_BACKUP_INTERVAL="7"
 ```
 
 and run
@@ -181,9 +178,40 @@ You should then be able to compile and run the webserver by running `run_webserv
 ~/ngafid2.0 $ sh run_webserver.sh
 ```
 
-Importing flights and calculating exceedences can be done by running the `run_process_flights.sh`
-and `run_exceedences.sh` files.
+Importing flights and calculating exceedences can be done by running the `run_process_upload.sh` file.
 
+
+## (Optional) using the backup daemon - works on Linux systems only.
+As demonstrated in `init_env.sh`, the NGAFID can be backed up using a configurable set of parameters (i.e. what tables to backup, etc).
+First, change the first line of the file in `db/backup_database.sh` so that the argument after `source` is the path to the aformentioned `init_env.sh` file.
+
+Then, you will need to copy the systemd files to your systemd directory and reload the os daemons.
+
+```
+~/ngafid2.0 # cp services/backup/ngafid-backup* /usr/lib/systemd/system
+~/ngafid2.0 # systemctl daemon-reload
+```
+
+To enable the backup service:
+```
+# systemctl enable ngafid-backup.service ngafid-backup.timer
+```
+
+If you desire to change the backup interval (default is weekly), you can override the `OnCalendar=` parameter with:
+```
+# systemctl edit ngafid-backup.service
+# systemctl daemon-reload
+```
+
+You may also want to check that everything has been loaded successfully. 
+```
+# systemctl status *timer
+```
+
+To run the backup at any given time, you can now simply invoke:
+```
+# systemctl start ngafid-backup
+```
 # ngafid2.0
 
 airport database:
