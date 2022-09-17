@@ -12,19 +12,19 @@ export class EventAnnotations extends React.Component {
     render() {
         return (
             <div>
-                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
-                                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
-                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                {/*<SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}*/}
+                {/*                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}*/}
+                {/*                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>*/}
 
                 <table class="table">
                     <thead>
                     <tr>
-                        <th scope={col}>Fleet ID</th>
-                        <th scope={col}>Event ID</th>
-                        <th scope={col}>Fleet ID</th>
-                        <th scope={col}>Timestamp</th>
-                        <th scope={col}>Classicifation</th>
-                        <th scope={col}>Notes</th>
+                        <th >Fleet ID</th>
+                        <th >Event ID</th>
+                        <th >Fleet ID</th>
+                        <th >Timestamp</th>
+                        <th >Classicifation</th>
+                        <th >Notes</th>
 
                     </tr>
                     </thead>
@@ -67,5 +67,5 @@ export class EventAnnotations extends React.Component {
 }
 
 const EventAnnotationsPage = ReactDOM.render(
-    <EventAnnotations/>, document.querySelector('#event-annotations-page')
+    <EventAnnotations/>, document.querySelector('#all-event-annotations')
 )
