@@ -4,6 +4,11 @@ import SignedInNavbar from "./signed_in_navbar";
 
 
 export class EventAnnotations extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
     render() {
         return (
             <div>
@@ -61,6 +66,6 @@ export class EventAnnotations extends React.Component {
 
 }
 
-var EventAnnotationsPage = ReactDOM.render(
+const EventAnnotationsPage = ReactDOM.render(
     <EventAnnotations/>, document.querySelector('#event-annotations-page')
 )

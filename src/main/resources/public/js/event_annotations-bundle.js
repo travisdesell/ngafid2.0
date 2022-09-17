@@ -47114,10 +47114,10 @@ var EventAnnotations = /*#__PURE__*/function (_React$Component) {
 
   var _super = _createSuper(EventAnnotations);
 
-  function EventAnnotations() {
+  function EventAnnotations(props) {
     _classCallCheck(this, EventAnnotations);
 
-    return _super.apply(this, arguments);
+    return _super.call(this, props);
   }
 
   _createClass(EventAnnotations, [{
