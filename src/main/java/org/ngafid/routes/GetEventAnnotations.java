@@ -60,8 +60,11 @@ public class GetEventAnnotations implements Route {
             return null;
         }
 
+        LOG.info("Testing -------------------------");
+
         try {
             List<Annotation> annotations = EventAnnotation.getAnnotationsByEvent(eventId, user.getId());
+            LOG.info("Annotations: " + annotations);
 
             return gson.toJson(annotations);
         } catch(SQLException e) {
