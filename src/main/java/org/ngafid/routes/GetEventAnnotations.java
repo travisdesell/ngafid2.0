@@ -82,10 +82,13 @@ public class GetEventAnnotations implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             List<Annotation> annotations = EventAnnotation.getAnnotationsByEvent(eventId, user.getId());
+            scopes.put("annotations", annotations);
             LOG.info("Annotations: " + annotations);
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
+
+
 
             return gson.toJson(annotations);
         } catch (SQLException | IOException e) {

@@ -16,46 +16,28 @@ export class EventAnnotations extends React.Component {
                 {/*                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}*/}
                 {/*                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>*/}
 
-                <table class="table">
+                <table className="table">
                     <thead>
                     <tr>
-                        <th >Fleet ID</th>
-                        <th >Event ID</th>
-                        <th >Fleet ID</th>
-                        <th >Timestamp</th>
-                        <th >Classicifation</th>
-                        <th >Notes</th>
+                        <th>Fleet ID</th>
+                        <th>Event ID</th>
+                        <th>Timestamp</th>
+                        <th>Classicifation</th>
+                        <th>Notes</th>
 
                     </tr>
                     </thead>
                     <tbody>
-                    <tr>
-                        <th scope="row">1</th>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>12-31-99</td>
-                        <td>Stall</td>
-                        <td>Blah</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">1</th>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>12-31-99</td>
-                        <td>Stall</td>
-                        <td>Blah</td>
-                    </tr>
-                    <tr>
-                        <th scope="row">1</th>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>0</td>
-                        <td>12-31-99</td>
-                        <td>Stall</td>
-                        <td>Blah</td>
-                    </tr>
+                    {annotations.map((val, index) => {
+                        return <tr key={index}>
+                            <td>{val.fleet_id}</td>
+                            <td>{val.eventId}</td>
+                            <td>{val.timestamp.toString()}</td>
+                            <td>{val.classId}</td>
+                            <td>{val.notes}</td>
+
+                        </tr>
+                    })}
                     </tbody>
                 </table>
             </div>
