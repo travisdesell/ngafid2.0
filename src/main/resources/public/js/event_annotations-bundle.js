@@ -47121,14 +47121,21 @@ var EventAnnotations = /*#__PURE__*/function (_React$Component) {
   }
 
   _createClass(EventAnnotations, [{
+    key: "generateTimestampString",
+    value: function generateTimestampString(dateTime) {
+      return dateTime.date.year + "-" + dateTime.date.month + "-" + dateTime.date.day + " " + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
+    }
+  }, {
     key: "render",
     value: function render() {
+      var _this = this;
+
       return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("table", {
         className: "table"
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("thead", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Fleet ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Event ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Timestamp"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Classicifation"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Notes"))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tbody", null, annotations.map(function (val, index) {
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", {
           key: index
-        }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.fleet_id), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.eventId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.timestamp.toString()), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.classId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.notes));
+        }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.fleet_id), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.eventId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, _this.generateTimestampString(val.timestamp)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.classId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, val.notes));
       }))));
     }
   }]);

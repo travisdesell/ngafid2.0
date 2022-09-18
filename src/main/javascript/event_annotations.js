@@ -9,6 +9,11 @@ export class EventAnnotations extends React.Component {
         super(props);
     }
 
+    generateTimestampString(dateTime) {
+        return dateTime.date.year + "-" + dateTime.date.month + "-" + dateTime.date.day + " "
+            + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
+    }
+
     render() {
         return (
             <div>
@@ -32,7 +37,7 @@ export class EventAnnotations extends React.Component {
                         return <tr key={index}>
                             <td>{val.fleet_id}</td>
                             <td>{val.eventId}</td>
-                            <td>{val.timestamp.toString()}</td>
+                            <td>{this.generateTimestampString(val.timestamp)}</td>
                             <td>{val.classId}</td>
                             <td>{val.notes}</td>
 
