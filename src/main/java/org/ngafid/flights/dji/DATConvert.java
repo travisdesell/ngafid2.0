@@ -231,7 +231,7 @@ public class DATConvert {
 
     protected void processAttrValuesPairs() throws IOException {
         csvWriter.print(",");
-        if (attrValuePairs.size() > 0) {
+        if (!attrValuePairs.isEmpty()) {
             AttrValuePair avp = attrValuePairs.remove(0);
             csvWriter.print(avp.getAttr() + "|" + avp.getValue());
         }
