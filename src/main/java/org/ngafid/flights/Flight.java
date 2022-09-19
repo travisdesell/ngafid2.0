@@ -3,8 +3,9 @@ package org.ngafid.flights;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
-import java.time.DateTimeException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -32,10 +33,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import java.time.DateTimeException;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import java.util.Arrays;
@@ -2199,10 +2196,23 @@ public class Flight {
             //TODO: here grab the LCL_TIME StringTimeSeries object and iterate through to see if the separation is indeed within 1-2s.
             // if it is not throw a new MalformedFlightFileException
             //
-            StringTimeSeries lclDate = this.getStringTimeSeries(LCL_DATE);
+
 
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
+        }
+        StringTimeSeries lclTime = this.getStringTimeSeries(LCL_TIME);
+        if (lclTime != null){
+            LocalTime prevTimeStamp = LocalTime.parse(lclTime.get(0));
+            for(int i=1;i<lclTime.size();i++){
+                LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
+                if (ChronoUnit.SECONDS.between(currTimeStamp,prevTimeStamp) > 1){
+                    exceptions.add(new MalformedFlightFileException("Entries have data with "));
+                }
+                else {
+                    prevTimeStamp = currTimeStamp;
+                }
+            }
         }
 
         try {
