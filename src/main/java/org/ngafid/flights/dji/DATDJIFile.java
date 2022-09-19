@@ -131,12 +131,6 @@ public class DATDJIFile {
         return datHeader.getFWDate();
     }
 
-    public String getACType() {
-        // TODO: Finish this
-        return "";
-//        if (this.getACType())
-    }
-
 
     public enum errorType {
         CRC, Other

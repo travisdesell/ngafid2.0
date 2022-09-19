@@ -212,7 +212,7 @@ public class DATConvert {
 
     private void insertFWDateStr() {
         addAttrValuePair("Firmware Date", datFile.getFirmwareDate());
-        addAttrValuePair("ACType", datFile.getACType());
+        addAttrValuePair("Drone Model", datFile.getDroneModelStr());
     }
 
     private void printCsvValue(String header, String value, lineType lineT, boolean valid) throws IOException {
