@@ -1,8 +1,11 @@
 package org.ngafid.flights.dji;
 
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 
 public class DATHeader {
+
+
 
     public enum DroneModel {
         P3I1, P3AP, P3S, I1, P4, MavicPro, P4P, P4A, I2, M200, M600, M100, SPARK, UNKNOWN, MavicAir, S900
@@ -86,9 +89,25 @@ public class DATHeader {
         return DATDJIFile;
     }
 
-//    public String getFirmwareDate() {
-//        return firmwareDate;
-//    }
+    /**
+     * Calculates the firmware date from a byte array
+     * @return Firmware Date String
+     */
+   public String getFWDate() {
+
+        byte[] byteArr = new byte[13];
+        int j = 0;
+        for (int i = 21; i < 33; i++) {
+            byteArr[j++] = DATDJIFile.memory.get(i);
+        }
+        String fwDate;
+        try {
+            fwDate = new String(byteArr, "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            fwDate = "";
+        }
+        return fwDate;
+    }
 
     public static String toString(DroneModel droneModel) {
         switch (droneModel) {

@@ -139,6 +139,7 @@ public class DATConvert {
     }
 
     public AnalyzeResultsDAT analyze(boolean printVersion) throws IOException {
+        this.insertFWDateStr();
         boolean processedPayload = false;
         this.printVersion = printVersion;
         final int sampleSize = (int) (datFile.getClockRate() / sampleRate);
@@ -153,10 +154,8 @@ public class DATConvert {
             }
             long lastTickNoPrinted = -sampleSize;
 
-            System.out.println("before while loop");
 
             while (datFile.getNextDatRec(true, true, true, false)) {
-                System.out.println("while loop");
                 int payloadType = datFile.type;
                 long payloadStart = datFile.start;
                 int payloadLength = datFile.payloadLength;
@@ -164,6 +163,8 @@ public class DATConvert {
                 if (tickNo > tickRangeUpper) {
                     throw new EOFException();
                 }
+
+                System.out.println("DATRecords: " + datRecords);
                 for (DATRecord datRecord : datRecords) {
                     if (datRecord.isId(payloadType)) {
                         Payload payload = new Payload(datFile, payloadStart, payloadLength, payloadType, tickNo);
@@ -183,9 +184,14 @@ public class DATConvert {
                     }
                 }
 
-                System.out.println("finished while loop");
+//                System.out.println("tickCompare: " + (tickRangeLower <= tickNo));
+//                System.out.println("csvWriter: " + (csvWriter));
+//                System.out.println("processedPayload: " + (processedPayload));
+//                System.out.println("tickNoPrinted: " + (tickNo >= lastTickNoPrinted + sampleSize));
+
                 if (tickRangeLower <= tickNo && (csvWriter != null) && processedPayload && tickNo >= lastTickNoPrinted + sampleSize) {
                     csvWriter.print(tickNo + "," + datFile.timeString(tickNo, timeOffset));
+                    System.out.println("LINE: " + lineType.LINE);
                     printCSVLine(lineType.LINE);
                     lastTickNoPrinted = tickNo;
                     processedPayload = true;
@@ -202,6 +208,11 @@ public class DATConvert {
 
         System.out.println("Skipped loop");
         return datFile.getResults();
+    }
+
+    private void insertFWDateStr() {
+        addAttrValuePair("Firmware Date", datFile.getFirmwareDate());
+        addAttrValuePair("ACType", datFile.getACType());
     }
 
     private void printCsvValue(String header, String value, lineType lineT, boolean valid) throws IOException {
@@ -581,8 +592,6 @@ public class DATConvert {
     public void setSampleRate(float sampleRate) {
         this.sampleRate = sampleRate;
     }
-
-
 
 
 }
