@@ -228,6 +228,34 @@ public class EventAnnotation extends Annotation {
         return annotations;
     }
 
+    /**
+     * Gets a list of all the annotations for a group
+     *
+     * @param groupId the id of the group that made annotations
+     *
+     * @return a list of annotations
+     */
+    public static List<Annotation> getGroupAnnotations(int groupId) throws SQLException {
+        List<Annotation> annotations = new ArrayList<>();
+
+        String queryString = "SELECT event_annotations.fleet_id, event_id, timestamp, notes, name FROM" +
+                " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
+                " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+        query.setInt(1, groupId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            EventAnnotation ea = new EventAnnotation(resultSet);
+
+            annotations.add((Annotation) ea);
+        }
+
+        return annotations;
+    }
+
     public static void displayUsage() {
         System.err.println("Usage: extract_loci_events [directory] [fleet_id] [user_id (of annotator)] [percent test events (0.d)]");
         System.err.println("Directory should have subdirectory with structure: <dir>/log");

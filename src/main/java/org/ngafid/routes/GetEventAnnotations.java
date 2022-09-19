@@ -48,7 +48,7 @@ public class GetEventAnnotations implements Route {
     public GetEventAnnotations(Gson gson) {
         this.gson = gson;
 
-        LOG.info("GET " + this.getClass().getName() + " initalized");
+        LOG.info("GET " + this.getClass().getName() + " initialized");
     }
 
     /**
@@ -58,14 +58,10 @@ public class GetEventAnnotations implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "all_event_annotations.html";
-        LOG.severe("Template Dir: " + WebServer.MUSTACHE_TEMPLATE_DIR);
-        LOG.severe("Template File: '" + templateFile + "'");
 
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
-
-        int eventId = Integer.parseInt(request.queryParams("eventId"));
 
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
@@ -81,7 +77,7 @@ public class GetEventAnnotations implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
-            List<Annotation> annotations = EventAnnotation.getAnnotationsByEvent(eventId, user.getId());
+            List<Annotation> annotations = EventAnnotation.getGroupAnnotations(user.getGroup(connection));
             scopes.put("annotations", annotations);
             LOG.info("Annotations: " + annotations);
 

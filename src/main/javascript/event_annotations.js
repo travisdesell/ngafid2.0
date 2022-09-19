@@ -27,7 +27,7 @@ export class EventAnnotations extends React.Component {
                         <th>Fleet ID</th>
                         <th>Event ID</th>
                         <th>Timestamp</th>
-                        <th>Classicifation</th>
+                        <th>Classification</th>
                         <th>Notes</th>
 
                     </tr>
@@ -38,7 +38,7 @@ export class EventAnnotations extends React.Component {
                             <td>{val.fleet_id}</td>
                             <td>{val.eventId}</td>
                             <td>{this.generateTimestampString(val.timestamp)}</td>
-                            <td>{val.classId}</td>
+                            <td>{val.name}</td>
                             <td>{val.notes}</td>
 
                         </tr>
