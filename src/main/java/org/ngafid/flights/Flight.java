@@ -2207,7 +2207,8 @@ public class Flight {
             for(int i=1;i<lclTime.size();i++){
                 LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
                 if (ChronoUnit.SECONDS.between(currTimeStamp,prevTimeStamp) > 1){
-                    exceptions.add(new MalformedFlightFileException("Entries have data with "));
+                    exceptions.add(new MalformedFlightFileException("Entries have data with frequency less than 1Hz"));
+                    break;
                 }
                 else {
                     prevTimeStamp = currTimeStamp;
