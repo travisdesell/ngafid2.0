@@ -12,16 +12,16 @@ import java.util.zip.InflaterInputStream;
 
 public class DJIAssistantFile {
 
-    static final int hearerLen = 283;
+    static final int HEARER_LEN = 283;
 
-    static final int bufSize = 1000;
+    static final int BUFFER_SIZE = 1000;
 
     public static boolean isDJIDat(File file) throws FileNotFoundException {
-        byte arra[] = new byte[256];
+        byte byteArr[] = new byte[256];
         try (FileInputStream fileInputStream = new FileInputStream(file)) {
-            fileInputStream.read(arra, 0, 256);
-            if ((arra[0] == (byte) 0x78) && (arra[1] == (byte) 0x9C)
-                /* && (arra[2] == (byte) 0xE4) */) {
+            fileInputStream.read(byteArr, 0, 256);
+            if ((byteArr[0] == (byte) 0x78) && (byteArr[1] == (byte) 0x9C)
+                /* && (byteArr[2] == (byte) 0xE4) */) {
                 return true;
             }
         } catch (IOException e) {
@@ -63,8 +63,8 @@ public class DJIAssistantFile {
         File datFile = null;
         BufferedInputStream bufferedIS = null;
         ExtractResult retv = (new DJIAssistantFile()).new ExtractResult();
-        byte buffer[] = new byte[bufSize];
-        byte header[] = new byte[hearerLen];
+        byte buffer[] = new byte[BUFFER_SIZE];
+        byte header[] = new byte[HEARER_LEN];
         boolean gotDat = false;
         // int len = 0;
         int beginFNRoot = datFileName.lastIndexOf("\\");
@@ -77,7 +77,7 @@ public class DJIAssistantFile {
                     inStream, inflater, 1000);
             bufferedIS = new BufferedInputStream(inflaterInStream);
             while (!gotDat
-                    && bufferedIS.read(header, 0, hearerLen) == hearerLen) {
+                    && bufferedIS.read(header, 0, HEARER_LEN) == HEARER_LEN) {
                 long uncompressedFileLength = Util.getUnsignedInt(header, 1);
                 int len = 0;
                 String flyFileName = Util.getString(header, 7);
@@ -92,8 +92,8 @@ public class DJIAssistantFile {
                     boolean done = false;
                     long outFileSize = 0;
                     while (!done) {
-                        int bufLength = bufSize;
-                        if (outFileSize + bufSize > uncompressedFileLength) {
+                        int bufLength = BUFFER_SIZE;
+                        if (outFileSize + BUFFER_SIZE > uncompressedFileLength) {
                             bufLength = (int) (uncompressedFileLength
                                     - outFileSize);
                             done = true;
@@ -113,7 +113,7 @@ public class DJIAssistantFile {
             if (!gotDat) {
                 return retv;
             }
-            while (bufferedIS.read(header, 0, hearerLen) == hearerLen) {
+            while (bufferedIS.read(header, 0, HEARER_LEN) == HEARER_LEN) {
                 long uncompressedFileLength = Util.getUnsignedInt(header, 1);
                 String flyFileName = Util.getString(header, 7);
                 if (flyFileName.indexOf("FLY") == 0) {
