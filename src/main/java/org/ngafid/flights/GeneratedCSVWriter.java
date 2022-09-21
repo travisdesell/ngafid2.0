@@ -134,7 +134,7 @@ public class GeneratedCSVWriter extends CSVWriter {
                 //Some CSV readers do not like the uncommented header line
                 //fileWriter.write(header);
 
-                for (int i = startLine; i < stopLine; i++) {
+                for (int i = startLine; i < stopLine + 1; i++) {
                     fileWriter.write(this.getLine(i));
                 }
 
