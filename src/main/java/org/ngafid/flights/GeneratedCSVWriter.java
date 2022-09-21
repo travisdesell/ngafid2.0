@@ -133,7 +133,7 @@ public class GeneratedCSVWriter extends CSVWriter {
                 fileWriter.write("#" + header);
                 fileWriter.write(header);
 
-                for (int i = startLine; i < stopLine; i++) {
+                for (int i = startLine; i < stopLine + 1; i++) {
                     fileWriter.write(this.getLine(i));
                 }
 
