@@ -27,7 +27,7 @@ public class GenerateBulkCSVS {
 	private String outDirectoryRoot, uploadDirectoryRoot;
 	private int fleetId;
 	private List<Flight> flights;
-	private Optional<String> aircraftName;
+	private Optional<List<String>> aircraftNames;
 	private boolean useZip;
 
 	static final Connection connection = Database.getConnection();
@@ -41,21 +41,20 @@ public class GenerateBulkCSVS {
 	 * @param flightLower the lower bound of the flightid 
 	 * @param flightUpper the upper bound of the flightid
 	 */
-	public GenerateBulkCSVS(String outDirectoryRoot, Optional<String> aircraftName, int fleetId, boolean useZip, int flightLower, int flightUpper) {
+	public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId, boolean useZip, int flightLower, int flightUpper) {
 		this.outDirectoryRoot = outDirectoryRoot;
-		this.aircraftName = aircraftName;
+		this.aircraftNames = aircraftNames;
 		this.fleetId = fleetId;
 		this.useZip = useZip;
 
 		try {
-			if (aircraftName.isPresent()) {
-				Filter root = new Filter("AND");
-				ArrayList<String> aircraftFilter = new ArrayList<>();
-				aircraftFilter.add("Airframe");
-				aircraftFilter.add("is");
-				aircraftFilter.add(aircraftName.get());
+			if (aircraftNames.isPresent()) {
+                List<String> aircraftNamesList = aircraftNames.get();
 
-				root.addFilter(new Filter(aircraftFilter));
+				Filter root = new Filter("AND");
+				Filter aircraftFilter = parseAircraftFilter(this.aircraftNames.get());
+
+				root.addFilter(aircraftFilter);
 				this.flights = Flight.getFlightsByRange(connection, root, fleetId, flightLower, flightUpper);
 			} else {
 				this.flights = Flight.getFlightsByRange(connection, fleetId, flightLower, flightUpper);
@@ -75,11 +74,11 @@ public class GenerateBulkCSVS {
 	 * @param startDate the start date to use
 	 * @param endDate the end tdate to use
 	 */
-	public GenerateBulkCSVS(String outDirectoryRoot, Optional<String> aircraftName, int fleetId, boolean useZip, String startDate, String endDate) {
+	public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId, boolean useZip, String startDate, String endDate) {
 		this.outDirectoryRoot = outDirectoryRoot;
 		this.fleetId = fleetId;
 		this.useZip = useZip;
-		this.aircraftName = aircraftName;
+		this.aircraftNames = aircraftNames;
 		this.getIdsByDate(startDate, endDate);
 		this.displayInfo();
 	}
@@ -107,13 +106,9 @@ public class GenerateBulkCSVS {
 		root.addFilter(new Filter(endInputs));
 
 		try{
-			if(this.aircraftName.isPresent()){
-				ArrayList<String> aircraftFilter = new ArrayList<>();
-				aircraftFilter.add("Airframe");
-				aircraftFilter.add("is");
-				aircraftFilter.add(aircraftName.get());
-
-				root.addFilter(new Filter(aircraftFilter));
+			if(this.aircraftNames.isPresent()){
+                Filter aircraftFilter = parseAircraftFilter(this.aircraftNames.get());
+				root.addFilter(aircraftFilter);
 
 				this.flights = Flight.getFlights(connection, fleetId, root);
 			} else {
@@ -125,6 +120,36 @@ public class GenerateBulkCSVS {
 			System.exit(1);
 		}
 	}
+
+    public static Filter parseAircraftFilter(List<String> aircraftNamesList) {
+        ArrayList<String> aircraftFilterArgs = new ArrayList<>();
+
+        int nAircrafts = aircraftNamesList.size();
+
+        Filter aircraftFilter = new Filter("OR");
+
+        for (int i = 0; i < nAircrafts; i++) {
+            String aircraftName = aircraftNamesList.get(i);
+
+            aircraftFilterArgs.add("Airframe");
+            aircraftFilterArgs.add("is");
+            aircraftFilterArgs.add(aircraftName);
+
+            if (i + 1 < nAircrafts) {
+                aircraftFilter.addFilter(new Filter(aircraftFilterArgs));
+                aircraftFilterArgs = new ArrayList<>();
+            }
+        }
+
+        if (!aircraftFilterArgs.isEmpty()) {
+            aircraftFilter.addFilter(new Filter(aircraftFilterArgs));
+        }
+
+        //System.out.println(aircraftFilter.toHumanReadable());
+        //System.exit(1);
+
+        return aircraftFilter;
+    }
 
 	/**
 	 * Dispays info to stdout about the csv generation
@@ -253,8 +278,9 @@ public class GenerateBulkCSVS {
 		int lwr = -1, upr = -1;
 		int fleetId = -1;
 		Optional<String> lDate = Optional.empty(),
-						 uDate = Optional.empty(),
-						 aircraftName = Optional.empty();
+						 uDate = Optional.empty();
+
+        Optional<List<String>> aircraftNames = Optional.empty();
 
 		boolean zip = false;
 		for (int i = 0; i < args.length; i++) {
@@ -306,12 +332,43 @@ public class GenerateBulkCSVS {
 					int j = i + 1;
 					StringBuilder sb = new StringBuilder();
 					boolean notEnd = false;
-					while(j < args.length && (notEnd = !args[j].startsWith("-"))) {
+                    boolean isNextAircraftPresent = false;
+                    
+                    List<String> names = new ArrayList<>();
+					while(j < args.length && ((notEnd = !args[j].startsWith("-")) | (isNextAircraftPresent = args[j].startsWith(",")))) {
+                        if (isNextAircraftPresent) {
+                            String acftStr = sb.toString();
+                            int strLen = acftStr.length();
+                            
+                            if (acftStr.charAt(strLen - 1) == ' ') {
+                                acftStr = acftStr.substring(0, strLen - 1);
+                            }
+                            names.add(acftStr);
+                            sb = new StringBuilder();
+                            ++j;
+                            continue;
+                        }
+
 						sb.append(args[j]);
 						if (notEnd) sb.append(" ");
 						++j;
 					}
-					aircraftName = Optional.of(sb.toString());
+
+                    if (sb.length() > 0) {
+                        String acftStr = sb.toString();
+                        int strLen = acftStr.length();
+
+                        if (acftStr.charAt(strLen - 1) == ' ') {
+                            acftStr = acftStr.substring(0, strLen - 1);
+                        }
+
+                        names.add(acftStr);
+                    }
+
+                    //System.out.println(names.toString());
+                    //System.exit(0);
+
+					aircraftNames = Optional.of(names);
 					System.err.println(sb);
 					
 					break;
@@ -334,9 +391,9 @@ public class GenerateBulkCSVS {
 
 		GenerateBulkCSVS gb;
 		if (lDate.isPresent() && uDate.isPresent()) {
-			gb = new GenerateBulkCSVS(dir, aircraftName, fleetId, zip, lDate.get(), uDate.get());
+			gb = new GenerateBulkCSVS(dir, aircraftNames, fleetId, zip, lDate.get(), uDate.get());
 		} else {
-			gb = new GenerateBulkCSVS(dir, aircraftName, fleetId, zip, lwr, upr);
+			gb = new GenerateBulkCSVS(dir, aircraftNames, fleetId, zip, lwr, upr);
 		}
 
 		if (zip) {
