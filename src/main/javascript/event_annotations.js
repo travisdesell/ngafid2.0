@@ -15,6 +15,18 @@ export class EventAnnotations extends React.Component {
     }
 
     render() {
+        let annotations = [];
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/event_group_annotations',
+            dataType : 'json',
+            success : function(response) {
+                annotations = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {},
+            async: false
+        });
 
         return (
             <div>
