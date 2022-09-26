@@ -241,7 +241,6 @@ public class DATConvert {
         csvWriter.print("," + attr + "," + value);
     }
 
-
     public void createRecordParsers() {
         goTxt5012.current = null; // TODO Figure out GoTxt50_12
         List<DATRecord> recs = new ArrayList<>();
@@ -252,7 +251,7 @@ public class DATConvert {
 
             for (RecSpec recInDat : recsInDat.values()) {
                 List<DATRecord> datRecordInstLst = getRecordInst(recInDat);
-                if (datRecordInstLst != null && datRecordInstLst.size() > 0) {
+                if (datRecordInstLst != null && !datRecordInstLst.isEmpty()) {
                     for (DATRecord DATRecordInst : datRecordInstLst) {
                         int recInstLength = DATRecordInst.getLength();
                         if (recInstLength <= recInDat.getLength()) { // recInstLength == -1 means it's a RecType.STRING
