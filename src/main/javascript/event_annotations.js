@@ -15,6 +15,7 @@ export class EventAnnotations extends React.Component {
     }
 
     render() {
+
         return (
             <div>
                 {/*<SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}*/}

@@ -248,9 +248,9 @@ public class EventAnnotation extends Annotation {
         ResultSet resultSet = query.executeQuery();
 
         while (resultSet.next()) {
-            EventAnnotation ea = new EventAnnotation(resultSet);
+            EventAnnotation eventAnnotation = new EventAnnotation(resultSet);
 
-            annotations.add((Annotation) ea);
+            annotations.add(eventAnnotation);
         }
 
         return annotations;
