@@ -28,7 +28,7 @@ public class FindSpinEvents {
 
     public static void findSpinEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE event_definition_id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
