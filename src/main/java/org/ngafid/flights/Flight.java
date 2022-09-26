@@ -3319,13 +3319,13 @@ public class Flight {
                 int flightId = resultSet.getInt(1);
                 this.id = flightId;
 
-                for (String key : doubleTimeSeries.keySet()) {
-                    System.out.println("double time series key: '" + key);
-                    System.out.println("\tis " + doubleTimeSeries.get(key).toString());
-                }
+                // Comment this out unless debugging
+                //for (String key : doubleTimeSeries.keySet()) {
+                    //System.out.println("double time series key: '" + key);
+                    //System.out.println("\tis " + doubleTimeSeries.get(key).toString());
+                //}
 
                 for (DoubleTimeSeries series : doubleTimeSeries.values()) {
-                    System.out.println(series);
                     series.updateDatabase(connection, flightId);
                 }
 
