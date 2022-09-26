@@ -164,6 +164,13 @@ public class TimeUtils {
         return ChronoUnit.SECONDS.between(start, end);
     }
 
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern) {
+        LocalDateTime start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern(pattern));
+        LocalDateTime end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern(pattern));
+
+        return ChronoUnit.SECONDS.between(start, end);
+    }
+
     /**
      * Add seconds to a Date object
      *
@@ -175,6 +182,13 @@ public class TimeUtils {
         Calendar cal = Calendar.getInstance();
         cal.setTime(date);
         cal.add(Calendar.SECOND, seconds);
+        return cal.getTime();
+    }
+
+    public static Date subtractSeconds(Date date, Integer seconds) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(date);
+        cal.add(Calendar.SECOND, -seconds);
         return cal.getTime();
     }
 
