@@ -28,7 +28,11 @@ public class FindSpinEvents {
 
     public static void findSpinEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE event_definition_id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
+            //String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE event_definition_id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
+                    "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_ALTITUDE_SPIN.getId() +
+                    " OR event_definition_id = " + HIGH_ALTITUDE_SPIN.getId() +
+                    ") AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
@@ -45,35 +49,6 @@ public class FindSpinEvents {
             e.printStackTrace();
             System.exit(1);
         } 
-    }
-
-    public static void clearPreviousEvents(int fleetId) throws SQLException {
-        String sql = "DELETE FROM events WHERE event_definition_id IN (?,?) AND fleet_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
-        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
-        query.setInt(3, fleetId);
-
-        query.executeUpdate();
-
-        sql = "DELETE FROM flight_processed WHERE event_definition_id IN (?,?) AND fleet_id = ?";
-        query = connection.prepareStatement(sql);
-
-        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
-        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
-        query.setInt(3, fleetId);
-
-        query.executeUpdate();
-
-        sql = "DELETE FROM event_statistics WHERE event_definition_id IN (?,?) AND fleet_id = ?";
-        query = connection.prepareStatement(sql);
-
-        query.setInt(1, LOW_ALTITUDE_SPIN.getId());
-        query.setInt(2, HIGH_ALTITUDE_SPIN.getId());
-        query.setInt(3, fleetId);
-
-        query.executeUpdate();
     }
 
     public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
@@ -176,7 +151,7 @@ public class FindSpinEvents {
                         currentEvent = null;
                     }
 
-                    if (endSpinSeconds >= 1 || currentEvent == null) {
+                    if (endSpinSeconds >= STOP_DELAY || currentEvent == null) {
                         if (currentEvent != null) {
                             if (altCstrViolated) {
                                 currentEvent.setDefinition(LOW_ALTITUDE_SPIN);
@@ -272,14 +247,14 @@ public class FindSpinEvents {
 
             LOG.info("Processing spin events for fleet: " + fleetId);
 
-            try {
-                clearPreviousEvents(fleetId);
+            //try {
+                //clearPreviousEvents(fleetId);
 
-                LOG.info("Cleared fleets previous events");
-            } catch (SQLException se) {
-                se.printStackTrace();
-                System.exit(1);
-            }
+                //LOG.info("Cleared fleets previous events");
+            //} catch (SQLException se) {
+                //se.printStackTrace();
+                //System.exit(1);
+            //}
 
             try {
                 List<Upload> uploads = Upload.getUploads(connection, fleetId);
