@@ -252,6 +252,18 @@ public class Flight {
         }
     }
 
+    public List<String> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException, SQLException {
+        List<String> missingParams = new ArrayList<>();
+
+        for (String param : seriesNames) {
+            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
+                missingParams.add(param);
+            }
+        }
+
+        return missingParams;
+    }
+
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId) throws SQLException {
         return getFlights(connection, fleetId, 0);
     }
