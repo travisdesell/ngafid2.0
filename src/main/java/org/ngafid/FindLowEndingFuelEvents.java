@@ -14,7 +14,7 @@ import java.text.ParseException;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static org.ngafid.events.CustomEvent.getLowEndFuelDefinition;
+import static org.ngafid.events.CustomEvent.*;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowEndingFuelEvents {
@@ -26,7 +26,10 @@ public class FindLowEndingFuelEvents {
 
     public static void findLowEndFuelEventsInUpload(Upload upload) {
         try {
-            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE id = -4 OR id = -5 OR id = -6)";
+            String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
+                    "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId() +
+                    " OR event_definition_id = " + LOW_END_FUEL_PA_28.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
+                    ") AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
 
