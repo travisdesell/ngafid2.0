@@ -55,6 +55,7 @@ public interface CalculationParameters {
     public static final String GND_SPD = "GndSpd";
     public static final String WIND_SPEED = "WndSpd";
     public static final String WIND_DIRECTION = "WndDr";
+    public static final String TOTAL_FUEL = "Total Fuel";
     public static final String LCL_DATE = "Lcl Date";
     public static final String LCL_TIME = "Lcl Time";
 
@@ -78,6 +79,9 @@ public interface CalculationParameters {
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
     public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
+
+    // Used to determine average fuel
+    public static final String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI

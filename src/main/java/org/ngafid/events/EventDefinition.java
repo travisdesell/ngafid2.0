@@ -3,7 +3,6 @@ package org.ngafid.events;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
@@ -29,7 +28,7 @@ public class EventDefinition {
     public static final int MIN_ABS_SEVERITY = 3;
     public static final int MAX_ABS_SEVERITY = 4;
 
-    private int id = -1;
+    private int id = 0;
     private int fleetId;
     private String name;
     private int startBuffer;
@@ -140,9 +139,11 @@ public class EventDefinition {
             this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
-            if (id <= -1) {
-                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
-            } else {
+            try {
+                if (id <= -1) {
+                    this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
+                }
+            } catch (NullPointerException e) {
                 this.filter = null;
             }
 
@@ -155,11 +156,56 @@ public class EventDefinition {
         initializeSeverity();
     }
 
+    /**
+     * Get an event definition by specifying the event name
+     *
+     * @param connection is the DB session
+     * @param eventName is the event name being retrieved
+     * @return Event Definition matching the name passed in
+     */
     public static EventDefinition getEventDefinition(Connection connection, String eventName) {
-        EventDefinition eventDef = null;
-
         eventName = "name = '" + eventName + "'";
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+
+        return getEventDefinitionFromDB(connection, query);
+    }
+
+    /**
+     * Get an event definition by specifying the name and airframe ID it is for
+     * Useful for events that vary based on airframe ID
+     *
+     * @param connection is the DB session
+     * @param eventName is the event name being retrieved
+     * @param airframeID is the airframe ID that goes with the event
+     * @return Event Definition matching name and ID passed in
+     */
+    public static EventDefinition getEventDefinition(Connection connection, String eventName, int airframeID) {
+        String airframeIDStr = "airframe_id = " + airframeID;
+
+        eventName = "name = '" + eventName + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
+
+        return getEventDefinitionFromDB(connection, query);
+    }
+
+    public static EventDefinition getEventDefinition(Connection connection, int eventID) {
+        EventDefinition eventDef = null;
+
+        String eventIDStr = "id = '" + eventID + "'";
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventIDStr;
+
+        return getEventDefinitionFromDB(connection, query);
+    }
+
+    /**
+     * Helper method for retrieving the EventDefinition from server
+     *
+     * @param connection is the DB session
+     * @param query is the query to execute to the DB
+     * @return Event Definition result from DB
+     */
+    private static EventDefinition getEventDefinitionFromDB(Connection connection, String query) {
+        EventDefinition eventDef = null;
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -667,7 +713,9 @@ public class EventDefinition {
      */
     public String toHumanReadable() {
         if (this.id < 0) {
-            return ((this.filter.toHumanReadable()).matches("^[AEIOU].*") ? "An " : "A ") + this.filter.toHumanReadable();
+            String humanReadableStr = filter.toHumanReadable();
+            
+            return (humanReadableStr.matches("^[AEIOU].*") ? "An " : "A ") + humanReadableStr;
         }
 
         String text = (name.matches("^[AEIOU].*") ? "An " : "A ");

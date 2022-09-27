@@ -172,6 +172,19 @@ public class StringTimeSeries {
         return null;
     }
 
+    public String[] getLastValidAndIndex() {
+        int position = timeSeries.size() - 1;
+        while (position >= 0) {
+            String current = timeSeries.get(position);
+            if (current.equals("")) {
+                position--;
+            } else {
+                return new String[]{current, String.valueOf(position)};
+            }
+        }
+        return null;
+    }
+
     public int size() {
         return timeSeries.size();
     }
