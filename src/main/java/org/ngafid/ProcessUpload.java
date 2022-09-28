@@ -187,6 +187,8 @@ public class ProcessUpload {
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
+                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(upload);
+
                 CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
 
                 CalculateProximity.calculateProximity(connection, uploadId, uploadProcessedEmail);
