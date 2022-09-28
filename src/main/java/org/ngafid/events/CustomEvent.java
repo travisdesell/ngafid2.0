@@ -1,10 +1,10 @@
 package org.ngafid.events;
 
 import org.ngafid.*;
-import org.ngafid.events.EventDefinition;
 import org.ngafid.flights.Flight;
 
 import java.sql.Connection;
+
 
 /** 
  * A CustomEvent is an Event that is not able to be calculated by the NGAFID's
@@ -14,11 +14,14 @@ import java.sql.Connection;
  */
 public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
-    private Flight flight;
-
     private static final Connection connection = Database.getConnection();
+    private Flight flight;
+   
     public static final EventDefinition HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
     public static final EventDefinition LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
+    public static final EventDefinition LOW_END_FUEL_PA_28 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 1);
+    public static final EventDefinition LOW_END_FUEL_CESSNA_172 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 2);
+    public static final EventDefinition LOW_END_FUEL_PA_44 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 3);
 
     public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight, EventDefinition eventDefinition) {
         super(startTime, endTime, startLine, endLine, severity);
@@ -33,6 +36,10 @@ public class CustomEvent extends Event {
 
     public void setDefinition(EventDefinition eventDefinition) {
         this.customEventDefinition = eventDefinition;
+    }
+    
+    public static EventDefinition getLowEndFuelDefinition(int airframeID) {
+        return EventDefinition.getEventDefinition(connection, "Low Ending Fuel", airframeID);
     }
 
     public EventDefinition getDefinition() {
