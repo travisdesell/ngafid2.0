@@ -14,9 +14,9 @@ import java.sql.Connection;
  */
 public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
-    private static final Connection connection = Database.getConnection();
     private Flight flight;
 
+    private static final Connection connection = Database.getConnection();
     public static final EventDefinition HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
     public static final EventDefinition LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
 
