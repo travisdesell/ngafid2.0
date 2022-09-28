@@ -1491,7 +1491,11 @@ public class Flight {
             return this.doubleTimeSeries.get(name);
         } else {
             DoubleTimeSeries dts = DoubleTimeSeries.getDoubleTimeSeries(Database.getConnection(), this.id, name);
-            this.doubleTimeSeries.put(name, dts);
+
+            if (dts != null) {
+                this.doubleTimeSeries.put(name, dts);
+            }
+
             return dts;
         }
 
