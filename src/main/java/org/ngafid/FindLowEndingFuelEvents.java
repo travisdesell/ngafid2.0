@@ -4,7 +4,6 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
-import org.ngafid.filters.Filter;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
