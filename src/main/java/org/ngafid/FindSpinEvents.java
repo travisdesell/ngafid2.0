@@ -23,12 +23,10 @@ import static org.ngafid.events.CustomEvent.*;
  */
 
 public class FindSpinEvents {
-    static final Connection connection = Database.getConnection();
     static final Logger LOG = Logger.getLogger(FindSpinEvents.class.getName());
 
-    public static void findSpinEventsInUpload(Upload upload) {
+    public static void findSpinEventsInUpload(Connection connection, Upload upload) {
         try {
-            //String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM events WHERE event_definition_id IN (" + HIGH_ALTITUDE_SPIN.getId() + ", " + LOW_ALTITUDE_SPIN.getId() + "))";
             String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
                     "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_ALTITUDE_SPIN.getId() +
                     " OR event_definition_id = " + HIGH_ALTITUDE_SPIN.getId() +
@@ -37,10 +35,11 @@ public class FindSpinEvents {
             List<Flight> flights = Flight.getFlights(connection, whereClause);
             System.out.println("Finding spin events for " + flights.size() + " flights.");
 
+
             for (Flight flight : flights) {
                 try {
-                    calculateVSPDDerived(flight);
-                    findSpinEvents(flight, 250);
+                    calculateVSPDDerived(connection, flight);
+                    findSpinEvents(connection, flight, 250);
                 } catch (MalformedFlightFileException mffe) {
                     LOG.severe("Can't process flight " + flight.getId());
                 }
@@ -51,7 +50,7 @@ public class FindSpinEvents {
         } 
     }
 
-    public static void findSpinEvents(Flight flight, double altAglLimit) throws Exception {
+    public static void findSpinEvents(Connection connection, Flight flight, double altAglLimit) throws Exception {
         flight.checkCalculationParameters(SPIN, SPIN_DEPENDENCIES);
 
         List<CustomEvent> lowAltitudeSpins = new ArrayList<>();
@@ -185,8 +184,8 @@ public class FindSpinEvents {
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
         }
 
-        setFlightProcessed(flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
-        setFlightProcessed(flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
+        setFlightProcessed(connection, flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());
+        setFlightProcessed(connection, flight, LOW_ALTITUDE_SPIN.getId(), hadError, lowAltitudeSpins.size());
     }
 
     /**
@@ -194,7 +193,7 @@ public class FindSpinEvents {
      *
      * @param flight the Flight to calculate dVSI for
      */
-    static void calculateVSPDDerived(Flight flight) throws IOException, SQLException, MalformedFlightFileException {
+    static void calculateVSPDDerived(Connection connection, Flight flight) throws IOException, SQLException, MalformedFlightFileException {
         int flightId = flight.getId();
         DoubleTimeSeries dts = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, VSPD_CALCULATED);
 
@@ -206,7 +205,7 @@ public class FindSpinEvents {
         }
     }
 
-    static void setFlightProcessed(Flight flight, int eventDefinitonId, int hadError, int count) throws SQLException {
+    static void setFlightProcessed(Connection connection, Flight flight, int eventDefinitonId, int hadError, int count) throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
@@ -227,6 +226,7 @@ public class FindSpinEvents {
      */
     public static void main(String [] args) {
         List<Fleet> fleets = null;
+        Connection connection = Database.getConnection();
 
         if (args.length == 1) {
             int fleetId = Integer.parseInt(args[0]);
@@ -241,6 +241,7 @@ public class FindSpinEvents {
             //Print to the console in yellow...
             System.err.println("\u001B[33mCAUTION: PROCESSING SPIN EVENTS FOR ALL FLEETS: THIS MAY TAKE SOME TIME... \u001B[0m");
         }
+
 
         for (Fleet fleet : fleets) {
             int fleetId = fleet.getId();
@@ -260,7 +261,7 @@ public class FindSpinEvents {
                 List<Upload> uploads = Upload.getUploads(connection, fleetId);
 
                 for (Upload upload : uploads) {
-                    findSpinEventsInUpload(upload);
+                    findSpinEventsInUpload(connection, upload);
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
