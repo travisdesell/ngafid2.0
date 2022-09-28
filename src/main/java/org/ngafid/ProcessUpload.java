@@ -185,8 +185,7 @@ public class ProcessUpload {
 
             //only progress if the upload ingestion was successful
             if (success) {
-                FindSpinEvents.findSpinEventsInUpload(upload);
-                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(upload);
+                FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
 
