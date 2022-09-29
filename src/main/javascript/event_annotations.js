@@ -14,19 +14,37 @@ export class EventAnnotations extends React.Component {
             + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
     }
 
+    createRow(annotation) {
+        return <tr key={index}>
+            <td>{annotation.fleet_id}</td>
+            <td>{annotation.eventId}</td>
+            <td>{this.generateTimestampString(annotation.timestamp)}</td>
+            <td>{annotation.name}</td>
+            <td>{annotation.notes}</td>
+        </tr>
+
+    }
+
     render() {
-        let annotations = [];
+        let rows = []
+
 
         $.ajax({
             type: 'GET',
             url: '/protected/event_group_annotations',
-            dataType : 'json',
-            success : function(response) {
-                annotations = response;
+            dataType: 'json',
+            success: function (response) {
+                for (let key in response) {
+                    rows.push(response[key]);
+                }
             },
-            error : function(jqXHR, textStatus, errorThrown) {},
+            error: function (jqXHR, textStatus, errorThrown) {
+            },
             async: false
         });
+
+
+        console.log(rows);
 
         return (
             <div>
@@ -42,20 +60,12 @@ export class EventAnnotations extends React.Component {
                         <th>Timestamp</th>
                         <th>Classification</th>
                         <th>Notes</th>
-
                     </tr>
                     </thead>
                     <tbody>
-                    {annotations.map((val, index) => {
-                        return <tr key={index}>
-                            <td>{val.fleet_id}</td>
-                            <td>{val.eventId}</td>
-                            <td>{this.generateTimestampString(val.timestamp)}</td>
-                            <td>{val.name}</td>
-                            <td>{val.notes}</td>
 
-                        </tr>
-                    })}
+                    {rows}
+
                     </tbody>
                 </table>
             </div>
