@@ -3,8 +3,9 @@ package org.ngafid.flights;
 import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
+import java.time.*;
+import java.time.temporal.ChronoUnit;
 import java.util.Iterator;
-import java.time.DateTimeException;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
@@ -32,10 +33,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
 import java.time.DateTimeException;
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import java.util.Arrays;
@@ -2202,6 +2199,28 @@ public class Flight {
 
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
+        }
+
+        StringTimeSeries lclTime = this.getStringTimeSeries(LCL_TIME);
+        if (lclTime != null){
+            LocalTime prevTimeStamp = null;
+            int sum = 0;
+            for(int i = 0; i < lclTime.size(); i++){
+                if (!lclTime.get(i).isBlank()){
+                    if (prevTimeStamp == null){
+                        prevTimeStamp = LocalTime.parse(lclTime.get(i));
+                    }
+                    else {
+                        LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
+                        sum = sum + currTimeStamp.getSecond() - prevTimeStamp.getSecond();
+                        prevTimeStamp = currTimeStamp;
+                    }
+                }
+            }
+            System.out.println(sum/lclTime.size());
+            if (sum/lclTime.size() > 1){
+                exceptions.add(new MalformedFlightFileException("Data having frequency more than 1hz"));
+            }
         }
 
         try {
