@@ -4,7 +4,7 @@ import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.time.*;
-import java.time.temporal.ChronoUnit;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
@@ -2203,23 +2203,34 @@ public class Flight {
 
         StringTimeSeries lclTime = this.getStringTimeSeries(LCL_TIME);
         if (lclTime != null){
+            int rowCount = 0;
             LocalTime prevTimeStamp = null;
-            int sum = 0;
+            int secondsDiffSum = 0;
             for(int i = 0; i < lclTime.size(); i++){
                 if (!lclTime.get(i).isBlank()){
                     if (prevTimeStamp == null){
                         prevTimeStamp = LocalTime.parse(lclTime.get(i));
+                        rowCount++;
                     }
                     else {
                         LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
-                        sum = sum + currTimeStamp.getSecond() - prevTimeStamp.getSecond();
+                        if (!currTimeStamp.equals(prevTimeStamp)) {
+                            secondsDiffSum = secondsDiffSum + (int)SECONDS.between(prevTimeStamp,currTimeStamp);
+//                            System.out.println("sum : " + sum + " count : " + rowCount);
+//                            System.out.println("Current timestamp : " + currTimeStamp);
+//                            System.out.println("Previous timestamp : " + prevTimeStamp);
+                            rowCount++;
+                        }
                         prevTimeStamp = currTimeStamp;
                     }
                 }
             }
-            System.out.println(sum/lclTime.size());
-            if (sum/lclTime.size() > 1){
-                exceptions.add(new MalformedFlightFileException("Data having frequency more than 1hz"));
+            System.out.println("Sum of time difference " + secondsDiffSum);
+            System.out.println("Time series size : " + rowCount);
+            System.out.println("Time actual series size : " + lclTime.size());
+            System.out.println((double) secondsDiffSum/rowCount);
+            if ((double)secondsDiffSum/rowCount > 1){
+                exceptions.add(new MalformedFlightFileException("Time series have frequency greater than 1Hz"));
             }
         }
 
