@@ -2217,9 +2217,6 @@ public class Flight {
                         LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
                         if (!currTimeStamp.equals(prevTimeStamp)) {
                             secondsDiffSum = secondsDiffSum + (int)SECONDS.between(prevTimeStamp,currTimeStamp);
-//                            System.out.println("sum : " + secondsDiffSum + " count : " + rowCount);
-//                            System.out.println("Current timestamp : " + currTimeStamp);
-//                            System.out.println("Previous timestamp : " + prevTimeStamp);
                             rowCount++;
                         }
                         prevTimeStamp = currTimeStamp;
