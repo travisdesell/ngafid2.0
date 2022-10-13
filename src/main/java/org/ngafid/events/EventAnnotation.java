@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.ngafid.*;
@@ -145,8 +146,8 @@ public class EventAnnotation extends Annotation {
     public static List<EventAnnotation> getAllEventAnnotationsByGroup(int groupId) throws SQLException {
         String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
         PreparedStatement query = connection.prepareStatement(sql);
-
         query.setInt(1, groupId);
+
         ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
