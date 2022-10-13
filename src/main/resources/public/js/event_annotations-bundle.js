@@ -47084,7 +47084,6 @@ __webpack_require__.r(__webpack_exports__);
 /* harmony import */ var react__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! react */ "./node_modules/react/index.js");
 /* harmony import */ var react_dom__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! react-dom */ "./node_modules/react-dom/index.js");
 /* harmony import */ var _signed_in_navbar__WEBPACK_IMPORTED_MODULE_2__ = __webpack_require__(/*! ./signed_in_navbar */ "./src/main/javascript/signed_in_navbar.js");
-/* provided dependency */ var $ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
 function _typeof(obj) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (obj) { return typeof obj; } : function (obj) { return obj && "function" == typeof Symbol && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj; }, _typeof(obj); }
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -47122,37 +47121,19 @@ var EventAnnotations = /*#__PURE__*/function (_React$Component) {
   }
 
   _createClass(EventAnnotations, [{
-    key: "generateTimestampString",
-    value: function generateTimestampString(dateTime) {
-      return dateTime.date.year + "-" + dateTime.date.month + "-" + dateTime.date.day + " " + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
-    }
-  }, {
-    key: "createRow",
-    value: function createRow(annotation) {
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", {
-        key: index
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, annotation.fleet_id), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, annotation.eventId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, this.generateTimestampString(annotation.timestamp)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, annotation.name), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, annotation.notes));
-    }
-  }, {
     key: "render",
     value: function render() {
-      var rows = [];
-      $.ajax({
-        type: 'GET',
-        url: '/protected/event_group_annotations',
-        dataType: 'json',
-        success: function success(response) {
-          for (var key in response) {
-            rows.push(response[key]);
-          }
-        },
-        error: function error(jqXHR, textStatus, errorThrown) {},
-        async: false
-      });
-      console.log(rows);
       return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("table", {
         className: "table"
-      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("thead", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Fleet ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Event ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Timestamp"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Classification"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Notes"))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tbody", null, rows)));
+      }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("thead", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Fleet ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Event ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Timestamp"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Classification"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Notes"))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tbody", null, annotations.map(function (eventAnnotation) {
+        return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.fleetId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.eventId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, EventAnnotations.generateTimestampString(eventAnnotation.timestamp)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.classification), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.notes));
+      }))));
+    }
+  }], [{
+    key: "generateTimestampString",
+    value: function generateTimestampString(dateTime) {
+      console.log(dateTime);
+      return dateTime.date.year + "-" + dateTime.date.month + "-" + dateTime.date.day + " " + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
     }
   }]);
 

@@ -9,43 +9,13 @@ export class EventAnnotations extends React.Component {
         super(props);
     }
 
-    generateTimestampString(dateTime) {
+    static generateTimestampString(dateTime) {
+        console.log(dateTime);
         return dateTime.date.year + "-" + dateTime.date.month + "-" + dateTime.date.day + " "
             + dateTime.time.hour + ":" + dateTime.time.minute + ":" + dateTime.time.second;
     }
 
-    createRow(annotation) {
-        return <tr key={index}>
-            <td>{annotation.fleet_id}</td>
-            <td>{annotation.eventId}</td>
-            <td>{this.generateTimestampString(annotation.timestamp)}</td>
-            <td>{annotation.name}</td>
-            <td>{annotation.notes}</td>
-        </tr>
-
-    }
-
     render() {
-        let rows = []
-
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/event_group_annotations',
-            dataType: 'json',
-            success: function (response) {
-                for (let key in response) {
-                    rows.push(response[key]);
-                }
-            },
-            error: function (jqXHR, textStatus, errorThrown) {
-            },
-            async: false
-        });
-
-
-        console.log(rows);
-
         return (
             <div>
                 {/*<SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}*/}
@@ -63,14 +33,23 @@ export class EventAnnotations extends React.Component {
                     </tr>
                     </thead>
                     <tbody>
-
-                    {rows}
-
+                    {annotations.map((eventAnnotation) => {
+                        return (
+                            <tr>
+                                <td>{eventAnnotation.fleetId}</td>
+                                <td>{eventAnnotation.eventId}</td>
+                                <td>{EventAnnotations.generateTimestampString(eventAnnotation.timestamp)}</td>
+                                <td>{eventAnnotation.classification}</td>
+                                <td>{eventAnnotation.notes}</td>
+                            </tr>
+                        )
+                    })}
                     </tbody>
                 </table>
+
             </div>
 
-        )
+        );
     }
 
 
