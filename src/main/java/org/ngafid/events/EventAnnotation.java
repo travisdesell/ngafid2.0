@@ -146,8 +146,8 @@ public class EventAnnotation extends Annotation {
         String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
         PreparedStatement query = connection.prepareStatement(sql);
 
-        ResultSet resultSet = query.executeQuery();
         query.setInt(1, groupId);
+        ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
 

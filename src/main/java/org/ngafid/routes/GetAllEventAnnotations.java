@@ -1,5 +1,6 @@
 /**
  * Gets all of the event annotations
+ *
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
 package org.ngafid.routes;
@@ -43,6 +44,7 @@ public class GetAllEventAnnotations implements Route {
 
     /**
      * Constructor
+     *
      * @param gson the gson object for JSON conversions
      */
     public GetAllEventAnnotations(Gson gson) {
@@ -78,19 +80,17 @@ public class GetAllEventAnnotations implements Route {
 
             Map<String, Object> scopes = new HashMap<String, Object>();
             List<EventAnnotation> annotations;
+            annotations = EventAnnotation.getAllEventAnnotationsInSameGroup(user);
 
-            if (user.isAdmin()) {
-                annotations = EventAnnotation.getAllEventAnnotations();
-            } else {
-                annotations = EventAnnotation.getAllEventAnnotationsInSameGroup(user);
-            }
+            LOG.log(java.util.logging.Level.INFO, "annotations: " + annotations);
 
-            scopes.put("all_annotations", "var annotations = JSON.parse('" + gson.toJson(annotations) +"');\n");
+//            scopes.put("navbar_js", Navbar.getJavascript(request));
+            scopes.put("all_annotations", "var annotations = JSON.parse('" + gson.toJson(annotations) + "');\n");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-        } catch(Exception e) {
+        } catch (Exception e) {
             return gson.toJson(new ErrorResponse(e));
         }
 
