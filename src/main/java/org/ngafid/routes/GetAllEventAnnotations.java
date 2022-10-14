@@ -79,8 +79,7 @@ public class GetAllEventAnnotations implements Route {
             Mustache mustache = mf.compile(templateFile.getPath());
 
             Map<String, Object> scopes = new HashMap<String, Object>();
-            List<EventAnnotation> annotations;
-            annotations = EventAnnotation.getAllEventAnnotationsByGroup(user.getId());
+            List<EventAnnotation> annotations = EventAnnotation.getAllEventAnnotationsByGroup(user.getId());
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
             scopes.put("all_annotations", "var annotations = JSON.parse('" + gson.toJson(annotations) + "');\n");
