@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.ngafid.*;
@@ -144,10 +143,12 @@ public class EventAnnotation extends Annotation {
     }
 
     public static List<EventAnnotation> getAllEventAnnotationsByGroup(int groupId) throws SQLException {
-        String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
+       String sql = "SELECT event_annotations.fleet_id, event_id, timestamp, notes, name FROM" +
+                " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
+                " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
-        query.setInt(1, groupId);
 
+        query.setInt(1, groupId);
         ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
@@ -224,34 +225,6 @@ public class EventAnnotation extends Annotation {
             }
 
             annotations.add(annotation);
-        }
-
-        return annotations;
-    }
-
-    /**
-     * Gets a list of all the annotations for a group
-     *
-     * @param groupId the id of the group that made annotations
-     *
-     * @return a list of annotations
-     */
-    public static List<Annotation> getGroupAnnotations(int groupId) throws SQLException {
-        List<Annotation> annotations = new ArrayList<>();
-
-        String queryString = "SELECT event_annotations.fleet_id, event_id, timestamp, notes, name FROM" +
-                " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
-                " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
-
-        PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, groupId);
-
-        ResultSet resultSet = query.executeQuery();
-
-        while (resultSet.next()) {
-            EventAnnotation eventAnnotation = new EventAnnotation(resultSet);
-
-            annotations.add(eventAnnotation);
         }
 
         return annotations;

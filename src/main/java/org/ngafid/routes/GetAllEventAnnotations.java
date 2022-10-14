@@ -6,7 +6,6 @@
 package org.ngafid.routes;
 
 import java.util.logging.Logger;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -26,16 +25,12 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Annotation;
 import org.ngafid.events.EventAnnotation;
-import org.ngafid.flights.Flight;
 
 public class GetAllEventAnnotations implements Route {
     private static final Logger LOG = Logger.getLogger(GetAllEventAnnotations.class.getName());
@@ -78,7 +73,7 @@ public class GetAllEventAnnotations implements Route {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile.getPath());
 
-            Map<String, Object> scopes = new HashMap<String, Object>();
+            Map<String, Object> scopes = new HashMap<>();
             List<EventAnnotation> annotations = EventAnnotation.getAllEventAnnotationsByGroup(user.getId());
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
