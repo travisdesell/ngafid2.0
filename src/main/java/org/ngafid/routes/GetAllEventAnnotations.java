@@ -15,6 +15,7 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 
+import org.ngafid.events.ReadableEventAnnotation;
 import spark.Route;
 import spark.Request;
 import spark.Response;
@@ -29,7 +30,6 @@ import java.sql.Connection;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.events.Annotation;
 import org.ngafid.events.EventAnnotation;
 
 public class GetAllEventAnnotations implements Route {
@@ -74,7 +74,7 @@ public class GetAllEventAnnotations implements Route {
             Mustache mustache = mf.compile(templateFile.getPath());
 
             Map<String, Object> scopes = new HashMap<>();
-            List<EventAnnotation> annotations = EventAnnotation.getAllEventAnnotationsByGroup(user.getId());
+            List<EventAnnotation> annotations = EventAnnotation.getDisplayedGroupAnnotations(user);
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
             scopes.put("all_annotations", "var annotations = JSON.parse('" + gson.toJson(annotations) + "');\n");
