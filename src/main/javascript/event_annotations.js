@@ -21,33 +21,39 @@ export class EventAnnotations extends React.Component {
                 <SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                 modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-
-                <table className="table">
-                    <thead>
-                    <tr>
-                        <th>Fleet ID</th>
-                        <th>Event ID</th>
-                        <th>Timestamp</th>
-                        <th>Classification</th>
-                        <th>Notes</th>
-                    </tr>
-                    </thead>
-                    <tbody>
-                    {annotations.map((eventAnnotation) => {
-                        return (
-                            <tr>
-                                <td>{eventAnnotation.fleetId}</td>
-                                <td>{eventAnnotation.eventId}</td>
-                                <td>{EventAnnotations.generateTimestampString(eventAnnotation.timestamp)}</td>
-                                <td>{eventAnnotation.classification}</td>
-                                <td>{eventAnnotation.notes}</td>
-                            </tr>
-                        )
-                    })}
-                    </tbody>
-                </table>
-
+                <div className="container-fluid" style={{backgroundColor: "white"}}>
+                    <div className="row">
+                        <div className="col-md-12">
+                            <table className="table table-striped table-bordered table-hover">
+                                <thead>
+                                <tr>
+                                    <th>Fleet ID</th>
+                                    <th>Event ID</th>
+                                    <th>Event Type</th>
+                                    <th>Event Timestamp</th>
+                                    <th>Event Description</th>
+                                    <th>Notes</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {annotations.map((eventAnnotation) => {
+                                    return (
+                                        <tr>
+                                            <td>{eventAnnotation.fleetId}</td>
+                                            <td>{eventAnnotation.eventId}</td>
+                                            <td>{EventAnnotations.generateTimestampString(eventAnnotation.timestamp)}</td>
+                                            <td>{eventAnnotation.classification}</td>
+                                            <td>{eventAnnotation.notes}</td>
+                                        </tr>
+                                    )
+                                })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
             </div>
+
 
         );
     }
