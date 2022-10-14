@@ -18,9 +18,9 @@ export class EventAnnotations extends React.Component {
     render() {
         return (
             <div>
-                {/*<SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}*/}
-                {/*                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}*/}
-                {/*                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>*/}
+                <SignedInNavbar activePage="event annotations" waitingUserCount={waitingUserCount}
+                                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
+                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <table className="table">
                     <thead>

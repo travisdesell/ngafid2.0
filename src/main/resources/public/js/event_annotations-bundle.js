@@ -47123,7 +47123,14 @@ var EventAnnotations = /*#__PURE__*/function (_React$Component) {
   _createClass(EventAnnotations, [{
     key: "render",
     value: function render() {
-      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("table", {
+      return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement(_signed_in_navbar__WEBPACK_IMPORTED_MODULE_2__["default"], {
+        activePage: "event annotations",
+        waitingUserCount: waitingUserCount,
+        fleetManager: fleetManager,
+        unconfirmedTailsCount: unconfirmedTailsCount,
+        modifyTailsAccess: modifyTailsAccess,
+        plotMapHidden: plotMapHidden
+      }), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("table", {
         className: "table"
       }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("thead", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Fleet ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Event ID"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Timestamp"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Classification"), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("th", null, "Notes"))), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tbody", null, annotations.map(function (eventAnnotation) {
         return /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("tr", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.fleetId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.eventId), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, EventAnnotations.generateTimestampString(eventAnnotation.timestamp)), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.classification), /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0__.createElement("td", null, eventAnnotation.notes));
