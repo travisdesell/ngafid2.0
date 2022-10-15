@@ -10,10 +10,23 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.ngafid.Database;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.flights.Flight;
 
 import java.util.logging.Logger;
 
@@ -22,6 +35,16 @@ public class EventStatistics {
 
     public static String getFirstOfMonth(String dateTime) {
         return dateTime.substring(0, 8) + "01";
+    }
+
+    public static void clearAllStatistics(Connection connection, Fleet fleet, EventDefinition eventDefinition) throws SQLException {
+        String sql = "DELETE FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleet.getId());
+        query.setInt(2, eventDefinition.getId());
+
+        query.executeUpdate();
     }
 
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime, double severity, double duration) throws SQLException {
@@ -57,7 +80,7 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId, String startDateTime) throws SQLException {
         //cannot update event statistics if the flight had no startDateTime
         if (startDateTime == null) return;
 
@@ -68,7 +91,7 @@ public class EventStatistics {
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, airframeNameId);
-        preparedStatement.setInt(3, eventId);
+        preparedStatement.setInt(3, eventDefinitionId);
         preparedStatement.setString(4, firstOfMonth);
 
         LOG.info(preparedStatement.toString());
@@ -76,7 +99,7 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId, String startDateTime) throws SQLException {
         //cannot update event statistics if the flight had no startDateTime
         if (startDateTime == null) return;
 
@@ -87,7 +110,7 @@ public class EventStatistics {
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, airframeNameId);
-        preparedStatement.setInt(3, eventId);
+        preparedStatement.setInt(3, eventDefinitionId);
         preparedStatement.setString(4, firstOfMonth);
 
         LOG.info(preparedStatement.toString());
@@ -1061,6 +1084,95 @@ public class EventStatistics {
         }
 
         return eventCounts;
+    }
+
+    public static void main(String [] args) {
+        Options options = new Options();
+
+        CommandLineParser parser = new DefaultParser();
+
+        Option fleetIds = new Option("f", "fleet_ids", true, "fleet id to recalculate for");
+        fleetIds.setArgs(Option.UNLIMITED_VALUES);
+        fleetIds.setRequired(false);
+
+        Option eventIds = new Option("e", "event_def_ids", true, "list of the event definition ids to clear");
+        eventIds.setArgs(Option.UNLIMITED_VALUES);
+        eventIds.setRequired(false);
+
+        options.addOption(fleetIds);
+        options.addOption(eventIds);
+
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("EventStatistics", options);
+
+            System.exit(1);
+        }
+
+        Connection connection = Database.getConnection();
+
+        String [] fleetIdStrs = cmd.getOptionValues("f");
+        String [] eventIdStrs = cmd.getOptionValues("e");
+
+        List<Fleet> fleets = null;
+        List<EventDefinition> eventDefinitions = null;
+
+        try {
+            if (fleetIdStrs == null || fleetIdStrs.length == 0) {
+                fleets = Fleet.getAllFleets(connection);
+            } else {
+                fleets = new ArrayList<>();
+                for (String fleetId : fleetIdStrs) {
+                    int id = Integer.parseInt(fleetId);
+                    fleets.add(Fleet.get(connection, id));
+                }
+            }
+
+            if (eventIdStrs == null || eventIdStrs.length == 0) {
+                eventDefinitions = EventDefinition.getAll(connection);
+            } else {
+                eventDefinitions = new ArrayList<>();
+                for (String eventId : eventIdStrs) {
+                    int id = Integer.parseInt(eventId);
+                    eventDefinitions.add(EventDefinition.getEventDefinition(connection, id));
+                }
+            }
+
+            LOG.info("Clearing event statistics for fleets: " + fleets.toString() + " and event definitions: " + Arrays.toString(eventIdStrs));
+
+            for (Fleet fleet : fleets) {
+                int fleetId = fleet.getId();
+
+                for (EventDefinition def : eventDefinitions) {
+                    int defId = def.getId();
+
+                    LOG.info("Clearing stats for fleet: " + fleet.getName() + " with definition: " + def.getName());
+                    clearAllStatistics(connection, fleet, def);
+
+                    List<Event> events = Event.getAll(connection, fleetId, defId);
+
+                    for (Event event : events) {
+                        Flight flight = Flight.getFlight(connection, event.getFlightId());
+                        int airframeNameId = flight.getAirframeNameId();
+                        
+                        event.updateStatistics(connection, fleetId, airframeNameId, defId);
+                        //EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, defId, flight.getStartDateTime());
+                    }
+                }
+            }
+
+            LOG.info("Finished!");
+            System.exit(0);
+        } catch (SQLException se) {
+            se.printStackTrace();
+            System.exit(1);
+        }
+        
     }
 }
 

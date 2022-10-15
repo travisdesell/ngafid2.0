@@ -96,6 +96,7 @@ function displayPlots(selectedAirframe) {
     percentData.push(ngafidPercents);
     percentData.push(fleetPercents);
 
+    console.log("fleetPercents:");
     console.log(fleetPercents);
     console.log(ngafidPercents);
 
@@ -110,7 +111,7 @@ function displayPlots(selectedAirframe) {
             var fixedText = "";
             if (value.x[i] > 0 && value.x[i] < 1) {
                 //console.log("Log10 of x is " + Math.log10(value.x[i]));
-                fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%"
+                fixedText = value.x[i].toFixed(-Math.ceil(Math.log10(value.x[i])) + 2) + "%";
             } else {
                 fixedText = value.x[i].toFixed(2) + "%";
             }

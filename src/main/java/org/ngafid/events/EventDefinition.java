@@ -629,6 +629,7 @@ public class EventDefinition {
         while (resultSet.next()) {
             allEvents.add(new EventDefinition(resultSet));
         }
+
         resultSet.close();
         preparedStatement.close();
 
