@@ -271,7 +271,6 @@ public final class WebServer {
         Spark.get("/protected/event_classes", new GetAnnotationClasses(gson));
         Spark.get("/protected/event_annotations", new GetEventAnnotations(gson));
         Spark.get("/protected/all_event_annotations", new GetAllEventAnnotations(gson));
-        Spark.get("/protected/event_group_annotations", new GetEventGroupAnnotations(gson));
         Spark.post("/protected/create_annotation", new PostEventAnnotation(gson));
         Spark.post("/protected/event_annotation_notes", new PostEventAnnotationNotes(gson));
 
