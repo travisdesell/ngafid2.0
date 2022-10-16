@@ -15,7 +15,6 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import com.google.gson.Gson;
 
-import org.ngafid.events.ReadableEventAnnotation;
 import spark.Route;
 import spark.Request;
 import spark.Response;
