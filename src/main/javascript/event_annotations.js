@@ -27,11 +27,9 @@ export class EventAnnotations extends React.Component {
                             <table className="table table-striped table-bordered table-hover">
                                 <thead>
                                 <tr>
-                                    <th>Fleet ID</th>
                                     <th>Event ID</th>
-                                    <th>Event Type</th>
                                     <th>Event Timestamp</th>
-                                    <th>Event Description</th>
+                                    <th>Event Classification</th>
                                     <th>Notes</th>
                                 </tr>
                                 </thead>
@@ -39,7 +37,6 @@ export class EventAnnotations extends React.Component {
                                 {annotations.map((eventAnnotation) => {
                                     return (
                                         <tr>
-                                            <td>{eventAnnotation.fleetId}</td>
                                             <td>{eventAnnotation.eventId}</td>
                                             <td>{EventAnnotations.generateTimestampString(eventAnnotation.timestamp)}</td>
                                             <td>{eventAnnotation.classification}</td>
