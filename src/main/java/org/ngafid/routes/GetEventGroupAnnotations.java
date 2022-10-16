@@ -1,11 +1,11 @@
 /**
  * Gets all of the event annotations
- *
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
 package org.ngafid.routes;
 
 import java.util.logging.Logger;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -25,23 +25,27 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.events.Annotation;
 import org.ngafid.events.EventAnnotation;
+import org.ngafid.flights.Flight;
 
-public class GetAllEventAnnotations implements Route {
+public class GetEventGroupAnnotations implements Route {
     private static final Logger LOG = Logger.getLogger(GetAllEventAnnotations.class.getName());
     private static Connection connection = Database.getConnection();
     private Gson gson;
 
     /**
      * Constructor
-     *
      * @param gson the gson object for JSON conversions
      */
-    public GetAllEventAnnotations(Gson gson) {
+    public GetEventGroupAnnotations(Gson gson) {
         this.gson = gson;
 
         LOG.info("GET " + this.getClass().getName() + " initalized");
@@ -54,13 +58,9 @@ public class GetAllEventAnnotations implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String resultString = "";
-
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
-
-        File templateFile = new File(WebServer.MUSTACHE_TEMPLATE_DIR + "all_event_annotations.html");
 
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
@@ -68,23 +68,13 @@ public class GetAllEventAnnotations implements Route {
             return null;
         }
 
+        List<EventAnnotation> annotations;
+
         try {
-            MustacheFactory mf = new DefaultMustacheFactory();
-            Mustache mustache = mf.compile(templateFile.getPath());
-
-            Map<String, Object> scopes = new HashMap<>();
-            List<EventAnnotation> annotations = EventAnnotation.getDisplayedGroupAnnotations(user);
-
-            scopes.put("navbar_js", Navbar.getJavascript(request));
-            scopes.put("all_annotations", "var annotations = JSON.parse('" + gson.toJson(annotations) + "');\n");
-
-            StringWriter stringOut = new StringWriter();
-            mustache.execute(new PrintWriter(stringOut), scopes).flush();
-            resultString = stringOut.toString();
-        } catch (Exception e) {
-            return gson.toJson(new ErrorResponse(e));
+            annotations = EventAnnotation.getAllEventAnnotationsByGroup(user.getId());
+        } catch (SQLException e) {
+            return gson.toJson(e);
         }
-
-        return resultString;
+        return gson.toJson(annotations);
     }
 }

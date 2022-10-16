@@ -18,7 +18,6 @@ import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 import org.ngafid.*;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.GeneratedCSVWriter;
 
@@ -31,7 +30,7 @@ import static org.ngafid.flights.CalculationParameters.*;
  */
 public class EventAnnotation extends Annotation {
     private int eventId, classId;
-    private String notes;
+    private String className, notes;
 
     private static Connection connection = Database.getConnection();
     private static final Logger LOG = Logger.getLogger(EventAnnotation.class.getName());
@@ -43,6 +42,7 @@ public class EventAnnotation extends Annotation {
         super(user, timestamp);
 
         this.eventId = eventId;
+        this.className = className;
         this.classId = this.getClassId(className);
         this.notes = notes;
     }
@@ -153,13 +153,31 @@ public class EventAnnotation extends Annotation {
         String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
         PreparedStatement query = connection.prepareStatement(sql);
 
-        ResultSet resultSet = query.executeQuery();
         query.setInt(1, groupId);
+        ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
 
         while (resultSet.next()) {
             annotations.add(new EventAnnotation(resultSet));
+        }
+
+        return annotations;
+    }
+
+    public static List<EventAnnotation> getDisplayedGroupAnnotations(User user) throws SQLException {
+        String sql = "SELECT event_annotations.fleet_id, event_id, timestamp, notes, name FROM" +
+                " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
+                " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
+        int groupId = user.getGroup(connection);
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, groupId);
+        ResultSet resultSet = query.executeQuery();
+
+        List<EventAnnotation> annotations = new LinkedList<>();
+        while (resultSet.next()) {
+            annotations.add(new EventAnnotation(resultSet.getInt(2), resultSet.getString(5), user, resultSet.getTimestamp(3).toLocalDateTime(), resultSet.getString(4)));
         }
 
         return annotations;
