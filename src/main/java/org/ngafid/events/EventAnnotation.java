@@ -163,14 +163,12 @@ public class EventAnnotation extends Annotation {
                 " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
                 " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
         int groupId = user.getGroup(connection);
-
         PreparedStatement query = connection.prepareStatement(sql);
 
         query.setInt(1, groupId);
         ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
-
         while (resultSet.next()) {
             annotations.add(new EventAnnotation(resultSet.getInt(2), resultSet.getString(5), user, resultSet.getTimestamp(3).toLocalDateTime(), resultSet.getString(4)));
         }
