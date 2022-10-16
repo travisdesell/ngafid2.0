@@ -39,7 +39,7 @@ export class EventAnnotations extends React.Component {
                                         <tr>
                                             <td>{eventAnnotation.eventId}</td>
                                             <td>{EventAnnotations.generateTimestampString(eventAnnotation.timestamp)}</td>
-                                            <td>{eventAnnotation.classification}</td>
+                                            <td>{eventAnnotation.className}</td>
                                             <td>{eventAnnotation.notes}</td>
                                         </tr>
                                     )
