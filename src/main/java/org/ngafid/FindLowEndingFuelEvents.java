@@ -4,6 +4,7 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.*;
 
@@ -106,7 +107,10 @@ public class FindLowEndingFuelEvents {
 
             event.updateDatabase(connection);
             event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
+            EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
             hadEvent++;
+        } else {
+            EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
         }
 
         setFlightProcessed(flight, hadEvent);
