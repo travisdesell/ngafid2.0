@@ -1,13 +1,10 @@
 package org.ngafid.accounts;
 
 
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.Statement;
-import java.sql.SQLException;
+import java.sql.*;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
@@ -731,6 +728,19 @@ public class User {
         user.fleetAccess = FleetAccess.create(connection, user.getId(), user.fleet.getId(), FleetAccess.WAITING);
 
         return user;
+    }
+
+    public void updateLastLoginTimeStamp(Connection connection) throws SQLException {
+
+        String updateQueryStr = "UPDATE user SET last_login_time = ? WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(updateQueryStr);
+        Date currentTimeStamp = new Date();
+        query.setTimestamp(1, new Timestamp(currentTimeStamp.getTime()));
+        query.setInt(2, this.id);
+        LOG.info(query.toString());
+        query.executeUpdate();
+
     }
 }
 
