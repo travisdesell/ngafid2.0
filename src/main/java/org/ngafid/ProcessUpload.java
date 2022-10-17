@@ -187,7 +187,7 @@ public class ProcessUpload {
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
-                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(upload);
+                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
 
