@@ -6,6 +6,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.TreeSet;
 import java.util.logging.Logger;
 
@@ -17,6 +18,7 @@ import org.ngafid.filters.Filter;
 
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
 
 
 public class EventDefinition {
@@ -224,6 +226,11 @@ public class EventDefinition {
         }
 
         return eventDef;
+    }
+
+    public static List<Flight> getFlightsWithEvent(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
+        String whereClause = "(EXISTS (SELECT * FROM events WHERE flight_id = flights.id AND event_definition_id = " + eventDefinitionId + ") AND fleet_id = " + fleetId + ")" ;
+        return Flight.getFlights(connection, whereClause);
     }
 
     /**

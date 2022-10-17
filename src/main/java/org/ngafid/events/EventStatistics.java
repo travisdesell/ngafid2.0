@@ -14,6 +14,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -1086,6 +1087,24 @@ public class EventStatistics {
         return eventCounts;
     }
 
+    public static boolean eventListContainsEventDef(List<Event> events, int eventDefinitionId) {
+        if (events != null) {
+            for (Event e : events) {
+                if (e.getEventDefinitionId() == eventDefinitionId) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
+    }
+
+    public static DateTime getEarliestMonth(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
+        String sql = "SELECT MIN(month_first_day) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+    }
+
     public static void main(String [] args) {
         Options options = new Options();
 
@@ -1143,26 +1162,21 @@ public class EventStatistics {
                 }
             }
 
+            StringBuilder sb = new StringBuilder();
+            int nFleets = fleets.size();
+            for (int i = 0; i < nFleets; i++) {
+                Fleet fleet = fleets.get(i);
+                sb.append(fleet.getName());
+                sb.append(i < nFleets - 1 ? ", " : ";");
+            }
+
             LOG.info("Clearing event statistics for fleets: " + fleets.toString() + " and event definitions: " + Arrays.toString(eventIdStrs));
 
-            for (Fleet fleet : fleets) {
-                int fleetId = fleet.getId();
+            for (EventDefinition def : eventDefinitions) {
+                int defId = def.getId();
+                for (Fleet fleet : fleets) {
+                    int fleetId = fleet.getId();
 
-                for (EventDefinition def : eventDefinitions) {
-                    int defId = def.getId();
-
-                    LOG.info("Clearing stats for fleet: " + fleet.getName() + " with definition: " + def.getName());
-                    clearAllStatistics(connection, fleet, def);
-
-                    List<Event> events = Event.getAll(connection, fleetId, defId);
-
-                    for (Event event : events) {
-                        Flight flight = Flight.getFlight(connection, event.getFlightId());
-                        int airframeNameId = flight.getAirframeNameId();
-                        
-                        event.updateStatistics(connection, fleetId, airframeNameId, defId);
-                        //EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, defId, flight.getStartDateTime());
-                    }
                 }
             }
 
