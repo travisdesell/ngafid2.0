@@ -29,6 +29,6 @@ do
     fi
 done
 
-/usr/bin/mysqldump -u$DB_USERNAME -p$DB_PASSWORD -h $DB_HOST $DB_NAME $NGAFID_BACKUP_TABLES > ${NGAFID_BACKUP_DIRECORY}/backup_$(date "+%F-%T").sql
+/usr/bin/mysqldump -u$DB_USERNAME -p$DB_PASSWORD -h $DB_HOST $DB_NAME $NGAFID_BACKUP_TABLES > ${NGAFID_BACKUP_DIR}/backup_$(date "+%F-%T").sql
 
 )
