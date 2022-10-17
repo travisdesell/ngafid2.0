@@ -67,7 +67,7 @@ public class PostLogin implements Route {
                 return gson.toJson(new LoginResponse(true, false, false, false, "Invalid email or password.", null));
             } else {
                 LOG.info("User authentication successful.");
-
+                user.updateLastLoginTimeStamp(connection);
                 //set the session attribute for this user so
                 //it will be considered logged in.
                 request.session().attribute("user", user);

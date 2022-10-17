@@ -121,7 +121,7 @@ if (!$update_2022_02_17) {
         `registration_time` DATETIME,
         `admin` BOOLEAN DEFAULT 0,
         `aggregate_view` BOOLEAN DEFAULT 0,
-
+        `last_login_time` DATETIME,
         PRIMARY KEY(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
