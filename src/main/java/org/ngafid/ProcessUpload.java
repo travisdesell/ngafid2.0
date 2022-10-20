@@ -331,6 +331,22 @@ public class ProcessUpload {
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
                         }
+                    } else if (entry.getName().endsWith(".DAT")) {
+                        try {
+                            Flight flight = Flight.processDAT(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
+
+                            if (connection != null) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                            }
+
+                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            validFlights++;
+                        } catch (IOException e) {
+                            System.err.println("ERROR: " + e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        }
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
