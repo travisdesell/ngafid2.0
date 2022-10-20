@@ -81,6 +81,7 @@ public class FindLowEndingFuelEvents {
 
         String[] lastValidDateAndIndex = date.getLastValidAndIndex();
         int i = Integer.parseInt(lastValidDateAndIndex[1]);
+        System.out.println("last valid date and index: " i);
 
         String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
 
@@ -89,7 +90,7 @@ public class FindLowEndingFuelEvents {
         double fuelSum = 0;
         int fuelValues = 0;
 
-        for (; duration <= 15; i--) {
+        for (; duration <= 15 && i >= 0; i--) {
             currentTime = date.get(i) + " " + time.get(i);
             fuelSum += fuel.get(i);
             fuelValues++;
@@ -99,18 +100,21 @@ public class FindLowEndingFuelEvents {
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 
-        double average = (fuelSum / fuelValues);
-        int hadEvent = 0;
-        if (average < threshold) {
-            CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
+        if (duration >= 15) {
+            double average = (fuelSum / fuelValues);
+            int hadEvent = 0;
+            if (average < threshold) {
+                CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
 
-            event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
-            EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
-            hadEvent++;
-        } else {
-            EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+                event.updateDatabase(connection);
+                event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
+                EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+                hadEvent++;
+            } else {
+                EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+            }
         }
+        
 
         setFlightProcessed(connection, flight, hadEvent);
     }

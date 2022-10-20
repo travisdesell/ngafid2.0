@@ -1862,7 +1862,8 @@ public class Flight {
                                 airframeName.contains("Garmin") ||
                                 airframeName.equals("Quest Kodiak 100") ||
                                 airframeName.equals("Cessna 400") ||
-                                airframeName.equals("Beechcraft A36/G36")) {
+                                airframeName.equals("Beechcraft A36/G36") ||
+                                airframeName.equals("Beechcraft G58")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44")) {
                             airframeType = "Rotorcraft";
