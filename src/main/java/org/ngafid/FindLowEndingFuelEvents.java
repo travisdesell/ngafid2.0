@@ -81,7 +81,7 @@ public class FindLowEndingFuelEvents {
 
         String[] lastValidDateAndIndex = date.getLastValidAndIndex();
         int i = Integer.parseInt(lastValidDateAndIndex[1]);
-        System.out.println("last valid date and index: " i);
+        System.out.println("last valid date and index: " + i);
 
         String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
 
@@ -100,9 +100,9 @@ public class FindLowEndingFuelEvents {
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 
+        int hadEvent = 0;
         if (duration >= 15) {
             double average = (fuelSum / fuelValues);
-            int hadEvent = 0;
             if (average < threshold) {
                 CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
 
@@ -114,7 +114,6 @@ public class FindLowEndingFuelEvents {
                 EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
             }
         }
-        
 
         setFlightProcessed(connection, flight, hadEvent);
     }
