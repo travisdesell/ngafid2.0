@@ -1,12 +1,14 @@
 package org.ngafid.events;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
@@ -1099,10 +1101,32 @@ public class EventStatistics {
         return false;
     }
 
-    public static DateTime getEarliestMonth(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
+    public static LocalDate getEarliestMonth(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
         String sql = "SELECT MIN(month_first_day) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
+        query.setInt(1, fleetId);
+        query.setInt(2, eventDefinitionId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        LocalDate earliest = null;
+        if (resultSet.next()) {
+            earliest = resultSet.getDate(1).toLocalDate();
+        }
+
+        return earliest;
+    }
+
+    public static void clearMonthStatistics(Connection connection, LocalDate month, int fleetId, int eventDefinitionId) throws SQLException {
+        String sql = "DELETE FROM event_statistics WHERE month_first_day = ? AND fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setDate(1, Date.valueOf(month));
+        query.setInt(2, fleetId);
+        query.setInt(3, eventDefinitionId);
+        
+        query.executeUpdate();
     }
 
     public static void main(String [] args) {
@@ -1177,6 +1201,10 @@ public class EventStatistics {
                 for (Fleet fleet : fleets) {
                     int fleetId = fleet.getId();
 
+                    LocalDate month = getEarliestMonth(connection, fleetId, defId);
+                    while (month != null) {
+
+                    }
                 }
             }
 
