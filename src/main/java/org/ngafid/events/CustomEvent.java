@@ -38,7 +38,7 @@ public class CustomEvent extends Event {
     }
     
     public static EventDefinition getLowEndFuelDefinition(int airframeID) {
-        return EventDefinition.getEventDefinition(connection, "Low Ending Fuel", airframeID);
+        return EventDefinition.getEventDefinition(Database.getConnection(), "Low Ending Fuel", airframeID);
     }
 
     public EventDefinition getDefinition() {
