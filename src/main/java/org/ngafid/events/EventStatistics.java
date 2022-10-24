@@ -1100,7 +1100,7 @@ public class EventStatistics {
 
         return false;
     }
-
+    
     public static LocalDate getEarliestMonth(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
         String sql = "SELECT MIN(month_first_day) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
@@ -1129,8 +1129,19 @@ public class EventStatistics {
         query.executeUpdate();
     }
 
+    public static int getTotalNumberOfFlights(Connection connection, LocalDate month, EventDefinition eventDefinition) {
+        String sql = "SELECT COUNT(*) FROM flights"
+    }
+
+    public static void calculateMonthStatistics(Connection connection, LocalDate month, int fleetId, EventDefinition eventDefinition) throws SQLException {
+
+
+    }
+
     public static void main(String [] args) {
         Options options = new Options();
+
+        final LocalDate thisMonth = LocalDate.now();
 
         CommandLineParser parser = new DefaultParser();
 
@@ -1203,7 +1214,15 @@ public class EventStatistics {
 
                     LocalDate month = getEarliestMonth(connection, fleetId, defId);
                     while (month != null) {
+                        clearMonthStatistics(connection, month, fleetId, defId);
 
+                        calculateMonthStatistics(connection, month, fleetId, def);
+
+                        month = month.plusMonths(1);
+
+                        if (month.compareTo(thisMonth) > 0) {
+                            month = null;
+                        }
                     }
                 }
             }
