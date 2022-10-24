@@ -164,10 +164,6 @@ public class Flight {
         return flights;
     }
 
-    public static Flight processDAT(int fleetId, Connection connection, InputStream inputStream, String name) {
-
-    }
-
     public ArrayList<MalformedFlightFileException> getExceptions() {
         return exceptions;
     }

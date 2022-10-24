@@ -38,6 +38,7 @@ import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
+
 public class ProcessUpload {
     private static Connection connection = null;
 
@@ -332,21 +333,21 @@ public class ProcessUpload {
                             errorFlights++;
                         }
                     } else if (entry.getName().endsWith(".DAT")) {
-                        try {
-                            Flight flight = Flight.processDAT(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
-
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
-
-                            if (flight.getStatus().equals("WARNING")) warningFlights++;
-
-                            validFlights++;
-                        } catch (IOException e) {
-                            System.err.println("ERROR: " + e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        }
+//                        try {
+//                            Flight flight = Flight.processDAT(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
+//
+//                            if (connection != null) {
+//                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+//                            }
+//
+//                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+//
+//                            validFlights++;
+//                        } catch (IOException e) {
+//                            System.err.println("ERROR: " + e.getMessage());
+//                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+//                            errorFlights++;
+//                        }
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
