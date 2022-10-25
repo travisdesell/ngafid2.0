@@ -28,7 +28,7 @@ public class FindLowEndingFuelEvents {
         try {
             String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
                     "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId() +
-                    " OR event_definition_id = " + LOW_END_FUEL_PA_28.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
+                    " OR event_definition_id = " + LOW_END_FUEL_PA_44.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
                     ") AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
