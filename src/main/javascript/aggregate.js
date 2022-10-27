@@ -100,7 +100,7 @@ function displayPlots(selectedAirframe) {
         barmode: 'stack',
         //autosize: false,
         //width: 500,
-        //height: 500,
+        height: 750,
         margin: {
             l: 250,
             r: 50,
@@ -114,7 +114,7 @@ function displayPlots(selectedAirframe) {
         title : 'Percentage of Flights With Event',
         //autosize: false,
         //width: 500,
-        //height: 500,
+        height: 750,
         margin: {
             l: 250,
             r: 50,
