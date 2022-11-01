@@ -60,14 +60,7 @@ public class CalculateExceedences {
         try {
             System.out.println("Event is: '" + eventDefinition.getName() + "'");
 
-            //first check and see if this was actually a flight (RPM > 800)
-            Pair<Double,Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
-            Pair<Double,Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
-
-            if ((minMaxRPM1 == null && minMaxRPM2 == null)  //both RPM values are null, can't calculate exceedence
-                    || (minMaxRPM2 == null && (minMaxRPM1 != null && minMaxRPM1.second() < 800)) //RPM2 is null, RPM1 is < 800
-                    || (minMaxRPM1 == null && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) //RPM1 is null, RPM2 is < 800
-                    || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
+            if (DoubleTimeSeries.flightHasInvalidRPMData(connection, flightId)) {
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
                 System.out.println("engines never turned on, setting flight_processed.had_error = 1");
 
@@ -80,6 +73,7 @@ public class CalculateExceedences {
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
                 stmt.close();
+                // Return with no update to stats count (rwnu)
                 return;
             }
 
@@ -103,6 +97,7 @@ public class CalculateExceedences {
                     System.out.println(stmt.toString());
                     stmt.executeUpdate();
                     stmt.close();
+                    // Return with no update to stats count (rwnu)
                     return;
                 }
 
@@ -143,6 +138,7 @@ public class CalculateExceedences {
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
                 stmt.close();
+                // Return with no update to stats count (rwnu)
                 return;
             }
 
