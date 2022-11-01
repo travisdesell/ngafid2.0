@@ -49,7 +49,7 @@ public class GetHome implements Route {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
-        messages.add(new Message("info", "This is a beta instance of the NGAFID that is to be used by authorized memebers only. Please contact Aidan LaBella at apl <at> mail <dot> rit <dot> edu for more information."));
+        messages.add(new Message("info", "This is a beta instance of the NGAFID that is to be used by authorized memebers only. Please contact the site administrator, Aidan LaBella at apl1341@rit.edu for more information."));
 
     }
 
@@ -59,7 +59,7 @@ public class GetHome implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
 
         messages.add(new Message(messageType, messageText));
-        messages.add(new Message("info", "This is a beta instance of the NGAFID that is to be used by authorized memebers only. Please contact Aidan LaBella at apl <at> mail <dot> rit <dot> edu for more information."));
+        messages.add(new Message("info", "This is a beta instance of the NGAFID that is to be used by authorized memebers only. Please contact the site administrator, Aidan LaBella at apl1341@rit.edu for more information."));
     }
 
     @Override

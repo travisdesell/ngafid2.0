@@ -107,10 +107,6 @@ public class Event {
         endLine = newEndLine;
     }
 
-    public int getId() {
-        return this.id;
-    }
-
     public int getFlightId() {
         return flightId;
     }
