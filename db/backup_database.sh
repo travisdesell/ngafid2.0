@@ -2,7 +2,7 @@
 # A simple sh script to backup the NGAFID
 # Author: Aidan LaBella
 
-source <path_to_ngafid2.0_repo>/init_env.sh
+source /ngafid/ngafid2.0/init_env.sh
 
 declare DB_PASSWORD
 declare DB_USERNAME
@@ -29,6 +29,6 @@ do
     fi
 done
 
-/usr/bin/mysqldump -u$DB_USERNAME -p$DB_PASSWORD -h $DB_HOST $DB_NAME $NGAFID_BACKUP_TABLES > ${NGAFID_BACKUP_DIRECORY}/backup_$(date "+%F-%T").sql
+/usr/bin/mysqldump -u$DB_USERNAME -p$DB_PASSWORD -h $DB_HOST $DB_NAME $NGAFID_BACKUP_TABLES > ${NGAFID_BACKUP_DIR}/backup_$(date "+%F-%T").sql
 
 )
