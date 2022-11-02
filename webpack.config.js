@@ -55,6 +55,7 @@ module.exports = {
         time_zones: __dirname + "/src/main/javascript/time_zones.js",
         user_preferences: __dirname + "/src/main/javascript/preferences_page.js",
         event_definitions_display: __dirname + "/src/main/javascript/event_definitions_display.js",
+        event_annotations: __dirname + "/src/main/javascript/event_annotations.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
         ttf: __dirname + "/src/main/javascript/ttf.js"

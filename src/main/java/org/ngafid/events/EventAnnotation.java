@@ -10,9 +10,14 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
 import org.ngafid.*;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.GeneratedCSVWriter;
 
@@ -25,17 +30,19 @@ import static org.ngafid.flights.CalculationParameters.*;
  */
 public class EventAnnotation extends Annotation {
     private int eventId, classId;
-    private String notes;
+    private String className, notes;
 
     private static Connection connection = Database.getConnection();
     private static final Logger LOG = Logger.getLogger(EventAnnotation.class.getName());
 
     private static final String DEFAULT_COLUMNS = "user_id, fleet_id, timestamp, event_id, class_id, notes";
+    private static final String CSV = "csv", TXT = "txt";
 
     public EventAnnotation(int eventId, String className, User user, LocalDateTime timestamp, String notes) throws SQLException {
         super(user, timestamp);
 
         this.eventId = eventId;
+        this.className = className;
         this.classId = this.getClassId(className);
         this.notes = notes;
     }
@@ -146,13 +153,31 @@ public class EventAnnotation extends Annotation {
         String sql = "SELECT " + DEFAULT_COLUMNS + " FROM event_annotations WHERE user_id IN (SELECT user_id FROM user_groups WHERE group_id = ?)";
         PreparedStatement query = connection.prepareStatement(sql);
 
-        ResultSet resultSet = query.executeQuery();
         query.setInt(1, groupId);
+        ResultSet resultSet = query.executeQuery();
 
         List<EventAnnotation> annotations = new LinkedList<>();
 
         while (resultSet.next()) {
             annotations.add(new EventAnnotation(resultSet));
+        }
+
+        return annotations;
+    }
+
+    public static List<EventAnnotation> getDisplayedGroupAnnotations(User user) throws SQLException {
+        String sql = "SELECT event_annotations.fleet_id, event_id, timestamp, notes, name FROM" +
+                " event_annotations JOIN user_groups ug on event_annotations.user_id = ug.user_id JOIN" +
+                " loci_event_classes lec on event_annotations.class_id = lec.id WHERE group_id = ?";
+        int groupId = user.getGroup(connection);
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, groupId);
+        ResultSet resultSet = query.executeQuery();
+
+        List<EventAnnotation> annotations = new LinkedList<>();
+        while (resultSet.next()) {
+            annotations.add(new EventAnnotation(resultSet.getInt(2), resultSet.getString(5), user, resultSet.getTimestamp(3).toLocalDateTime(), resultSet.getString(4)));
         }
 
         return annotations;
@@ -284,25 +309,56 @@ public class EventAnnotation extends Annotation {
     }
 
     public static void main(String [] args) {
-        if (args.length != 5 || args[0].equals("-h")) {
-            displayUsage();
-            System.exit(1);
-        }
+        Options options = new Options();
 
-        LOG.info("Extracting events...");
-        
-        String directoryRoot = args[0];
+        CommandLineParser parser = new DefaultParser();
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
 
-        int fleetId = Integer.parseInt(args[1]);
-        int userId = Integer.parseInt(args[2]);
+        Option fleetIdArg = new Option("f", "fleet_id", true, "the fleet id to extract for");
+        fleetIdArg.setRequired(true);
+        fleetIdArg.setArgs(1);
+        options.addOption(fleetIdArg);
 
-        double pctTest = Double.parseDouble(args[3]);
+        Option outDirArg = new Option("d", "output_directory", true, "the root output directory to write the csv and log files to");
+        outDirArg.setRequired(true);
+        outDirArg.setArgs(1);
+        options.addOption(outDirArg);
 
-        int nTimeSteps = Integer.parseInt(args[4]);
-        
-        LocalDateTime now = LocalDateTime.now();
+        Option userIdArg = new Option("u", "user_id", true, "the user id for the annotator whose events should be pulled");
+        userIdArg.setRequired(true);
+        userIdArg.setArgs(1);
+        options.addOption(userIdArg);
+
+        Option tsArg = new Option("t", "num_timesteps", true, "the number of timesteps that the events should have");
+        tsArg.setRequired(true);
+        tsArg.setArgs(1);
+        options.addOption(tsArg);
+
+        Option logArg = new Option("l", "log_file_type", true, "how the exports should be logged; \"csv\" for a csv with each event csv file mapped to its class, \"txt\" for a human-readable logfile");
+        logArg.setRequired(true);
+        logArg.setArgs(1);
+        options.addOption(logArg);
+
 
         try {
+            cmd = parser.parse(options, args);
+
+            String directoryRoot = cmd.getOptionValue("d");
+            int fleetId = Integer.parseInt(cmd.getOptionValue("f"));
+            int userId = Integer.parseInt(cmd.getOptionValue("u"));
+            int nTimeSteps = Integer.parseInt(cmd.getOptionValue("t"));
+            String logFileType = cmd.getOptionValue("l");
+            System.out.println(logFileType);
+
+            boolean logToCSV = false;
+            if (!(logToCSV = logFileType.equalsIgnoreCase(CSV)) && !logFileType.equalsIgnoreCase(TXT)) {
+                System.err.println("The argument for log_file_type should be \"csv\" or \"txt\"");
+                System.exit(1);
+            } 
+            
+            LocalDateTime now = LocalDateTime.now();
+
             if (!new File(directoryRoot).exists()) {
                 System.err.println("ERROR: directory does not exist!");
                 System.exit(1);
@@ -314,7 +370,9 @@ public class EventAnnotation extends Annotation {
                 logDirectory.mkdirs();
             }
 
-            File logFile = new File(logDirectory.getPath() + "/log_" + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + now.getHour() + now.getMinute() + now.getSecond() + ".txt");
+            LOG.info("Arguments OK. Now extracting events...");
+
+            File logFile = new File(logDirectory.getPath() + "/log_" + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + now.getHour() + now.getMinute() + now.getSecond() + (logToCSV ? ".csv" : ".log"));
 
             if (!logFile.exists()) {
                 logFile.createNewFile();
@@ -322,7 +380,13 @@ public class EventAnnotation extends Annotation {
 
             PrintWriter pw = new PrintWriter(logFile);
 
-            pw.println("Log file for generated events at time: " + now.toString());
+            if (logToCSV) {
+                pw.println("# CSV Log file for generated events at time: " + now.toString());
+                pw.println("# EventLabel,EventCSVFile");
+                pw.println("EventLabel,EventCSVFile");
+            } else {
+                pw.println("Log file for generated events at time: " + now.toString());
+            }
 
             List<Event> events = getLabeledEvents(fleetId, userId);
 
@@ -332,27 +396,28 @@ public class EventAnnotation extends Annotation {
 
                 label = label.replaceAll("\\s", "_");
 
-                String prefix = "/";
-                if (pctTest > 0.0) {
-                    prefix = (isTestFile(pctTest) ? "/test_" : "/train_");
-                }
-
-                String outputCSVFileName = directoryRoot + prefix + "event_" + event.getId() + "." + label + ".csv";
+                String localCSVFilename = "event_" + event.getId() + "." + label + ".csv";
+                String outputCSVFileName = directoryRoot + "/" + localCSVFilename;
                 File outputCSVFile = new File(outputCSVFileName);
 
-                GeneratedCSVWriter csvWriter = new GeneratedCSVWriter(flight, eventRecognitionColumns, Optional.of(outputCSVFile));
+                GeneratedCSVWriter csvWriter = new GeneratedCSVWriter(flight, EVENT_RECOGNITION_COLUMNS_UNIVARIATE, Optional.of(outputCSVFile));
 
-                List<String> missingColumns = flight.checkCalculationParameters(eventRecognitionColumns);
+                List<String> missingColumns = flight.checkCalculationParameters(EVENT_RECOGNITION_COLUMNS_UNIVARIATE);
 
-                if (!missingColumns.isEmpty()) {
+                if (!missingColumns.isEmpty() && !logToCSV) {
                     pw.println("NOT GENERATED: Event id#" + event.getId() + ": " + label + " missing columns: " + missingColumns.toString());
                 } else {
                     csvWriter.writeToFile(event, nTimeSteps);
-                    pw.println(outputCSVFileName + ": Event id#" + event.getId() + ": " + label);
+                    if (logToCSV) {
+                        pw.println(label + "," + localCSVFilename);
+                    } else {
+                        pw.println(outputCSVFileName + ": Event id#" + event.getId() + ": " + label);
+                    }
                 }
             }
             
             pw.close();
+
             LOG.info("Done!");
             System.exit(0);
         } catch (Exception e) {

@@ -170,6 +170,7 @@ public class User {
         String sql = "SELECT group_id FROM user_groups WHERE user_id = ?";
 
         PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, this.id);
 
         ResultSet resultSet = query.executeQuery();
 
