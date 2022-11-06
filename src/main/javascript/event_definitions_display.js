@@ -54,7 +54,23 @@ class EventDefinitionsDisplayPage extends React.Component {
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                 modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                {rows}
+                <div className="container-fluid" style={{backgroundColor: "white"}}>
+                     <div className="row">
+                         <div className="col-md-12">
+                             <table className="table table-striped table-bordered table-hover">
+                                 <thead>
+                                 <tr>
+                                     <th>Event ID</th>
+                                     <th>Event Name</th>
+                                     <th>Aircraft Type</th>
+                                     <th>Event Definition</th>
+                                 </tr>
+                                 </thead>
+                             </table>
+                         </div>
+                     </div>
+                </div>
+
             </div>
         )
     }
