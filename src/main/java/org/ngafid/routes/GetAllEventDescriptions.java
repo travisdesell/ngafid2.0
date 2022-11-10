@@ -37,7 +37,7 @@ public class GetAllEventDescriptions implements Route {
 
         ResultSet resultSet = preparedStatement.executeQuery();
         LOG.info("resultSet: " + resultSet);
-        Map<String, Map<Integer, EventDefinition>> definitions = new HashMap<>();
+        Map<String, Map<Integer, String>> definitions = new HashMap<>();
 
         while (resultSet.next()) {
             EventDefinition eventDefinition = new EventDefinition(resultSet);
@@ -50,7 +50,7 @@ public class GetAllEventDescriptions implements Route {
                 definitions.put(eventDefinition.getName(), new HashMap<>());
             }
 
-            definitions.get(eventDefinition.getName()).put(eventDefinition.getAirframeNameId(), eventDefinition);
+            definitions.get(eventDefinition.getName()).put(eventDefinition.getAirframeNameId(), eventDefinition.toHumanReadable());
         }
 
         return gson.toJson(definitions);

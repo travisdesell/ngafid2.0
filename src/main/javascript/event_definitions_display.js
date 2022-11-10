@@ -35,11 +35,14 @@ class EventDefinition extends React.Component {
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
-        let events = new Map();
-        console.log(events);
         const descriptions = GetAllDescriptions();
-
-        this.events = new Map(Object.entries(events));
+        console.log(descriptions);
+        for (let key in Object.keys(descriptions)) {
+            for (let id in Object.keys(descriptions[key])) {
+                console.log(descriptions[key][id]);
+            }
+        }
+        this.events = new Map(Object.entries(descriptions));
     }
 
     render() {
