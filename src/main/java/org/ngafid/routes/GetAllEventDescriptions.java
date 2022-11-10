@@ -9,6 +9,8 @@ import spark.Route;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.logging.Logger;
 
 public class GetAllEventDescriptions implements Route {
@@ -35,14 +37,26 @@ public class GetAllEventDescriptions implements Route {
 
         ResultSet resultSet = preparedStatement.executeQuery();
         LOG.info("resultSet: " + resultSet);
+        Map<String, Map<Integer, EventDefinition>> definitions = new HashMap<>();
 
-        resultSet.next();
-        EventDefinition eventDefinition = new EventDefinition(resultSet);
-        LOG.info("eventDefinition: " + eventDefinition);
+        while (resultSet.next()) {
+            EventDefinition eventDefinition = new EventDefinition(resultSet);
+            LOG.info("eventDefinition: " + eventDefinition);
 
-        String text = eventDefinition.toHumanReadable();
-        LOG.info("text: " + text);
+            String text = eventDefinition.toHumanReadable();
+            LOG.info("text: " + text);
 
-        return gson.toJson(text);
+            if (!definitions.containsKey(eventDefinition.getName())) {
+                definitions.put(eventDefinition.getName(), new HashMap<>());
+            }
+
+            definitions.get(eventDefinition.getName()).put(eventDefinition.getAirframeNameId(), eventDefinition);
+        }
+
+        LOG.info(definitions.toString());
+
+
+
+        return gson.toJson(definitions);
     }
 }
