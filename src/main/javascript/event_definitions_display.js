@@ -35,14 +35,16 @@ class EventDefinition extends React.Component {
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
-        const descriptions = GetAllDescriptions();
-        console.log(descriptions);
-        for (let key in Object.keys(descriptions)) {
-            for (let id in Object.keys(descriptions[key])) {
-                console.log(descriptions[key][id]);
-            }
-        }
-        this.events = new Map(Object.entries(descriptions));
+        this.events = new Map(Object.entries(GetAllDescriptions()));
+
+        // for (let key in Object.keys(this.events)) {
+        //     for (let id in Object.keys(this.events[key])) {
+        //
+        //         console.log(this.events[key][id]);
+        //     }
+        // }
+        //
+        // console.log(this.events);
     }
 
     render() {
@@ -57,7 +59,6 @@ class EventDefinitionsDisplayPage extends React.Component {
                              <table className="table table-striped table-bordered table-hover">
                                  <thead>
                                  <tr>
-                                     <th>Event ID</th>
                                      <th>Event Name</th>
                                      <th>Aircraft Type</th>
                                      <th>Event Definition</th>
