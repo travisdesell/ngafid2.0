@@ -64,9 +64,10 @@ class EventDefinitionsDisplayPage extends React.Component {
                                      <th>Aircraft Type</th>
                                      <th>Event Definition</th>
                                  </tr>
+                                 </thead>
                                  <tbody>
                                 {Object.keys(this.events).map((eventKey) => {
-                                    return Object.keys(this.events[eventKey]).map((airframeName) => {
+                                    Object.keys(this.events[eventKey]).map((airframeName) => {
                                         return (
                                             <tr>
                                                 <td>{eventKey}</td>
@@ -77,7 +78,6 @@ class EventDefinitionsDisplayPage extends React.Component {
                                     })
                                 })}
                                 </tbody>
-                                 </thead>
                              </table>
                          </div>
                      </div>
