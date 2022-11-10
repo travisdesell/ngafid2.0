@@ -28,7 +28,7 @@ public class GetEventDescription implements Route {
         LOG.info("expectedName: " + expectedName);
 
         String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " +
-                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id WHERE event_definitions.name = + "\"" + expectedName + "\"";
+                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id WHERE event_definitions.name =" + "\"" + expectedName + "\"";
         LOG.info("query: " + query);
 
         PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);

@@ -35,20 +35,16 @@ class EventDefinition extends React.Component {
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
-        this.events = {};
+        let events = {};
 
-        for (let i = 0; i < eventNames.length; i++) {
-            this.events[eventNames[i]] = GetDescription(eventNames[i]);
+        for (const element of eventNames) {
+            this.events[element] = GetDescription(element);
         }
+
+        this.events = new Map(Object.entries(events));
     }
 
     render() {
-        let rows = [];
-
-        for (let key in this.events) {
-            rows.push(<EventDefinition eventName={key} eventDef={this.events[key]} />)
-        }
-
         return (
             <div>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
@@ -65,6 +61,18 @@ class EventDefinitionsDisplayPage extends React.Component {
                                      <th>Aircraft Type</th>
                                      <th>Event Definition</th>
                                  </tr>
+                                 <tbody>
+                                {this.events.map((description) => {
+                                    return (
+                                        <tr>
+                                            <td>1</td>
+                                            <td>2</td>
+                                            <td>3</td>
+                                            <td>4</td>
+                                        </tr>
+                                    )
+                                })}
+                                </tbody>
                                  </thead>
                              </table>
                          </div>
