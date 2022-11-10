@@ -11,11 +11,11 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Logger;
 
-public class GetEventDescription implements Route {
+public class GetAllEventDescriptions implements Route {
     private static final Logger LOG = Logger.getLogger(GetAllEventDescriptions.class.getName());
     private Gson gson;
 
-    public GetEventDescription(Gson gson) {
+    public GetAllEventDescriptions(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initialized");
@@ -27,7 +27,7 @@ public class GetEventDescription implements Route {
         LOG.info("expectedName: " + expectedName);
 
         String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " +
-                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id WHERE event_definitions.name =" + "\"" + expectedName + "\"";
+                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
         LOG.info("query: " + query);
 
         PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);

@@ -35,9 +35,11 @@ class EventDefinition extends React.Component {
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
-        let events = {};
+        let events = new Map();
+        console.log(events);
 
         for (const element of eventNames) {
+            console.log(element);
             this.events[element] = GetDescription(element);
         }
 
