@@ -36,6 +36,7 @@ class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
         this.events = new Map(Object.entries(GetAllDescriptions()));
+        console.log(this.events);
 
         // for (let key in Object.keys(this.events)) {
         //     for (let id in Object.keys(this.events[key])) {
@@ -64,15 +65,16 @@ class EventDefinitionsDisplayPage extends React.Component {
                                      <th>Event Definition</th>
                                  </tr>
                                  <tbody>
-                                {this.events.map((description) => {
-                                    return (
-                                        <tr>
-                                            <td>1</td>
-                                            <td>2</td>
-                                            <td>3</td>
-                                            <td>4</td>
-                                        </tr>
-                                    )
+                                {Object.keys(this.events).map((eventKey) => {
+                                    return Object.keys(this.events[eventKey]).map((airframeName) => {
+                                        return (
+                                            <tr>
+                                                <td>{eventKey}</td>
+                                                <td>{this.events[eventKey]}</td>
+                                                <td>{this.events[eventKey][airframeName]}</td>
+                                            </tr>
+                                        )
+                                    })
                                 })}
                                 </tbody>
                                  </thead>
