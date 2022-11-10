@@ -1,21 +1,14 @@
 import {errorModal} from "./error_modal";
 
-var descriptions = {};
 
+export default function GetAllDescriptions() {
+    let descriptions = null;
 
-export default function GetDescription(eventName) {
-    if (descriptions[eventName]) {
-        console.log("Description for " + eventName + " already stored.");
-        return descriptions[eventName];
-    }
-
-    var text = "";
-
-    console.log("Getting description for " + eventName + " from server.");
+    console.log("Getting  all descriptions from the server.");
     $.ajax({
             type: 'GET',
-            url: '/protected/get_event_description',
-            data : {eventName : eventName},
+            url: '/protected/get_all_event_descriptions',
+            data : {},
             dataType : 'json',
             success : function(response) {
                 console.log("received response: " + response);
@@ -26,7 +19,7 @@ export default function GetDescription(eventName) {
                     errorModal.show(response.err_title, response.err_msg);
                 }
 
-                descriptions[eventName] = response;
+                descriptions = response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Getting Event Description", errorThrown);
@@ -34,6 +27,6 @@ export default function GetDescription(eventName) {
             async: false
         });
 
-    console.log("Returning text: " + descriptions[eventName]);
-    return descriptions[eventName];
+    console.log("Returning descriptions: " + descriptions);
+    return descriptions;
 }

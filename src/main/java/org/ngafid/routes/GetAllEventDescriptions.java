@@ -53,10 +53,6 @@ public class GetAllEventDescriptions implements Route {
             definitions.get(eventDefinition.getName()).put(eventDefinition.getAirframeNameId(), eventDefinition);
         }
 
-        LOG.info(definitions.toString());
-
-
-
         return gson.toJson(definitions);
     }
 }

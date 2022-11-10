@@ -1,7 +1,7 @@
 import React from "react";
-import GetDescription from "./get_description";
 import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar";
+import GetAllDescriptions from "./get_all_descriptions";
 
 class EventDefinition extends React.Component {
     constructor(props) {
@@ -37,11 +37,7 @@ class EventDefinitionsDisplayPage extends React.Component {
         super(props);
         let events = new Map();
         console.log(events);
-
-        for (const element of eventNames) {
-            console.log(element);
-            this.events[element] = GetDescription(element);
-        }
+        const descriptions = GetAllDescriptions();
 
         this.events = new Map(Object.entries(events));
     }
