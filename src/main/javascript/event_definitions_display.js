@@ -3,27 +3,6 @@ import ReactDOM from "react-dom";
 import SignedInNavbar from "./signed_in_navbar";
 import GetAllDescriptions from "./get_all_descriptions";
 
-class EventDefinition extends React.Component {
-    constructor(props) {
-        super(props);
-
-        this.eventName = props.eventName;
-        this.airframeName = props.airframeName;
-        this.eventDef = props.eventDef;
-    }
-
-    render() {
-        return (
-            <React.Fragment>
-                <td>{this.eventName}</td>
-                <td>{this.airframeName}</td>
-                <td>{this.eventDef}</td>
-            </React.Fragment>
-        )
-    }
-}
-
-
 class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
@@ -35,9 +14,7 @@ class EventDefinitionsDisplayPage extends React.Component {
         let rows = [];
 
         for (let eventName of this.events.keys()) {
-            console.log(eventName);
-            console.log(this.events.get(eventName));
-            for (let airframe in Object.keys(this.events.get(eventName))) {
+            for (let airframe of Object.keys(this.events.get(eventName))) {
                 rows.push([eventName, airframe, this.events.get(eventName)[airframe]]);
             }
         }
@@ -47,7 +24,6 @@ class EventDefinitionsDisplayPage extends React.Component {
 
     render() {
         let rows = this.createRows();
-        console.log(rows);
         return (
             <div>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
@@ -71,7 +47,6 @@ class EventDefinitionsDisplayPage extends React.Component {
                                             <th>{row[0]}</th>
                                             <th>{row[1]}</th>
                                             <th>{row[2]}</th>
-
                                         </tr>
                                     )
                                 })}
