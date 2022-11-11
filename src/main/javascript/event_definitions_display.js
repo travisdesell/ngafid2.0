@@ -14,11 +14,11 @@ class EventDefinition extends React.Component {
 
     render() {
         return (
-            <div>
+            <React.Fragment>
                 <td>{this.eventName}</td>
                 <td>{this.airframeName}</td>
                 <td>{this.eventDef}</td>
-            </div>
+            </React.Fragment>
         )
     }
 }
@@ -29,29 +29,20 @@ class EventDefinitionsDisplayPage extends React.Component {
         super(props);
         this.events = new Map(Object.entries(GetAllDescriptions()));
         console.log(this.events);
-
-        // for (let key in Object.keys(this.events)) {
-        //     for (let id in Object.keys(this.events[key])) {
-        //
-        //         console.log(this.events[key][id]);
-        //     }
-        // }
-        //
-        // console.log(this.events);
     }
 
     createRows() {
         let rows = [];
 
-        for (let key in Object.keys(this.events)) {
-            for (let id in Object.keys(this.events[key])) {
-                console.log(this.events[key][id]);
-                rows.push(<EventDefinition eventName={this.events[key][id].name} airframeName={this.events[key][id].airframe} eventDef={this.events[key][id].description}/>);
+        for (let eventName of this.events.keys()) {
+            console.log(eventName);
+            console.log(this.events.get(eventName));
+            for (let airframe in Object.keys(this.events.get(eventName))) {
+                rows.push([eventName, airframe, this.events.get(eventName)[airframe]]);
             }
         }
 
         return rows;
-
     }
 
     render() {
@@ -74,7 +65,16 @@ class EventDefinitionsDisplayPage extends React.Component {
                                 </tr>
                                 </thead>
                                 <tbody>
-                                {this.createRows()}
+                                {rows.map((row, index) => {
+                                    return (
+                                        <tr>
+                                            <th>{row[0]}</th>
+                                            <th>{row[1]}</th>
+                                            <th>{row[2]}</th>
+
+                                        </tr>
+                                    )
+                                })}
                                 </tbody>
                             </table>
                         </div>
