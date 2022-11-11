@@ -277,6 +277,7 @@ public final class WebServer {
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.get("/protected/get_event_description", new GetEventDescription(gson));
+        Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));

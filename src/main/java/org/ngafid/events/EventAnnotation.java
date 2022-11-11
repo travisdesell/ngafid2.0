@@ -258,6 +258,23 @@ public class EventAnnotation extends Annotation {
         System.err.println("Directory should have subdirectory with structure: <dir>/log");
     }
 
+    public static int getEventLabelId(Connection connection, int eventId) throws SQLException {
+        String sql = "SELECT lcs.id FROM event_annotations INNER JOIN loci_event_classes AS lcs ON class_id = lcs.id WHERE event_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, eventId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        int id = -1;
+
+        if (resultSet.next()) {
+            id = resultSet.getInt(1);
+        }
+
+        return id;
+    }
+
     public static String getEventLabel(Connection connection, int eventId) throws SQLException {
         String sql = "SELECT lcs.name FROM event_annotations INNER JOIN loci_event_classes AS lcs ON class_id = lcs.id WHERE event_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
@@ -340,6 +357,11 @@ public class EventAnnotation extends Annotation {
         logArg.setArgs(1);
         options.addOption(logArg);
 
+        Option aggArg = new Option("n", "numeric_classes", true, "use numeric classes");
+        aggArg.setRequired(false);
+        aggArg.setArgs(1);
+        options.addOption(aggArg);
+
 
         try {
             cmd = parser.parse(options, args);
@@ -349,6 +371,7 @@ public class EventAnnotation extends Annotation {
             int userId = Integer.parseInt(cmd.getOptionValue("u"));
             int nTimeSteps = Integer.parseInt(cmd.getOptionValue("t"));
             String logFileType = cmd.getOptionValue("l");
+            boolean isAggregate = Boolean.parseBoolean(cmd.getOptionValue("a"));
             System.out.println(logFileType);
 
             boolean logToCSV = false;
@@ -400,9 +423,9 @@ public class EventAnnotation extends Annotation {
                 String outputCSVFileName = directoryRoot + "/" + localCSVFilename;
                 File outputCSVFile = new File(outputCSVFileName);
 
-                GeneratedCSVWriter csvWriter = new GeneratedCSVWriter(flight, EVENT_RECOGNITION_COLUMNS_UNIVARIATE, Optional.of(outputCSVFile));
+                GeneratedCSVWriter csvWriter = new GeneratedCSVWriter(flight, EVENT_RECOGNITION_COLUMNS, Optional.of(outputCSVFile));
 
-                List<String> missingColumns = flight.checkCalculationParameters(EVENT_RECOGNITION_COLUMNS_UNIVARIATE);
+                List<String> missingColumns = flight.checkCalculationParameters(EVENT_RECOGNITION_COLUMNS);
 
                 if (!missingColumns.isEmpty() && !logToCSV) {
                     pw.println("NOT GENERATED: Event id#" + event.getId() + ": " + label + " missing columns: " + missingColumns.toString());

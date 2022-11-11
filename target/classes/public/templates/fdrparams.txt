@@ -1,0 +1,79 @@
+time secon	time in seconds from the beginning of the recording	1.0
+temp deg C	temp in degrees celsius of the ambient air near the airplane at current altitude	45
+lon degre	longitude in degrees	–117.20
+lat degre	latitude in degrees	34.000
+h msl ft	height above mean sea level in TRUE feet, regardless of any barometric pressure setting or other errors	4010
+h rad ft	radio altimeter indication	0
+ailn ratio	aileron deflection in ratio –1.0 (left) to +1.0 (right)	0
+elev ratio	elevator deflection in ratio –1.- (nose down) to +1.0 (nose up)	0
+rudd ratio	rudder deflection in ratio –1.- (left) to +1.0 (right)	0
+ptch deg	pitch in degrees, positive indicating up	0
+roll deg	roll in degrees, positive indicating right	0
+hdng TRUE	heading in degrees TRUE	0
+speed KIAS	speed in knots	250.1
+VVI ft/mn	indicated vertical speed in feet per minute	.2
+slip deg	indicated slip in degrees, positive indicating nose right	0
+turn deg	turn-slip indicator deflection, positive indicating right	.4
+mach #	Indicated Mach number	.5
+AOA deg	Indicated Angle of Attack	1
+stall warn	Stall warning on, 1 or 0	0
+flap rqst	Flap handle position, 0.0 (retracted) to 1.0 (extended)	0
+flap actul	Flap–1 deflection ratio, 0.0 (retracted) to 1.0 (extended)	0
+slat ratio	Slat–1 deflection ratio, 0.0 (retracted) to 1.0 (extended)	0
+sbrk ratio	Speedbrake deflection ratio, 0.0 (retracted), (1.0 extended), 1.5 (ground-deployed)	0
+gear handl	Gear handle, 0 (up) to 1 (down)	1
+Ngear down	Gear #1 (nose?) deployment ratio, 0.0 (retracted) to 1.0 (down)	1
+Lgear down	Gear #2 (left?) deployment ratio, 0.0 (retracted) to 1.0 (down)	1
+Rgear down	Gear #3 (right?) deployment ratio, 0.0 (retracted) to 1.0 (down)	1
+elev trim	Elevator trim, –1.0 (nose down) to 1.0 (nose up)	0
+NAV–1 frq	Nav–1 frequency in a 5-digit integer form with no decimal	11010
+NAV–2 frq	Nav–2 frequency in a 5-digit integer form with no decimal	10930
+NAV–1 type	Nav–1 type (NONE=0, NDB=2, VOR=3, LOC=5, ILS=10)	4
+NAV–2 type	Nav–2 type (NONE=0, NDB=2, VOR=3, LOC=5, ILS=10)	4
+OBS–1 deg	OBS–1 in degrees 0 to 360	90
+OBS–2 deg	OBS–2 in degrees 0 to 360	270
+DME–1 nm	0.0 means no DME found, any positive value means we are getting DME data	0
+DME–2 nm	0.0 means no DME found, any positive value means we are getting DME data	0
+NAV–1 h-def	Horizontal (localizer) deflection, –2.5 to 2.5 dots, positive fly right	2.5
+NAV–2 h-def	Horizontal (localizer) deflection, –2.5 to 2.5 dots, positive fly right	2.5
+NAV–1 n/t/f	Nav–1 NAV/TO/FROM (nav=0, to=1, from=2)	1
+NAV–2 n/t/f	Nav–1 NAV/TO/FROM (nav=0, to=1, from=2)	1
+NAV–1 v-def	Vertical (glideslope) deflection, –2.5 to 2.5 dots, positive fly up	2.5
+NAV–2 v-def	Vertical (glideslope) deflection, –2.5 to 2.5 dots, positive fly up	2.5
+OM over	Over marker 0 or 1	0
+MM over	Over marker 0 or 1	0
+IM over	Over marker 0 or 1	0
+f-dir 0/1	Flight director on, 0 or 1	0
+f-dir ptch	Flight director pitch in degrees, positive indicating up	10
+f-dir roll	Flight director roll in degrees, positive indicating right	10
+ktmac 0/1	Autopilot is holding knots or mach number (knots=0, mach=1)	0
+throt mode	Auto-throttle mode (off=0, on=1)	0
+hdg mode	Autopilot heading mode (0=wing-level, 1=heading, 2=localizer or other CDI)	0
+alt mode	Autopilot altitude mode (3=pitch sync, 4=vvi, 5=airspeed, 6=airspeed with alt arm, 7=alt hold, 8=terrain-follow, 9=glideslope hold)	0
+hnav mode	Localizer CDI is ARMED for capture 0 or 1	0
+glslp mode	Glideslope CDI is ARMED for capture 0 or 1	0
+back mode	Back-course on 0 or 1	0
+speed selec	Autopilot speed selection, knots or Mach number	0
+hdg selec	Autopilot heading selection, degrees magnetic	0
+vvi selec	Autopilot vertical speed selection, feet per minute	0
+alt selec	Autopilot altitude selection, feet MSL indicated	500
+baro in hg	Barometric pressure dialed into the altimeter, inches HG	29.9
+DH ft	Decision height dialed into the radio alt, feet AGL	0
+Mcaut 0/1	Master Caution alerting 0 to 1	0
+Mwarn 0/1	Master Warning alerting 0 to 1	0
+GPWS 0/1	Ground Proximity Warning 0 to 1	0
+Mmode 0–4	Map mode: 0 through 4 can give different map results	0
+Mrang 0–6	Map range: 0 through 6 will give different map ranges	0
+throt ratio	Throttle ratio 0.0 to 1.0 (emergency settings can actually exceed 1.0)	1
+prop cntrl	Propeller RPM command, per engine	2005.4
+prop rpm	Propeller RPM actual, per engine	2005.4
+prop deg	Propeller pitch in degrees, per engine	30
+N1 %	N1, per engine	100.1
+N2 %	N2, per engine	100.1
+MPR inch	Engine Manifold Pressure, per engine	0
+EPR ind	Engine Pressure Ratio, per engine	0
+torq ft*lb	Engine torque, per engine	584.1
+FF lb/hr	Fuel Flow, per engine	400
+ITT deg C	Turbine Inlet Temperature, per engine	1000
+EGT deg C	Exhaust Gas Temperature, per engine	1000
+CHT deg C	Cylinder Head Temperature, per engine	0

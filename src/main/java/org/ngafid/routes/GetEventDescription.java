@@ -6,14 +6,13 @@ import org.ngafid.events.EventDefinition;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-import spark.Session;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.logging.Logger;
 
 public class GetEventDescription implements Route {
-    private static final Logger LOG = Logger.getLogger(GetEventDescription.class.getName());
+    private static final Logger LOG = Logger.getLogger(GetAllEventDescriptions.class.getName());
     private Gson gson;
 
     public GetEventDescription(Gson gson) {
@@ -27,7 +26,8 @@ public class GetEventDescription implements Route {
         String expectedName = request.queryParams("eventName");
         LOG.info("expectedName: " + expectedName);
 
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
+        String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe " +
+                "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id WHERE event_definitions.name =" + "\"" + expectedName + "\"";
         LOG.info("query: " + query);
 
         PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
