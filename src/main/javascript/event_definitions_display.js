@@ -9,7 +9,7 @@ class EventDefinitionsDisplayPage extends React.Component {
         this.events = new Map(Object.entries(GetAllDescriptions()));
     }
 
-    createRows() {
+    render() {
         let rows = [];
 
         for (let eventName of this.events.keys()) {
@@ -18,11 +18,6 @@ class EventDefinitionsDisplayPage extends React.Component {
             }
         }
 
-        return rows;
-    }
-
-    render() {
-        let rows = this.createRows();
         return (
             <div>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
