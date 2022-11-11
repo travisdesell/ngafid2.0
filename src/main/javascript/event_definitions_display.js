@@ -7,7 +7,6 @@ class EventDefinitionsDisplayPage extends React.Component {
     constructor(props) {
         super(props);
         this.events = new Map(Object.entries(GetAllDescriptions()));
-        console.log(this.events);
     }
 
     createRows() {
@@ -43,7 +42,7 @@ class EventDefinitionsDisplayPage extends React.Component {
                                 <tbody>
                                 {rows.map((row, index) => {
                                     return (
-                                        <tr>
+                                        <tr key={index}>
                                             <th>{row[0]}</th>
                                             <th>{row[1]}</th>
                                             <th>{row[2]}</th>

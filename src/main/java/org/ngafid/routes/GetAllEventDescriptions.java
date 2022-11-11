@@ -1,5 +1,9 @@
 package org.ngafid.routes;
 
+/**
+ * Route for retreiving all event descriptions in alphabetic order
+ */
+
 import com.google.gson.Gson;
 import org.ngafid.Database;
 import org.ngafid.events.EventDefinition;
