@@ -11,6 +11,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.logging.Logger;
 
 public class GetAllEventDescriptions implements Route {
@@ -37,7 +38,7 @@ public class GetAllEventDescriptions implements Route {
 
         ResultSet resultSet = preparedStatement.executeQuery();
         LOG.info("resultSet: " + resultSet);
-        Map<String, Map<String, String>> definitions = new HashMap<>();
+        Map<String, Map<String, String>> definitions = new TreeMap<>();
         Map<Integer, String> airframeNames = new HashMap<>();
 
         while (resultSet.next()) {
