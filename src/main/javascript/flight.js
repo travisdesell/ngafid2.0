@@ -525,7 +525,7 @@ class FlightPage extends React.Component {
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
 
-                <CesiumButtons></CesiumButtons>
+                <CesiumButtons location="Top"></CesiumButtons>
                 <div style={style}>
                     <FlightsCard
                         parent={this}

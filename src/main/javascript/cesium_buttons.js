@@ -78,15 +78,17 @@ export function updateCesiumButtonState() {
     let cesiumButtonsDisabled = cesiumFlightsSelected.length <= 0;
 
     let viewButtonTop = document.getElementById("cesiumViewButtonTop");
-    let viewButtonBot = document.getElementById("cesiumViewButtonBottom");
-    viewButtonTop.disabled = cesiumButtonsDisabled;
-    viewButtonBot.disabled = cesiumButtonsDisabled;
-
-
     let clearButtonTop = document.getElementById("cesiumClearButtonTop");
-    let clearButtonBot = document.getElementById("cesiumClearButtonBottom");
+    viewButtonTop.disabled = cesiumButtonsDisabled;
     clearButtonTop.disabled = cesiumButtonsDisabled;
-    clearButtonBot.disabled = cesiumButtonsDisabled;
+
+
+    let clearButtonBot = document.getElementById("cesiumClearButtonBottom");
+    let viewButtonBot = document.getElementById("cesiumViewButtonBottom");
+    if (clearButtonBot != null || clearButtonBot !== null) {
+        viewButtonBot.disabled = cesiumButtonsDisabled;
+        clearButtonBot.disabled = cesiumButtonsDisabled;
+    }
 }
 
 
