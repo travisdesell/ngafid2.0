@@ -524,7 +524,7 @@ class FlightPage extends React.Component {
                     <div id="map" className="map" style={{width:"50%", display:"none"}}></div>
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
-
+                <br />
                 <CesiumButtons location="Top"></CesiumButtons>
                 <div style={style}>
                     <FlightsCard

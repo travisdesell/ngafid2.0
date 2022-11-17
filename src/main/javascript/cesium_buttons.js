@@ -8,6 +8,8 @@ class CesiumButtons extends React.Component {
         this.state = {
             disabled: cesiumFlightsSelected.length <= 0
         };
+
+
     }
 
     /**
@@ -23,6 +25,20 @@ class CesiumButtons extends React.Component {
         }
 
         window.open(URL);
+    }
+
+    createButtonStyle(color) {
+        console.log("Creating style")
+        return {
+            alignItems: 'center',
+            justifyContent: 'center',
+            paddingVertical: 12,
+            paddingHorizontal: 32,
+            borderRadius: 4,
+            elevation: 3,
+            backgroundColor: color,
+            opacity_disabled: 0,
+        }
     }
 
     /**
@@ -52,15 +68,19 @@ class CesiumButtons extends React.Component {
 
     render() {
         return (
-            <div className="col form-row input-group m-0 p-0">
+            <div className="col form-row input-group m-0 p-0" style={{
+                position: "center", display: 'flex',
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}>
                 <div className="input-group-prepend p-0">
                     <button id={"cesiumViewButton" + this.props.location} className="btn btn-sm btn-primary"
-                            onClick={() => this.viewCesiumFlights()}>
+                            onClick={() => this.viewCesiumFlights()} style={this.createButtonStyle("blue")}>
                         View Selected Replays
                     </button>
 
                     <button id={"cesiumClearButton" + this.props.location} className="btn btn-sm btn-primary"
-                            onClick={() => this.clearCesiumFlights()}>
+                            onClick={() => this.clearCesiumFlights()} style={this.createButtonStyle("red")}>
                         Clear Selected Replays
                     </button>
                 </div>
