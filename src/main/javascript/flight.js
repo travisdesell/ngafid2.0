@@ -1,3 +1,5 @@
+import Button from "react-bootstrap/Button";
+
 console.log('importing stuff!');
 
 import 'bootstrap';
@@ -14,8 +16,9 @@ import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import { FlightsCard } from './flights_card_component.js';
 
 import Plotly from 'plotly.js';
+import {CesiumButtons} from "./cesium_buttons";
 
-global.plotlyLayout = { 
+global.plotlyLayout = {
     shapes : []
 };
 
@@ -48,7 +51,7 @@ class FlightPage extends React.Component {
         for (var i = 0, ii = layers.length; i < ii; ++i) {
             console.log("setting layer " + i + " to:" + (styles[i] === style));
             layers[i].setVisible(styles[i] === style);
-        }   
+        }
 
         console.log("map style changed to: '" +  style + "'!");
         this.setState({
@@ -66,7 +69,7 @@ class FlightPage extends React.Component {
     showMap() {
         if (this.state.mapVisible) return;
 
-        if ( !$("#map-toggle-button").hasClass("active") ) { 
+        if ( !$("#map-toggle-button").hasClass("active") ) {
             $("#map-toggle-button").addClass("active");
             $("#map-toggle-button").attr("aria-pressed", true);
         }
@@ -92,10 +95,10 @@ class FlightPage extends React.Component {
     hideMap() {
         if (!this.state.mapVisible) return;
 
-        if ( $("#map-toggle-button").hasClass("active") ) { 
+        if ( $("#map-toggle-button").hasClass("active") ) {
             $("#map-toggle-button").removeClass("active");
             $("#map-toggle-button").attr("aria-pressed", false);
-        }   
+        }
 
         this.state.mapVisible = false;
         this.setState(this.state);
@@ -122,7 +125,7 @@ class FlightPage extends React.Component {
     showPlot() {
         if (this.state.plotVisible) return;
 
-        if ( !$("#plot-toggle-button").hasClass("active") ) { 
+        if ( !$("#plot-toggle-button").hasClass("active") ) {
             $("#plot-toggle-button").addClass("active");
             $("#plot-toggle-button").attr("aria-pressed", true);
         }
@@ -147,10 +150,10 @@ class FlightPage extends React.Component {
     hidePlot() {
         if (!this.state.plotVisible) return;
 
-        if ( $("#plot-toggle-button").hasClass("active") ) { 
+        if ( $("#plot-toggle-button").hasClass("active") ) {
             $("#plot-toggle-button").removeClass("active");
             $("#plot-toggle-button").attr("aria-pressed", false);
-        }   
+        }
 
         this.state.plotVisible = false;
         this.setState(this.state);
@@ -231,11 +234,11 @@ class FlightPage extends React.Component {
                 } else {
                     errorModal.show("Error creating tag", "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name");
                 }
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     /**
@@ -283,7 +286,7 @@ class FlightPage extends React.Component {
                                 }
                             }
                         }
-                    } 
+                    }
                     thisFlight.setState(thisFlight.state);
                 } else {
                     thisFlight.showNoEditError();
@@ -315,11 +318,11 @@ class FlightPage extends React.Component {
                 console.log(response);
 
                 tags = response;
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: false 
-        });  
+            },
+            async: false
+        });
 
         return tags;
     }
@@ -388,14 +391,14 @@ class FlightPage extends React.Component {
                                 }
                             }
                         }
-                    } 
+                    }
                 } else if (response.allTagsCleared) {
                     for (var i = 0; i < thisFlight.state.flights.length; i++) {
                         let flight = thisFlight.state.flights[i];
                         if (flight.id == flightId) {
                             flight.tags = [];
                         }
-                    } 
+                    }
                 } else {
                     for (var i = 0; i < thisFlight.state.flights.length; i++) {
                         let flight = thisFlight.state.flights[i];
@@ -405,13 +408,13 @@ class FlightPage extends React.Component {
                             tags.splice(tags.indexOf(tag), 1);
                         }
                     }
-                } 
+                }
                 thisFlight.setState(thisFlight.state);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: false 
-        });  
+            },
+            async: false
+        });
     }
 
     /**
@@ -447,11 +450,11 @@ class FlightPage extends React.Component {
                     }
                 }
                 thisFlight.setState(thisFlight.state);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
 
@@ -463,26 +466,41 @@ class FlightPage extends React.Component {
                           () => {this.removeTag(flightId, -2, false)});
     }
 
+    /**
+     * Handles clearing all selected flights for multiple flight replays
+     */
+     clearCesiumFlights() {
+         cesiumFlightsSelected.forEach((removedFlight) => {
+             console.log("Removed " + removedFlight);
+             let toggleButton = document.getElementById("cesiumToggled" + removedFlight);
+             toggleButton.click();
+         });
+
+         if (cesiumFlightsSelected.length > 0) {
+             this.clearCesiumFlights();
+         }
+    }
+
     render() {
         let style = null;
         if (this.state.mapVisible || this.state.plotVisible) {
             console.log("rendering half");
-            style = { 
+            style = {
                 overflow : "scroll",
                 height : "calc(50%)"
-            };  
+            };
         } else {
-            style = { 
+            style = {
                 overflow : "scroll",
                 height : "calc(100%)"
-            };  
+            };
         }
 
         style.padding = "5";
 
         return (
             <div>
-                <SignedInNavbar 
+                <SignedInNavbar
                     activePage="flights"
                     filterVisible={this.state.filterVisible}
                     plotVisible={this.state.plotVisible}
@@ -503,14 +521,15 @@ class FlightPage extends React.Component {
                 />
 
                 <div id="plot-map-div" className='row m-0' style={{width:"100%", height:"0%"}}>
-                    <div id="map" className="map" style={{width:"50%", display:"none"}}></div> 
+                    <div id="map" className="map" style={{width:"50%", display:"none"}}></div>
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
 
+                <CesiumButtons></CesiumButtons>
                 <div style={style}>
                     <FlightsCard
                         parent={this}
-                        flights={this.state.flights} 
+                        flights={this.state.flights}
                         navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
