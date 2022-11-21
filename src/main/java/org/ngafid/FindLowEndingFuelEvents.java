@@ -15,7 +15,7 @@ import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.events.CustomEvent.*;
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 public class FindLowEndingFuelEvents {
     public static final Connection connection = Database.getConnection();

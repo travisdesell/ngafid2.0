@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static org.ngafid.flights.Parameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 public class NIFA implements Serializable {
 
@@ -120,11 +120,11 @@ public class NIFA implements Serializable {
 
     public NIFA(Connection connection, Flight flight) throws SQLException {
         this.flight = flight;
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
-        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
-        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(ATITUDE);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(ONGITUDE);
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(ALT_AGL);
+        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(ALT_MSL);
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(GND_SPD);
         StringTimeSeries timeSeries = flight.getStringTimeSeries(connection, "Lcl Time");
         StringTimeSeries dateSeries = flight.getStringTimeSeries(connection, "Lcl Date");
 
