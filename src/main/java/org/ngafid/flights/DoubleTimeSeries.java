@@ -20,7 +20,7 @@ import org.ngafid.Database;
 import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import javax.sql.rowset.serial.SerialBlob;
 

@@ -64,7 +64,7 @@ import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -252,7 +252,7 @@ public class Flight {
         }
     }
 
-    public List<String> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException, SQLException {
+    public List<String> checkCalculationParameters(String [] seriesNames) throws SQLException {
         List<String> missingParams = new ArrayList<>();
 
         for (String param : seriesNames) {

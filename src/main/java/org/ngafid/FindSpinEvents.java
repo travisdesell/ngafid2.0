@@ -13,7 +13,7 @@ import java.sql.*;
 
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 import static org.ngafid.events.CustomEvent.*;
 
 /**

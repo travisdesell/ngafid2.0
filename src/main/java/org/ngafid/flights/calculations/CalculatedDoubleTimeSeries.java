@@ -4,11 +4,12 @@
  *
  * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
  */
-package org.ngafid.flights;
+package org.ngafid.flights.calculations;
 
 import java.io.IOException;
 import java.sql.SQLException;
 import java.sql.Connection;
+import org.ngafid.flights.*;
 
 public class CalculatedDoubleTimeSeries extends DoubleTimeSeries {
     private final Flight flight;

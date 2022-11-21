@@ -1,10 +1,11 @@
-package org.ngafid.flights;
+package org.ngafid.flights.calculations;
 
+import org.ngafid.flights.*;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 
