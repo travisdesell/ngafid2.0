@@ -1,8 +1,6 @@
 package org.ngafid;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.Console;
+import java.io.*;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -14,6 +12,13 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import Files.*;
+import Files.AnalyzeDatResults;
+import Files.ConvertDat;
+import Files.CsvWriter;
+import Files.DatFile;
+import Files.FileEnd;
+import Files.NotDatFile;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -332,21 +337,39 @@ public class ProcessUpload {
                             errorFlights++;
                         }
                     } else if (entry.getName().endsWith(".DAT")) {
-//                        try {
-//                            Flight flight = Flight.processDAT(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
-//
-//                            if (connection != null) {
-//                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-//                            }
-//
-//                            if (flight.getStatus().equals("WARNING")) warningFlights++;
-//
-//                            validFlights++;
-//                        } catch (IOException e) {
-//                            System.err.println("ERROR: " + e.getMessage());
-//                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-//                            errorFlights++;
-//                        }
+                        try {
+                            File file = new File(entry.getName());
+                            System.out.println("Processing: " + file.getAbsolutePath());
+                            DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
+                            datFile.reset();
+                            datFile.preAnalyze();
+
+                            ConvertDat convertDat = datFile.createConVertDat();
+
+                            String csvFilename = file.getAbsolutePath() + ".csv";
+                            System.out.println("Writing: " + csvFilename);
+                            convertDat.csvWriter = new CsvWriter(csvFilename);
+                            convertDat.createRecordParsers();
+
+                            datFile.reset();
+                            AnalyzeDatResults results = convertDat.analyze(true);
+
+                            File convertedFile = new File(file.getAbsolutePath() + ".csv");
+                            Flight flight = new Flight(fleetId, convertedFile.getName(), new FileInputStream(convertedFile), connection);
+
+                            if (connection != null) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                            }
+
+                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            validFlights++;
+                        } catch (IOException | NotDatFile | FileEnd | FatalFlightFileException |
+                                 FlightAlreadyExistsException e) {
+                            System.err.println("ERROR: " + e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        }
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
