@@ -38,7 +38,6 @@ import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
-
 public class ProcessUpload {
     private static Connection connection = null;
 
