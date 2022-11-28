@@ -109,7 +109,7 @@ public class ConvertDatV3 extends ConvertDat {
                     }
                 }
             }
-        } catch (Files.Corrupted e) {
+        } catch (Corrupted e) {
             DatConLog.Error(".DAT Corrupted");
             //e.printStackTrace();
             //            throw new RuntimeException(".DAT Corrupted");

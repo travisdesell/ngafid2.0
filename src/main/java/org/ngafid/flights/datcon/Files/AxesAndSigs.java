@@ -4,6 +4,8 @@ import org.ngafid.flights.datcon.Files.Axis;
 import org.ngafid.flights.datcon.Files.Signal;
 import org.ngafid.flights.datcon.Files.Units;
 
+import java.nio.file.Files;
+
 public class AxesAndSigs {
 
     public static Axis motorSpeedAxis = new Axis("motorSpeed", "Motor Speed",
@@ -47,9 +49,9 @@ public class AxesAndSigs {
     public static Axis cellVoltsAxis = new Axis("cellVolts", "Cell Volts",
             org.ngafid.flights.datcon.Files.Units.volts);
 
-    public static Axis gyroAxis = new Axis("gyro", "Gyro", Files.Units.degreesPerSec);
+    public static Axis gyroAxis = new Axis("gyro", "Gyro", Units.degreesPerSec);
 
-    public static Axis accelAxis = new Axis("accel", "Accelerometer", Files.Units.G);
+    public static Axis accelAxis = new Axis("accel", "Accelerometer", Units.G);
 
     public static Axis controlAxis = new Axis("control", "Control",
             org.ngafid.flights.datcon.Files.Units.controlStick);

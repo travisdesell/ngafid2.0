@@ -322,10 +322,10 @@ public class OpConfig {
             dictPrintStream.println("static {");
 
             OpConfig opConfig = new OpConfig(lines);
-            Vector<DatConRecs.RecDef.RecordDef> records = opConfig.getRecords();
+            Vector<RecordDef> records = opConfig.getRecords();
             //opConfig.printRecords();
             for (int i = 0; i < records.size(); i++) {
-                org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record = records.get(i);
+                RecordDef record = records.get(i);
                 createJavaFile(dirName, record);
                 dictPrintStream.println("entries.add(new RecClassSpec("
                         + record.getNameWithLengthAndId() + ".class,"

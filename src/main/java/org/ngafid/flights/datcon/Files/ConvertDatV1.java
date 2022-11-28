@@ -102,7 +102,7 @@ public class ConvertDatV1 extends ConvertDat {
     protected Vector<Record> getRecordInst(RecSpec recInDat) {
         Vector<Record> retv = new Vector<Record>();
         Record rec = null;
-        rec = Dictionary.getRecordInst(DatConRecs.String.Dictionary.entries,
+        rec = Dictionary.getRecordInst(Dictionary.entries,
                 recInDat, this, true);
         if (rec != null) {
             retv.add(rec);

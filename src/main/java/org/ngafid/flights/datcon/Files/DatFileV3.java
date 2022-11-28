@@ -15,6 +15,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.util.Vector;
 
 public class DatFileV3 extends DatFile {
@@ -39,7 +40,7 @@ public class DatFileV3 extends DatFile {
     }
 
     public ConvertDat createConVertDat() {
-        return (new V3.Files.ConvertDatV3(this));
+        return (new ConvertDatV3(this));
     }
 
     public void reset() throws IOException {
@@ -206,7 +207,7 @@ public class DatFileV3 extends DatFile {
                 }
 
                 startOfRecord = nextStartOfRecord;
-            } catch (Files.Corrupted c) {
+            } catch (Corrupted c) {
                 //                if (Persist.EXPERIMENTAL_DEV) {
                 //                    System.out.println("Corrupted " + getPos());
                 //                }
@@ -314,7 +315,7 @@ public class DatFileV3 extends DatFile {
         } catch (Corrupted ex) {
         } catch (IOException e) {
         } finally {
-            if (Files.Persist.EXPERIMENTAL_DEV) {
+            if (Persist.EXPERIMENTAL_DEV) {
                 printTypes();
             }
             try {
