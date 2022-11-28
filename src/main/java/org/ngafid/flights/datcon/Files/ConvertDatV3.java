@@ -118,7 +118,7 @@ public class ConvertDatV3 extends ConvertDat {
         } finally {
             _datFile.close();
             DatConLog.Log("CRC Error Ratio "
-                    + _datFile.getErrorRatio(Files.Corrupted.Type.CRC));
+                    + _datFile.getErrorRatio(Corrupted.Type.CRC));
             DatConLog.Log("Other Error Ratio "
                     + _datFile.getErrorRatio(Corrupted.Type.Other));
             DatConLog.Log(
@@ -134,9 +134,9 @@ public class ConvertDatV3 extends ConvertDat {
 
     @Override
     protected Vector<Record> getRecordInst(RecSpec recInDat) {
-        Vector<Record> retv = new Vector<Record>();
+        Vector<Record> retv = new Vector<>();
         Record rec = null;
-        rec = Dictionary.getRecordInst(DatConRecs.String.Dictionary.entries,
+        rec = Dictionary.getRecordInst(Dictionary.entries,
                 recInDat, this, true);
         if (rec != null) {
             retv.add(rec);
