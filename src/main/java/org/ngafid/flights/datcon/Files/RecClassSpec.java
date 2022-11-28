@@ -1,7 +1,7 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Record;
-import Files.RecSpec;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.RecSpec;
 
 public class RecClassSpec extends RecSpec {
 

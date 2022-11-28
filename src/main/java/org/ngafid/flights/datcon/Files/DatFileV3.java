@@ -1,14 +1,14 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Payload;
-import DatConRecs.RecDef.OpConfig;
-import DatConRecs.RecDef.RecordDef;
-import Files.AnalyzeDatResults;
-import Files.ConvertDat;
-import Files.Corrupted;
-import Files.DatConLog;
-import Files.NotDatFile;
-import Files.Persist;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.OpConfig;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef;
+import org.ngafid.flights.datcon.Files.AnalyzeDatResults;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.Corrupted;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.NotDatFile;
+import org.ngafid.flights.datcon.Files.Persist;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -27,11 +27,11 @@ public class DatFileV3 extends DatFile {
         return recordDefs;
     }
 
-    public DatFileV3(String fileName) throws IOException, Files.NotDatFile {
+    public DatFileV3(String fileName) throws IOException, org.ngafid.flights.datcon.Files.NotDatFile {
         super(fileName);
     }
 
-    public DatFileV3(File _file) throws IOException, Files.NotDatFile {
+    public DatFileV3(File _file) throws IOException, org.ngafid.flights.datcon.Files.NotDatFile {
         super(_file);
     }
 
@@ -59,7 +59,7 @@ public class DatFileV3 extends DatFile {
         numRolloverRecs = 0;
         numRecs = 0;
         numCorrupted = 0;
-        Files.Corrupted.reset();
+        org.ngafid.flights.datcon.Files.Corrupted.reset();
         try {
             setPosition(startOfRecord);
         } catch (FileEnd | IOException e) {
@@ -98,7 +98,7 @@ public class DatFileV3 extends DatFile {
     // sequence - remove recs out of sequence
     // eofProcessing -
     public boolean getNextDatRec(boolean filter, boolean translate,
-            boolean sequence, boolean eofProcessing) throws Files.Corrupted, FileEnd {
+            boolean sequence, boolean eofProcessing) throws org.ngafid.flights.datcon.Files.Corrupted, FileEnd {
         boolean done = false;
         long nextStartOfRecord = 0;
         long actualTickNo = 0;
@@ -116,7 +116,7 @@ public class DatFileV3 extends DatFile {
                 }
                 // if not positioned at next 0x55, then its corrupted
                 if (getByte(startOfRecord) != 0x55) {
-                    throw (new Files.Corrupted(actualTickNo, startOfRecord));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, startOfRecord));
                 }
                 lengthOfRecord = (0xFF & getByte(startOfRecord + 1));
                 byte always0 = (byte) getByte(startOfRecord + 2);
@@ -138,8 +138,8 @@ public class DatFileV3 extends DatFile {
                     //                                        / (double) getPos());
                     //                        int x = 1;
                     //                    }
-                    throw (new Files.Corrupted(thisRecordTickNo, startOfRecord + 1,
-                            Files.Corrupted.Type.CRC));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(thisRecordTickNo, startOfRecord + 1,
+                            org.ngafid.flights.datcon.Files.Corrupted.Type.CRC));
                 }
                 //                if (Persist.EXPERIMENTAL_DEV) {
                 //                    System.out.println(" tick# " + thisRecordTickNo + " Pos "
@@ -148,7 +148,7 @@ public class DatFileV3 extends DatFile {
                 //                }
                 numRecs++;
                 if (always0 != 0) {
-                    throw (new Files.Corrupted(thisRecordTickNo, startOfRecord + 1));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(thisRecordTickNo, startOfRecord + 1));
                 }
 
                 if (!inRollover && lastRecordTickNo > upperTickLim
@@ -180,11 +180,11 @@ public class DatFileV3 extends DatFile {
                     }
                     // just this record is corrupted
                     lastActualTickNo = actualTickNo;
-                    throw (new Files.Corrupted(thisRecordTickNo, startOfRecord + 1));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(thisRecordTickNo, startOfRecord + 1));
                 }
 
                 if (lengthOfRecord == 0) {
-                    throw (new Files.Corrupted(actualTickNo, startOfRecord + 1));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, startOfRecord + 1));
                 }
 
                 // if nextStartOfRecord not positioned at next 0x55, then this
@@ -192,7 +192,7 @@ public class DatFileV3 extends DatFile {
                 // processing of the next record
                 if (getByte(nextStartOfRecord) != 0x55
                         && getByte(nextStartOfRecord) != 0x00) {
-                    throw (new Files.Corrupted(actualTickNo, nextStartOfRecord));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, nextStartOfRecord));
                 }
                 if (!sequence || (actualTickNo > lastActualTickNo)) {
                     lastActualTickNo = actualTickNo;
@@ -218,7 +218,7 @@ public class DatFileV3 extends DatFile {
                 //                                                        + (float) numCorrupted / (float) numRecs);
                 if ((numRecs > 1000)
                         && ((float) numCorrupted / (float) numRecs) > 0.02) {
-                    throw (new Files.Corrupted(actualTickNo, startOfRecord));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, startOfRecord));
                 }
                 try {
                     setPosition(c.filePos);
@@ -232,14 +232,14 @@ public class DatFileV3 extends DatFile {
                 } catch (FileEnd f) {
                     throw (f);
                 } catch (IOException e) {
-                    throw (new Files.Corrupted(actualTickNo, nextStartOfRecord));
+                    throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, nextStartOfRecord));
                 }
                 // set position right before the next 0x55
                 startOfRecord = getPos() - 1;
             } catch (FileEnd f) {
                 throw (f);
             } catch (Exception e) {
-                throw (new Files.Corrupted(actualTickNo, startOfRecord));
+                throw (new org.ngafid.flights.datcon.Files.Corrupted(actualTickNo, startOfRecord));
             }
         }
         return false;

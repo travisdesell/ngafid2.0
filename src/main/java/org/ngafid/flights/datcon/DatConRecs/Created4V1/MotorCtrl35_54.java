@@ -1,8 +1,9 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.MotorControl;
-importorg.ngafid.flights.datcon.DatConRecs.Payload;
-import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.MotorControl;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
 
 public class MotorCtrl35_54 extends MotorControl {
   

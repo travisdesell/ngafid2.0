@@ -1,7 +1,7 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.Payload;
-importorg.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.Record;
 import org.ngafid.Files.datcon.DatConRecs.*;
 import org.ngafid.Files.datcon.DatConRecs.ConvertDat.lineType;
 

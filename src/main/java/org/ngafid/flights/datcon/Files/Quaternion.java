@@ -18,7 +18,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.Files;
 
-import Files.RollPitchYaw;
+import org.ngafid.flights.datcon.Files.RollPitchYaw;
 
 import java.text.DecimalFormat;
 
@@ -162,7 +162,7 @@ public class    Quaternion {
         return a.times(b.inverse());
     }
 
-    public Files.RollPitchYaw toRollPitchYaw() {
+    public org.ngafid.flights.datcon.Files.RollPitchYaw toRollPitchYaw() {
         double sqW = SCALAR * SCALAR;
         double sqX = X * X;
         double sqY = Y * Y;

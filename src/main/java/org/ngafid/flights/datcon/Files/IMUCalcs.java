@@ -1,9 +1,9 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.RecIMU;
-import Files.ConvertDat.lineType;
-import Files.Signal;
-import Files.Units;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.Signal;
+import org.ngafid.flights.datcon.Files.Units;
 
 import java.io.IOException;
 

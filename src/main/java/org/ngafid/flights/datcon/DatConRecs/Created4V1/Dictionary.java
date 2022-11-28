@@ -1,7 +1,7 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.Created4V1.HomePoint34_13;
-import org.ngafid.Files.datcon.DatConRecs.RecClassSpec;
+import org.ngafid.flights.datcon.DatConRecs.Created4V1.HomePoint34_13;
+import org.ngafid.flights.datcon.Files.RecClassSpec;
 
 import java.util.Vector;
 

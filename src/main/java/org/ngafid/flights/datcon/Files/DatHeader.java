@@ -1,6 +1,6 @@
 package org.ngafid.flights.datcon.Files;
 
-import Files.DatFile;
+import org.ngafid.flights.datcon.Files.DatFile;
 
 import java.io.UnsupportedEncodingException;
 

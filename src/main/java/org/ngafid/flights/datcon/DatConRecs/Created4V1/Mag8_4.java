@@ -1,8 +1,10 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.Created4V3.MagRawGroup;
-importorg.ngafid.flights.datcon.DatConRecs.Payload;
-import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.MagRawGroup;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.MagRawGroup;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
 
 public class Mag8_4 extends MagRawGroup {
 

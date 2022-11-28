@@ -10,7 +10,7 @@ public class Units {
 
     public static final Units noUnits = new Units("");
 
-    public static Files.Units meters = new Units("meters");
+    public static org.ngafid.flights.datcon.Files.Units meters = new Units("meters");
 
     public static Units msec = new Units("milliSeconds");
 

@@ -18,19 +18,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Record;
-import Files.AnalyzeDatResults;
-import Files.ConvertDat;
-import Files.Corrupted;
-import Files.Corrupted.Type;
-import Files.DJIAssistantFile;
-import Files.DatConLog;
-import Files.DatConPopups;
-import Files.DatHeader;
-import Files.DatHeader.AcType;
-import Files.NotDatFile;
-import Files.Persist;
-import Files.RecSpec;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.AnalyzeDatResults;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.Corrupted;
+import org.ngafid.flights.datcon.Files.Corrupted.Type;
+import org.ngafid.flights.datcon.Files.DJIAssistantFile;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.DatConPopups;
+import org.ngafid.flights.datcon.Files.DatHeader;
+import org.ngafid.flights.datcon.Files.DatHeader.AcType;
+import org.ngafid.flights.datcon.Files.NotDatFile;
+import org.ngafid.flights.datcon.Files.Persist;
+import org.ngafid.flights.datcon.Files.RecSpec;
 import V1.Files.DatFileV1;
 import V3.Files.DatFileV3;
 import apps.DatCon;
@@ -81,7 +81,7 @@ public class DatFile {
 
     protected long numRecs = 0;
 
-    protected Files.AnalyzeDatResults results = null;
+    protected org.ngafid.flights.datcon.Files.AnalyzeDatResults results = null;
 
     public long startOfRecord = 0;
 
@@ -110,22 +110,22 @@ public class DatFile {
 
     double clockRate = 600;
 
-    private Files.DatHeader datHeader;
+    private org.ngafid.flights.datcon.Files.DatHeader datHeader;
 
-    private HashMap<Integer, Files.RecSpec> recsInDat = new HashMap<Integer, Files.RecSpec>();
+    private HashMap<Integer, org.ngafid.flights.datcon.Files.RecSpec> recsInDat = new HashMap<Integer, Files.RecSpec>();
 
     public long _tickNo = 0;
 
     public int _type = 0;
 
-    public HashMap<Integer, Files.RecSpec> getRecsInDat() {
+    public HashMap<Integer, org.ngafid.flights.datcon.Files.RecSpec> getRecsInDat() {
         return recsInDat;
     }
 
     public void addRecInDat(int type, int length) {
         Integer key = Integer.valueOf(type);
         if (!recsInDat.containsKey(key)) {
-            recsInDat.put(key, new Files.RecSpec(type, length));
+            recsInDat.put(key, new org.ngafid.flights.datcon.Files.RecSpec(type, length));
         }
     }
 
@@ -133,31 +133,31 @@ public class DatFile {
         recsInDat.clear();
     }
 
-    public DatFile(String fileName) throws IOException, Files.NotDatFile {
+    public DatFile(String fileName) throws IOException, org.ngafid.flights.datcon.Files.NotDatFile {
         this(new File(fileName));
     }
 
     public static DatFile createDatFile(String datFileName)
-            throws Files.NotDatFile, IOException {
+            throws org.ngafid.flights.datcon.Files.NotDatFile, IOException {
         byte arra[] = new byte[256];
         //if (true )return (new DatFileV3(datFileName));
-        Files.DatConLog.Log(" ");
-        Files.DatConLog.Log("createDatFile " + datFileName);
+        org.ngafid.flights.datcon.Files.DatConLog.Log(" ");
+        org.ngafid.flights.datcon.Files.DatConLog.Log("createDatFile " + datFileName);
         FileInputStream bfr = new FileInputStream(new File(datFileName));
         bfr.read(arra, 0, 256);
         bfr.close();
         String headerString = new String(arra, 0, 21);
         if (!(headerString.substring(16, 21).equals("BUILD"))) {
             if (Persist.invalidStructOK) {
-                Files.DatConLog.Log("createDatFile invalid header - proceeding");
+                org.ngafid.flights.datcon.Files.DatConLog.Log("createDatFile invalid header - proceeding");
                 datFile = new DatFileV3(datFileName);
                 datFile.setStartOfRecords(256);
                 return datFile;
             }
             if (headerString.substring(0, 4).equals("LOGH")) {
-                throw new Files.NotDatFile("Probably an encrypted .DAT");
+                throw new org.ngafid.flights.datcon.Files.NotDatFile("Probably an encrypted .DAT");
             }
-            throw new Files.NotDatFile();
+            throw new org.ngafid.flights.datcon.Files.NotDatFile();
         }
         if ((new String(arra, 242, 10).equals("DJI_LOG_V3"))) {
             datFile = new DatFileV3(datFileName);
@@ -184,7 +184,7 @@ public class DatFile {
     }
 
     public static DatFile createDatFile(String datFileName, final DatCon datCon)
-            throws Files.NotDatFile, IOException {
+            throws org.ngafid.flights.datcon.Files.NotDatFile, IOException {
         if (Files.DJIAssistantFile.isDJIDat(new File(datFileName))) {
             if (Persist.autoTransDJIAFiles) {
                 int lastSlash = datFileName.lastIndexOf("\\");
@@ -198,15 +198,15 @@ public class DatFile {
                 datCon.goButton.setEnabled(false);
                 datCon.goButton.setText("Extracting .DAT");
                 try {
-                    Files.DatConLog.Log("DJIAssistantFile.extractFirst(" + datFileName
+                    org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst(" + datFileName
                             + ", " + tempDirName + ")");
-                    Files.DJIAssistantFile.ExtractResult result = DJIAssistantFile
+                    org.ngafid.flights.datcon.Files.DJIAssistantFile.ExtractResult result = DJIAssistantFile
                             .extractFirst(datFileName, tempDirName);
                     if (result.moreThanOne()) {
                         //                    if (true) {
-                        Files.DatConLog.Log(
+                        org.ngafid.flights.datcon.Files.DatConLog.Log(
                                 "DJIAssistantFile.extractFirst:moreThanOne");
-                        boolean moreThanOnePopup = Files.DatConPopups
+                        boolean moreThanOnePopup = org.ngafid.flights.datcon.Files.DatConPopups
                                 .moreThanOne(DatCon.frame);
                         if (moreThanOnePopup) {
                             return new DatFileV3(result.getFile());
@@ -214,11 +214,11 @@ public class DatFile {
                             return null;
                         }
                     } else if (result.none()) {
-                        Files.DatConLog.Log("DJIAssistantFile.extractFirst:none");
+                        org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst:none");
                         DatConPopups.none(DatCon.frame);
                         return null;
                     }
-                    Files.DatConLog.Log("DJIAssistantFile.extractFirst:one");
+                    org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst:one");
                     return new DatFileV3(result.getFile());
                 } finally {
                     datCon.goButton.setBackground(bgColor);
@@ -231,10 +231,10 @@ public class DatFile {
         return createDatFile(datFileName);
     }
 
-    public DatFile(File _file) throws Files.NotDatFile, FileNotFoundException {
+    public DatFile(File _file) throws org.ngafid.flights.datcon.Files.NotDatFile, FileNotFoundException {
         datHeader = new DatHeader(this);
         file = _file;
-        results = new Files.AnalyzeDatResults();
+        results = new org.ngafid.flights.datcon.Files.AnalyzeDatResults();
         fileLength = file.length();
         inputStream = new FileInputStream(file);
         _channel = inputStream.getChannel();
@@ -251,7 +251,7 @@ public class DatFile {
     public DatFile() {
     }
 
-    public Files.ConvertDat createConVertDat() {
+    public org.ngafid.flights.datcon.Files.ConvertDat createConVertDat() {
         return (new ConvertDat(this));
     }
 
@@ -277,7 +277,7 @@ public class DatFile {
         // tickGroups[1].reset();
         // tgIndex = 1;
         numCorrupted = 0;
-        results = new Files.AnalyzeDatResults();
+        results = new org.ngafid.flights.datcon.Files.AnalyzeDatResults();
         if (inputStream == null) {
             inputStream = new FileInputStream(file);
             _channel = inputStream.getChannel();
@@ -470,11 +470,11 @@ public class DatFile {
             break;
         case UNKNOWN:
             numBattCells = 4;
-            Files.DatConLog.Log("Assuming 4 cellls per battery");
+            org.ngafid.flights.datcon.Files.DatConLog.Log("Assuming 4 cellls per battery");
             break;
         default:
             numBattCells = 4;
-            Files.DatConLog.Log("Assuming 4 cellls per battery");
+            org.ngafid.flights.datcon.Files.DatConLog.Log("Assuming 4 cellls per battery");
             break;
         }
     }
@@ -494,11 +494,11 @@ public class DatFile {
         return acTypeName;
     }
 
-    public Files.RecSpec getRecId(int _type) {
-        Files.RecSpec retv = null;
+    public org.ngafid.flights.datcon.Files.RecSpec getRecId(int _type) {
+        org.ngafid.flights.datcon.Files.RecSpec retv = null;
         Iterator<Files.RecSpec> iter = recsInDat.values().iterator();
         while (iter.hasNext()) {
-            Files.RecSpec tst = iter.next();
+            org.ngafid.flights.datcon.Files.RecSpec tst = iter.next();
             if (tst.getId() == _type) {
                 if (retv != null) {
                     return null;
@@ -635,7 +635,7 @@ public class DatFile {
     }
 
     public double getCRCRatio() {
-        double ratio = (double) Files.Corrupted.getNum(Type.CRC)
+        double ratio = (double) org.ngafid.flights.datcon.Files.Corrupted.getNum(Type.CRC)
                 / (double) numRecs;
         return ratio;
     }
@@ -643,7 +643,7 @@ public class DatFile {
     public double getErrorRatio(Type _type) {
         switch (_type) {
         case CRC:
-            return (double) Files.Corrupted.getNum(Type.CRC)
+            return (double) org.ngafid.flights.datcon.Files.Corrupted.getNum(Type.CRC)
                     / (double) numRecs;
         case Other:
             return (double) Corrupted.getNum(Type.Other)

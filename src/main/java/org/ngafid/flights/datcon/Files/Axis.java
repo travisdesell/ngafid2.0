@@ -1,6 +1,6 @@
 package org.ngafid.flights.datcon.Files;
 
-import Files.Units;
+import org.ngafid.flights.datcon.Files.Units;
 
 import java.util.LinkedList;
 
@@ -9,7 +9,7 @@ public class Axis {
 
     String name = "";
 
-    Files.Units units = null;
+    org.ngafid.flights.datcon.Files.Units units = null;
 
     private static LinkedList<Axis> axes = new LinkedList<Axis>();
 
@@ -21,7 +21,7 @@ public class Axis {
         this(name, label, null);
     }
 
-    public Axis(String name, String label, Files.Units units) {
+    public Axis(String name, String label, org.ngafid.flights.datcon.Files.Units units) {
         this.label = label;
         this.name = name;
         this.units = units;

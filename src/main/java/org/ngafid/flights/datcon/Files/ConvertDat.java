@@ -19,11 +19,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Dictionary;
-import DatConRecs.GoTxt50_12;
-import DatConRecs.RecDef.RecordDef;
-import DatConRecs.Record;
-import Files.DatHeader.AcType;
+import org.ngafid.flights.datcon.DatConRecs.Dictionary;
+import org.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.DatHeader.AcType;
 import apps.DatCon;
 
 import java.io.File;

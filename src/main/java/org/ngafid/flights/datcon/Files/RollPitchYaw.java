@@ -19,7 +19,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.datcon.Files;
 
-import Files.Quaternion;
+import org.ngafid.flights.datcon.Files.Quaternion;
 
 import java.text.DecimalFormat;
 

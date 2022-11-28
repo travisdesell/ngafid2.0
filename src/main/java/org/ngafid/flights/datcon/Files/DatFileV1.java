@@ -1,14 +1,14 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Payload;
-import Files.AnalyzeDatResults;
-import Files.ConvertDat;
-import Files.Corrupted;
-import Files.DatFile;
-import Files.DatHeader;
-import Files.FileEnd;
-import Files.NotDatFile;
-import Files.Persist;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.AnalyzeDatResults;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.Corrupted;
+import org.ngafid.flights.datcon.Files.DatFile;
+import org.ngafid.flights.datcon.Files.DatHeader;
+import org.ngafid.flights.datcon.Files.FileEnd;
+import org.ngafid.flights.datcon.Files.NotDatFile;
+import org.ngafid.flights.datcon.Files.Persist;
 
 import java.io.File;
 import java.io.FileNotFoundException;

@@ -1,7 +1,7 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.RecIMU;
-import Files.Persist;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.Files.Persist;
 
 public class MagYaw {
 

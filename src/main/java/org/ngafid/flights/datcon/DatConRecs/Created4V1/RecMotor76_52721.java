@@ -1,8 +1,8 @@
 
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.Created4V3.Motor;
-importorg.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.Motor;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
 import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
 
 public class RecMotor76_52721 extends Motor {

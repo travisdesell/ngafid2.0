@@ -19,16 +19,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Dictionary;
-import DatConRecs.Payload;
-import DatConRecs.RecDef.RecordDef;
-import DatConRecs.Record;
-import Files.ConvertDat;
-import Files.Corrupted;
-import Files.Persist;
-import V3.Files.DatFileV3;
+import org.ngafid.flights.datcon.DatConRecs.Dictionary;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.Corrupted;
+import org.ngafid.flights.datcon.Files.Persist;
+import org.ngafid.flights.datcon.Files.DatFileV3;
 
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.Vector;
 
 public class ConvertDatV3 extends ConvertDat {
@@ -219,7 +220,7 @@ public class ConvertDatV3 extends ConvertDat {
             return retv;
         }
         retv = Dictionary.getRecordInst(
-                DatConRecs.Created4V3.Dictionary.entries, recInDat, this,
+                org.ngafid.flights.datcon.DatConRecs.Created4V3.Dictionary.entries, recInDat, this,
                 true);
         return retv;
     }
@@ -238,13 +239,13 @@ public class ConvertDatV3 extends ConvertDat {
         }
         Record retv = null;
         if (null != (retv = Dictionary.getRecordInst(
-                DatConRecs.FromOtherV3Dats.Dictionary.entries, recInDat,
+                org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.Dictionary.entries, recInDat,
                 this, false))) {
             return retv;
         }
 
         return Dictionary.getRecordInst(
-                DatConRecs.FromViewer.Dictionary.entries, recInDat, this,
+                org.ngafid.flights.datcon.DatConRecs.FromViewer.Dictionary.entries, recInDat, this,
                 false);
     }
 }

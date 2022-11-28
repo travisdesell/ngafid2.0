@@ -1,15 +1,15 @@
 package org.ngafid.flights.datcon.Files;
 
-import DatConRecs.Dictionary;
-import DatConRecs.Payload;
-import DatConRecs.Record;
-import Files.AnalyzeDatResults;
-import Files.ConvertDat;
-import Files.Corrupted;
-import Files.DatConLog;
-import Files.FileEnd;
-import Files.Persist;
-import Files.RecSpec;
+import org.ngafid.flights.datcon.DatConRecs.Dictionary;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.AnalyzeDatResults;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.Corrupted;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.FileEnd;
+import org.ngafid.flights.datcon.Files.Persist;
+import org.ngafid.flights.datcon.Files.RecSpec;
 
 import java.io.IOException;
 import java.util.Vector;
@@ -166,14 +166,14 @@ public class ConvertDatV1 extends ConvertDat {
             return retv;
         }
         retv = Dictionary.getRecordInst(
-                DatConRecs.Created4V1.Dictionary.entries, recInDat, this,
+                org.ngafid.flights.datcon.DatConRecs.Created4V1.Dictionary.entries, recInDat, this,
                 true);
         return retv;
     }
 
     private Record getRecordInstFromDat(RecSpec recInDat) {
         Record retv = Dictionary.getRecordInst(
-                DatConRecs.FromViewer.Dictionary.entries, recInDat, this,
+                org.ngafid.flights.datcon.DatConRecs.FromViewer.Dictionary.entries, recInDat, this,
                 false);
         return retv;
     }

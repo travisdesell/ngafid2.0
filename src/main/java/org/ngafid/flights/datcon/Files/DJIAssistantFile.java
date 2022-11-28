@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.Files;
 
-import Files.DatConLog;
-import Files.NotDatFile;
-import Files.Util;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.NotDatFile;
+import org.ngafid.flights.datcon.Files.Util;
 
 import java.io.*;
 import java.util.zip.Inflater;
@@ -84,9 +84,9 @@ public class DJIAssistantFile {
             bufferedIS = new BufferedInputStream(inflaterInStream);
             while (!gotDat
                     && bufferedIS.read(header, 0, hearerLen) == hearerLen) {
-                long uncompressedFileLength = Files.Util.getUnsignedInt(header, 1);
+                long uncompressedFileLength = org.ngafid.flights.datcon.Files.Util.getUnsignedInt(header, 1);
                 int len = 0;
-                String flyFileName = Files.Util.getString(header, 7);
+                String flyFileName = org.ngafid.flights.datcon.Files.Util.getString(header, 7);
                 if (flyFileName.indexOf("FLY") == 0) {
                     gotDat = true;
                     datFile = new File(
@@ -120,7 +120,7 @@ public class DJIAssistantFile {
                 return retv;
             }
             while (bufferedIS.read(header, 0, hearerLen) == hearerLen) {
-                long uncompressedFileLength = Files.Util.getUnsignedInt(header, 1);
+                long uncompressedFileLength = org.ngafid.flights.datcon.Files.Util.getUnsignedInt(header, 1);
                 String flyFileName = Util.getString(header, 7);
                 if (flyFileName.indexOf("FLY") == 0) {
                     retv.setMoreThanOne(true);
@@ -131,7 +131,7 @@ public class DJIAssistantFile {
                 }
             }
         } catch (IOException e) {
-            Files.DatConLog.Exception(e);
+            org.ngafid.flights.datcon.Files.DatConLog.Exception(e);
         } finally {
             try {
                 if (bufferedIS != null) {

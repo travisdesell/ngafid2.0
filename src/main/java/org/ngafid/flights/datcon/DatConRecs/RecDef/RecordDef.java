@@ -7,7 +7,7 @@ import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 import org.ngafid.flights.datcon.Files.DatConLog;
 import org.ngafid.flights.datcon.Files.Signal;
 import org.ngafid.flights.datcon.Files.Units;
-import V3.Files.ConvertDatV3;
+import org.ngafid.flights.datcon.Files.ConvertDatV3;
 
 import java.util.Vector;
 

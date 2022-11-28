@@ -1,6 +1,6 @@
 package org.ngafid.flights.datcon.Files;
 
-import Files.DatConLog;
+import org.ngafid.flights.datcon.Files.DatConLog;
 import GUI.KMLPanel;
 
 import javax.swing.*;
