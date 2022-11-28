@@ -6,52 +6,52 @@ import org.ngafid.flights.datcon.Files.Units;
 
 public class AxesAndSigs {
 
-    public static org.ngafid.flights.datcon.Files.Axis motorSpeedAxis = new Files.Axis("motorSpeed", "Motor Speed",
+    public static Axis motorSpeedAxis = new Axis("motorSpeed", "Motor Speed",
             org.ngafid.flights.datcon.Files.Units.rpm);
 
-    public static org.ngafid.flights.datcon.Files.Axis motorVoltsAxis = new Files.Axis("motorVolts", "Motor Volts",
+    public static Axis motorVoltsAxis = new Axis("motorVolts", "Motor Volts",
             org.ngafid.flights.datcon.Files.Units.volts);
 
-    public static org.ngafid.flights.datcon.Files.Axis motorEscTempAxis = new Files.Axis("motorESCTemp",
+    public static Axis motorEscTempAxis = new Axis("motorESCTemp",
             "Motor ESC Temp", org.ngafid.flights.datcon.Files.Units.degrees);
 
-    public static org.ngafid.flights.datcon.Files.Axis motorPWMAxis = new Files.Axis("motorCommanded",
+    public static Axis motorPWMAxis = new Axis("motorCommanded",
             "Motor Commanded", org.ngafid.flights.datcon.Files.Units.percentage);
 
-    public static org.ngafid.flights.datcon.Files.Axis motorVoutAxis = new Files.Axis("motorVout", "Motor Vout",
+    public static Axis motorVoutAxis = new Axis("motorVout", "Motor Vout",
             org.ngafid.flights.datcon.Files.Units.volts);
 
-    public static org.ngafid.flights.datcon.Files.Axis motorPPMrecvAxis = new Files.Axis("motorPPMrecv",
+    public static Axis motorPPMrecvAxis = new Axis("motorPPMrecv",
             "Motor PPM recv");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorPPMsendAxis = new Files.Axis("motorPPMsend",
+    public static Axis motorPPMsendAxis = new Axis("motorPPMsend",
             "Motor PPM send");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorCurrentAxis = new Files.Axis("motorCurrent",
+    public static Axis motorCurrentAxis = new Axis("motorCurrent",
             "Motor Current");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorWattsAxis = new Files.Axis("motorWatts", "Motor Watts");
+    public static Axis motorWattsAxis = new Axis("motorWatts", "Motor Watts");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorWattsSecsAxis = new Files.Axis("motorWattsSecs",
+    public static Axis motorWattsSecsAxis = new Axis("motorWattsSecs",
             "Motor Watts Secs");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorWattsSecsPerDistAxis = new Files.Axis(
+    public static Axis motorWattsSecsPerDistAxis = new Axis(
             "motorWattsSecs/Dist", "Motor Watts Secs / Dist");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorWattsPerVelAxis = new Files.Axis("motorWatts/Vel",
+    public static Axis motorWattsPerVelAxis = new Axis("motorWatts/Vel",
             "Motor Watts Per Vel");
 
-    public static org.ngafid.flights.datcon.Files.Axis motorStatusAxis = new Files.Axis("motorStatus",
+    public static Axis motorStatusAxis = new Axis("motorStatus",
             "Motor Status");
 
-    public static org.ngafid.flights.datcon.Files.Axis cellVoltsAxis = new Files.Axis("cellVolts", "Cell Volts",
+    public static Axis cellVoltsAxis = new Axis("cellVolts", "Cell Volts",
             org.ngafid.flights.datcon.Files.Units.volts);
 
-    public static org.ngafid.flights.datcon.Files.Axis gyroAxis = new Files.Axis("gyro", "Gyro", Files.Units.degreesPerSec);
+    public static Axis gyroAxis = new Axis("gyro", "Gyro", Files.Units.degreesPerSec);
 
-    public static org.ngafid.flights.datcon.Files.Axis accelAxis = new Files.Axis("accel", "Accelerometer", Files.Units.G);
+    public static Axis accelAxis = new Axis("accel", "Accelerometer", Files.Units.G);
 
-    public static org.ngafid.flights.datcon.Files.Axis controlAxis = new Axis("control", "Control",
+    public static Axis controlAxis = new Axis("control", "Control",
             org.ngafid.flights.datcon.Files.Units.controlStick);
 
     public static Signal motorSpeedSig = Signal.SeriesInt("Motor:Speed",

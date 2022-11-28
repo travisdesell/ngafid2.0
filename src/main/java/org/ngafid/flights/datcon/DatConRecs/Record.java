@@ -3,7 +3,7 @@ package org.ngafid.flights.datcon.DatConRecs;
 import org.ngafid.flights.datcon.DatConRecs.Payload;
 import org.ngafid.flights.datcon.Files.*;
 import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
-import V3.Files.DatFileV3;
+import org.ngafid.flights.datcon.Files.DatFileV3;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;

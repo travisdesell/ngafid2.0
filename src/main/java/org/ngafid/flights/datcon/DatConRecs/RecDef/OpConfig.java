@@ -21,7 +21,7 @@ public class OpConfig {
         normal, string, none;
     }
 
-    private Vector<DatConRecs.RecDef.RecordDef> records = new Vector<DatConRecs.RecDef.RecordDef>();
+    private Vector<RecordDef> records = new Vector<>();
 
     @SuppressWarnings("serial")
     public static class ParseError extends Exception {

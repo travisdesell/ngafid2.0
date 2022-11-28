@@ -39,7 +39,7 @@ public class AirCraftCondition39_70 extends AirCraftCondition {
     }
 
     @Override
-    public void process(org.ngafid.flights.datcon.org.ngafid.flights.datcon.DatConRecs.Payload _payload) {
+    public void process(Payload _payload) {
         super.process(_payload);
         try {
             valid = true;
