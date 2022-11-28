@@ -21,11 +21,11 @@ package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
 // 50 Hz
 
-import DatConRecs.Created4V3.RCStatus;
-import DatConRecs.Payload;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RCStatus;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
 
 public class RecRCStat48_1700 extends RCStatus {
 

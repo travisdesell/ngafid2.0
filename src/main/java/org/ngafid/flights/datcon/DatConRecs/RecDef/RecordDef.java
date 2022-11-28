@@ -1,12 +1,12 @@
 package org.ngafid.flights.datcon.DatConRecs.RecDef;
 
-import DatConRecs.Payload;
-import DatConRecs.RecDef.Field;
-import DatConRecs.Record;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
-import Files.Signal;
-import Files.Units;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.Field;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.Signal;
+import org.ngafid.flights.datcon.Files.Units;
 import V3.Files.ConvertDatV3;
 
 import java.util.Vector;

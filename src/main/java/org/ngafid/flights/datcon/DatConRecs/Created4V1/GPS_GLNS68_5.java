@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-import DatConRecs.GpsGroup;
-import DatConRecs.Payload;
-import Files.ConvertDat;
+importorg.ngafid.flights.datcon.DatConRecs.GpsGroup;
+importorg.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
 
 public class GPS_GLNS68_5 extends GpsGroup {
 

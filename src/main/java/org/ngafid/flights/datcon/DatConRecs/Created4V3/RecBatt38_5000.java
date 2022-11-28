@@ -18,8 +18,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.RecBatt38_500X;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecBatt38_500X;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 // 50 HZ
 //length 47

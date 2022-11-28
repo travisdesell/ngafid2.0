@@ -18,10 +18,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.RecAirComp;
-import DatConRecs.Payload;
-import Files.*;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecAirComp;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class RecAirComp29_10100 extends RecAirComp {
 

@@ -1,11 +1,11 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-import DatConRecs.Payload;
-import DatConRecs.Record;
-import Files.AxesAndSigs;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
+importorg.ngafid.flights.datcon.DatConRecs.Payload;
+importorg.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.Files.datcon.DatConRecs.AxesAndSigs;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat.lineType;
+import org.ngafid.Files.datcon.DatConRecs.DatConLog;
 
 public class HomePoint34_13 extends Record {
 

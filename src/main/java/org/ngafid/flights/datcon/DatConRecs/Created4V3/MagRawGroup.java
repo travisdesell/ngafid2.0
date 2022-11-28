@@ -1,9 +1,9 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Payload;
-import DatConRecs.Record;
-import Files.*;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class MagRawGroup extends Record {
 

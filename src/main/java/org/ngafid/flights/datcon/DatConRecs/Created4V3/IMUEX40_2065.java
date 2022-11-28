@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.IMUEX40;
-import DatConRecs.Payload;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX40;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class IMUEX40_2065 extends IMUEX40 {
 

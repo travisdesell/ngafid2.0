@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.MagGroup;
-import DatConRecs.Payload;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.MagGroup;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class RecMag6_2256 extends MagGroup {
 

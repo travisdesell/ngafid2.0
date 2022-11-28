@@ -1,9 +1,9 @@
 
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.GpsGroup;
-import DatConRecs.Payload;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.GpsGroup;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class GPS_2096 extends GpsGroup {
 

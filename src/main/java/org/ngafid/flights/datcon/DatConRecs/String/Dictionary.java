@@ -1,9 +1,9 @@
 package org.ngafid.flights.datcon.DatConRecs.String;
 
-import DatConRecs.String.RecDefs_65533;
-import DatConRecs.String.RecFlyLog_32768;
-import DatConRecs.String.Sys_cfg_65535;
-import Files.RecClassSpec;
+import org.ngafid.flights.datcon.DatConRecs.String.RecDefs_65533;
+import org.ngafid.flights.datcon.DatConRecs.String.RecFlyLog_32768;
+import org.ngafid.flights.datcon.DatConRecs.String.Sys_cfg_65535;
+import org.ngafid.flights.datcon.Files.RecClassSpec;
 
 import java.util.Vector;
 

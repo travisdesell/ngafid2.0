@@ -1,10 +1,10 @@
 package org.ngafid.flights.datcon.DatConRecs;
 
-import DatConRecs.GoTxt50_12;
-import DatConRecs.Payload;
-import DatConRecs.Record;
-import Files.*;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class RecIMU extends Record {
 

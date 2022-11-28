@@ -1,10 +1,11 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-import DatConRecs.AirCraftCondition;
-import DatConRecs.Payload;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
+import org.ngafid.flights.datcon.DatConRecs.AirCraftCondition;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.DatConRecs.AirCraftCondition;
 
 public class AirCraftCondition39_70 extends AirCraftCondition {
     //    protected boolean valid = false;
@@ -38,7 +39,7 @@ public class AirCraftCondition39_70 extends AirCraftCondition {
     }
 
     @Override
-    public void process(Payload _payload) {
+    public void process(org.ngafid.flights.datcon.org.ngafid.flights.datcon.DatConRecs.Payload _payload) {
         super.process(_payload);
         try {
             valid = true;

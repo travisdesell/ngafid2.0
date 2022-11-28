@@ -1,10 +1,10 @@
 package org.ngafid.flights.datcon.DatConRecs;
 
-import DatConRecs.Created4V1.RecBatt45_17;
-import DatConRecs.GoTxt50_12;
-import DatConRecs.Record;
-import DatConRecs.svn_info_65534;
-import Files.*;
+import org.ngafid.flights.datcon.DatConRecs.Created4V1.RecBatt45_17;
+import org.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.DatConRecs.svn_info_65534;
+import org.ngafid.flights.datcon.Files.*;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;

@@ -18,10 +18,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.RecIMU;
-import DatConRecs.Record;
-import Files.*;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class Motor extends Record {
 

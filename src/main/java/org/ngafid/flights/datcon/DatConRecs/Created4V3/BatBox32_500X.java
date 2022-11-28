@@ -1,12 +1,12 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.RecBatt;
-import DatConRecs.Payload;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
-import Files.Signal;
-import Files.Units;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecBatt;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.Signal;
+import org.ngafid.flights.datcon.Files.Units;
 
 public class BatBox32_500X extends RecBatt {
     protected boolean valid = false;

@@ -1,22 +1,22 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.Controller_36_1000;
-import DatConRecs.Created4V3.IMUEX40_2064;
-import DatConRecs.Created4V3.IMUEX40_2065;
-import DatConRecs.Created4V3.IMUEX40_2066;
-import DatConRecs.Created4V3.IMUEX40_3;
-import DatConRecs.Created4V3.IMUEX60_2064;
-import DatConRecs.Created4V3.RecAirComp21_10100;
-import DatConRecs.Created4V3.RecAirComp29_10100;
-import DatConRecs.Created4V3.RecAirComp32_10099;
-import DatConRecs.Created4V3.RecMag6_2256;
-import DatConRecs.Created4V3.RecMagRaw6_20352;
-import DatConRecs.Created4V3.RecSVOAVOID15_1121;
-import Files.RecClassSpec;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.Controller_36_1000;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX40_2064;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX40_2065;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX40_2066;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX40_3;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.IMUEX60_2064;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecAirComp21_10100;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecAirComp29_10100;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecAirComp32_10099;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecMag6_2256;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecMagRaw6_20352;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RecSVOAVOID15_1121;
+import org.ngafid.flights.datcon.Files.RecClassSpec;
 
 import java.util.Vector;
 
-public class Dictionary extends DatConRecs.Dictionary {
+public class Dictionary extends org.ngafid.flights.datcon.DatConRecs.Dictionary {
 
     public static Vector<RecClassSpec> entries = new Vector<RecClassSpec>();
     static {

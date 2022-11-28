@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.MagRawGroup;
-import DatConRecs.Payload;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.MagRawGroup;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class RecMagRaw6_20351 extends MagRawGroup {
     public RecMagRaw6_20351(ConvertDat convertDat) {

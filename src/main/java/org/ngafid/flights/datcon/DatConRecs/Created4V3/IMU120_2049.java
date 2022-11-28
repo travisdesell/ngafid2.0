@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Payload;
-import DatConRecs.RecIMU;
-import Files.ConvertDat;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class IMU120_2049 extends RecIMU {
     public IMU120_2049(ConvertDat convertDat) {

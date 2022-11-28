@@ -1,10 +1,10 @@
 
 package org.ngafid.flights.datcon.DatConRecs;
 
-import Files.DatFile;
-import Files.FileEnd;
-import Files.Quaternion;
-import Files.RollPitchYaw;
+import org.ngafid.flights.datcon.Files.DatFile;
+import org.ngafid.flights.datcon.Files.FileEnd;
+import org.ngafid.flights.datcon.Files.Quaternion;
+import org.ngafid.flights.datcon.Files.RollPitchYaw;
 
 import java.io.IOException;
 import java.io.PrintStream;

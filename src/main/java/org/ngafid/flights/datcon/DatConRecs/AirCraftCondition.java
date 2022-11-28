@@ -1,11 +1,11 @@
 package org.ngafid.flights.datcon.DatConRecs;
 
-import DatConRecs.Record;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
-import Files.Signal;
-import Files.Units;
+import org.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.Signal;
+import org.ngafid.flights.datcon.Files.Units;
 
 public class AirCraftCondition extends Record {
     protected boolean valid = false;

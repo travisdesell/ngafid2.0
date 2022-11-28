@@ -1,12 +1,12 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-import DatConRecs.Payload;
-import DatConRecs.Record;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
-import Files.DatConLog;
-import Files.Signal;
-import Files.Units;
+importorg.ngafid.flights.datcon.DatConRecs.Payload;
+importorg.ngafid.flights.datcon.DatConRecs.Record;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat.lineType;
+import org.ngafid.Files.datcon.DatConRecs.DatConLog;
+import org.ngafid.Files.datcon.DatConRecs.Signal;
+import org.ngafid.Files.datcon.DatConRecs.Units;
 
 // 15 HZ
 public class RecTabletLoc179_43 extends Record {

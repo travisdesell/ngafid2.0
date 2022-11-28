@@ -1,11 +1,11 @@
 package org.ngafid.flights.datcon.DatConRecs.RecDef;
 
-import DatConRecs.RecDef.Field;
-import DatConRecs.RecDef.Field.FieldType;
-import DatConRecs.RecDef.RecordDef;
-import Files.DatConLog;
-import Files.Persist;
-import Files.RecSpec;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.Field;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.Field.FieldType;
+import org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.Persist;
+import org.ngafid.flights.datcon.Files.RecSpec;
 
 import java.io.*;
 import java.util.HashSet;
@@ -83,7 +83,7 @@ public class OpConfig {
         String recName = "";
         FieldType fieldType = null;
         String varName = "";
-        DatConRecs.RecDef.RecordDef record = null;
+        org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record = null;
         Field field = null;
         Line line = null;
         Vector<String> tokens = null;
@@ -146,7 +146,7 @@ public class OpConfig {
                     if (firstToken.equalsIgnoreCase("type")) {
                         if (isNumber(tokens.get(1))) {
                             recId = Integer.parseInt(tokens.get(1));
-                            record = new DatConRecs.RecDef.RecordDef(recName, recId,
+                            record = new org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef(recName, recId,
                                     RecSpec.RecType.BINARY);
                             varNames.clear();
                             varNameExtension = 0;
@@ -217,7 +217,7 @@ public class OpConfig {
                     if (firstToken.equalsIgnoreCase("type")) {
                         if (isNumber(tokens.get(1))) {
                             recId = Integer.parseInt(tokens.get(1));
-                            record = new DatConRecs.RecDef.RecordDef(recName, recId,
+                            record = new org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef(recName, recId,
                                     RecSpec.RecType.STRING);
                             state = State.StringTypeSeen;
                             break;
@@ -313,9 +313,9 @@ public class OpConfig {
             File dictFile = new File(System.getProperty("user.dir")
                     + "/DatConRecs/" + dirName + "/" + "Dictionary.java");
             PrintStream dictPrintStream = new PrintStream(dictFile);
-            dictPrintStream.println("package DatConRecs." + dirName + ";");
+            dictPrintStream.println("package org.ngafid.flights.datcon.DatConRecs." + dirName + ";");
             dictPrintStream.println("import java.util.Vector;");
-            dictPrintStream.println("import Files.RecClassSpec;");
+            dictPrintStream.println("import org.ngafid.flights.datcon.Files.RecClassSpec;");
             dictPrintStream.println("public class Dictionary {");
             dictPrintStream.println(
                     " public static Vector<RecClassSpec> entries = new Vector<RecClassSpec>();");
@@ -325,7 +325,7 @@ public class OpConfig {
             Vector<DatConRecs.RecDef.RecordDef> records = opConfig.getRecords();
             //opConfig.printRecords();
             for (int i = 0; i < records.size(); i++) {
-                DatConRecs.RecDef.RecordDef record = records.get(i);
+                org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record = records.get(i);
                 createJavaFile(dirName, record);
                 dictPrintStream.println("entries.add(new RecClassSpec("
                         + record.getNameWithLengthAndId() + ".class,"
@@ -343,7 +343,7 @@ public class OpConfig {
         }
     }
 
-    private static void createJavaFile(String dirName, DatConRecs.RecDef.RecordDef record)
+    private static void createJavaFile(String dirName, org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record)
             throws FileNotFoundException {
         File file = new File(System.getProperty("user.dir") + "/DatConRecs/"
                 + dirName + "/" + record.getNameWithLengthAndId() + ".java");
@@ -360,7 +360,7 @@ public class OpConfig {
     }
 
     private static void createJavaFileString(PrintStream printStream,
-            String dirName, DatConRecs.RecDef.RecordDef record) {
+            String dirName, org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record) {
         printStream.println("package src.DatConRecs." + dirName + ";");
         printStream.println("import src.DatConRecs.*;");
         printStream.println("import src.Files.ConvertDat;");
@@ -393,7 +393,7 @@ public class OpConfig {
     }
 
     private static void createJavaFileBinary(PrintStream printStream,
-            String dirName, DatConRecs.RecDef.RecordDef record) {
+            String dirName, org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef record) {
         printStream.println("package src.DatConRecs." + dirName + ";");
         printStream.println("import src.DatConRecs.*;");
         printStream.println("import src.Files.ConvertDat;");

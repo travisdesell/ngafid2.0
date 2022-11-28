@@ -18,10 +18,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.RCStatus;
-import DatConRecs.Payload;
-import Files.ConvertDat;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.RCStatus;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class RecRCStat78_1700 extends RCStatus {
 

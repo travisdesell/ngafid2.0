@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-import DatConRecs.Payload;
-import DatConRecs.RecBatt;
-import Files.ConvertDat;
+importorg.ngafid.flights.datcon.DatConRecs.Payload;
+importorg.ngafid.flights.datcon.DatConRecs.RecBatt;
+import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
 
 public class RecBatt45_17 extends RecBatt {
 

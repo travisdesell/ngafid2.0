@@ -19,10 +19,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package org.ngafid.flights.datcon.DatConRecs.Created4V3;
 
-import DatConRecs.Created4V3.Motor;
-import DatConRecs.Payload;
-import Files.ConvertDat;
-import Files.DatConLog;
+import org.ngafid.flights.datcon.DatConRecs.Created4V3.Motor;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.DatConLog;
 
 public class RecMotor185_10090 extends Motor {
 

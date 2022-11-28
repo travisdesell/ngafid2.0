@@ -1,8 +1,8 @@
 package org.ngafid.flights.datcon.DatConRecs;
 
-import DatConRecs.Payload;
-import Files.*;
-import Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 import V3.Files.DatFileV3;
 
 import java.io.IOException;

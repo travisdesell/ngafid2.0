@@ -1,12 +1,12 @@
 package org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats;
 
-import DatConRecs.FromOtherV3Dats.ATTI_MINI0_2208;
-import DatConRecs.FromOtherV3Dats.ATTI_MINI1_2209;
-import DatConRecs.FromOtherV3Dats.Controller_39_1000;
-import DatConRecs.FromOtherV3Dats.err_code_112;
-import DatConRecs.FromOtherV3Dats.serial_api_inputs_1002;
-import DatConRecs.FromOtherV3Dats.usonic4_16;
-import Files.RecClassSpec;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.ATTI_MINI0_2208;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.ATTI_MINI1_2209;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.Controller_39_1000;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.err_code_112;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.serial_api_inputs_1002;
+import org.ngafid.flights.datcon.DatConRecs.FromOtherV3Dats.usonic4_16;
+import org.ngafid.flights.datcon.Files.RecClassSpec;
 
 import java.util.Vector;
 
