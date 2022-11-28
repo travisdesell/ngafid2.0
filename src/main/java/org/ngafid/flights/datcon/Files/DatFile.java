@@ -31,9 +31,8 @@ import org.ngafid.flights.datcon.Files.DatHeader.AcType;
 import org.ngafid.flights.datcon.Files.NotDatFile;
 import org.ngafid.flights.datcon.Files.Persist;
 import org.ngafid.flights.datcon.Files.RecSpec;
-import V1.Files.DatFileV1;
-import V3.Files.DatFileV3;
-import apps.DatCon;
+import org.ngafid.flights.datcon.Files.DatFileV1;
+import org.ngafid.flights.datcon.Files.DatFileV3;
 
 import java.awt.*;
 import java.io.File;
@@ -43,6 +42,7 @@ import java.io.IOException;
 import java.nio.ByteOrder;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.HashMap;
@@ -112,7 +112,7 @@ public class DatFile {
 
     private org.ngafid.flights.datcon.Files.DatHeader datHeader;
 
-    private HashMap<Integer, org.ngafid.flights.datcon.Files.RecSpec> recsInDat = new HashMap<Integer, Files.RecSpec>();
+    private HashMap<Integer, org.ngafid.flights.datcon.Files.RecSpec> recsInDat = new HashMap<Integer, RecSpec>();
 
     public long _tickNo = 0;
 
@@ -183,54 +183,6 @@ public class DatFile {
         return false;
     }
 
-    public static DatFile createDatFile(String datFileName, final DatCon datCon)
-            throws org.ngafid.flights.datcon.Files.NotDatFile, IOException {
-        if (Files.DJIAssistantFile.isDJIDat(new File(datFileName))) {
-            if (Persist.autoTransDJIAFiles) {
-                int lastSlash = datFileName.lastIndexOf("\\");
-                String tempDirName = datFileName.substring(0, lastSlash + 1);
-                Color bgColor = datCon.goButton.getBackground();
-                Color fgColor = datCon.goButton.getForeground();
-                boolean enabled = datCon.goButton.isEnabled();
-                String text = datCon.goButton.getText();
-                datCon.goButton.setBackground(Color.BLUE);
-                datCon.goButton.setForeground(Color.WHITE);
-                datCon.goButton.setEnabled(false);
-                datCon.goButton.setText("Extracting .DAT");
-                try {
-                    org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst(" + datFileName
-                            + ", " + tempDirName + ")");
-                    org.ngafid.flights.datcon.Files.DJIAssistantFile.ExtractResult result = DJIAssistantFile
-                            .extractFirst(datFileName, tempDirName);
-                    if (result.moreThanOne()) {
-                        //                    if (true) {
-                        org.ngafid.flights.datcon.Files.DatConLog.Log(
-                                "DJIAssistantFile.extractFirst:moreThanOne");
-                        boolean moreThanOnePopup = org.ngafid.flights.datcon.Files.DatConPopups
-                                .moreThanOne(DatCon.frame);
-                        if (moreThanOnePopup) {
-                            return new DatFileV3(result.getFile());
-                        } else {
-                            return null;
-                        }
-                    } else if (result.none()) {
-                        org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst:none");
-                        DatConPopups.none(DatCon.frame);
-                        return null;
-                    }
-                    org.ngafid.flights.datcon.Files.DatConLog.Log("DJIAssistantFile.extractFirst:one");
-                    return new DatFileV3(result.getFile());
-                } finally {
-                    datCon.goButton.setBackground(bgColor);
-                    datCon.goButton.setForeground(fgColor);
-                    datCon.goButton.setEnabled(enabled);
-                    datCon.goButton.setText(text);
-                }
-            }
-        }
-        return createDatFile(datFileName);
-    }
-
     public DatFile(File _file) throws org.ngafid.flights.datcon.Files.NotDatFile, FileNotFoundException {
         datHeader = new DatHeader(this);
         file = _file;
@@ -268,8 +220,6 @@ public class DatFile {
             }
         }
         memory = null;
-        System.gc();
-        System.runFinalization();
     }
 
     public void reset() throws IOException, FileEnd {
@@ -496,7 +446,7 @@ public class DatFile {
 
     public org.ngafid.flights.datcon.Files.RecSpec getRecId(int _type) {
         org.ngafid.flights.datcon.Files.RecSpec retv = null;
-        Iterator<Files.RecSpec> iter = recsInDat.values().iterator();
+        Iterator<RecSpec> iter = recsInDat.values().iterator();
         while (iter.hasNext()) {
             org.ngafid.flights.datcon.Files.RecSpec tst = iter.next();
             if (tst.getId() == _type) {
@@ -510,7 +460,7 @@ public class DatFile {
     }
 
     public void printTypes() {
-        Iterator<Files.RecSpec> iter = recsInDat.values().iterator();
+        Iterator<RecSpec> iter = recsInDat.values().iterator();
         while (iter.hasNext()) {
             RecSpec tst = iter.next();
             DatConLog.Log(tst.getDescription() + " Type " + tst.getId());

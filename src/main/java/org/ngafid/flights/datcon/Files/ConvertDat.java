@@ -24,7 +24,6 @@ import org.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
 import org.ngafid.flights.datcon.DatConRecs.RecDef.RecordDef;
 import org.ngafid.flights.datcon.DatConRecs.Record;
 import org.ngafid.flights.datcon.Files.DatHeader.AcType;
-import apps.DatCon;
 
 import java.io.File;
 import java.io.IOException;
@@ -289,10 +288,10 @@ public class ConvertDat {
                     printCsvValue(this.getClass().getSimpleName(), "", lineT,
                             false);
                     if (_datFile.isTablet()) {
-                        printCsvValue(DatCon.version + "-Tablet", "", lineT,
+                        printCsvValue("1.0-Tablet", "", lineT,
                                 false);
                     } else {
-                        printCsvValue(DatCon.version, "", lineT, false);
+                        printCsvValue("1.0", "", lineT, false);
                     }
                 }
             } else {

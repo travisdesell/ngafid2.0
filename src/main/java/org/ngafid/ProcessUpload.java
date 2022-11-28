@@ -12,13 +12,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import Files.*;
-import Files.AnalyzeDatResults;
-import Files.ConvertDat;
-import Files.CsvWriter;
-import Files.DatFile;
-import Files.FileEnd;
-import Files.NotDatFile;
+import org.ngafid.flights.datcon.Files.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;

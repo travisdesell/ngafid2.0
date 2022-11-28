@@ -16,10 +16,10 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+// TODO: Needs to be removed and all dependencies as well
 
 package org.ngafid.flights.datcon.Files;
 
-import apps.DatCon;
 
 import java.io.*;
 
@@ -27,60 +27,26 @@ public class DatConLog {
     private static PrintWriter dotdatPW = null;
 
     public DatConLog() {
-        String userHome = System.getProperty("user.home");
-        if (userHome != null && userHome.length() > 0) {
-            try {
-                dotdatPW = new PrintWriter(new BufferedWriter(
-                        new FileWriter(userHome + "/.dotdat", false)));
-            } catch (FileNotFoundException e) {
-            } catch (IOException e) {
-            }
-        }
-        dotdatPW.println("Version " + DatCon.version);
-        dotdatPW.flush();
     }
 
     public static void Log(String msg) {
-        if (msg.length() > 0) {
-            if (dotdatPW != null) {
-                dotdatPW.println("MSG: " + msg);
-                dotdatPW.flush();
-            }
-        }
     }
 
     public static void Error(String error) {
-        if (dotdatPW != null) {
-            dotdatPW.println("ERROR: " + error);
-            dotdatPW.flush();
-        }
     }
 
     public static void Exception(Exception e) {
-        if (dotdatPW != null) {
-            e.printStackTrace(dotdatPW);
-            dotdatPW.flush();
-        }
     }
 
     public static void Exception(Exception e, String msg) {
-        Error(msg);
-        if (dotdatPW != null) {
-            e.printStackTrace(dotdatPW);
-            dotdatPW.flush();
-        }
     }
 
     public static void separator() {
-        if (dotdatPW != null) {
-            dotdatPW.println(
-                    "########################################################\n");
-            dotdatPW.flush();
-        }
+
     }
 
     public boolean ok() {
-        return (dotdatPW != null);
+        return true;
     }
 
 }

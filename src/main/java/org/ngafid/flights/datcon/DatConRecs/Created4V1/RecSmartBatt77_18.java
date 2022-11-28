@@ -2,8 +2,8 @@ package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
 import org.ngafid.flights.datcon.DatConRecs.Payload;
 import org.ngafid.flights.datcon.DatConRecs.Record;
-import org.ngafid.Files.datcon.DatConRecs.*;
-import org.ngafid.Files.datcon.DatConRecs.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.*;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
 
 public class RecSmartBatt77_18 extends Record {
 
