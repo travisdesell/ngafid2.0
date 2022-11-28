@@ -1,13 +1,16 @@
 package org.ngafid.flights.datcon.DatConRecs.Created4V1;
 
-importorg.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
-importorg.ngafid.flights.datcon.DatConRecs.Payload;
-importorg.ngafid.flights.datcon.DatConRecs.RecIMU;
-import org.ngafid.Files.datcon.DatConRecs.ConvertDat;
-import org.ngafid.Files.datcon.DatConRecs.ConvertDat.lineType;
-import org.ngafid.Files.datcon.DatConRecs.DatConLog;
-import org.ngafid.Files.datcon.DatConRecs.Signal;
-import org.ngafid.Files.datcon.DatConRecs.Units;
+import org.ngafid.flights.datcon.DatConRecs.GoTxt50_12;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.Files.ConvertDat;
+import org.ngafid.flights.datcon.Files.ConvertDat.lineType;
+import org.ngafid.flights.datcon.Files.DatConLog;
+import org.ngafid.flights.datcon.Files.Signal;
+import org.ngafid.flights.datcon.Files.Units;
+import org.ngafid.flights.datcon.DatConRecs.Payload;
+import org.ngafid.flights.datcon.DatConRecs.RecIMU;
+import org.ngafid.flights.datcon.Files.ConvertDat;
 
 public class Record_1 extends RecIMU {
     public Record_1(ConvertDat convertDat) {

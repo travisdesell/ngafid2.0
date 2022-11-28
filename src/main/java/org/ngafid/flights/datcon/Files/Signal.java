@@ -1,8 +1,9 @@
 package org.ngafid.flights.datcon.Files;
 
-import Files.Axis;
-import Files.Units;
+import org.ngafid.flights.datcon.Files.Axis;
+import org.ngafid.flights.datcon.Files.Units;
 
+import java.nio.file.Files;
 import java.util.LinkedList;
 
 public class Signal {
@@ -20,7 +21,7 @@ public class Signal {
 
     SigType sigType = SigType.UNDEFINED;
 
-    private Files.Axis axis = null;
+    private Axis axis = null;
 
     private NumType numType = NumType.UNDEFINED;
 
@@ -28,7 +29,7 @@ public class Signal {
 
     private boolean experimental;
 
-    private Files.Units units = Files.Units.noUnits;
+    private Units units = Units.noUnits;
 
     private static LinkedList<Signal> signals = new LinkedList<Signal>();
 
@@ -58,7 +59,7 @@ public class Signal {
         retv.numType = NumType.INT;
         retv.defaultState = defaultState;
         retv.experimental = false;
-        retv.units = Files.Units.noUnits;
+        retv.units = Units.noUnits;
         return retv;
     }
 
@@ -69,8 +70,8 @@ public class Signal {
         return retv;
     }
 
-    private Signal(String name, String description, Files.Axis axis, SigType sigType,
-                   NumType numType, Files.Units units) {
+    private Signal(String name, String description, Axis axis, SigType sigType,
+                   NumType numType, Units units) {
         this.name = name;
         this.description = description;
         this.axis = axis;
@@ -91,21 +92,21 @@ public class Signal {
     }
 
     public static Signal SeriesDouble(String name, String description,
-                                      Files.Axis axis, Files.Units units) {
+                                      Axis axis, Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.DOUBLE, units);
         return retv;
     }
 
     public static Signal SeriesDouble(String name, int index,
-                                      String description, Files.Axis axis, Files.Units units) {
+                                      String description, Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.DOUBLE, units);
         return retv;
     }
 
     public static Signal SeriesDoubleExperimental(String name,
-                                                  String description, Files.Axis axis, Files.Units units) {
+                                                  String description, Axis axis, Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.DOUBLE, units);
         retv.experimental = true;
@@ -113,29 +114,29 @@ public class Signal {
     }
 
     public static Signal SeriesDoubleExperimental(String name, int index,
-                                                  String description, Files.Axis axis, Files.Units units) {
+                                                  String description, Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.DOUBLE, units);
         retv.experimental = true;
         return retv;
     }
 
-    public static Signal SeriesFloat(String name, String description, Files.Axis axis,
-            Files.Units units) {
+    public static Signal SeriesFloat(String name, String description, Axis axis,
+            Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.FLOAT4, units);
         return retv;
     }
 
     public static Signal SeriesFloat(String name, int index, String description,
-                                     Files.Axis axis, Files.Units units) {
+                                     Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.FLOAT4, units);
         return retv;
     }
 
     public static Signal SeriesFloatExperimental(String name,
-                                                 String description, Files.Axis axis, Files.Units units) {
+                                                 String description, Axis axis, Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.FLOAT4, units);
         retv.experimental = true;
@@ -143,29 +144,29 @@ public class Signal {
     }
 
     public static Signal SeriesFloatExperimental(String name, int index,
-                                                 String description, Files.Axis axis, Files.Units units) {
+                                                 String description, Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.FLOAT4, units);
         retv.experimental = true;
         return retv;
     }
 
-    public static Signal SeriesInt(String name, String description, Files.Axis axis,
-            Files.Units units) {
+    public static Signal SeriesInt(String name, String description, Axis axis,
+            Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.INT, units);
         return retv;
     }
 
     public static Signal SeriesInt(String name, int index, String description,
-                                   Files.Axis axis, Files.Units units) {
+                                   Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.INT, units);
         return retv;
     }
 
     public static Signal SeriesIntExperimental(String name, String description,
-                                               Files.Axis axis, Files.Units units) {
+                                               Axis axis, Units units) {
         Signal retv = new Signal(name, description, axis, SigType.SERIES,
                 NumType.INT, units);
         retv.experimental = true;
@@ -173,7 +174,7 @@ public class Signal {
     }
 
     public static Signal SeriesIntExperimental(String name, int index,
-                                               String description, Files.Axis axis, Files.Units units) {
+                                               String description, Axis axis, Units units) {
         Signal retv = new Signal(name + "(" + index + ")", description, axis,
                 SigType.SERIES, NumType.INT, units);
         retv.experimental = true;
@@ -208,7 +209,7 @@ public class Signal {
         return experimental;
     }
 
-    public Files.Units getUnits() {
+    public Units getUnits() {
         return units;
     }
 
