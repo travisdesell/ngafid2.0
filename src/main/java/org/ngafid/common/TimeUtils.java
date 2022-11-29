@@ -32,6 +32,12 @@ public class TimeUtils {
         } else if (offset.equals("+21:00")) {
             ldt = ldt.plusHours(3);
             offset = "+18:00";
+        } else if (offset.equals("+22:00")) {
+            ldt = ldt.plusHours(4);
+            offset = "+18:00";
+        } else if (offset.equals("+23:00")) {
+            ldt = ldt.plusHours(5);
+            offset = "+18:00";
         } else if (offset.equals("-19:00")) {
             ldt = ldt.minusHours(1);
             offset = "-18:00";
@@ -44,7 +50,11 @@ public class TimeUtils {
         } else if (offset.equals("-22:00")) {
             ldt = ldt.minusHours(4);
             offset = "-18:00";
+        } else if (offset.equals("-23:00")) {
+            ldt = ldt.minusHours(5);
+            offset = "-18:00";
         }
+
 
         return offset;
     }
