@@ -107,27 +107,25 @@
             <version>0.9.6</version>
         </dependency>
 
-        <!--        TODO: Needs authentication with GitHub-->
-        <!--        <dependency>-->
-        <!--            <groupId>org.ngafid</groupId>-->
-        <!--            <artifactId>dat2csv</artifactId>-->
-        <!--            <version>1.0</version>-->
-        <!--        </dependency>-->
-
-<!--                <dependency>-->
-<!--                    <groupId>org.ngafid</groupId>-->
-<!--                    <artifactId>DAT2CSV</artifactId>-->
-<!--                    <version>1.0</version>-->
-<!--                </dependency>-->
+        <dependency>
+            <groupId>org.ngafid</groupId>
+            <artifactId>dat2csv</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>
+                ${project.basedir}/src/main/resources/DAT2CSV-1.0-sources.jar
+            </systemPath>
+        </dependency>
+        <dependency>
+            <groupId>org.ngafid</groupId>
+            <artifactId>dat2csv</artifactId>
+            <version>1.0</version>
+            <scope>system</scope>
+            <systemPath>
+                ${project.basedir}/src/main/resources/DAT2CSV-1.0-sources.jar
+            </systemPath>
+        </dependency>
     </dependencies>
-
-
-    <repositories>
-        <repository>
-            <id>local-maven-repo</id>
-            <url>~/.m2/repository/org/example/DAT2CSV/17/DAT2CSV-17.jar</url>
-        </repository>
-    </repositories>
 
     <build>
         <pluginManagement>
