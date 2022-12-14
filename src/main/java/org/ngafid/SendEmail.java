@@ -1,11 +1,15 @@
 package org.ngafid;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.io.IOException;
 
 import java.util.*;
+import java.util.logging.Logger;
+
 import javax.mail.*;
 import javax.mail.internet.*;
 import javax.activation.*;
@@ -15,6 +19,8 @@ public class SendEmail {
     private static String password;
     private static String username;
     private static ArrayList<String> adminEmails;
+
+    private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
     static {
         if (System.getenv("NGAFID_EMAIL_INFO") == null) {
@@ -39,15 +45,41 @@ public class SendEmail {
         }
 
         try {
-            BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
-            username = bufferedReader.readLine();
-            password = bufferedReader.readLine();
+            File file = new File(NGAFID_EMAIL_INFO);
+            BufferedReader bufferedReader = null;
+            
+            if (!file.exists()) {
+                // Create a new file and will populate it 
+                file.createNewFile();
 
-            System.out.println("email username: '" + username + "'");
-            System.out.println("email password: '" + password + "'");
+                try {
+                    PrintWriter pw = new PrintWriter(file);
 
-            //Don't remove this!
-            bufferedReader.close();
+                    pw.write("# E-mail not configured for the NGAFID\n");
+                    pw.write("# To change this, replace these lines with the email login info\n");
+
+                    pw.close();
+                } catch (IOException ie) {
+                    LOG.severe("ERROR: Could not write default information to email file: " + NGAFID_EMAIL_INFO);
+                }
+                
+                LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + NGAFID_EMAIL_INFO + ".");
+            } else {
+                bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
+
+                username = bufferedReader.readLine();
+
+                if (username.startsWith("#")) {
+                    LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
+                } else {
+                    password = bufferedReader.readLine();
+                    LOG.info("Using email address to send emails: " + username);
+                }
+
+                //Don't remove this!
+                bufferedReader.close();
+            }
+
         } catch (IOException e) {
             System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + NGAFID_EMAIL_INFO + "'");
             e.printStackTrace();
