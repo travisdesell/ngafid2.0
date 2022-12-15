@@ -349,14 +349,7 @@ public class ProcessUpload {
 
                         convertDATFile(tempExtractedFile);
                         File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
-                        Thread thread = new Thread(() -> {
-                            try {
-                                placeInZip(processedCSVFile.getAbsolutePath(),  zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
-                            } catch (IOException e) {
-                                System.err.println("Error placing converted DAT back into zip file: " + e.getMessage());
-                            }
-                        });
-                        thread.start();
+                        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
 
                         try (InputStream stream = new FileInputStream(processedCSVFile)) {
                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
@@ -370,14 +363,15 @@ public class ProcessUpload {
                             flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
                             validFlights++;
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | SQLException e) {
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
+                                 SQLException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
+                        } finally {
+                            Files.delete(Paths.get(processedCSVFile.getAbsolutePath()));
+                            Files.delete(Paths.get(tempExtractedFile.getAbsolutePath()));
                         }
-
-                        processedCSVFile.delete();
-                        tempExtractedFile.delete();
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
@@ -498,16 +492,16 @@ public class ProcessUpload {
     private static void placeInZip(String file, String zipFileName) throws IOException {
         System.out.println("Placing " + file + " in zip");
 
-        Map<String, String> env = new HashMap<>();
-        env.put("create", "true");
+        Map<String, String> zipENV = new HashMap<>();
+        zipENV.put("create", "true");
 
-        Path filePath = Paths.get(file);
-        Path path = Paths.get(filePath.getParent() + "/" + zipFileName);
+        Path csvFilePath = Paths.get(file);
+        Path zipFilePath = Paths.get(csvFilePath.getParent() + "/" + zipFileName);
 
-        URI uri = URI.create("jar:" + path.toUri());
-        try (FileSystem fileSystem = FileSystems.newFileSystem(uri, env)) {
-            Path fileSystemPath = fileSystem.getPath(file.substring(file.lastIndexOf("/") + 1));
-            Files.write(fileSystemPath, Files.readAllBytes(filePath), StandardOpenOption.CREATE);
+        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
+        try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
+            Path zipFileSystemPath = fileSystem.getPath(file.substring(file.lastIndexOf("/") + 1));
+            Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
         }
     }
 
