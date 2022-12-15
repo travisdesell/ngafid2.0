@@ -349,7 +349,32 @@ public class ProcessUpload {
 
                         convertDATFile(tempExtractedFile);
                         File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
-                        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+                        Thread thread = new Thread(() -> {
+                            try {
+                                placeInZip(processedCSVFile.getAbsolutePath(),  zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+                            } catch (IOException e) {
+                                System.err.println("Error placing converted DAT back into zip file: " + e.getMessage());
+                            }
+                        });
+                        thread.start();
+
+                        try (InputStream stream = new FileInputStream(processedCSVFile)) {
+                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+
+                            if (connection != null) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                            }
+
+                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+
+                            validFlights++;
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | SQLException e) {
+                            System.err.println(e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        }
 
                         processedCSVFile.delete();
                         tempExtractedFile.delete();
