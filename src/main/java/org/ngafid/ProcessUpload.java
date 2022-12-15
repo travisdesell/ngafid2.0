@@ -337,6 +337,7 @@ public class ProcessUpload {
                         String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
                         File tempExtractedFile = new File(parentFolder, zipName);
 
+                        System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
                         try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
                             int len;
                             byte[] buffer = new byte[1024];
@@ -346,7 +347,7 @@ public class ProcessUpload {
                             }
                         }
 
-                        processDATFile(tempExtractedFile);
+                        convertDATFile(tempExtractedFile);
                         File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
                         placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
 
@@ -485,8 +486,8 @@ public class ProcessUpload {
         }
     }
 
-    private static File processDATFile(File file) throws NotDatFile, IOException, FileEnd {
-        System.out.println("Processing: " + file.getAbsolutePath());
+    private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
+        System.out.println("Converting to CSV: " + file.getAbsolutePath());
         DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
         datFile.reset();
         datFile.preAnalyze();
@@ -494,7 +495,6 @@ public class ProcessUpload {
         ConvertDat convertDat = datFile.createConVertDat();
 
         String csvFilename = file.getAbsolutePath() + ".csv";
-        System.out.println("Writing: " + csvFilename);
         convertDat.csvWriter = new CsvWriter(csvFilename);
         convertDat.createRecordParsers();
 
