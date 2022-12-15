@@ -113,16 +113,7 @@
             <version>1.0</version>
             <scope>system</scope>
             <systemPath>
-                ${project.basedir}/src/main/resources/DAT2CSV-1.0-sources.jar
-            </systemPath>
-        </dependency>
-        <dependency>
-            <groupId>org.ngafid</groupId>
-            <artifactId>dat2csv</artifactId>
-            <version>1.0</version>
-            <scope>system</scope>
-            <systemPath>
-                ${project.basedir}/src/main/resources/DAT2CSV-1.0-sources.jar
+                ${pom.basedir}/src/main/resources/DAT2CSV-1.0.jar
             </systemPath>
         </dependency>
     </dependencies>
