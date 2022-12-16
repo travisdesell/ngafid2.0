@@ -304,7 +304,7 @@ public class TurnToFinal implements Serializable {
         ArrayList<TurnToFinal> ttfs = new ArrayList<>(itineraries.size());
 
         for (Itinerary it : itineraries) {
-            int to = it.minAltitudeIndex;
+            int to = it.getMinAltitudeIndex();
             if (!it.wasApproach())
                 continue;
 
@@ -425,8 +425,8 @@ public class TurnToFinal implements Serializable {
                     Map.entry("flightStartDate", this.flightStartDate),
                     Map.entry("maxRoll", this.maxRoll),
                     Map.entry("selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
-                    Map.entry(OSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
-                    Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
+                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
+                    Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
             );
         }
         catch (IllegalArgumentException _iae) {
