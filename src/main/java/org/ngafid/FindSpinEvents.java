@@ -7,6 +7,8 @@ import java.io.*;
 import org.ngafid.*;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.flights.*;
+import org.ngafid.flights.calculations.CalculatedDoubleTimeSeries;
+import org.ngafid.flights.calculations.VSPDRegression;
 import org.ngafid.events.*;
 
 import java.sql.*;

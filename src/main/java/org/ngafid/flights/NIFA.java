@@ -120,8 +120,8 @@ public class NIFA implements Serializable {
 
     public NIFA(Connection connection, Flight flight) throws SQLException {
         this.flight = flight;
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(ATITUDE);
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(ONGITUDE);
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(LATITUDE);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(LONGITUDE);
         DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(ALT_AGL);
         DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(ALT_MSL);
         DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(GND_SPD);
