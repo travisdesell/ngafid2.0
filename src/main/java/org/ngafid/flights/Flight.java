@@ -60,6 +60,7 @@ import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.calculations.*;
 
 import static org.ngafid.flights.calculations.Parameters.*;
 
