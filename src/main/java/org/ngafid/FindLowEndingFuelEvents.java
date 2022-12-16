@@ -4,6 +4,7 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.CustomEvent;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventStatistics;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.*;
 
@@ -18,24 +19,23 @@ import static org.ngafid.events.CustomEvent.*;
 import static org.ngafid.flights.CalculationParameters.*;
 
 public class FindLowEndingFuelEvents {
-    public static final Connection connection = Database.getConnection();
     public static final Logger LOG = Logger.getLogger(FindLowEndingFuelEvents.class.getName());
     private static Map<Integer, EventDefinition> eventDefs = new HashMap<>();
     private static Map<Integer, Double> thresholds = new HashMap<>();
 
 
-    public static void findLowEndFuelEventsInUpload(Upload upload) {
+    public static void findLowEndFuelEventsInUpload(Connection connection, Upload upload) {
         try {
             String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
                     "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId() +
-                    " OR event_definition_id = " + LOW_END_FUEL_PA_28.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
+                    " OR event_definition_id = " + LOW_END_FUEL_PA_44.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
                     ") AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
 
             for (Flight flight : flights) {
                 try {
-                    findLowEndFuel(flight);
+                    findLowEndFuel(connection, flight);
                 } catch (MalformedFlightFileException e) {
                     System.out.println("Could not process flight " + flight.getId());
                 } catch (ParseException e) {
@@ -53,7 +53,7 @@ public class FindLowEndingFuelEvents {
         }
     }
 
-    public static void findLowEndFuel(Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
+    public static void findLowEndFuel(Connection connection, Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
         int airframeNameID = flight.getAirframeNameId();
 
         if (!eventDefs.containsKey(airframeNameID)) {
@@ -81,6 +81,7 @@ public class FindLowEndingFuelEvents {
 
         String[] lastValidDateAndIndex = date.getLastValidAndIndex();
         int i = Integer.parseInt(lastValidDateAndIndex[1]);
+        System.out.println("last valid date and index: " + i);
 
         String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
 
@@ -89,7 +90,7 @@ public class FindLowEndingFuelEvents {
         double fuelSum = 0;
         int fuelValues = 0;
 
-        for (; duration <= 15; i--) {
+        for (; duration <= 15 && i >= 0; i--) {
             currentTime = date.get(i) + " " + time.get(i);
             fuelSum += fuel.get(i);
             fuelValues++;
@@ -99,24 +100,29 @@ public class FindLowEndingFuelEvents {
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 
-        double average = (fuelSum / fuelValues);
         int hadEvent = 0;
-        if (average < threshold) {
-            CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
+        if (duration >= 15) {
+            double average = (fuelSum / fuelValues);
+            if (average < threshold) {
+                CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
 
-            event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
-            hadEvent++;
+                event.updateDatabase(connection);
+                event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
+                EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+                hadEvent++;
+            } else {
+                EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+            }
         }
 
-        setFlightProcessed(flight, hadEvent);
+        setFlightProcessed(connection, flight, hadEvent);
     }
 
     private static double getThresholdValueFromText(String text) {
         return Double.parseDouble(text.substring(text.lastIndexOf(" ") + 1));
     }
 
-    static void setFlightProcessed(Flight flight, int count) throws SQLException {
+    static void setFlightProcessed(Connection connection, Flight flight, int count) throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
         PreparedStatement stmt = connection.prepareStatement(queryString);
@@ -133,6 +139,8 @@ public class FindLowEndingFuelEvents {
 
     public static void main(String[] args) {
         List<Fleet> fleets = null;
+        Connection connection = Database.getConnection();
+
 
         if (args.length == 1) {
             try {
@@ -159,7 +167,7 @@ public class FindLowEndingFuelEvents {
                 uploadSize = uploads.size();
 
                 for (Upload upload : uploads) {
-                    findLowEndFuelEventsInUpload(upload);
+                    findLowEndFuelEventsInUpload(connection, upload);
                 }
             } catch (SQLException e) {
                 System.exit(1);

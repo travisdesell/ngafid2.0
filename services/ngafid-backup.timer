@@ -1,0 +1,12 @@
+# Timer for backing up the NGAFID
+
+[Unit]
+Description=Periodically backs up the NGAFID's mySQL instance 
+Requires=ngafid-backup.service
+
+[Timer]
+Unit=ngafid-backup.service
+OnCalendar=Weekly
+
+[Install]
+WantedBy=timers.target
