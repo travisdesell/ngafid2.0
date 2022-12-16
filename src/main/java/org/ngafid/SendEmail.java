@@ -105,6 +105,8 @@ public class SendEmail {
 
             // Set To: header field of the header.
             for (String toRecipient : toRecipients) {
+                //list of users who do not want emails: TODO: make this a user setting
+                if (toRecipient.equals("nievesn2@erau.edu")) continue;
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
             }
 

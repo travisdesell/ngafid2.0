@@ -193,5 +193,9 @@ if ($update_flights_status) {
     query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
 }
 
+$update_email_settings = true;
+if ($update_email_settings) {
+    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;";
+}
 
 ?>

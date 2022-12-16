@@ -174,14 +174,28 @@ public class FindSpinEvents {
             }
         }
         
+        int airframeNameId = flight.getAirframeNameId(), fleetId = flight.getFleetId();
         for (CustomEvent event : lowAltitudeSpins) {
             event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
+            event.updateStatistics(connection, fleetId, airframeNameId, event.getDefinition().getId());
         }
 
         for (CustomEvent event : highAltitudeSpins) {
             event.updateDatabase(connection);
-            event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), event.getDefinition().getId());
+            event.updateStatistics(connection, fleetId, airframeNameId, event.getDefinition().getId());
+        }
+        
+        String flightStartDateTime = flight.getStartDateTime();
+        if (!highAltitudeSpins.isEmpty()) {
+            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, HIGH_ALTITUDE_SPIN.getId(), flightStartDateTime);
+        } else {
+            EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, HIGH_ALTITUDE_SPIN.getId(), flightStartDateTime);
+        }
+
+        if (!lowAltitudeSpins.isEmpty()) {
+            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, LOW_ALTITUDE_SPIN.getId(), flightStartDateTime);
+        } else {
+            EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, LOW_ALTITUDE_SPIN.getId(), flightStartDateTime);
         }
 
         setFlightProcessed(connection, flight, HIGH_ALTITUDE_SPIN.getId(), hadError, highAltitudeSpins.size());

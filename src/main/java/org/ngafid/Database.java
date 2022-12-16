@@ -121,6 +121,7 @@ public class Database {
             System.exit(1);
         }
 
+        /*
         if (!connectionInitiated) {
             connectionInitiated = true; 
 
@@ -144,6 +145,7 @@ public class Database {
                 }
             }).start();
         }
+        */
     }
 
     static {
