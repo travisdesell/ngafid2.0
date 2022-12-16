@@ -27,7 +27,10 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $raise_password = getenv("RAISE_PASSWORD");
 
-$sftp = new Net_SFTP('sftp.asias.info');
+//$sftp = new Net_SFTP('sftp.asias.info');
+//if (!$sftp->login('service_ngafid_dto_upload@ngafid.org', $raise_password)) {
+
+$sftp = new Net_SFTP('sftp.rotorcraft.asias.info');
 if (!$sftp->login('service_ngafid_dto_upload@ngafid.org', $raise_password)) {
     echo "Login failed!\n";
     exit(1);
@@ -38,7 +41,8 @@ $result = query_ngafid_db("SELECT fleet_id, system_id, tail, confirmed FROM tail
 $source_tail_filename = "./system_ids_to_tails__" . $date = date('Y-m-d') . ".csv";
 $target_tail_filename = "system_ids_to_tails__" . $date = date('Y-m-d') . ".csv";
 
-echo "system ids to tails filename is '$tail_filename'\n";
+echo "system ids to tails source (local) filename is   '$source_tail_filename'\n";
+echo "system ids to tails target (on sftp) filename is '$target_tail_filename'\n";
 
 $file_contents = "#fleet_id, system_id, tail number, confirmed\n";
 while (NULL != ($row = $result->fetch_assoc())) {
@@ -51,14 +55,18 @@ while (NULL != ($row = $result->fetch_assoc())) {
     $file_contents .= "$fleet_id, $system_id, $tail, $confirmed\n";
 }
 
-file_put_contents($tail_filename, $file_contents);
+$bytes_written = file_put_contents($source_tail_filename, $file_contents);
+echo "wrote $bytes_written bytes for the system ids to tail file\n";
 
 //transfer the system_ids_to_tails filename over first
-$sftp->put($tail_filename, $tail_filename);
+$res = $sftp->put($target_tail_filename, $source_tail_filename, NET_SFTP_LOCAL_FILE | NET_SFTP_RESUME);
+echo "result from sftp->put was '$res'\n";
 
 
 
 $result = query_ngafid_db("SELECT DISTINCT(upload_id) FROM flights WHERE airframe_type_id = (SELECT id FROM airframe_types WHERE name = 'Rotorcraft')");
+
+$count = 0;
 
 while (NULL != ($row = $result->fetch_assoc())) {
     $upload_id = $row['upload_id'];
@@ -81,15 +89,14 @@ while (NULL != ($row = $result->fetch_assoc())) {
         echo "\ttarget file: '$target_file'\n";
         echo "\tsent to raise? $sent_to_raise\n";
 
-        $sftp->put($source_file, $target_file);
-
+        $res = $sftp->put($target_file, $source_file, NET_SFTP_LOCAL_FILE | NET_SFTP_RESUME);
+        echo "result from sftp->put was '$res'\n";
 
         query_ngafid_db("UPDATE uploads SET sent_to_raise = 1, contains_rotorcraft = 1 WHERE id = $upload_id");
 
-        exit(1);
+        $count += 1;
     }
     echo "\n";
-    exit(1);
 
 }
 
