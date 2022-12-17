@@ -187,6 +187,18 @@ public class DJIFlightProcessor {
 
 
         // TODO: String Time Series
+        Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
+        stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState", len));
+        stringTimeSeriesMap.put("flyCommand", new StringTimeSeries(connection, "Flight Command", "Command", len));
+        stringTimeSeriesMap.put("flightAction", new StringTimeSeries(connection, "Flight Action", "Action", len));
+        stringTimeSeriesMap.put("nonGPSCause", new StringTimeSeries(connection, "Non GPS Cause", "GPS Cause", len));
+        stringTimeSeriesMap.put("connectedToRC", new StringTimeSeries(connection, "Connected To RC", "Connection", len));
+        stringTimeSeriesMap.put("Battery:lowVoltage", new StringTimeSeries(connection, "Battery:lowVoltage", "", len)); // Unknown. Does not appear in data
+        stringTimeSeriesMap.put("RC:ModeSwitch", new StringTimeSeries(connection, "RC Mode Switch", "Mode", len)); // Unknown. Just shows P
+        stringTimeSeriesMap.put("gpsUsed", new StringTimeSeries(connection, "GPS Used", "boolean", len));
+        stringTimeSeriesMap.put("visionUsed", new StringTimeSeries(connection, "Vision Used", "boolean", len));
+        stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error", len));
+        stringTimeSeriesMap.put("Attribute|Value", new StringTimeSeries(connection, "Attribute|Value", "Key-Value Pair", len));
 
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
         String[] line;
