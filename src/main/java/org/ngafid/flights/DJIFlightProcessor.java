@@ -173,9 +173,20 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Motor:Current:RSide", new DoubleTimeSeries(connection, "Right Side Motor Current", "Amps", len));
 
 
+        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "", len));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", "", len));
+        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", "", len));
+        doubleTimeSeriesMap.put("AirComp:VelNorm", new DoubleTimeSeries(connection, "Airspeed Norm Velocity", "", len));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:X", new DoubleTimeSeries(connection, "Airspeed Ground X", "", len));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:Y", new DoubleTimeSeries(connection, "Airspeed Ground Y", "", len));
+        doubleTimeSeriesMap.put("AirComp:VelLevel", new DoubleTimeSeries(connection, "Airspeed Level Velocity", "", len));
 
-        doubleTimeSeriesMap.put("", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Longitude", new DoubleTimeSeries(connection, "RTK Longitude", "degrees", len));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Latitude", new DoubleTimeSeries(connection, "RTK Latitude", "degrees", len));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Alti", new DoubleTimeSeries(connection, "RTK Altitude", "feet", len));
 
+
+        // TODO: String Time Series
 
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
         String[] line;
