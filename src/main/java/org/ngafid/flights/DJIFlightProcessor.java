@@ -91,9 +91,90 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("Controller:gpsLevel", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("Controller:ctrl_level", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts1", new DoubleTimeSeries(connection, "Battery Cell Volts 1", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts2", new DoubleTimeSeries(connection, "Battery Cell Volts 2", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts3", new DoubleTimeSeries(connection, "Battery Cell Volts 3", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts4", new DoubleTimeSeries(connection, "Battery Cell Volts 4", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts5", new DoubleTimeSeries(connection, "Battery Cell Volts 5", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):cellVolts6", new DoubleTimeSeries(connection, "Battery Cell Volts 6", "Voltage", len));
+        doubleTimeSeriesMap.put("Battery(0):current", new DoubleTimeSeries(connection, "Battery Current", "Amps", len));
+        doubleTimeSeriesMap.put("Battery(0):totalVolts", new DoubleTimeSeries(connection, "Battery Total Voltage", "Voltage", len));
+
+        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "", "", len)); // TODO: Fill params
+        doubleTimeSeriesMap.put("Battery(0):battery%", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("Battery(0):FullChargeCap", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("Battery(0):RemainingCap", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("Battery(0):voltSpread", new DoubleTimeSeries(connection, "", "", len));
+
+        doubleTimeSeriesMap.put("Battery(0):watts", new DoubleTimeSeries(connection, "Battery Watts", "Watts", len));
+        doubleTimeSeriesMap.put("Battery(0):minCurrent", new DoubleTimeSeries(connection, "Battery Minimum Current", "Amps", len));
+        doubleTimeSeriesMap.put("Battery(0):maxCurrent", new DoubleTimeSeries(connection, "Battery Maximum Current", "Amps", len));
+        doubleTimeSeriesMap.put("Battery(0):avgCurrent", new DoubleTimeSeries(connection, "Battery Average Current", "Amps", len));
+        doubleTimeSeriesMap.put("Battery(0):minVolts", new DoubleTimeSeries(connection, "Battery Minimum Volts", "Volts", len));
+        doubleTimeSeriesMap.put("Battery(0):maxVolts", new DoubleTimeSeries(connection, "Battery Maximum Volts", "Volts", len));
+        doubleTimeSeriesMap.put("Battery(0):avgVolts", new DoubleTimeSeries(connection, "Battery Average Volts", "Volts", len));
+        doubleTimeSeriesMap.put("Battery(0):minWatts", new DoubleTimeSeries(connection, "Battery Minimum Watts", "Watts", len));
+        doubleTimeSeriesMap.put("Battery(0):maxWatts", new DoubleTimeSeries(connection, "Battery Maximum Watts", "Watts", len));
+        doubleTimeSeriesMap.put("Battery(0):avgWatts", new DoubleTimeSeries(connection, "Battery Average Watts", "Watts", len));
+
+        doubleTimeSeriesMap.put("SMART_BATT:goHome%", new DoubleTimeSeries(connection, "Smart Battery Go Home Percentage", "percentage", len));
+        doubleTimeSeriesMap.put("SMART_BATT:land%", new DoubleTimeSeries(connection, "Smart Battery Land Percentage", "percentage", len));
+        doubleTimeSeriesMap.put("SMART_BATT:goHomeTime", new DoubleTimeSeries(connection, "Smart Battery Go Home Time", "seconds", len));
+        doubleTimeSeriesMap.put("SMART_BATT:landTime", new DoubleTimeSeries(connection, "Smart Battery Land Time", "seconds", len));
+
+        doubleTimeSeriesMap.put("Motor:Status:RFront", new DoubleTimeSeries(connection, "Right Front Motor Status", "Status Number", len));
+        doubleTimeSeriesMap.put("Motor:Status:LFront", new DoubleTimeSeries(connection, "Left Front Motor Status", "Status Number", len));
+        doubleTimeSeriesMap.put("Motor:Status:LSide", new DoubleTimeSeries(connection, "Left Side Motor Status", "Status Number", len));
+        doubleTimeSeriesMap.put("Motor:Status:LBack", new DoubleTimeSeries(connection, "Left Back Motor Status", "Status Number", len));
+        doubleTimeSeriesMap.put("Motor:Status:RBack", new DoubleTimeSeries(connection, "Right Back Motor Status", "Status Number", len));
+        doubleTimeSeriesMap.put("Motor:Status:RSide", new DoubleTimeSeries(connection, "Right Side Motor Status", "Status Number", len));
+
+        doubleTimeSeriesMap.put("Motor:Speed:RFront", new DoubleTimeSeries(connection, "Right Front Motor Speed", "m/s", len));
+        doubleTimeSeriesMap.put("Motor:Speed:LFront", new DoubleTimeSeries(connection, "Left Front Motor Speed", "m/s", len));
+        doubleTimeSeriesMap.put("Motor:Speed:LSide", new DoubleTimeSeries(connection, "Left Side Motor Speed", "m/s", len));
+        doubleTimeSeriesMap.put("Motor:Speed:LBack", new DoubleTimeSeries(connection, "Left Side Motor Speed", "m/s", len));
+        doubleTimeSeriesMap.put("Motor:Speed:RBack", new DoubleTimeSeries(connection, "Right Back Motor Speed", "m/s", len));
+        doubleTimeSeriesMap.put("Motor:Speed:RSide", new DoubleTimeSeries(connection, "Right Side Motor Speed", "m/s", len));
+
+        doubleTimeSeriesMap.put("Motor:Volts:RFront", new DoubleTimeSeries(connection, "Right Front Motor Voltage", "Volts", len));
+        doubleTimeSeriesMap.put("Motor:Volts:LFront", new DoubleTimeSeries(connection, "Left Front Motor Voltage", "Volts", len));
+        doubleTimeSeriesMap.put("Motor:Volts:LSide", new DoubleTimeSeries(connection, "Left Side Motor Voltage", "Volts", len));
+        doubleTimeSeriesMap.put("Motor:Volts:LBack", new DoubleTimeSeries(connection, "Left Back Motor Voltage", "Volts", len));
+        doubleTimeSeriesMap.put("Motor:Volts:RBack", new DoubleTimeSeries(connection, "Right Back Motor Voltage", "Volts", len));
+        doubleTimeSeriesMap.put("Motor:Volts:RSide", new DoubleTimeSeries(connection, "Right Side Motor Voltage", "Volts", len));
+
+        doubleTimeSeriesMap.put("Motor:EscTemp:RFront", new DoubleTimeSeries(connection, "Right Front Motor Temperature", "Celsius", len));
+        doubleTimeSeriesMap.put("Motor:EscTemp:LFront", new DoubleTimeSeries(connection, "Left Front Motor Temperature", "Celsius", len));
+        doubleTimeSeriesMap.put("Motor:EscTemp:LSide", new DoubleTimeSeries(connection, "Left Side Motor Temperature", "Celsius", len));
+        doubleTimeSeriesMap.put("Motor:EscTemp:LBack", new DoubleTimeSeries(connection, "Left Back Motor Temperature", "Celsius", len));
+        doubleTimeSeriesMap.put("Motor:EscTemp:RBack", new DoubleTimeSeries(connection, "Right Back Motor Temperature", "Celsius", len));
+        doubleTimeSeriesMap.put("Motor:EscTemp:RSide", new DoubleTimeSeries(connection, "Right Side Motor Temperature", "Celsius", len));
+
+
+        doubleTimeSeriesMap.put("Motor:PPMrecv:RFront", new DoubleTimeSeries(connection, "Right Front Motor Stop Command", "Stop Command", len));
+        doubleTimeSeriesMap.put("Motor:PPMrecv:LFront", new DoubleTimeSeries(connection, "Left Front Motor Stop Command", "Stop Command", len));
+        doubleTimeSeriesMap.put("Motor:PPMrecv:LSide", new DoubleTimeSeries(connection, "Left Side Motor Stop Command", "Stop Command", len));
+        doubleTimeSeriesMap.put("Motor:PPMrecv:LBack", new DoubleTimeSeries(connection, "Left Back Motor Stop Command", "Stop Command", len));
+        doubleTimeSeriesMap.put("Motor:PPMrecv:RBack", new DoubleTimeSeries(connection, "Right Back Motor Stop Command", "Stop Command", len));
+        doubleTimeSeriesMap.put("Motor:PPMrecv:RSide", new DoubleTimeSeries(connection, "Right Side Motor Stop Command", "Stop Command", len));
+
+        doubleTimeSeriesMap.put("Motor:V_out:RFront", new DoubleTimeSeries(connection, "Right Front Motor ", "", len));
+        doubleTimeSeriesMap.put("Motor:V_out:LFront", new DoubleTimeSeries(connection, "Left Front Motor Voltage Out", "Voltage", len));
+        doubleTimeSeriesMap.put("Motor:V_out:LSide", new DoubleTimeSeries(connection, "Left Side Motor Voltage Out", "Voltage", len));
+        doubleTimeSeriesMap.put("Motor:V_out:LBack", new DoubleTimeSeries(connection, "Left Back Motor Voltage Out", "Voltage", len));
+        doubleTimeSeriesMap.put("Motor:V_out:RBack", new DoubleTimeSeries(connection, "Right Back Motor Voltage Out", "Voltage", len));
+        doubleTimeSeriesMap.put("Motor:V_out:RSide", new DoubleTimeSeries(connection, "Right Side Motor Voltage Out", "Voltage", len));
+
+        doubleTimeSeriesMap.put("Motor:Current:RFront", new DoubleTimeSeries(connection, "Right Front Motor Current", "Amps", len));
+        doubleTimeSeriesMap.put("Motor:Current:LFront", new DoubleTimeSeries(connection, "Left Front Motor Current", "Amps", len));
+        doubleTimeSeriesMap.put("Motor:Current:LSide", new DoubleTimeSeries(connection, "Left Side Motor Current", "Amps", len));
+        doubleTimeSeriesMap.put("Motor:Current:LBack", new DoubleTimeSeries(connection, "Left Back Motor Current", "Amps", len));
+        doubleTimeSeriesMap.put("Motor:Current:RBack", new DoubleTimeSeries(connection, "Right Back Motor Current", "Amps", len));
+        doubleTimeSeriesMap.put("Motor:Current:RSide", new DoubleTimeSeries(connection, "Right Side Motor Current", "Amps", len));
 
 
 
+        doubleTimeSeriesMap.put("", new DoubleTimeSeries(connection, "", "", len));
 
 
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
