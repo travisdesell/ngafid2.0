@@ -28,7 +28,6 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.SendEmail;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
@@ -38,6 +37,8 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+
+import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
 public class ProcessUpload {
     private static Connection connection = null;
@@ -352,7 +353,7 @@ public class ProcessUpload {
                         placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
 
                         try (InputStream stream = new FileInputStream(processedCSVFile)) {
-                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+                            Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
 
                             if (connection != null) {
                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
