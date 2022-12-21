@@ -24,13 +24,38 @@ public class DJIFlightProcessor {
     public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, CsvValidationException, IOException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection, -1); // TODO: Update len
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection, new ArrayList<String>()); // TODO: Update Arraylist
-
+        Map<Integer, String> indexedCols = new HashMap<>();
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
         String[] line;
         String[] headers = reader.readNext();
 
+        for (int i = 0; i < headers.length; i++) {
+            indexedCols.put(i, headers[i]);
+        }
 
-        return new Flight(null, null); // TODO: Update this later
+        while ((line = reader.readNext()) != null) {
+            for (int i = 0; i < line.length; i++) {
+                String column = indexedCols.get(i);
+                if (doubleTimeSeriesMap.containsKey(column)) {
+                    DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
+                    colTimeSeries.add(Double.parseDouble(line[i]));
+                } else {
+                    StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
+                    colTimeSeries.add(line[i]);
+                }
+            }
+        }
+
+        Flight flight = new Flight(fleetId, entry, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
+        flight.status = "SUCCESS"; // TODO: See if this needs to be updated
+        flight.airframeType = "UAS Rotorcraft";
+        flight.airframeTypeId = 4;
+
+        return flight;
+    }
+
+    private static Map<String, String> getAttributeMap(StringTimeSeries timeSeries) {
+
     }
 
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable
