@@ -5,7 +5,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -21,7 +20,7 @@ public class DJIFlightProcessor {
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
-    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, CsvValidationException, IOException {
+    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, CsvValidationException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection, -1); // TODO: Update len
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection, new ArrayList<String>()); // TODO: Update Arraylist
         Map<Integer, String> indexedCols = new HashMap<>();
@@ -46,16 +45,24 @@ public class DJIFlightProcessor {
             }
         }
 
-        Flight flight = new Flight(fleetId, entry, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
-        flight.status = "SUCCESS"; // TODO: See if this needs to be updated
-        flight.airframeType = "UAS Rotorcraft";
-        flight.airframeTypeId = 4;
+        Map<String, String> attributeMap  = getAttributeMap(stringTimeSeriesMap.get("Attribute|Value"));
+
+        Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
+        flight.setStatus("SUCCESS"); // TODO: See if this needs to be updated
+        flight.setAirframeType("UAS Rotorcraft");
+        flight.setAirframeTypeID(4);
 
         return flight;
     }
 
     private static Map<String, String> getAttributeMap(StringTimeSeries timeSeries) {
+        Map<String, String> attributeMap = new HashMap<>();
+        for (int i = 0; i < timeSeries.size(); i++) {
+            String[] splitPair = timeSeries.get(i).split("\\|");
+            attributeMap.put(splitPair[0], splitPair[1]);
+        }
 
+        return attributeMap;
     }
 
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable
