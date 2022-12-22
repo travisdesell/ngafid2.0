@@ -143,11 +143,11 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Battery(0):current", new DoubleTimeSeries(connection, "Battery Current", "Amps", len));
         doubleTimeSeriesMap.put("Battery(0):totalVolts", new DoubleTimeSeries(connection, "Battery Total Voltage", "Voltage", len));
 
-        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "", "", len)); // TODO: Fill params
-        doubleTimeSeriesMap.put("Battery(0):battery%", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("Battery(0):FullChargeCap", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("Battery(0):RemainingCap", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("Battery(0):voltSpread", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "Battery Temperature", "Celsius", len)); // TODO: Fill params
+        doubleTimeSeriesMap.put("Battery(0):battery%", new DoubleTimeSeries(connection, "Battery Percentage", "Percentage", len));
+        doubleTimeSeriesMap.put("Battery(0):FullChargeCap", new DoubleTimeSeries(connection, "Battery Full Charge Cap", "Capacity", len));
+        doubleTimeSeriesMap.put("Battery(0):RemainingCap", new DoubleTimeSeries(connection, "Battery Remaining Cap", "Capacity", len));
+        doubleTimeSeriesMap.put("Battery(0):voltSpread", new DoubleTimeSeries(connection, "Battery Voltage Spread", "Voltage", len));
 
         doubleTimeSeriesMap.put("Battery(0):watts", new DoubleTimeSeries(connection, "Battery Watts", "Watts", len));
         doubleTimeSeriesMap.put("Battery(0):minCurrent", new DoubleTimeSeries(connection, "Battery Minimum Current", "Amps", len));
