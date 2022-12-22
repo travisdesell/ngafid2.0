@@ -27,24 +27,24 @@ public class DJIFlightProcessor {
         Map<Integer, String> indexedCols = new HashMap<>();
         Map<String, String> attributeMap = getAttributeMap(cloneInputStream(stream));
 
+        try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)))) {
+            String[] line;
+            String[] headers = reader.readNext();
 
-        CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
-        String[] line;
-        String[] headers = reader.readNext();
+            for (int i = 0; i < headers.length; i++) {
+                indexedCols.put(i, headers[i]);
+            }
 
-        for (int i = 0; i < headers.length; i++) {
-            indexedCols.put(i, headers[i]);
-        }
-
-        while ((line = reader.readNext()) != null) {
-            for (int i = 0; i < line.length; i++) {
-                String column = indexedCols.get(i);
-                if (doubleTimeSeriesMap.containsKey(column)) {
-                    DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
-                    colTimeSeries.add(Double.parseDouble(line[i]));
-                } else {
-                    StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
-                    colTimeSeries.add(line[i]);
+            while ((line = reader.readNext()) != null) {
+                for (int i = 0; i < line.length; i++) {
+                    String column = indexedCols.get(i);
+                    if (doubleTimeSeriesMap.containsKey(column)) {
+                        DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
+                        colTimeSeries.add(Double.parseDouble(line[i]));
+                    } else {
+                        StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
+                        colTimeSeries.add(line[i]);
+                    }
                 }
             }
         }
