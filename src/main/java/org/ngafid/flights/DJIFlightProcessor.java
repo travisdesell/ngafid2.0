@@ -51,6 +51,8 @@ public class DJIFlightProcessor {
             }
         } catch (CsvValidationException e) {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
+        } catch (ParseException e) {
+            e.printStackTrace();
         }
 
         Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"),
@@ -106,7 +108,7 @@ public class DJIFlightProcessor {
         }
 
         for (int i = 0; i < lonRad.size(); i++) {
-            latDeg.add(Math.toDegrees(lonRad.get(i)));
+            latDeg.add(Math.toDegrees(latRad.get(i)));
         }
 
         doubleTimeSeriesMap.put("Longitude", longDeg);
@@ -116,6 +118,7 @@ public class DJIFlightProcessor {
     private static void calculateDateTime(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws SQLException, ParseException {
         StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm"); // Always 0
         DoubleTimeSeries seconds = doubleTimeSeriesMap.get("offsetTime");
 
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
@@ -123,10 +126,19 @@ public class DJIFlightProcessor {
 
         String[] dateTime = dateTimeStr.split(" ");
         String date = dateTime[0];
+
+        if (date.split("-")[1].length() == 1) {
+            date = date.substring(0, 5) + "0" + date.substring(5);
+        }
+
+        if (date.split("-")[2].length() == 1) {
+            date = date.substring(0, 8) + "0" + date.substring(8);
+        }
+
         String time = dateTime[1];
 
-        localDateSeries.add(lclDateFormat.format(date));
-        localTimeSeries.add(lclTimeFormat.format(time));
+        localDateSeries.add(lclDateFormat.parse(date).toString());
+        localTimeSeries.add(lclTimeFormat.parse(time).toString());
 
         Date parsedDate = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(date + " " + time);
         for (int i = 0; i < seconds.size(); i++) {
@@ -135,17 +147,11 @@ public class DJIFlightProcessor {
 
             localDateSeries.add(lclDateFormat.format(newDate));
             localTimeSeries.add(lclTimeFormat.format(newDate));
+            utcOfstSeries.add("00:00");
         }
 
         stringTimeSeriesMap.put("Lcl Date", localDateSeries);
         stringTimeSeriesMap.put("Lcl Time", localTimeSeries);
-    }
-
-    private static void calculateAltitudes(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
-        DoubleTimeSeries sensorAlt = doubleTimeSeriesMap.get("GPS(0):Alt");
-
-        DoubleTimeSeries altAgl = new DoubleTimeSeries(connection, "AltAGL", "ft");
-        DoubleTimeSeries altMsl = new DoubleTimeSeries(connection, "AltMSL", "ft");
     }
 
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
@@ -241,7 +247,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
         doubleTimeSeriesMap.put("General:vpsHeight", new DoubleTimeSeries(connection, "VPS Height", "ft"));
         doubleTimeSeriesMap.put("General:relativeHeight", new DoubleTimeSeries(connection, "Relative Height", "ft"));
-        doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "Absolute Height", "ft"));
+        doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "AltAGL", "ft"));
         doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "GPS Longitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "GPS Latitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "Date", "Date"));
