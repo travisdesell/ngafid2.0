@@ -42,15 +42,18 @@ public class DJIFlightProcessor {
                 for (int i = 0; i < line.length; i++) {
 
                     String column = indexedCols.get(i);
-                    LOG.info(column);
 
-                    if (doubleTimeSeriesMap.containsKey(column)) {
-                        DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
-                        double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
-                        colTimeSeries.add(value);
-                    } else {
-                        StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
-                        colTimeSeries.add(line[i]);
+                    try {
+                        if (doubleTimeSeriesMap.containsKey(column)) {
+                            DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
+                            double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
+                            colTimeSeries.add(value);
+                        } else {
+                            StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
+                            colTimeSeries.add(line[i]);
+                        }
+                    } catch (NullPointerException e) {
+                        LOG.log(Level.WARNING, "Column {0} not found in time series map", column);
                     }
                 }
             }
