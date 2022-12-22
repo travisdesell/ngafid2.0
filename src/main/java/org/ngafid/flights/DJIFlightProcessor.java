@@ -22,7 +22,7 @@ public class DJIFlightProcessor {
 
     public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, CsvValidationException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection, -1); // TODO: Update len
-        Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection, new ArrayList<String>()); // TODO: Update Arraylist
+        Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
         String[] line;
@@ -119,7 +119,6 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):dateTimeStamp", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "", "", len));
@@ -232,19 +231,21 @@ public class DJIFlightProcessor {
         return doubleTimeSeriesMap;
     }
 
-    private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection, ArrayList<String> timeSeries) throws SQLException {
+    private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState", timeSeries));
-        stringTimeSeriesMap.put("flyCommand", new StringTimeSeries(connection, "Flight Command", "Command", timeSeries));
-        stringTimeSeriesMap.put("flightAction", new StringTimeSeries(connection, "Flight Action", "Action", timeSeries));
-        stringTimeSeriesMap.put("nonGPSCause", new StringTimeSeries(connection, "Non GPS Cause", "GPS Cause", timeSeries));
-        stringTimeSeriesMap.put("connectedToRC", new StringTimeSeries(connection, "Connected To RC", "Connection", timeSeries));
-        stringTimeSeriesMap.put("Battery:lowVoltage", new StringTimeSeries(connection, "Battery:lowVoltage", "", timeSeries)); // Unknown. Does not appear in data
-        stringTimeSeriesMap.put("RC:ModeSwitch", new StringTimeSeries(connection, "RC Mode Switch", "Mode", timeSeries)); // Unknown. Just shows P
-        stringTimeSeriesMap.put("gpsUsed", new StringTimeSeries(connection, "GPS Used", "boolean", timeSeries));
-        stringTimeSeriesMap.put("visionUsed", new StringTimeSeries(connection, "Vision Used", "boolean", timeSeries));
-        stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error", timeSeries));
-        stringTimeSeriesMap.put("Attribute|Value", new StringTimeSeries(connection, "Attribute|Value", "Key-Value Pair", timeSeries));
+        stringTimeSeriesMap.put("GPS(0):dateTimeStamp", new StringTimeSeries(connection, "", ""));
+
+        stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
+        stringTimeSeriesMap.put("flyCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
+        stringTimeSeriesMap.put("flightAction", new StringTimeSeries(connection, "Flight Action", "Action"));
+        stringTimeSeriesMap.put("nonGPSCause", new StringTimeSeries(connection, "Non GPS Cause", "GPS Cause"));
+        stringTimeSeriesMap.put("connectedToRC", new StringTimeSeries(connection, "Connected To RC", "Connection"));
+        stringTimeSeriesMap.put("Battery:lowVoltage", new StringTimeSeries(connection, "Battery:lowVoltage", "")); // Unknown. Does not appear in data
+        stringTimeSeriesMap.put("RC:ModeSwitch", new StringTimeSeries(connection, "RC Mode Switch", "Mode")); // Unknown. Just shows P
+        stringTimeSeriesMap.put("gpsUsed", new StringTimeSeries(connection, "GPS Used", "boolean"));
+        stringTimeSeriesMap.put("visionUsed", new StringTimeSeries(connection, "Vision Used", "boolean"));
+        stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error"));
+        stringTimeSeriesMap.put("Attribute|Value", new StringTimeSeries(connection, "Attribute|Value", "Key-Value Pair"));
 
         return stringTimeSeriesMap;
     }
