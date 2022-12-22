@@ -73,56 +73,56 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("IMU_ATTI(0):Longitude", new DoubleTimeSeries(connection, "Longitude", "degrees", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):Latitude", new DoubleTimeSeries(connection, "Latitude", "degrees", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):numSats", new DoubleTimeSeries(connection, "NumSats", "number", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Raw", new DoubleTimeSeries(connection, "Barometer Raw", "Nu", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Smooth", new DoubleTimeSeries(connection, "Barometer Smooth", "tick", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Raw", new DoubleTimeSeries(connection, "Barometer Raw", "atm", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Smooth", new DoubleTimeSeries(connection, "Barometer Smooth", "atm", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):accel:X", new DoubleTimeSeries(connection, "Acceleration X", "m/s^2", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Y", new DoubleTimeSeries(connection, "Acceleration Y", "m/s^2", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Z", new DoubleTimeSeries(connection, "Acceleration Z", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Composite", new DoubleTimeSeries(connection, "Composite Acceleration", "", len)); // TODO: Figure out datatype
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:X", new DoubleTimeSeries(connection, "Gyro X", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Y", new DoubleTimeSeries(connection, "Gyro Y", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Z", new DoubleTimeSeries(connection, "Gyro Z", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Composite", new DoubleTimeSeries(connection, "Composite Gyro", "", len)); // TODO: Figure out datatype
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:X", new DoubleTimeSeries(connection, "Mag X", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Y", new DoubleTimeSeries(connection, "Mag Y", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Z", new DoubleTimeSeries(connection, "Mag Z", "m/s^2", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Mod", new DoubleTimeSeries(connection, "Mod Mag", "", len)); // TODO: Figure out datatype
+        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Composite", new DoubleTimeSeries(connection, "Composite Acceleration", "m/s^2", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:X", new DoubleTimeSeries(connection, "Gyro X", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Y", new DoubleTimeSeries(connection, "Gyro Y", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Z", new DoubleTimeSeries(connection, "Gyro Z", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Composite", new DoubleTimeSeries(connection, "Composite Gyro", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:X", new DoubleTimeSeries(connection, "Mag X", "A/m", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Y", new DoubleTimeSeries(connection, "Mag Y", "A/m", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Z", new DoubleTimeSeries(connection, "Mag Z", "A/m", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Mod", new DoubleTimeSeries(connection, "Mod Mag", "A/m", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):velN", new DoubleTimeSeries(connection, "Velocity N", "m/s", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):velD", new DoubleTimeSeries(connection, "Velocity D", "m/s", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):velComposite", new DoubleTimeSeries(connection, "Velocity Composite", "m/s", len));
         doubleTimeSeriesMap.put("IMU_ATTI(0):velH", new DoubleTimeSeries(connection, "Velocity H", "m/s", len));
 
-        doubleTimeSeriesMap.put("IMU_ATTI(0):GPS-H", new DoubleTimeSeries(connection, "H GPS", "m/s", len)); // TODO: Figure out datatype
-        doubleTimeSeriesMap.put("IMU_ATTI(0):roll", new DoubleTimeSeries(connection, "Roll", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):pitch", new DoubleTimeSeries(connection, "Pitch", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw", new DoubleTimeSeries(connection, "Yaw", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw360", new DoubleTimeSeries(connection, "Yaw 360", "", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):GPS-H", new DoubleTimeSeries(connection, "H GPS", "ft", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):roll", new DoubleTimeSeries(connection, "Roll", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):pitch", new DoubleTimeSeries(connection, "Pitch", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw", new DoubleTimeSeries(connection, "Yaw", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw360", new DoubleTimeSeries(connection, "Yaw 360", "deg/s", len));
 
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Z", new DoubleTimeSeries(connection, "Total Gyro Z", "", len)); // TODO: You know what to do
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:X", new DoubleTimeSeries(connection, "Total Gyro X", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Y", new DoubleTimeSeries(connection, "Total Gyro Y", "", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Z", new DoubleTimeSeries(connection, "Total Gyro Z", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:X", new DoubleTimeSeries(connection, "Total Gyro X", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Y", new DoubleTimeSeries(connection, "Total Gyro Y", "deg/s", len));
 
 
-        doubleTimeSeriesMap.put("IMU_ATTI(0):magYaw", new DoubleTimeSeries(connection, "Mag Yaw", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceHP", new DoubleTimeSeries(connection, "Distance HP", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceTravelled", new DoubleTimeSeries(connection, "Distance Travelled", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[mag]", new DoubleTimeSeries(connection, "Direction of Travel (mag)", "", len));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[true]", new DoubleTimeSeries(connection, "Direction of Travel (true)", "", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):magYaw", new DoubleTimeSeries(connection, "Mag Yaw", "deg/s", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceHP", new DoubleTimeSeries(connection, "Distance HP", "ft", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceTravelled", new DoubleTimeSeries(connection, "Distance Travelled", "ft", len));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[mag]", new DoubleTimeSeries(connection, "Direction of Travel (mag)", "deg", len)); // Dont know about these types
+        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[true]", new DoubleTimeSeries(connection, "Direction of Travel (true)", "deg", len));
 
         doubleTimeSeriesMap.put("IMU_ATTI(0):temperature", new DoubleTimeSeries(connection, "Temperature", "Celsius", len));
         doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds", len));
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health", len));
-        doubleTimeSeriesMap.put("General:vpsHeight", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("General:relativeHeight", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "", "", len));
-        doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "", "", len));
+        doubleTimeSeriesMap.put("General:vpsHeight", new DoubleTimeSeries(connection, "VPS Height", "ft", len));
+        doubleTimeSeriesMap.put("General:relativeHeight", new DoubleTimeSeries(connection, "Relative Height", "ft", len));
+        doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "Absolute Height", "ft", len));
+        doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "Longitude", "degrees", len));
+        doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "Latitude", "degrees", len));
+        doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "Date", "Date", len));
+        doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "Time", "Time", len));
+        doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "MSL Height", "ft", len));
+        doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "Horizontal Dilution of Precision", "DOP Value", len));
+        doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "Vertical Dilution of Precision", "DOP Value", len));
+        doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s", len));
         doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "", "", len));
         doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "", "", len));
