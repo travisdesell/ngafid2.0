@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.Fleet;
 
 public class AirSync {
@@ -17,7 +18,6 @@ public class AirSync {
 
     // How long the daemon will wait before making another request
     private static final long WAIT_TIME = 10000;
-    private static URL AIR_SYNC_URL;
     private static Connection connection = Database.getConnection();
 
     private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
@@ -39,9 +39,9 @@ public class AirSync {
         return sb.toString();
     }
 
-    public static boolean hasUploadsWaiting(Fleet fleet, List<Tail> tails) {
+    public static boolean hasUploadsWaiting(AirSyncFleet fleet) {
         //TODO: Implement a way to see if there are uploads waiting on the AirSync servers;
-        System.out.println(tails.toString());
+        System.out.println("fleet has creds: " + fleet.getAuth());
 
         return false;
     }
@@ -56,7 +56,7 @@ public class AirSync {
 
         try {
             while (true) {
-                List<Fleet> airSyncFleets = Fleet.getAirSyncFleets(connection);
+                List<AirSyncFleet> airSyncFleets = AirSyncFleet.getAll(connection);
 
                 LOG.info("Found AirSync-enabled fleets: " + airSyncFleets.stream().map(Fleet::getName).collect(Collectors.joining(", ")));
 
@@ -65,15 +65,13 @@ public class AirSync {
                     System.exit(1);
                 }
 
-                for (Fleet fleet : airSyncFleets) {
+                for (AirSyncFleet fleet : airSyncFleets) {
                     // Go round-robin through each fleet and check to see if it has AirSync uploads waiting
-                    List<Tail> tails = Tails.getAirSyncTails(connection, fleet.getId());
-                    LOG.info("Got tails for fleet " + fleet.getName() + ": " + tails.stream().map(Object::toString).collect(Collectors.joining(", ")));
 
-                    if (AirSync.hasUploadsWaiting(fleet, tails)) {
-                        LOG.info("Making request to AirSync server.");
-                        AirSync airSync = new AirSync(LocalDateTime.now(), fleet);
-                    }
+                    //if (AirSync.hasUploadsWaiting(fleet)) {
+                        //LOG.info("Making request to AirSync server.");
+                        //AirSync airSync = new AirSync(LocalDateTime.now(), fleet);
+                    //}
                 }
 
                 Thread.sleep(WAIT_TIME);
