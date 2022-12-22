@@ -3422,10 +3422,10 @@ public class Flight {
     }
 
     public void setAirframeType(String type) {
-        this.type = type;
+        this.airframeType = type;
     }
 
     public void setAirframeTypeID(Integer typeID) {
-        this.typeID = typeID;
+        this.airframeTypeId  = typeID;
     }
 }

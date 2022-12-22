@@ -21,7 +21,7 @@ public class DJIFlightProcessor {
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
-    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, CsvValidationException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection);
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
@@ -47,6 +47,8 @@ public class DJIFlightProcessor {
                     }
                 }
             }
+        } catch (CsvValidationException e) {
+            throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
         }
 
         Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
