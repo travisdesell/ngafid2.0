@@ -3,12 +3,17 @@ package org.ngafid.flights;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+
+import static org.ngafid.common.TimeUtils.addMilliseconds;
+import static org.ngafid.common.TimeUtils.addSeconds;
 
 /**
  * Represents Flights for the NGAFID, but for DJI drones
@@ -28,6 +33,7 @@ public class DJIFlightProcessor {
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
         Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
+        String flightStatus = "SUCCESS";
 
         if (!attributeMap.containsKey("mcID(SN)")) {
             throw new FatalFlightFileException("No DJI serial number provided in binary.");
@@ -36,13 +42,20 @@ public class DJIFlightProcessor {
         try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
             readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
             calculateLatLonGPS(connection, doubleTimeSeriesMap);
+
+            if (attributeMap.containsKey("dateTime")) {
+                calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
+            } else {
+                // TODO: Data might have another way of determining the date/time
+                flightStatus = "WARNING";
+            }
         } catch (CsvValidationException e) {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
         }
 
         Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"),
                 doubleTimeSeriesMap, stringTimeSeriesMap, connection);
-        flight.setStatus("SUCCESS"); // TODO: See if this needs to be updated
+        flight.setStatus(flightStatus);
         flight.setAirframeType("UAS Rotorcraft");
         flight.setAirframeTypeID(4);
 
@@ -98,6 +111,41 @@ public class DJIFlightProcessor {
 
         doubleTimeSeriesMap.put("Longitude", longDeg);
         doubleTimeSeriesMap.put("Latitude", latDeg);
+    }
+
+    private static void calculateDateTime(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws SQLException, ParseException {
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        DoubleTimeSeries seconds = doubleTimeSeriesMap.get("offsetTime");
+
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        String[] dateTime = dateTimeStr.split(" ");
+        String date = dateTime[0];
+        String time = dateTime[1];
+
+        localDateSeries.add(lclDateFormat.format(date));
+        localTimeSeries.add(lclTimeFormat.format(time));
+
+        Date parsedDate = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(date + " " + time);
+        for (int i = 0; i < seconds.size(); i++) {
+            int millseconds = (int) (seconds.get(i) * 1000);
+            Date newDate = addMilliseconds(parsedDate, millseconds);
+
+            localDateSeries.add(lclDateFormat.format(newDate));
+            localTimeSeries.add(lclTimeFormat.format(newDate));
+        }
+
+        stringTimeSeriesMap.put("Lcl Date", localDateSeries);
+        stringTimeSeriesMap.put("Lcl Time", localTimeSeries);
+    }
+
+    private static void calculateAltitudes(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        DoubleTimeSeries sensorAlt = doubleTimeSeriesMap.get("GPS(0):Alt");
+
+        DoubleTimeSeries altAgl = new DoubleTimeSeries(connection, "AltAGL", "ft");
+        DoubleTimeSeries altMsl = new DoubleTimeSeries(connection, "AltMSL", "ft");
     }
 
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
