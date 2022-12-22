@@ -28,6 +28,10 @@ public class DJIFlightProcessor {
         Map<Integer, String> indexedCols = new HashMap<>();
         Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
 
+        if (!attributeMap.containsKey("mcID(SN)")) {
+            throw new FatalFlightFileException("No DJI serial number provided in binary.");
+        }
+
         try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
             String[] line;
             String[] headers = reader.readNext();
@@ -37,7 +41,7 @@ public class DJIFlightProcessor {
             }
 
             while ((line = reader.readNext()) != null) {
-                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
+//                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
 
                 for (int i = 0; i < line.length; i++) {
 
@@ -61,7 +65,7 @@ public class DJIFlightProcessor {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
         }
 
-        Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
+        Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
         flight.setStatus("SUCCESS"); // TODO: See if this needs to be updated
         flight.setAirframeType("UAS Rotorcraft");
         flight.setAirframeTypeID(4);
@@ -114,10 +118,14 @@ public class DJIFlightProcessor {
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
+        doubleTimeSeriesMap.put("Longitude", new DoubleTimeSeries(connection, "Longitude", "degrees"));
+        doubleTimeSeriesMap.put("Latitude", new DoubleTimeSeries(connection, "Latitude", "degrees"));
+        
+        
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
         doubleTimeSeriesMap.put("offsetTime", new DoubleTimeSeries(connection, "Offset Time", "seconds"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):Longitude", new DoubleTimeSeries(connection, "Longitude", "degrees"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):Latitude", new DoubleTimeSeries(connection, "Latitude", "degrees"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):Longitude", new DoubleTimeSeries(connection, "IMU Longitude", "radians"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):Latitude", new DoubleTimeSeries(connection, "IMU Latitude", "radians"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):numSats", new DoubleTimeSeries(connection, "NumSats", "number"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Raw", new DoubleTimeSeries(connection, "Barometer Raw", "atm"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Smooth", new DoubleTimeSeries(connection, "Barometer Smooth", "atm"));
@@ -163,8 +171,8 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("General:vpsHeight", new DoubleTimeSeries(connection, "VPS Height", "ft"));
         doubleTimeSeriesMap.put("General:relativeHeight", new DoubleTimeSeries(connection, "Relative Height", "ft"));
         doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "Absolute Height", "ft"));
-        doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "Longitude", "degrees"));
-        doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "Latitude", "degrees"));
+        doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "GPS Longitude", "radians"));
+        doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "GPS Latitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "Date", "Date"));
         doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "Time", "Time"));
         doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "MSL Height", "ft"));
@@ -273,9 +281,9 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("AirComp:AirSpeedGround:Y", new DoubleTimeSeries(connection, "Airspeed Ground Y", ""));
         doubleTimeSeriesMap.put("AirComp:VelLevel", new DoubleTimeSeries(connection, "Airspeed Level Velocity", ""));
 
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Longitude", new DoubleTimeSeries(connection, "RTK Longitude", "degrees"));
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Latitude", new DoubleTimeSeries(connection, "RTK Latitude", "degrees"));
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Alti", new DoubleTimeSeries(connection, "RTK Altitude", "feet"));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Longitude", new DoubleTimeSeries(connection, "RTK Longitude", "radians"));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Latitude", new DoubleTimeSeries(connection, "RTK Latitude", "radians"));
+        doubleTimeSeriesMap.put("IMUEX(0):rtk_Alti", new DoubleTimeSeries(connection, "RTK Altitude", "ft"));
 
         return doubleTimeSeriesMap;
     }
