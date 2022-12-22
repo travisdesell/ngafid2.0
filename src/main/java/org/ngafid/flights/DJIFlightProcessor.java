@@ -37,11 +37,17 @@ public class DJIFlightProcessor {
             }
 
             while ((line = reader.readNext()) != null) {
+                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
+
                 for (int i = 0; i < line.length; i++) {
+
                     String column = indexedCols.get(i);
+                    LOG.info(column);
+
                     if (doubleTimeSeriesMap.containsKey(column)) {
                         DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
-                        colTimeSeries.add(Double.parseDouble(line[i]));
+                        double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
+                        colTimeSeries.add(value);
                     } else {
                         StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
                         colTimeSeries.add(line[i]);
@@ -124,12 +130,14 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Y", new DoubleTimeSeries(connection, "Mag Y", "A/m"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Z", new DoubleTimeSeries(connection, "Mag Z", "A/m"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Mod", new DoubleTimeSeries(connection, "Mod Mag", "A/m"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velN", new DoubleTimeSeries(connection, "Velocity N", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velD", new DoubleTimeSeries(connection, "Velocity D", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velComposite", new DoubleTimeSeries(connection, "Velocity Composite", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velH", new DoubleTimeSeries(connection, "Velocity H", "m/s"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):velN", new DoubleTimeSeries(connection, "IMU Velocity N", "m/s"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):velE", new DoubleTimeSeries(connection, "IMU Velocity E", "m/s"));
 
-        doubleTimeSeriesMap.put("IMU_ATTI(0):GPS-H", new DoubleTimeSeries(connection, "H GPS", "ft"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):velD", new DoubleTimeSeries(connection, "IMU Velocity D", "m/s"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):velComposite", new DoubleTimeSeries(connection, "Velocity Composite", "m/s"));
+        doubleTimeSeriesMap.put("IMU_ATTI(0):velH", new DoubleTimeSeries(connection, "IMU Velocity H", "m/s"));
+
+        doubleTimeSeriesMap.put("IMU_ATTI(0):GPS-H", new DoubleTimeSeries(connection, "IMU H GPS", "ft"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):roll", new DoubleTimeSeries(connection, "Roll", "deg/s"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):pitch", new DoubleTimeSeries(connection, "Pitch", "deg/s"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):yaw", new DoubleTimeSeries(connection, "Yaw", "deg/s"));
@@ -163,8 +171,9 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "", ""));
         doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "", ""));
         doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("GPS(0):velE", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("GPS(0):velD", new DoubleTimeSeries(connection, "", ""));
+        doubleTimeSeriesMap.put("GPS(0):velN", new DoubleTimeSeries(connection, "GPS Velocity N", "m/s"));
+        doubleTimeSeriesMap.put("GPS(0):velE", new DoubleTimeSeries(connection, "GPS Velocity E", "m/s"));
+        doubleTimeSeriesMap.put("GPS(0):velD", new DoubleTimeSeries(connection, "GPS Velocity D", "m/s"));
         doubleTimeSeriesMap.put("RC:Aileron", new DoubleTimeSeries(connection, "", ""));
         doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "", ""));
         doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "", ""));
@@ -270,12 +279,12 @@ public class DJIFlightProcessor {
 
     private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        stringTimeSeriesMap.put("GPS(0):dateTimeStamp", new StringTimeSeries(connection, "", "yyyy-mm-ddThh:mm:ssZ"));
+        stringTimeSeriesMap.put("GPS:dateTimeStamp", new StringTimeSeries(connection, "", "yyyy-mm-ddThh:mm:ssZ"));
         stringTimeSeriesMap.put("localDateSeries", new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd"));
         stringTimeSeriesMap.put("localTimeSeries", new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss"));
 
         stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
-        stringTimeSeriesMap.put("flyCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
+        stringTimeSeriesMap.put("flycCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
         stringTimeSeriesMap.put("flightAction", new StringTimeSeries(connection, "Flight Action", "Action"));
         stringTimeSeriesMap.put("nonGPSCause", new StringTimeSeries(connection, "Non GPS Cause", "GPS Cause"));
         stringTimeSeriesMap.put("connectedToRC", new StringTimeSeries(connection, "Connected To RC", "Connection"));
