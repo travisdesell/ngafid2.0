@@ -61,7 +61,7 @@ public class DJIFlightProcessor {
         ByteArrayOutputStream byteArrOStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[1024];
         while (inputStream.read(buffer) > -1) {
-            byteArrOStream.write(buffer, 0);
+            byteArrOStream.write(buffer);
         }
 
         byteArrOStream.flush();
