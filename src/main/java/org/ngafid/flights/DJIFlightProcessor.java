@@ -21,7 +21,8 @@ public class DJIFlightProcessor {
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
-    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection)
+            throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         List<InputStream> inputStreams = duplicateInputStream(stream, 2);
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection);
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
@@ -33,44 +34,70 @@ public class DJIFlightProcessor {
         }
 
         try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
-            String[] line;
-            String[] headers = reader.readNext();
-
-            for (int i = 0; i < headers.length; i++) {
-                indexedCols.put(i, headers[i]);
-            }
-
-            while ((line = reader.readNext()) != null) {
-//                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
-
-                for (int i = 0; i < line.length; i++) {
-
-                    String column = indexedCols.get(i);
-
-                    try {
-                        if (doubleTimeSeriesMap.containsKey(column)) {
-                            DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
-                            double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
-                            colTimeSeries.add(value);
-                        } else {
-                            StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
-                            colTimeSeries.add(line[i]);
-                        }
-                    } catch (NullPointerException e) {
-                        LOG.log(Level.WARNING, "Column {0} not found in time series map", column);
-                    }
-                }
-            }
+            readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
+            calculateLatLonGPS(connection, doubleTimeSeriesMap);
         } catch (CsvValidationException e) {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
         }
 
-        Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
+        Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"),
+                doubleTimeSeriesMap, stringTimeSeriesMap, connection);
         flight.setStatus("SUCCESS"); // TODO: See if this needs to be updated
         flight.setAirframeType("UAS Rotorcraft");
         flight.setAirframeTypeID(4);
 
         return flight;
+    }
+
+    private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
+                                 Map<String, StringTimeSeries> stringTimeSeriesMap, Map<Integer, String> indexedCols) throws IOException, CsvValidationException {
+        String[] line;
+        String[] headers = reader.readNext();
+
+        for (int i = 0; i < headers.length; i++) {
+            indexedCols.put(i, headers[i]);
+        }
+
+        while ((line = reader.readNext()) != null) {
+//                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
+
+            for (int i = 0; i < line.length; i++) {
+
+                String column = indexedCols.get(i);
+
+                try {
+                    if (doubleTimeSeriesMap.containsKey(column)) {
+                        DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
+                        double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
+                        colTimeSeries.add(value);
+                    } else {
+                        StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
+                        colTimeSeries.add(line[i]);
+                    }
+                } catch (NullPointerException e) {
+                    LOG.log(Level.WARNING, "Column {0} not found in time series map", column);
+                }
+            }
+        }
+    }
+
+    private static void calculateLatLonGPS(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        DoubleTimeSeries lonRad = doubleTimeSeriesMap.get("GPS(0):Long");
+        DoubleTimeSeries latRad = doubleTimeSeriesMap.get("GPS(0):Lat");
+
+        DoubleTimeSeries longDeg = new DoubleTimeSeries(connection, "Longitude", "degrees");
+        DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
+
+        for (int i = 0; i < lonRad.size(); i++) {
+            longDeg.add(Math.toDegrees(lonRad.get(i)));
+        }
+
+        for (int i = 0; i < lonRad.size(); i++) {
+            latDeg.add(Math.toDegrees(lonRad.get(i)));
+        }
+
+        doubleTimeSeriesMap.put("Longitude", longDeg);
+        doubleTimeSeriesMap.put("Latitude", latDeg);
     }
 
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
@@ -118,10 +145,6 @@ public class DJIFlightProcessor {
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
-        doubleTimeSeriesMap.put("Longitude", new DoubleTimeSeries(connection, "Longitude", "degrees"));
-        doubleTimeSeriesMap.put("Latitude", new DoubleTimeSeries(connection, "Latitude", "degrees"));
-        
-        
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
         doubleTimeSeriesMap.put("offsetTime", new DoubleTimeSeries(connection, "Offset Time", "seconds"));
         doubleTimeSeriesMap.put("IMU_ATTI(0):Longitude", new DoubleTimeSeries(connection, "IMU Longitude", "radians"));
