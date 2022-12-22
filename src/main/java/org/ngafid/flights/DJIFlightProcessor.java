@@ -22,12 +22,13 @@ public class DJIFlightProcessor {
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
     public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+        List<InputStream> inputStreams = duplicateInputStream(stream, 2);
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection);
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
-        Map<String, String> attributeMap = getAttributeMap(cloneInputStream(stream));
+        Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
 
-        try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)))) {
+        try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
             String[] line;
             String[] headers = reader.readNext();
 
@@ -59,16 +60,27 @@ public class DJIFlightProcessor {
         return flight;
     }
 
-    private static InputStream cloneInputStream(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream byteArrOStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[1024];
-        while (inputStream.read(buffer) > -1) {
-            byteArrOStream.write(buffer);
+    private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
+        List<InputStream> inputStreams = new ArrayList<>();
+        List<OutputStream> outputStreams = new ArrayList<>();
+
+        for (int i = 0; i < copies; i++) {
+            outputStreams.add(new ByteArrayOutputStream());
         }
 
-        byteArrOStream.flush();
+        byte[] buffer = new byte[1024];
+        while (inputStream.read(buffer) > -1) {
+            for (OutputStream outputStream : outputStreams) {
+                outputStream.write(buffer);
+            }
+        }
 
-        return new ByteArrayInputStream(byteArrOStream.toByteArray());
+        for (OutputStream outputStream : outputStreams) {
+            outputStream.flush();
+            inputStreams.add(new ByteArrayInputStream(((ByteArrayOutputStream) outputStream).toByteArray()));
+        }
+
+        return inputStreams;
     }
 
     private static Map<String, String> getAttributeMap(InputStream stream) {
