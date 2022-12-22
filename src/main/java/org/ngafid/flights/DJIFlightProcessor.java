@@ -1,12 +1,11 @@
 package org.ngafid.flights;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
@@ -17,6 +16,8 @@ import com.opencsv.exceptions.CsvValidationException;
 
 
 public class DJIFlightProcessor {
+    private static final Logger LOG = Logger.getLogger(DJIFlightProcessor.class.getName());
+
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
@@ -24,6 +25,9 @@ public class DJIFlightProcessor {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection, -1); // TODO: Update len
         Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
+        Map<String, String> attributeMap = getAttributeMap(cloneInputStream(stream));
+
+
         CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)));
         String[] line;
         String[] headers = reader.readNext();
@@ -45,8 +49,6 @@ public class DJIFlightProcessor {
             }
         }
 
-        Map<String, String> attributeMap  = getAttributeMap(stringTimeSeriesMap.get("Attribute|Value"));
-
         Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), attributeMap.get("ACType"), doubleTimeSeriesMap, stringTimeSeriesMap, connection);
         flight.setStatus("SUCCESS"); // TODO: See if this needs to be updated
         flight.setAirframeType("UAS Rotorcraft");
@@ -55,12 +57,34 @@ public class DJIFlightProcessor {
         return flight;
     }
 
-    private static Map<String, String> getAttributeMap(StringTimeSeries timeSeries) {
-        Map<String, String> attributeMap = new HashMap<>();
-        for (int i = 0; i < timeSeries.size(); i++) {
-            String[] splitPair = timeSeries.get(i).split("\\|");
-            attributeMap.put(splitPair[0], splitPair[1]);
+    private static InputStream cloneInputStream(InputStream inputStream) throws IOException {
+        ByteArrayOutputStream byteArrOStream = new ByteArrayOutputStream();
+        byte[] buffer = new byte[1024];
+        int len;
+        while ((len = inputStream.read(buffer)) > -1) {
+            byteArrOStream.write(buffer, 0, len);
         }
+
+        byteArrOStream.flush();
+
+        return new ByteArrayInputStream(byteArrOStream.toByteArray());
+    }
+
+    private static Map<String, String> getAttributeMap(InputStream stream) {
+        Map<String, String> attributeMap = new HashMap<>();
+        try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)))) {
+            String[] line;
+            while ((line = reader.readNext()) != null) {
+                if (line[line.length - 1].contains("|")) {
+                    String[] split = line[line.length - 1].split("\\|");
+                    attributeMap.put(split[0], split[1]);
+                }
+            }
+        } catch (IOException | CsvValidationException e) {
+            e.printStackTrace();
+        }
+
+        LOG.log(Level.INFO, "Attribute Map: {0}", attributeMap);
 
         return attributeMap;
     }
