@@ -233,7 +233,9 @@ public class DJIFlightProcessor {
 
     private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        stringTimeSeriesMap.put("GPS(0):dateTimeStamp", new StringTimeSeries(connection, "", ""));
+        stringTimeSeriesMap.put("GPS(0):dateTimeStamp", new StringTimeSeries(connection, "", "yyyy-mm-ddThh:mm:ssZ"));
+        stringTimeSeriesMap.put("localDateSeries", new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd"));
+        stringTimeSeriesMap.put("localTimeSeries", new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss"));
 
         stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
         stringTimeSeriesMap.put("flyCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
