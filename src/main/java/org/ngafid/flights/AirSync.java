@@ -39,7 +39,7 @@ public class AirSync {
         return sb.toString();
     }
 
-    public static boolean hasUploadsWaiting(AirSyncFleet fleet) {
+    public static boolean hasUploadsWaiting(AirSyncFleet fleet) throws IOException {
         //TODO: Implement a way to see if there are uploads waiting on the AirSync servers;
         System.out.println("fleet has creds: " + fleet.getAuth());
 
@@ -56,11 +56,11 @@ public class AirSync {
 
         try {
             while (true) {
-                List<AirSyncFleet> airSyncFleets = AirSyncFleet.getAll(connection);
+                AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
 
-                LOG.info("Found AirSync-enabled fleets: " + airSyncFleets.stream().map(Fleet::getName).collect(Collectors.joining(", ")));
+                LOG.info("Found AirSync-enabled fleets: " + Arrays.toString(airSyncFleets));
 
-                if (airSyncFleets == null || airSyncFleets.isEmpty()) {
+                if (airSyncFleets == null || airSyncFleets.length == 0) {
                     LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
                 }

@@ -249,4 +249,8 @@ public class Fleet {
 
         return fleet;
     }
+
+    public String toString() {
+        return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
+    }
 }

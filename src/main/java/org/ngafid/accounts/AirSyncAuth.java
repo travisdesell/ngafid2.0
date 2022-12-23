@@ -18,9 +18,14 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 public class AirSyncAuth {
+    class AccessToken {
+        public String accessToken;
+    }
+
     private Fleet fleet;
     private String apiKey, apiSecret;
-    private byte [] hash, bearerAuth;
+    private byte [] hash;
+    private AccessToken accessToken;
 
     private static String AIR_SYNC_AUTH_ENDPOINT_DEV = "https://service-dev.air-sync.com/partner_api/v1/auth/";
     private static String AIR_SYNC_AUTH_ENDPOINT_PROD = "https://api.air-sync.com/partner_api/v1/auth/";
@@ -44,6 +49,10 @@ public class AirSyncAuth {
         }
     }
 
+    public String bearerString() {
+        return "Bearer " + this.accessToken.accessToken;
+    }
+
     public void requestAuthorization() throws IOException {
         HttpsURLConnection connection = (HttpsURLConnection) new URL(AIR_SYNC_AUTH_ENDPOINT_DEV).openConnection();
 
@@ -54,8 +63,10 @@ public class AirSyncAuth {
         InputStream is = connection.getInputStream();
         byte [] respRaw = is.readAllBytes();
 
-        String str = new String(respRaw);
-        System.out.println("Got response: " + str);
+        String resp = new String(respRaw).replaceAll("access_token", "accessToken");
+
+        this.accessToken = gson.fromJson(resp, AccessToken.class);
+        this.issueTime = LocalDateTime.now();
     }
 
     public LocalDateTime getIssueTime() {
