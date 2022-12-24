@@ -610,5 +610,18 @@ if (!$update_uploads_for_raise) {
     query_ngafid_db($query);
 }
 
+$create_airsync = false;
+if ($create_airsync) {
+    $query = "CREATE TABLE `airsync_fleet_info` (
+    `fleet_id` int(11) DEFAULT NULL,
+    `api_key` varchar(32) DEFAULT NULL,
+    `api_secret` varchar(64) DEFAULT NULL,
+    KEY `airsync_fleet_id_fk` (`fleet_id`),
+    CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf;";
+
+    query_ngafid_db($query);
+}
+
 ?>
 
