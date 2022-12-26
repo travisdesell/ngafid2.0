@@ -137,21 +137,20 @@ public class DJIFlightProcessor {
 
         String time = dateTime[1];
 
-        localDateSeries.add(lclDateFormat.parse(date).toString());
-        localTimeSeries.add(lclTimeFormat.parse(time).toString());
-
         Date parsedDate = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(date + " " + time);
         for (int i = 0; i < seconds.size(); i++) {
             int millseconds = (int) (seconds.get(i) * 1000);
             Date newDate = addMilliseconds(parsedDate, millseconds);
 
+            LOG.info("DateTime: " + newDate.toString());
             localDateSeries.add(lclDateFormat.format(newDate));
             localTimeSeries.add(lclTimeFormat.format(newDate));
-            utcOfstSeries.add("00:00");
+            utcOfstSeries.add("+00:00");
         }
 
         stringTimeSeriesMap.put("Lcl Date", localDateSeries);
         stringTimeSeriesMap.put("Lcl Time", localTimeSeries);
+        stringTimeSeriesMap.put("UTCOfst", utcOfstSeries);
     }
 
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
@@ -250,24 +249,24 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "AltAGL", "ft"));
         doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "GPS Longitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "GPS Latitude", "radians"));
-        doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "Date", "Date"));
-        doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "Time", "Time"));
+        doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "GPS Date", "Date"));
+        doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "GPS Time", "Time"));
         doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "MSL Height", "ft"));
         doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "Horizontal Dilution of Precision", "DOP Value"));
         doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "Vertical Dilution of Precision", "DOP Value"));
         doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s"));
-        doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "", ""));
+        doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "GPS Num GPS", ""));
+        doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "GPS Num GLNAS", ""));
+        doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "GPS Num SV", ""));
         doubleTimeSeriesMap.put("GPS(0):velN", new DoubleTimeSeries(connection, "GPS Velocity N", "m/s"));
         doubleTimeSeriesMap.put("GPS(0):velE", new DoubleTimeSeries(connection, "GPS Velocity E", "m/s"));
         doubleTimeSeriesMap.put("GPS(0):velD", new DoubleTimeSeries(connection, "GPS Velocity D", "m/s"));
-        doubleTimeSeriesMap.put("RC:Aileron", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("Controller:gpsLevel", new DoubleTimeSeries(connection, "", ""));
-        doubleTimeSeriesMap.put("Controller:ctrl_level", new DoubleTimeSeries(connection, "", ""));
+        doubleTimeSeriesMap.put("RC:Aileron", new DoubleTimeSeries(connection, "RC Aileron", ""));
+        doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "RC Elevator", ""));
+        doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "RC Rudder", ""));
+        doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "RC Throttle", ""));
+        doubleTimeSeriesMap.put("Controller:gpsLevel", new DoubleTimeSeries(connection, "Controller GPS Level", ""));
+        doubleTimeSeriesMap.put("Controller:ctrl_level", new DoubleTimeSeries(connection, "Controller Control Level", ""));
         doubleTimeSeriesMap.put("Battery(0):cellVolts1", new DoubleTimeSeries(connection, "Battery Cell Volts 1", "Voltage"));
         doubleTimeSeriesMap.put("Battery(0):cellVolts2", new DoubleTimeSeries(connection, "Battery Cell Volts 2", "Voltage"));
         doubleTimeSeriesMap.put("Battery(0):cellVolts3", new DoubleTimeSeries(connection, "Battery Cell Volts 3", "Voltage"));
@@ -367,9 +366,9 @@ public class DJIFlightProcessor {
 
     private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        stringTimeSeriesMap.put("GPS:dateTimeStamp", new StringTimeSeries(connection, "", "yyyy-mm-ddThh:mm:ssZ"));
-        stringTimeSeriesMap.put("localDateSeries", new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd"));
-        stringTimeSeriesMap.put("localTimeSeries", new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss"));
+        stringTimeSeriesMap.put("GPS:dateTimeStamp", new StringTimeSeries(connection, "GPS Date Time Stamp", "yyyy-mm-ddThh:mm:ssZ"));
+//        stringTimeSeriesMap.put("localDateSeries", new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd"));
+//        stringTimeSeriesMap.put("localTimeSeries", new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss"));
 
         stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
         stringTimeSeriesMap.put("flycCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
