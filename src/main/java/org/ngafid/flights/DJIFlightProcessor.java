@@ -13,12 +13,6 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
 import static org.ngafid.common.TimeUtils.addMilliseconds;
-import static org.ngafid.common.TimeUtils.addSeconds;
-
-/**
- * Represents Flights for the NGAFID, but for DJI drones
- */
-
 
 public class DJIFlightProcessor {
     private static final Logger LOG = Logger.getLogger(DJIFlightProcessor.class.getName());
@@ -74,8 +68,6 @@ public class DJIFlightProcessor {
         }
 
         while ((line = reader.readNext()) != null) {
-//                LOG.log(Level.INFO, "Processing line: {0}", Arrays.toString(line));
-
             for (int i = 0; i < line.length; i++) {
 
                 String column = indexedCols.get(i);
@@ -142,7 +134,6 @@ public class DJIFlightProcessor {
             int millseconds = (int) (seconds.get(i) * 1000);
             Date newDate = addMilliseconds(parsedDate, millseconds);
 
-            LOG.info("DateTime: " + newDate.toString());
             localDateSeries.add(lclDateFormat.format(newDate));
             localTimeSeries.add(lclTimeFormat.format(newDate));
             utcOfstSeries.add("+00:00");
@@ -195,7 +186,7 @@ public class DJIFlightProcessor {
         return attributeMap;
     }
 
-    // TODO: Maybe find a pattern with names and datatypes to make this more manageable
+    // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
@@ -255,9 +246,9 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "Horizontal Dilution of Precision", "DOP Value"));
         doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "Vertical Dilution of Precision", "DOP Value"));
         doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s"));
-        doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "GPS Num GPS", ""));
-        doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "GPS Num GLNAS", ""));
-        doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "GPS Num SV", ""));
+        doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "GPS Num GPS", "Number"));
+        doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "GPS Num GLNAS", "Number"));
+        doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "GPS Num SV", "Number"));
         doubleTimeSeriesMap.put("GPS(0):velN", new DoubleTimeSeries(connection, "GPS Velocity N", "m/s"));
         doubleTimeSeriesMap.put("GPS(0):velE", new DoubleTimeSeries(connection, "GPS Velocity E", "m/s"));
         doubleTimeSeriesMap.put("GPS(0):velD", new DoubleTimeSeries(connection, "GPS Velocity D", "m/s"));
@@ -276,7 +267,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Battery(0):current", new DoubleTimeSeries(connection, "Battery Current", "Amps"));
         doubleTimeSeriesMap.put("Battery(0):totalVolts", new DoubleTimeSeries(connection, "Battery Total Voltage", "Voltage"));
 
-        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "Battery Temperature", "Celsius")); // TODO: Fill params
+        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "Battery Temperature", "Celsius"));
         doubleTimeSeriesMap.put("Battery(0):battery%", new DoubleTimeSeries(connection, "Battery Percentage", "Percentage"));
         doubleTimeSeriesMap.put("Battery(0):FullChargeCap", new DoubleTimeSeries(connection, "Battery Full Charge Cap", "Capacity"));
         doubleTimeSeriesMap.put("Battery(0):RemainingCap", new DoubleTimeSeries(connection, "Battery Remaining Cap", "Capacity"));
@@ -349,13 +340,13 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Motor:Current:RSide", new DoubleTimeSeries(connection, "Right Side Motor Current", "Amps"));
 
 
-        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", ""));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", ""));
-        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", ""));
-        doubleTimeSeriesMap.put("AirComp:VelNorm", new DoubleTimeSeries(connection, "Airspeed Norm Velocity", ""));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:X", new DoubleTimeSeries(connection, "Airspeed Ground X", ""));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:Y", new DoubleTimeSeries(connection, "Airspeed Ground Y", ""));
-        doubleTimeSeriesMap.put("AirComp:VelLevel", new DoubleTimeSeries(connection, "Airspeed Level Velocity", ""));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "knots"));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", "knots"));
+        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", "ft"));
+        doubleTimeSeriesMap.put("AirComp:VelNorm", new DoubleTimeSeries(connection, "Airspeed Norm Velocity", "k/h"));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:X", new DoubleTimeSeries(connection, "Airspeed Ground X", "knots"));
+        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:Y", new DoubleTimeSeries(connection, "Airspeed Ground Y", "knots"));
+        doubleTimeSeriesMap.put("AirComp:VelLevel", new DoubleTimeSeries(connection, "Airspeed Level Velocity", "k/h"));
 
         doubleTimeSeriesMap.put("IMUEX(0):rtk_Longitude", new DoubleTimeSeries(connection, "RTK Longitude", "radians"));
         doubleTimeSeriesMap.put("IMUEX(0):rtk_Latitude", new DoubleTimeSeries(connection, "RTK Latitude", "radians"));
@@ -367,8 +358,6 @@ public class DJIFlightProcessor {
     private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
         stringTimeSeriesMap.put("GPS:dateTimeStamp", new StringTimeSeries(connection, "GPS Date Time Stamp", "yyyy-mm-ddThh:mm:ssZ"));
-//        stringTimeSeriesMap.put("localDateSeries", new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd"));
-//        stringTimeSeriesMap.put("localTimeSeries", new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss"));
 
         stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
         stringTimeSeriesMap.put("flycCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
