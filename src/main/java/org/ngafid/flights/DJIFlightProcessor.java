@@ -98,11 +98,11 @@ public class DJIFlightProcessor {
         DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
 
         for (int i = 0; i < lonRad.size(); i++) {
-            longDeg.add(Math.toDegrees(lonRad.get(i)));
+            longDeg.add(Math.toDegrees(lonRad.get(i)) / 100);
         }
 
         for (int i = 0; i < lonRad.size(); i++) {
-            latDeg.add(Math.toDegrees(latRad.get(i)));
+            latDeg.add(Math.toDegrees(latRad.get(i)) / 100);
         }
 
         doubleTimeSeriesMap.put("Longitude", longDeg);
