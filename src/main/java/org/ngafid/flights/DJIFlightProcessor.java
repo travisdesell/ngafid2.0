@@ -83,6 +83,8 @@ public class DJIFlightProcessor {
                     }
                 } catch (NullPointerException e) {
                     LOG.log(Level.WARNING, "Column {0} not found in time series map", column);
+                } catch (NumberFormatException e) {
+                    LOG.log(Level.WARNING, "Could not parse value {0} as double", line[i]);
                 }
             }
         }
