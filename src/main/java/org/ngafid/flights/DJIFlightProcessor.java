@@ -49,6 +49,8 @@ public class DJIFlightProcessor {
             e.printStackTrace();
         }
 
+        dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
+
         Flight flight = new Flight(fleetId, entry, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"),
                 doubleTimeSeriesMap, stringTimeSeriesMap, connection);
         flight.setStatus(flightStatus);
@@ -186,6 +188,22 @@ public class DJIFlightProcessor {
         LOG.log(Level.INFO, "Attribute Map: {0}", attributeMap);
 
         return attributeMap;
+    }
+
+    private static void dropBlankCols(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
+        for (String key : doubleTimeSeriesMap.keySet()) {
+            if (doubleTimeSeriesMap.get(key).size() == 0) {
+                doubleTimeSeriesMap.remove(key);
+            }
+        }
+
+        for (String key : stringTimeSeriesMap.keySet()) {
+            if (stringTimeSeriesMap.get(key).size() == 0) {
+                stringTimeSeriesMap.remove(key);
+            }
+        }
+
+
     }
 
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
