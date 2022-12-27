@@ -12,6 +12,7 @@ import Button from 'react-bootstrap/Button';
 import Container from 'react-bootstrap/Container';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
+import InputGroup from "react-bootstrap/InputGroup";
 
 
 class EmailPreferences extends React.Component {
@@ -36,6 +37,9 @@ class EmailPreferences extends React.Component {
                         </h6>
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
+                                <InputGroup>
+                                    <FormCheck type="checkbox" id="optOut" label="Opt Out Of All Emails" style={{padding: "1 1 1 1"}}/>
+                                </InputGroup>
                             </div>
                         </div>
                     </div>
