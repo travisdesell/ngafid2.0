@@ -14,6 +14,7 @@ import Row from 'react-bootstrap/Row';
 import { errorModal } from "./error_modal.js";
 import { MetricViewerSettings } from "./metricviewer_preferences.js";
 import SignedInNavbar from "./signed_in_navbar.js";
+import { EmailPreferences } from "./email_preferences.js";
 
 class PreferencesPage extends React.Component {
     constructor(props) {
@@ -51,6 +52,9 @@ class PreferencesPage extends React.Component {
                                                 selectedMetrics={this.state.selectedMetrics}
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
+
+                                            <EmailPreferences>
+                                            </EmailPreferences>
                                     </div>
                                 </div>
                             </div>
