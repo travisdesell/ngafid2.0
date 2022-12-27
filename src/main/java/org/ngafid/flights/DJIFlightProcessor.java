@@ -190,6 +190,13 @@ public class DJIFlightProcessor {
         return attributeMap;
     }
 
+    private static void indexCols(String[] cols, Map<Integer, String> indexedCols) {
+        int i = 0;
+        for (String col : cols) {
+            indexedCols.put(i++, col);
+        }
+    }
+
     private static void dropBlankCols(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         for (String key : doubleTimeSeriesMap.keySet()) {
             if (doubleTimeSeriesMap.get(key).size() == 0) {
@@ -202,7 +209,9 @@ public class DJIFlightProcessor {
                 stringTimeSeriesMap.remove(key);
             }
         }
+    }
 
+    private static void createMaps(Connection connection, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, Map<String, TimeSeries> timeSeriesMap) {
 
     }
 
