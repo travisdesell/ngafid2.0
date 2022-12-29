@@ -3,6 +3,7 @@ package org.ngafid.accounts;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -18,20 +19,22 @@ import com.google.gson.reflect.*;
 public class AirSyncFleet extends Fleet {
     private AirSyncAuth authCreds;
     private List<AirSyncAircraft> aircraft;
+    private LocalDateTime lastUploadTime;
 
     private static AirSyncFleet [] fleets = null;
     private static String AIR_SYNC_AIRCRAFT_ENDPOINT = "https://service-dev.air-sync.com/partner_api/v1/aircraft/";
 
     private static final Gson gson = WebServer.gson;
 
-    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth) {
+    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastUploadTime) {
         super(id, name);
         this.authCreds = airSyncAuth;
+        this.lastUploadTime = lastUploadTime;
     }
 
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         this(resultSet.getInt(1), resultSet.getString(2), 
-                new AirSyncAuth(resultSet.getString(3), resultSet.getString(4)));
+            new AirSyncAuth(resultSet.getString(3), resultSet.getString(4)), resultSet.getTimestamp(5).toLocalDateTime());
     }
 
     public AirSyncAuth getAuth() throws IOException {
@@ -74,7 +77,7 @@ public class AirSyncFleet extends Fleet {
         } else return null;
 
         if (fleets == null || fleets.length != asFleetCount) {
-            sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
+            sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
             query = connection.prepareStatement(sql);
 
             resultSet = query.executeQuery();
