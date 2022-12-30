@@ -211,62 +211,63 @@ public class DJIFlightProcessor {
         }
     }
 
-    private static void createMaps(Connection connection, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, Map<String, TimeSeries> timeSeriesMap) {
+    private static void processCols(Connection connection, String[] cols, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
+        int i = 0;
+        for (String col : cols) {
+            indexedCols.put(i++, col);
+            String category = col.split(":")[0];
+
+            switch (category) {
+                case "IMU_ATTI(0)":
+                    handleIMUDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    break;
+                case "GPS(0)":
+                    handleGPSDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    break;
+
+                case "General":
+                    doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "ft"));
+                    break;
+
+
+            }
+
+        }
+    }
+
+    private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
+
 
     }
+
+    private static void handleIMUDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        String dataType;
+
+        if (colName.contains("Longitude") || colName.contains("Latitude")) {
+            dataType = "radians";
+        } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
+            dataType = "degrees";
+        } else if (colName.contains("distance") || colName.contains("GPS-H")) {
+            dataType = "ft";
+        } else if (colName.contains("temperature")) {
+            dataType = "Celsius";
+        } else {
+            dataType = "number";
+            LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
+        }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+    }
+
 
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
         doubleTimeSeriesMap.put("offsetTime", new DoubleTimeSeries(connection, "Offset Time", "seconds"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):Longitude", new DoubleTimeSeries(connection, "IMU Longitude", "radians"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):Latitude", new DoubleTimeSeries(connection, "IMU Latitude", "radians"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):numSats", new DoubleTimeSeries(connection, "NumSats", "number"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Raw", new DoubleTimeSeries(connection, "Barometer Raw", "atm"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):barometer:Smooth", new DoubleTimeSeries(connection, "Barometer Smooth", "atm"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:X", new DoubleTimeSeries(connection, "Acceleration X", "m/s^2"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Y", new DoubleTimeSeries(connection, "Acceleration Y", "m/s^2"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Z", new DoubleTimeSeries(connection, "Acceleration Z", "m/s^2"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):accel:Composite", new DoubleTimeSeries(connection, "Composite Acceleration", "m/s^2"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:X", new DoubleTimeSeries(connection, "Gyro X", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Y", new DoubleTimeSeries(connection, "Gyro Y", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Z", new DoubleTimeSeries(connection, "Gyro Z", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):gyro:Composite", new DoubleTimeSeries(connection, "Composite Gyro", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:X", new DoubleTimeSeries(connection, "Mag X", "A/m"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Y", new DoubleTimeSeries(connection, "Mag Y", "A/m"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Z", new DoubleTimeSeries(connection, "Mag Z", "A/m"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):mag:Mod", new DoubleTimeSeries(connection, "Mod Mag", "A/m"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velN", new DoubleTimeSeries(connection, "IMU Velocity N", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velE", new DoubleTimeSeries(connection, "IMU Velocity E", "m/s"));
 
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velD", new DoubleTimeSeries(connection, "IMU Velocity D", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velComposite", new DoubleTimeSeries(connection, "Velocity Composite", "m/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):velH", new DoubleTimeSeries(connection, "IMU Velocity H", "m/s"));
-
-        doubleTimeSeriesMap.put("IMU_ATTI(0):GPS-H", new DoubleTimeSeries(connection, "IMU H GPS", "ft"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):roll", new DoubleTimeSeries(connection, "Roll", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):pitch", new DoubleTimeSeries(connection, "Pitch", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw", new DoubleTimeSeries(connection, "Yaw", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):yaw360", new DoubleTimeSeries(connection, "Yaw 360", "deg/s"));
-
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Z", new DoubleTimeSeries(connection, "Total Gyro Z", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:X", new DoubleTimeSeries(connection, "Total Gyro X", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):totalGyro:Y", new DoubleTimeSeries(connection, "Total Gyro Y", "deg/s"));
-
-
-        doubleTimeSeriesMap.put("IMU_ATTI(0):magYaw", new DoubleTimeSeries(connection, "Mag Yaw", "deg/s"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceHP", new DoubleTimeSeries(connection, "Distance HP", "ft"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):distanceTravelled", new DoubleTimeSeries(connection, "Distance Travelled", "ft"));
-        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[mag]", new DoubleTimeSeries(connection, "Direction of Travel (mag)", "deg")); // Dont know about these types
-        doubleTimeSeriesMap.put("IMU_ATTI(0):directionOfTravel[true]", new DoubleTimeSeries(connection, "Direction of Travel (true)", "deg"));
-
-        doubleTimeSeriesMap.put("IMU_ATTI(0):temperature", new DoubleTimeSeries(connection, "Temperature", "Celsius"));
         doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds"));
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
-        doubleTimeSeriesMap.put("General:vpsHeight", new DoubleTimeSeries(connection, "VPS Height", "ft"));
-        doubleTimeSeriesMap.put("General:relativeHeight", new DoubleTimeSeries(connection, "Relative Height", "ft"));
-        doubleTimeSeriesMap.put("General:absoluteHeight", new DoubleTimeSeries(connection, "AltAGL", "ft"));
         doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "GPS Longitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "GPS Latitude", "radians"));
         doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "GPS Date", "Date"));
@@ -324,13 +325,6 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Motor:Status:LBack", new DoubleTimeSeries(connection, "Left Back Motor Status", "Status Number"));
         doubleTimeSeriesMap.put("Motor:Status:RBack", new DoubleTimeSeries(connection, "Right Back Motor Status", "Status Number"));
         doubleTimeSeriesMap.put("Motor:Status:RSide", new DoubleTimeSeries(connection, "Right Side Motor Status", "Status Number"));
-
-        doubleTimeSeriesMap.put("Motor:Speed:RFront", new DoubleTimeSeries(connection, "Right Front Motor Speed", "m/s"));
-        doubleTimeSeriesMap.put("Motor:Speed:LFront", new DoubleTimeSeries(connection, "Left Front Motor Speed", "m/s"));
-        doubleTimeSeriesMap.put("Motor:Speed:LSide", new DoubleTimeSeries(connection, "Left Side Motor Speed", "m/s"));
-        doubleTimeSeriesMap.put("Motor:Speed:LBack", new DoubleTimeSeries(connection, "Left Side Motor Speed", "m/s"));
-        doubleTimeSeriesMap.put("Motor:Speed:RBack", new DoubleTimeSeries(connection, "Right Back Motor Speed", "m/s"));
-        doubleTimeSeriesMap.put("Motor:Speed:RSide", new DoubleTimeSeries(connection, "Right Side Motor Speed", "m/s"));
 
         doubleTimeSeriesMap.put("Motor:Volts:RFront", new DoubleTimeSeries(connection, "Right Front Motor Voltage", "Volts"));
         doubleTimeSeriesMap.put("Motor:Volts:LFront", new DoubleTimeSeries(connection, "Left Front Motor Voltage", "Volts"));
@@ -402,4 +396,5 @@ public class DJIFlightProcessor {
 
         return stringTimeSeriesMap;
     }
+
 }
