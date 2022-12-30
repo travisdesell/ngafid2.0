@@ -225,10 +225,17 @@ public class DJIFlightProcessor {
                     handleGPSDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
+                case "Battery(0)":
+                    handleBatteryDataType(connection, col, doubleTimeSeriesMap);
+                    break;
+
                 case "General":
                     doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "ft"));
                     break;
 
+                case "Controller":
+                    doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "level"));
+                    break;
 
             }
 
@@ -283,6 +290,29 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
+    private static void handleBatteryDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        String dataType = "number";
+        colName = colName.toLowerCase();
+
+        if (colName.contains("volt")) {
+            dataType = "Voltage";
+        } else if (colName.contains("watts")) {
+            dataType = "Watts";
+        } else if (colName.contains("current")) {
+            dataType = "Amps";
+        } else if (colName.contains("cap")) {
+            dataType = "Capacity";
+        } else if (colName.contains("temp")) {
+            dataType = "Celsius";
+        } else if (colName.contains("^")) {
+            dataType = "Percentage";
+        } else {
+            LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
+        }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+    }
+
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
@@ -296,33 +326,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "RC Elevator", ""));
         doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "RC Rudder", ""));
         doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "RC Throttle", ""));
-        doubleTimeSeriesMap.put("Controller:gpsLevel", new DoubleTimeSeries(connection, "Controller GPS Level", ""));
-        doubleTimeSeriesMap.put("Controller:ctrl_level", new DoubleTimeSeries(connection, "Controller Control Level", ""));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts1", new DoubleTimeSeries(connection, "Battery Cell Volts 1", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts2", new DoubleTimeSeries(connection, "Battery Cell Volts 2", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts3", new DoubleTimeSeries(connection, "Battery Cell Volts 3", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts4", new DoubleTimeSeries(connection, "Battery Cell Volts 4", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts5", new DoubleTimeSeries(connection, "Battery Cell Volts 5", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):cellVolts6", new DoubleTimeSeries(connection, "Battery Cell Volts 6", "Voltage"));
-        doubleTimeSeriesMap.put("Battery(0):current", new DoubleTimeSeries(connection, "Battery Current", "Amps"));
-        doubleTimeSeriesMap.put("Battery(0):totalVolts", new DoubleTimeSeries(connection, "Battery Total Voltage", "Voltage"));
 
-        doubleTimeSeriesMap.put("Battery(0):Temp", new DoubleTimeSeries(connection, "Battery Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Battery(0):battery%", new DoubleTimeSeries(connection, "Battery Percentage", "Percentage"));
-        doubleTimeSeriesMap.put("Battery(0):FullChargeCap", new DoubleTimeSeries(connection, "Battery Full Charge Cap", "Capacity"));
-        doubleTimeSeriesMap.put("Battery(0):RemainingCap", new DoubleTimeSeries(connection, "Battery Remaining Cap", "Capacity"));
-        doubleTimeSeriesMap.put("Battery(0):voltSpread", new DoubleTimeSeries(connection, "Battery Voltage Spread", "Voltage"));
-
-        doubleTimeSeriesMap.put("Battery(0):watts", new DoubleTimeSeries(connection, "Battery Watts", "Watts"));
-        doubleTimeSeriesMap.put("Battery(0):minCurrent", new DoubleTimeSeries(connection, "Battery Minimum Current", "Amps"));
-        doubleTimeSeriesMap.put("Battery(0):maxCurrent", new DoubleTimeSeries(connection, "Battery Maximum Current", "Amps"));
-        doubleTimeSeriesMap.put("Battery(0):avgCurrent", new DoubleTimeSeries(connection, "Battery Average Current", "Amps"));
-        doubleTimeSeriesMap.put("Battery(0):minVolts", new DoubleTimeSeries(connection, "Battery Minimum Volts", "Volts"));
-        doubleTimeSeriesMap.put("Battery(0):maxVolts", new DoubleTimeSeries(connection, "Battery Maximum Volts", "Volts"));
-        doubleTimeSeriesMap.put("Battery(0):avgVolts", new DoubleTimeSeries(connection, "Battery Average Volts", "Volts"));
-        doubleTimeSeriesMap.put("Battery(0):minWatts", new DoubleTimeSeries(connection, "Battery Minimum Watts", "Watts"));
-        doubleTimeSeriesMap.put("Battery(0):maxWatts", new DoubleTimeSeries(connection, "Battery Maximum Watts", "Watts"));
-        doubleTimeSeriesMap.put("Battery(0):avgWatts", new DoubleTimeSeries(connection, "Battery Average Watts", "Watts"));
 
         doubleTimeSeriesMap.put("SMART_BATT:goHome%", new DoubleTimeSeries(connection, "Smart Battery Go Home Percentage", "percentage"));
         doubleTimeSeriesMap.put("SMART_BATT:land%", new DoubleTimeSeries(connection, "Smart Battery Land Percentage", "percentage"));
