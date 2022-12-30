@@ -229,6 +229,10 @@ public class DJIFlightProcessor {
                     handleBatteryDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
+                case "Motor":
+                    handleMotorDataType(connection, col, doubleTimeSeriesMap);
+                    break;
+
                 case "General":
                     doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "ft"));
                     break;
@@ -304,7 +308,7 @@ public class DJIFlightProcessor {
             dataType = "Capacity";
         } else if (colName.contains("temp")) {
             dataType = "Celsius";
-        } else if (colName.contains("^")) {
+        } else if (colName.contains("%")) {
             dataType = "Percentage";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
@@ -313,7 +317,26 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
-    // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
+    private static void handleMotorDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        String dataType = "number";
+
+        if (colName.contains("V_out") || colName.contains("Volts")) {
+            dataType = "Voltage";
+        } else if (colName.contains("Current")) {
+            dataType = "Amps";
+        } else if (colName.contains("PPMrecv")) {
+            dataType = "RC Stop Command";
+        } else if (colName.contains("Temp")) {
+            dataType = "Celsius";
+        } else if (colName.contains("Status")) {
+            dataType = "Status Number";
+        } else {
+            LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
+        }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+    }
+
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
@@ -333,48 +356,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("SMART_BATT:goHomeTime", new DoubleTimeSeries(connection, "Smart Battery Go Home Time", "seconds"));
         doubleTimeSeriesMap.put("SMART_BATT:landTime", new DoubleTimeSeries(connection, "Smart Battery Land Time", "seconds"));
 
-        doubleTimeSeriesMap.put("Motor:Status:RFront", new DoubleTimeSeries(connection, "Right Front Motor Status", "Status Number"));
-        doubleTimeSeriesMap.put("Motor:Status:LFront", new DoubleTimeSeries(connection, "Left Front Motor Status", "Status Number"));
-        doubleTimeSeriesMap.put("Motor:Status:LSide", new DoubleTimeSeries(connection, "Left Side Motor Status", "Status Number"));
-        doubleTimeSeriesMap.put("Motor:Status:LBack", new DoubleTimeSeries(connection, "Left Back Motor Status", "Status Number"));
-        doubleTimeSeriesMap.put("Motor:Status:RBack", new DoubleTimeSeries(connection, "Right Back Motor Status", "Status Number"));
-        doubleTimeSeriesMap.put("Motor:Status:RSide", new DoubleTimeSeries(connection, "Right Side Motor Status", "Status Number"));
 
-        doubleTimeSeriesMap.put("Motor:Volts:RFront", new DoubleTimeSeries(connection, "Right Front Motor Voltage", "Volts"));
-        doubleTimeSeriesMap.put("Motor:Volts:LFront", new DoubleTimeSeries(connection, "Left Front Motor Voltage", "Volts"));
-        doubleTimeSeriesMap.put("Motor:Volts:LSide", new DoubleTimeSeries(connection, "Left Side Motor Voltage", "Volts"));
-        doubleTimeSeriesMap.put("Motor:Volts:LBack", new DoubleTimeSeries(connection, "Left Back Motor Voltage", "Volts"));
-        doubleTimeSeriesMap.put("Motor:Volts:RBack", new DoubleTimeSeries(connection, "Right Back Motor Voltage", "Volts"));
-        doubleTimeSeriesMap.put("Motor:Volts:RSide", new DoubleTimeSeries(connection, "Right Side Motor Voltage", "Volts"));
-
-        doubleTimeSeriesMap.put("Motor:EscTemp:RFront", new DoubleTimeSeries(connection, "Right Front Motor Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Motor:EscTemp:LFront", new DoubleTimeSeries(connection, "Left Front Motor Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Motor:EscTemp:LSide", new DoubleTimeSeries(connection, "Left Side Motor Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Motor:EscTemp:LBack", new DoubleTimeSeries(connection, "Left Back Motor Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Motor:EscTemp:RBack", new DoubleTimeSeries(connection, "Right Back Motor Temperature", "Celsius"));
-        doubleTimeSeriesMap.put("Motor:EscTemp:RSide", new DoubleTimeSeries(connection, "Right Side Motor Temperature", "Celsius"));
-
-
-        doubleTimeSeriesMap.put("Motor:PPMrecv:RFront", new DoubleTimeSeries(connection, "Right Front Motor Stop Command", "Stop Command"));
-        doubleTimeSeriesMap.put("Motor:PPMrecv:LFront", new DoubleTimeSeries(connection, "Left Front Motor Stop Command", "Stop Command"));
-        doubleTimeSeriesMap.put("Motor:PPMrecv:LSide", new DoubleTimeSeries(connection, "Left Side Motor Stop Command", "Stop Command"));
-        doubleTimeSeriesMap.put("Motor:PPMrecv:LBack", new DoubleTimeSeries(connection, "Left Back Motor Stop Command", "Stop Command"));
-        doubleTimeSeriesMap.put("Motor:PPMrecv:RBack", new DoubleTimeSeries(connection, "Right Back Motor Stop Command", "Stop Command"));
-        doubleTimeSeriesMap.put("Motor:PPMrecv:RSide", new DoubleTimeSeries(connection, "Right Side Motor Stop Command", "Stop Command"));
-
-        doubleTimeSeriesMap.put("Motor:V_out:RFront", new DoubleTimeSeries(connection, "Right Front Motor ", ""));
-        doubleTimeSeriesMap.put("Motor:V_out:LFront", new DoubleTimeSeries(connection, "Left Front Motor Voltage Out", "Voltage"));
-        doubleTimeSeriesMap.put("Motor:V_out:LSide", new DoubleTimeSeries(connection, "Left Side Motor Voltage Out", "Voltage"));
-        doubleTimeSeriesMap.put("Motor:V_out:LBack", new DoubleTimeSeries(connection, "Left Back Motor Voltage Out", "Voltage"));
-        doubleTimeSeriesMap.put("Motor:V_out:RBack", new DoubleTimeSeries(connection, "Right Back Motor Voltage Out", "Voltage"));
-        doubleTimeSeriesMap.put("Motor:V_out:RSide", new DoubleTimeSeries(connection, "Right Side Motor Voltage Out", "Voltage"));
-
-        doubleTimeSeriesMap.put("Motor:Current:RFront", new DoubleTimeSeries(connection, "Right Front Motor Current", "Amps"));
-        doubleTimeSeriesMap.put("Motor:Current:LFront", new DoubleTimeSeries(connection, "Left Front Motor Current", "Amps"));
-        doubleTimeSeriesMap.put("Motor:Current:LSide", new DoubleTimeSeries(connection, "Left Side Motor Current", "Amps"));
-        doubleTimeSeriesMap.put("Motor:Current:LBack", new DoubleTimeSeries(connection, "Left Back Motor Current", "Amps"));
-        doubleTimeSeriesMap.put("Motor:Current:RBack", new DoubleTimeSeries(connection, "Right Back Motor Current", "Amps"));
-        doubleTimeSeriesMap.put("Motor:Current:RSide", new DoubleTimeSeries(connection, "Right Side Motor Current", "Amps"));
 
 
         doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "knots"));
