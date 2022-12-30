@@ -219,10 +219,10 @@ public class DJIFlightProcessor {
 
             switch (category) {
                 case "IMU_ATTI(0)":
-                    handleIMUDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    handleIMUDataType(connection, col, doubleTimeSeriesMap);
                     break;
                 case "GPS(0)":
-                    handleGPSDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    handleGPSDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
                 case "General":
@@ -233,11 +233,6 @@ public class DJIFlightProcessor {
             }
 
         }
-    }
-
-    private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
-
-
     }
 
     private static void handleIMUDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
@@ -259,6 +254,34 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
+    private static void handleGPSDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s"));
+
+        String dataType;
+
+        if (colName.contains("Long") || colName.contains("Lat")) {
+            dataType = "radians";
+        } else if (colName.contains("vel")) {
+            dataType = "m/s";
+        } else if (colName.contains("height")) {
+            dataType = "ft";
+        } else if (colName.contains("DOP")) {
+            dataType = "DOP Value";
+        } else if (colName.contains("Date")) {
+            dataType = "Date";
+        } else if (colName.contains("Time")) {
+            dataType = "Time";
+        } else if (colName.contains("sAcc")) {
+            dataType = "cm/s";
+        } else {
+            dataType = "number";
+            if (!colName.contains("num")) {
+                LOG.log(Level.WARNING, "GPS Unknown data type: {0}", colName);
+            }
+        }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+    }
 
     // TODO: Maybe find a pattern with names and datatypes to make this more manageable and flexible
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
@@ -268,20 +291,7 @@ public class DJIFlightProcessor {
 
         doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds"));
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
-        doubleTimeSeriesMap.put("GPS(0):Long", new DoubleTimeSeries(connection, "GPS Longitude", "radians"));
-        doubleTimeSeriesMap.put("GPS(0):Lat", new DoubleTimeSeries(connection, "GPS Latitude", "radians"));
-        doubleTimeSeriesMap.put("GPS(0):Date", new DoubleTimeSeries(connection, "GPS Date", "Date"));
-        doubleTimeSeriesMap.put("GPS(0):Time", new DoubleTimeSeries(connection, "GPS Time", "Time"));
-        doubleTimeSeriesMap.put("GPS(0):heightMSL", new DoubleTimeSeries(connection, "MSL Height", "ft"));
-        doubleTimeSeriesMap.put("GPS(0):hDOP", new DoubleTimeSeries(connection, "Horizontal Dilution of Precision", "DOP Value"));
-        doubleTimeSeriesMap.put("GPS(0):pDOP", new DoubleTimeSeries(connection, "Vertical Dilution of Precision", "DOP Value"));
-        doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s"));
-        doubleTimeSeriesMap.put("GPS(0):numGPS", new DoubleTimeSeries(connection, "GPS Num GPS", "Number"));
-        doubleTimeSeriesMap.put("GPS(0):numGLNAS", new DoubleTimeSeries(connection, "GPS Num GLNAS", "Number"));
-        doubleTimeSeriesMap.put("GPS(0):numSV", new DoubleTimeSeries(connection, "GPS Num SV", "Number"));
-        doubleTimeSeriesMap.put("GPS(0):velN", new DoubleTimeSeries(connection, "GPS Velocity N", "m/s"));
-        doubleTimeSeriesMap.put("GPS(0):velE", new DoubleTimeSeries(connection, "GPS Velocity E", "m/s"));
-        doubleTimeSeriesMap.put("GPS(0):velD", new DoubleTimeSeries(connection, "GPS Velocity D", "m/s"));
+
         doubleTimeSeriesMap.put("RC:Aileron", new DoubleTimeSeries(connection, "RC Aileron", ""));
         doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "RC Elevator", ""));
         doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "RC Rudder", ""));
