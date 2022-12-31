@@ -395,36 +395,77 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
+    private static void handleMiscDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
+        String dataType;
+        boolean isDouble = true;
+        switch (colName) {
+            case "Tick#":
+                dataType = "tick";
+                break;
 
-    private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
-        Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
-        doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
-        doubleTimeSeriesMap.put("offsetTime", new DoubleTimeSeries(connection, "Offset Time", "seconds"));
+            case "offsetTime":
+            case "flightTime":
+                dataType = "seconds";
+                break;
 
-        doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds"));
-        doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
+            case "gpsHealth":
+                dataType = "GPS Health";
+                break;
 
+            case "flyCState":
+                dataType = "C State";
+                isDouble = false;
+                break;
 
+            case "flycCommand":
+                dataType = "Command";
+                isDouble = false;
+                break;
 
-        return doubleTimeSeriesMap;
-    }
+            case "flightAction":
+                dataType = "Action";
+                isDouble = false;
+                break;
 
-    private static Map<String, StringTimeSeries> getStringTimeSeriesMap(Connection connection) throws SQLException {
-        Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        stringTimeSeriesMap.put("GPS:dateTimeStamp", new StringTimeSeries(connection, "GPS Date Time Stamp", "yyyy-mm-ddThh:mm:ssZ"));
+            case "nonGPSCause":
+                dataType = "GPS Cause";
+                isDouble = false;
+                break;
 
-        stringTimeSeriesMap.put("flyCState", new StringTimeSeries(connection, "Flight CState", "CState"));
-        stringTimeSeriesMap.put("flycCommand", new StringTimeSeries(connection, "Flight Command", "Command"));
-        stringTimeSeriesMap.put("flightAction", new StringTimeSeries(connection, "Flight Action", "Action"));
-        stringTimeSeriesMap.put("nonGPSCause", new StringTimeSeries(connection, "Non GPS Cause", "GPS Cause"));
-        stringTimeSeriesMap.put("connectedToRC", new StringTimeSeries(connection, "Connected To RC", "Connection"));
-        stringTimeSeriesMap.put("Battery:lowVoltage", new StringTimeSeries(connection, "Battery:lowVoltage", "")); // Unknown. Does not appear in data
-        stringTimeSeriesMap.put("RC:ModeSwitch", new StringTimeSeries(connection, "RC Mode Switch", "Mode")); // Unknown. Just shows P
-        stringTimeSeriesMap.put("gpsUsed", new StringTimeSeries(connection, "GPS Used", "boolean"));
-        stringTimeSeriesMap.put("visionUsed", new StringTimeSeries(connection, "Vision Used", "boolean"));
-        stringTimeSeriesMap.put("Attribute|Value", new StringTimeSeries(connection, "Attribute|Value", "Key-Value Pair"));
+            case "connectedToRC":
+                dataType = "Connection";
+                isDouble = false;
+                break;
 
-        return stringTimeSeriesMap;
+            case "gpsUsed":
+            case "visionUsed":
+                dataType = "boolean";
+                isDouble = false;
+                break;
+
+            case "Attribute|Value":
+                dataType = "Key-Value Pair";
+                isDouble = false;
+                break;
+
+            case "Battery:lowVoltage":
+                dataType = "Low Voltage";
+                isDouble = false;
+                break;
+
+            case "GPS:dateTimeStamp":
+                dataType = "yyyy-mm-ddThh:mm:ssZ";
+                isDouble = false;
+
+            default:
+                dataType = "N/A";
+        }
+
+        if (isDouble) {
+            doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+        } else {
+            stringTimeSeriesMap.put(colName, new StringTimeSeries(connection, colName, dataType));
+        }
     }
 
 }
