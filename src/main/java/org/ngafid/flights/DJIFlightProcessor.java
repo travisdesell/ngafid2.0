@@ -255,7 +255,7 @@ public class DJIFlightProcessor {
             dataType = "radians";
         } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
             dataType = "degrees";
-        } else if (colName.contains("distance") || colName.contains("GPS-H") ||  colName.contains("Alti")) {
+        } else if (colName.contains("distance") || colName.contains("GPS-H") || colName.contains("Alti")) {
             dataType = "ft";
         } else if (colName.contains("temperature")) {
             dataType = "Celsius";
@@ -346,6 +346,24 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
+    private static void processRC(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        String dataType;
+
+        if (colName.contains("Aileron")) {
+            dataType = "Aileron";
+        } else if (colName.contains("Elevator")) {
+            dataType = "Elevator";
+        } else if (colName.contains("Rudder")) {
+            dataType = "Rudder";
+        } else if (colName.contains("Throttle")) {
+            dataType = "Throttle";
+        } else {
+            dataType = "number";
+            LOG.log(Level.WARNING, "RC Unknown data type: {0}", colName);
+        }
+    }
+
+
     private static Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap(Connection connection) throws SQLException {
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
         doubleTimeSeriesMap.put("Tick#", new DoubleTimeSeries(connection, "Tick", "tick"));
@@ -353,11 +371,6 @@ public class DJIFlightProcessor {
 
         doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds"));
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
-
-        doubleTimeSeriesMap.put("RC:Aileron", new DoubleTimeSeries(connection, "RC Aileron", ""));
-        doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "RC Elevator", ""));
-        doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "RC Rudder", ""));
-        doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "RC Throttle", ""));
 
         doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "knots"));
         doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", "knots"));
