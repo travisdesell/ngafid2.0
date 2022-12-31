@@ -236,7 +236,11 @@ public class DJIFlightProcessor {
                     break;
 
                 case "RC":
-                    handleRCDataType(connection, col, doubleTimeSeriesMap);
+                    handleRCDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    break;
+
+                case "AirComp":
+                    handleAirCompDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
                 case "General":
@@ -351,8 +355,8 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
-    private static void handleRCDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
-        String dataType;
+    private static void handleRCDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
+        String dataType = "number";
 
         if (colName.contains("Aileron")) {
             dataType = "Aileron";
@@ -363,7 +367,11 @@ public class DJIFlightProcessor {
         } else if (colName.contains("Throttle")) {
             dataType = "Throttle";
         } else {
-            dataType = "number";
+            if (colName.equals("RC:ModeSwitch")) {
+                stringTimeSeriesMap.put(colName, new StringTimeSeries(connection, "RC Mode Switch", "Mode"));
+                return;
+            }
+
             LOG.log(Level.WARNING, "RC Unknown data type: {0}", colName);
         }
 
@@ -372,8 +380,6 @@ public class DJIFlightProcessor {
 
     private static void handleAirCompDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
         String dataType;
-
-        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", "ft"));
 
         if (colName.contains("AirSpeed")) {
             dataType = "knots";
