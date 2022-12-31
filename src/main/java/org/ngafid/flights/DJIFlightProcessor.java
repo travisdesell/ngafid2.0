@@ -223,7 +223,7 @@ public class DJIFlightProcessor {
                     handleIMUDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
                 case "GPS":
-                    handleGPSDataType(connection, col, doubleTimeSeriesMap);
+                    handleGPSDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
 
                 case "Battery":
@@ -232,7 +232,7 @@ public class DJIFlightProcessor {
                     break;
 
                 case "Motor":
-                    handleMotorDataType(connection, col, doubleTimeSeriesMap);
+                    handleMotorDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
 
                 case "RC":
@@ -295,10 +295,13 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
-    private static void handleGPSDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
-        doubleTimeSeriesMap.put("GPS(0):sAcc", new DoubleTimeSeries(connection, "Speed Accuracy", "cm/s"));
-
+    private static void handleGPSDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
         String dataType;
+
+        if (colName.contains("dateTimeStamp")) {
+            stringTimeSeriesMap.put(colName, new StringTimeSeries(connection, colName, "yyyy-mm-ddThh:mm:ssZ"));
+            return;
+        }
 
         if (colName.contains("Long") || colName.contains("Lat")) {
             dataType = "degrees";
@@ -349,7 +352,15 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
-    private static void handleMotorDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+    private static void handleMotorDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
+        if (colName.contains("lowVoltage")) {
+            stringTimeSeriesMap.put(colName, new StringTimeSeries(connection, colName, "Low Voltage"));
+            return;
+        } else if (colName.contains("status")) {
+            stringTimeSeriesMap.put(colName, new StringTimeSeries(connection, colName, "Battery Status"));
+            return;
+        }
+
         String dataType = "number";
 
         if (colName.contains("V_out") || colName.contains("Volts")) {
@@ -463,16 +474,6 @@ public class DJIFlightProcessor {
 
             case "Attribute|Value":
                 dataType = "Key-Value Pair";
-                isDouble = false;
-                break;
-
-            case "Battery:lowVoltage":
-                dataType = "Low Voltage";
-                isDouble = false;
-                break;
-
-            case "GPS:dateTimeStamp":
-                dataType = "yyyy-mm-ddThh:mm:ssZ";
                 isDouble = false;
                 break;
 
