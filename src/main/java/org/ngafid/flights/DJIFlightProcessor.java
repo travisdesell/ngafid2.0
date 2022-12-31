@@ -252,7 +252,13 @@ public class DJIFlightProcessor {
     private static void handleIMUDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
         String dataType;
 
-        if (colName.contains("Longitude") || colName.contains("Latitude")) {
+        if (colName.contains("accel")) {
+            dataType = "m/s^2";
+        } else if (colName.contains("gyro")) {
+            dataType = "deg/s";
+        } else if (colName.contains("mag")) {
+            dataType = "A/m";
+        } else if (colName.contains("Longitude") || colName.contains("Latitude")) {
             dataType = "radians";
         } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
             dataType = "degrees";
@@ -260,6 +266,8 @@ public class DJIFlightProcessor {
             dataType = "ft";
         } else if (colName.contains("temperature")) {
             dataType = "Celsius";
+        } else if (colName.contains("barometer")) {
+            dataType = "atm";
         } else {
             if (colName.contains("err")) {
                 stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error"));
@@ -267,7 +275,10 @@ public class DJIFlightProcessor {
             }
 
             dataType = "number";
-            LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
+            if (!colName.contains("num")) {
+                LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
+
+            }
         }
 
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
@@ -304,21 +315,21 @@ public class DJIFlightProcessor {
 
     private static void handleBatteryDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
         String dataType = "number";
-        colName = colName.toLowerCase();
+        String lowerColName = colName.toLowerCase();
 
-        if (colName.contains("volt")) {
+        if (lowerColName.contains("volt")) {
             dataType = "Voltage";
-        } else if (colName.contains("watts")) {
+        } else if (lowerColName.contains("watts")) {
             dataType = "Watts";
-        } else if (colName.contains("current")) {
+        } else if (lowerColName.contains("current")) {
             dataType = "Amps";
-        } else if (colName.contains("cap")) {
+        } else if (lowerColName.contains("cap")) {
             dataType = "Capacity";
-        } else if (colName.contains("temp")) {
+        } else if (lowerColName.contains("temp")) {
             dataType = "Celsius";
-        } else if (colName.contains("%")) {
+        } else if (lowerColName.contains("%")) {
             dataType = "Percentage";
-        } else if (colName.contains("time")) {
+        } else if (lowerColName.contains("time")) {
             dataType = "seconds";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
