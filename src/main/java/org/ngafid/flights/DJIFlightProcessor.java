@@ -103,11 +103,11 @@ public class DJIFlightProcessor {
         DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
 
         for (int i = 0; i < lonRad.size(); i++) {
-            longDeg.add(Math.toDegrees(lonRad.get(i)) / 100);
+            longDeg.add(lonRad.get(i));
         }
 
         for (int i = 0; i < lonRad.size(); i++) {
-            latDeg.add(Math.toDegrees(latRad.get(i)) / 100);
+            latDeg.add(latRad.get(i));
         }
 
         doubleTimeSeriesMap.put("Longitude", longDeg);
@@ -270,7 +270,7 @@ public class DJIFlightProcessor {
         } else if (colName.contains("mag")) {
             dataType = "A/m";
         } else if (colName.contains("Longitude") || colName.contains("Latitude")) {
-            dataType = "radians";
+            dataType = "degrees";
         } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
             dataType = "degrees";
         } else if (colName.contains("distance") || colName.contains("GPS-H") || colName.contains("Alti")) {
@@ -301,7 +301,7 @@ public class DJIFlightProcessor {
         String dataType;
 
         if (colName.contains("Long") || colName.contains("Lat")) {
-            dataType = "radians";
+            dataType = "degrees";
         } else if (colName.contains("vel")) {
             dataType = "m/s";
         } else if (colName.contains("height")) {
