@@ -23,17 +23,20 @@ public class DJIFlightProcessor {
     public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection)
             throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         List<InputStream> inputStreams = duplicateInputStream(stream, 2);
-        Map<String, DoubleTimeSeries> doubleTimeSeriesMap = getDoubleTimeSeriesMap(connection);
-        Map<String, StringTimeSeries> stringTimeSeriesMap = getStringTimeSeriesMap(connection);
         Map<Integer, String> indexedCols = new HashMap<>();
+        Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
+        Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
         Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
         String flightStatus = "SUCCESS";
+
 
         if (!attributeMap.containsKey("mcID(SN)")) {
             throw new FatalFlightFileException("No DJI serial number provided in binary.");
         }
 
         try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
+            processCols(connection, reader.readNext(), indexedCols, doubleTimeSeriesMap, stringTimeSeriesMap);
+
             readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
             calculateLatLonGPS(connection, doubleTimeSeriesMap);
 
@@ -63,11 +66,6 @@ public class DJIFlightProcessor {
     private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
                                  Map<String, StringTimeSeries> stringTimeSeriesMap, Map<Integer, String> indexedCols) throws IOException, CsvValidationException {
         String[] line;
-        String[] headers = reader.readNext();
-
-        for (int i = 0; i < headers.length; i++) {
-            indexedCols.put(i, headers[i]);
-        }
 
         while ((line = reader.readNext()) != null) {
             for (int i = 0; i < line.length; i++) {
@@ -190,13 +188,6 @@ public class DJIFlightProcessor {
         return attributeMap;
     }
 
-    private static void indexCols(String[] cols, Map<Integer, String> indexedCols) {
-        int i = 0;
-        for (String col : cols) {
-            indexedCols.put(i++, col);
-        }
-    }
-
     private static void dropBlankCols(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         for (String key : doubleTimeSeriesMap.keySet()) {
             if (doubleTimeSeriesMap.get(key).size() == 0) {
@@ -251,7 +242,8 @@ public class DJIFlightProcessor {
                     doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "level"));
                     break;
 
-
+                default:
+                    handleMiscDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
             }
 
         }
@@ -456,9 +448,12 @@ public class DJIFlightProcessor {
             case "GPS:dateTimeStamp":
                 dataType = "yyyy-mm-ddThh:mm:ssZ";
                 isDouble = false;
+                break;
 
             default:
                 dataType = "N/A";
+                isDouble = false;
+                LOG.log(Level.WARNING, "Misc Unknown data type: {0}", colName);
         }
 
         if (isDouble) {
