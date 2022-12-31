@@ -37,9 +37,15 @@ public class AirSyncFleet extends Fleet {
             new AirSyncAuth(resultSet.getString(3), resultSet.getString(4)), resultSet.getTimestamp(5).toLocalDateTime());
     }
 
-    public AirSyncAuth getAuth() throws IOException {
+    public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
-            this.authCreds.requestAuthorization();
+            try {
+                this.authCreds.requestAuthorization();
+            } catch (IOException ie) {
+                ie.printStackTrace();
+                System.err.println("Unable to authenticate airsync fleet: " + super.getName());
+                System.exit(1);
+            }
         }
 
         return this.authCreds;
