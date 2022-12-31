@@ -235,6 +235,10 @@ public class DJIFlightProcessor {
                     handleMotorDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
+                case "RC":
+                    handleRCDataType(connection, col, doubleTimeSeriesMap);
+                    break;
+
                 case "General":
                     doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "ft"));
                     break;
@@ -242,6 +246,7 @@ public class DJIFlightProcessor {
                 case "Controller":
                     doubleTimeSeriesMap.put(col, new DoubleTimeSeries(connection, col, "level"));
                     break;
+
 
             }
 
@@ -346,7 +351,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
-    private static void processRC(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+    private static void handleRCDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
         String dataType;
 
         if (colName.contains("Aileron")) {
@@ -361,6 +366,27 @@ public class DJIFlightProcessor {
             dataType = "number";
             LOG.log(Level.WARNING, "RC Unknown data type: {0}", colName);
         }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
+    }
+
+    private static void handleAirCompDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+        String dataType;
+
+        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", "ft"));
+
+        if (colName.contains("AirSpeed")) {
+            dataType = "knots";
+        } else if (colName.contains("Alti")) {
+            dataType = "ft";
+        } else if (colName.contains("Vel")) {
+            dataType = "k/h";
+        } else {
+            dataType = "number";
+            LOG.log(Level.WARNING, "AirComp Unknown data type: {0}", colName);
+        }
+
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(connection, colName, dataType));
     }
 
 
@@ -372,17 +398,7 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("flightTime", new DoubleTimeSeries(connection, "Flight Time", "seconds"));
         doubleTimeSeriesMap.put("gpsHealth", new DoubleTimeSeries(connection, "GPS Health", "Health"));
 
-        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "knots"));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", "knots"));
-        doubleTimeSeriesMap.put("AirComp:Alti", new DoubleTimeSeries(connection, "Airspeed Altitude ", "ft"));
-        doubleTimeSeriesMap.put("AirComp:VelNorm", new DoubleTimeSeries(connection, "Airspeed Norm Velocity", "k/h"));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:X", new DoubleTimeSeries(connection, "Airspeed Ground X", "knots"));
-        doubleTimeSeriesMap.put("AirComp:AirSpeedGround:Y", new DoubleTimeSeries(connection, "Airspeed Ground Y", "knots"));
-        doubleTimeSeriesMap.put("AirComp:VelLevel", new DoubleTimeSeries(connection, "Airspeed Level Velocity", "k/h"));
 
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Longitude", new DoubleTimeSeries(connection, "RTK Longitude", "radians"));
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Latitude", new DoubleTimeSeries(connection, "RTK Latitude", "radians"));
-        doubleTimeSeriesMap.put("IMUEX(0):rtk_Alti", new DoubleTimeSeries(connection, "RTK Altitude", "ft"));
 
         return doubleTimeSeriesMap;
     }
