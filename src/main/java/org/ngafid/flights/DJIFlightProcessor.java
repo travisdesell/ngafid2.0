@@ -213,16 +213,20 @@ public class DJIFlightProcessor {
             indexedCols.put(i++, col);
             String category = col.split(":")[0];
 
+            if (category.contains("(")) {
+                category = category.substring(0, category.indexOf("("));
+            }
+
             switch (category) {
-                case "IMU_ATTI(0)":
-                case "IMUEX(0)":
+                case "IMU_ATTI":
+                case "IMUEX":
                     handleIMUDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
-                case "GPS(0)":
+                case "GPS":
                     handleGPSDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
-                case "Battery(0)":
+                case "Battery":
                 case "SMART_BATT":
                     handleBatteryDataType(connection, col, doubleTimeSeriesMap);
                     break;
@@ -359,6 +363,8 @@ public class DJIFlightProcessor {
         } else if (colName.contains("Temp")) {
             dataType = "Celsius";
         } else if (colName.contains("Status")) {
+            dataType = "Status Number";
+        } else if (colName.contains("Hz")) {
             dataType = "Status Number";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
