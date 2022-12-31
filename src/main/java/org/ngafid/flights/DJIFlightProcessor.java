@@ -254,8 +254,10 @@ public class DJIFlightProcessor {
 
         if (colName.contains("accel")) {
             dataType = "m/s^2";
-        } else if (colName.contains("gyro")) {
+        } else if (colName.contains("gyro") || colName.contains("Gyro")) {
             dataType = "deg/s";
+        } else if (colName.contains("vel") || colName.contains("Velocity")) {
+            dataType = "m/s";
         } else if (colName.contains("mag")) {
             dataType = "A/m";
         } else if (colName.contains("Longitude") || colName.contains("Latitude")) {
@@ -343,6 +345,8 @@ public class DJIFlightProcessor {
 
         if (colName.contains("V_out") || colName.contains("Volts")) {
             dataType = "Voltage";
+        } else if (colName.contains("Speed")) {
+            dataType = "m/s";
         } else if (colName.contains("Current")) {
             dataType = "Amps";
         } else if (colName.contains("PPMrecv")) {
