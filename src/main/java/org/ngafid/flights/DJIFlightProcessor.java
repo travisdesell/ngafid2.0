@@ -219,7 +219,8 @@ public class DJIFlightProcessor {
 
             switch (category) {
                 case "IMU_ATTI(0)":
-                    handleIMUDataType(connection, col, doubleTimeSeriesMap);
+                case "IMUEX(0)":
+                    handleIMUDataType(connection, col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
                 case "GPS(0)":
                     handleGPSDataType(connection, col, doubleTimeSeriesMap);
@@ -247,18 +248,23 @@ public class DJIFlightProcessor {
         }
     }
 
-    private static void handleIMUDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+    private static void handleIMUDataType(Connection connection, String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) throws SQLException {
         String dataType;
 
         if (colName.contains("Longitude") || colName.contains("Latitude")) {
             dataType = "radians";
         } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
             dataType = "degrees";
-        } else if (colName.contains("distance") || colName.contains("GPS-H")) {
+        } else if (colName.contains("distance") || colName.contains("GPS-H") ||  colName.contains("Alti")) {
             dataType = "ft";
         } else if (colName.contains("temperature")) {
             dataType = "Celsius";
         } else {
+            if (colName.contains("err")) {
+                stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error"));
+                return;
+            }
+
             dataType = "number";
             LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
         }
@@ -381,7 +387,6 @@ public class DJIFlightProcessor {
         stringTimeSeriesMap.put("RC:ModeSwitch", new StringTimeSeries(connection, "RC Mode Switch", "Mode")); // Unknown. Just shows P
         stringTimeSeriesMap.put("gpsUsed", new StringTimeSeries(connection, "GPS Used", "boolean"));
         stringTimeSeriesMap.put("visionUsed", new StringTimeSeries(connection, "Vision Used", "boolean"));
-        stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries(connection, "IMUEX Error", "error"));
         stringTimeSeriesMap.put("Attribute|Value", new StringTimeSeries(connection, "Attribute|Value", "Key-Value Pair"));
 
         return stringTimeSeriesMap;
