@@ -90,9 +90,14 @@ public class DJIFlightProcessor {
         }
     }
 
-    private static void calculateLatLonGPS(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException {
+    private static void calculateLatLonGPS(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException, FatalFlightFileException {
         DoubleTimeSeries lonRad = doubleTimeSeriesMap.get("GPS(0):Long");
         DoubleTimeSeries latRad = doubleTimeSeriesMap.get("GPS(0):Lat");
+
+        if (lonRad == null || latRad == null) {
+            LOG.log(Level.WARNING, "Could not find GPS(0):Long or GPS(0):Lat in time series map");
+            throw new FatalFlightFileException("No GPS data found in binary.");
+        }
 
         DoubleTimeSeries longDeg = new DoubleTimeSeries(connection, "Longitude", "degrees");
         DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
