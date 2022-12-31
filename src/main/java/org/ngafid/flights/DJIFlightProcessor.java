@@ -226,6 +226,7 @@ public class DJIFlightProcessor {
                     break;
 
                 case "Battery(0)":
+                case "SMART_BATT":
                     handleBatteryDataType(connection, col, doubleTimeSeriesMap);
                     break;
 
@@ -310,6 +311,8 @@ public class DJIFlightProcessor {
             dataType = "Celsius";
         } else if (colName.contains("%")) {
             dataType = "Percentage";
+        } else if (colName.contains("time")) {
+            dataType = "seconds";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
         }
@@ -349,15 +352,6 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("RC:Elevator", new DoubleTimeSeries(connection, "RC Elevator", ""));
         doubleTimeSeriesMap.put("RC:Rudder", new DoubleTimeSeries(connection, "RC Rudder", ""));
         doubleTimeSeriesMap.put("RC:Throttle", new DoubleTimeSeries(connection, "RC Throttle", ""));
-
-
-        doubleTimeSeriesMap.put("SMART_BATT:goHome%", new DoubleTimeSeries(connection, "Smart Battery Go Home Percentage", "percentage"));
-        doubleTimeSeriesMap.put("SMART_BATT:land%", new DoubleTimeSeries(connection, "Smart Battery Land Percentage", "percentage"));
-        doubleTimeSeriesMap.put("SMART_BATT:goHomeTime", new DoubleTimeSeries(connection, "Smart Battery Go Home Time", "seconds"));
-        doubleTimeSeriesMap.put("SMART_BATT:landTime", new DoubleTimeSeries(connection, "Smart Battery Land Time", "seconds"));
-
-
-
 
         doubleTimeSeriesMap.put("AirComp:AirSpeedBody:X", new DoubleTimeSeries(connection, "Airspeed Body X", "knots"));
         doubleTimeSeriesMap.put("AirComp:AirSpeedBody:Y", new DoubleTimeSeries(connection, "Airspeed Body Y", "knots"));
