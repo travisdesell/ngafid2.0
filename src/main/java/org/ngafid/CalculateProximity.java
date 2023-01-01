@@ -22,14 +22,9 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.LinkedHashSet;
+import java.util.*;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
-import java.util.TreeSet;
 
 import org.ngafid.common.TimeUtils;
 
@@ -41,6 +36,9 @@ import org.ngafid.filters.Filter;
 import org.ngafid.filters.Pair;
 
 import org.ngafid.airports.Airports;
+
+import static org.ngafid.flights.Parameters.PARAM_LATITUDE;
+import static org.ngafid.flights.Parameters.PARAM_LONGITUDE;
 
 public class CalculateProximity {
 
@@ -292,6 +290,41 @@ public class CalculateProximity {
 
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
+
+    public static List<Double> calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo){
+        List<Double> rateOfClosureList =  new ArrayList<>();
+        int i = 30, j = 30;
+        while (i < flightInfo.epochTime.length && j < otherInfo.epochTime.length) {
+            //skip entries where the epoch time was 0 (the date/time was null)
+            if (flightInfo.epochTime[i] == 0) {
+                i++;
+                continue;
+            }
+
+            if (otherInfo.epochTime[j] == 0) {
+                j++;
+                continue;
+            }
+
+            //make sure both iterators are for the same time
+            if (flightInfo.epochTime[i] < otherInfo.epochTime[j]) {
+                i++;
+                continue;
+            }
+
+            if (otherInfo.epochTime[j] < flightInfo.epochTime[i]) {
+                j++;
+                continue;
+            }
+
+
+            double distanceFt = Airports.calculateDistanceInFeet(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j], otherInfo.longitude[j]);
+            double altDiff = Math.abs(flightInfo.altitudeMSL[i] - otherInfo.altitudeMSL[j]);
+            distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
+            rateOfClosureList.add(distanceFt);
+        }
+        return rateOfClosureList;
+    }
     
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
@@ -471,6 +504,7 @@ public class CalculateProximity {
                                         //the event
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
+                                        List<Double> rateOfClosure = calculateRateOfClosure(flightInfo, otherInfo);
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                                         eventList.add(event);
 
