@@ -25,6 +25,8 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -42,7 +44,9 @@ import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
 public class ProcessUpload {
     private static Connection connection = null;
-
+    private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
+    private static final String ERROR_STATUS_STR = "ERROR";
+    
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
         System.out.println(Arrays.toString(arguments));
@@ -381,38 +385,39 @@ public class ProcessUpload {
 
             } catch (java.nio.file.NoSuchFileException e) {
                 System.err.println("NoSuchFileException: " + e);
+                LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload and re-upload.");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e.toString() + ", broken upload: please delete this upload and re-upload.");
 
             } catch (IOException e) {
-                System.err.println("IOException: " + e);
+                LOG.log(Level.SEVERE, "IOException: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e.toString() + ", could not read from zip file: please delete this upload and re-upload.");
             } catch (NotDatFile e) {
-                System.err.println("NotDatFile: " + e);
+                LOG.log(Level.SEVERE, "NotDatFile: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Tried to process a non-DAT file as a DAT file.");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e + ", tried to process a non-DAT file as a DAT file.");
             } catch (FileEnd e) {
-                System.err.println("FileEnd: " + e);
+                LOG.log(Level.SEVERE, "FileEnd: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Reached the end of a file while doing DAT processing");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e + ", reached the end of a file while doing DAT processing");
             }
 
         } else {
             //insert an upload error for this upload
-            status = "ERROR";
+            status = ERROR_STATUS_STR;
             UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
 
             uploadException = new Exception("Uploaded file was not a zip file.");
@@ -491,8 +496,8 @@ public class ProcessUpload {
     }
 
     private static void placeInZip(String file, String zipFileName) throws IOException {
-        System.out.println("Placing " + file + " in zip");
-
+        LOG.info("Placing " + file + " in zip");
+        
         Map<String, String> zipENV = new HashMap<>();
         zipENV.put("create", "true");
 
