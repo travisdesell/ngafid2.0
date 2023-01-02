@@ -35,7 +35,7 @@ public class PutEmailPreferences implements Route {
         boolean emailUploadStatus = Boolean.parseBoolean(request.queryParams("emailUploadStatus"));
         boolean emailCriticalEvents = Boolean.parseBoolean(request.queryParams("emailCriticalEvents"));
         boolean emailUploadError = Boolean.parseBoolean(request.queryParams("emailUploadError"));
-        EmailFrequency emailFrequency = EmailFrequency.valueOf((request.queryParams("emailFrequency")).toUpperCase());
+        EmailFrequency emailFrequency = EmailFrequency.valueOf((request.queryParams("emailFrequency")));
 
         try {
             return gson.toJson(User.updateUserEmailPreferences(connection, user.getId(), emailOptOut, emailUploadProcessing,

@@ -50,7 +50,7 @@ public class UserPreferences {
         this.emailFrequency = emailFrequency;
     }
     public static UserPreferences defaultPreferences(int userId) {
-        return new UserPreferences(userId, 1, defaultMetrics, false, false, false, false, false, EmailFrequency.NONE);
+        return new UserPreferences(userId, 1, defaultMetrics, false, false, false, false, false, EmailFrequency.NEVER);
     }
 
     public int getDecimalPrecision() {

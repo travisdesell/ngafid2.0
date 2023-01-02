@@ -205,7 +205,7 @@ if ($update_email_preferences) {
     query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_upload_status BOOLEAN default 0 not null");
     query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_critical_events BOOLEAN default 0 not null");
     query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_upload_error BOOLEAN default 0 not null");
-    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_report_frequency VARCHAR(16) default 'MONTHLY' not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_report_frequency VARCHAR(16) default 'NEVER' not null");
 }
 
 ?>
