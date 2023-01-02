@@ -256,15 +256,6 @@ public class User {
 
         UserPreferences userPreferences = null;
 
-        LOG.log(Level.INFO, "optOut: {0}", optOut);
-        LOG.log(Level.INFO, "uploadProcess: {0}", uploadProcess);
-        LOG.log(Level.INFO, "uploadStatus: {0}", uploadStatus);
-        LOG.log(Level.INFO, "criticalEvents: {0}", criticalEvents);
-        LOG.log(Level.INFO, "emailError: {0}", emailError);
-        LOG.log(Level.INFO, "frequency: {0}", frequency);
-
-
-
         query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
         query.setInt(1, userId);
 
