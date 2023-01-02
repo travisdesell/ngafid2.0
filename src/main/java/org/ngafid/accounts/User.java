@@ -245,7 +245,14 @@ public class User {
         if (resultSet.next()) {
             decimalPrecision = resultSet.getInt(1);
         }
-            
+
+        boolean optOut = resultSet.getBoolean(2);
+        boolean uploadProcess = resultSet.getBoolean(3);
+        boolean uploadStatus = resultSet.getBoolean(4);
+        boolean criticalEvents = resultSet.getBoolean(5);
+        boolean emailError = resultSet.getBoolean(6);
+        EmailFrequency frequency = EmailFrequency.valueOf(resultSet.getString(7));
+
         UserPreferences userPreferences = null;
 
         query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
@@ -263,7 +270,7 @@ public class User {
             userPreferences = UserPreferences.defaultPreferences(userId);
             storeUserPreferences(connection, userId, userPreferences);
         } else {
-            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames);
+            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames, optOut, uploadProcess, uploadStatus, criticalEvents, emailError, frequency);
         }
 
         return userPreferences;
