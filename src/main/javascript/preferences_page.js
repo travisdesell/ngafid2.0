@@ -53,7 +53,7 @@ class PreferencesPage extends React.Component {
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
 
-                                            <EmailPreferences>
+                                            <EmailPreferences optOut={true} uploadProcessing={true} uploadProcessStatus={false} criticalEvents={true}>
                                             </EmailPreferences>
                                     </div>
                                 </div>

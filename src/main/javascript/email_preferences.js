@@ -1,25 +1,20 @@
 import 'bootstrap';
 import React, {Component} from "react";
-import ReactDOM from "react-dom";
-import Dropdown from 'react-bootstrap/Dropdown';
-import DropdownButton from 'react-bootstrap/DropdownButton';
-import Pagination from 'react-bootstrap/Pagination';
-import FormCheck from 'react-bootstrap/FormCheck';
 import Form from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-import InputGroup from "react-bootstrap/InputGroup";
+import Dropdown from "react-bootstrap/Dropdown";
 
 
 class EmailPreferences extends React.Component {
     constructor(props) {
         super(props);
 
-        this.state = {}
+        // TOOD: Update when more props are passed in
+        this.state = {
+            emailOptOut: this.props.optOut,
+            uploadProcessing: !this.props.optOut,
+            uploadStatus: !this.props.optOut,
+            criticalEvents: !this.props.optOut
+        }
     }
 
     render() {
@@ -37,9 +32,50 @@ class EmailPreferences extends React.Component {
                         </h6>
                         <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
-                                <InputGroup>
-                                    <FormCheck type="checkbox" id="optOut" label="Opt Out Of All Emails" style={{padding: "1 1 1 1"}}/>
-                                </InputGroup>
+                                <div className="p-2">
+                                    <Form>
+                                        <Form.Check
+                                            type="switch"
+                                            id="email-opt-out"
+                                            label="Opt Out of All Email Notifications"
+                                            defaultChecked={this.props.optOut}
+                                        />
+                                        <Form.Check
+                                            type="switch"
+                                            id="upload-processing"
+                                            label="Upload Is Being Processed"
+                                            defaultChecked={this.props.uploadProcessing}
+                                            disabled={this.props.optOut}
+                                        />
+                                        <Form.Check
+                                            type="switch"
+                                            id="upload-processing"
+                                            label="Upload Process Status"
+                                            defaultChecked={this.props.uploadProcessStatus}
+                                            disabled={this.props.optOut}
+                                        />
+                                        <Form.Check
+                                            type="switch"
+                                            id="upload-processing"
+                                            label="Critical Events"
+                                            defaultChecked={this.props.criticalEvents}
+                                            disabled={this.props.optOut}
+                                        />
+                                        <br/>
+                                        <Dropdown>
+                                            <Dropdown.Toggle id="dropdown-basic">
+                                                Report Frequency
+                                            </Dropdown.Toggle>
+
+                                            <Dropdown.Menu>
+                                                <Dropdown.Item href="#/action-1">Daily</Dropdown.Item>
+                                                <Dropdown.Item href="#/action-2">Weekly</Dropdown.Item>
+                                                <Dropdown.Item href="#/action-3">Monthly</Dropdown.Item>
+                                            </Dropdown.Menu>
+
+                                        </Dropdown>
+                                    </Form>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -50,4 +86,8 @@ class EmailPreferences extends React.Component {
 }
 
 
-export {EmailPreferences};
+export
+{
+    EmailPreferences
+}
+    ;
