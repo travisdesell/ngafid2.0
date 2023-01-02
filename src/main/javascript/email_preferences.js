@@ -2,6 +2,7 @@ import 'bootstrap';
 import React, {Component} from "react";
 import Form from 'react-bootstrap/Form';
 import Dropdown from "react-bootstrap/Dropdown";
+import Button from "react-bootstrap/Button";
 
 
 class EmailPreferences extends React.Component {
@@ -74,6 +75,12 @@ class EmailPreferences extends React.Component {
                                             </Dropdown.Menu>
 
                                         </Dropdown>
+
+                                        <br/>
+
+                                        <Button onClick={(this.props.saveEmailPreferences())}>
+                                            Save
+                                        </Button>
                                     </Form>
                                 </div>
                             </div>

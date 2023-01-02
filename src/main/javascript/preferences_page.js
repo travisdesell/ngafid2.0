@@ -32,6 +32,10 @@ class PreferencesPage extends React.Component {
         console.log(this.state);
     }
 
+    saveEmailPreferences() {
+        console.log("saving email prefs");
+    }
+
 
     render() {
         return (
@@ -53,7 +57,8 @@ class PreferencesPage extends React.Component {
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
 
-                                            <EmailPreferences optOut={true} uploadProcessing={true} uploadProcessStatus={false} criticalEvents={true}>
+                                            <EmailPreferences optOut={true} uploadProcessing={true} uploadProcessStatus={false} criticalEvents={true}
+                                            saveEmailPreferences={() => this.saveEmailPreferences}>
                                             </EmailPreferences>
                                     </div>
                                 </div>
