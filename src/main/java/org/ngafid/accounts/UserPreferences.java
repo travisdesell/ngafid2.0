@@ -34,25 +34,25 @@ public class UserPreferences {
     public UserPreferences(int userId, int decimalPrecision, List<String> flightMetrics, boolean emailOptOut, boolean emailUploadProcessing, boolean emailUploadStatus, boolean emailCriticalEvents, boolean emailUploadError, EmailFrequency emailFrequency) {
         this.userId = userId;
         this.decimalPrecision = decimalPrecision;
+        this.flightMetrics = flightMetrics;
         this.emailOptOut = emailOptOut;
         this.emailUploadProcessing = emailUploadProcessing;
         this.emailUploadStatus = emailUploadStatus;
         this.emailCriticalEvents = emailCriticalEvents;
         this.emailUploadError = emailUploadError;
         this.emailFrequency = emailFrequency;
-        this.flightMetrics = flightMetrics;
     }
 
     public UserPreferences(int userId, int decimalPrecision, String[] flightMetrics, boolean emailOptOut, boolean emailUploadProcessing, boolean emailUploadStatus, boolean emailCriticalEvents, boolean emailUploadError, EmailFrequency emailFrequency) {
         this.userId = userId;
         this.decimalPrecision = decimalPrecision;
+        this.flightMetrics = List.of(flightMetrics);
         this.emailOptOut = emailOptOut;
         this.emailUploadProcessing = emailUploadProcessing;
         this.emailUploadStatus = emailUploadStatus;
         this.emailCriticalEvents = emailCriticalEvents;
         this.emailUploadError = emailUploadError;
         this.emailFrequency = emailFrequency;
-        this.flightMetrics = List.of(flightMetrics);
     }
     public static UserPreferences defaultPreferences(int userId) {
         return new UserPreferences(userId, 1, defaultMetrics, false, false, false, false, false, EmailFrequency.NONE);

@@ -356,6 +356,37 @@ public class User {
     }
 
     /**
+     * Updates the user's email preferences in the database
+     * @param connection A connection to the mysql database
+     * @param userID ID the update for
+     * @param optOut whether the user wants to opt out of emails
+     * @param uploadProcessing whether the user wants to receive emails when a flight is being processed
+     * @param uploadStatus whether the user wants to receive emails when a flight is finished processing
+     * @param criticalEvents whether the user wants to receive emails when a critical event occurs
+     * @param uploadError whether the user wants to receive emails when a flight fails to process
+     * @param frequency the frequency of emails the user wants to receive
+     * @return Updated User Preferences
+     * @throws SQLException
+     */
+    public static UserPreferences updateUserEmailPreferences(Connection connection, int userID, boolean optOut, boolean uploadProcessing, boolean uploadStatus, boolean criticalEvents, boolean uploadError, EmailFrequency frequency) throws SQLException {
+        String queryString = "UPDATE user_preferences SET email_opt_out = ?, email_upload_processing = ?, email_upload_status = ?, email_critical_events = ?, email_upload_error = ?, email_report_frequency = ?, WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setBoolean(1, optOut);
+        query.setBoolean(2, uploadProcessing);
+        query.setBoolean(3, uploadStatus);
+        query.setBoolean(4, criticalEvents);
+        query.setBoolean(5, uploadProcessing);
+        query.setString(6, frequency.toString());
+        query.setInt(7, userID);
+
+        query.executeUpdate();
+
+        return getUserPreferences(connection, userID);
+    }
+
+    /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user
      *
      * @param connection A connection to the mysql database.
