@@ -57,7 +57,6 @@ public class GetUserPreferencesPage implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
-        int fleetId = user.getFleetId();
 
         try {
             UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
@@ -71,6 +70,8 @@ public class GetUserPreferencesPage implements Route {
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
             scopes.put("user_prefs_json",
                        "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+
+            LOG.log(java.util.logging.Level.SEVERE, "userPreferences: " + gson.toJson(gson.toJson(userPreferences)));
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

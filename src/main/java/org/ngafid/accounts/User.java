@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.ngafid.filters.Filter;
@@ -235,25 +236,34 @@ public class User {
      * @return an instane of {@link UserPreferences} with all the user's preferences and settings
      */
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM user_preferences WHERE user_id = ?");
         query.setInt(1, userId);
 
         ResultSet resultSet = query.executeQuery();
 
         int decimalPrecision = 1;
-
+        int i = 2;
         if (resultSet.next()) {
-            decimalPrecision = resultSet.getInt(1);
+            decimalPrecision = resultSet.getInt(i++);
         }
 
-        boolean optOut = resultSet.getBoolean(2);
-        boolean uploadProcess = resultSet.getBoolean(3);
-        boolean uploadStatus = resultSet.getBoolean(4);
-        boolean criticalEvents = resultSet.getBoolean(5);
-        boolean emailError = resultSet.getBoolean(6);
-        EmailFrequency frequency = EmailFrequency.valueOf(resultSet.getString(7));
+        boolean optOut = resultSet.getBoolean(i++);
+        boolean uploadProcess = resultSet.getBoolean(i++);
+        boolean uploadStatus = resultSet.getBoolean(i++);
+        boolean criticalEvents = resultSet.getBoolean(i++);
+        boolean emailError = resultSet.getBoolean(i++);
+        EmailFrequency frequency = EmailFrequency.valueOf(resultSet.getString(i++));
 
         UserPreferences userPreferences = null;
+
+        LOG.log(Level.INFO, "optOut: {0}", optOut);
+        LOG.log(Level.INFO, "uploadProcess: {0}", uploadProcess);
+        LOG.log(Level.INFO, "uploadStatus: {0}", uploadStatus);
+        LOG.log(Level.INFO, "criticalEvents: {0}", criticalEvents);
+        LOG.log(Level.INFO, "emailError: {0}", emailError);
+        LOG.log(Level.INFO, "frequency: {0}", frequency);
+
+
 
         query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
         query.setInt(1, userId);
@@ -340,7 +350,7 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId the userId to update for
-     * @param precision the new decimal precision value to store
+     * @param decimalPrecision the new decimal precision value to store
      */
     public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId, int decimalPrecision) throws SQLException {
         String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
