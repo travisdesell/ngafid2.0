@@ -1,10 +1,18 @@
 package org.ngafid.accounts;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.ngafid.flights.CalculationParameters.*;
 
+
 public class UserPreferences {
+
+
     private int userId, decimalPrecision;
     private List<String> flightMetrics;
 
@@ -49,6 +57,15 @@ public class UserPreferences {
         }
 
         return wasUpdated;
+    }
+
+    public Map<String, String> getUserPreferences(Connection connection, int userID) throws SQLException {
+        Map<String, String> userPreferences = new HashMap<>();
+
+        PreparedStatement statement = connection.prepareStatement("SELECT * FROM user_preferences WHERE user_id = ?");
+
+
+
     }
 
     /**
