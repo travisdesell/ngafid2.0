@@ -193,9 +193,19 @@ if ($update_flights_status) {
     query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
 }
 
-$update_email_settings = true;
+$update_email_settings = false;
 if ($update_email_settings) {
-    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;";
+    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time");
+}
+
+$update_email_preferences = true;
+if ($update_email_preferences) {
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_opt_out BOOLEAN default 0 not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_upload_processing BOOLEAN default 0 not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_upload_status BOOLEAN default 0 not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_critical_events BOOLEAN default 0 not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_upload_error BOOLEAN default 0 not null");
+    query_ngafid_db("ALTER TABLE user_preferences ADD COLUMN email_report_frequency VARCHAR(16) default 'MONTHLY' not null");
 }
 
 ?>

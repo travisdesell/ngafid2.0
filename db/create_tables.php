@@ -544,6 +544,7 @@ if (!$update_2022_02_17) {
         `email_opt_out` BOOLEAN NOT NULL DEFAULT FALSE,
         `email_upload_processing` BOOLEAN NOT NULL DEFAULT FALSE,
         `email_upload_status` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_upload_error` BOOLEAN NOT NULL DEFAULT FALSE,
         `email_critical_events` BOOLEAN NOT NULL DEFAULT FALSE,
         `email_report_frequency` VARCHAR(16) NOT NULL DEFAULT 'MONTHLY',
         
