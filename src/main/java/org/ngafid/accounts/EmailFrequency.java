@@ -1,7 +1,7 @@
 package org.ngafid.accounts;
 
 public enum EmailFrequency {
-        NONE("NONE"),
+        NEVER("NEVER"),
         DAILY("DAILY"),
         WEEKLY("WEEKLY"),
         MONTHLY("MONTHLY"),

@@ -92,7 +92,7 @@ class EmailPreferences extends React.Component {
                                         <Form.Group>
                                             <Form.Label>Report Frequency</Form.Label>
                                             <Form.Control as="select" onChange={(e) => this.props.setEmailFrequency(e)} value={this.props.emailFrequency}>
-                                                <option value="NONE">None</option>
+                                                <option value="NEVER">Never</option>
                                                 <option value="DAILY">Daily</option>
                                                 <option value="WEEKLY">Weekly</option>
                                                 <option value="MONTHLY">Monthly</option>
