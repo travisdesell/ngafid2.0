@@ -72,6 +72,8 @@ class EmailPreferences extends React.Component {
                                                 <Dropdown.Item href="#/action-1">Daily</Dropdown.Item>
                                                 <Dropdown.Item href="#/action-2">Weekly</Dropdown.Item>
                                                 <Dropdown.Item href="#/action-3">Monthly</Dropdown.Item>
+                                                <Dropdown.Item href="#/action-3">Quarterly</Dropdown.Item>
+                                                <Dropdown.Item href="#/action-3">Yearly</Dropdown.Item>
                                             </Dropdown.Menu>
 
                                         </Dropdown>
