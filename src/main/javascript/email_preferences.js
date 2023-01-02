@@ -40,13 +40,19 @@ class EmailPreferences extends React.Component {
                                             id="email-opt-out"
                                             label="Opt Out of All Email Notifications"
                                             defaultChecked={this.props.optOut}
+                                            onChange={(e) => {
+                                                this.props.setOptOut(e)
+                                            }}
                                         />
                                         <Form.Check
                                             type="switch"
                                             id="upload-processing"
                                             label="Upload Is Being Processed"
                                             defaultChecked={this.props.uploadProcessing}
-                                            disabled={this.props.optOut}
+                                            onChange={(e) => {
+                                                this.props.setUploadProcessing(e)
+                                            }}
+
                                         />
                                         <Form.Check
                                             type="switch"
@@ -54,6 +60,10 @@ class EmailPreferences extends React.Component {
                                             label="Upload Process Status"
                                             defaultChecked={this.props.uploadProcessStatus}
                                             disabled={this.props.optOut}
+                                            onChange={(e) => {
+                                                this.props.setUploadProcessStatus(e)
+                                            }}
+
                                         />
                                         <Form.Check
                                             type="switch"
@@ -61,6 +71,10 @@ class EmailPreferences extends React.Component {
                                             label="Upload Errors"
                                             defaultChecked={this.props.uploadErrors}
                                             disabled={this.props.optOut}
+                                            onChange={(e) => {
+                                                this.props.setUploadError(e)
+                                            }}
+
                                         />
                                         <Form.Check
                                             type="switch"
@@ -68,6 +82,10 @@ class EmailPreferences extends React.Component {
                                             label="Critical Events"
                                             defaultChecked={this.props.criticalEvents}
                                             disabled={this.props.optOut}
+                                            onChange={(e) => {
+                                                this.props.setCriticalEvents(e)
+                                            }}
+
                                         />
                                         <br/>
                                         <Dropdown>
@@ -87,7 +105,7 @@ class EmailPreferences extends React.Component {
 
                                         <br/>
 
-                                        <Button onClick={(this.props.saveEmailPreferences())}>
+                                        <Button onClick={(this.props.saveEmailPreferences)}>
                                             Save
                                         </Button>
                                     </Form>

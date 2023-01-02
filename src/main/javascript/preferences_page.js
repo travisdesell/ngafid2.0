@@ -31,9 +31,14 @@ class PreferencesPage extends React.Component {
         console.log(this.state);
     }
 
+
+
     saveEmailPreferences() {
         console.log("saving email prefs");
+        console.log(this.state);
     }
+
+
 
 
     render() {
@@ -59,13 +64,24 @@ class PreferencesPage extends React.Component {
                                         </MetricViewerSettings>
 
                                         <EmailPreferences optOut={this.state.emailOptOut}
+                                                          setOptOut={(e) => this.setState({emailOptOut: e.target.checked})}
+
                                                           uploadProcessing={this.state.emailUploadProcessing && !this.state.emailOptOut}
-                                                          uploadProcessStatus={this.state.emailUploadProcessing && !this.state.emailOptOut}
+                                                          setUploadProcessing={(e) => this.setState({emailUploadProcessing: e.target.checked})}
+
+                                                          uploadProcessStatus={this.state.emailUploadStatus && !this.state.emailOptOut}
+                                                          setUploadProcessStatus={(e) => this.setState({emailUploadStatus: e.target.checked})}
+
                                                           criticalEvents={this.state.emailCriticalEvents && !this.state.emailOptOut}
+                                                          setCriticalEvents={(e) => this.setState({emailCriticalEvents: e.target.checked})}
+
                                                           uploadError={this.state.emailUploadError && !this.state.emailOptOut}
+                                                          setUploadError={(e) => this.setState({emailUploadError: e.target.checked})}
+
                                                           emailFrequency={this.state.emailFrequency}
-                                                          optOutChange={(e) => this.setState({emailOptOut: e.target.checked})}
-                                                          saveEmailPreferences={() => this.saveEmailPreferences}>
+                                                          setEmailFrequency={(e) => this.setState({emailFrequency: e.target.checked})}
+
+                                                          saveEmailPreferences={() => this.saveEmailPreferences()}>
                                         </EmailPreferences>
                                     </div>
                                 </div>
