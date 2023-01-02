@@ -38,7 +38,7 @@ class PreferencesPage extends React.Component {
             emailUploadStatus: this.state.emailUploadStatus,
             emailCriticalEvents: this.state.emailCriticalEvents,
             emailUploadError: this.state.emailUploadError,
-            emailFrequency: "DAILY",
+            emailFrequency: this.state.emailFrequency,
         }
 
         $.ajax({
@@ -46,7 +46,7 @@ class PreferencesPage extends React.Component {
             type: "PUT",
             data: emailPreferences,
             dataType: "json",
-            success: function (response) {
+            success: (response) => {
                 console.log("received response: ");
                 console.log(response);
                 this.setState({
@@ -100,10 +100,10 @@ class PreferencesPage extends React.Component {
                                                           setUploadError={(e) => this.setState({emailUploadError: e.target.checked})}
 
                                                           emailFrequency={this.state.emailFrequency}
-                                                          setEmailFrequency={(e) => this.setState({emailFrequency: e.target.checked})}
+                                                          setEmailFrequency={(e) => this.setState({emailFrequency: e.target.value})}
 
-                                                          saveEmailPreferences={() => this.saveEmailPreferences()}>
-                                        </EmailPreferences>
+                                                          saveEmailPreferences={() => this.saveEmailPreferences()}
+                                        />
                                     </div>
                                 </div>
                             </div>

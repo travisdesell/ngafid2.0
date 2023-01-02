@@ -89,20 +89,17 @@ class EmailPreferences extends React.Component {
 
                                         />
                                         <br/>
-                                        <Dropdown>
-                                            <Dropdown.Toggle id="dropdown-basic">
-                                                Report Frequency
-                                            </Dropdown.Toggle>
-
-                                            <Dropdown.Menu>
-                                                <Dropdown.Item href="#/action-1">Daily</Dropdown.Item>
-                                                <Dropdown.Item href="#/action-2">Weekly</Dropdown.Item>
-                                                <Dropdown.Item href="#/action-3">Monthly</Dropdown.Item>
-                                                <Dropdown.Item href="#/action-3">Quarterly</Dropdown.Item>
-                                                <Dropdown.Item href="#/action-3">Yearly</Dropdown.Item>
-                                            </Dropdown.Menu>
-
-                                        </Dropdown>
+                                        <Form.Group>
+                                            <Form.Label>Report Frequency</Form.Label>
+                                            <Form.Control as="select" onChange={(e) => this.props.setEmailFrequency(e)} value={this.props.emailFrequency}>
+                                                <option value="NONE">None</option>
+                                                <option value="DAILY">Daily</option>
+                                                <option value="WEEKLY">Weekly</option>
+                                                <option value="MONTHLY">Monthly</option>
+                                                <option value="QUARTERLY">Quarterly</option>
+                                                <option value="YEARLY">Yearly</option>
+                                            </Form.Control>
+                                        </Form.Group>
 
                                         <br/>
 
