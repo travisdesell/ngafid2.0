@@ -3,15 +3,6 @@ import 'bootstrap';
 import React, {Component} from "react";
 import ReactDOM from "react-dom";
 
-import Form from 'react-bootstrap/Form';
-import FormControl from 'react-bootstrap/FormControl';
-import ListGroup from 'react-bootstrap/ListGroup';
-import Button from 'react-bootstrap/Button';
-import Container from 'react-bootstrap/Container';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-
-import {errorModal} from "./error_modal.js";
 import {MetricViewerSettings} from "./metricviewer_preferences.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import {EmailPreferences} from "./email_preferences.js";
@@ -68,11 +59,12 @@ class PreferencesPage extends React.Component {
                                         </MetricViewerSettings>
 
                                         <EmailPreferences optOut={this.state.emailOptOut}
-                                                          uploadProcessing={this.state.emailUploadProcessing}
-                                                          uploadProcessStatus={this.state.emailUploadProcessing}
-                                                          criticalEvents={this.state.emailCriticalEvents}
-                                                          uploadError={this.state.emailUploadError}
+                                                          uploadProcessing={this.state.emailUploadProcessing && !this.state.emailOptOut}
+                                                          uploadProcessStatus={this.state.emailUploadProcessing && !this.state.emailOptOut}
+                                                          criticalEvents={this.state.emailCriticalEvents && !this.state.emailOptOut}
+                                                          uploadError={this.state.emailUploadError && !this.state.emailOptOut}
                                                           emailFrequency={this.state.emailFrequency}
+                                                          optOutChange={(e) => this.setState({emailOptOut: e.target.checked})}
                                                           saveEmailPreferences={() => this.saveEmailPreferences}>
                                         </EmailPreferences>
                                     </div>

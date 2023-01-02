@@ -50,14 +50,21 @@ class EmailPreferences extends React.Component {
                                         />
                                         <Form.Check
                                             type="switch"
-                                            id="upload-processing"
+                                            id="upload-process-status"
                                             label="Upload Process Status"
                                             defaultChecked={this.props.uploadProcessStatus}
                                             disabled={this.props.optOut}
                                         />
                                         <Form.Check
                                             type="switch"
-                                            id="upload-processing"
+                                            id="upload-errors"
+                                            label="Upload Errors"
+                                            defaultChecked={this.props.uploadErrors}
+                                            disabled={this.props.optOut}
+                                        />
+                                        <Form.Check
+                                            type="switch"
+                                            id="critical-events"
                                             label="Critical Events"
                                             defaultChecked={this.props.criticalEvents}
                                             disabled={this.props.optOut}
