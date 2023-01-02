@@ -24,21 +24,42 @@ class PreferencesPage extends React.Component {
             emailCriticalEvents: userPreferences.emailCriticalEvents,
             emailUploadError: userPreferences.emailUploadError,
             emailFrequency: userPreferences.emailFrequency,
-
         };
-
-        console.log("this users prefs:");
-        console.log(this.state);
     }
-
 
 
     saveEmailPreferences() {
         console.log("saving email prefs");
         console.log(this.state);
+
+        let emailPreferences = {
+            emailOptOut: this.state.emailOptOut,
+            emailUploadProcessing: this.state.emailUploadProcessing,
+            emailUploadStatus: this.state.emailUploadStatus,
+            emailCriticalEvents: this.state.emailCriticalEvents,
+            emailUploadError: this.state.emailUploadError,
+            emailFrequency: "DAILY",
+        }
+
+        $.ajax({
+            url: "email_preferences",
+            type: "PUT",
+            data: emailPreferences,
+            dataType: "json",
+            success: function (response) {
+                console.log("received response: ");
+                console.log(response);
+                this.setState({
+                    emailOptOut: response.emailOptOut,
+                    emailUploadProcessing: response.emailUploadProcessing,
+                    emailUploadStatus: response.emailUploadStatus,
+                    emailCriticalEvents: response.emailCriticalEvents,
+                    emailUploadError: response.emailUploadError,
+                    emailFrequency: response.emailFrequency,
+                });
+            }
+        });
     }
-
-
 
 
     render() {
@@ -66,16 +87,16 @@ class PreferencesPage extends React.Component {
                                         <EmailPreferences optOut={this.state.emailOptOut}
                                                           setOptOut={(e) => this.setState({emailOptOut: e.target.checked})}
 
-                                                          uploadProcessing={this.state.emailUploadProcessing && !this.state.emailOptOut}
+                                                          uploadProcessing={this.state.emailUploadProcessing}
                                                           setUploadProcessing={(e) => this.setState({emailUploadProcessing: e.target.checked})}
 
-                                                          uploadProcessStatus={this.state.emailUploadStatus && !this.state.emailOptOut}
+                                                          uploadProcessStatus={this.state.emailUploadStatus}
                                                           setUploadProcessStatus={(e) => this.setState({emailUploadStatus: e.target.checked})}
 
-                                                          criticalEvents={this.state.emailCriticalEvents && !this.state.emailOptOut}
+                                                          criticalEvents={this.state.emailCriticalEvents}
                                                           setCriticalEvents={(e) => this.setState({emailCriticalEvents: e.target.checked})}
 
-                                                          uploadError={this.state.emailUploadError && !this.state.emailOptOut}
+                                                          uploadError={this.state.emailUploadError}
                                                           setUploadError={(e) => this.setState({emailUploadError: e.target.checked})}
 
                                                           emailFrequency={this.state.emailFrequency}

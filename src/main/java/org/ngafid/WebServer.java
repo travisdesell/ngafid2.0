@@ -276,6 +276,7 @@ public final class WebServer {
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
+        Spark.put("/protected/email_preferences", new PutEmailPreferences(gson));
 
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));

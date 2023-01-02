@@ -48,6 +48,7 @@ class EmailPreferences extends React.Component {
                                             type="switch"
                                             id="upload-processing"
                                             label="Upload Is Being Processed"
+                                            disabled={this.props.optOut}
                                             defaultChecked={this.props.uploadProcessing}
                                             onChange={(e) => {
                                                 this.props.setUploadProcessing(e)
@@ -69,7 +70,7 @@ class EmailPreferences extends React.Component {
                                             type="switch"
                                             id="upload-errors"
                                             label="Upload Errors"
-                                            defaultChecked={this.props.uploadErrors}
+                                            defaultChecked={this.props.uploadError}
                                             disabled={this.props.optOut}
                                             onChange={(e) => {
                                                 this.props.setUploadError(e)

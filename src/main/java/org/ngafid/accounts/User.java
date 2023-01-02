@@ -379,7 +379,7 @@ public class User {
      * @throws SQLException
      */
     public static UserPreferences updateUserEmailPreferences(Connection connection, int userID, boolean optOut, boolean uploadProcessing, boolean uploadStatus, boolean criticalEvents, boolean uploadError, EmailFrequency frequency) throws SQLException {
-        String queryString = "UPDATE user_preferences SET email_opt_out = ?, email_upload_processing = ?, email_upload_status = ?, email_critical_events = ?, email_upload_error = ?, email_report_frequency = ?, WHERE user_id = ?";
+        String queryString = "UPDATE user_preferences SET email_opt_out = ?, email_upload_processing = ?, email_upload_status = ?, email_critical_events = ?, email_upload_error = ?, email_report_frequency = ? WHERE user_id = ?";
 
         PreparedStatement query = connection.prepareStatement(queryString);
 
