@@ -104,6 +104,16 @@ public class Event {
         this.endTime = fixTime(endTime);
         this.metaDataList = new ArrayList<>();
     }
+    public Event(String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId, RateOfClosure rateOfClosure) {
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.severity = severity;
+        this.otherFlightId = otherFlightId;
+        this.rateOfClosure = rateOfClosure;
+    }
+
 
     /**
      * Creates an event from a mysql query result
