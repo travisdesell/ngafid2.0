@@ -2,6 +2,7 @@ package org.ngafid;
 
 import org.ngafid.Database;
 import org.ngafid.events.Event;
+import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
@@ -291,11 +292,13 @@ public class CalculateProximity {
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
 
-    public static List<Double> calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo){
-        List<Double> rateOfClosureList =  new ArrayList<>();
-        int i = 30, j = 30;
-        while (i < flightInfo.epochTime.length && j < otherInfo.epochTime.length) {
-            //skip entries where the epoch time was 0 (the date/time was null)
+    public static List<Double> calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
+                                                        int endLine, int otherStartLine,int otherEndLine ){
+
+//        double rateOfClosureArray [] = new double[endLine];
+        List<Double> rateOfClosure = new ArrayList<>();
+        int i = startLine, j = otherStartLine;
+        while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
                 i++;
                 continue;
@@ -321,9 +324,12 @@ public class CalculateProximity {
             double distanceFt = Airports.calculateDistanceInFeet(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j], otherInfo.longitude[j]);
             double altDiff = Math.abs(flightInfo.altitudeMSL[i] - otherInfo.altitudeMSL[j]);
             distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
-            rateOfClosureList.add(distanceFt);
+            rateOfClosure.add(distanceFt);
+            i++;
+            j++;
         }
-        return rateOfClosureList;
+//        System.out.println(rateOfClosureList);
+        return rateOfClosure;
     }
     
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
@@ -504,8 +510,10 @@ public class CalculateProximity {
                                         //the event
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
-                                        List<Double> rateOfClosure = calculateRateOfClosure(flightInfo, otherInfo);
-                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+
+                                        List<Double> rateOfClosureList = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureList);
+                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
                                         eventList.add(event);
 
                                         //add in an event for the other flight as well so we don't need to recalculate this
@@ -539,7 +547,9 @@ public class CalculateProximity {
 
                     //if there was an event still going when one flight ended, create it and add it to the list
                     if (startTime != null) {
-                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                        List<Double> rateOfClosureList = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureList);
+                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
                         eventList.add( event );
 
                         //add in an event for the other flight as well so we don't need to recalculate this
