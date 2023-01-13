@@ -87,12 +87,12 @@ public class AirSync {
                         List<AirSyncAircraft> aircraft = fleet.getAircraft();
                         for (AirSyncAircraft a : aircraft) {
                             List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
-                            List<AirSyncUpload> uploads = a.getUploads(fleet.getAuth());
+                            List<AirSyncUpload> uploads = a.getUploads(connection, fleet);
                             for (AirSyncUpload u : uploads) {
                                 if (processedIds.contains(u.getId())) {
                                     LOG.info("Skipping AirSync with upload id: " + u.getId() + " as it already exists in the database");
                                 } else {
-                                    u.proccess(fleet, connection);
+                                    u.proccess(connection);
                                 }
                             }
                         }

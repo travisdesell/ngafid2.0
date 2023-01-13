@@ -26,6 +26,7 @@ public class AirSyncUpload extends Upload {
     private String timeStart, timeEnd;
     private LocalDateTime localDateTimeStart, localDateTimeEnd;
     private String fileUrl;
+    private Fleet fleet;
 
     private static String STATUS_IMPORTED = "IMPORTED";
     private static String STATUS_ERR = "ERROR";
@@ -33,26 +34,57 @@ public class AirSyncUpload extends Upload {
 
     private static final Logger LOG = Logger.getLogger(AirSyncUpload.class.getName());
 
-    public AirSyncUpload(int id, int fleetId) {
+    private AirSyncUpload(int id, int fleetId) {
         super(id);
         super.fleetId = fleetId;
     }
 
-    public static List<AirSyncUpload> getUploads(AirSyncAircraft aircraft) {
-        return null;
-    }
-
-    public void proccess(Fleet fleet, Connection connection) throws MalformedFlightFileException {
+    /**
+     * This will act as the constructor as we will be parsing the object
+     * from JSON most of the time.
+     *
+     * It is up to the programmer to ensure this method is called each time a JSON
+     * AirSyncUpload class is instantiated.
+     *
+     * @param {fleet} a reference to the fleet that this upload is for
+     * @param {connection} a reference to the database {@link Connection}
+     */
+    public void initalize(Fleet fleet, Connection connection) {
         super.fleetId = fleet.getId();
+
+        this.fleet = fleet;
+
+        //This does not include timezones yet
+        //TODO: Add time zone support!
         this.localDateTimeStart = LocalDateTime.parse(this.timeStart.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
         this.localDateTimeEnd = LocalDateTime.parse(this.timeEnd.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
 
+        try {
+            this.setUploaderId(connection);
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+    }
+
+    public void setUploaderId(Connection connection) throws SQLException {
+        String sql = "SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user'";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            super.uploaderId = resultSet.getInt(1);
+        }
+    }
+
+    public void proccess(Connection connection) throws MalformedFlightFileException {
         //Ensure there is data to read before proceeding...
         int count = 0;
         if ((count = readCsvData()) > 0) {
             // Target zip: $NGAFID_ARCHIVE_DIR/<FLEET_ID>/<UPLOADER_ID>/<FLIGHT YYYY>/<FLIGHT MM>/<upload_id>__<upload_name>.zip 
             try {
-                String zipId = id + "_" + aircraftId + ".zip";
+                String zipId = String.format("%d_%s.zip", id, aircraftId);
                 String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/" + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
 
                 File file = new File(path + "/" + zipId);
@@ -91,9 +123,7 @@ public class AirSyncUpload extends Upload {
                     uploadId = createUpload(connection, STATUS_IMPORTED, zipId, identifier, count);
                 }
 
-                System.out.println("createUpload with id " + uploaderId);
-
-                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                flight.updateDatabase(connection, uploadId, this.uploaderId, fleetId);
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
 			} catch (Exception e) {
                 LOG.severe("Exception caught in file processing:");
@@ -127,7 +157,7 @@ public class AirSyncUpload extends Upload {
     }
 
     public int createUpload(Connection connection, String status, String fileName, String identifier, int count) throws SQLException {
-        String sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, airsync_id, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,(SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user'),?,?,?,?)";
+        String sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, airsync_id, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
         PreparedStatement query = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
         //String hash = this.getMd5Hash();
@@ -143,10 +173,11 @@ public class AirSyncUpload extends Upload {
         query.setInt(9, (status.equals(STATUS_ERR) ? 1 : 0));
         query.setInt(10, (status.equals(STATUS_WARN) ? 1 : 0));
         query.setInt(11, this.id);
-        query.setInt(12, -2);
-        query.setInt(13, 0);
+        query.setInt(12, this.uploaderId);
+        query.setInt(13, -2);
         query.setInt(14, 0);
-        query.setInt(15, this.id);
+        query.setInt(15, 0);
+        query.setInt(16, this.id);
 
         System.out.println(query.toString());
         query.executeUpdate();
