@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.Fleet;
 
@@ -46,6 +47,22 @@ public class AirSync {
         return false;
     }
 
+    public static List<Integer> getProcessedIds(Connection connection, int fleetId) throws SQLException {
+        String sql = "SELECT airsync_id FROM uploads WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+        List<Integer> ids = new LinkedList<>();
+
+        while (resultSet.next()) {
+            ids.add(resultSet.getInt(1));
+        }
+
+        return ids;
+    }
+
     /**
      * This daemon's entry point
      *
@@ -66,6 +83,21 @@ public class AirSync {
                 }
 
                 for (AirSyncFleet fleet : airSyncFleets) {
+                    //if (fleet.isQueryOutdated(connection)) {
+                        List<AirSyncAircraft> aircraft = fleet.getAircraft();
+                        for (AirSyncAircraft a : aircraft) {
+                            List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
+                            List<AirSyncUpload> uploads = a.getUploads(fleet.getAuth());
+                            for (AirSyncUpload u : uploads) {
+                                if (processedIds.contains(u.getId())) {
+                                    LOG.info("Skipping AirSync with upload id: " + u.getId() + " as it already exists in the database");
+                                } else {
+                                    u.proccess(fleet, connection);
+                                }
+                            }
+                        }
+                    //}
+
                     // Go round-robin through each fleet and check to see if it has AirSync uploads waiting
 
                     //if (AirSync.hasUploadsWaiting(fleet)) {
@@ -74,6 +106,7 @@ public class AirSync {
                     //}
                 }
 
+                LOG.info("Sleeping for " + WAIT_TIME + "ms.");
                 Thread.sleep(WAIT_TIME);
             }
         } catch (Exception e) {

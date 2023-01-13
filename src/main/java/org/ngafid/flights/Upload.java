@@ -21,23 +21,27 @@ import org.ngafid.flights.Flight;
 public class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
-    private int id;
-    private int fleetId;
-    private int uploaderId;
-    private String filename;
-    private String identifier;
-    private int numberChunks;
-    private int uploadedChunks;
-    private String chunkStatus;
-    private String md5Hash;
-    private long sizeBytes;
-    private long bytesUploaded;
-    private String status;
-    private String startTime;
-    private String endTime;
-    private int validFlights;
-    private int warningFlights;
-    private int errorFlights;
+    protected int id;
+    protected int fleetId;
+    protected int uploaderId;
+    protected String filename;
+    protected String identifier;
+    protected int numberChunks;
+    protected int uploadedChunks;
+    protected String chunkStatus;
+    protected String md5Hash;
+    protected long sizeBytes;
+    protected long bytesUploaded;
+    protected String status;
+    protected String startTime;
+    protected String endTime;
+    protected int validFlights;
+    protected int warningFlights;
+    protected int errorFlights;
+
+    public Upload(int id) {
+        this.id = id;
+    }
 
     public int getId() {
         return id;

@@ -116,6 +116,9 @@ class SignedInNavbar extends React.Component {
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
         //const [show, setShow] = React.useState(false);
+        var uploadsButton = (
+            <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
+        );
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
@@ -213,7 +216,7 @@ class SignedInNavbar extends React.Component {
 
                         <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
                         <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
-                        <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
+                        {uploadsButton}
 
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (this.props.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
