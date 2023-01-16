@@ -292,12 +292,11 @@ public class CalculateProximity {
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
 
-    public static List<Double> calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
+    public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
                                                         int endLine, int otherStartLine,int otherEndLine ){
 
-//        double rateOfClosureArray [] = new double[endLine];
-        List<Double> rateOfClosure = new ArrayList<>();
-        int i = startLine, j = otherStartLine;
+        double rateOfClosure[] = new double[endLine - startLine];
+        int i = startLine, j = otherStartLine, index = 0;
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
                 i++;
@@ -320,15 +319,15 @@ public class CalculateProximity {
                 continue;
             }
 
-
             double distanceFt = Airports.calculateDistanceInFeet(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j], otherInfo.longitude[j]);
             double altDiff = Math.abs(flightInfo.altitudeMSL[i] - otherInfo.altitudeMSL[j]);
             distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
-            rateOfClosure.add(distanceFt);
+            rateOfClosure[index] = distanceFt;
+
             i++;
             j++;
+            index++;
         }
-//        System.out.println(rateOfClosureList);
         return rateOfClosure;
     }
     
@@ -344,7 +343,6 @@ public class CalculateProximity {
 
     public static void processFlight(Connection connection, Flight flight, UploadProcessedEmail uploadProcessedEmail) {
         System.out.println("Processing flight: " + flight.getId() + ", " + flight.getFilename());
-
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
@@ -511,8 +509,9 @@ public class CalculateProximity {
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
 
-                                        List<Double> rateOfClosureList = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureList);
+                                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                                        System.out.println("Creating event for flight : " + flightId );
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
                                         eventList.add(event);
 
@@ -547,8 +546,8 @@ public class CalculateProximity {
 
                     //if there was an event still going when one flight ended, create it and add it to the list
                     if (startTime != null) {
-                        List<Double> rateOfClosureList = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureList);
+                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                         Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
                         eventList.add( event );
 
