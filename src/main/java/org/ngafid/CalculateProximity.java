@@ -516,7 +516,7 @@ public class CalculateProximity {
                                         eventList.add(event);
 
                                         //add in an event for the other flight as well so we don't need to recalculate this
-                                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId), otherFlight.getStartDateTime());
+                                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
                                     }
 
                                     //reset the event values
@@ -552,7 +552,7 @@ public class CalculateProximity {
                         eventList.add( event );
 
                         //add in an event for the other flight as well so we don't need to recalculate this
-                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId), otherFlight.getStartDateTime());
+                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
                     }
                 }
                 //end the loop processing a particular flight
