@@ -21,23 +21,27 @@ import org.ngafid.flights.Flight;
 public class Upload {
     private static final Logger LOG = Logger.getLogger(Upload.class.getName());
 
-    private int id;
-    private int fleetId;
-    private int uploaderId;
-    private String filename;
-    private String identifier;
-    private int numberChunks;
-    private int uploadedChunks;
-    private String chunkStatus;
-    private String md5Hash;
-    private long sizeBytes;
-    private long bytesUploaded;
-    private String status;
-    private String startTime;
-    private String endTime;
-    private int validFlights;
-    private int warningFlights;
-    private int errorFlights;
+    protected int id;
+    protected int fleetId;
+    protected int uploaderId;
+    protected String filename;
+    protected String identifier;
+    protected int numberChunks;
+    protected int uploadedChunks;
+    protected String chunkStatus;
+    protected String md5Hash;
+    protected long sizeBytes;
+    protected long bytesUploaded;
+    protected String status;
+    protected String startTime;
+    protected String endTime;
+    protected int validFlights;
+    protected int warningFlights;
+    protected int errorFlights;
+
+    public Upload(int id) {
+        this.id = id;
+    }
 
     public int getId() {
         return id;
@@ -232,7 +236,7 @@ public class Upload {
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         //PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? ORDER BY start_time DESC";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND airsync_id <= 0 ORDER BY start_time DESC";
         if (condition != null) query += " " + condition;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
@@ -252,7 +256,7 @@ public class Upload {
     }
 
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ?";
+        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
         if (condition != null) query += " " + condition;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
@@ -273,7 +277,7 @@ public class Upload {
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
         //String query = "SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?";
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
 
         if (types.length > 0) {
             query += " AND (";
@@ -308,7 +312,7 @@ public class Upload {
     }
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String [] types, String sqlLimit) throws SQLException{
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
 
         if (types.length > 0) {
             query += " AND (";

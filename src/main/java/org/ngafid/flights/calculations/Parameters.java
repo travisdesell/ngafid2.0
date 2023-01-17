@@ -1,14 +1,28 @@
 /**
- * This interface contains useful constants and values for the {@link LossOfControlCalculation} and {@link StallCalculation}
  *
- * @author <a href = mailto:apl1341@cs.rit.edu>Aidan LaBella @ RIT CS</a>
+ * An interface to help keep better track of what flight parameters actually do.
+ * In the future, this may be a good place to store meta information about parameters, e.g.:
+ * - Parameters that share the same name
+ * - Parameters that are not always available
+ * - Relationships between parameters
+ * @author <a href = mailto:josh@mail.rit.edu>Josh Karns</a>
+ * @author <a href = mailto:apl@mail.rit.edu>Aidan LaBella</a>
  */
+package org.ngafid.flights.calculations;
 
-package org.ngafid.flights;
+public interface Parameters {
+    /**
+     * JSON-specific parameters
+     * EXC = Exceedences
+     */
+    public static final String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
+    public static final String PARAM_JSON_CENTER_LINE_EXC =  "centerLineExceedences";
+    public static final String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
+    public static final String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
+    public static final String PARAM_JSON_OPTIMAL_DESCENT_EXC = "optimalDescentExceedences";
+    public static final String PARAM_JSON_LATITUDE = "lat";
+    public static final String PARAM_JSON_LONGITUDE = "lon";
 
-import java.util.Map;
-
-public interface CalculationParameters {
     public static final double STD_PRESS_INHG = 29.92;
     public static final double COMP_CONV = (double) (Math.PI / 180); 
 
@@ -25,15 +39,25 @@ public interface CalculationParameters {
     public static final int VSI_LAG_DIFF = 1;
 
     /**
-     * {@link DoubleTimeSeries} constants
+     * {@link DoubleTimeSeries} constants, column names
      */
+    public static final String LAT = "Latitude";
+    public static final String LON = "Longitude";
     public static final String LAG_SUFFIX = "_lag";
     public static final String LEAD_SUFFIX = "_lead";
     public static final String HDG = "HDG";
+    public static final String TRK = "TRK";
     public static final String NORM_AC = "NormAc";
     public static final String LAT_AC = "LatAc";
     public static final String IAS = "IAS";
-    public static final String VSPD = "VSPD";
+
+    /*
+     * How fast the aircraft is moving vertically.
+     * This is called velocity instead of speed because the number actually has a direction associated with it,
+     * the sign of the number. If it is > 0, then the aircraft is ascending; likewise a negative value means
+     * the aircraft is descending.
+     * */
+    public static final String VSPD = "VSpd";
     public static final String DENSITY_RATIO = "DensityRatio";
     public static final String OAT = "OAT";
     public static final String BARO_A = "BaroA";
@@ -58,6 +82,11 @@ public interface CalculationParameters {
     public static final String TOTAL_FUEL = "Total Fuel";
     public static final String LCL_DATE = "Lcl Date";
     public static final String LCL_TIME = "Lcl Time";
+    public static final String LATITUDE = "Latitude";
+    public static final String LONGITUDE = "Longitude";
+    public static final String STALL_PROBABILITY = "PStall";
+    public static final String LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
+    public static final String HDG_TRK_DIFF = "HDG TRK Diff";
 
     /**
      * {@link Airframes} id's
@@ -80,6 +109,9 @@ public interface CalculationParameters {
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
     public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
 
+    //Params required for HDG TRK diff
+    public static final String [] HDG_TRK_DEPENDENCIES = {HDG, TRK};
+
     // Used to determine average fuel
     public static final String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
 
@@ -89,6 +121,4 @@ public interface CalculationParameters {
     public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
     public static final String [] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
 
-    public static final String [] EVENT_RECOGNITION_COLUMNS = {ROLL, PITCH, AOA_SIMPLE, VSPD_CALCULATED, IAS, NORM_AC, LAT_AC, ALT_AGL};
-    public static final String [] EVENT_RECOGNITION_COLUMNS_UNIVARIATE = {AOA_SIMPLE};
 }
