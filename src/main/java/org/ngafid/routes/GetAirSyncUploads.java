@@ -21,10 +21,11 @@ import spark.Request;
 import spark.Response;
 import spark.Session;
 
-import org.ngafid.common.*;
 import org.ngafid.Database;
+import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.flights.AirSyncUpload;
 import org.ngafid.flights.Upload;
 
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -32,35 +33,14 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 
-public class GetImports implements Route {
-    private static final Logger LOG = Logger.getLogger(GetImports.class.getName());
+public class GetAirSyncUploads implements Route {
+    private static final Logger LOG = Logger.getLogger(GetAirSyncUploads.class.getName());
     private Gson gson;
 
-    private static class Message {
-        String type;
-        String message;
-
-        Message(String type, String message) {
-            this.type = type;
-            this.message = message;
-        }
-    }
-
-    private List<Message> messages = null;
-
-    public GetImports(Gson gson) {
+    public GetAirSyncUploads(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
-    }
-
-    public GetImports(Gson gson, String messageType, String messageText) {
-        this.gson = gson;
-
-        LOG.info("post " + this.getClass().getName() + " initalized");
-
-        messages = new ArrayList<Message>();
-        messages.add(new Message(messageType, messageText));
     }
 
     @Override
@@ -68,7 +48,7 @@ public class GetImports implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "imports.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "airsync_uploads.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
@@ -76,10 +56,6 @@ public class GetImports implements Route {
             Mustache mustache = mf.compile(templateFile);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
-
-            if (messages != null) {
-                scopes.put("messages", messages);
-            }
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
@@ -93,15 +69,16 @@ public class GetImports implements Route {
 
             Connection connection = Database.getConnection();
 
-            int totalImports = Upload.getNumUploads(connection, fleetId, null);
-            int numberPages = totalImports / pageSize;
-            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            int totalUploads = AirSyncUpload.getNumUploads(connection, fleetId, null);
+            List<Upload> uploads = AirSyncUpload.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+
+            int numberPages = totalUploads / pageSize;
 
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
+            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

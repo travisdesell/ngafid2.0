@@ -108,7 +108,7 @@ public class GetUploads implements Route {
             int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
 
-            ArrayList<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
+            List<Upload> pending_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADING"});
             //update the status of all the uploads currently uploading to incomplete so the webpage knows they
             //need to be restarted and aren't currently being uploaded.
             for (Upload upload : pending_uploads) {
@@ -117,7 +117,7 @@ public class GetUploads implements Route {
                 }
             }
 
-            ArrayList<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> other_uploads = Upload.getUploads(connection, fleetId, new String[]{"UPLOADED", "IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
