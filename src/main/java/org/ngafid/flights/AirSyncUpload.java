@@ -191,6 +191,45 @@ public class AirSyncUpload extends Upload {
         return -1;
     }
 
+    public static List<Upload> getUploads(Connection connection, int fleetId) throws SQLException {
+        return getUploads(connection, fleetId, new String());
+    }
+
+    public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
+        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND airsync_id > 0 ORDER BY start_time DESC", DEFAULT_COLUMNS);
+        if (condition != null && !condition.isBlank()) sql += " " + condition;
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        List<Upload> uploads = new ArrayList<>();
+
+        while (resultSet.next()) {
+            uploads.add(new Upload(resultSet));
+        }
+
+        return uploads;
+    }
+
+    public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM uploads WHERE fleet_id = ? AND airsync_id > 0";
+        if (condition != null && !condition.isBlank()) sql += " " + condition;
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        }
+
+        return -1;
+    }
+
+
     public int readCsvData() {
         try {
             URL input = new URL(fileUrl);
@@ -199,6 +238,8 @@ public class AirSyncUpload extends Upload {
             this.data = is.readAllBytes();
         } catch (Exception e) {
             e.printStackTrace();
+
+            return -1;
         }
 
         // Return num of bytes read

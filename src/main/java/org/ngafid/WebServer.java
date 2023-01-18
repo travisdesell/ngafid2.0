@@ -206,6 +206,7 @@ public final class WebServer {
         Spark.post("/protected/update_password", new PostUpdatePassword(gson));
 
         Spark.get("/protected/uploads", new GetUploads(gson));
+        Spark.get("/protected/airsync_uploads", new GetAirSyncUploads(gson));
         Spark.post("/protected/remove_upload", new PostRemoveUpload(gson));
 
         Spark.get("/protected/imports", new GetImports(gson));

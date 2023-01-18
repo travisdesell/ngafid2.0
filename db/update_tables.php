@@ -194,7 +194,7 @@ if ($update_flights_status) {
 
 $update_email_settings = true;
 if ($update_email_settings) {
-    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;";
+    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;");
 }
 
 $update_for_airsync = true;
