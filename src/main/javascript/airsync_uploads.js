@@ -1,13 +1,6 @@
-import 'bootstrap';
-import React, { Component } from "react";
-import ReactDOM from "react-dom";
-
 class AirsyncUploadsCard extends React.Component {
     constructor(props) {
         super(props);
-
-        console.log("AirSync uploads init");
-        console.log(props);
 
         let uploads = props.uploads;
         if (uploads == undefined) uploads = [];
@@ -25,6 +18,27 @@ class AirsyncUploadsCard extends React.Component {
         console.log("does nothing");
     }
 
+    triggerInput() {
+        var uploadsCard = this;
+
+        $('#upload-file-input').trigger('click');
+
+        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
+            console.log("number files selected: " + this.files.length);
+            console.log( this.files );
+
+            if (this.files.length > 0) { 
+                var file = this.files[0];
+                var filename = file.webkitRelativePath || file.fileName || file.name;
+
+                if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
+                    display_error_modal("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+                } else {
+                    uploadsCard.addUpload(file);
+                }    
+            }    
+        });  
+    }
 
     render() {
         const hidden = this.props.hidden;
@@ -55,7 +69,4 @@ class AirsyncUploadsCard extends React.Component {
     }
 }
 
-var preferencesPage = ReactDOM.render(
-    <AirsyncUploadsCard numberPages={numberPages} uploads={uploads} currentPage={currentPage}/>,
-   document.querySelector('#airsync-uploads-page')
-)
+

@@ -2,6 +2,8 @@ package org.ngafid.accounts;
 
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.sql.Connection;
+
 import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.WebServer;
@@ -20,12 +22,16 @@ import java.io.InputStream;
 public class AirSyncAircraft {
     private int id;
     private String tailNumber;
+    private Fleet fleet;
     private static final Gson gson = WebServer.gson;
 
-
-    public AirSyncAircraft(int id, String tailNumber) {
+    private AirSyncAircraft(int id, String tailNumber) {
         this.id = id;
         this.tailNumber = tailNumber;
+    }
+
+    public void initialize(Fleet fleet) {
+        this.fleet = fleet;
     }
 
     private URL getAircraftLogURL() throws MalformedURLException {
@@ -34,14 +40,15 @@ public class AirSyncAircraft {
         return new URL(String.format(baseURL, id));
     }
 
-    public List<AirSyncUpload> getUploads(AirSyncAuth authentication) throws Exception {
-        HttpsURLConnection connection = (HttpsURLConnection) getAircraftLogURL().openConnection();
+    public List<AirSyncUpload> getUploads(Connection connection, AirSyncFleet fleet) throws Exception {
+        AirSyncAuth authentication = fleet.getAuth();
+        HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL().openConnection();
 
-        connection.setRequestMethod("GET");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Authorization", authentication.bearerString());     
+        netConnection.setRequestMethod("GET");
+        netConnection.setDoOutput(true);
+        netConnection.setRequestProperty("Authorization", authentication.bearerString());     
 
-        InputStream is = connection.getInputStream();
+        InputStream is = netConnection.getInputStream();
         byte [] respRaw = is.readAllBytes();
 
         String resp = new String(respRaw).replaceAll("aircraft_id", "aircraftId");
@@ -49,9 +56,11 @@ public class AirSyncAircraft {
         resp = resp.replaceAll("time_end", "timeEnd");
         resp = resp.replaceAll("file_url", "fileUrl");
 
-        System.out.println(resp);
-
         Type target = new TypeToken<List<AirSyncUpload>>(){}.getType();
-        return gson.fromJson(resp, target);
+        List<AirSyncUpload> uploads = gson.fromJson(resp, target);
+
+        for (AirSyncUpload u : uploads) u.initalize(fleet, connection);
+        
+        return uploads;
     }
 }

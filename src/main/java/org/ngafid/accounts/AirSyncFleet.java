@@ -102,6 +102,8 @@ public class AirSyncFleet extends Fleet {
             
             Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
             this.aircraft = gson.fromJson(resp, target);
+
+            for (AirSyncAircraft a : aircraft) a.initialize(this);
         }
         
         return this.aircraft;

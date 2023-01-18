@@ -116,9 +116,25 @@ class SignedInNavbar extends React.Component {
         //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
         //const [show, setShow] = React.useState(false);
-        var uploadsButton = (
-            <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
-        );
+        var uploadsButton = "";
+            if (airSyncEnabled) {
+                uploadsButton = (
+                    <li className="nav-item dropdown">
+                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "uploads" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {"Uploads"}
+                        </a>
+                        <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
+                            <DropdownLink name={"Manual Uploads"} href="/protected/uploads"/>
+                            <DropdownLink name={"AirSync Uploads"} href="/protected/airsync_uploads"/>
+                        </div>
+                    </li>
+
+                );
+            } else {
+                uploadsButton = (
+                    <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
+                );
+            }
 
         console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
 
