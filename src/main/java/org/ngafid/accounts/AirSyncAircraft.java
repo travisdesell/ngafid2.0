@@ -59,7 +59,7 @@ public class AirSyncAircraft {
         Type target = new TypeToken<List<AirSyncUpload>>(){}.getType();
         List<AirSyncUpload> uploads = gson.fromJson(resp, target);
 
-        for (AirSyncUpload u : uploads) u.initalize(fleet, connection);
+        for (AirSyncUpload u : uploads) u.init(fleet, connection);
         
         return uploads;
     }

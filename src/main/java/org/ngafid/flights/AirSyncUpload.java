@@ -20,19 +20,25 @@ import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.Fleet;
 
 public class AirSyncUpload extends Upload {
+    private int airsyncId;
     private byte [] data;
     private int aircraftId;
     private String origin, destination;
     private String timeStart, timeEnd;
     private LocalDateTime localDateTimeStart, localDateTimeEnd;
     private String fileUrl;
-    private Fleet fleet;
 
-    private static String STATUS_IMPORTED = "IMPORTED";
-    private static String STATUS_ERR = "ERROR";
-    private static String STATUS_WARN = "WARNING";
+    private static final String AS_COLUMNS = DEFAULT_COLUMNS + ", airsync_id";
+    private static final String STATUS_IMPORTED = "IMPORTED";
+    private static final String STATUS_ERR = "ERROR";
+    private static final String STATUS_WARN = "WARNING";
 
     private static final Logger LOG = Logger.getLogger(AirSyncUpload.class.getName());
+
+    public AirSyncUpload(ResultSet resultSet) throws SQLException {
+        super(resultSet);
+        this.airsyncId = resultSet.getInt(18);
+    }
 
     private AirSyncUpload(int id, int fleetId) {
         super(id);
@@ -49,10 +55,12 @@ public class AirSyncUpload extends Upload {
      * @param {fleet} a reference to the fleet that this upload is for
      * @param {connection} a reference to the database {@link Connection}
      */
-    public void initalize(Fleet fleet, Connection connection) {
+    public void init(Fleet fleet, Connection connection) {
         super.fleetId = fleet.getId();
 
-        this.fleet = fleet;
+        //Change this over from the JSON parse so that the NGAFID id and AirSync id
+        //do not get interchanged
+        this.airsyncId = id;
 
         //This does not include timezones yet
         //TODO: Add time zone support!
@@ -172,12 +180,14 @@ public class AirSyncUpload extends Upload {
         query.setInt(8, (status.equals(STATUS_IMPORTED) ? 1 : 0));
         query.setInt(9, (status.equals(STATUS_ERR) ? 1 : 0));
         query.setInt(10, (status.equals(STATUS_WARN) ? 1 : 0));
-        query.setInt(11, this.id);
+        query.setInt(11, this.airsyncId);
         query.setInt(12, this.uploaderId);
         query.setInt(13, -2);
         query.setInt(14, 0);
         query.setInt(15, 0);
-        query.setInt(16, this.id);
+
+        //TODO: changeme when we get the MD5 hash from AirSync
+        query.setInt(16, this.airsyncId);
 
         System.out.println(query.toString());
         query.executeUpdate();
@@ -196,7 +206,7 @@ public class AirSyncUpload extends Upload {
     }
 
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND airsync_id > 0 ORDER BY start_time DESC", DEFAULT_COLUMNS);
+        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND airsync_id > 0 ORDER BY start_time DESC", AS_COLUMNS);
         if (condition != null && !condition.isBlank()) sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
@@ -207,7 +217,7 @@ public class AirSyncUpload extends Upload {
         List<Upload> uploads = new ArrayList<>();
 
         while (resultSet.next()) {
-            uploads.add(new Upload(resultSet));
+            uploads.add(new AirSyncUpload(resultSet));
         }
 
         return uploads;
