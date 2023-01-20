@@ -27,6 +27,7 @@ public class AirSyncUpload extends Upload {
     private String timeStart, timeEnd;
     private LocalDateTime localDateTimeStart, localDateTimeEnd;
     private String fileUrl;
+    private AirSyncAircraft aircraft;
 
     private static final String AS_COLUMNS = DEFAULT_COLUMNS + ", airsync_id";
     private static final String STATUS_IMPORTED = "IMPORTED";
@@ -55,8 +56,9 @@ public class AirSyncUpload extends Upload {
      * @param {fleet} a reference to the fleet that this upload is for
      * @param {connection} a reference to the database {@link Connection}
      */
-    public void init(Fleet fleet, Connection connection) {
+    public void init(Fleet fleet, AirSyncAircraft aircraft, Connection connection) {
         super.fleetId = fleet.getId();
+        this.aircraft = aircraft;
 
         //Change this over from the JSON parse so that the NGAFID id and AirSync id
         //do not get interchanged
@@ -92,24 +94,24 @@ public class AirSyncUpload extends Upload {
         if ((count = readCsvData()) > 0) {
             // Target zip: $NGAFID_ARCHIVE_DIR/<FLEET_ID>/<UPLOADER_ID>/<FLIGHT YYYY>/<FLIGHT MM>/<upload_id>__<upload_name>.zip 
             try {
-                String zipId = String.format("%d_%s.zip", id, aircraftId);
+                String zipId = aircraftId + ".zip";
                 String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/" + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
 
                 File file = new File(path + "/" + zipId);
 
                 if (file.exists()) {
-                    LOG.severe("Zip file for upload " + path + " already exists! Skipping this file...");
-                    return;
-                } 
-
-                String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
-                    
-                File dirPath = new File(path);
-                if (!dirPath.exists()) {
-                    dirPath.mkdirs();
+                    LOG.info(String.format("Found file for aircraft %d and parent (date) %s", aircraftId, path));
+                }  else {
+                    File dirPath = new File(path);
+                    if (!dirPath.exists()) {
+                        dirPath.mkdirs();
+                    }
                 }
 
-                if (file.createNewFile()) {
+                String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
+
+                    
+                if (file.exists() || file.createNewFile()) {
                     ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
                     ZipEntry csvEntry = new ZipEntry(csvName);
 
@@ -123,7 +125,8 @@ public class AirSyncUpload extends Upload {
                     return;
                 }
 
-                String identifier = this.aircraftId + "AS-" + this.localDateTimeStart.getYear() + "-" + this.localDateTimeStart.getMonthValue() + "-" + this.localDateTimeStart.getDayOfMonth();
+
+                String identifier = this.aircraftId + "AS-" + this.localDateTimeStart.getYear() + "-" + this.localDateTimeStart.getMonthValue() + "-" + this.localDateTimeStart.getDayOfMonth() + "_" + this.aircraft.getTailNumber() + "_" + this.origin + "_" + this.destination;
 
                 Flight flight = new Flight(fleetId, csvName, new ByteArrayInputStream(this.data), connection);
                 int uploadId = -1;

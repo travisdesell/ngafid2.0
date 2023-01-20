@@ -1,4 +1,6 @@
 import 'bootstrap';
+import { Paginator } from "./paginator_component.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
@@ -93,8 +95,9 @@ class AirSyncUpload extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.identifier}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle2}>{uploadInfo.identifier}</div>
                     <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>AirSync Ref #: {uploadInfo.airsyncId}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>Tail: {uploadInfo.tailNumber}</div>
                     <div className="p-1 flex-fill card progress" style={fixedFlexStyle2}>
                         <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">{sizeText}</div>
                     </div>
@@ -117,7 +120,10 @@ class AirSyncUploadsCard extends React.Component {
         if (uploads == undefined) uploads = [];
 
         this.state = {
-            uploads : uploads
+            uploads : uploads,
+            numberPages : numberPages,
+            currentPage : currentPage,
+            pageSize : 10,
         };
     }
 
@@ -129,6 +135,48 @@ class AirSyncUploadsCard extends React.Component {
         console.log("does nothing");
     }
 
+    submitFilter() {
+        //prep data
+        var uploadsPage = this;
+
+        var submissionData = {
+            currentPage : this.state.currentPage,
+            pageSize : this.state.pageSize,
+        };
+
+        console.log(submissionData);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/airsync_uploads',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                console.log("got response: "+response+" "+response.sizeAll);
+
+                uploadsPage.setState({
+                    uploads : response.uploads,
+                    numberPages : response.numberPages
+                });
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },
+            async: true
+        });
+    }
+
 
     render() {
         const hidden = this.props.hidden;
@@ -137,22 +185,58 @@ class AirSyncUploadsCard extends React.Component {
         };
 
         return (
-            <div className="card-body" hidden={hidden}>
-                {
-                    this.state.uploads.map((uploadInfo, index) => {
-                        return (
-                            <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                        );
-                    })
-                }
-                <div className="d-flex justify-content-center mt-2">
-                    <div className="p-0">
-                        <button id="upload-flights-button" className="btn btn-primary" onClick={() => this.triggerInput()}>
-                            <i className="fa fa-refresh"></i> Sync with AirSync Server Now
-                        </button>
-                    </div>
-                </div>
+            <div>
+                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
+                <div className="card-body" hidden={hidden}>
+                    <div className="card mb-1 border-secondary">
+                        <div className="p-2">
+                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-refresh"></i> Sync with AirSync Server Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                    {
+                        this.state.uploads.map((uploadInfo, index) => {
+                            return (
+                                <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                            );
+                        })
+                    }
+
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                </div>
             </div>
         );
     }
