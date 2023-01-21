@@ -612,7 +612,7 @@ if (!$update_uploads_for_raise) {
 }
 
 if ($create_airsync) {
-    $query = "CREATE TABLE `airsync_fleet_info` (
+        $query = "CREATE TABLE `airsync_fleet_info` (
         `fleet_id` int(11) NOT NULL,                                                            
         `api_key` varchar(32) NOT NULL,                                                         
         `api_secret` varchar(64) NOT NULL,                                                      
@@ -620,6 +620,21 @@ if ($create_airsync) {
         `timeout` int(11) DEFAULT NULL,                                                             
         KEY `airsync_fleet_id_fk` (`fleet_id`),                                                     
         CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`));";
+
+        query_ngafid_db($query);
+
+        $query = "CREATE TABLE `airsync_imports` (
+        `id` int(11) NOT NULL,
+        `tail` varchar(2048) DEFAULT NULL,
+        `time_received` timestamp NULL DEFAULT NULL,
+        `upload_id` int(11) NOT NULL,
+        `fleet_id` int(11) NOT NULL,
+        PRIMARY KEY (`id`),
+        KEY `airsync_imports_uploads_null_fk` (`upload_id`),
+        KEY `airsync_imports_fleet_id_fk` (`fleet_id`),
+        CONSTRAINT `airsync_imports_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`),
+        CONSTRAINT `airsync_imports_uploads_null_fk` FOREIGN KEY (`upload_id`) REFERENCES `uploads` (`id`)
+        );";
 
         query_ngafid_db($query);
 }

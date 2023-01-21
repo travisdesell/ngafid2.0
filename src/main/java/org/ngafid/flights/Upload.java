@@ -237,11 +237,13 @@ public class Upload {
 
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
         //PreparedStatement uploadQuery = connection.prepareStatement("SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
-        String query = "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE fleet_id = ? AND airsync_id <= 0 ORDER BY start_time DESC";
+        String query = "SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? ORDER BY start_time DESC";
         if (condition != null) query += " " + condition;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
+        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
+
         ResultSet resultSet = uploadQuery.executeQuery();
 
         ArrayList<Upload> uploads = new ArrayList<Upload>();
@@ -257,15 +259,15 @@ public class Upload {
     }
 
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
+        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
         if (condition != null) query += " " + condition;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
 
         uploadQuery.setInt(1, fleetId);
-        ResultSet resultSet = uploadQuery.executeQuery();
+        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
 
-        ArrayList<Upload> uploads = new ArrayList<Upload>();
+        ResultSet resultSet = uploadQuery.executeQuery();
 
         resultSet.next();
         int count = resultSet.getInt(1);
@@ -278,7 +280,7 @@ public class Upload {
 
     public static List<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
         //String query = "SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?";
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
         if (types.length > 0) {
             query += " AND (";
@@ -292,11 +294,14 @@ public class Upload {
         query += " ORDER BY start_time DESC";
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
+
         uploadQuery.setInt(1, fleetId);
+        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
 
         for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 2, types[i]);
+            uploadQuery.setString(i + 3, types[i]);
         }
+
 
         ResultSet resultSet = uploadQuery.executeQuery();
 
@@ -313,7 +318,7 @@ public class Upload {
     }
 
     public static List<Upload> getUploads(Connection connection, int fleetId, String [] types, String sqlLimit) throws SQLException{
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND airsync_id <= 0";
+        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
 
         if (types.length > 0) {
             query += " AND (";
@@ -331,9 +336,10 @@ public class Upload {
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
         uploadQuery.setInt(1, fleetId);
+        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
 
         for (int i = 0; i < types.length; i++) {
-            uploadQuery.setString(i + 2, types[i]);
+            uploadQuery.setString(i + 3, types[i]);
         }
         ResultSet resultSet = uploadQuery.executeQuery();
 

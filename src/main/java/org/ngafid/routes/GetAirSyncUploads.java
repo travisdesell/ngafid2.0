@@ -25,7 +25,7 @@ import org.ngafid.Database;
 import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.flights.AirSyncUpload;
+import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
 
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -69,8 +69,8 @@ public class GetAirSyncUploads implements Route {
 
             Connection connection = Database.getConnection();
 
-            int totalUploads = AirSyncUpload.getNumUploads(connection, fleetId, null);
-            List<Upload> uploads = AirSyncUpload.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
+            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             int numberPages = totalUploads / pageSize;
 

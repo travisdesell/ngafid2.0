@@ -8,7 +8,7 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAuth.AccessToken;
-import org.ngafid.flights.AirSyncUpload;
+import org.ngafid.flights.AirSyncImport;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
@@ -42,14 +42,15 @@ public class AirSyncAircraft {
     }
 
     private URL getAircraftLogURL() throws MalformedURLException {
+        //TODO: get this to iterate through the pages
         String baseURL = "https://service-dev.air-sync.com/partner_api/v1/aircraft/%d/logs?page=0&number_of_results=25";
 
         return new URL(String.format(baseURL, id));
     }
 
-    public List<AirSyncUpload> getUploads(Connection connection, AirSyncFleet fleet) {
+    public List<AirSyncImport> getImports(Connection connection, AirSyncFleet fleet) {
         AirSyncAuth authentication = fleet.getAuth();
-        List<AirSyncUpload> uploads = null;
+        List<AirSyncImport> imports = null;
 
         try {
             HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL().openConnection();
@@ -67,14 +68,14 @@ public class AirSyncAircraft {
             resp = resp.replaceAll("time_end", "timeEnd");
             resp = resp.replaceAll("file_url", "fileUrl");
 
-            Type target = new TypeToken<List<AirSyncUpload>>(){}.getType();
-            uploads = gson.fromJson(resp, target);
+            Type target = new TypeToken<List<AirSyncImport>>(){}.getType();
+            imports = gson.fromJson(resp, target);
 
-            for (AirSyncUpload u : uploads) u.init(fleet, this, connection);
+            for (AirSyncImport i : imports) i.init(fleet, this);
         } catch (Exception e) {
             LOG.severe("Caught " + e.toString() + " when making AirSync request!");
         }
         
-        return uploads;
+        return imports;
     }
 }

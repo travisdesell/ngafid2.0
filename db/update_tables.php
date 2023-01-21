@@ -200,8 +200,7 @@ if ($update_email_settings) {
 
 $update_for_airsync = true;
 if ($update_for_airsync) {
-    query_ngafid_db("ALTER TABLE uploads ADD COLUMN `airsync_id` int(11) DEFAULT '0' AFTER `n_error_flights`;");
-    query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', '');");
+    query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', 'A');");
 }
 
 ?>
