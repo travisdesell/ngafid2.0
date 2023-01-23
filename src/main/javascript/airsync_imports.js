@@ -9,27 +9,67 @@ import SignedInNavbar from "./signed_in_navbar.js";
 
 import { Paginator } from "./paginator_component.js";
 
+class FlightWarning extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        let warning = this.props.warning;
+
+        const styleName = { flex : "0 0 25em" };
+        let filenameClasses = "p-1 mr-1 card border-warning text-warning";
+        let filenameText = warning.filename;
+        if (warning.sameFilename) {
+            filenameClasses = "p-1 mr-1";
+            filenameText = "";
+        }
+
+        return (
+            <div className="d-flex flex-row p-0 mt-1">
+                <div className={filenameClasses} style={styleName} >
+                    {filenameText}
+                </div>
+                <div className="p-1 card border-warning text-warning flex-fill">
+                    {warning.message}
+                </div>
+            </div>
+        );
+    }
+}
+
+class FlightWarnings extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        let flightWarnings = this.props.flightWarnings;
+
+        return (
+            <div className="m-0">
+                {
+                    flightWarnings.map((warning, index) => {
+                        return (
+                            <FlightWarning warning={warning} key={warning.id} />
+                        );
+                    })
+                }
+            </div>
+        );
+    }
+}
 
 class AirSyncImport extends React.Component {
     constructor(props) {
         super(props);
 
-        let uploadErrors = props.uploadErrors;
-        if (uploadErrors == undefined) uploadErrors = [];
-
-        let flightWarnings = props.flightWarnings;
-        if (flightWarnings == undefined) flightWarnings = [];
-
-        let flightErrors = props.flightErrors;
-        if (flightErrors == undefined) flightErrors = [];
-
-
         this.state = {
             expanded : false,
             loaded : false,
-            uploadErrors : uploadErrors,
-            flightWarnings: flightWarnings,
-            flightErrors: flightErrors
+            //uploadErrors : uploadErrors,
+            flightWarnings: props.importInfo.warnings,
+            //flightErrors: flightErrors
         };
     }
 
@@ -38,56 +78,59 @@ class AirSyncImport extends React.Component {
     }
 
     expandClicked() {
-        var thisImport = this;
+        this.setState({
+            expanded : true,
+        })
+        //var thisImport = this;
 
-        var submissionData = {
-            uploadId : this.props.importInfo.id
-        };   
+        //var submissionData = {
+            //uploadId : this.props.importInfo.id
+        //};   
 
-        if (this.state.loaded) {
-            console.log("not fetching import information from the server, already loaded.");
-            thisImport.state.expanded = !thisImport.state.expanded;
-            thisImport.setState(thisImport.state);
-        } else {
-            console.log("fetching import information from the server.");
+        //if (this.state.loaded) {
+            //console.log("not fetching import information from the server, already loaded.");
+            //thisImport.state.expanded = !thisImport.state.expanded;
+            //thisImport.setState(thisImport.state);
+        //} else {
+            //console.log("fetching import information from the server.");
 
-            $.ajax({
-                type: 'POST',
-                url: '/protected/airsync_imports',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
+            //$.ajax({
+                //type: 'POST',
+                //url: '/protected/airsync_imports',
+                //data : submissionData,
+                //dataType : 'json',
+                //success : function(response) {
+                    //console.log("received response: ");
+                    //console.log(response);
 
-                    if (response.errorTitle !== undefined) {
-                        errorModal.show(response.errorTitle, response.errorMessage);
-                    } else {
-                        thisImport.state.loaded = true;
-                        thisImport.state.expanded = !thisImport.state.expanded;
-                        console.log("expand clicked, now:" + thisImport.state.expanded);
-                        thisImport.state.uploadErrors = response.uploadErrors;
-                        thisImport.state.flightWarnings = response.flightWarnings;
-                        thisImport.state.flightErrors = response.flightErrors;
+                    //if (response.errorTitle !== undefined) {
+                        //errorModal.show(response.errorTitle, response.errorMessage);
+                    //} else {
+                        //thisImport.state.loaded = true;
+                        //thisImport.state.expanded = !thisImport.state.expanded;
+                        //console.log("expand clicked, now:" + thisImport.state.expanded);
+                        //thisImport.state.uploadErrors = response.uploadErrors;
+                        //thisImport.state.flightWarnings = response.flightWarnings;
+                        //thisImport.state.flightErrors = response.flightErrors;
 
-                        thisImport.setState(thisImport.state);
-                    }
+                        //thisImport.setState(thisImport.state);
+                    //}
 
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Uploads", errorThrown);
-                },   
-                async: true 
-            });  
-        }
+                //},   
+                //error : function(jqXHR, textStatus, errorThrown) {
+                    //errorModal.show("Error Loading Uploads", errorThrown);
+                //},   
+                //async: true 
+            //});  
+        //}
 
     }
 
     render() {
         let expanded = this.state.expanded;
-        let uploadErrors = this.state.uploadErrors;
+        //let uploadErrors = this.state.uploadErrors;
         let flightWarnings = this.state.flightWarnings;
-        let flightErrors = this.state.flightErrors;
+        //let flightErrors = this.state.flightErrors;
 
         for (var i = 1; i < flightWarnings.length; i++) {
             if (flightWarnings[i-1].filename == flightWarnings[i].filename) {
@@ -97,15 +140,16 @@ class AirSyncImport extends React.Component {
             }
         }
 
-        for (var i = 1; i < flightErrors.length; i++) {
-            if (flightErrors[i-1].filename == flightErrors[i].filename) {
-                flightErrors[i].sameFilename = true;
-            } else {
-                flightErrors[i].sameFilename = false;
-            }
-        }
+        //for (var i = 1; i < flightErrors.length; i++) {
+            //if (flightErrors[i-1].filename == flightErrors[i].filename) {
+                //flightErrors[i].sameFilename = true;
+            //} else {
+                //flightErrors[i].sameFilename = false;
+            //}
+        //}
 
         let importInfo = this.props.importInfo;
+        console.log(importInfo);
 
         /*
         console.log("rendering import for filename: '" + importInfo.filename + "'");
@@ -202,19 +246,19 @@ class AirSyncImport extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
-                    <div className={textClasses + " flex-fill"} style={styleName}>{importInfo.filename}</div>
-                    <div className={textClasses} style={styleTime}>{importInfo.endTime}</div>
-                    <div className={textClasses + " text-success"} style={styleCount}>{importInfo.validFlights} valid</div>
-                    <div className={textClasses + " text-warning"} style={styleCount}>{importInfo.warningFlights} warnings</div>
-                    <div className={textClasses + " text-danger"} style={styleCount}>{importInfo.errorFlights} errors</div>
+                    <div className={textClasses} style={styleCount}>
+                        <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
+                    </div>
+                    <div className={textClasses } style={styleCount}>{importInfo.status}</div>
+                    <div className={textClasses } style={styleCount}>{importInfo.timeReceived}</div>
+                    <div className={textClasses } style={styleCount}>AirSync ref#{importInfo.id}</div>
+                    <div className={textClasses } style={styleCount}>{importInfo.tail}</div>
                     <div className={cardClasses} style={styleStatus}>{statusText}</div>
                     <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
 
                 </div>
                 <div className={expandDivClasses} hidden={!expanded}>
-                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors}/>
                     <FlightWarnings expanded={expanded} flightWarnings={flightWarnings}/>
-                    <FlightErrors expanded={expanded} flightErrors={flightErrors}/>
                 </div>
             </div>
         );
@@ -226,6 +270,9 @@ class AirSyncImport extends React.Component {
 class ImportsPage extends React.Component {
     constructor(props) {
         super(props);
+
+        console.log("imports: ");
+        console.log(imports);
 
         this.state = {
             imports : this.props.imports,
@@ -300,7 +347,7 @@ class ImportsPage extends React.Component {
                 {
                     this.state.imports.map((importInfo, index) => {
                         return (
-                            <Import importInfo={importInfo} key={importInfo.identifier} />
+                            <AirSyncImport importInfo={importInfo} key={importInfo.id} />
                         );
                     })
                 }
@@ -328,5 +375,5 @@ class ImportsPage extends React.Component {
 
 var importsPage = ReactDOM.render(
     <ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage} />,
-    document.querySelector('#imports-page')
+    document.querySelector('#airsync-imports-page')
 );

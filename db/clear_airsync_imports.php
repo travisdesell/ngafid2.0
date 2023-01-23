@@ -13,6 +13,7 @@ $result = query_ngafid_db("SELECT id FROM user WHERE first_name = 'airsync' AND 
 $row = $result->fetch_assoc();
 $as_uploader_id = $row['id'];
 
+query_ngafid_db("DELETE FROM airsync_imports");
 query_ngafid_db("DELETE FROM uploads WHERE uploader_id = " . $as_uploader_id . ";");
 query_ngafid_db("DELETE FROM double_series WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM string_series WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
@@ -20,7 +21,6 @@ query_ngafid_db("DELETE FROM events WHERE flight_id IN (SELECT id FROM flights W
 query_ngafid_db("DELETE FROM flight_processed WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM itinerary WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM flights WHERE uploader_id = " . $as_uploader_id . ";");
-query_ngafid_db("DELETE FROM airsync_imports;");
 
 echo "Cleared all AirSync uploads\n";
 

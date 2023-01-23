@@ -132,13 +132,13 @@ class SignedInNavbar extends React.Component {
 
                 );
 
-                uploadsButton = (
+                importsButton = (
                     <li className="nav-item dropdown">
                         <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            {"Uploads"}
+                            {"Imports"}
                         </a>
                         <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
-                            <DropdownLink name={"Manual Uploads"} href="/protected/imports"/>
+                            <DropdownLink name={"Manual Imports"} href="/protected/imports"/>
                             <DropdownLink name={"AirSync Imports"} href="/protected/airsync_imports"/>
                         </div>
                     </li>

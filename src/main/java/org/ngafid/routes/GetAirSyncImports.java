@@ -26,6 +26,7 @@ import org.ngafid.common.*;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.AirSyncImport;
+import org.ngafid.flights.AirSyncImportResponse;
 import org.ngafid.flights.Upload;
 
 import com.github.mustachejava.DefaultMustacheFactory;
@@ -48,7 +49,7 @@ public class GetAirSyncImports implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "airsync_uploads.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "airsync_imports.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
@@ -69,8 +70,8 @@ public class GetAirSyncImports implements Route {
 
             Connection connection = Database.getConnection();
 
-            int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            int totalUploads = AirSyncImport.getNumImports(connection, fleetId, null);
+            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             int numberPages = totalUploads / pageSize;
 
@@ -78,7 +79,7 @@ public class GetAirSyncImports implements Route {
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
 
-            scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
+            scopes.put("imports_js", "var imports = JSON.parse('" + gson.toJson(imports) + "');");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

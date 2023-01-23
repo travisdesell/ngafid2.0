@@ -89,7 +89,7 @@ public class AirSyncImport {
         if ((count = readCsvData()) > 0) {
             try {
                 String zipId = aircraftId + ".zip";
-                String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncImporter/"/* we will use this instead of the user id */ + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
+                String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/"/* we will use this instead of the user id */ + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
 
                 File file = new File(path + "/" + zipId);
 
@@ -135,7 +135,7 @@ public class AirSyncImport {
                 flight.updateTail(connection, aircraft.getTailNumber());
                 flight.updateDatabase(connection, this.uploadId, getUploaderId(), fleetId);
 
-                this.createImport(connection);
+                this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
 			} catch (Exception e) {
@@ -237,8 +237,8 @@ public class AirSyncImport {
         }
     }
 
-    public void createImport(Connection connection) throws SQLException {
-        String sql = "INSERT INTO airsync_imports(id, tail, time_received, upload_id, fleet_id) VALUES(?,?,?,?,?)";
+    public void createImport(Connection connection, Flight flight) throws SQLException {
+        String sql = "INSERT INTO airsync_imports(id, tail, time_received, upload_id, fleet_id, flight_id) VALUES(?,?,?,?,?,?)";
         PreparedStatement query = connection.prepareStatement(sql);
 
         query.setInt(1, this.id);
@@ -246,6 +246,7 @@ public class AirSyncImport {
         query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
         query.setInt(4, this.uploadId);
         query.setInt(5, this.fleetId);
+        query.setInt(6, flight.getId());
 
         query.executeUpdate();
         query.close();
@@ -283,6 +284,43 @@ public class AirSyncImport {
 
         query.setInt(1, fleetId);
         query.setInt(2, getUploaderId());
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return resultSet.getInt(1);
+        }
+
+        return -1;
+    }
+
+    public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition) throws SQLException {
+        String sql = "SELECT a.id, a.time_received, a.upload_id, f.status, a.flight_id, a.tail FROM airsync_imports AS a INNER JOIN flights AS f ON f.id = a.flight_id WHERE a.fleet_id = ?";
+        if (condition != null && !condition.isBlank()) sql += " " + condition;
+
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleetId);
+
+        System.out.println(query.toString());
+        ResultSet resultSet = query.executeQuery();
+
+        List<AirSyncImportResponse> imports = new ArrayList<>();
+
+        while (resultSet.next()) {
+            imports.add(new AirSyncImportResponse(fleetId, resultSet));
+        }
+
+        return imports;
+    }
+
+    public static int getNumImports(Connection connection, int fleetId, String condition) throws SQLException {
+        String sql = "SELECT COUNT(*) FROM airsync_imports WHERE fleet_id = ?";
+        if (condition != null && !condition.isBlank()) sql += " " + condition;
+
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleetId);
 
         ResultSet resultSet = query.executeQuery();
 
