@@ -200,6 +200,7 @@ if ($update_email_settings) {
 
 $update_for_airsync = true;
 if ($update_for_airsync) {
+    // this creates the default AirSync user
     query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', 'A');");
 }
 
