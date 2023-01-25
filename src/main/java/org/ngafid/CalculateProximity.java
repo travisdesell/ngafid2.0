@@ -292,10 +292,29 @@ public class CalculateProximity {
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
 
+    public static double calculateDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
+                                           double otherFlightLongitude, double flightAltitude, double otherFlightAltitude){
+
+        double distanceFt = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
+        double altDiff = Math.abs(flightAltitude - otherFlightAltitude);
+        double distance = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
+
+        return distance;
+    }
+
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
                                                         int endLine, int otherStartLine,int otherEndLine ){
 
         double rateOfClosure[] = new double[endLine - startLine];
+        double previousDistance = 0.0;
+        if (startLine == 0 || otherStartLine == 0) {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
+                    otherInfo.latitude[otherStartLine], otherInfo.longitude[otherStartLine], flightInfo.altitudeMSL[startLine], otherInfo.altitudeMSL[startLine]);
+        }
+        else {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
+                    otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1], flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[startLine-1]);
+        }
         int i = startLine, j = otherStartLine, index = 0;
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
@@ -318,12 +337,10 @@ public class CalculateProximity {
                 j++;
                 continue;
             }
-
-            double distanceFt = Airports.calculateDistanceInFeet(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j], otherInfo.longitude[j]);
-            double altDiff = Math.abs(flightInfo.altitudeMSL[i] - otherInfo.altitudeMSL[j]);
-            distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
-            rateOfClosure[index] = distanceFt;
-
+            double currentDistance = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i],
+                    otherInfo.latitude[j], otherInfo.longitude[j], flightInfo.altitudeMSL[i], otherInfo.altitudeMSL[j]);
+            rateOfClosure[index] = currentDistance - previousDistance;
+            previousDistance = currentDistance;
             i++;
             j++;
             index++;
