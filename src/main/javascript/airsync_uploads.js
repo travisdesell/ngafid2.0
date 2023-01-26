@@ -94,26 +94,28 @@ class AirSyncUpload extends React.Component {
             statusClasses += " border-danger text-danger";
         } else if (status == "IMPORTED") {
             if (uploadInfo.errorFlights == 0 && uploadInfo.warningFlights == 0) {
-                statusText = "Imported";
+                statusText = "All Flights Imported";
                 progressBarClasses += " bg-success";
                 statusClasses += " border-success text-success";
 
             } else if (uploadInfo.errorFlights != 0 && uploadInfo.errorFlights != 0) {
-                statusText = "Imported With Errors and Warnings";
+                statusText = "Imported With Some Errors and Warnings";
                 progressBarClasses += " bg-danger";
                 statusClasses += " border-danger text-danger ";
 
             } else if (uploadInfo.errorFlights != 0) {
-                statusText = "Imported With Errors";
+                statusText = "Imported With Some Errors";
                 progressBarClasses += " bg-danger";
                 statusClasses += " border-danger text-danger ";
 
             } else if (uploadInfo.warningFlights != 0) {
-                statusText = "Imported With Warnings";
+                statusText = "Imported With Some Warnings";
                 progressBarClasses += " bg-warning";
                 statusClasses += " border-warning text-warning ";
             }
         }
+
+        let validClasses = 
 
         statusClasses += " mr-1 bg-light flex-fill";
 

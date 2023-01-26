@@ -175,7 +175,7 @@ class AirSyncImport extends React.Component {
         const styleName = { };
         const styleTime = { flex : "0 0 11em" };
         const styleCount = { flex : "0 0 8em" };
-        const styleStatus = { flex : "0 0 10em" };
+        const styleStatus = { flex : "0 0 20em" };
         const styleButton = { };
 
         let statusText = "";
@@ -193,47 +193,17 @@ class AirSyncImport extends React.Component {
 
         let progressBarClasses = "progress-bar";
         let status = importInfo.status;
+        console.log("status: " + status);
         let colorClasses = "";
 
-        if (status == "HASHING") {
-            statusText = "Hashing";
+        if (status == "SUCCESS") {
+            statusText = "Imported";
+            progressBarClasses += " bg-success";
+            colorClasses += " border-success text-success";
+        } else if (status == "WARNING") {
+            statusText = "Imported With Warning(s)";
             progressBarClasses += " bg-warning";
-            colorClasses += " border-warning text-warning";
-        } else if (status == "IMPORTED") {
-            if (importInfo.errorFlights == 0 && importInfo.warningFlights == 0) {
-                statusText = "Imported";
-                progressBarClasses += " bg-success";
-                colorClasses += " border-success text-success";
-
-            } else if (importInfo.errorFlights != 0 && importInfo.warningFlights != 0) {
-                statusText = "Imported With Errors and Warnings";
-                progressBarClasses += " bg-danger";
-                colorClasses += " border-danger text-danger ";
-
-            } else if (importInfo.errorFlights != 0) {
-                statusText = "Imported With Errors";
-                progressBarClasses += " bg-danger";
-                colorClasses += " border-danger text-danger ";
-
-            } else if (importInfo.warningFlights != 0) {
-                statusText = "Imported With Warnings";
-                progressBarClasses += " bg-warning";
-                colorClasses += " border-warning text-warning ";
-            }
-
-        } else if (status == "UPLOADED") {
-            statusText = "Not Yet Imported";
-            progressBarClasses += " bg-info";
-            colorClasses += " border-info text-info";
-
-        } else if (status == "UPLOADING") {
-            statusText = "Uploading";
-
-        } else if (status == "UPLOAD INCOMPLETE") {
-            statusText = "Upload Incomplete";
-            progressBarClasses += " bg-warning";
-            colorClasses += " border-warning text-warning";
-
+            colorClasses += " border-warning text-warning ";
         } else if (status == "ERROR") {
             statusText = "Import Failed";
             progressBarClasses += " bg-danger";
@@ -243,6 +213,8 @@ class AirSyncImport extends React.Component {
         let textClasses = "p-1 mr-1 card bg-light";
         let cardClasses = textClasses + colorClasses;
 
+        let fillClasses = textClasses + " flex-fill";
+
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
@@ -250,9 +222,8 @@ class AirSyncImport extends React.Component {
                     <div className={textClasses} style={styleCount}>
                         <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
                     </div>
-                    <div className={textClasses } style={styleCount}>{statusText}</div>
-                    <div className={textClasses } style={styleCount}>{importInfo.timeReceived}</div>
-                    <div className={textClasses } style={styleCount}>AirSync ref#{importInfo.id}</div>
+                    <div className={fillClasses} style={styleCount}>Received at: {importInfo.timeReceived}</div>
+                    <div className={fillClasses} style={styleCount}>AirSync ref#{importInfo.id}</div>
                     <div className={cardClasses} style={styleStatus}>{statusText}</div>
                     <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
 

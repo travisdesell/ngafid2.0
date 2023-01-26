@@ -308,7 +308,7 @@ public class AirSyncImport {
     }
 
     public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition) throws SQLException {
-        String sql = "SELECT a.id, a.time_received, a.upload_id, f.status, a.flight_id, a.tail FROM airsync_imports AS a INNER JOIN flights AS f ON f.id = a.flight_id WHERE a.fleet_id = ?";
+        String sql = "SELECT a.id, a.time_received, a.upload_id, f.status, a.flight_id, a.tail FROM airsync_imports AS a INNER JOIN flights AS f ON f.id = a.flight_id WHERE a.fleet_id = ? ORDER BY a.time_received";
         if (condition != null && !condition.isBlank()) sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
