@@ -297,17 +297,15 @@ public class CalculateProximity {
 
         double distanceFt = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
         double altDiff = Math.abs(flightAltitude - otherFlightAltitude);
-        double distance = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
-        return distance;
+        distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
+        return distanceFt;
     }
 
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
                                                         int endLine, int otherStartLine,int otherEndLine ){
 
         double rateOfClosure[] = new double[endLine - startLine];
-        double previousDistance = 0.0;
-
-        previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
+        double previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
                     otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1], flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
 
         int i = startLine, j = otherStartLine, index = 0;
