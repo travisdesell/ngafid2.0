@@ -122,6 +122,10 @@ public class Flight {
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
+    //
+    public static final String WARNING = "WARNING";
+    public static final String SUCCESS = "SUCCESS";
+    public static final String ERROR = "ERROR";
 
     private long processingStatus = 0;
 

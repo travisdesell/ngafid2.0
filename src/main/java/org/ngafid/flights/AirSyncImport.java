@@ -129,7 +129,7 @@ public class AirSyncImport {
 
                 if (connection != null) {
                     //TODO: change the status based on the month!
-                    this.insertUpload(connection, STATUS_IMPORTED, zipId, identifier, count);
+                    this.insertUpload(connection, STATUS_IMPORTED, zipId, identifier, count, flight);
                 }
 
                 flight.updateTail(connection, aircraft.getTailNumber());
@@ -179,8 +179,8 @@ public class AirSyncImport {
      *
      * @throws SQLException
      */
-    public void insertUpload(Connection connection, String status, String fileName, String identifier, int count) throws SQLException {
-        String sql = "SELECT id, size_bytes, bytes_uploaded FROM uploads WHERE identifier = ?";
+    public void insertUpload(Connection connection, String status, String fileName, String identifier, int count, Flight flight) throws SQLException {
+        String sql = "SELECT id, size_bytes, bytes_uploaded, n_valid_flights, n_error_flights, n_warning_flights FROM uploads WHERE identifier = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
         query.setString(1, identifier);
@@ -191,7 +191,11 @@ public class AirSyncImport {
             int sizeBytes = resultSet.getInt(2);
             int bytesUploaded = resultSet.getInt(3);
 
-            sql = "UPDATE uploads SET size_bytes = ?, bytes_uploaded = ? WHERE id = ?";
+            int nValid = resultSet.getInt(4);
+            int nErr = resultSet.getInt(5);
+            int nWarn = resultSet.getInt(6);
+
+            sql = "UPDATE uploads SET size_bytes = ?, bytes_uploaded = ?, n_valid_flights = ?, n_error_flights = ?, n_warning_flights = ? WHERE id = ?";
             query = connection.prepareStatement(sql);
 
             int newSize = count + sizeBytes;
@@ -199,7 +203,13 @@ public class AirSyncImport {
 
             query.setInt(1, newSize);
             query.setInt(2, newUploadedSize);
-            query.setInt(3, this.uploadId);
+
+            // Update respective statuses
+            query.setInt(3, (flight.getStatus().equals(Flight.SUCCESS) ? nValid + 1 : nValid));
+            query.setInt(4, (flight.getStatus().equals(Flight.ERROR) ? nErr + 1 : nErr));
+            query.setInt(5, (flight.getStatus().equals(Flight.WARNING) ? nWarn + 1 :nWarn));
+
+            query.setInt(6, this.uploadId);
 
             query.executeUpdate();
         } else {
@@ -270,7 +280,10 @@ public class AirSyncImport {
         List<Upload> uploads = new ArrayList<>();
 
         while (resultSet.next()) {
-            uploads.add(new Upload(resultSet));
+            Upload u = new Upload(resultSet);
+            u.getAirSyncInfo(connection);
+
+            uploads.add(u);
         }
 
         return uploads;
@@ -347,7 +360,7 @@ public class AirSyncImport {
         // Return num of bytes read
         return data.length;
     }
-    
+
     @Override
     public String toString() {
         return "AirSyncImport: " + this.uploadId + ", for aircraftId: " + aircraftId + ", origin: " + origin + ", destination: " + destination + ",\n" +

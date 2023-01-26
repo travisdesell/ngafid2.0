@@ -7,10 +7,20 @@ import ReactDOM from "react-dom";
 class AirSyncUpload extends React.Component {
     constructor(props) {
         super(props);
+
+        this.state = {
+            expanded : false,
+        }
     }
 
     componentDidMount() {
         //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
+    }
+
+    expandClicked() {
+        this.setState({
+            expanded : !expanded,
+        });
     }
 
     render() {
@@ -18,6 +28,7 @@ class AirSyncUpload extends React.Component {
 
         let progressSize = uploadInfo.progressSize;
         let totalSize = uploadInfo.totalSize;
+        let expanded = this.state.expanded;
 
         if (progressSize == undefined) progressSize = uploadInfo.bytes_uploaded;
         if (totalSize == undefined) totalSize = uploadInfo.size_bytes;
@@ -47,6 +58,18 @@ class AirSyncUpload extends React.Component {
 
 
         let statusText = "";
+
+        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let expandIconClasses = "fa ";
+
+        let expandDivClasses = "";
+        if (expanded) {
+            expandIconClasses += "fa-angle-double-up";
+            expandDivClasses = "m-0 mt-1 mb-4";
+        } else {
+            expandIconClasses += "fa-angle-double-down";
+            expandDivClasses = "m-0";
+        }
 
         let progressBarClasses = "progress-bar";
         let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
@@ -92,16 +115,19 @@ class AirSyncUpload extends React.Component {
             }
         }
 
+        statusClasses += " mr-1 bg-light flex-fill";
+
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
                     <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle2}>{uploadInfo.identifier}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>AirSync Ref #: {uploadInfo.airsyncId}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>Tail: {uploadInfo.tailNumber}</div>
-                    <div className="p-1 flex-fill card progress" style={fixedFlexStyle2}>
-                        <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">{sizeText}</div>
-                    </div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>Tail: {uploadInfo.tail}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.groupString}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.validFlights} valid flights.</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.warningFlights} warning flights.</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.errorFlights} error flights.</div>
                     <div className={statusClasses} style={fixedFlexStyle3}>{statusText}</div>
+                    <button className={expandButtonClasses} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
                 </div>
             </div>
         );

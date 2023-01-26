@@ -7,6 +7,7 @@ import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.time.Month;
 
 import org.ngafid.WebServer;
 
@@ -40,6 +41,9 @@ public class Upload {
     protected int validFlights;
     protected int warningFlights;
     protected int errorFlights;
+
+    // For AirSync uploads that are grouped by month.
+    String groupString = null, tail = null;
 
     public Upload(int id) {
         this.id = id;
@@ -431,5 +435,32 @@ public class Upload {
         query.setInt(4, id);
         query.executeUpdate();
         query.close();
+    }
+
+    public void getAirSyncInfo(Connection connection) throws SQLException {
+        String [] dateInfo = this.identifier.split("-");
+        int month = Integer.parseInt(dateInfo[3]);
+
+        this.groupString = Month.of(month) + " " + dateInfo[2];
+
+        String sql = "SELECT DISTINCT tail FROM airsync_imports WHERE upload_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, this.id);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            tail = resultSet.getString(1);
+
+            if (resultSet.next()) {
+                //This should not happen!
+                tail = null;
+
+                //It indicates that more than one aircraft is grouped into an 
+                //AirSync upload, which is not intended!
+                LOG.severe("This should not be happening! Multiple tails in one AirSync upload! " + Thread.currentThread().getStackTrace().toString());
+            }
+        }
     }
 }

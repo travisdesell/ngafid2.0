@@ -79,7 +79,7 @@ class AirSyncImport extends React.Component {
 
     expandClicked() {
         this.setState({
-            expanded : true,
+            expanded : !this.state.expanded,
         })
         //var thisImport = this;
 
@@ -246,13 +246,13 @@ class AirSyncImport extends React.Component {
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
+                    <div className={textClasses } style={styleCount}>{importInfo.tail}</div>
                     <div className={textClasses} style={styleCount}>
                         <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
                     </div>
-                    <div className={textClasses } style={styleCount}>{importInfo.status}</div>
+                    <div className={textClasses } style={styleCount}>{statusText}</div>
                     <div className={textClasses } style={styleCount}>{importInfo.timeReceived}</div>
                     <div className={textClasses } style={styleCount}>AirSync ref#{importInfo.id}</div>
-                    <div className={textClasses } style={styleCount}>{importInfo.tail}</div>
                     <div className={cardClasses} style={styleStatus}>{statusText}</div>
                     <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
 
