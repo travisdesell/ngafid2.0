@@ -516,7 +516,7 @@ class FlightPage extends React.Component {
 
                 <div style={style}>
                     <div className="card mb-1 border-secondary">
-                        <div className="input-group-prepend p-0">
+                        <div className="row m-0 p-2">
                             <CesiumButtons location="top"></CesiumButtons>
                         </div>
                     </div>
