@@ -27,7 +27,7 @@ class CesiumButtons extends React.Component {
         window.open(URL);
     }
 
-    createButtonStyle(color) {
+    createButtonStyle() {
         console.log("Creating style")
         return {
             alignItems: 'center',
@@ -36,7 +36,6 @@ class CesiumButtons extends React.Component {
             paddingHorizontal: 32,
             borderRadius: 4,
             elevation: 3,
-            backgroundColor: color,
             opacity_disabled: 0,
         }
     }
@@ -78,6 +77,8 @@ class CesiumButtons extends React.Component {
                             onClick={() => this.viewCesiumFlights()} style={this.createButtonStyle("blue")}>
                         View Selected Replays
                     </button>
+
+                    &nbsp;
 
                     <button id={"cesiumClearButton" + this.props.location} className="btn btn-sm btn-primary"
                             onClick={() => this.clearCesiumFlights()} style={this.createButtonStyle("red")}>
