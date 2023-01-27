@@ -1,8 +1,143 @@
 import 'bootstrap';
+import { Paginator } from "./paginator_component.js";
+import SignedInNavbar from "./signed_in_navbar.js";
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 
-class AirsyncUploadsCard extends React.Component {
+class AirSyncUpload extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            expanded : false,
+        }
+    }
+
+    componentDidMount() {
+        //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
+    }
+
+    expandClicked() {
+        this.setState({
+            expanded : !expanded,
+        });
+    }
+
+    render() {
+        let uploadInfo = this.props.uploadInfo;
+
+        let progressSize = uploadInfo.progressSize;
+        let totalSize = uploadInfo.totalSize;
+        let expanded = this.state.expanded;
+
+        if (progressSize == undefined) progressSize = uploadInfo.bytes_uploaded;
+        if (totalSize == undefined) totalSize = uploadInfo.size_bytes;
+
+        const width = ((progressSize / totalSize) * 100).toFixed(2);
+        const sizeText = (uploadInfo.sizeBytes / 1000) + " K";
+        const progressSizeStyle = {
+            width : width + "%",
+            height : "24px",
+            textAlign : "left",
+            whiteSpace : "nowrap"
+        };
+
+        const fixedFlexStyle1 = {
+            flex : "0 0 15em"
+        };
+
+        const fixedFlexStyle2 = {
+            //flex : "0 0 75em",
+            height : "34px",
+            padding : "4 0 4 0"
+        };
+
+        const fixedFlexStyle3 = {
+            flex : "0 0 18em"
+        };
+
+
+        let statusText = "";
+
+        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let expandIconClasses = "fa ";
+
+        let expandDivClasses = "";
+        if (expanded) {
+            expandIconClasses += "fa-angle-double-up";
+            expandDivClasses = "m-0 mt-1 mb-4";
+        } else {
+            expandIconClasses += "fa-angle-double-down";
+            expandDivClasses = "m-0";
+        }
+
+        let progressBarClasses = "progress-bar";
+        let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
+        let status = uploadInfo.status;
+        if (status == "HASHING") {
+            statusText = "Hashing";
+            progressBarClasses += " bg-warning";
+            statusClasses += " border-warning text-warning";
+        } else if (status == "UPLOADED") {
+            statusText = "Uploaded";
+            progressBarClasses += " bg-primary";
+            statusClasses += " border-primary text-primary";
+        } else if (status == "UPLOADING") {
+            statusText = "Uploading";
+        } else if (status == "UPLOAD INCOMPLETE") {
+            statusText = "Upload Incomplete";
+            progressBarClasses += " bg-warning";
+            statusClasses += " border-warning text-warning";
+        } else if (status == "ERROR") {
+            statusText = "Import Failed";
+            progressBarClasses += " bg-danger";
+            statusClasses += " border-danger text-danger";
+        } else if (status == "IMPORTED") {
+            if (uploadInfo.errorFlights == 0 && uploadInfo.warningFlights == 0) {
+                statusText = "All Flights Imported";
+                progressBarClasses += " bg-success";
+                statusClasses += " border-success text-success";
+
+            } else if (uploadInfo.errorFlights != 0 && uploadInfo.errorFlights != 0) {
+                statusText = "Imported With Some Errors and Warnings";
+                progressBarClasses += " bg-danger";
+                statusClasses += " border-danger text-danger ";
+
+            } else if (uploadInfo.errorFlights != 0) {
+                statusText = "Imported With Some Errors";
+                progressBarClasses += " bg-danger";
+                statusClasses += " border-danger text-danger ";
+
+            } else if (uploadInfo.warningFlights != 0) {
+                statusText = "Imported With Some Warnings";
+                progressBarClasses += " bg-warning";
+                statusClasses += " border-warning text-warning ";
+            }
+        }
+
+        let validClasses = 
+
+        statusClasses += " mr-1 bg-light flex-fill";
+
+        return (
+            <div className="m-1">
+                <div className="d-flex flex-row">
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle2}>{uploadInfo.identifier}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>Tail: {uploadInfo.tail}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.groupString}</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.validFlights} valid flights.</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.warningFlights} warning flights.</div>
+                    <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.errorFlights} error flights.</div>
+                    <div className={statusClasses} style={fixedFlexStyle3}>{statusText}</div>
+                    <button className={expandButtonClasses} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
+                </div>
+            </div>
+        );
+
+    }
+}
+
+class AirSyncUploadsCard extends React.Component {
     constructor(props) {
         super(props);
 
@@ -13,7 +148,10 @@ class AirsyncUploadsCard extends React.Component {
         if (uploads == undefined) uploads = [];
 
         this.state = {
-            uploads : uploads
+            uploads : uploads,
+            numberPages : numberPages,
+            currentPage : currentPage,
+            pageSize : 10,
         };
     }
 
@@ -25,6 +163,48 @@ class AirsyncUploadsCard extends React.Component {
         console.log("does nothing");
     }
 
+    submitFilter() {
+        //prep data
+        var uploadsPage = this;
+
+        var submissionData = {
+            currentPage : this.state.currentPage,
+            pageSize : this.state.pageSize,
+        };
+
+        console.log(submissionData);
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/airsync_uploads',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                console.log("got response: "+response+" "+response.sizeAll);
+
+                uploadsPage.setState({
+                    uploads : response.uploads,
+                    numberPages : response.numberPages
+                });
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },
+            async: true
+        });
+    }
+
 
     render() {
         const hidden = this.props.hidden;
@@ -33,29 +213,64 @@ class AirsyncUploadsCard extends React.Component {
         };
 
         return (
-            <div className="card-body" hidden={hidden}>
-                {
-                    this.state.uploads.map((uploadInfo, index) => {
-                        return (
-                            <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
-                        );
-                    })
-                }
-                <div className="d-flex justify-content-center mt-2">
-                    <div className="p-0">
-                        <input id ="upload-file-input" type="file" style={hiddenStyle} />
-                        <button id="upload-flights-button" className="btn btn-primary" onClick={() => this.triggerInput()}>
-                            <i className="fa fa-upload"></i> Upload Flights
-                        </button>
-                    </div>
-                </div>
+            <div>
+                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
+                <div className="card-body" hidden={hidden}>
+                    <div className="card mb-1 border-secondary">
+                        <div className="p-2">
+                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                                <i className="fa fa-refresh"></i> Sync with AirSync Server Now
+                            </button>
+                        </div>
+                    </div>
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                    {
+                        this.state.uploads.map((uploadInfo, index) => {
+                            return (
+                                <AirSyncUpload uploadInfo={uploadInfo} key={uploadInfo.identifier} />
+                            );
+                        })
+                    }
+
+
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                </div>
             </div>
         );
     }
 }
 
 var preferencesPage = ReactDOM.render(
-    <AirsyncUploadsCard numberPages={numberPages} uploads={uploads} currentPage={currentPage}/>,
+    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} currentPage={currentPage}/>,
    document.querySelector('#airsync-uploads-page')
 )

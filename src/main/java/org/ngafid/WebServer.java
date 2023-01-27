@@ -1,5 +1,7 @@
 package org.ngafid;
 
+
+
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
@@ -87,7 +89,7 @@ public final class WebServer {
             Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
 
             // Make sure we redirect all HTTP traffic to HTTPS now
-            Service http = Service.ignite().port(8082);
+            Service http = Service.ignite().port(8080);
             http.before(((request, response) -> {
                 final String url = request.url();
                 if (url.startsWith("http://")) {
@@ -207,9 +209,12 @@ public final class WebServer {
 
         Spark.get("/protected/uploads", new GetUploads(gson));
         Spark.get("/protected/airsync_uploads", new GetAirSyncUploads(gson));
+        Spark.post("/protected/airsync_uploads", new PostAirSyncUploads(gson));
         Spark.post("/protected/remove_upload", new PostRemoveUpload(gson));
 
         Spark.get("/protected/imports", new GetImports(gson));
+        Spark.get("/protected/airsync_imports", new GetAirSyncImports(gson));
+        Spark.post("/protected/airsync_imports", new PostAirSyncImports(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
 
         Spark.post("/protected/uploads", new PostUploads(gson));
@@ -265,13 +270,6 @@ public final class WebServer {
 
         Spark.post("/protected/events", new PostEvents(gson));
         Spark.post("/protected/event_stat", new PostEventStatistics(gson));
-        
-        //For LOC-I Classification project
-        Spark.get("/protected/event_classes", new GetAnnotationClasses(gson));
-        Spark.get("/protected/event_annotations", new GetEventAnnotations(gson));
-        Spark.get("/protected/all_event_annotations", new GetAllEventAnnotations(gson));
-        Spark.post("/protected/create_annotation", new PostEventAnnotation(gson));
-        Spark.post("/protected/event_annotation_notes", new PostEventAnnotationNotes(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));

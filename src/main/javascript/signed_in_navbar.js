@@ -117,6 +117,7 @@ class SignedInNavbar extends React.Component {
         const buttonStyle = { };
         //const [show, setShow] = React.useState(false);
         var uploadsButton = "";
+        var importsButton = "";
             if (airSyncEnabled) {
                 uploadsButton = (
                     <li className="nav-item dropdown">
@@ -130,7 +131,23 @@ class SignedInNavbar extends React.Component {
                     </li>
 
                 );
+
+                importsButton = (
+                    <li className="nav-item dropdown">
+                        <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {"Imports"}
+                        </a>
+                        <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
+                            <DropdownLink name={"Manual Imports"} href="/protected/imports"/>
+                            <DropdownLink name={"AirSync Imports"} href="/protected/airsync_imports"/>
+                        </div>
+                    </li>
+
+                );
             } else {
+                importsButton = (
+                    <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
+                )
                 uploadsButton = (
                     <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
                 );
@@ -241,7 +258,7 @@ class SignedInNavbar extends React.Component {
                         </li>
 
                         <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
-                        <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
+                        {importsButton}
                         {uploadsButton}
 
                         <li className="nav-item dropdown">

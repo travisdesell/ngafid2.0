@@ -48,7 +48,7 @@ public class AirSync {
     }
 
     public static List<Integer> getProcessedIds(Connection connection, int fleetId) throws SQLException {
-        String sql = "SELECT airsync_id FROM uploads WHERE fleet_id = ?";
+        String sql = "SELECT id FROM airsync_imports WHERE fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
         query.setInt(1, fleetId);
@@ -87,13 +87,18 @@ public class AirSync {
                         List<AirSyncAircraft> aircraft = fleet.getAircraft();
                         for (AirSyncAircraft a : aircraft) {
                             List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
-                            List<AirSyncUpload> uploads = a.getUploads(connection, fleet);
-                            for (AirSyncUpload u : uploads) {
-                                if (processedIds.contains(u.getId())) {
-                                    LOG.info("Skipping AirSync with upload id: " + u.getId() + " as it already exists in the database");
-                                } else {
-                                    u.proccess(connection);
+                            List<AirSyncImport> imports = a.getImports(connection, fleet);
+
+                            if (imports != null) {
+                                for (AirSyncImport i : imports) {
+                                    if (processedIds.contains(i.getId())) {
+                                        LOG.info("Skipping AirSync with upload id: " + i.getId() + " as it already exists in the database");
+                                    } else {
+                                        i.proccess(connection);
+                                    }
                                 }
+                            } else {
+                                LOG.severe("Unable to get imports for aircraft: " + a.getTailNumber());
                             }
                         }
                     //}

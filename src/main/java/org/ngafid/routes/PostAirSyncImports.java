@@ -18,27 +18,20 @@ import spark.Spark;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
 import org.ngafid.common.*;
+import org.ngafid.routes.PostUploads.UploadsResponse;
 
-public class PostUploads implements Route {
-    private static final Logger LOG = Logger.getLogger(PostUploads.class.getName());
+
+public class PostAirSyncImports implements Route {
+    private static final Logger LOG = Logger.getLogger(PostAirSyncImports.class.getName());
     private Gson gson;
 
-    public PostUploads(Gson gson) {
+    public PostAirSyncImports(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
-    }
-
-    public static class UploadsResponse {
-        public List<Upload> uploads;
-        public int numberPages;
-
-        public UploadsResponse(List<Upload> uploads, int numberPages) {
-            this.uploads = uploads;
-            this.numberPages = numberPages;
-        }
     }
 
 
@@ -66,7 +59,7 @@ public class PostUploads implements Route {
 
             int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
-            List<Upload> uploads = Upload.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             return gson.toJson(new UploadsResponse(uploads, numberPages));
         } catch (SQLException e) {

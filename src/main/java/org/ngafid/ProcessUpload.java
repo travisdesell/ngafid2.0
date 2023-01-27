@@ -23,6 +23,7 @@ import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -119,7 +120,7 @@ public class ProcessUpload {
         try {
             Fleet fleet = Fleet.get(connection, fleetId);
             String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
-            ArrayList<Upload> uploads = Upload.getUploads(connection, fleetId);
+            List<Upload> uploads = Upload.getUploads(connection, fleetId);
             System.out.print("Found " + uploads.size() + " uploads from fleet " + f + ". Would you like to reimport them? [Y/n] ");
             Console con = System.console();
             String s = con.readLine("");
