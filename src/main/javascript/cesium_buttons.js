@@ -106,7 +106,7 @@ export function updateCesiumButtonState() {
 
     let clearButtonBot = document.getElementById("cesiumClearButtonBottom");
     let viewButtonBot = document.getElementById("cesiumViewButtonBottom");
-    if (clearButtonBot != null || clearButtonBot !== null) {
+    if (clearButtonBot !== null || viewButtonBot !== null) {
         viewButtonBot.disabled = cesiumButtonsDisabled;
         clearButtonBot.disabled = cesiumButtonsDisabled;
     }
