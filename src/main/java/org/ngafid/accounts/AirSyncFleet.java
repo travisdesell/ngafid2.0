@@ -87,6 +87,26 @@ public class AirSyncFleet extends Fleet {
         return this.authCreds;
     }
 
+    public LocalDateTime getLastImportTime(Connection connection, AirSyncAircraft aircraft) throws SQLException {
+        String sql = "SELECT MAX(start_time) FROM flights WHERE id IN (SELECT flight_id FROM airsync_imports WHERE fleet_id = ? AND tail = ?)";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, this.getId());
+        query.setString(2, aircraft.getTailNumber());
+
+        LocalDateTime time = null;
+        ResultSet resultSet = query.executeQuery();
+        if (resultSet.next()) {
+            Timestamp t = resultSet.getTimestamp(1);
+
+            if (t != null) {
+                time = t.toLocalDateTime();
+            }
+        }
+
+        return time;
+    }
+
     public List<AirSyncAircraft> getAircraft() throws IOException {
         if (aircraft == null) {
             HttpsURLConnection connection = (HttpsURLConnection) new URL(AIR_SYNC_AIRCRAFT_ENDPOINT).openConnection();

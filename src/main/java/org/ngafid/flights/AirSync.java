@@ -87,7 +87,18 @@ public class AirSync {
                         List<AirSyncAircraft> aircraft = fleet.getAircraft();
                         for (AirSyncAircraft a : aircraft) {
                             List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
-                            List<AirSyncImport> imports = a.getImports(connection, fleet);
+
+                            LocalDateTime fleetLastImportTime = fleet.getLastImportTime(connection, a);
+
+                            List<AirSyncImport> imports;
+
+                            if (fleetLastImportTime != null) {
+                                imports = a.getImportsAfterDate(connection, fleet, fleetLastImportTime);
+                                LOG.info(String.format("Getting imports for fleet %s after %s.", fleet.getName(), fleetLastImportTime.toString()));
+                            } else {
+                                imports = a.getImports(connection, fleet);
+                                LOG.info(String.format("Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.", fleet.getName(), fleetLastImportTime));
+                            }
 
                             if (imports != null) {
                                 for (AirSyncImport i : imports) {
