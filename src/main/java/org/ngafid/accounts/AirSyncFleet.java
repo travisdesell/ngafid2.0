@@ -14,6 +14,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.flights.AirSync;
+import org.ngafid.flights.AirSyncEndpoints;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.*;
@@ -25,7 +27,6 @@ public class AirSyncFleet extends Fleet {
     private Duration timeout;
 
     private static AirSyncFleet [] fleets = null;
-    private static String AIR_SYNC_AIRCRAFT_ENDPOINT = "https://service-dev.air-sync.com/partner_api/v1/aircraft/";
 
     private static final Gson gson = WebServer.gson;
 
@@ -75,13 +76,7 @@ public class AirSyncFleet extends Fleet {
 
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
-            try {
-                this.authCreds.requestAuthorization();
-            } catch (IOException ie) {
-                ie.printStackTrace();
-                System.err.println("Unable to authenticate airsync fleet: " + super.getName());
-                System.exit(1);
-            }
+            this.authCreds.requestAuthorization();
         }
 
         return this.authCreds;
@@ -107,23 +102,27 @@ public class AirSyncFleet extends Fleet {
         return time;
     }
 
-    public List<AirSyncAircraft> getAircraft() throws IOException {
+    public List<AirSyncAircraft> getAircraft() {
         if (aircraft == null) {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(AIR_SYNC_AIRCRAFT_ENDPOINT).openConnection();
+            try {
+                HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRCRAFT).openConnection();
 
-            connection.setRequestMethod("GET");
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.authCreds.bearerString());     
+                connection.setRequestMethod("GET");
+                connection.setDoOutput(true);
+                connection.setRequestProperty("Authorization", this.authCreds.bearerString());     
 
-            InputStream is = connection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
-            
-            String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
-            
-            Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
-            this.aircraft = gson.fromJson(resp, target);
+                InputStream is = connection.getInputStream();
+                byte [] respRaw = is.readAllBytes();
+                
+                String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
+                
+                Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
+                this.aircraft = gson.fromJson(resp, target);
 
-            for (AirSyncAircraft a : aircraft) a.initialize(this);
+                for (AirSyncAircraft a : aircraft) a.initialize(this);
+            } catch (IOException ie) {
+                AirSync.handleAirSyncAPIException(ie, this.authCreds);
+            }
         }
         
         return this.aircraft;

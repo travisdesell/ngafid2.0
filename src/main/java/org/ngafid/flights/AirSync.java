@@ -8,9 +8,12 @@ import java.sql.*;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.Database;
+import org.ngafid.SendEmail;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
+import org.ngafid.accounts.AirSyncAuth;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.Fleet;
 
@@ -61,6 +64,44 @@ public class AirSync {
         }
 
         return ids;
+    }
+
+    public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
+        String message = e.getMessage();
+
+        LOG.severe("Caught " + message + " when making AirSync request!");
+
+        if (message.contains("HTTP response code: 401")) {
+            LOG.warning("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!). Requesting a new one...");
+            authentication.requestAuthorization();
+        } else {
+            crashGracefully(e);
+        }
+    }
+
+    public static void sendAdminCrashNotification(String message) {
+        String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
+        ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
+
+        ArrayList<String> bccRecipients = new ArrayList<String>();
+        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message);
+    }
+
+    public static void crashGracefully(Exception e) {
+        System.err.println("FATAL: Exiting due to error " + e.getMessage() + "!");
+        e.printStackTrace();
+
+        StringBuilder sb = new StringBuilder("The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
+        sb.append("Exception caught: " + e.getMessage() + "\n");
+        sb.append("Stack trace:\n");
+        sb.append(ExceptionUtils.getStackTrace(e));
+
+        String message = sb.toString();
+
+        System.err.println(message);
+        sendAdminCrashNotification(message);
+
+        System.exit(1);
     }
 
     /**
@@ -126,8 +167,7 @@ public class AirSync {
                 Thread.sleep(WAIT_TIME);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
+            crashGracefully(e);
         }
     }
 }
