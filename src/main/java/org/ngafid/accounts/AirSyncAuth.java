@@ -13,6 +13,7 @@ import java.util.Base64;
 import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.WebServer;
+import org.ngafid.flights.AirSyncEndpoints;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
@@ -27,8 +28,6 @@ public class AirSyncAuth {
     private byte [] hash;
     private AccessToken accessToken;
 
-    private static String AIR_SYNC_AUTH_ENDPOINT_DEV = "https://service-dev.air-sync.com/partner_api/v1/auth/";
-    private static String AIR_SYNC_AUTH_ENDPOINT_PROD = "https://api.air-sync.com/partner_api/v1/auth/";
 
     private static final long BEARER_CERT_EXP_TIME = 3600;
 
@@ -42,31 +41,34 @@ public class AirSyncAuth {
         byte [] srcWord = (apiKey + ":" + apiSecret).getBytes();
         this.hash = Base64.getEncoder().encode(srcWord);
 
-        try {
-            this.requestAuthorization();
-        } catch (IOException ie) {
-            ie.printStackTrace();
-        }
+        this.requestAuthorization();
     }
 
     public String bearerString() {
         return "Bearer " + this.accessToken.accessToken;
     }
 
-    public void requestAuthorization() throws IOException {
-        HttpsURLConnection connection = (HttpsURLConnection) new URL(AIR_SYNC_AUTH_ENDPOINT_DEV).openConnection();
+    public void requestAuthorization() {
+        try {
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AUTH_DEV).openConnection();
 
-        connection.setRequestMethod("POST");
-        connection.setDoOutput(true);
-        connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));     
+            connection.setRequestMethod("POST");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));     
 
-        InputStream is = connection.getInputStream();
-        byte [] respRaw = is.readAllBytes();
+            InputStream is = connection.getInputStream();
+            byte [] respRaw = is.readAllBytes();
 
-        String resp = new String(respRaw).replaceAll("access_token", "accessToken");
+            String resp = new String(respRaw).replaceAll("access_token", "accessToken");
 
-        this.accessToken = gson.fromJson(resp, AccessToken.class);
-        this.issueTime = LocalDateTime.now();
+            this.accessToken = gson.fromJson(resp, AccessToken.class);
+            this.issueTime = LocalDateTime.now();
+        } catch (IOException ie) {
+            ie.printStackTrace();
+            System.err.println("FATAL: Unable to get a token from AirSync! Exiting due to fatal error.");
+
+            System.exit(1);
+        }
     }
 
     public LocalDateTime getIssueTime() {

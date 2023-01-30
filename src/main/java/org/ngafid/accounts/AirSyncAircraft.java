@@ -8,6 +8,8 @@ import javax.net.ssl.HttpsURLConnection;
 
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAuth.AccessToken;
+import org.ngafid.flights.AirSync;
+import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
 
 import com.google.gson.Gson;
@@ -15,9 +17,11 @@ import com.google.gson.reflect.TypeToken;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.lang.reflect.Type;
 import java.util.List;
 import java.util.logging.Logger;
+import java.io.IOException;
 import java.io.InputStream;
 
 public class AirSyncAircraft {
@@ -25,6 +29,13 @@ public class AirSyncAircraft {
     private String tailNumber;
     private Fleet fleet;
     private static final Gson gson = WebServer.gson;
+
+    private static final int PAGE_SIZE = 3;
+
+    // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
+    private static LocalDateTime MAX_LCL_DATE_TIME = LocalDateTime.of(9999, 12, 31, 10, 10);
+
+    private static final String TIMESTAMP_UPLOADED = "";
 
     private static final Logger LOG = Logger.getLogger(AirSyncAircraft.class.getName());
 
@@ -41,41 +52,81 @@ public class AirSyncAircraft {
         return this.tailNumber;
     }
 
-    private URL getAircraftLogURL() throws MalformedURLException {
-        //TODO: get this to iterate through the pages
-        String baseURL = "https://service-dev.air-sync.com/partner_api/v1/aircraft/%d/logs?page=0&number_of_results=25";
+    private URL getAircraftLogURL(int page) throws MalformedURLException {
+        return new URL(String.format(AirSyncEndpoints.ALL_LOGS, this.id, page, PAGE_SIZE));
+    }
 
-        return new URL(String.format(baseURL, id));
+    private URL getAircraftLogURL(int page, LocalDateTime lastImportTime) throws MalformedURLException {
+        return new URL(String.format(AirSyncEndpoints.ALL_LOGS_BY_TIME, this.id, page, PAGE_SIZE, lastImportTime.toString(), MAX_LCL_DATE_TIME.toString()));
+    }
+
+    private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication) throws Exception {
+        netConnection.setRequestMethod("GET");
+        netConnection.setDoOutput(true);
+        netConnection.setRequestProperty("Authorization", authentication.bearerString());     
+
+        InputStream is = netConnection.getInputStream();
+        byte [] respRaw = is.readAllBytes();
+
+        String resp = new String(respRaw).replaceAll("aircraft_id", "aircraftId");
+        resp = resp.replaceAll("tail_number", "tailNumber");
+        resp = resp.replaceAll("time_start", "timeStart");
+        resp = resp.replaceAll("time_end", "timeEnd");
+        resp = resp.replaceAll("file_url", "fileUrl");
+
+        Type target = new TypeToken<List<AirSyncImport>>(){}.getType();
+        List<AirSyncImport> page = gson.fromJson(resp, target);
+
+
+        // initialize the imports
+        for (AirSyncImport i : page) i.init(fleet, this);
+
+        return page;
     }
 
     public List<AirSyncImport> getImports(Connection connection, AirSyncFleet fleet) {
         AirSyncAuth authentication = fleet.getAuth();
-        List<AirSyncImport> imports = null;
+        List<AirSyncImport> imports = new LinkedList<>();
 
-        try {
-            HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL().openConnection();
+        boolean continueIteration = true;
 
-            netConnection.setRequestMethod("GET");
-            netConnection.setDoOutput(true);
-            netConnection.setRequestProperty("Authorization", authentication.bearerString());     
+        int nPage = 0;
+        while (continueIteration) {
+            try {
+                HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++).openConnection();
+                List<AirSyncImport> page = getImportsHTTPS(netConnection, fleet.getAuth());
 
-            InputStream is = netConnection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
-
-            String resp = new String(respRaw).replaceAll("aircraft_id", "aircraftId");
-            resp = resp.replaceAll("tail_number", "tailNumber");
-            resp = resp.replaceAll("time_start", "timeStart");
-            resp = resp.replaceAll("time_end", "timeEnd");
-            resp = resp.replaceAll("file_url", "fileUrl");
-
-            Type target = new TypeToken<List<AirSyncImport>>(){}.getType();
-            imports = gson.fromJson(resp, target);
-
-            for (AirSyncImport i : imports) i.init(fleet, this);
-        } catch (Exception e) {
-            LOG.severe("Caught " + e.toString() + " when making AirSync request!");
+                continueIteration = page.size() == PAGE_SIZE;
+                imports.addAll(page);
+            } catch (Exception e) {
+                AirSync.handleAirSyncAPIException(e, authentication);
+            }
         }
         
         return imports;
     }
+
+     public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet fleet, LocalDateTime lastImportTime) {
+        AirSyncAuth authentication = fleet.getAuth();
+        List<AirSyncImport> imports = new LinkedList<>();
+
+        boolean continueIteration = true;
+
+        int nPage = 0;
+        
+        while (continueIteration) {
+            try {
+                HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
+                List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
+
+                continueIteration = page.size() == PAGE_SIZE;
+                imports.addAll(page);
+            } catch (Exception e) {
+                AirSync.handleAirSyncAPIException(e, authentication);
+            }
+        }
+
+        return imports;
+     }
+    
 }
