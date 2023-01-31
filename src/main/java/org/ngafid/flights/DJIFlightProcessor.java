@@ -59,6 +59,8 @@ public class DJIFlightProcessor {
         flight.setStatus(flightStatus);
         flight.setAirframeType("UAS Rotorcraft");
         flight.setAirframeTypeID(4);
+
+        doubleTimeSeriesMap.put("AltAGL", new DoubleTimeSeries(connection, "AltAGL", "ft"));
         flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
 
         return flight;
@@ -96,7 +98,6 @@ public class DJIFlightProcessor {
         DoubleTimeSeries latRad = doubleTimeSeriesMap.get("GPS(0):Lat");
         DoubleTimeSeries altMSL = doubleTimeSeriesMap.get("GPS(0):heightMSL");
 
-
         if (lonRad == null || latRad == null) {
             LOG.log(Level.WARNING, "Could not find GPS(0):Long or GPS(0):Lat in time series map");
             throw new FatalFlightFileException("No GPS data found in binary.");
@@ -105,7 +106,6 @@ public class DJIFlightProcessor {
         DoubleTimeSeries longDeg = new DoubleTimeSeries(connection, "Longitude", "degrees");
         DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
         DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft");
-        DoubleTimeSeries agl = new DoubleTimeSeries(connection, "AltAGL", "ft"); // Gets calculated later
 
         for (int i = 0; i < lonRad.size(); i++) {
             longDeg.add(lonRad.get(i));
@@ -122,7 +122,6 @@ public class DJIFlightProcessor {
         doubleTimeSeriesMap.put("Longitude", longDeg);
         doubleTimeSeriesMap.put("Latitude", latDeg);
         doubleTimeSeriesMap.put("AltMSL", altMSL);
-        doubleTimeSeriesMap.put("AltAGL", agl);
     }
 
     private static void calculateDateTime(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws SQLException, ParseException {
