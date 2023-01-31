@@ -21,7 +21,7 @@ public class DJIFlightProcessor {
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
     public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection)
-            throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+            throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, MalformedFlightFileException {
         List<InputStream> inputStreams = duplicateInputStream(stream, 2);
         Map<Integer, String> indexedCols = new HashMap<>();
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
@@ -59,6 +59,7 @@ public class DJIFlightProcessor {
         flight.setStatus(flightStatus);
         flight.setAirframeType("UAS Rotorcraft");
         flight.setAirframeTypeID(4);
+        flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
 
         return flight;
     }
@@ -93,6 +94,8 @@ public class DJIFlightProcessor {
     private static void calculateLatLonGPS(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws SQLException, FatalFlightFileException {
         DoubleTimeSeries lonRad = doubleTimeSeriesMap.get("GPS(0):Long");
         DoubleTimeSeries latRad = doubleTimeSeriesMap.get("GPS(0):Lat");
+        DoubleTimeSeries altMSL = doubleTimeSeriesMap.get("GPS(0):heightMSL");
+
 
         if (lonRad == null || latRad == null) {
             LOG.log(Level.WARNING, "Could not find GPS(0):Long or GPS(0):Lat in time series map");
@@ -101,6 +104,8 @@ public class DJIFlightProcessor {
 
         DoubleTimeSeries longDeg = new DoubleTimeSeries(connection, "Longitude", "degrees");
         DoubleTimeSeries latDeg = new DoubleTimeSeries(connection, "Latitude", "degrees");
+        DoubleTimeSeries msl = new DoubleTimeSeries(connection, "AltMSL", "ft");
+        DoubleTimeSeries agl = new DoubleTimeSeries(connection, "AltAGL", "ft"); // Gets calculated later
 
         for (int i = 0; i < lonRad.size(); i++) {
             longDeg.add(lonRad.get(i));
@@ -110,8 +115,14 @@ public class DJIFlightProcessor {
             latDeg.add(latRad.get(i));
         }
 
+        for (int i = 0; i < altMSL.size(); i++) {
+            msl.add(altMSL.get(i));
+        }
+
         doubleTimeSeriesMap.put("Longitude", longDeg);
         doubleTimeSeriesMap.put("Latitude", latDeg);
+        doubleTimeSeriesMap.put("AltMSL", altMSL);
+        doubleTimeSeriesMap.put("AltAGL", agl);
     }
 
     private static void calculateDateTime(Connection connection, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws SQLException, ParseException {
