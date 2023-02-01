@@ -74,6 +74,8 @@ public class AirSync {
         if (message.contains("HTTP response code: 401")) {
             LOG.warning("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!). Requesting a new one...");
             authentication.requestAuthorization();
+        } else if (message.contains("HTTP response code: 502")) {
+            LOG.warning("Got a 502 error!");
         } else {
             crashGracefully(e);
         }
@@ -91,6 +93,7 @@ public class AirSync {
         System.err.println("FATAL: Exiting due to error " + e.getMessage() + "!");
         e.printStackTrace();
 
+        //TODO: format this as html!
         StringBuilder sb = new StringBuilder("The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
         sb.append("Exception caught: " + e.getMessage() + "\n");
         sb.append("Stack trace:\n");
@@ -116,32 +119,36 @@ public class AirSync {
             while (true) {
                 AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
 
-                LOG.info("Found AirSync-enabled fleets: " + Arrays.toString(airSyncFleets));
-
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
                     LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
                 }
 
                 for (AirSyncFleet fleet : airSyncFleets) {
-                    //if (fleet.isQueryOutdated(connection)) {
+                    String logMessage = "Fleet " + fleet.getName() + ": %s";
+
+                    if (fleet.isQueryOutdated(connection)) {
+                        LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
+
                         List<AirSyncAircraft> aircraft = fleet.getAircraft();
                         for (AirSyncAircraft a : aircraft) {
                             List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
 
-                            LocalDateTime fleetLastImportTime = fleet.getLastImportTime(connection, a);
+                            Optional<LocalDateTime> aircraftLastImportTime = a.getLastImportTime(connection);
 
                             List<AirSyncImport> imports;
 
-                            if (fleetLastImportTime != null) {
-                                imports = a.getImportsAfterDate(connection, fleet, fleetLastImportTime);
-                                LOG.info(String.format("Getting imports for fleet %s after %s.", fleet.getName(), fleetLastImportTime.toString()));
+                            if (aircraftLastImportTime.isPresent()) {
+                                // We must make the interval exclusive when asking the server for flights
+                                LocalDateTime importTime = aircraftLastImportTime.get().plusSeconds(1);
+                                imports = a.getImportsAfterDate(connection, fleet, importTime);
+                                LOG.info(String.format("Getting imports for fleet %s after %s.", fleet.getName(), importTime.toString()));
                             } else {
                                 imports = a.getImports(connection, fleet);
-                                LOG.info(String.format("Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.", fleet.getName(), fleetLastImportTime));
+                                LOG.info(String.format("Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.", fleet.getName()));
                             }
 
-                            if (imports != null) {
+                            if (imports != null && !imports.isEmpty()) {
                                 for (AirSyncImport i : imports) {
                                     if (processedIds.contains(i.getId())) {
                                         LOG.info("Skipping AirSync with upload id: " + i.getId() + " as it already exists in the database");
@@ -150,17 +157,14 @@ public class AirSync {
                                     }
                                 }
                             } else {
-                                LOG.severe("Unable to get imports for aircraft: " + a.getTailNumber());
+                                LOG.info("No imports found for aircraft: " + a.getTailNumber() + " in fleet " + fleet.getName() + ", continuing.");
                             }
                         }
-                    //}
 
-                    // Go round-robin through each fleet and check to see if it has AirSync uploads waiting
-
-                    //if (AirSync.hasUploadsWaiting(fleet)) {
-                        //LOG.info("Making request to AirSync server.");
-                        //AirSync airSync = new AirSync(LocalDateTime.now(), fleet);
-                    //}
+                        fleet.setLastQueryTime(connection);
+                    } else {
+                        LOG.info(String.format(logMessage, "does not need to be updated, will skip."));
+                    }
                 }
 
                 LOG.info("Sleeping for " + WAIT_TIME + "ms.");

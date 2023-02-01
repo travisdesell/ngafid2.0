@@ -23,55 +23,107 @@ import com.google.gson.reflect.*;
 public class AirSyncFleet extends Fleet {
     private AirSyncAuth authCreds;
     private List<AirSyncAircraft> aircraft;
-    private Timestamp lastQueryTime;
-    private Duration timeout;
+    private LocalDateTime lastQueryTime;
+
+    //timeout in minutes
+    private long timeout = -1;
+
+    // 1 Day
+    private static final long DEFAULT_TIMEOUT = 1440;
 
     private static AirSyncFleet [] fleets = null;
 
     private static final Gson gson = WebServer.gson;
 
-    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, Timestamp lastQueryTime, long timeout) {
+    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastQueryTime, long timeout) {
         super(id, name);
         this.authCreds = airSyncAuth;
         this.lastQueryTime = lastQueryTime;
-        this.timeout = Duration.ofMinutes(timeout);
+
+        if (timeout <= 0) {
+            this.timeout = DEFAULT_TIMEOUT;
+        } else {
+            this.timeout = timeout;
+        }
     }
 
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
-        this(resultSet.getInt(1), resultSet.getString(2), 
-            new AirSyncAuth(resultSet.getString(3), resultSet.getString(4)),
-            resultSet.getTimestamp(5), resultSet.getInt(6));
+        super(resultSet.getInt(1), resultSet.getString(2));
+        this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
+
+        Timestamp timestamp = resultSet.getTimestamp(5);
+        if (timestamp == null) {
+            this.lastQueryTime = LocalDateTime.MIN;
+        } else {
+            this.lastQueryTime = timestamp.toLocalDateTime();
+        }
+
+        long timeout = resultSet.getLong(6);
+        if (timeout <= 0) {
+            this.timeout = DEFAULT_TIMEOUT;
+        } else {
+            this.timeout = timeout;
+        }
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
-        String sql = "SELECT last_upload_time FROM airsync_fleet_info WHERE fleet_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
+        if (lastQueryTime == null) {
+            String sql = "SELECT last_upload_time FROM airsync_fleet_info WHERE fleet_id = ?";
+            PreparedStatement query = connection.prepareStatement(sql);
 
-        ResultSet resultSet = query.executeQuery();
+            query.setInt(1, super.getId());
 
-        if (resultSet.next()) {
-            return resultSet.getTimestamp(1).toLocalDateTime();
-        } else return null;
+            ResultSet resultSet = query.executeQuery();
 
+            if (resultSet.next()) {
+                return resultSet.getTimestamp(1).toLocalDateTime();
+            } else return null;
+        }
+
+        return lastQueryTime;
     } 
 
-    public boolean isQueryOutdated(Connection connection) throws SQLException {
-        return (Duration.between(getLastQueryTime(connection), this.lastQueryTime.toLocalDateTime()).compareTo(this.timeout) >= 0);
-    }
-
-    public void setLastQueryTime() {
-        this.setLastQueryTime(LocalDateTime.now(), Database.getConnection());
-    }
-
-    public void setLastQueryTime(LocalDateTime time, Connection connection) {
-        String sql = "UPDATE airsync_fleet_info SET last_upload_time WHERE fleet_id = ?";
-
-        try {
+    public long getTimeout(Connection connection) throws SQLException {
+        if (timeout <= 0) {
+            String sql = "SELECT timeout FROM airsync_fleet_info WHERE fleet_id = ?";
             PreparedStatement query = connection.prepareStatement(sql);
-            query.executeUpdate();
-        } catch (SQLException se) {
-            se.printStackTrace();
+
+            query.setInt(1, super.getId());
+
+            ResultSet resultSet = query.executeQuery();
+
+            if (resultSet.next()) {
+                long timeout = resultSet.getLong(1);
+
+                if (timeout > 0) {
+                    this.timeout = timeout;
+                }
+            }
         }
+
+        return timeout;
+    }
+
+    public boolean isQueryOutdated(Connection connection) throws SQLException {
+        return (Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection));
+    }
+
+    public void setLastQueryTime(Connection connection) throws SQLException {
+        this.setLastQueryTime(LocalDateTime.now(), connection);
+    }
+
+    public void setLastQueryTime(LocalDateTime time, Connection connection) throws SQLException {
+        String sql = "UPDATE airsync_fleet_info SET last_upload_time = CURRENT_TIMESTAMP WHERE fleet_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, super.getId());
+
+        query.executeUpdate();
+
+        //Force updating these variables the next time there
+        //is a check
+        this.timeout = -1;
+        this.lastQueryTime = null;
     }
 
     public AirSyncAuth getAuth() {
@@ -80,26 +132,6 @@ public class AirSyncFleet extends Fleet {
         }
 
         return this.authCreds;
-    }
-
-    public LocalDateTime getLastImportTime(Connection connection, AirSyncAircraft aircraft) throws SQLException {
-        String sql = "SELECT MAX(start_time) FROM flights WHERE id IN (SELECT flight_id FROM airsync_imports WHERE fleet_id = ? AND tail = ?)";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        query.setInt(1, this.getId());
-        query.setString(2, aircraft.getTailNumber());
-
-        LocalDateTime time = null;
-        ResultSet resultSet = query.executeQuery();
-        if (resultSet.next()) {
-            Timestamp t = resultSet.getTimestamp(1);
-
-            if (t != null) {
-                time = t.toLocalDateTime();
-            }
-        }
-
-        return time;
     }
 
     public List<AirSyncAircraft> getAircraft() {

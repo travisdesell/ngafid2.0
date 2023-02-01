@@ -21,6 +21,7 @@ query_ngafid_db("DELETE FROM events WHERE flight_id IN (SELECT id FROM flights W
 query_ngafid_db("DELETE FROM flight_processed WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM itinerary WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM flights WHERE uploader_id = " . $as_uploader_id . ";");
+query_ngafid_db("UPDATE airsync_fleet_info SET last_upload_time = null;");
 
 echo "Cleared all AirSync uploads\n";
 
