@@ -29,8 +29,37 @@ class Upload extends React.Component {
         $("#loading").show();
         console.log("downloading upload");
 
+        const submissionData = {
+            fleetId : this.props.fleetId,
+            uploaderId : this.props.uploadInfo.id,
+            identifier : this.props.uploadInfo.identifier,
+        };
 
-        $("#loading").hide();
+        $.ajax({
+            type: 'GET',
+            url: '/protected/download_upload',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                $("#loading").hide();
+                errorModal.show("Error downloading upload", errorThrown);
+            },
+            async: true
+        });
+
 
     }
 

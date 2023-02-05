@@ -260,7 +260,7 @@ public final class WebServer {
         Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
 
         // Routes for downloading files
-        Spark.get("/protected/download", new GetUpload(gson));
+        Spark.get("/protected/download_upload", new GetUpload(gson));
 
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
