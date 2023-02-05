@@ -60,9 +60,16 @@ class Events extends React.Component {
     updateEventDisplay(index, toggle) {
             // Draw rectangles on plot
         var event = this.state.events[index];
+        console.log(event);
+        if (this.props.parent.state.cesiumMapVisible) {
+            this.props.parent.addCesiumEventEntity(event);
+        }
+        // this.props.parent.addCesiumEventEntity(event);
         console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
         let shapes = global.plotlyLayout.shapes;
-
+        console.log("Shapes in event : ");
+        console.log(shapes);
+        console.log(event.color);
         let update = {
             id: event.id,
             type: 'rect',
