@@ -25,6 +25,15 @@ class Upload extends React.Component {
         //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
     }
 
+    downloadUpload() {
+        $("#loading").show();
+        console.log("downloading upload");
+
+
+        $("#loading").hide();
+
+    }
+
 
     removeUpload() {
         $("#loading").show();
@@ -154,6 +163,7 @@ class Upload extends React.Component {
                     </div>
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
+                    <button type="button" className={"btn btn btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-download" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.downloadUpload()}></i> </button>
                     <button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </button>
 
                 </div>
