@@ -6,6 +6,7 @@ import Plotly from 'plotly.js';
 import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
+import {errorModal} from "./error_modal";
 
 
 // establish set of RGB values to combine //
@@ -259,6 +260,7 @@ class Events extends React.Component {
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
                                 </button>
+                                <button id="rocButton" className={buttonClasses} style={styleButton} onClick={() => this.getRocData(event.id)}> Calculate rate of closure</button>
                             </div>
                         );
                     })
@@ -267,6 +269,36 @@ class Events extends React.Component {
             </div>
         );
 
+    }
+
+    getRocData(eventId){
+        console.log("Calculating Rate of Closure")
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/rate_of_closure',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                var trace = {
+                    x : response.x,
+                    y : response.y,
+                    type : "histogram",
+                    //marker : { size: 1},
+                    // name : thisTrace.props.flightId + " - " + seriesName
+                }
+                Plotly.addTraces('plot', [trace]);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flight Coordinates", errorThrown);
+            },
+            async: true
+        })
     }
 }
 
