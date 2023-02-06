@@ -65,8 +65,12 @@ public class GetUpload implements Route {
                 while ((bytesRead = fileInputStream.read(buffer)) != -1) {
                     outputStream.write(buffer, 0, bytesRead);
                 }
+
+                outputStream.flush();
+
+                LOG.info("File sent successfully");
             } catch (IOException e) {
-                e.printStackTrace();
+                LOG.severe(e.toString());
             }
 
             return response.raw();

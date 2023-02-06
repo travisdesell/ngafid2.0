@@ -49,6 +49,8 @@ class Upload extends React.Component {
 
 
 
+
+
                 if (response.errorTitle) {
                     console.log("displaying error modal!");
                     errorModal.show(response.errorTitle, response.errorMessage);
