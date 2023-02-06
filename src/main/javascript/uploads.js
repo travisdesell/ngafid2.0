@@ -46,12 +46,6 @@ class Upload extends React.Component {
                 console.log(response);
 
                 $("#loading").hide();
-                // Handle file download
-
-                const docA = document.createElement('a');
-                docA.href = response.downloadUrl;
-                docA.download = response.filename;
-                docA.click();
 
 
 

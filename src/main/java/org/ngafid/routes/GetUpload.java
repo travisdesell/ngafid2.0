@@ -52,27 +52,21 @@ public class GetUpload implements Route {
         LOG.info("File: " + file.getAbsolutePath());
         if (file.exists()) {
             System.out.println(file.getName());
-            response.header("Content-Disposition", "attachment; filename=" + file.getName());
-            response.type("application/download");
 
-            try (ZipOutputStream zipOStream = new ZipOutputStream(new BufferedOutputStream(response.raw().getOutputStream()));
-                 BufferedInputStream buffIStream = new BufferedInputStream(new FileInputStream(file))) {
-                ZipEntry entry = new ZipEntry(file.getName());
+            response.raw().setContentType("application/zip");
+            response.raw().setHeader("Content-Disposition", "attachment; filename=" + upload.getFilename());
+            response.raw().setHeader("Content-Length", String.valueOf(file.length()));
 
-                zipOStream.putNextEntry(entry);
 
+            try (FileInputStream fileInputStream = new FileInputStream(file); OutputStream outputStream = response.raw().getOutputStream()) {
                 byte[] buffer = new byte[8192];
                 int bytesRead;
-                while ((bytesRead = buffIStream.read(buffer)) != -1) {
-                    zipOStream.write(buffer, 0, bytesRead);
-                }
 
-            } catch (FileNotFoundException e) {
-                LOG.severe(String.format("File not found: %s", file.getName()));
-                return "File was not found";
+                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
+                    outputStream.write(buffer, 0, bytesRead);
+                }
             } catch (IOException e) {
-                LOG.log(Level.SEVERE, "IO Exception: ", e);
-                return "Error downloading file";
+                e.printStackTrace();
             }
 
             return response.raw();
