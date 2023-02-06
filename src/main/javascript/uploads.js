@@ -30,10 +30,13 @@ class Upload extends React.Component {
         console.log("downloading upload");
 
         const submissionData = {
-            fleetId : this.props.fleetId,
-            uploaderId : this.props.uploadInfo.id,
-            identifier : this.props.uploadInfo.identifier,
+            fleetId : this.props.uploadInfo.fleetId,
+            uploaderId : this.props.uploadInfo.uploaderId,
+            fileId : this.props.uploadInfo.id,
+            filename : this.props.uploadInfo.filename,
         };
+
+        console.log(submissionData);
 
         $.ajax({
             type: 'GET',
