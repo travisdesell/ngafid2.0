@@ -30,7 +30,7 @@ class Upload extends React.Component {
         console.log("downloading upload");
 
         const submissionData = {
-            uploadId : this.props.uploadInfo.uploaderId,
+            uploadId : this.props.uploadInfo.id,
             md5Hash : this.props.uploadInfo.md5Hash
         };
 

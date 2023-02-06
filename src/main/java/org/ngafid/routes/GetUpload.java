@@ -11,7 +11,9 @@ import spark.*;
 import java.io.File;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
+
 
 public class GetUpload implements Route {
     private static final Logger LOG = Logger.getLogger(GetUpload.class.getName());
@@ -30,9 +32,7 @@ public class GetUpload implements Route {
         User user = session.attribute("user");
         Connection connection = Database.getConnection();
 
-        System.out.println(request.queryParams("uploadId"));
-        System.out.println(request.queryParams("md5Hash"));
-
+        LOG.info("Retrieving upload: " + request.queryParams("uploadId") + " " + request.queryParams("md5Hash"));
         Upload upload = Upload.getUploadById(connection, Integer.parseInt(request.queryParams("uploadId")), request.queryParams("md5Hash"));
 
         if (upload == null) {
@@ -46,18 +46,17 @@ public class GetUpload implements Route {
                 return null;
         }
 
-        System.out.println(upload.getFilename());
+        File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(), upload.getUploaderId(), upload.getId(), upload.getFilename()));
+        LOG.info("File: " + file.getAbsolutePath());
+        if (file.exists()) {
+            response.header("Content-Disposition", "attachment; filename=" + file.getName());
+            response.type("application/zip");
 
-//        String directory = WebServer.NGAFID_ARCHIVE_DIR + "/" + request.params("fleetId") + "/" + request.params("uploaderId") + "/" + request.params("identifier");
-//        LOG.info("Retrieving upload: " + directory);
-//
-//        File file = new File(directory + ".zip");
-//        if (file.exists()) {
-//            response.header("Content-Disposition", "attachment; filename=" + file.getName());
-//            response.type("application/zip");
-//
-//            return file;
-//        }
+            return file;
+        }
+
+        LOG.log(Level.SEVERE, "File not found: ", file.getAbsolutePath());
+
 
         return null;
     }
