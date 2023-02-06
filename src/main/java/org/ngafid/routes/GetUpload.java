@@ -8,11 +8,13 @@ import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
 import spark.*;
 
-import java.io.File;
+import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 
 public class GetUpload implements Route {
@@ -41,23 +43,42 @@ public class GetUpload implements Route {
         }
 
         if (!user.hasUploadAccess(upload.getFleetId())) {
-                LOG.severe("INVALID ACCESS: user did not have upload or manager access this fleet.");
-                Spark.halt(401, "User did not have access to delete this upload.");
-                return null;
+            LOG.severe("INVALID ACCESS: user did not have upload or manager access this fleet.");
+            Spark.halt(401, "User did not have access to delete this upload.");
+            return null;
         }
 
         File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(), upload.getUploaderId(), upload.getId(), upload.getFilename()));
         LOG.info("File: " + file.getAbsolutePath());
         if (file.exists()) {
+            System.out.println(file.getName());
             response.header("Content-Disposition", "attachment; filename=" + file.getName());
-            response.type("application/zip");
+            response.type("application/download");
 
-            return file;
+            try (ZipOutputStream zipOStream = new ZipOutputStream(new BufferedOutputStream(response.raw().getOutputStream()));
+                 BufferedInputStream buffIStream = new BufferedInputStream(new FileInputStream(file))) {
+                ZipEntry entry = new ZipEntry(file.getName());
+
+                zipOStream.putNextEntry(entry);
+
+                byte[] buffer = new byte[8192];
+                int bytesRead;
+                while ((bytesRead = buffIStream.read(buffer)) != -1) {
+                    zipOStream.write(buffer, 0, bytesRead);
+                }
+
+            } catch (FileNotFoundException e) {
+                LOG.severe(String.format("File not found: %s", file.getName()));
+                return "File was not found";
+            } catch (IOException e) {
+                LOG.log(Level.SEVERE, "IO Exception: ", e);
+                return "Error downloading file";
+            }
+
+            return response.raw();
         }
 
-        LOG.log(Level.SEVERE, "File not found: ", file.getAbsolutePath());
-
-
-        return null;
+        LOG.severe(String.format("File not found: %s", file.getName()));
+        return "File was not found";
     }
 }
