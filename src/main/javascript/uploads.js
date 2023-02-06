@@ -30,10 +30,8 @@ class Upload extends React.Component {
         console.log("downloading upload");
 
         const submissionData = {
-            fleetId : this.props.uploadInfo.fleetId,
-            uploaderId : this.props.uploadInfo.uploaderId,
-            fileId : this.props.uploadInfo.id,
-            filename : this.props.uploadInfo.filename,
+            uploadId : this.props.uploadInfo.uploaderId,
+            md5Hash : this.props.uploadInfo.md5Hash
         };
 
         console.log(submissionData);
