@@ -7,6 +7,7 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.Upload;
 import spark.*;
+import spark.utils.IOUtils;
 
 import java.io.*;
 import java.sql.Connection;
@@ -55,25 +56,20 @@ public class GetUpload implements Route {
 
             response.raw().setContentType("application/zip");
             response.raw().setHeader("Content-Disposition", "attachment; filename=" + upload.getFilename());
-            response.raw().setHeader("Content-Length", String.valueOf(file.length()));
 
-
-            try (FileInputStream fileInputStream = new FileInputStream(file); OutputStream outputStream = response.raw().getOutputStream()) {
-                byte[] buffer = new byte[8192];
-                int bytesRead;
-
-                while ((bytesRead = fileInputStream.read(buffer)) != -1) {
-                    outputStream.write(buffer, 0, bytesRead);
-                }
-
+            try (InputStream buffInputStream = new BufferedInputStream(new FileInputStream(file));
+                 OutputStream outputStream = response.raw().getOutputStream()) {
+                String byteString = new String(IOUtils.toByteArray(buffInputStream));
+                outputStream.write(byteString.getBytes());
                 outputStream.flush();
 
-                LOG.info("File sent successfully");
+                System.out.println(byteString.substring(0, 70));
+
+                return response.raw();
+
             } catch (IOException e) {
                 LOG.severe(e.toString());
             }
-
-            return response.raw();
         }
 
         LOG.severe(String.format("File not found: %s", file.getName()));

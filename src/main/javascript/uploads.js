@@ -40,22 +40,25 @@ class Upload extends React.Component {
             type: 'GET',
             url: '/protected/download_upload',
             data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-
-                $("#loading").hide();
-
-
-
-
-
+            dataType : 'text',
+            success: function (response) {
                 if (response.errorTitle) {
+                    $("#loading").hide();
                     console.log("displaying error modal!");
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
+
+                console.log("received response: ");
+                console.log(response);
+                const file = new Blob([this.response], {type: 'application/zip'});
+                const link = document.createElement('a');
+                link.href = window.URL.createObjectURL(file);
+                link.download = "upload.zip";
+                link.click();
+                $("#loading").hide();
+
+
 
             },
             error : function(jqXHR, textStatus, errorThrown) {
@@ -75,7 +78,7 @@ class Upload extends React.Component {
         var submissionData = {
             uploadId : this.props.uploadInfo.id,
             md5Hash : this.props.uploadInfo.md5Hash
-        };   
+        };
 
         let thisUpload = this;
 
@@ -100,13 +103,13 @@ class Upload extends React.Component {
                 }
 
                 thisUpload.props.removeUpload(thisUpload.props.uploadInfo);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error removing upload", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     confirmRemoveUpload() {
@@ -426,7 +429,7 @@ class UploadsPage extends React.Component {
         var file = uploadInfo.file;
         var position = uploadInfo.position;
 
-        var numberChunks = parseInt(uploadInfo.numberChunks); 
+        var numberChunks = parseInt(uploadInfo.numberChunks);
         var filename = uploadInfo.filename;
         var identifier = uploadInfo.identifier;
 
@@ -561,7 +564,7 @@ class UploadsPage extends React.Component {
             console.log("number files selected: " + this.files.length);
             console.log( this.files );
 
-            if (this.files.length > 0) { 
+            if (this.files.length > 0) {
                 var file = this.files[0];
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
@@ -574,9 +577,9 @@ class UploadsPage extends React.Component {
                     errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsPage.addUpload(file);
-                }    
-            }    
-        });  
+                }
+            }
+        });
     }
 
     render() {
@@ -596,7 +599,7 @@ class UploadsPage extends React.Component {
 
                     <div className="card mb-1 border-secondary">
                         <div className="p-2">
-                            { 
+                            {
                                 this.state.pending_uploads.length > 0
                                     ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
                                     : ""
