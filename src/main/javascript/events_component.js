@@ -225,6 +225,7 @@ class Events extends React.Component {
                             <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
+
                                                 let flight = this.props.parent;
                                                 let eventsMapped = flight.state.eventsMapped;
                                                 let displayStatus = false;
@@ -280,9 +281,9 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
+                        let zoomToCesiumEntityBtn = "";
                         let eventMetaDataText = "";
                         var eventMetaData = this.getEventMetaData(event.id);
-
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
                             
@@ -297,6 +298,14 @@ class Events extends React.Component {
                                 }
                             }
 
+                        }
+                        console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
+                        console.log("Flight id " + event.flightId);
+                        if (this.props.parent.state.cesiumMapVisible) {
+                            zoomToCesiumEntityBtn = (
+                                <button id="zoomCesium" data-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
+                                    <i className="fa fa-search-plus"></i>
+                                </button>)
                         }
 
                         if (eventMetaData != null) {
@@ -313,10 +322,15 @@ class Events extends React.Component {
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                    <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                        <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} {eventMetaDataText} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
-                                        {rocPlot}
-                                    </button>
+                                <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
+                                    {rocPlot}
+                                </button>
+
+                                <div>
+                                    {zoomToCesiumEntityBtn}
+                                </div>
+
                             </div>
 
                         );
