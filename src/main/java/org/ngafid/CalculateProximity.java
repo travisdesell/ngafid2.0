@@ -332,7 +332,7 @@ public class CalculateProximity {
             }
             double currentDistance = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i],
                     otherInfo.latitude[j], otherInfo.longitude[j], flightInfo.altitudeMSL[i], otherInfo.altitudeMSL[j]);
-            rateOfClosure[index] = currentDistance - previousDistance;
+            rateOfClosure[index] = previousDistance - currentDistance;
             previousDistance = currentDistance;
             i++;
             j++;

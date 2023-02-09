@@ -246,9 +246,13 @@ class Events extends React.Component {
                         let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         let otherFlightText = "";
                         let otherFlightURL = "";
+                        let rateOfClosureBtn = "";
+                        let rocPlot = "";
                         if (event.eventDefinitionId == -1) { 
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+                            rateOfClosureBtn = ( <button id="rocButton" className={buttonClasses} style={styleButton} onClick={() => this.getRocData(event.id)}>Rate of Closure</button>   )
+                            rocPlot = (<div id={event.id + "-rocPlot"}></div>)
                         }
 
                         return (
@@ -258,10 +262,12 @@ class Events extends React.Component {
                                 </div>
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
+                                    {rocPlot}
                                 </button>
-                                <button id="rocButton" className={buttonClasses} style={styleButton} onClick={() => this.getRocData(event.id)}> Calculate rate of closure</button>
+
                             </div>
+
                         );
                     })
                 }
@@ -276,6 +282,7 @@ class Events extends React.Component {
         var submissionData = {
             eventId : eventId
         };
+        var id = eventId + "-rocPlot";
         $.ajax({
             type: 'POST',
             url: '/protected/rate_of_closure',
@@ -288,17 +295,16 @@ class Events extends React.Component {
                 var trace = {
                     x : response.x,
                     y : response.y,
-                    type : "histogram",
-                    //marker : { size: 1},
-                    // name : thisTrace.props.flightId + " - " + seriesName
+                    type : "scatter",
                 }
-                Plotly.addTraces('plot', [trace]);
+                Plotly.newPlot(id, [trace])
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flight Coordinates", errorThrown);
             },
             async: true
         })
+
     }
 }
 

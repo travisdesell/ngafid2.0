@@ -69,14 +69,18 @@ public class RateOfClosure {
 
     public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId){
         try {
-            PreparedStatement query = connection.prepareStatement("select data from rate_of_closure where event_id = ?");
+            PreparedStatement query = connection.prepareStatement("select data, size from rate_of_closure where event_id = ?");
+            LOG.info(query.toString());
             query.setInt(1, eventId);
             ResultSet resultSet = query.executeQuery();
-            RateOfClosure rateOfClosure = new RateOfClosure(connection, resultSet);
-            LOG.info(query.toString());
-            return rateOfClosure;
+            if(resultSet.next()){
+                RateOfClosure rateOfClosure = new RateOfClosure(connection, resultSet);
+                return rateOfClosure;
+            }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+
+        return null;
     }
 }
