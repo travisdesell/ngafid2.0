@@ -181,23 +181,17 @@ public class Conditional {
 
         StringBuilder classSB = new StringBuilder();
 
-        classSB.append(
-            "import java.util.List;\n" +
-            "import java.util.HashMap;\n\n" +
-            "public class CompiledCondition" + this.hashCode() + " {\n\n" +
-            "    private int length = -1;\n");
+        classSB.append("import java.util.List;\n" + "import java.util.HashMap;\n\n" + "public class CompiledCondition").append(this.hashCode()).append(" {\n\n").append("    private int length = -1;\n");
 
         for (String parameter : parameters) {
-            classSB.append(
-            "    private double[] " + parameter + " = null;\n");
+            classSB.append("    private double[] ").append(parameter).append(" = null;\n");
         }
         classSB.append("\n");
         classSB.append(
             "    public CompiledCondition(int length, HashMap<String, double[]> parameterMap) {\n" +
             "        this.length = length;");
         for (String parameter : parameters) {
-            classSB.append(
-            "        this." + parameter + "Series = parameterMap.get(\"" + parameter + "\");\n");
+            classSB.append("        this.").append(parameter).append("Series = parameterMap.get(\"").append(parameter).append("\");\n");
         }
         classSB.append("}\n\n");
 
@@ -205,8 +199,7 @@ public class Conditional {
             "    public boolean evaluate(int timeStep) {\n");
 
         for (String parameter : parameters) {
-            classSB.append(
-            "        double " + parameter + " = this." + parameter + "Series[timeStep];\n");
+            classSB.append("        double ").append(parameter).append(" = this.").append(parameter).append("Series[timeStep];\n");
         }
 
         return conditionStr;
@@ -219,10 +212,10 @@ public class Conditional {
             sb.append("(");
                 // This is just an inlined NaN test
                 // https://stackoverflow.com/questions/18442503/java-isnan-how-it-works
-                sb.append("!(" + parameterName + " != " + parameterName + ")" );
+                sb.append("!(").append(parameterName).append(" != ").append(parameterName).append(")");
                 sb.append(" && ");
-                // Hex string so we don't lose precision by rouding. toString may round a float to make it pretty
-                sb.append(parameterName + " " + condition + " " + Double.toHexString(this.value));
+                // Hex string, so we don't lose precision by rouding. toString may round a float to make it pretty
+                sb.append(parameterName).append(" ").append(condition).append(" ").append(Double.toHexString(this.value));
             sb.append(")");
         } else if (type.equals("GROUP")) {
             sb.append("(");
@@ -255,10 +248,10 @@ public class Conditional {
             return "(" + string + ")";
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < children.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += children.get(i).toString();
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(children.get(i).toString());
             }
 
             return "(" + string + ")";

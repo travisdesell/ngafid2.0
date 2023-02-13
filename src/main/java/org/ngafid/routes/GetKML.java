@@ -89,7 +89,7 @@ public class GetKML implements Route {
             StringBuffer sb = new StringBuffer();
 
             for (int i = 0; i < altMSL.size(); i++) {
-                sb.append(longitude.get(i) + "," + latitude.get(i) + "," + altMSL.get(i) + "\n");
+                sb.append(longitude.get(i)).append(",").append(latitude.get(i)).append(",").append(altMSL.get(i)).append("\n");
             }
 
             String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "template.kml";

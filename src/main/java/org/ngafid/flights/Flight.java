@@ -1262,7 +1262,7 @@ public class Flight {
                 queryString.append("' ");
             }
 
-            queryString.append("WHERE id = " + flightTag.hashCode());
+            queryString.append("WHERE id = ").append(flightTag.hashCode());
             System.out.println("Query String Update: " + queryString.toString());
             PreparedStatement query = connection.prepareStatement(queryString.toString());
             query.executeUpdate();

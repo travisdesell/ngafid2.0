@@ -273,20 +273,20 @@ public class Upload {
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
         //String query = "SELECT id, fleetId, uploaderId, filename, identifier, numberChunks, chunkStatus, md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights, warningFlights, errorFlights FROM uploads WHERE fleetId = ?";
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
+        StringBuilder query = new StringBuilder("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?");
 
         if (types.length > 0) {
-            query += " AND (";
+            query.append(" AND (");
 
             for (int i = 0; i < types.length; i++) {
-                if (i > 0) query += " OR ";
-                query += "status = ?";
+                if (i > 0) query.append(" OR ");
+                query.append("status = ?");
             }
-            query += ")";
+            query.append(")");
         }
-        query += " ORDER BY start_time DESC";
+        query.append(" ORDER BY start_time DESC");
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
+        PreparedStatement uploadQuery = connection.prepareStatement(query.toString());
         uploadQuery.setInt(1, fleetId);
 
         for (int i = 0; i < types.length; i++) {
@@ -308,23 +308,23 @@ public class Upload {
     }
 
     public static ArrayList<Upload> getUploads(Connection connection, int fleetId, String [] types, String sqlLimit) throws SQLException{
-        String query = "SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?";
+        StringBuilder query = new StringBuilder("SELECT id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights FROM uploads WHERE fleet_id = ?");
 
         if (types.length > 0) {
-            query += " AND (";
+            query.append(" AND (");
 
             for (int i = 0; i < types.length; i++) {
-                if (i > 0) query += " OR ";
-                query += "status = ?";
+                if (i > 0) query.append(" OR ");
+                query.append("status = ?");
             }
-            query += ")";
+            query.append(")");
         }
-        query += " ORDER BY start_time DESC";
+        query.append(" ORDER BY start_time DESC");
 
         if(!sqlLimit.isEmpty())
-            query += sqlLimit;
+            query.append(sqlLimit);
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
+        PreparedStatement uploadQuery = connection.prepareStatement(query.toString());
         uploadQuery.setInt(1, fleetId);
 
         for (int i = 0; i < types.length; i++) {

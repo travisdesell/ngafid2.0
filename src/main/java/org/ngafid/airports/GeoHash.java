@@ -9,9 +9,9 @@ public class GeoHash {
     private static DecimalFormat decimalFormat;
 
     static {
-        String decimalStr = "";
+        StringBuilder decimalStr = new StringBuilder();
         for (int i = 0; i < hashDecimals; i++) {
-            decimalStr += "#";
+            decimalStr.append("#");
         }
 
         decimalFormat = new DecimalFormat("###." + decimalStr);
