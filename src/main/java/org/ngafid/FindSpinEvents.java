@@ -245,9 +245,16 @@ public class FindSpinEvents {
         if (args.length == 1) {
             int fleetId = Integer.parseInt(args[0]);
             try {
-                fleets = List.of(Fleet.get(connection, fleetId));
+                Fleet fleet = Fleet.get(connection, fleetId);
+                if (fleet == null) {
+                    throw new NullPointerException("Retrieved fleet was null");
+                }
+                
+                fleets = List.of(fleet);
             } catch (SQLException se) {
                 se.printStackTrace();
+            } catch (NullPointerException npe) {
+                npe.printStackTrace();
             }
         } else {
             fleets = Fleet.getAllFleets(connection);

@@ -33,12 +33,12 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException, NullPointerException {
+    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException {
         super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
 
-        int uploadId = flight.getUploadId();
+        int uploadId = flight.getUploadId(); // TODO: This can cause a NPE. Should address this in another PR
         System.out.println("target upload id is: " + uploadId);
 
         //TODO: Probably better to pass the connection in as an argument to the constructor
