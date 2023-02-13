@@ -12,6 +12,7 @@ import spark.utils.IOUtils;
 import java.io.*;
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
@@ -52,27 +53,22 @@ public class GetUpload implements Route {
         File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(), upload.getUploaderId(), upload.getId(), upload.getFilename()));
         LOG.info("File: " + file.getAbsolutePath());
         if (file.exists()) {
-            System.out.println(file.getName());
-
             response.raw().setContentType("application/zip");
             response.raw().setHeader("Content-Disposition", "attachment; filename=" + upload.getFilename());
 
             try (InputStream buffInputStream = new BufferedInputStream(new FileInputStream(file));
                  OutputStream outputStream = response.raw().getOutputStream()) {
-                String byteString = new String(IOUtils.toByteArray(buffInputStream));
-                outputStream.write(byteString.getBytes());
-                outputStream.flush();
 
-                System.out.println(byteString.substring(0, 70));
+                IOUtils.copy(buffInputStream, outputStream);
 
-                return response.raw();
-
+                LOG.log(Level.INFO, "%s file sent", file.getName());
+                return null;
             } catch (IOException e) {
                 LOG.severe(e.toString());
             }
         }
 
         LOG.severe(String.format("File not found: %s", file.getName()));
-        return "File was not found";
+        return "File was not found on server";
     }
 }

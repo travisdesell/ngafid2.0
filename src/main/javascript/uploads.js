@@ -28,46 +28,8 @@ class Upload extends React.Component {
     downloadUpload() {
         $("#loading").show();
         console.log("downloading upload");
-
-        const submissionData = {
-            uploadId : this.props.uploadInfo.id,
-            md5Hash : this.props.uploadInfo.md5Hash
-        };
-
-        console.log(submissionData);
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/download_upload',
-            data : submissionData,
-            dataType : 'text',
-            success: function (response) {
-                if (response.errorTitle) {
-                    $("#loading").hide();
-                    console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
-                    return false;
-                }
-
-                console.log("received response: ");
-                console.log(response);
-                const file = new Blob([this.response], {type: 'application/zip'});
-                const link = document.createElement('a');
-                link.href = window.URL.createObjectURL(file);
-                link.download = "upload.zip";
-                link.click();
-                $("#loading").hide();
-
-
-
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                $("#loading").hide();
-                errorModal.show("Error downloading upload", errorThrown);
-            },
-            async: true
-        });
-
+        window.open("/protected/download_upload?uploadId=" + this.props.uploadInfo.id + "&md5Hash=" + this.props.uploadInfo.md5Hash);
+        $("#loading").hide();
 
     }
 
