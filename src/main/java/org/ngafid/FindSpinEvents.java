@@ -254,7 +254,7 @@ public class FindSpinEvents {
             } catch (SQLException se) {
                 se.printStackTrace();
             } catch (Exception e) {
-                npe.printStackTrace();
+                e.printStackTrace();
             }
         } else {
             fleets = Fleet.getAllFleets(connection);

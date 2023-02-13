@@ -30,19 +30,20 @@ public class GetEventDescription implements Route {
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
         LOG.info("query: " + query);
 
-        PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
-        LOG.info("preparedStatement: " + preparedStatement);
+        try (PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query)) {
+            LOG.info("preparedStatement: " + preparedStatement);
 
-        ResultSet resultSet = preparedStatement.executeQuery();
-        LOG.info("resultSet: " + resultSet);
+            ResultSet resultSet = preparedStatement.executeQuery();
+            LOG.info("resultSet: " + resultSet);
 
-        resultSet.next();
-        EventDefinition eventDefinition = new EventDefinition(resultSet);
-        LOG.info("eventDefinition: " + eventDefinition);
+            resultSet.next();
+            EventDefinition eventDefinition = new EventDefinition(resultSet);
+            LOG.info("eventDefinition: " + eventDefinition);
 
-        String text = eventDefinition.toHumanReadable();
-        LOG.info("text: " + text);
+            String text = eventDefinition.toHumanReadable();
+            LOG.info("text: " + text);
 
-        return gson.toJson(text);
+            return gson.toJson(text);
+        }
     }
 }

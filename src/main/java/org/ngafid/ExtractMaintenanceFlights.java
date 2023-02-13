@@ -437,7 +437,7 @@ public class ExtractMaintenanceFlights {
                         }
                         if (labelToCluster == null) System.err.println("ERROR: labelToCluster is null!");
 
-                        String eventCluster = labelToCluster.get(event.getLabel());
+                        String eventCluster = labelToCluster.get(event.getLabel()); // TODO: Throws a NPE here because null check only prints message
 
                         if (!eventCluster.equals(targetCluster)) continue;
                         //System.out.println(ac.toString());

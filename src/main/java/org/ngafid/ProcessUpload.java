@@ -251,9 +251,9 @@ public class ProcessUpload {
         int warningFlights = 0;
         int errorFlights = 0;
         if (extension.equals(".zip")) {
-            try {
+            try (ZipFile zipFile = new ZipFile(filename)) {
                 System.err.println("processing zip file: '" + filename + "'");
-                ZipFile zipFile = new ZipFile(filename);
+
 
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
 
