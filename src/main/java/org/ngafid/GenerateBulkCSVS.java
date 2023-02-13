@@ -383,7 +383,7 @@ public class GenerateBulkCSVS {
 			System.exit(1);
 		}
 
-		if (!dir.substring(dir.length() - 1, dir.length()).equals("/")) {
+		if (dir.charAt(dir.length() - 1) != '/') {
 			System.out.println(dir);
 			dir += "/";
 			System.out.println("corrected unix path to: "+dir);

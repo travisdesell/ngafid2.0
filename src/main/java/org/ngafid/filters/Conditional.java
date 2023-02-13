@@ -177,7 +177,7 @@ public class Conditional {
         HashSet<String> parameters = new HashSet<>();
         StringBuilder conditionSB = new StringBuilder();
         this.codeGen(conditionSB, parameters);
-        String condition = conditionSB.toString();
+        String conditionStr = conditionSB.toString();
 
         StringBuilder classSB = new StringBuilder();
 
@@ -209,7 +209,7 @@ public class Conditional {
             "        double " + parameter + " = this." + parameter + "Series[timeStep];\n");
         }
 
-        return condition.toString();
+        return conditionStr;
     }
 
     private void codeGen(StringBuilder sb, HashSet<String> parameters) {

@@ -269,7 +269,7 @@ public class Filter {
             case "Runway":
                 String iataRunway = inputs.get(1);
                 String iataCode2 = iataRunway.substring(0, 3);
-                String runway = iataRunway.substring(6, iataRunway.length());
+                String runway = iataRunway.substring(6);
                 parameters.add(iataCode2);
                 parameters.add(runway);
 
