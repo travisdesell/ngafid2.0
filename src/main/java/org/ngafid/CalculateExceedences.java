@@ -70,9 +70,7 @@ public class CalculateExceedences {
             //both RPM values are null, can't calculate exceedence
             //RPM2 is null, RPM1 is < 800
             //RPM1 is null, RPM2 is < 800
-            if (minMaxRPM1 == null && minMaxRPM2 == null || minMaxRPM2 == null && minMaxRPM1.second() < 800 ||
-                minMaxRPM1 == null && minMaxRPM2 != null && minMaxRPM2.second() < 800 ||
-                minMaxRPM1 != null && minMaxRPM1.second() < 800 && minMaxRPM2 != null && minMaxRPM2.second() < 800) { //RPM1 and RPM2 < 800
+            if (minMaxRPM1 == null && minMaxRPM2 == null || minMaxRPM2 == null && minMaxRPM1.second() < 800 || minMaxRPM1 == null && minMaxRPM2.second() < 800 || minMaxRPM1 != null && minMaxRPM1.second() < 800 && minMaxRPM2 != null && minMaxRPM2.second() < 800) { //RPM1 and RPM2 < 800
                 //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
                 System.out.println("engines never turned on, setting flight_processed.had_error = 1");
 

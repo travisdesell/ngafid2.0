@@ -350,7 +350,7 @@ public class GenerateBulkCSVS {
                         }
 
 						sb.append(args[j]);
-						if (notEnd) sb.append(" ");
+						sb.append(" ");
 						++j;
 					}
 

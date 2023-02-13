@@ -322,10 +322,6 @@ public class EventStatistics {
 
             int previousMonth = currentMonth - 1;
             int tempYear = currentYear;
-            if (currentMonth == 0) {
-                currentMonth = 12;
-                tempYear = currentYear - 1;
-            }
 
             monthStats.add(EventRow.getStatistics(connection, "Previous Month", fleetId, eventId, "YEAR(month_first_day) = ? AND MONTH(month_first_day) = ?", new int[]{currentYear, currentMonth} ));
 

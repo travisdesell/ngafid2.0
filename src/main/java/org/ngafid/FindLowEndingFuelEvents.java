@@ -145,11 +145,11 @@ public class FindLowEndingFuelEvents {
         if (args.length == 1) {
             try {
                 Fleet fleet = Fleet.get(connection, Integer.parseInt(args[0]));
-                fleets = List.of(fleet);
-
                 if (fleet == null) {
                     throw new Exception("Retrieved fleet was null");
                 }
+
+                fleets = List.of(fleet);
             } catch (SQLException e) {
                 e.printStackTrace();
             } catch (Exception e) {
