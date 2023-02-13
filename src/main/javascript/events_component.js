@@ -251,8 +251,12 @@ class Events extends React.Component {
                         if (event.eventDefinitionId == -1) { 
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
-                            rateOfClosureBtn = ( <button id="rocButton" className={buttonClasses} style={styleButton} onClick={() => this.getRocData(event.id)}>Rate of Closure</button>   )
-                            rocPlot = (<div id={event.id + "-rocPlot"}></div>)
+                            rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} style={styleButton} onClick={() => this.getRocData(event)}>
+                                <i className="fa fa-area-chart p-1"></i></button>   );
+                            if(!event.rocPlotVisible){
+                                rocPlot = (<div id={event.id + "-rocPlot"}></div>);
+                            }
+
                         }
 
                         return (
@@ -277,35 +281,43 @@ class Events extends React.Component {
 
     }
 
-    getRocData(eventId){
-        console.log("Calculating Rate of Closure")
-        var submissionData = {
-            eventId : eventId
-        };
+    getRocData(event){
+        var eventId = event.id;
         var id = eventId + "-rocPlot";
-        $.ajax({
-            type: 'POST',
-            url: '/protected/rate_of_closure',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
+        if (!event.rocPlotVisible){
+            console.log("Calculating Rate of Closure")
+            var submissionData = {
+                eventId : eventId
+            };
+            $.ajax({
+                type: 'POST',
+                url: '/protected/rate_of_closure',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("received response: ");
+                    console.log(response);
 
-                var trace = {
-                    x : response.x,
-                    y : response.y,
-                    type : "scatter",
-                }
-                Plotly.newPlot(id, [trace])
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Flight Coordinates", errorThrown);
-            },
-            async: true
-        })
-
+                    var trace = {
+                        x : response.x,
+                        y : response.y,
+                        type : "scatter",
+                    }
+                    Plotly.newPlot(id, [trace])
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Loading Rate of closure ", errorThrown);
+                },
+                async: true
+            })
+            event.rocPlotVisible = true
+            $("#"+id).show();
+        }else {
+            event.rocPlotVisible = false;
+            $("#"+id).hide();
+        }
     }
+
 }
 
 export { Events, eventColorScheme };
