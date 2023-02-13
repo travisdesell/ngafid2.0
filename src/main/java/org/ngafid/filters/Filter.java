@@ -246,8 +246,6 @@ public class Filter {
                 return "DATE(flights.end_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "Start Time":
-                parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
-                return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "End Time":
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
