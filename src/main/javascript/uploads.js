@@ -10,6 +10,7 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import { Paginator } from "./paginator_component.js";
 
 import SparkMD5 from "spark-md5";
+import Button from "react-bootstrap/Button";
 
 
 var paused = [];
@@ -162,8 +163,8 @@ class Upload extends React.Component {
                     </div>
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
-                    <button type="button" className={"btn btn btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-download" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.downloadUpload()}></i> </button>
-                    <button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </button>
+                    <Button type="button" className={"btn btn btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-download" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.downloadUpload()}></i> </Button>
+                    <Button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </Button>
 
                 </div>
             </div>
