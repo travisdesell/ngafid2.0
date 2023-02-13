@@ -38,8 +38,6 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     private long daysToNext = 0;
     private long flightsToNext = -1;
 
-    private DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-
     //private ArrayList<AircraftTimeline> combinedRecords = new ArrayList<AircraftTimeline>();
 
 
@@ -102,6 +100,7 @@ public class AircraftTimeline implements Comparable<AircraftTimeline> {
     public AircraftTimeline(int flightId, String startTime, String endTime) {
         this.flightId = flightId;
         //System.out.println("parsing start time: '" + startTime + "'");
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
         this.startTime = LocalDate.parse(startTime, formatter);
         //System.out.println("parsing end time: '" + endTime + "'");
         this.endTime = LocalDate.parse(endTime, formatter);

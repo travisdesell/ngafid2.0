@@ -11,7 +11,7 @@ public class ConvertDoubleSeriesNames {
 
     public static List<String> getDoubleSeriesNamesOriginal() throws SQLException {
         List<String> dsnOriginal = new ArrayList<>();
-        String queryString = "SELECT UNIQUE name FROM double_series";
+        String queryString = "SELECT UNIQUE name FROM double_series"; // TODO: This query looks like a problem
 
         PreparedStatement preparedStatement = connection.prepareStatement(queryString);
         ResultSet resultSet = preparedStatement.executeQuery();

@@ -16,9 +16,9 @@ import org.ngafid.common.MutableDouble;
 public class Airports {
     public final static double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
 
-    private static HashMap<String, ArrayList<Airport>> geoHashToAirport;
-    private static HashMap<String, Airport> siteNumberToAirport;
-    private static HashMap<String, Airport> iataToAirport;
+    private static final HashMap<String, ArrayList<Airport>> geoHashToAirport;
+    private static final HashMap<String, Airport> siteNumberToAirport;
+    private static final HashMap<String, Airport> iataToAirport;
 
     public static final String AIRPORTS_FILE;
     public static final String RUNWAYS_FILE;
