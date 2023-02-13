@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.InputStream;
 import java.io.IOException;
 
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -14,6 +15,8 @@ import java.util.zip.*;
 import java.util.Enumeration;
 import java.util.Optional;
 
+import com.sun.jdi.InvocationException;
+import org.apache.commons.lang.NullArgumentException;
 import spark.utils.IOUtils;
 
 import org.ngafid.Database;
@@ -30,7 +33,7 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException {
+    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException, NullPointerException {
         super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
@@ -41,10 +44,13 @@ public class CachedCSVWriter extends CSVWriter {
         //TODO: Probably better to pass the connection in as an argument to the constructor
         Connection connection = Database.getConnection();
         Upload upload = Upload.getUploadById(connection, uploadId);
+        if (upload == null) {
+            throw new NullPointerException(); // Throw exception earlier
+        }
 
         System.out.println("got an upload with filename: '" + upload.getFilename() + "'");
 
-        String archiveFilename = directoryRoot + uploadId + "__" + upload. getFilename();
+        String archiveFilename = directoryRoot + uploadId + "__" + upload.getFilename();
         System.out.println("archive filename will be: '" + archiveFilename + "'");
 
         this.zipFile = new File(archiveFilename);

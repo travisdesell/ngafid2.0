@@ -35,6 +35,10 @@ public class Navbar {
             //don't do anything so the navbar still displays even if there is an issue with the database
         }
 
-        return "var admin = " + user.isAdmin()  + "; var aggregateView = " + user.hasAggregateView() + "; var fleetManager = " + fleetManager + "; var waitingUserCount = " + waitingUserCount + "; var modifyTailsAccess = " + modifyTailsAccess + "; var unconfirmedTailsCount = " + unconfirmedTailsCount + ";";
+        if (user != null) {
+            return "var admin = " + user.isAdmin()  + "; var aggregateView = " + user.hasAggregateView() + "; var fleetManager = " + fleetManager + "; var waitingUserCount = " + waitingUserCount + "; var modifyTailsAccess = " + modifyTailsAccess + "; var unconfirmedTailsCount = " + unconfirmedTailsCount + ";";
+        }
+
+        return "var admin = " + false  + "; var aggregateView = " + false + "; var fleetManager = " + false + "; var waitingUserCount = " + 0 + "; var modifyTailsAccess = " + false + "; var unconfirmedTailsCount = " + 0 + ";";
     }
 }
