@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -32,6 +33,8 @@ public class AirSyncFleet extends Fleet {
     private static final long DEFAULT_TIMEOUT = 1440;
 
     private static AirSyncFleet [] fleets = null;
+        
+    private static final Logger LOG = Logger.getLogger(AirSyncFleet.class.getName());
 
     private static final Gson gson = WebServer.gson;
 
@@ -128,6 +131,7 @@ public class AirSyncFleet extends Fleet {
 
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
+            LOG.info("Bearer token is out of date. Requesting a new one.");
             this.authCreds.requestAuthorization();
         }
 

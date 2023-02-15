@@ -21,7 +21,7 @@ public class AirSync {
     private Upload upload;
 
     // How long the daemon will wait before making another request
-    private static final long WAIT_TIME = 10000;
+    private static final long DEFAULT_WAIT_TIME = 10000;
     private static Connection connection = Database.getConnection();
 
     private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
@@ -72,10 +72,12 @@ public class AirSync {
         LOG.severe("Caught " + message + " when making AirSync request!");
 
         if (message.contains("HTTP response code: 401")) {
-            LOG.warning("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!). Requesting a new one...");
+            LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
+            crashGracefully(e);
         } else if (message.contains("HTTP response code: 502")) {
-            LOG.warning("Got a 502 error!");
+            LOG.severe("Got a 502 error!");
+            crashGracefully(e);
         } else {
             crashGracefully(e);
         }
@@ -105,6 +107,19 @@ public class AirSync {
         sendAdminCrashNotification(message);
 
         System.exit(1);
+    }
+
+    private static long getWaitTime(Connection connection) throws SQLException {
+        String sql = "SELECT MIN(timeout*1000 - (CURRENT_TIMESTAMP - last_upload_time)) AS remaining_time FROM airsync_fleet_info";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            return 1000 * resultSet.getLong(1);
+        }
+
+        return DEFAULT_WAIT_TIME;
     }
 
     /**
@@ -167,8 +182,9 @@ public class AirSync {
                     }
                 }
 
-                LOG.info("Sleeping for " + WAIT_TIME + "ms.");
-                Thread.sleep(WAIT_TIME);
+                long waitTime = getWaitTime(connection);
+                LOG.info("Sleeping for " + waitTime + "ms.");
+                Thread.sleep(waitTime);
             }
         } catch (Exception e) {
             crashGracefully(e);
