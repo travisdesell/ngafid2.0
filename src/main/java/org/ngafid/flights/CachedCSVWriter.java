@@ -33,7 +33,7 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException {
+    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException, NullPointerException {
         super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
