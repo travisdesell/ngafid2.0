@@ -13,6 +13,8 @@ import Row from 'react-bootstrap/Row';
 
 import { errorModal } from "./error_modal.js";
 import { MetricViewerSettings } from "./metricviewer_preferences.js";
+import { AirSyncSettings } from "./airsync_settings.js";
+
 import SignedInNavbar from "./signed_in_navbar.js";
 
 class PreferencesPage extends React.Component {
@@ -51,6 +53,11 @@ class PreferencesPage extends React.Component {
                                                 selectedMetrics={this.state.selectedMetrics}
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
+                                            <AirSyncSettings
+                                                isVertical={false}
+                                                selectedMetrics={this.state.selectedMetrics}
+                                                decimalPrecision={this.state.decimalPrecision}>
+                                            </AirSyncSettings>
                                     </div>
                                 </div>
                             </div>

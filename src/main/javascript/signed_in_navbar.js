@@ -157,11 +157,10 @@ class SignedInNavbar extends React.Component {
 
         let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
         let analysisActive = this.props.activePage === "ttf";
-        let researchActive = this.props.activePage === "event_annotations";
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
-                <a className="navbar-brand" href="../">NGAFID (RIT BETA)</a>
+                <a className="navbar-brand" href="../">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
@@ -245,15 +244,6 @@ class SignedInNavbar extends React.Component {
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Turn to Final Tool"} hidden={false} active={this.props.activePage === "ttf"} href="/protected/ttf"/>
-                            </div>
-                        </li>
-
-                        <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (researchActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Research{researchActive ? (<span className="sr-only">(current)</span>) : ""}
-                            </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
-                                <DropdownLink name={"Event Annotations"} hidden={false} active={this.props.activePage === "event_annotations"} href="/protected/all_event_annotations"/>
                             </div>
                         </li>
 
