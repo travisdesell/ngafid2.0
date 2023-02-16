@@ -129,7 +129,6 @@ class AirSyncUpload extends React.Component {
                     <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.warningFlights} warning flights.</div>
                     <div className="p-1 mr-1 card border-light bg-light" style={fixedFlexStyle1}>{uploadInfo.errorFlights} error flights.</div>
                     <div className={statusClasses} style={fixedFlexStyle3}>{statusText}</div>
-                    <button className={expandButtonClasses} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
                 </div>
             </div>
         );
