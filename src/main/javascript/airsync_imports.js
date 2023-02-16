@@ -215,13 +215,20 @@ class AirSyncImport extends React.Component {
 
         let fillClasses = textClasses + " flex-fill";
 
+        let inlineClasses = textClasses + " flex-row justify-content-between";
+
+        //<h6 className="p-1"><span className="badge badge-success">New!</span> </h6>
+        let flightNumInfo = ( 
+            <div className={inlineClasses} style={styleCount}>
+                <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
+            </div>
+        );
+
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
                     <div className={textClasses } style={styleCount}>{importInfo.tail}</div>
-                    <div className={textClasses} style={styleCount}>
-                        <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + importInfo.flightId}>{importInfo.flightId}</a></i>
-                    </div>
+                    {flightNumInfo}
                     <div className={fillClasses} style={styleCount}>Received at: {importInfo.timeReceived}</div>
                     <div className={fillClasses} style={styleCount}>AirSync ref#{importInfo.id}</div>
                     <div className={cardClasses} style={styleStatus}>{statusText}</div>
@@ -265,7 +272,7 @@ class ImportsPage extends React.Component {
 
         $.ajax({
             type: 'POST',
-            url: '/protected/get_imports',
+            url: '/protected/airsync_imports',
             data : submissionData,
             dataType : 'json',
             success : function(response) {
@@ -280,10 +287,8 @@ class ImportsPage extends React.Component {
                     return false;
                 }
 
-                console.log("got response: "+response+" "+response.size);
-
                 importsPage.setState({
-                    imports : response.imports,
+                    imports : response.page,
                     numberPages : response.numberPages
                 });
             },
@@ -303,7 +308,7 @@ class ImportsPage extends React.Component {
                 <Paginator
                     submitFilter={() => {this.submitFilter();}}
                     items={this.state.imports}
-                    itemName="uploads"
+                    itemName="imports"
                     currentPage={this.state.currentPage}
                     numberPages={this.state.numberPages}
                     pageSize={this.state.pageSize}
@@ -327,7 +332,7 @@ class ImportsPage extends React.Component {
                 <Paginator
                     submitFilter={() => {this.submitFilter();}}
                     items={this.state.imports}
-                    itemName="uploads"
+                    itemName="imports"
                     currentPage={this.state.currentPage}
                     numberPages={this.state.numberPages}
                     pageSize={this.state.pageSize}

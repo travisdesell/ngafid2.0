@@ -191,10 +191,8 @@ class AirSyncUploadsCard extends React.Component {
                     return false;
                 }
 
-                console.log("got response: "+response+" "+response.sizeAll);
-
                 uploadsPage.setState({
-                    uploads : response.uploads,
+                    uploads : response.page,
                     numberPages : response.numberPages
                 });
             },

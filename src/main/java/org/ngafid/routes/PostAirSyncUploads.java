@@ -57,11 +57,12 @@ public class PostAirSyncUploads implements Route {
 
             Connection connection = Database.getConnection();
 
-            int totalUploads = Upload.getNumUploads(connection, fleetId, null);
+            int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
-            return gson.toJson(new UploadsResponse(uploads, numberPages));
+            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+
+            return gson.toJson(new PaginationResponse<Upload>(uploads, numberPages));
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
