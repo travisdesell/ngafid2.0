@@ -16,6 +16,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.CalculateExceedences;
 import org.ngafid.Database;
+import org.ngafid.UploadException;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.Fleet;
@@ -92,6 +93,9 @@ public class AirSyncImport {
         //Ensure there is data to read before proceeding...
         int count = 0;
         if ((count = readCsvData()) > 0) {
+            String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
+            String identifier = getUploadIdentifier(fleetId, aircraftId, this.localDateTimeStart);
+
             try {
                 String zipId = aircraftId + ".zip";
                 String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/"/* we will use this instead of the user id */ + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
@@ -107,7 +111,6 @@ public class AirSyncImport {
                     }
                 }
 
-                String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
                     
                 if (file.exists() || file.createNewFile()) {
                     ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
@@ -128,7 +131,6 @@ public class AirSyncImport {
                 // NOTE: multiple imports will reside in one upload.
                 // Format: AS-<ngafid_fleet_id>.<airsync_aircraft_id>-<UPLOAD_YYYY>-<UPLOAD_MM>
 
-                String identifier = getUploadIdentifier(fleetId, aircraftId, this.localDateTimeStart);
 
                 Flight flight = new Flight(fleetId, csvName, new ByteArrayInputStream(this.data), connection);
 
@@ -143,15 +145,29 @@ public class AirSyncImport {
                 this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
-			} catch (Exception e) {
-                LOG.severe("Exception caught in file processing:");
-                LOG.severe(e.getLocalizedMessage());
-				e.printStackTrace();
-                System.exit(1);
+			} catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                UploadException ue = new UploadException(e.getMessage(), e, csvName);
+                try {
+                    FlightError.insertError(connection, uploadId, ue.getFilename(), ue.getMessage());
+                    addErrorFlight(connection, identifier);
+                } catch (SQLException se) {
+                    AirSync.crashGracefully(se);
+                }
+            } catch (Exception e) {
+                AirSync.crashGracefully(e);
 			}
         } else {
             throw new MalformedFlightFileException("Unable to read data from the provided AirSync upload for AirSync Aircraft id: " + aircraftId + " for flight: " + origin + " to " + destination + " at " + timeStart);
         }
+    }
+
+    public void addErrorFlight(Connection connection, String identifier) throws SQLException {
+        String sql = "UPDATE uploads SET n_error_flights = n_error_flights + 1 WHERE identifier = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setString(1, identifier);
+
+        query.executeUpdate();
     }
 
     //public String getMd5Hash() {

@@ -50,7 +50,7 @@ public class AirSyncAuth {
 
     public void requestAuthorization() {
         try {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AUTH_DEV).openConnection();
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AUTH_PROD).openConnection();
 
             connection.setRequestMethod("POST");
             connection.setDoOutput(true);
