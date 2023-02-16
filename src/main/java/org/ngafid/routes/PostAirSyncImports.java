@@ -19,10 +19,9 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.AirSyncImport;
+import org.ngafid.flights.AirSyncImportResponse;
 import org.ngafid.flights.Upload;
 import org.ngafid.common.*;
-import org.ngafid.routes.PostUploads.UploadsResponse;
-
 
 public class PostAirSyncImports implements Route {
     private static final Logger LOG = Logger.getLogger(PostAirSyncImports.class.getName());
@@ -57,11 +56,12 @@ public class PostAirSyncImports implements Route {
 
             Connection connection = Database.getConnection();
 
-            int totalUploads = Upload.getNumUploads(connection, fleetId, null);
-            int numberPages = totalUploads / pageSize;
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            int totalImports = AirSyncImport.getNumImports(connection, fleetId, null);
+            int numberPages = totalImports / pageSize;
 
-            return gson.toJson(new UploadsResponse(uploads, numberPages));
+            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId, " LIMIT " + (currentPage * pageSize) + "," + pageSize);
+
+            return gson.toJson(new PaginationResponse<AirSyncImportResponse>(imports, numberPages));
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
