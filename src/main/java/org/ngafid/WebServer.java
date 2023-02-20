@@ -2,6 +2,7 @@ package org.ngafid;
 
 
 
+import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
@@ -10,6 +11,10 @@ import spark.Service;
 
 import java.io.InputStream;
 
+import java.sql.Time;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -55,15 +60,21 @@ public final class WebServer {
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
+        // Handle server shutdowns.
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
-                LOG.info("NGAFID WebServer shutting down.");
-                shutdownEmailAlert();
+                LocalDateTime now = LocalDateTime.now();
+                LOG.info("NGAFID WebServer is shutting down at " + now);
+                shutdownEmailAlert(now);
             }
 
-            private void handleForcedShutdown() {
+            private void shutdownEmailAlert(LocalDateTime time) {
+                String message = "NGAFID WebServer has shutdown at " + time;
 
+                ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(System.getenv("NGAFID_ADMIN_EMAILS").split(";")));
 
+                ArrayList<String> bccRecipients = new ArrayList<String>();
+                SendEmail.sendEmail(adminEmails, bccRecipients, "NGAFID WebServer Shutdown", message);
             }
         });
     }
