@@ -2,13 +2,10 @@ package org.ngafid.routes;
 
 import com.google.gson.Gson;
 import org.ngafid.Database;
-import org.ngafid.accounts.User;
 import org.ngafid.events.RateOfClosure;
 import spark.Request;
 import spark.Response;
 import spark.Route;
-import spark.Session;
-
 import java.sql.Connection;
 import java.util.logging.Logger;
 
@@ -40,9 +37,7 @@ public class PostRateOfClosure implements Route {
     public Object handle(Request request, Response response) {
 
         LOG.info("handling rate of closure route");
-
         int eventId = Integer.parseInt(request.queryParams("eventId"));
-
         try {
             RateOfClosureData rocData = new RateOfClosureData(eventId);
             String output = gson.toJson(rocData);
@@ -51,7 +46,5 @@ public class PostRateOfClosure implements Route {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
-
-
     }
 }
