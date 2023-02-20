@@ -75,7 +75,6 @@ class CreateAccountCard extends React.Component {
             submissionData.fleetName = $("#newFleetName").val().trim();
         } else if (this.state.checkedRadio == "existingFleet") {
             submissionData.fleetName = $("#fleetSelect").val().trim();
-        } else if (this.state.checkedRadio == "gaard") {
         } else {
             //invalid radio type
             return;
@@ -106,9 +105,6 @@ class CreateAccountCard extends React.Component {
 
                 } else if (checkedRadio == "existingFleet") {
                     window.location.replace("/protected/waiting");
-
-                } else if (checkedRadio == "gaard") {
-                    //TODO: currently disabled
 
                 } else {
                     return;
@@ -849,12 +845,6 @@ class CreateAccountCard extends React.Component {
 
                                     <div className="p-2 flex-fill">
 
-                                        <div className="form-check">
-                                            <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTyepGAARD" value="gaard" onChange={() => this.validateAccountType()}disabled/>
-                                            <label className="form-check-label" htmlFor="exampleRadios1">
-                                                I am a GAARD User.
-                                            </label>
-                                        </div>
                                         <div className="form-check">
                                             <input className="form-check-input" type="radio" name="accountTypeRadios" id="accountTypeNewFleet" value="newFleet" onChange={() => this.validateAccountType()} />
                                             <label className="form-check-label" htmlFor="exampleRadios2">
