@@ -173,6 +173,13 @@ and automatically recompile whenever you change one of the files:
 ~/ngafid2.0 $ npm run watch
 ```
 
+Run:
+```
+sh setup_dat_importing.sh
+```
+This will install a JAR file dependency to where Maven installs your dependencies to.
+Running the next two steps will not be possible without running this script.
+
 You should then be able to compile and run the webserver by running `run_webserver.sh`
 ```
 ~/ngafid2.0 $ sh run_webserver.sh
