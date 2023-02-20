@@ -54,6 +54,18 @@ public final class WebServer {
             System.exit(1);
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                LOG.info("NGAFID WebServer shutting down.");
+                shutdownEmailAlert();
+            }
+
+            private void handleForcedShutdown() {
+
+
+            }
+        });
     }
 
     /** 
