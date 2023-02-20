@@ -36,7 +36,6 @@
         "babel-preset-es2015": "^6.24.1",
         "clone-deep": "^4.0.1",
         "fs": "0.0.1-security",
-        "jQuery-QueryBuilder": "^2.6.0",
         "moment": "^2.29.1",
         "ol": "^5.3.3",
         "ol-layerswitcher": "^3.8.3",
