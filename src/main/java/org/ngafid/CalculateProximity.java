@@ -521,6 +521,7 @@ public class CalculateProximity {
                                         RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                                         System.out.println("Creating event for flight : " + flightId );
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
+
                                         eventList.add(event);
 
                                         //add in an event for the other flight as well so we don't need to recalculate this
