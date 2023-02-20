@@ -135,8 +135,8 @@ public class Flight {
     //the tags associated with this flight
     private List<FlightTag> tags = null;
 
-    private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
-    private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
+    private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
+    private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private HashMap<String, Double> calculationCriticalValues;
 
@@ -2300,7 +2300,7 @@ public class Flight {
     // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
     // separate flights.
     public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
-                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection)
+                  Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries, Connection connection)
             throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.doubleTimeSeries = doubleTimeSeries;
         this.stringTimeSeries = stringTimeSeries;
@@ -3466,5 +3466,17 @@ public class Flight {
         }
 
         printWriter.close();
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setAirframeType(String type) {
+        this.airframeType = type;
+    }
+
+    public void setAirframeTypeID(Integer typeID) {
+        this.airframeTypeId  = typeID;
     }
 }
