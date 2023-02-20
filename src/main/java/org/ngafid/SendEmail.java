@@ -104,10 +104,19 @@ public class SendEmail {
             message.setFrom(new InternetAddress(from));
 
             // Set To: header field of the header.
+            boolean erau_found = false;
             for (String toRecipient : toRecipients) {
                 //list of users who do not want emails: TODO: make this a user setting
-                if (toRecipient.equals("nievesn2@erau.edu")) continue;
+                if (toRecipient.equals("nievesn2@erau.edu") || toRecipient.equals("dicksonm@erau.edu")) {
+                    erau_found = true;
+                    continue;
+                }
+
                 message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
+            }
+
+            if (erau_found) {
+                message.addRecipient(Message.RecipientType.TO, new InternetAddress("dbavsafe@gmail.com"));
             }
 
             for (String bccRecipient : bccRecipients) {
