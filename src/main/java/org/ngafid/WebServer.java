@@ -13,7 +13,6 @@ import java.io.InputStream;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
@@ -293,11 +292,12 @@ public final class WebServer {
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         Spark.exception(Exception.class, (exception, request, response) -> {
-            LOG.severe("Exception caught in WebServer: " + exception.getMessage());
             String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
                                                 .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
                                                 .append(".\n The exception was: ").append(exception.getMessage()).append("\n")
                                                 .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
+
+            LOG.severe("Exception occurred: " + exception.getMessage());
             sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
         });
 

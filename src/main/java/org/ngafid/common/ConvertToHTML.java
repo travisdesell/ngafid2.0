@@ -1,5 +1,9 @@
 package org.ngafid.common;
 
+/**
+ * Conversion methods for converting objects into nicely formatted HTML
+ */
+
 public class ConvertToHTML {
     /**
      * Gets the stack trace from an exception and converts it to a string

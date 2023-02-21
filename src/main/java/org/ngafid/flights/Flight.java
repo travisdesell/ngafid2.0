@@ -2190,7 +2190,7 @@ public class Flight {
             } else {
                 LOG.severe("Cannot calculate engine variances! Unknown airframe type: '" + airframeName + "'");
                 LOG.severe("Skipping...");
-                // System.exit(1);Loo
+                // System.exit(1);
             }
 
             if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
