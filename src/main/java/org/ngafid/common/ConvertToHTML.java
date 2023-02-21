@@ -18,6 +18,6 @@ public class ConvertToHTML {
     }
 
     public static String convertString(String string) {
-        return string.replaceAll("\r", "<br>");
+        return string.replaceAll("\n", "<br>");
     }
 }
