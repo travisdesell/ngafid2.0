@@ -65,6 +65,10 @@ public class SendEmail {
         }
     }
 
+    public static void sendAdminEmails(String subject, String body) {
+        sendEmail(adminEmails, new ArrayList<>(), subject, body);
+    }
+
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
         System.out.println("emailing to " + String.join(", ", toRecipients));
         System.out.println("BCCing to " + String.join(", ", bccRecipients));

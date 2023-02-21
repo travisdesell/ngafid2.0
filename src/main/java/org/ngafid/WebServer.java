@@ -2,6 +2,8 @@ package org.ngafid;
 
 
 
+import org.apache.maven.exception.DefaultExceptionHandler;
+import org.apache.maven.exception.ExceptionSummary;
 import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
@@ -11,16 +13,16 @@ import spark.Service;
 
 import java.io.InputStream;
 
-import java.sql.Time;
+import java.net.SocketException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import static org.ngafid.SendEmail.sendAdminEmails;
 
 /**
  * The entry point for the NGAFID web server.
@@ -60,23 +62,23 @@ public final class WebServer {
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
-        // Handle server shutdowns.
         Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
             public void run() {
-                LocalDateTime now = LocalDateTime.now();
-                LOG.info("NGAFID WebServer is shutting down at " + now);
-                shutdownEmailAlert(now);
-            }
-
-            private void shutdownEmailAlert(LocalDateTime time) {
-                String message = "NGAFID WebServer has shutdown at " + time;
-
-                ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(System.getenv("NGAFID_ADMIN_EMAILS").split(";")));
-
-                ArrayList<String> bccRecipients = new ArrayList<String>();
-                SendEmail.sendEmail(adminEmails, bccRecipients, "NGAFID WebServer Shutdown", message);
+                String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now();
+                LOG.info(message);
+                sendAdminEmails("NGAFID WebServer Shutdown", message);
             }
         });
+
+        Thread.UncaughtExceptionHandler exceptionHandler = (thread, error) -> {
+            String message = "NGAFID WebServer encountered an uncaught exception at " + LocalDateTime.now();
+            message += error.getMessage() + " " + ExceptionUtils.getStackTrace(error);
+            LOG.severe(message);
+            sendAdminEmails("NGAFID WebServer Uncaught Exception", message);
+        };
+
+        Thread.setDefaultUncaughtExceptionHandler(exceptionHandler);
     }
 
     /** 
@@ -85,7 +87,7 @@ public final class WebServer {
      * @param args
      *    Command line arguments; none expected.
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SocketException {
         // initialize Logging
         try {
             ClassLoader classLoader = WebServer.class.getClassLoader();
@@ -304,6 +306,8 @@ public final class WebServer {
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         LOG.info("NGAFID WebServer initialization complete.");
+
+        int err = 10 / 0;
     }
 }
 
