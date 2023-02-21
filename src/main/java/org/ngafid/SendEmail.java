@@ -65,6 +65,11 @@ public class SendEmail {
         }
     }
 
+    /**
+     * Wrapper for sending an email to NGAFID admins
+     * @param subject - subject of the email
+     * @param body - body of the email
+     */
     public static void sendAdminEmails(String subject, String body) {
         sendEmail(adminEmails, new ArrayList<>(), subject, body);
     }
