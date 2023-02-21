@@ -15,6 +15,7 @@ public class SendEmail {
     private static String password;
     private static String username;
     private static ArrayList<String> adminEmails;
+    private static boolean emailEnabled = true;
 
     static {
         if (System.getenv("NGAFID_EMAIL_INFO") == null) {
@@ -40,8 +41,14 @@ public class SendEmail {
 
         try {
             BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
+
             username = bufferedReader.readLine();
             password = bufferedReader.readLine();
+
+            String line;
+            if (username == null || password == null || ((line = bufferedReader.readLine()) != null && line.toLowerCase().equals("false"))) {
+                emailEnabled = false;
+            }
 
             System.out.println("email username: '" + username + "'");
             System.out.println("email password: '" + password + "'");
@@ -75,6 +82,11 @@ public class SendEmail {
     }
 
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
+        if (!emailEnabled) {
+            System.out.println("Emailing has been disabled, not sending email");
+            return;
+        }
+
         System.out.println("emailing to " + String.join(", ", toRecipients));
         System.out.println("BCCing to " + String.join(", ", bccRecipients));
         System.out.println("subject: '" + subject + "'");
