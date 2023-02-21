@@ -77,8 +77,8 @@ public class SendEmail {
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
         System.out.println("emailing to " + String.join(", ", toRecipients));
         System.out.println("BCCing to " + String.join(", ", bccRecipients));
-        System.out.println("subject: '" + subject);
-        System.out.println("body: '" + body);
+        System.out.println("subject: '" + subject + "'");
+        System.out.println("body: '" + body + "'");
 
 
         // Sender's email ID needs to be mentioned
