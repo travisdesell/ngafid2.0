@@ -59,10 +59,19 @@ public class GetHome implements Route {
         messages.add(new Message(messageType, messageText));
     }
 
+    public static void divisionErr() {
+        int i = 10 / 0;
+
+    }
+    public static void divisionErrParent() {
+        divisionErr();
+    }
+
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
+        divisionErrParent();
         String resultString = "";
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "home.html";
         LOG.severe("template file: '" + templateFile + "'");
