@@ -12,6 +12,7 @@ import spark.Service;
 import java.io.InputStream;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
@@ -61,9 +62,9 @@ public final class WebServer {
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now();
+            String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
             LOG.info(message);
-            sendAdminEmails("NGAFID WebServer Shutdown", message);
+            sendAdminEmails(message, "");
         }));
     }
 
@@ -291,16 +292,13 @@ public final class WebServer {
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
-        Spark.get("/throwexception", (request, response) -> {
-            int i = 10 / 0;
-            return "This will never be returned";
-        });
-
         Spark.exception(Exception.class, (exception, request, response) -> {
             LOG.severe("Exception caught in WebServer: " + exception.getMessage());
-            String message = "An uncaught exception was thrown in the NGAFID WebServer at " + LocalDateTime.now() + ".\n The exception was: " + exception.getMessage() + "\n";
-            message += "\nThe stack trace was:\n" + ConvertToHTML.convertError(exception) + "\n";
-            sendAdminEmails("Uncaught Exception in NGAFID", ConvertToHTML.convertString(message));
+            String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
+                                                .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
+                                                .append(".\n The exception was: ").append(exception.getMessage()).append("\n")
+                                                .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
+            sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
