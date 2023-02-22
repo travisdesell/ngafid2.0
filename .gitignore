@@ -6,3 +6,6 @@ dbinfo
 dbinfo.php
 db/dbinfo.php
 node_modules
+target/*
+src/main/resources/public/js/*
+.cache-loader/*
