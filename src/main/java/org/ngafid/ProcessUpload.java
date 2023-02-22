@@ -75,7 +75,6 @@ public class ProcessUpload {
             try {
                 PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
-
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
@@ -189,7 +188,7 @@ public class ProcessUpload {
             UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
 
             boolean success = ingestFlights(connection, uploadId, fleetId, uploaderId, filename, uploadProcessedEmail);
-
+            System.out.println(success);
             //only progress if the upload ingestion was successful
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
