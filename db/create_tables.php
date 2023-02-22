@@ -7,8 +7,8 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$update_2022_02_17 = false;
-$update_turn_to_final = false;
+$update_2022_02_17 = true;
+$update_turn_to_final = true;
 $update_visited_airports = true;
 $update_uploads_for_raise = true;
 $update_rate_of_closure = true;
@@ -602,6 +602,7 @@ if ($update_rate_of_closure){
     $query = "CREATE TABLE `rate_of_closure` (
     `id` INT(11) NOT NULL AUTO_INCREMENT,
     `event_id` INT(11) NOT NULL,
+    `size` INT(11) NOT NULL,
     `data` MEDIUMBLOB,
     PRIMARY KEY(`id`),
     FOREIGN KEY(`event_id`) REFERENCES events(`id`)
