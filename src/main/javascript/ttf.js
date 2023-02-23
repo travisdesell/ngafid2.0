@@ -2,6 +2,10 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import Form from "react-bootstrap/Form";
+import Popover from 'react-bootstrap/Popover';
+import Col from 'react-bootstrap/Col';
+import Row from 'react-bootstrap/Row';
+import Button from 'react-bootstrap/Button';
 
 import { map, styles, layers, Colors, overlay, initializeMap, container, content, closer } from "./map.js";
 import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
@@ -28,13 +32,62 @@ var moment = require('moment');
 
 initializeMap();
 
+class TTFMapPopup extends React.Component {
+    constructor(props) {
+        super(props);
+        console.log("Creating TTFMapPopup");
+        this.state = {
+            visible: true
+        };
+    }
+
+    show() {
+        this.setState({visible: true});
+    }
+
+    close() {
+        this.setState({visible: false});
+    }
+
+    render() {
+        var style = {
+            top: this.props.pixel[1] + this.props.map_container_rect.y - 10,
+            left: this.props.pixel[0] + this.props.map_container_rect.x + 15,
+            minWidth: 320,
+        };
+
+        if (!this.state.visible) {
+            return null;
+        }
+
+        return (
+            <div style={{ height: 120 }}>
+                <Popover
+                    style={style}
+                >
+                    <Popover.Title as="h2">
+                        <Col sm={5}>Flight {this.props.flight_id} Approach {this.props.approach_n}</Col>
+                        <Col style={{ display: "flex" }}>
+                            <Button onClick={ () => this.close() } data-toggle="button" variant="outline-secondary">
+                                <i className="fa fa-times p-1"></i>
+                            </Button>
+                        </Col>
+                    </Popover.Title>
+                    <Popover.Content>
+                        <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + this.props.flight_id}>{this.props.flight_id}</a></i>
+                    </Popover.Content>
+                </Popover>
+            </div>
+        );
+    }
+}
+
 class RollSlider extends React.Component {
     constructor(props) {
         super(props);
     }
 
     makeRollSlider(min, max, onChange, getValue) {
-        
         return (
             <div className="col-auto" style={{textAlign: 'center', margin: 'auto'}}
                   >
@@ -195,6 +248,7 @@ class TTFCard extends React.Component {
             plotVisible: true,
             mapStyle: "Road",
             disableFetching: false,
+            popups: [],
             // Style object for ttf lines. This is just a thin green line style.
             ttfStyle:
                 new Style({
@@ -210,21 +264,6 @@ class TTFCard extends React.Component {
                             width: 2
                         })
                     })
-                }),
-            optimalDescentExceedencesStyle:
-                new Style({
-                     stroke: new Stroke({
-                         color: "#ff0000",
-                         width: 1.5
-                     }),
-                     image: new Circle({
-                         radius: 5,
-                         //fill: new Fill({color: [0, 0, 0, 255]}),
-                         stroke: new Stroke({
-                             color: [0, 0, 0, 0],
-                             width: 2
-                         })
-                     })
                 }),
         };
 
@@ -248,36 +287,54 @@ class TTFCard extends React.Component {
                                  modifyTailsAccess={modifyTailsAccess}/>,
             document.querySelector('#navbar')
         );
-
+        
+        var thisTTF = this;
         // https://embed.plnkr.co/plunk/hhEAWk
-        map.on('click', function(event) {
-            // https://openlayers.org/en/latest/examples/popup.html
-            // var container = document.getElementById('popup');
-            // var content = document.getElementById('popup-content');
-            // var closer = document.getElementById('popup-closer');
-
-            closer.onclick = function() {
-                overlay.setPosition(undefined);
-                closer.blur();
-                return false;
-            };
-
-            var coordinate = event.coordinate;
-            var f = map.forEachFeatureAtPixel(event.pixel, function(feature, layer) { return feature; });
-            console.log(f);
-            if (f && f.get('type') == 'ttf') {
-                var geometry = f.getGeometry();
-                var coord = geometry.getCoordinates();
-                console.log("selected feature " + f.get('name'));
-                window.open("/protected/flight?flight_id=4228", '_blank').focus();
-            } else {
-                container.style.display = 'none';
-            }
-        });
+        map.on('click', (event => this.openMapPopup(event)));
+        map.on('moveend', (() => this.zoomChanged()));
 
         Plotly.newPlot('deviations-plot', [], deviationsPlotlyLayout, plotlyConfig);
         Plotly.newPlot('alt-plot', [], altitudePlotlyLayout, plotlyConfig);
         Plotly.newPlot('glide-angle-hist', [], glideAngleHistLayout, plotlyConfig);
+    }
+
+    openMapPopup(event) {
+        closer.onclick = function() {
+            overlay.setPosition(undefined);
+            closer.blur();
+            return false;
+        };
+
+        var coordinate = event.coordinate;
+        var f = map.forEachFeatureAtPixel(event.pixel, function(feature, layer) { return feature; });
+        console.log(f);
+        if (f && f.get('type') == 'ttf') {
+            var geometry = f.getGeometry();
+            var coord = geometry.getCoordinates();
+            console.log("selected feature " + f.get('name'));
+            // window.open("/protected/flight?flight_id=" + f.get('name'), '_blank').focus();
+            var ttfObject = f.get('ttf');
+            var rect = document.getElementById('map-container').getBoundingClientRect();
+            var popupProps = {
+                pixel: event.pixel,
+                flight_id: f.get('name'),
+                map_container_rect: rect
+            };
+            
+            var outerHTML = document.createElement('div');
+            var popup = ReactDOM.render(React.createElement(TTFMapPopup, popupProps), outerHTML);
+            document.body.appendChild(outerHTML);
+            this.state.popups.push(popup);
+            outerHTML.setAttribute("id", "popover" + this.state.popups.length);
+        } else {
+            container.style.display = 'none';
+        }     
+    }
+
+    zoomChanged() {
+        for (var i in this.state.popups)
+            this.state.popups[i].close();
+        this.state.popups = [];
     }
 
     mapSelectChanged(style) {
@@ -303,7 +360,6 @@ class TTFCard extends React.Component {
         $("#map").show();
 
         $("#map").css("width", "100%");
-
     }
 
     hideMap() {
@@ -480,22 +536,12 @@ class TTFCard extends React.Component {
 
         let layer = ttf.layer;
         layer.setVisible(true);
-
-        // let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
-        // optimalDescentExceedencesLayer.setVisible(true);
-
-        // let extent = layer.getSource().getExtent();
-        // console.log(extent);
-        // map.getView().fit(extent, map.getSize());
     }
 
     hideTTF(ttf) {
         this.makeTTFLayers(ttf);
         let layer = ttf.layer;
         layer.setVisible(false);
-
-        // let optimalDescentExceedencesLayer = ttf.optimalDescentExceedencesLayer;
-        // optimalDescentExceedencesLayer.setVisible(false);
     }
 
     // setMaximumRoll will move the roll slider to the maximum roll found in the set of ttfs so that
@@ -512,12 +558,12 @@ class TTFCard extends React.Component {
         let curves = ttfs
             .map(ttf => {
                 ttfIndex += 1;
-                let glideAngle = ttf.selfDefinedGlideAngle;
+                let glideAngle = ttf.thisDefinedGlideAngle;
                 let alt = ttf.AltAGL;
 
                 // This is what applies the roll filter
                 if (this.shouldDisplay(ttf)) {
-                    return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.selfDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
+                    return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.thisDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
                              alt: { name: ttf.flightId, x: ttf.distanceFromRunway, y: alt, type: 'scatter', mode: 'lines' },
                              maxGlideAngle: glideAngle, _ttfIndex: ttfIndex };
                 } else
@@ -685,7 +731,6 @@ class TTFCard extends React.Component {
             if (this.state.data != null) {
                 for (var ttf of this.state.data.ttfs) {
                     map.removeLayer(ttf.layer);
-                    // map.removeLayer(ttf.optimalDescentExceedencesLayer);
                 }
             }
             this.setState({disableFetching: true})
