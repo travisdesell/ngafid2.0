@@ -6,6 +6,7 @@ import Popover from 'react-bootstrap/Popover';
 import Col from 'react-bootstrap/Col';
 import Row from 'react-bootstrap/Row';
 import Button from 'react-bootstrap/Button';
+import ButtonGroup from 'react-bootstrap/ButtonGroup';
 
 import { map, styles, layers, Colors, overlay, initializeMap, container, content, closer } from "./map.js";
 import { TimeHeader, TurnToFinalHeaderComponents } from "./time_header.js";
@@ -52,8 +53,7 @@ class TTFMapPopup extends React.Component {
     render() {
         var style = {
             top: this.props.pixel[1] + this.props.map_container_rect.y - 10,
-            left: this.props.pixel[0] + this.props.map_container_rect.x + 15,
-            minWidth: 320,
+            left: this.props.pixel[0] + this.props.map_container_rect.x + 15
         };
 
         if (!this.state.visible) {
@@ -65,17 +65,21 @@ class TTFMapPopup extends React.Component {
                 <Popover
                     style={style}
                 >
-                    <Popover.Title as="h2">
-                        <Col sm={5}>Flight {this.props.flight_id} Approach {this.props.approach_n}</Col>
-                        <Col style={{ display: "flex" }}>
-                            <Button onClick={ () => this.close() } data-toggle="button" variant="outline-secondary">
-                                <i className="fa fa-times p-1"></i>
-                            </Button>
-                        </Col>
-                    </Popover.Title>
-                    <Popover.Content>
-                        <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + this.props.flight_id}>{this.props.flight_id}</a></i>
-                    </Popover.Content>
+                    <Popover.Title as="h2" style={{ display: "flex" }}><Row>
+                            <Col >Flight {this.props.flight_id} Approach {this.props.approach_n}</Col>
+                            <Col sm="auto"></Col>
+                            <Col>
+                            <ButtonGroup>
+                                <Button variant="outline-info" href={"/protected/flight?flight_id=" + this.props.flight_id} target="_blank">
+                                    <i className="fa fa-plane p-1"></i>
+                                </Button>
+                                <Button onClick={ () => this.close() } data-toggle="button" variant="outline-danger">
+                                    <i className="fa fa-times p-1"></i>
+                                </Button>
+                            </ButtonGroup>
+                            </Col>
+                    </Row></Popover.Title>
+                    <Popover.Content></Popover.Content>
                 </Popover>
             </div>
         );
@@ -318,7 +322,8 @@ class TTFCard extends React.Component {
             var popupProps = {
                 pixel: event.pixel,
                 flight_id: f.get('name'),
-                map_container_rect: rect
+                map_container_rect: rect,
+                approach_n: ttfObject.approachn
             };
             
             var outerHTML = document.createElement('div');
@@ -701,9 +706,13 @@ class TTFCard extends React.Component {
         // If the TTFs have already been plotted it will use the previous layer.
         function responseFunction(response) {
             var ttfs = [];
+            var approachCounts = {};
             for (var i = 0; i < response.ttfs.length; i++) {
                 let ttf = response.ttfs[i];
-
+                if (!(ttf.flightId in approachCounts)) {
+                    approachCounts[ttf.flightId] = 0;
+                }
+                ttf.approachn = ++approachCounts[ttf.flightId];
                 ttfs.push(ttf);
                 thisTTF.plotTTF(ttf);
             }
