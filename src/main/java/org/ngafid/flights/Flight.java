@@ -2131,7 +2131,7 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (!airframeName.equals("ScanEagle")) {
+        if (!airframeName.equals("ScanEagle") || !airframeName.equals("DJI M600")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
             } catch (MalformedFlightFileException e) {
