@@ -161,6 +161,39 @@ public class DJIFlightProcessor {
         stringTimeSeriesMap.put("UTCOfst", utcOfstSeries);
     }
 
+
+    private String calculateStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
+        DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
+        DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
+        DoubleTimeSeries offsetTime = doubleTimeSeriesMap.get("offsetTime");
+
+        if (dateSeries == null || timeSeries == null) {
+            LOG.log(Level.WARNING, "Could not find GPS(0):Date or GPS(0):Time in time series map");
+            return null;
+        }
+
+        int colCount = 0;
+        while (colCount < dateSeries.size() && colCount < timeSeries.size()) {
+            double date = dateSeries.get(colCount);
+            double time = timeSeries.get(colCount);
+            if (!Double.isNaN(date) && !Double.isNan(time) && date != 0 && time != 0) {
+                SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+                try {
+                    Date parsedDate = dateFormat.parse(String.valueOf(date) + String.valueOf(time));
+                    int currentOffset = (int) (offsetTime.get(colCount) * 1000);
+                    Date newDate = addMilliseconds(parsedDate, -currentOffset);
+
+                    return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(newDate);
+                } catch (ParseException e) {
+                    LOG.log(Level.WARNING, "Could not parse date {0} and time {1} as date", new Object[]{date, time});
+                    return null;
+                }
+            }
+
+            colCount++;
+        }
+    }
+
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
         List<InputStream> inputStreams = new ArrayList<>();
         List<OutputStream> outputStreams = new ArrayList<>();
