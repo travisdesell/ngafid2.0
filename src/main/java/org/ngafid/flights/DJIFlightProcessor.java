@@ -45,11 +45,13 @@ public class DJIFlightProcessor {
                 calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
             } else {
                 String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
-                if (dateTimeStr == null) {
+
+                if (dateTimeStr != null) {
+                    calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
+                } else {
                     flightStatus = "WARNING";
                 }
 
-                calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
             }
         } catch (CsvValidationException e) {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
