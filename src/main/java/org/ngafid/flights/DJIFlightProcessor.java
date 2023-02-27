@@ -40,11 +40,16 @@ public class DJIFlightProcessor {
             readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
             calculateLatLonGPS(connection, doubleTimeSeriesMap);
 
+
             if (attributeMap.containsKey("dateTime")) {
                 calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
             } else {
-                // TODO: Data might have another way of determining the date/time
-                flightStatus = "WARNING";
+                String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
+                if (dateTimeStr == null) {
+                    flightStatus = "WARNING";
+                }
+
+                calculateDateTime(connection, doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
             }
         } catch (CsvValidationException e) {
             throw new FatalFlightFileException("Error parsing CSV file: " + e.getMessage());
@@ -148,8 +153,8 @@ public class DJIFlightProcessor {
 
         Date parsedDate = (new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")).parse(date + " " + time);
         for (int i = 0; i < seconds.size(); i++) {
-            int millseconds = (int) (seconds.get(i) * 1000);
-            Date newDate = addMilliseconds(parsedDate, millseconds);
+            int millis = (int) (seconds.get(i) * 1000);
+            Date newDate = addMilliseconds(parsedDate, millis);
 
             localDateSeries.add(lclDateFormat.format(newDate));
             localTimeSeries.add(lclTimeFormat.format(newDate));
@@ -162,7 +167,7 @@ public class DJIFlightProcessor {
     }
 
 
-    private String calculateStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
+    private static String findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
         DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
         DoubleTimeSeries offsetTime = doubleTimeSeriesMap.get("offsetTime");
@@ -174,12 +179,23 @@ public class DJIFlightProcessor {
 
         int colCount = 0;
         while (colCount < dateSeries.size() && colCount < timeSeries.size()) {
-            double date = dateSeries.get(colCount);
-            double time = timeSeries.get(colCount);
-            if (!Double.isNaN(date) && !Double.isNan(time) && date != 0 && time != 0) {
+            int date = (int) dateSeries.get(colCount); // Date is an integer in the format YYYYMMDD
+            int time = (int) timeSeries.get(colCount);
+
+
+            if (!Double.isNaN(date) && !Double.isNaN(time) && date != 0 && time != 0) {
                 SimpleDateFormat dateFormat = new SimpleDateFormat("yyyyMMddHHmmss");
+
+                String year = String.valueOf(date).substring(0, 4);
+                String month = String.valueOf(date).substring(4, 6);
+                String day = String.valueOf(date).substring(6, 8);
+
+                String hour = String.valueOf(time).substring(0, 2);
+                String minute = String.valueOf(time).substring(2, 4);
+                String second = String.valueOf(time).substring(4, 6);
+
                 try {
-                    Date parsedDate = dateFormat.parse(String.valueOf(date) + String.valueOf(time));
+                    Date parsedDate = dateFormat.parse(year + month + day + hour + minute + second);
                     int currentOffset = (int) (offsetTime.get(colCount) * 1000);
                     Date newDate = addMilliseconds(parsedDate, -currentOffset);
 
@@ -192,6 +208,8 @@ public class DJIFlightProcessor {
 
             colCount++;
         }
+
+        return null;
     }
 
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
