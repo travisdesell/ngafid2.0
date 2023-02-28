@@ -516,16 +516,18 @@ public class CalculateProximity {
                                         //the event
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
-
-                                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                                         System.out.println("Creating event for flight : " + flightId );
-                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
-
+                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        if ( severity > 0) {
+                                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                                            event.setRateOfClosure(rateOfClosure);
+                                            otherEvent.setRateOfClosure(rateOfClosure);
+                                        }
                                         eventList.add(event);
-
                                         //add in an event for the other flight as well so we don't need to recalculate this
-                                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
+                                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                                     }
 
                                     //reset the event values
@@ -552,15 +554,21 @@ public class CalculateProximity {
                     }
                     //System.out.println("\t\tseries matched time on " + totalMatches + " rows");
 
-
                     //if there was an event still going when one flight ended, create it and add it to the list
                     if (startTime != null) {
-                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
-                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
+
+                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+
+                        if ( severity > 0 ) {
+                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                            event.setRateOfClosure(rateOfClosure);
+                            otherEvent.setRateOfClosure(rateOfClosure);
+                        }
                         eventList.add( event );
                         //add in an event for the other flight as well so we don't need to recalculate this
-                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
+                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                     }
                 }
                 //end the loop processing a particular flight

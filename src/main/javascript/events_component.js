@@ -248,20 +248,19 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
-                        const rocButtonStyle = {
-                            height : 10,
-                            width : 10,
-                            display: "inline-block"
-                        }
-                        if (event.eventDefinitionId == -1) { 
+                        if (event.eventDefinitionId == -1) {
+                            var rocPlotData = this.getRocData(event);
+                            console.log("Roc Plot Data")
+                            console.log(rocPlotData)
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
-                            rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} style={styleButton}  onClick={() => this.getRocData(event)}>
-                                <i className="fa fa-area-chart p-1" ></i></button>   );
-                            if(!event.rocPlotVisible){
-                                rocPlot = (<div id={event.id + "-rocPlot"}></div>);
+                            if (rocPlotData != null) {
+                                rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} style={styleButton}  onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                    <i className="fa fa-area-chart p-1" ></i></button>   );
+                                if (!event.rocPlotVisible) {
+                                    rocPlot = (<div id={event.id + "-rocPlot"}></div>);
+                                }
                             }
-
                         }
 
                         return (
@@ -286,65 +285,68 @@ class Events extends React.Component {
 
     }
 
-    getRocData(event){
-        var eventId = event.id;
-        var id = eventId + "-rocPlot";
-
-        if (!event.rocPlotVisible){
-            console.log("Calculating Rate of Closure")
-            var submissionData = {
-                eventId : eventId
-            };
-            $.ajax({
-                type: 'POST',
-                url: '/protected/rate_of_closure',
-                data : submissionData,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-                    var trace = {
-                        x : response.x,
-                        y : response.y,
-                        type : "scatter",
-                        name : eventId + "- Rate of Closure",
-                    }
-                    var layout = {
-                        shapes: [
-                            {
-                                type: 'rect',
-                                x0: 5,
-                                y0: Math.min(...response.y),
-                                x1: response.x.length - 5,
-                                y1: Math.max(...response.y),
-                                fillcolor: '#d3d3d3',
-                                opacity: 0.3,
-                                line: {
-                                    width: 0
-                                }
-                            }],
-
-                        yaxis : {
-                            title:{
-                                text:"Rate of closure"
-                            }
+    displayRateOfClosurePlot(data, event) {
+        var id = event.id + "-rocPlot";
+        if (!event.rocPlotVisible) {
+            var trace = {
+                x : data.x,
+                y : data.y,
+                type : "scatter",
+            }
+            var layout = {
+                shapes: [
+                    {
+                        type: 'rect',
+                        x0: 5,
+                        y0: Math.min(...data.y),
+                        x1: data.x.length - 5,
+                        y1: Math.max(...data.y),
+                        fillcolor: '#d3d3d3',
+                        opacity: 0.3,
+                        line: {
+                            width: 0
                         }
+                    }],
+                yaxis : {
+                    title:{
+                        text:"Rate of closure"
                     }
-
-                    Plotly.newPlot(id, [trace], layout)
-                },
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Rate of closure ", errorThrown);
-                },
-                async: true
-            })
+                }
+            }
+            Plotly.newPlot(id, [trace], layout)
             event.rocPlotVisible = true
             $("#"+id).show();
-        }else {
+        } else {
             event.rocPlotVisible = false;
             $("#"+id).hide();
         }
-    }
+    };
+
+
+    getRocData(event) {
+        var eventId = event.id;
+        var rocPlotData = null;
+        console.log("Calculating Rate of Closure")
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/rate_of_closure',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("in ajax call : ");
+                console.log(response);
+                rocPlotData =  response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Rate of closure ", errorThrown);
+            },
+            async: false
+        })
+        return rocPlotData;
+    };
 
 }
 
