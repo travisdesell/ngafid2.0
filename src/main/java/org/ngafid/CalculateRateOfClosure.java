@@ -86,6 +86,7 @@ public class CalculateRateOfClosure {
 
         double previousDistance = calculateDistance(flightInfo.latitude[flightInfo.startLine-1], flightInfo.longitude[flightInfo.startLine-1],
                 otherInfo.latitude[otherInfo.startLine-1], otherInfo.longitude[otherInfo.startLine-1], flightInfo.altitudeMSL[flightInfo.startLine-1], otherInfo.altitudeMSL[otherInfo.startLine-1]);
+
         int startLine = flightInfo.startLine;
         int endLine = flightInfo.endLine;
         int otherStartLine = otherInfo.startLine;
@@ -94,8 +95,10 @@ public class CalculateRateOfClosure {
         endLine = (endLine + 5) < flightInfo.epochTime.length ? (endLine + 5) : endLine;
         otherStartLine = (otherStartLine - 5) > 0 ? (otherStartLine - 5) : 0;
         otherEndLine = (otherEndLine + 5) < otherInfo.epochTime.length ? (otherEndLine + 5) : otherEndLine;
+
         double rateOfClosure[] = new double[endLine - startLine];
         int i = startLine, j = otherStartLine, index = 0;
+
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
                 i++;
@@ -131,7 +134,7 @@ public class CalculateRateOfClosure {
             Connection connection = Database.getConnection();
             String queryString = "select  e.flight_id as flight_id, e.other_flight_id as otherFlightId, e.severity as severity ,e.fleet_id as fleet_id," +
                     " e.start_line as startLine, e.end_line as endLine, e.id as eventId from events as e " +
-                    " where e.event_definition_id = -1 and e.id not in (select event_id from rate_of_closure)";
+                    " where e.event_definition_id = -1 and severity > 0 and e.id not in (select event_id from rate_of_closure)";
             PreparedStatement query = connection.prepareStatement(queryString);
             ResultSet resultSet = query.executeQuery();
             while (resultSet.next()) {

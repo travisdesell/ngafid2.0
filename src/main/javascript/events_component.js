@@ -297,7 +297,6 @@ class Events extends React.Component {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
                                 }
                             }
-
                         }
                         console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
                         console.log("Flight id " + event.flightId);
