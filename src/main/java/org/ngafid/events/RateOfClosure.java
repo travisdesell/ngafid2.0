@@ -30,7 +30,7 @@ public class RateOfClosure {
         this.size = this.rateOfClosureArray.length;
     }
 
-    public RateOfClosure(Connection connection, ResultSet resultSet) {
+    public RateOfClosure(ResultSet resultSet) {
 
         try {
             Blob values = resultSet.getBlob(1);
@@ -39,7 +39,6 @@ public class RateOfClosure {
             values.free();
             this.rateOfClosureArray = Compression.inflateDoubleArray(bytes, size);
             this.size = this.rateOfClosureArray.length;
-
         } catch (SQLException e) {
             throw new RuntimeException(e);
         } catch (IOException e) {
@@ -48,7 +47,7 @@ public class RateOfClosure {
 
     }
 
-    public void updateDatabase(Connection connection ,int eventId){
+    public void updateDatabase(Connection connection ,int eventId) {
         try {
             byte blobBytes[] = Compression.compressDoubleArray(this.rateOfClosureArray);
             Blob rateOfClosureBlob = new SerialBlob(blobBytes);
@@ -67,16 +66,18 @@ public class RateOfClosure {
         }
     }
 
-    public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId){
+    public static RateOfClosure getRateOfClosureOfEvent(Connection connection, int eventId) {
         try {
             PreparedStatement query = connection.prepareStatement("select data, size from rate_of_closure where event_id = ?");
             LOG.info(query.toString());
             query.setInt(1, eventId);
             ResultSet resultSet = query.executeQuery();
-            if(resultSet.next()){
-                RateOfClosure rateOfClosure = new RateOfClosure(connection, resultSet);
+            if (resultSet.next()) {
+                RateOfClosure rateOfClosure = new RateOfClosure(resultSet);
                 return rateOfClosure;
             }
+            resultSet.close();
+            query.close();
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
