@@ -89,12 +89,13 @@ public class AirSyncImport {
         return "AS-" + fleetId + "." + aircraftId + "-" + time.getYear() + "-" + time.getMonthValue();
     }
 
-    public void proccess(Connection connection) throws MalformedFlightFileException {
+    public void process(Connection connection) throws MalformedFlightFileException {
         //Ensure there is data to read before proceeding...
         int count = 0;
+        String identifier = getUploadIdentifier(fleetId, aircraftId, this.localDateTimeStart);
+
         if ((count = readCsvData()) > 0) {
             String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
-            String identifier = getUploadIdentifier(fleetId, aircraftId, this.localDateTimeStart);
 
             try {
                 String zipId = aircraftId + ".zip";
@@ -113,6 +114,7 @@ public class AirSyncImport {
 
                     
                 if (file.exists() || file.createNewFile()) {
+                    //TODO: check for uniqueness
                     ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
                     ZipEntry csvEntry = new ZipEntry(csvName);
 
@@ -157,7 +159,11 @@ public class AirSyncImport {
                 AirSync.crashGracefully(e);
 			}
         } else {
-            throw new MalformedFlightFileException("Unable to read data from the provided AirSync upload for AirSync Aircraft id: " + aircraftId + " for flight: " + origin + " to " + destination + " at " + timeStart);
+            try {
+                addErrorFlight(connection, identifier);
+            } catch (SQLException se) {
+                se.printStackTrace();
+            }
         }
     }
 
@@ -388,8 +394,7 @@ public class AirSyncImport {
 
             this.data = is.readAllBytes();
         } catch (Exception e) {
-            e.printStackTrace();
-
+            AirSync.logFile.println("ERROR: Unable to read fileUrl for aircraftId " + this.aircraftId + ": " + fileUrl);
             return -1;
         }
 
