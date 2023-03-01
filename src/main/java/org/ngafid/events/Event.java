@@ -212,7 +212,7 @@ public class Event {
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
             if (resultSet.next()) {
                 int eventId = resultSet.getInt(1);
-                if (this.rateOfClosure != null){
+                if (this.rateOfClosure != null) {
                     this.rateOfClosure.updateDatabase(connection, eventId);
 
                 }

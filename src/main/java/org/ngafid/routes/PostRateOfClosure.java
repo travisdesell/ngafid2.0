@@ -26,7 +26,7 @@ public class PostRateOfClosure implements Route {
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
             this.y = rateOfClosure.getRateOfClosureArray();
-            for(int i = 0; i < rateOfClosure.getSize();i++){
+            for (int i = 0; i < rateOfClosure.getSize(); i++) {
                 x[i] = i;
             }
         }
@@ -44,7 +44,7 @@ public class PostRateOfClosure implements Route {
                 String output = gson.toJson(rocData);
                 return output;
             }
-        } catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
