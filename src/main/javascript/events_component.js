@@ -250,12 +250,10 @@ class Events extends React.Component {
                         let rocPlot = "";
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRocData(event);
-                            console.log("Roc Plot Data")
-                            console.log(rocPlotData)
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
                             if (rocPlotData != null) {
-                                rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} style={styleButton}  onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
                                     <i className="fa fa-area-chart p-1" ></i></button>   );
                                 if (!event.rocPlotVisible) {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
@@ -336,8 +334,6 @@ class Events extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("in ajax call : ");
-                console.log(response);
                 rocPlotData =  response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
