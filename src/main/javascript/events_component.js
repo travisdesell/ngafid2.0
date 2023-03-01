@@ -283,10 +283,9 @@ class Events extends React.Component {
                         let zoomToCesiumEntityBtn = "";
                         let eventMetaDataText = "";
                         var eventMetaData = this.getEventMetaData(event.id);
-
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
-                            
+
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
 
