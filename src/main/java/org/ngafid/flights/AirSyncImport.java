@@ -76,6 +76,8 @@ public class AirSyncImport {
             if (resultSet.next()) {
                 AIRSYNC_UPLOADER_ID = resultSet.getInt(1);
             }
+
+            query.close();
         }
 
         return AIRSYNC_UPLOADER_ID;
@@ -174,6 +176,8 @@ public class AirSyncImport {
         query.setString(1, identifier);
 
         query.executeUpdate();
+
+        query.close();
     }
 
     //public String getMd5Hash() {
@@ -248,6 +252,8 @@ public class AirSyncImport {
             query.setInt(7, this.uploadId);
 
             query.executeUpdate();
+
+            query.close();
         } else {
             sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             
@@ -282,6 +288,8 @@ public class AirSyncImport {
             if (resultSet.next()) {
                 this.uploadId = resultSet.getInt(1);
             }
+
+            query.close();
         }
     }
 
@@ -328,6 +336,7 @@ public class AirSyncImport {
             uploads.add(u);
         }
 
+        query.close();
         return uploads;
     }
 
@@ -345,6 +354,8 @@ public class AirSyncImport {
         if (resultSet.next()) {
             return resultSet.getInt(1);
         }
+
+        query.close();
 
         return -1;
     }
@@ -366,6 +377,8 @@ public class AirSyncImport {
             imports.add(new AirSyncImportResponse(fleetId, resultSet));
         }
 
+        query.close();
+
         return imports;
     }
 
@@ -382,6 +395,8 @@ public class AirSyncImport {
         if (resultSet.next()) {
             return resultSet.getInt(1);
         }
+
+        query.close();
 
         return -1;
     }
