@@ -15,6 +15,6 @@ export RUNWAYS_FILE=$NGAFID_DATA_FOLDER/runways/runways_parsed.csv
 export MUSTACHE_TEMPLATE_DIR=$NGAFID_REPO/src/main/resources/public/templates/
 export SPARK_STATIC_FILES=$NGAFID_REPO/src/main/resources/public/
 export NGAFID_EMAIL_INFO=$NGAFID_REPO/email_info
-export NGAFID_ADMIN_EMAILS="ritchie@rit.edu"
+export NGAFID_ADMIN_EMAILS="apl1341@rit.edu"
 export NGAFID_BACKUP_DIR=/data/d2s2_lab/ngafid_backups/system
 export NGAFID_BACKUP_TABLES="user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters event_annotations string_series_names data_type_names flight_tags sim_aircraft uploads"

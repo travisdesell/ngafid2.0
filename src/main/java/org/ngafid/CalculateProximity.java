@@ -38,8 +38,7 @@ import org.ngafid.filters.Pair;
 
 import org.ngafid.airports.Airports;
 
-import static org.ngafid.flights.Parameters.PARAM_LATITUDE;
-import static org.ngafid.flights.Parameters.PARAM_LONGITUDE;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 public class CalculateProximity {
 

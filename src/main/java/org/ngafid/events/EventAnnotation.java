@@ -21,7 +21,7 @@ import org.ngafid.accounts.User;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.GeneratedCSVWriter;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class is used for creating event annotations in the NGAFID
