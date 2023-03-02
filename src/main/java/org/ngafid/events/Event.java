@@ -14,6 +14,7 @@ import java.util.logging.Logger;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.ngafid.flights.Airframes;
 
@@ -147,6 +148,10 @@ public class Event {
         return startLine;
     }
 
+    public int getId() {
+        return id;
+    }
+
     public String getStartTime() {
         return startTime;
     }
@@ -161,6 +166,10 @@ public class Event {
 
     public int getDuration() {
         return (endLine - startLine) + 1;
+    }
+
+    public int getEventDefinitionId() {
+        return this.eventDefinitionId;
     }
 
     public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId) throws SQLException {
@@ -234,6 +243,23 @@ public class Event {
         }
     }
 
+    public static Event getEvent(Connection connection, int eventId) throws SQLException {
+        String sql = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE id = ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, eventId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        Event event = null;
+
+        if (resultSet.next()) {
+            event = new Event(resultSet);
+        }
+
+        return event;
+    }
+
     /**
      * Gets all of the event from the database for a given flight.
      *
@@ -251,6 +277,66 @@ public class Event {
         ResultSet resultSet = preparedStatement.executeQuery();
 
         ArrayList<Event> allEvents = new ArrayList<Event>();
+        while (resultSet.next()) {
+            allEvents.add(new Event(resultSet));
+        }
+        resultSet.close();
+        preparedStatement.close();
+
+        return allEvents;
+    }
+
+    /**
+     * Gets all of the event from the database for a given fleet and {@link EventDefinition}.
+     *
+     * @param connection is the connection to the database.
+     * @param fleetId the id of the fleet for the event list.
+     * @param eventDefinitionId the event def id
+     *
+     * @return an array list of all events in the database for the given flight id.
+     */
+    public static List<Event> getAll(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
+        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE fleet_id = ? AND event_definition_id = ? ORDER BY start_time";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setInt(2, eventDefinitionId);
+
+        LOG.info(preparedStatement.toString());
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        List<Event> allEvents = new ArrayList<Event>();
+        while (resultSet.next()) {
+            allEvents.add(new Event(resultSet));
+        }
+        resultSet.close();
+        preparedStatement.close();
+
+        return allEvents;
+    }
+
+    /**
+     * Gets all of the event from the database for a given flight, fleet and {@link EventDefinition}.
+     *
+     * @param connection is the connection to the database.
+     * @param fleetId the id of the fleet for the event list.
+     * @param flightId the id of the flight for the event list.
+     * @param eventDefinitionId the event def id
+     *
+     * @return an array list of all events in the database for the given flight id.
+     */
+    public static List<Event> getAll(Connection connection, int fleetId, int flightId, int eventDefinitionId) throws SQLException {
+        String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ? ORDER BY start_time";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setInt(2, flightId);
+        preparedStatement.setInt(3, eventDefinitionId);
+
+        LOG.info(preparedStatement.toString());
+        ResultSet resultSet = preparedStatement.executeQuery();
+
+        List<Event> allEvents = new ArrayList<Event>();
         while (resultSet.next()) {
             allEvents.add(new Event(resultSet));
         }

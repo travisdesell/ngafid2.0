@@ -60,8 +60,9 @@ import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.calculations.*;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -121,6 +122,10 @@ public class Flight {
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
+    //
+    public static final String WARNING = "WARNING";
+    public static final String SUCCESS = "SUCCESS";
+    public static final String ERROR = "ERROR";
 
     private long processingStatus = 0;
 
@@ -135,8 +140,8 @@ public class Flight {
     //the tags associated with this flight
     private List<FlightTag> tags = null;
 
-    private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
-    private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
+    private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
+    private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private HashMap<String, Double> calculationCriticalValues;
 
@@ -249,7 +254,7 @@ public class Flight {
         }
     }
 
-    public List<String> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException, SQLException {
+    public List<String> checkCalculationParameters(String [] seriesNames) throws SQLException {
         List<String> missingParams = new ArrayList<>();
 
         for (String param : seriesNames) {
@@ -2290,7 +2295,7 @@ public class Flight {
     // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
     // separate flights.
     public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
-                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection)
+                  Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries, Connection connection)
             throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.doubleTimeSeries = doubleTimeSeries;
         this.stringTimeSeries = stringTimeSeries;
@@ -3172,6 +3177,23 @@ public class Flight {
 
     }
 
+    public void updateTail(Connection connection, String tailNumber) throws SQLException {
+        if (this.systemId != null && !this.systemId.isBlank()) {
+            String sql = "INSERT INTO tails(system_id, fleet_id, tail, confirmed) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tail = ?";
+            PreparedStatement query = connection.prepareStatement(sql);
+
+            query.setString(1, this.systemId);
+            query.setInt(2, this.fleetId);
+            query.setString(3, tailNumber);
+            query.setBoolean(4, true);
+            query.setString(5, tailNumber);
+
+            System.out.println(query.toString());
+
+            query.executeUpdate();
+        }
+    }
+
     public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
@@ -3456,5 +3478,17 @@ public class Flight {
         }
 
         printWriter.close();
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setAirframeType(String type) {
+        this.airframeType = type;
+    }
+
+    public void setAirframeTypeID(Integer typeID) {
+        this.airframeTypeId  = typeID;
     }
 }

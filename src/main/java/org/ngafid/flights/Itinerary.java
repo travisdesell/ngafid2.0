@@ -408,6 +408,15 @@ public class Itinerary {
         this.type = type;
     }
 
+    /**
+     * Accessor for the minAltitudeIndex
+     *
+     * @return the minAltitudeIndex, as an int
+     */
+    public int getMinAltitudeIndex() {
+        return this.minAltitudeIndex;
+    }
+
     // method to determine if itinerary stop is a touch and go or go around
     public void determineType(){
         int approachTime = endOfApproach - startOfApproach;

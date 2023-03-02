@@ -88,7 +88,7 @@ public class SendEmail {
         properties.setProperty("mail.smtp.port", "587");
         properties.setProperty("mail.smtp.auth", "true");        
         properties.setProperty("mail.smtp.ssl.protocols", "TLSv1.2");
-
+    
         // Get the default mail session object.
         System.out.println("getting authenticator");
         Authenticator auth = new SMTPAuthenticator();
@@ -115,8 +115,11 @@ public class SendEmail {
             }
 
             // Set Subject: header field
+            subject = "[ngafid.labellanetworks.com]: " + subject;
             message.setSubject(subject);
 
+            body += "\n. This message originated from the NGAFID beta site at https://ngafid.labellanetworks.com. \n";
+            body += "\n If you no longer wish to recieve these emails from the beta site, please message Aidan LaBella at apl@mail.rit.edu.";
             // Now set the actual message
             message.setContent(body, "text/html; charset=utf-8");
 
@@ -134,8 +137,8 @@ public class SendEmail {
         // Recipient's email ID needs to be mentioned.
 
         ArrayList<String> recipients = new ArrayList<String>();
-        recipients.add("tjdvse@rit.edu");
-        recipients.add("travis.desell@gmail.com");
+        recipients.add("apl1341@rit.edu");
+        recipients.add("aidan@labellahome.org");
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
 
