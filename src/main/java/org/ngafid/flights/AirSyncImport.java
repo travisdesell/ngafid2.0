@@ -76,6 +76,8 @@ public class AirSyncImport {
             if (resultSet.next()) {
                 AIRSYNC_UPLOADER_ID = resultSet.getInt(1);
             }
+
+            query.close();
         }
 
         return AIRSYNC_UPLOADER_ID;
@@ -174,6 +176,7 @@ public class AirSyncImport {
         query.setString(1, identifier);
 
         query.executeUpdate();
+        query.close();
     }
 
     //public String getMd5Hash() {
@@ -230,6 +233,8 @@ public class AirSyncImport {
                 latestStartTime = this.localDateTimeUpload;
             }
 
+            query.close();
+
             sql = "UPDATE uploads SET size_bytes = ?, bytes_uploaded = ?, n_valid_flights = ?, n_error_flights = ?, n_warning_flights = ?, start_time = ? WHERE id = ?";
             query = connection.prepareStatement(sql);
 
@@ -251,7 +256,12 @@ public class AirSyncImport {
         } else {
             sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
             
-            query.close();
+            if (!query.isClosed()) {
+                // Make sure we close our resources before 
+                // we proceed with another query.
+                query.close();
+            }
+
             query = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
             //String hash = this.getMd5Hash();
@@ -283,6 +293,8 @@ public class AirSyncImport {
                 this.uploadId = resultSet.getInt(1);
             }
         }
+
+        query.close();
     }
 
     public void createImport(Connection connection, Flight flight) throws SQLException {
@@ -328,6 +340,7 @@ public class AirSyncImport {
             uploads.add(u);
         }
 
+        query.close();
         return uploads;
     }
 
@@ -342,11 +355,13 @@ public class AirSyncImport {
 
         ResultSet resultSet = query.executeQuery();
 
+        int numUploads = -1;
         if (resultSet.next()) {
-            return resultSet.getInt(1);
+            numUploads = resultSet.getInt(1);
         }
 
-        return -1;
+        query.close();
+        return numUploads;
     }
 
     public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition) throws SQLException {
@@ -366,6 +381,7 @@ public class AirSyncImport {
             imports.add(new AirSyncImportResponse(fleetId, resultSet));
         }
 
+        query.close();
         return imports;
     }
 
@@ -379,11 +395,13 @@ public class AirSyncImport {
 
         ResultSet resultSet = query.executeQuery();
 
+        int numImports = -1;
         if (resultSet.next()) {
-            return resultSet.getInt(1);
+            numImports = resultSet.getInt(1);
         }
 
-        return -1;
+        query.close();
+        return numImports;
     }
 
 
