@@ -70,7 +70,7 @@ public class AirSyncFleet extends Fleet {
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
-        if (lastQueryTime == null) {
+        if (this.lastQueryTime == null) {
             String sql = "SELECT last_upload_time FROM airsync_fleet_info WHERE fleet_id = ?";
             PreparedStatement query = connection.prepareStatement(sql);
 
@@ -78,12 +78,16 @@ public class AirSyncFleet extends Fleet {
 
             ResultSet resultSet = query.executeQuery();
 
+            LocalDateTime lastQueryTime = null;
             if (resultSet.next()) {
-                return resultSet.getTimestamp(1).toLocalDateTime();
-            } else return null;
+                lastQueryTime = resultSet.getTimestamp(1).toLocalDateTime();
+            } 
+            
+            query.close();
+            return lastQueryTime;
         }
 
-        return lastQueryTime;
+        return this.lastQueryTime;
     } 
 
     public long getTimeout(Connection connection) throws SQLException {
@@ -102,6 +106,8 @@ public class AirSyncFleet extends Fleet {
                     this.timeout = timeout;
                 }
             }
+
+            query.close();
         }
 
         return timeout;
@@ -122,6 +128,7 @@ public class AirSyncFleet extends Fleet {
         query.setInt(1, super.getId());
 
         query.executeUpdate();
+        query.close();
 
         //Force updating these variables the next time there
         //is a check
@@ -173,7 +180,12 @@ public class AirSyncFleet extends Fleet {
         int asFleetCount = 0;
         if (resultSet.next()) {
             asFleetCount = resultSet.getInt(1);
-        } else return null;
+        } else {
+            query.close();
+            return null;
+        }
+
+        query.close();
 
         if (fleets == null || fleets.length != asFleetCount) {
             sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
@@ -187,6 +199,8 @@ public class AirSyncFleet extends Fleet {
             while (resultSet.next()) {
                 fleets[i++] = new AirSyncFleet(resultSet);
             }
+
+            query.close();
         }
 
         return fleets;

@@ -112,16 +112,17 @@ public class AirSync {
     }
 
     private static long getWaitTime(Connection connection) throws SQLException {
-        String sql = "SELECT MIN(timeout*1000 - (CURRENT_TIMESTAMP - last_upload_time)) AS remaining_time FROM airsync_fleet_info";
+        String sql = "SELECT MIN(timeout - TIMESTAMPDIFF(MINUTE, last_upload_time, CURRENT_TIMESTAMP)) AS remaining_time FROM airsync_fleet_info";
         PreparedStatement query = connection.prepareStatement(sql);
 
         ResultSet resultSet = query.executeQuery();
 
+        long waitTime = DEFAULT_WAIT_TIME;
         if (resultSet.next()) {
-            return 1000 * resultSet.getLong(1);
+            waitTime = 1000 * 60 * resultSet.getLong(1);
         }
 
-        return DEFAULT_WAIT_TIME;
+        return waitTime;
     }
 
     /**
