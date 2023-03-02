@@ -56,17 +56,6 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
-    public Event(String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId, RateOfClosure rateOfClosure) {
-        this.startTime = startTime;
-        this.endTime = endTime;
-        this.startLine = startLine;
-        this.endLine = endLine;
-        this.severity = severity;
-        this.otherFlightId = otherFlightId;
-        this.rateOfClosure = rateOfClosure;
-    }
-
-
     /**
      * Creates an event from a mysql query result
      *
@@ -232,7 +221,7 @@ public class Event {
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
             if (resultSet.next()) {
                 int eventId = resultSet.getInt(1);
-                if (this.rateOfClosure != null){
+                if (this.rateOfClosure != null) {
                     this.rateOfClosure.updateDatabase(connection, eventId);
 
                 }
@@ -466,6 +455,9 @@ public class Event {
         resultSet.close();
 
         return eventsByAirframe;
+    }
+    public void setRateOfClosure(RateOfClosure rateOfClosure) {
+        this.rateOfClosure = rateOfClosure;
     }
 }
 

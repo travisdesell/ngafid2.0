@@ -301,30 +301,30 @@ public class CalculateProximity {
     }
 
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
-                                                        int endLine, int otherStartLine,int otherEndLine ){
+                                                        int endLine, int otherStartLine,int otherEndLine ) {
 
-        double rateOfClosure[] = new double[endLine - startLine];
         double previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
                     otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1], flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
-
+        startLine = (startLine - 5) > 0 ? (startLine - 5) : 0;
+        endLine = (endLine + 5) < flightInfo.epochTime.length ? (endLine + 5) : endLine;
+        otherStartLine = (otherStartLine - 5) > 0 ? (otherStartLine - 5) : 0;
+        otherEndLine = (otherEndLine + 5) < otherInfo.epochTime.length ? (otherEndLine + 5) : otherEndLine;
+        double rateOfClosure[] = new double[endLine - startLine];
         int i = startLine, j = otherStartLine, index = 0;
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
                 i++;
                 continue;
             }
-
             if (otherInfo.epochTime[j] == 0) {
                 j++;
                 continue;
             }
-
             //make sure both iterators are for the same time
             if (flightInfo.epochTime[i] < otherInfo.epochTime[j]) {
                 i++;
                 continue;
             }
-
             if (otherInfo.epochTime[j] < flightInfo.epochTime[i]) {
                 j++;
                 continue;
@@ -515,16 +515,18 @@ public class CalculateProximity {
                                         //the event
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
-
-                                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                                         System.out.println("Creating event for flight : " + flightId );
-                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
-
+                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        if ( severity > 0) {
+                                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                                            event.setRateOfClosure(rateOfClosure);
+                                            otherEvent.setRateOfClosure(rateOfClosure);
+                                        }
                                         eventList.add(event);
-
                                         //add in an event for the other flight as well so we don't need to recalculate this
-                                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
+                                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                                     }
 
                                     //reset the event values
@@ -551,16 +553,21 @@ public class CalculateProximity {
                     }
                     //System.out.println("\t\tseries matched time on " + totalMatches + " rows");
 
-
                     //if there was an event still going when one flight ended, create it and add it to the list
                     if (startTime != null) {
-                        double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
-                        RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
-                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId(), rateOfClosure);
-                        eventList.add( event );
 
+                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+
+                        if ( severity > 0 ) {
+                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                            event.setRateOfClosure(rateOfClosure);
+                            otherEvent.setRateOfClosure(rateOfClosure);
+                        }
+                        eventList.add( event );
                         //add in an event for the other flight as well so we don't need to recalculate this
-                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId, rateOfClosure), otherFlight.getStartDateTime());
+                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                     }
                 }
                 //end the loop processing a particular flight
