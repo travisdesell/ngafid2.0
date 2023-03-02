@@ -102,8 +102,6 @@ public class AirSyncFleet extends Fleet {
                     this.timeout = timeout;
                 }
             }
-
-            query.close();
         }
 
         return timeout;
@@ -124,7 +122,6 @@ public class AirSyncFleet extends Fleet {
         query.setInt(1, super.getId());
 
         query.executeUpdate();
-        query.close();
 
         //Force updating these variables the next time there
         //is a check
@@ -176,10 +173,7 @@ public class AirSyncFleet extends Fleet {
         int asFleetCount = 0;
         if (resultSet.next()) {
             asFleetCount = resultSet.getInt(1);
-        } else {
-            query.close();
-            return null;
-        }
+        } else return null;
 
         if (fleets == null || fleets.length != asFleetCount) {
             sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
@@ -194,8 +188,6 @@ public class AirSyncFleet extends Fleet {
                 fleets[i++] = new AirSyncFleet(resultSet);
             }
         }
-
-        query.close();
 
         return fleets;
     }
