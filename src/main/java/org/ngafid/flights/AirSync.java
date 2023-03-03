@@ -75,7 +75,7 @@ public class AirSync {
 
         if (message.contains("HTTP response code: 40")) {
             LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
-            //authentication.requestAuthorization();
+            authentication.requestAuthorization();
             logFile.println("Got exception at time " + LocalDateTime.now().toString() + ": " + e.getMessage());
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");

@@ -115,38 +115,38 @@ public class AirSyncImport {
                     }
                 }
 
-                ZipOutputStream zipOutputStream = null;
+                ByteArrayOutputStream bos = new ByteArrayOutputStream();
+                ZipOutputStream zipOutputStream = new ZipOutputStream(bos);
 
                 if (file.exists()) {
                     //If the zip archive already exists for this aircraft 
                     //we must take the exisitng archive and append to it
-                    File tempInput = new File(fileName + ".temp");
-                    if (file.renameTo(tempInput))  {
-                        ZipFile input = new ZipFile(tempInput);
-                        zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
-                        
-                        Enumeration<? extends ZipEntry> entries = input.entries();
+                    //File tempInput = new File(fileName + ".temp");
+                    //if (bos.)  {
+                    ZipFile input = new ZipFile(file);
+                    
+                    Enumeration<? extends ZipEntry> entries = input.entries();
 
-                        while (entries.hasMoreElements()) {
-                            ZipEntry entry = entries.nextElement();
+                    while (entries.hasMoreElements()) {
+                        ZipEntry entry = entries.nextElement();
 
-                            zipOutputStream.putNextEntry(entry);
+                        zipOutputStream.putNextEntry(entry);
 
-                            byte [] data = input.getInputStream(entry).readAllBytes();
+                        byte [] data = input.getInputStream(entry).readAllBytes();
 
-                            zipOutputStream.write(data, 0, data.length);
-                            zipOutputStream.closeEntry();
-                        }
-
-                        // We don't need this file anymore, destroy it.
-                        tempInput.delete();
-                        input.close();
+                        zipOutputStream.write(data, 0, data.length);
+                        zipOutputStream.closeEntry();
                     }
+
+                    // We don't need this file anymore, destroy it.
+                    input.close();
+                    //}
 
                 } else if (file.createNewFile()) {
                     //We can write directly to the output stream here since there
                     //is nothing to overwrite
-                    zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
+                    //zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
+                    LOG.info("Creating new zip file: " + file.toURI());
                 } else {
                     LOG.severe("Could not create AirSync zip " + path + ". This should not happen - check your permissions!");
                     return;
@@ -159,6 +159,13 @@ public class AirSyncImport {
 
                 zipOutputStream.closeEntry();
                 zipOutputStream.close();
+
+                //Write to the new file from memory
+                byte [] buf = bos.toByteArray();
+                FileOutputStream fos = new FileOutputStream(file);
+
+                fos.write(buf);
+                fos.close();
 
                 // The identifier of any AirSync upload will be unique! 
                 // NOTE: multiple imports will reside in one upload.
