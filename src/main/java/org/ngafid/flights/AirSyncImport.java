@@ -103,7 +103,8 @@ public class AirSyncImport {
                 String zipId = aircraftId + ".zip";
                 String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/"/* we will use this instead of the user id */ + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
 
-                File file = new File(path + "/" + zipId);
+                String fileName = path + "/" + zipId;
+                File file = new File(fileName);
 
                 if (file.exists()) {
                     LOG.info(String.format("Found file for aircraft %d and parent (date) %s", aircraftId, path));
@@ -114,28 +115,54 @@ public class AirSyncImport {
                     }
                 }
 
-                    
-                if (file.exists() || file.createNewFile()) {
-                    //TODO: check for uniqueness
-                    ZipOutputStream zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
-                    ZipEntry csvEntry = new ZipEntry(csvName);
+                ZipOutputStream zipOutputStream = null;
 
-                    zipOutputStream.putNextEntry(csvEntry);
-                    zipOutputStream.write(this.data, 0, count);
+                if (file.exists()) {
+                    //If the zip archive already exists for this aircraft 
+                    //we must take the exisitng archive and append to it
+                    File tempInput = new File(fileName + ".temp");
+                    if (file.renameTo(tempInput))  {
+                        ZipFile input = new ZipFile(tempInput);
+                        zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
+                        
+                        Enumeration<? extends ZipEntry> entries = input.entries();
 
-                    zipOutputStream.closeEntry();
-                    zipOutputStream.close();
+                        while (entries.hasMoreElements()) {
+                            ZipEntry entry = entries.nextElement();
+
+                            zipOutputStream.putNextEntry(entry);
+
+                            byte [] data = input.getInputStream(entry).readAllBytes();
+
+                            zipOutputStream.write(data, 0, data.length);
+                            zipOutputStream.closeEntry();
+                        }
+
+                        // We don't need this file anymore, destroy it.
+                        tempInput.delete();
+                        input.close();
+                    }
+
+                } else if (file.createNewFile()) {
+                    //We can write directly to the output stream here since there
+                    //is nothing to overwrite
+                    zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
                 } else {
                     LOG.severe("Could not create AirSync zip " + path + ". This should not happen - check your permissions!");
                     return;
                 }
 
+                ZipEntry csvEntry = new ZipEntry(csvName);
+
+                zipOutputStream.putNextEntry(csvEntry);
+                zipOutputStream.write(this.data, 0, count);
+
+                zipOutputStream.closeEntry();
+                zipOutputStream.close();
 
                 // The identifier of any AirSync upload will be unique! 
                 // NOTE: multiple imports will reside in one upload.
                 // Format: AS-<ngafid_fleet_id>.<airsync_aircraft_id>-<UPLOAD_YYYY>-<UPLOAD_MM>
-
-
                 Flight flight = new Flight(fleetId, csvName, new ByteArrayInputStream(this.data), connection);
 
                 if (connection != null) {
