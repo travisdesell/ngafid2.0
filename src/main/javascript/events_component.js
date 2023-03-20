@@ -339,9 +339,9 @@ class Events extends React.Component {
                 shapes: [
                     {
                         type: 'rect',
-                        x0: 5,
+                        x0: 0,
                         y0: Math.min(...data.y),
-                        x1: data.x.length - 5,
+                        x1: data.x.length - 10,
                         y1: Math.max(...data.y),
                         fillcolor: '#d3d3d3',
                         opacity: 0.3,
@@ -351,7 +351,12 @@ class Events extends React.Component {
                     }],
                 yaxis : {
                     title:{
-                        text:"Rate of closure"
+                        text: "Rate of closure (distance in ft)"
+                    }
+                },
+                xaxis : {
+                    title : {
+                        text : "Proximity Event (seconds)"
                     }
                 }
             }
