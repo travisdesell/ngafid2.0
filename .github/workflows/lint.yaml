@@ -1,4 +1,4 @@
-name: Lint Codebase
+name: Format and Lint
 
 on:
   pull_request:
@@ -7,9 +7,23 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  formatting:
+    name: Format
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: axel-op/googlejavaformat-action@v3
+        with:
+          args: "--replace"
+          skip-commit: true
+      - name: Print diffs
+        run: git --no-pager diff --exit-code
+
+  lint:
     name: Lint
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout Code
         uses: actions/checkout@v3
@@ -18,12 +32,15 @@ jobs:
 
       - name: Lint
         uses: github/super-linter@v4
+
         env:
           VALIDATE_ALL_CODEBASE: true
           VALIDATE_JAVA: true
           VALIDATE_JAVASCRIPT_ES: true
           VALIDATE_JSX: true
           VALIDATE_PHP: true
+          IGNORE_GITIGNORED_FILES: true
+
 
 
 
