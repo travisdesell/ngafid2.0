@@ -1,25 +1,10 @@
-name: Format and Lint
+name: Lint
 
 on:
   pull_request:
     branches: [main]
-  push:
-    branches: [main]
 
 jobs:
-  formatting:
-    name: Format
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - uses: axel-op/googlejavaformat-action@v3
-        with:
-          args: "--replace"
-          skip-commit: true
-      - name: Print diffs
-        run: git --no-pager diff --exit-code
-
   lint:
     name: Lint
     runs-on: ubuntu-latest
@@ -40,16 +25,3 @@ jobs:
           VALIDATE_JSX: true
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
-
-
-
-
-
-
-
-
-
-
-
-
-
