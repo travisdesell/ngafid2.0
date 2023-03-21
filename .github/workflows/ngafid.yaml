@@ -9,6 +9,10 @@ jobs:
         runs-on: ubuntu-latest
 
         steps:
+            - name: Setup DAT Importing
+              run: |
+                sh setup_dat_importing.sh
+
             - uses: actions/checkout@v3
             - name: Setup JDK 11
               uses: actions/setup-java@v3
