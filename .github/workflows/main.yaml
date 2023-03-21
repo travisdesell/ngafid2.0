@@ -16,9 +16,10 @@ jobs:
           java-version: 11
           distribution: 'adopt'
 
-      - name: Maven Build
-        run: |
-          mvn install:install-file initialize -Dfile=src/main/resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+      - name: Setup DAT2CSV
+        run: mvn install:install-file initialize -Dfile=src/main/resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+
+      - name: Maven Compile
           mvn clean compile -DskipTests
 
       - name: Maven Test
