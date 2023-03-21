@@ -11,9 +11,8 @@ jobs:
     steps:
       - name: Run DAT Import
         run: |
-          pwd
-            ls -l
-          sh setup_dat_importing.sh
+          mvn install:install-file initialize -Dfile=src/main/resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
+
 
 
       - uses: actions/checkout@v3
