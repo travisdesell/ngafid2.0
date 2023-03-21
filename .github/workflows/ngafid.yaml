@@ -16,6 +16,14 @@ jobs:
           java-version: 11
           distribution: 'adopt'
 
+      - name: Cache Maven packages
+        uses: actions/cache@v2
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
       - name: Setup DAT2CSV
         run: mvn install:install-file initialize -Dfile=src/main/resources/DAT2CSV-1.0.jar -DgroupId=org.ngafid -DartifactId=dat2csv -Dpackaging=jar -Dversion=1.0
 
@@ -25,10 +33,4 @@ jobs:
       - name: Maven Test
         run: mvn test
 
-      - name: Cache Maven packages
-        uses: actions/cache@v2
-        with:
-          path: ~/.m2
-          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+
