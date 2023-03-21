@@ -1,0 +1,36 @@
+name: Lint Codebase
+
+on:
+  [pull_request, push]:
+    branches: [main]
+
+jobs:
+  build:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Lint
+        uses: github/super-linter@v4
+        env:
+          VALIDATE_ALL_CODEBASE: true
+          VALIDATE_JAVA: true
+          VALIDATE_JAVASCRIPT_ES: true
+          VALIDATE_JSX: true
+          VALIDATE_PHP: true
+
+
+
+
+
+
+
+
+
+
+
+
