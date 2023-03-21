@@ -12,6 +12,8 @@ jobs:
       - name: Run DAT Import
         run: |
           pwd
+            ls -l
+          sh setup_dat_importing.sh
 
 
       - uses: actions/checkout@v3
