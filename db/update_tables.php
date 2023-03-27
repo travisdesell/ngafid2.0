@@ -198,4 +198,8 @@ if ($update_email_settings) {
     query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;";
 }
 
+$update_system_id_length = true;
+if ($update_system_id_length) {
+    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24);
+}
 ?>
