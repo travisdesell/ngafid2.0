@@ -2,6 +2,7 @@ package org.ngafid;
 
 
 
+import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
@@ -10,12 +11,16 @@ import spark.Service;
 
 import java.io.InputStream;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+
+import static org.ngafid.SendEmail.sendAdminEmails;
 
 /**
  * The entry point for the NGAFID web server.
@@ -54,6 +59,12 @@ public final class WebServer {
             System.exit(1);
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
+            LOG.info(message);
+            sendAdminEmails(message, "");
+        }));
     }
 
     /** 
@@ -259,6 +270,9 @@ public final class WebServer {
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
         Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
 
+        // Routes for downloading files
+        Spark.get("/protected/download_upload", new GetUpload(gson));
+
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
@@ -279,6 +293,16 @@ public final class WebServer {
 
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
+
+        Spark.exception(Exception.class, (exception, request, response) -> {
+            String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
+                                                .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
+                                                .append(".\n The exception was: ").append(exception.getMessage()).append("\n")
+                                                .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
+
+            LOG.severe("Exception occurred: " + exception.getMessage());
+            sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
+        });
 
         LOG.info("NGAFID WebServer initialization complete.");
     }

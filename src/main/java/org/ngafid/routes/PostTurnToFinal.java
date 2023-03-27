@@ -13,7 +13,7 @@ import org.ngafid.accounts.User;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.TurnToFinal;
+import org.ngafid.flights.calculations.TurnToFinal;
 import spark.*;
 
 import javax.xml.crypto.Data;

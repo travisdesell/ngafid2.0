@@ -19,6 +19,7 @@ public class SendEmail {
     private static String password;
     private static String username;
     private static ArrayList<String> adminEmails;
+    private static boolean emailEnabled = true;
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
@@ -67,9 +68,9 @@ public class SendEmail {
             } else {
                 bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
 
-                username = bufferedReader.readLine();
+                String username = bufferedReader.readLine();
 
-                if (username.startsWith("#")) {
+                if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
                 } else {
                     password = bufferedReader.readLine();
@@ -79,7 +80,6 @@ public class SendEmail {
                 //Don't remove this!
                 bufferedReader.close();
             }
-
         } catch (IOException e) {
             System.err.println("Error reading from NGAFID_EMAIL_INFO: '" + NGAFID_EMAIL_INFO + "'");
             e.printStackTrace();
@@ -101,8 +101,22 @@ public class SendEmail {
         }
     }
 
+    /**
+     * Wrapper for sending an email to NGAFID admins
+     * @param subject - subject of the email
+     * @param body - body of the email
+     */
+    public static void sendAdminEmails(String subject, String body) {
+        sendEmail(adminEmails, new ArrayList<>(), subject, body);
+    }
+
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
         SMTPAuthenticator auth = new SMTPAuthenticator();
+
+        if (!emailEnabled) {
+            System.out.println("Emailing has been disabled, not sending email");
+            return;
+        }
 
         if (auth.isValid()) {
             System.out.println("emailing to " + String.join(", ", toRecipients));
