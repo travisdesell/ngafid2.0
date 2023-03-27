@@ -2,7 +2,7 @@ package org.ngafid;
 
 import org.ngafid.events.Event;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.TurnToFinal;
+import org.ngafid.flights.calculations.TurnToFinal;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.NIFA;
 

@@ -60,8 +60,9 @@ import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.calculations.*;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -249,7 +250,7 @@ public class Flight {
         }
     }
 
-    public List<String> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException, SQLException {
+    public List<String> checkCalculationParameters(String [] seriesNames) throws SQLException {
         List<String> missingParams = new ArrayList<>();
 
         for (String param : seriesNames) {
@@ -2131,7 +2132,7 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (!airframeName.equals("ScanEagle")) {
+        if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
             } catch (MalformedFlightFileException e) {
