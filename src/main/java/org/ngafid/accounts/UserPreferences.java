@@ -2,7 +2,7 @@ package org.ngafid.accounts;
 
 import java.util.List;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 public class UserPreferences {
     private int userId, decimalPrecision;
