@@ -20,6 +20,7 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.ngafid.flights.*;
+import org.ngafid.flights.calculations.TurnToFinal;
 
 public class CalculateTTF {
     private static Connection connection = Database.getConnection();
