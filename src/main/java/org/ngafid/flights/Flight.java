@@ -2132,7 +2132,7 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (!airframeName.equals("ScanEagle")) {
+        if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
             } catch (MalformedFlightFileException e) {
