@@ -26,8 +26,8 @@ public class PostRateOfClosure implements Route {
         public RateOfClosurePlotData(RateOfClosure rateOfClosure) {
             this.x = new int[rateOfClosure.getSize()];
             this.y = rateOfClosure.getRateOfClosureArray();
-            for (int i = 0; i < rateOfClosure.getSize(); i++) {
-                x[i] = i;
+            for (int i = -5; i < rateOfClosure.getSize() - 5; i++) {
+                x[i+5] = i;
             }
         }
     }
