@@ -311,7 +311,7 @@ class Events extends React.Component {
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
-
+                                    {rateOfClosureBtn} {rocPlot}
                                 </button>
 
                                 {eventAnnotations}
