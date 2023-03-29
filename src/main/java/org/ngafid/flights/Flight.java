@@ -1870,7 +1870,8 @@ public class Flight {
                                 airframeName.equals("Beechcraft A36/G36") ||
                                 airframeName.equals("Beechcraft G58")) {
                             airframeType = "Fixed Wing";
-                        } else if (airframeName.equals("R44")) {
+                        } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
+                            airframeName = "R44";
                             airframeType = "Rotorcraft";
                         } else {
                             System.err.println("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
@@ -1913,6 +1914,8 @@ public class Flight {
         } else {
             //the next line is the column data types
             String dataTypesLine = bufferedReader.readLine();
+            if (dataTypesLine.length() == 0) dataTypesLine = bufferedReader.readLine(); //handle windows files with carriage returns
+
             if (dataTypesLine.charAt(0) != '#')
                 throw new FatalFlightFileException("Second line of the flight file should begin with a '#' and contain column data types.");
             dataTypesLine = dataTypesLine.substring(1);
@@ -1922,6 +1925,8 @@ public class Flight {
 
             //the next line is the column headers
             String headersLine = bufferedReader.readLine();
+            if (headersLine.length() == 0) headersLine = bufferedReader.readLine(); //handle windows files with carriage returns
+
             System.out.println("Headers line is: " + headersLine);
             headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
             headers.replaceAll(String::trim);
@@ -1948,6 +1953,11 @@ public class Flight {
         String line;
         String lastWarning = "";
         while ((line = bufferedReader.readLine()) != null) {
+            if (line.length() == 0) {
+                line = bufferedReader.readLine(); //handle windows files with carriage returns
+                if (line == null) break;
+            }
+
 
             if (line.contains("Lcl Time")) {
                 System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
@@ -2126,7 +2136,7 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (!airframeName.equals("ScanEagle")) {
+        if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
             } catch (MalformedFlightFileException e) {
