@@ -1,4 +1,4 @@
-package org.ngafid.flights;
+package org.ngafid.flights.calculations;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
@@ -16,7 +16,9 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
+import org.ngafid.flights.*;
+
+import static org.ngafid.flights.calculations.Parameters.*; //eliminates the need to use Parameters.<PARAM>
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
@@ -274,14 +276,14 @@ public class TurnToFinal implements Serializable {
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {
-        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(PARAM_LATITUDE);
-        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(PARAM_LONGITUDE);
-        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_GND_LEVEL);
-        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(PARAM_ALTITUDE_ABOVE_SEA_LEVEL);
-        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(PARAM_ROLL);
-        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(PARAM_GND_SPEED);
-        DoubleTimeSeries stallProbability = flight.getDoubleTimeSeries(PARAM_STALL_PROBABILITY);
-        DoubleTimeSeries locProbability = flight.getDoubleTimeSeries(PARAM_LOSS_OF_CONTROL_PROBABILITY);
+        DoubleTimeSeries latTimeSeries = flight.getDoubleTimeSeries(LAT);
+        DoubleTimeSeries lonTimeSeries = flight.getDoubleTimeSeries(LON);
+        DoubleTimeSeries altTimeSeries = flight.getDoubleTimeSeries(ALT_AGL);
+        DoubleTimeSeries altMSLTimeSeries = flight.getDoubleTimeSeries(ALT_MSL);
+        DoubleTimeSeries rollTimeSeries = flight.getDoubleTimeSeries(ROLL);
+        DoubleTimeSeries velocityTimeSeries = flight.getDoubleTimeSeries(GND_SPD);
+        DoubleTimeSeries stallProbability = flight.getDoubleTimeSeries(STALL_PROBABILITY);
+        DoubleTimeSeries locProbability = flight.getDoubleTimeSeries(LOSS_OF_CONTROL_PROBABILITY);
 
         int flightId = flight.getId();
 
@@ -302,7 +304,7 @@ public class TurnToFinal implements Serializable {
         ArrayList<TurnToFinal> ttfs = new ArrayList<>(itineraries.size());
 
         for (Itinerary it : itineraries) {
-            int to = it.minAltitudeIndex;
+            int to = it.getMinAltitudeIndex();
             if (!it.wasApproach())
                 continue;
 
@@ -414,7 +416,7 @@ public class TurnToFinal implements Serializable {
                     Map.entry(PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE, this.selfDefinedGlideAngle),
                     Map.entry(PARAM_JSON_LATITUDE, this.latitude),
                     Map.entry(PARAM_JSON_LONGITUDE, this.longitude),
-                    Map.entry(PARAM_ALTITUDE_ABOVE_SEA_LEVEL, this.altMSL),
+                    Map.entry(ALT_MSL, this.altMSL),
                     Map.entry("AltAGL", this.altitude),
                     Map.entry("distanceFromRunway", this.distanceFromRunway),
                     Map.entry("flightId", this.flightId),
@@ -423,8 +425,8 @@ public class TurnToFinal implements Serializable {
                     Map.entry("flightStartDate", this.flightStartDate),
                     Map.entry("maxRoll", this.maxRoll),
                     Map.entry("selfDefinedGlidePathDeviations", this.selfDefinedGlidePathDeviations),
-                    Map.entry(PARAM_LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
-                    Map.entry(PARAM_STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
+                    Map.entry(LOSS_OF_CONTROL_PROBABILITY, this.locProbability != null ? this.locProbability : false),
+                    Map.entry(STALL_PROBABILITY, this.stallProbability != null ? this.stallProbability : false))
             );
         }
         catch (IllegalArgumentException _iae) {

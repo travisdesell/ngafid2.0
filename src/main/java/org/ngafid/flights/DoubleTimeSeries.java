@@ -11,6 +11,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 import java.util.zip.Deflater;
@@ -18,9 +19,10 @@ import java.util.zip.Inflater;
 
 import org.ngafid.Database;
 import org.ngafid.common.Compression;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.filters.Pair;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 import javax.sql.rowset.serial.SerialBlob;
 
@@ -524,6 +526,48 @@ public class DoubleTimeSeries {
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;
+    }
+
+    public static int [] getDoubleSeriesColumnIds(Connection connection, EventDefinition eventDefinition) throws SQLException {
+        List<String> columnNames = new ArrayList<String>();
+        columnNames.addAll(eventDefinition.getColumnNames());
+
+        return getDoubleSeriesColumnIds(connection, columnNames);
+    }
+
+    /**
+     * Checks to see if the flight has valid RPM data that the event calculator can work with.
+     *
+     * @param connection the connnection to the database
+     * @param flightId the id of the flight to check data for
+     *
+     * @return a boolean, true if the flight has invalid RPM data, false if it is otherwise valid
+     *
+     * @throws {@link SQLException}
+     */
+    public static boolean flightHasInvalidRPMData(Connection connection, int flightId) throws SQLException {
+        Pair<Double,Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
+        Pair<Double,Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
+
+        return ((minMaxRPM1 == null && minMaxRPM2 == null)  //both RPM values are null, can't calculate exceedence
+                || (minMaxRPM2 == null && (minMaxRPM1 != null && minMaxRPM1.second() < 800)) //RPM2 is null, RPM1 is < 800
+                || (minMaxRPM1 == null && (minMaxRPM2 != null && minMaxRPM2.second() < 800)) //RPM1 is null, RPM2 is < 800
+                || ((minMaxRPM1.second() < 800) && (minMaxRPM2.second() < 800)));   //RPM1 and RPM2 < 800
+    }
+
+    public static int [] getDoubleSeriesColumnIds(Connection connection, List<String> columnNames) throws SQLException {
+        String sql = "SELECT id FROM double_series_names WHERE name IN ('" + String.join("','", columnNames) + "')";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        List<Integer> ids = new ArrayList<>();
+
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            ids.add(resultSet.getInt(1));
+        }
+
+        return ids.stream().mapToInt(Integer::intValue).toArray();
     }
 }
 

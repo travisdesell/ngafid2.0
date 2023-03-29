@@ -2,7 +2,7 @@
 # A simple sh script to backup the NGAFID
 # Author: Aidan LaBella
 
-source <path_to_ngafid2.0_repo>/init_env.sh
+source /ngafid/ngafid2.0/init_env.sh
 
 declare DB_PASSWORD
 declare DB_USERNAME
