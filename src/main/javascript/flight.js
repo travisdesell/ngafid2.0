@@ -524,9 +524,18 @@ class FlightPage extends React.Component {
                     <div id="map" className="map" style={{width:"50%", display:"none"}}></div>
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
-                <br />
-                <CesiumButtons location="Top"></CesiumButtons>
+
                 <div style={style}>
+                    <div className="card mb-1 border-secondary">
+                        <div className="row m-0 p-2">
+                            <div className="col-12">
+                                <div className="float-right">
+                                    <CesiumButtons location="Top"></CesiumButtons>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
                     <FlightsCard
                         parent={this}
                         flights={this.state.flights}
@@ -551,6 +560,16 @@ class FlightPage extends React.Component {
                         clearTags={(flightId) => this.clearTags(flightId)}
                         editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
                     />
+
+                    <div className="card mb-1 border-secondary">
+                        <div className="row m-0 p-2">
+                            <div className="col-12">
+                                <div className="float-right">
+                                    <CesiumButtons location="Bottom"></CesiumButtons>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );

@@ -6,7 +6,7 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-import java.util.ArrayList;
+import java.util.*;
 import java.util.logging.Logger;
 
 public class FlightWarning {
@@ -30,6 +30,23 @@ public class FlightWarning {
         exceptionPreparedStatement.close();
     }
 
+    public static List<FlightWarning> getWarningsByFlight(Connection connection, int flightId) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.id = ? AND flight_warnings.flight_id = flights.id");
+                
+        query.setInt(1, flightId);
+        ResultSet resultSet = query.executeQuery();
+
+        List<FlightWarning> warnings = new ArrayList<FlightWarning>();
+
+        while (resultSet.next()) {
+            warnings.add(new FlightWarning(connection, resultSet));
+        }
+
+        resultSet.close();
+        query.close();
+        return warnings;
+    }
+
     public static ArrayList<FlightWarning> getFlightWarnings(Connection connection, int uploadId) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT flights.filename, flights.upload_id, flight_warnings.id, flight_warnings.message_id, flight_warnings.flight_id FROM flight_warnings, flights WHERE flights.upload_id = ? AND flight_warnings.flight_id = flights.id");
                 
@@ -46,7 +63,7 @@ public class FlightWarning {
         query.close();
         return warnings;
     }
-
+        
     /**
      * @param connection is the connection to the database
      * @param fleetId is the fleet's id

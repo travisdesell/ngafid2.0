@@ -17,6 +17,11 @@ public class Fleet {
     private int id = -1;
     String name;
 
+    public Fleet(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     /**
      * A list of all users who have access (or are requesting access) to this fleet.
      */
@@ -118,11 +123,7 @@ public class Fleet {
 
         if (!resultSet.next()) return null;
 
-        Fleet fleet = new Fleet();
-        fleet.id = id;
-        fleet.name = resultSet.getString(1);
-
-        return fleet;
+        return new Fleet(id, resultSet.getString(1));
     }
 
     /**
@@ -144,11 +145,27 @@ public class Fleet {
 
         if (!resultSet.next()) return null;
 
-        Fleet fleet = new Fleet();
-        fleet.id = resultSet.getInt(1);
-        fleet.name = name;
+        return new Fleet(resultSet.getInt(1), name);
+    }
 
-        return fleet;
+    public static List<Fleet> getAirSyncFleets(Connection connection) {
+        String queryString = "SELECT fleet_id FROM airsync";
+
+        List<Fleet> fleets = new ArrayList<>();
+        
+        try {
+            PreparedStatement ps = connection.prepareStatement(queryString);
+
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                fleets.add(get(connection, rs.getInt(1)));
+            }
+        } catch (SQLException se) {
+            se.printStackTrace();
+        }
+
+        return fleets;
     }
 
     /**
@@ -221,15 +238,19 @@ public class Fleet {
 
         ResultSet resultSet = query.getGeneratedKeys();
 
-        Fleet fleet = new Fleet();
+        Fleet fleet = null;
+
         if (resultSet.next()) {
-            fleet.id = resultSet.getInt(1);
-            fleet.name = name;
+            fleet = new Fleet(resultSet.getInt(1), name);
         } else {
             LOG.severe("Database Error: Could not get id of new fleet from database after insert.");
             throw new AccountException("Database Error", "Could not get id of new fleet from database after insert.");
         }
 
         return fleet;
+    }
+
+    public String toString() {
+        return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
     }
 }

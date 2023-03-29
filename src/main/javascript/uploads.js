@@ -10,6 +10,7 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import { Paginator } from "./paginator_component.js";
 
 import SparkMD5 from "spark-md5";
+import Button from "react-bootstrap/Button";
 
 
 var paused = [];
@@ -25,6 +26,14 @@ class Upload extends React.Component {
         //console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
     }
 
+    downloadUpload() {
+        $("#loading").show();
+        console.log("downloading upload");
+        window.open("/protected/download_upload?uploadId=" + this.props.uploadInfo.id + "&md5Hash=" + this.props.uploadInfo.md5Hash);
+        $("#loading").hide();
+
+    }
+
 
     removeUpload() {
         $("#loading").show();
@@ -32,7 +41,7 @@ class Upload extends React.Component {
         var submissionData = {
             uploadId : this.props.uploadInfo.id,
             md5Hash : this.props.uploadInfo.md5Hash
-        };   
+        };
 
         let thisUpload = this;
 
@@ -57,13 +66,13 @@ class Upload extends React.Component {
                 }
 
                 thisUpload.props.removeUpload(thisUpload.props.uploadInfo);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
                 errorModal.show("Error removing upload", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
     }
 
     confirmRemoveUpload() {
@@ -154,7 +163,8 @@ class Upload extends React.Component {
                     </div>
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
-                    <button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </button>
+                    <Button type="button" className={"btn btn btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-download" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.downloadUpload()}></i> </Button>
+                    <Button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </Button>
 
                 </div>
             </div>
@@ -382,7 +392,7 @@ class UploadsPage extends React.Component {
         var file = uploadInfo.file;
         var position = uploadInfo.position;
 
-        var numberChunks = parseInt(uploadInfo.numberChunks); 
+        var numberChunks = parseInt(uploadInfo.numberChunks);
         var filename = uploadInfo.filename;
         var identifier = uploadInfo.identifier;
 
@@ -517,7 +527,7 @@ class UploadsPage extends React.Component {
             console.log("number files selected: " + this.files.length);
             console.log( this.files );
 
-            if (this.files.length > 0) { 
+            if (this.files.length > 0) {
                 var file = this.files[0];
                 var filename = file.webkitRelativePath || file.fileName || file.name;
 
@@ -530,9 +540,9 @@ class UploadsPage extends React.Component {
                     errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
                 } else {
                     uploadsPage.addUpload(file);
-                }    
-            }    
-        });  
+                }
+            }
+        });
     }
 
     render() {
@@ -552,7 +562,7 @@ class UploadsPage extends React.Component {
 
                     <div className="card mb-1 border-secondary">
                         <div className="p-2">
-                            { 
+                            {
                                 this.state.pending_uploads.length > 0
                                     ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
                                     : ""

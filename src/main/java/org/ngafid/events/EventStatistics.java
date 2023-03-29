@@ -1,27 +1,60 @@
 package org.ngafid.events;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
 import java.time.LocalDate;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.TreeSet;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.ngafid.Database;
+import org.ngafid.accounts.Fleet;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
+
+import spark.utils.StringUtils;
 
 import java.util.logging.Logger;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
 
+    private static final int MIN_VALUE = -999999;
+    private static final int MAX_VALUE = 999999;
+
     public static String getFirstOfMonth(String dateTime) {
         return dateTime.substring(0, 8) + "01";
+    }
+
+    public static void clearAllStatistics(Connection connection, Fleet fleet, EventDefinition eventDefinition) throws SQLException {
+        String sql = "DELETE FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleet.getId());
+        query.setInt(2, eventDefinition.getId());
+
+        query.executeUpdate();
     }
 
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime, double severity, double duration) throws SQLException {
@@ -57,7 +90,7 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId, String startDateTime) throws SQLException {
         //cannot update event statistics if the flight had no startDateTime
         if (startDateTime == null) return;
 
@@ -68,7 +101,7 @@ public class EventStatistics {
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, airframeNameId);
-        preparedStatement.setInt(3, eventId);
+        preparedStatement.setInt(3, eventDefinitionId);
         preparedStatement.setString(4, firstOfMonth);
 
         LOG.info(preparedStatement.toString());
@@ -76,7 +109,7 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
+    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId, String startDateTime) throws SQLException {
         //cannot update event statistics if the flight had no startDateTime
         if (startDateTime == null) return;
 
@@ -87,7 +120,7 @@ public class EventStatistics {
         PreparedStatement preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, airframeNameId);
-        preparedStatement.setInt(3, eventId);
+        preparedStatement.setInt(3, eventDefinitionId);
         preparedStatement.setString(4, firstOfMonth);
 
         LOG.info(preparedStatement.toString());
@@ -95,14 +128,45 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
+    // "struct" that can represent a row of the EventStatistics table
+    private static class EventStatisticsRow {
+        int fleetId, airframeId, eventDefinitionId, flightsWithEvent, totalFlights, totalEvents, durMin, durMax, durSum;
+        Date monthFirstDay;
+        double sevMin, sevMax, sevSum;
+
+        public void insert(Connection connection) throws SQLException {
+            String sql = "INSERT INTO event_statistics(fleet_id, airframe_id, event_definition_id, month_first_day, flights_with_event, total_flights, total_events, min_duration, sum_duration, max_duration, min_severity, sum_severity, max_severity) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)";
+            PreparedStatement query = connection.prepareStatement(sql);
+
+            query.setInt(1, this.fleetId);
+            query.setInt(2, this.airframeId);
+            query.setInt(3, this.eventDefinitionId);
+            query.setDate(4, this.monthFirstDay);
+            query.setInt(5, this.flightsWithEvent);
+            query.setInt(6, this.totalFlights);
+            query.setInt(7, this.totalEvents);
+            query.setInt(8, this.durMin);
+            query.setInt(9, this.durSum);
+            query.setInt(10, this.durMax);
+            query.setDouble(11, this.sevMin);
+            query.setDouble(12, this.sevSum);
+            query.setDouble(13, this.sevMax);
+
+            query.executeUpdate();
+        }
+    }
+
 
     private static class EventRow {
         String rowName;
+        String humanReadable;
 
         int flightsWithoutError;
+        double avgEvents;
+
         int flightsWithEvent;
         int totalEvents;
-        double avgEvents;
+        int processedFlights;
         double avgDuration;
         double minDuration;
         double maxDuration;
@@ -110,6 +174,7 @@ public class EventStatistics {
         double minSeverity;
         double maxSeverity;
 
+        // TODO No longer used?
         int aggFlightsWithoutError;
         int aggFlightsWithEvent;
         int aggTotalEvents;
@@ -126,6 +191,76 @@ public class EventStatistics {
             this.rowName = rowName;
         }
 
+        public static EventRow getNewStatistics(Connection connection, EventDefinition eventDefinition, int fleetId, int uploadId, boolean isGeneric) throws SQLException {
+            EventRow eventRow = new EventRow(eventDefinition.getName());
+            eventRow.humanReadable = eventDefinition.toHumanReadable();
+            int airframeNameId = eventDefinition.getAirframeNameId();
+            int eventId = eventDefinition.getId();
+            PreparedStatement preparedStatement;
+            ResultSet resultSet;
+
+            // Query Strings
+            String flightsProcessedQ = "SELECT count(*) FROM flight_processed JOIN flights ON flights.id = flight_processed.flight_id WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ? AND flights.upload_id = ? " + (!isGeneric ? " AND flights.airframe_id = ?" : "");
+            String flightsWithEventQ = "SELECT count(DISTINCT e.flight_id) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.event_definition_id = ? AND e.fleet_id = ? AND f.upload_id = ? " + (!isGeneric ? " AND f.airframe_id = ? " : "" );
+            String allStatsQ = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ? AND e.event_definition_id = ? " + (!isGeneric ? " AND f.airframe_id = ?" : "");
+
+            // Get number flights processed from this upload and airframe
+            preparedStatement = connection.prepareStatement(flightsProcessedQ);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setInt(2, eventId);
+            preparedStatement.setInt(3, uploadId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            eventRow.processedFlights = resultSet.getInt(1);
+            resultSet.close();
+            preparedStatement.close();
+
+            // Get number flights with event from this upload and airframe
+            preparedStatement = connection.prepareStatement(flightsWithEventQ);
+            preparedStatement.setInt(1, eventId);
+            preparedStatement.setInt(2, fleetId);
+            preparedStatement.setInt(3, uploadId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            eventRow.flightsWithEvent = resultSet.next() ? resultSet.getInt(1) : 0;
+            resultSet.close();
+            preparedStatement.close();
+
+            // Get the rest of the stats for this upload and airframe
+            preparedStatement = connection.prepareStatement(allStatsQ);
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setInt(2, uploadId);
+            preparedStatement.setInt(3, eventId);
+            if (!isGeneric) preparedStatement.setInt(4, airframeNameId);
+
+            resultSet = preparedStatement.executeQuery();
+            eventRow.totalEvents = (resultSet.next() ? resultSet.getInt(1) : 0);
+
+            if (eventRow.totalEvents != 0) {
+                eventRow.minSeverity = resultSet.getDouble(2);
+                eventRow.avgSeverity = resultSet.getDouble(3);
+                eventRow.maxSeverity = resultSet.getDouble(4);
+                eventRow.minDuration = resultSet.getDouble(5);
+                eventRow.avgDuration = resultSet.getDouble(6);
+                eventRow.maxDuration = resultSet.getDouble(7);
+            } else {
+                eventRow.minSeverity = 0;
+                eventRow.avgSeverity = 0;
+                eventRow.maxSeverity = 0;
+                eventRow.minDuration = 0;
+                eventRow.avgDuration = 0;
+                eventRow.maxDuration = 0;
+            }
+            resultSet.close();
+            preparedStatement.close();
+
+            return eventRow;
+        }
+
+        // TODO Remove because not used anymore
         public static EventRow getStatistics(Connection connection, String rowName, int fleetId, int eventId, String extraQuery, int[] extraParams) throws SQLException {
             EventRow eventRow = new EventRow(rowName);
 
@@ -249,6 +384,7 @@ public class EventStatistics {
         }
     }
 
+    // TODO Remove because not used anymore
     private static class AirframeStatistics {
         int eventId;
         String eventName;
@@ -260,6 +396,7 @@ public class EventStatistics {
 
         ArrayList<EventRow> monthStats = new ArrayList<EventRow>();
 
+        // TODO Remove because not used anymore
         AirframeStatistics(Connection connection, EventDefinition eventDefinition, int fleetId) throws SQLException {
             this.eventId = eventDefinition.getId();
             this.eventName = eventDefinition.getName();
@@ -283,7 +420,7 @@ public class EventStatistics {
                 preparedStatement.setInt(2, airframeNameId);
 
                 resultSet = preparedStatement.executeQuery();
-            } 
+            }
             resultSet.next();
 
             totalFlights = resultSet.getInt(1);
@@ -291,7 +428,7 @@ public class EventStatistics {
             resultSet.close();
             preparedStatement.close();
 
-            //get number flights processed 
+            //get number flights processed
             if (airframeNameId == 0) {
                 query = "SELECT count(*) FROM flight_processed WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
                 preparedStatement = connection.prepareStatement(query);
@@ -336,16 +473,79 @@ public class EventStatistics {
             monthStats.add(EventRow.getStatistics(connection, "Overall", fleetId, eventId, "", new int[]{}));
         }
 
+        int uploadID;
+        EventRow eventRow;
+
+        // TODO Remove because not used anymore
+        AirframeStatistics(Connection connection, EventDefinition eventDefinition, int uploadID, int fleetId) throws SQLException {
+            this.eventId = eventDefinition.getId();
+            this.eventName = eventDefinition.getName();
+            this.humanReadable = eventDefinition.toHumanReadable();
+            this.uploadID = uploadID;
+
+            int airframeNameId = eventDefinition.getAirframeNameId();
+            String query;
+            PreparedStatement preparedStatement;
+            ResultSet resultSet;
+
+            // Get number flights processed from this upload and airframe
+            int paramCount = 1;
+            String flightsProcessedQ = "SELECT count(*) FROM flight_processed " + (airframeNameId != 0 ? "INNER JOIN flights ON flights.airframe_id = ? AND flights.id = flight_processed.flight_id " : "") + "WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
+            preparedStatement = connection.prepareStatement(flightsProcessedQ);
+            if (airframeNameId == 0) preparedStatement.setInt(paramCount++, airframeNameId);
+            preparedStatement.setInt(paramCount++, fleetId);
+            preparedStatement.setInt(paramCount++, eventId);
+
+            resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+            processedFlights = resultSet.getInt(1);
+            resultSet.close();
+            preparedStatement.close();
+
+            this.eventRow = new EventRow("Stats");
+            if (airframeNameId == 0) {
+                query = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ?";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setInt(2, uploadID);
+            } else {
+                query = "SELECT count(*), min(e.severity), avg(e.severity), max(e.severity), min(e.end_time - e.start_time), avg(e.end_time - e.start_time), max(e.end_time - e.start_time) FROM events AS e JOIN flights AS f ON e.flight_id = f.id WHERE e.fleet_id = ? AND f.upload_id = ? AND f.airframe_id = ?";
+                preparedStatement = connection.prepareStatement(query);
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setInt(2, uploadID);
+                preparedStatement.setInt(3, airframeNameId);
+            }
+            resultSet = preparedStatement.executeQuery();
+            this.eventRow.totalEvents = (resultSet.next() ? resultSet.getInt(1) : 0);
+
+            if (this.eventRow.totalEvents != 0) {
+                this.eventRow.minSeverity = resultSet.getDouble(2);
+                this.eventRow.avgSeverity = resultSet.getDouble(3);
+                this.eventRow.maxSeverity = resultSet.getDouble(4);
+                this.eventRow.minDuration = resultSet.getDouble(5);
+                this.eventRow.avgDuration = resultSet.getDouble(6);
+                this.eventRow.maxDuration = resultSet.getDouble(7);
+            } else {
+                this.eventRow.minSeverity = 0;
+                this.eventRow.avgSeverity = 0;
+                this.eventRow.maxSeverity = 0;
+                this.eventRow.minDuration = 0;
+                this.eventRow.avgDuration = 0;
+                this.eventRow.maxDuration = 0;
+            }
+            resultSet.close();
+            preparedStatement.close();
+        }
     }
 
-    int airframeNameId;
-    String airframeName;
+    // TODO Remove OLD...
     ArrayList<AirframeStatistics> events;
-
     public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId) throws SQLException {
         this.airframeNameId = airframeNameId;
         this.airframeName = airframeName;
         events = new ArrayList<>();
+
+        LOG.info("Accidentally entered old stuff");
 
         ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection, "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[]{airframeNameId,  fleetId});
 
@@ -356,6 +556,41 @@ public class EventStatistics {
         }
     }
 
+
+    int airframeNameId;
+    String airframeName;
+    int totalFlights;
+    ArrayList<EventRow> eventRows;
+
+    public EventStatistics(Connection connection, int uploadID, int airframeNameId, String airframeName, int fleetID) throws SQLException {
+        this.airframeNameId = airframeNameId;
+        this.airframeName = airframeName;
+        ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection, "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[]{airframeNameId,  fleetID});
+        PreparedStatement preparedStatement;
+        ResultSet resultSet;
+
+        // Get number of flights from this upload and airframe
+        String totFlightsQ = "SELECT count(*) FROM flights WHERE fleet_id = ? AND upload_id = ? " + (airframeNameId != 0 ? "AND airframe_id = ?" : "");
+        preparedStatement = connection.prepareStatement(totFlightsQ);
+        preparedStatement.setInt(1, fleetID);
+        preparedStatement.setInt(2, uploadID);
+        if (airframeNameId != 0) preparedStatement.setInt(3, airframeNameId);
+
+        LOG.info(preparedStatement.toString());
+        resultSet = preparedStatement.executeQuery();
+        resultSet.next();
+        totalFlights = resultSet.getInt(1);
+        resultSet.close();
+        preparedStatement.close();
+
+        // Calculate stats of individual events
+        eventRows = new ArrayList<>();
+        for (EventDefinition ed : eventDefinitions) {
+            eventRows.add(EventRow.getNewStatistics(connection, ed, fleetID, uploadID, airframeNameId == 0));
+        }
+    }
+
+    // TODO Not used anymore?
     public static ArrayList<EventStatistics> getAll(Connection connection, int fleetId) throws SQLException {
         String query = "SELECT id, airframe FROM airframes INNER JOIN fleet_airframes ON airframes.id = fleet_airframes.airframe_id WHERE fleet_airframes.fleet_id = ? ORDER BY airframe";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -1061,6 +1296,367 @@ public class EventStatistics {
         }
 
         return eventCounts;
+    }
+
+    public static LocalDate getEarliestMonth(Connection connection, int fleetId, int eventDefinitionId) throws SQLException {
+        String sql = "SELECT MIN(month_first_day) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleetId);
+        query.setInt(2, eventDefinitionId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        LocalDate earliest = null;
+        if (resultSet.next()) {
+            Date date = resultSet.getDate(1);
+
+            if (date != null) {
+                earliest = date.toLocalDate();
+            }
+        }
+
+        return earliest;
+    }
+
+    public static void clearMonthStatistics(Connection connection, LocalDate month, int fleetId, int eventDefinitionId) throws SQLException {
+        String sql = "DELETE FROM event_statistics WHERE month_first_day = ? AND fleet_id = ? AND event_definition_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setDate(1, Date.valueOf(month));
+        query.setInt(2, fleetId);
+        query.setInt(3, eventDefinitionId);
+        
+        query.executeUpdate();
+    }
+
+    /**
+     * Gets the total number of VALID flights in a month. A valid flight is defined as one with non-null RPM data, 
+     * non-null {@link org.ngafid.flights.DoubleTimeSeries} columns, and non-null date and time {@link org.ngafid.flights.StringTimeSeries} data.
+     *
+     * @param connection the database connection
+     * @param row is the EventStatisticsRow that should already contain the fleetId, event def id and airframe id
+     * @param month the current month to get the count for -- this MUST be the first of such month
+     * @param tsColumnIds are the ids of the DoubleTimeSeries columns that constitute a valid flight
+     *
+     * @throws SQLException should there be an issue with the query
+     */
+    public static void calculateTotalNumberOfFlights(Connection connection, EventStatisticsRow row, LocalDate month, int ... tsColumnIds) throws SQLException {
+        final LocalDate nextMonth = month.plusMonths(1);
+        String sql = "SELECT id FROM flights WHERE start_time >= ? AND start_time < ? AND fleet_id = ? " + (row.airframeId > 0 ? (" AND airframe_id = " + row.airframeId) : "");
+
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setDate(1, Date.valueOf(month));
+        query.setDate(2, Date.valueOf(nextMonth));
+        query.setInt(3, row.fleetId);
+
+        //LOG.info("Getting flights count with query:");
+        //LOG.info(query.toString());
+
+        int sum = 0;
+
+        ResultSet rs = query.executeQuery();
+        while (rs.next()) {
+            int flightId = rs.getInt(1);
+
+            if (checkFlight(connection, flightId, row.airframeId, tsColumnIds)) {
+                sum++;
+            }
+        }
+
+        row.totalFlights = sum;
+    }
+
+    /** 
+     * Checks a flight to see if it is valid for calculations and statistics
+     *
+     * @param connection the database connection
+     * @param flightId the flights id to check
+     * @param airframeId the airframe id to check
+     * @param tsColumnIds the time series column ids that constitute a valid flight (i.e. ones that must not be null)
+     *
+     * @throws SQLException if there is an issue with the query
+     */
+    public static boolean checkFlight(Connection connection, int flightId, int airframeId, int ... tsColumnIds) throws SQLException {
+        String sql = "SELECT name_id FROM double_series WHERE flight_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, flightId);
+
+        ResultSet rs = query.executeQuery();
+        List<Integer> results = new ArrayList<>();
+
+        while (rs.next()) {
+            results.add(rs.getInt(1));
+        }
+
+        for (int id : tsColumnIds) {
+            if (!results.contains(id)) {
+                return false;
+            }
+        }
+
+        sql = "SELECT EXISTS (SELECT id FROM string_series WHERE flight_id = ? AND name_id = (SELECT id FROM string_series_names WHERE name = \"Lcl Time\")) AND EXISTS (SELECT id FROM string_series WHERE flight_id = ? AND name_id = (SELECT id FROM string_series_names WHERE name = \"Lcl Date\"))";
+        //ensure these are the right date/time names!
+        
+        query = connection.prepareStatement(sql);
+
+        query.setInt(1, flightId);  
+        query.setInt(2, flightId);  
+
+        rs = query.executeQuery();
+
+        if (rs.next()) {
+            if (!rs.getBoolean(1)) {
+                return false;
+            }
+        }
+
+        return !DoubleTimeSeries.flightHasInvalidRPMData(connection, flightId);
+    }
+
+    /**
+     * Gets the number of flights with an event
+     *
+     * @param connection the database connection
+     * @param row the EventStatisticsRow that holds this statistics data
+     * @param month the month to calculate for
+     *
+     * @throws SQLException if there is a query issue
+     */
+    public static void calculateFlightsWithEvent(Connection connection, EventStatisticsRow row, LocalDate month) throws SQLException {
+        final LocalDate nextMonth = month.plusMonths(1);
+
+        String sql = "SELECT COUNT(*) FROM flights WHERE id IN (SELECT flight_id FROM events WHERE event_definition_id = ? AND fleet_id = ? AND start_time >= ? AND end_time < ? " + (row.airframeId > 0 ? ("AND airframe_id = " + row.airframeId) : "") + ")";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, row.eventDefinitionId);
+        query.setInt(2, row.fleetId);
+        query.setDate(3, Date.valueOf(month));
+        query.setDate(4, Date.valueOf(nextMonth));
+
+        ResultSet resultSet = query.executeQuery();
+        if (resultSet.next()) {
+            row.flightsWithEvent = resultSet.getInt(1);
+        }
+    }
+
+    /**
+     * Gets the statistics (severity, duration)
+     *
+     * @param connection the database connection
+     * @param row the EventStatisticsRow that holds this statistics data
+     * @param month the month to calculate for
+     *
+     * @throws SQLException if there is a query issue
+     */
+    public static void calculateStatistics(Connection connection, EventStatisticsRow row, LocalDate month) throws SQLException {
+        final LocalDate nextMonth = month.plusMonths(1);
+
+        String sql = "SELECT MIN(1 + end_line - start_line), MAX(1 + end_line - start_line), SUM(1 + end_line - start_line) FROM events WHERE fleet_id = ? AND event_definition_id = ? AND start_time >= ? AND end_time < ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, row.fleetId);
+        query.setInt(2, row.eventDefinitionId);
+        query.setDate(3, Date.valueOf(month));
+        query.setDate(4, Date.valueOf(nextMonth));
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            row.durMin = resultSet.getInt(1);
+            if (resultSet.wasNull()) {
+                row.durMin = MIN_VALUE;
+            }
+
+            row.durMax = resultSet.getInt(2);
+            if (resultSet.wasNull()) {
+                row.durMax = MAX_VALUE;
+            }
+
+            // No need to do a null check, default is 0 for NULL in SQL
+            row.durSum = resultSet.getInt(3);
+        }
+
+        sql = "SELECT MIN(severity), MAX(severity), SUM(severity) FROM events WHERE fleet_id = ? AND event_definition_id = ? AND start_time >= ? AND end_time < ?";
+        query = connection.prepareStatement(sql);
+
+        query.setInt(1, row.fleetId);
+        query.setInt(2, row.eventDefinitionId);
+        query.setDate(3, Date.valueOf(month));
+        query.setDate(4, Date.valueOf(nextMonth));
+
+        resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            row.sevMin = resultSet.getDouble(1);
+            if (resultSet.wasNull()) {
+                row.sevMin = (double) MIN_VALUE;
+            }
+
+            row.sevMax = resultSet.getDouble(2);
+            if (resultSet.wasNull()) {
+                row.sevMax = (double) MAX_VALUE;
+            }
+
+            row.sevSum = resultSet.getDouble(3);
+        }
+
+        //System.out.print("FleetID: " + row.fleetId + " defId: " + row.eventDefinitionId + " Month: " + month.toString() + " dur. min,sum,max: " + row.durMin + "\t" + row.durSum + "\t" + row.durMax + " sev. min,sum,max: " + row.sevMin + "\t" + row.sevSum + "\t" + row.sevMax);
+
+    }
+
+    /**
+     * Gets the total event count from the database for a given statistic
+     *
+     * @param connection the database connection
+     * @param row the EventStatisticsRow that holds this statistics data
+     * @param month the month to calculate for
+     *
+     * @throws SQLException if there is a query issue
+     */
+    public static void calculateTotalEventCount(Connection connection, EventStatisticsRow row, LocalDate month) throws SQLException {
+        final LocalDate nextMonth = month.plusMonths(1);
+        String sql = "SELECT COUNT(*) FROM events WHERE fleet_id = ? AND event_definition_id = ? AND start_time >= ? AND end_time < ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, row.fleetId);
+        query.setInt(2, row.eventDefinitionId);
+        query.setDate(3, Date.valueOf(month));
+        query.setDate(4, Date.valueOf(nextMonth));
+
+        ResultSet resultSet = query.executeQuery();
+        if (resultSet.next()) {
+            row.totalEvents = resultSet.getInt(1);
+        }
+    }
+
+    public static void calculateMonthStatistics(Connection connection, LocalDate month, int fleetId, int airframeId, int eventDefinitionId, int ... tsColumnIds) throws SQLException {
+        EventStatisticsRow row = new EventStatisticsRow();
+
+        row.monthFirstDay = Date.valueOf(month);
+        row.fleetId = fleetId;
+        row.airframeId = airframeId;
+        row.eventDefinitionId = eventDefinitionId;
+
+        calculateTotalNumberOfFlights(connection, row, month, tsColumnIds);
+        calculateTotalEventCount(connection, row, month);
+
+        if (row.totalFlights > 0) {
+            calculateFlightsWithEvent(connection, row, month);
+            calculateStatistics(connection, row, month);
+            //System.out.print(" eventFlights: " + row.flightsWithEvent + " totalFlights: " + row.totalFlights + " totalEvents: " + row.totalEvents + "\n");
+
+            if (row.airframeId == 0) {
+                row.airframeId++;
+            }
+
+            row.insert(connection);
+        } 
+        // No point in wasting CPU time...
+
+    }
+
+    public static void main(String [] args) {
+        Options options = new Options();
+
+        final LocalDate thisMonth = LocalDate.now();
+
+        CommandLineParser parser = new DefaultParser();
+
+        Option fleetIds = new Option("f", "fleet_ids", true, "fleet id to recalculate for");
+        fleetIds.setArgs(Option.UNLIMITED_VALUES);
+        fleetIds.setRequired(false);
+
+        Option eventIds = new Option("e", "event_def_ids", true, "list of the event definition ids to clear");
+        eventIds.setArgs(Option.UNLIMITED_VALUES);
+        eventIds.setRequired(false);
+
+        options.addOption(fleetIds);
+        options.addOption(eventIds);
+
+        HelpFormatter formatter = new HelpFormatter();
+        CommandLine cmd = null;
+
+        try {
+            cmd = parser.parse(options, args);
+        } catch (ParseException e) {
+            System.out.println(e.getMessage());
+            formatter.printHelp("EventStatistics", options);
+
+            System.exit(1);
+        }
+
+        Connection connection = Database.getConnection();
+
+        String [] fleetIdStrs = cmd.getOptionValues("f");
+        String [] eventIdStrs = cmd.getOptionValues("e");
+
+        List<Fleet> fleets = null;
+        List<EventDefinition> eventDefinitions = null;
+
+        try {
+            if (fleetIdStrs == null || fleetIdStrs.length == 0) {
+                fleets = Fleet.getAllFleets(connection);
+            } else {
+                fleets = new ArrayList<>();
+                for (String fleetId : fleetIdStrs) {
+                    int id = Integer.parseInt(fleetId);
+                    fleets.add(Fleet.get(connection, id));
+                }
+            }
+
+            if (eventIdStrs == null || eventIdStrs.length == 0) {
+                eventDefinitions = EventDefinition.getAll(connection);
+            } else {
+                eventDefinitions = new ArrayList<>();
+                for (String eventId : eventIdStrs) {
+                    int id = Integer.parseInt(eventId);
+                    eventDefinitions.add(EventDefinition.getEventDefinition(connection, id));
+                }
+            }
+
+            StringBuilder sb = new StringBuilder();
+            int nFleets = fleets.size();
+            for (int i = 0; i < nFleets; i++) {
+                Fleet fleet = fleets.get(i);
+                sb.append(fleet.getName());
+                sb.append(i < nFleets - 1 ? ", " : ";");
+            }
+
+            LOG.info("Clearing event statistics for fleets: " + sb.toString() + " and event definitions: " + Arrays.toString(eventIdStrs));
+
+            for (EventDefinition def : eventDefinitions) {
+                int [] columnIds = DoubleTimeSeries.getDoubleSeriesColumnIds(connection, def);
+
+                int defId = def.getId();
+                for (Fleet fleet : fleets) {
+                    int fleetId = fleet.getId();
+
+                    LocalDate month = getEarliestMonth(connection, fleetId, defId);
+                    while (month != null) {
+                        clearMonthStatistics(connection, month, fleetId, defId);
+
+                        calculateMonthStatistics(connection, month, fleetId, def.getAirframeNameId(), defId, columnIds);
+
+                        month = month.plusMonths(1);
+
+                        if (month.compareTo(thisMonth) > 0) {
+                            month = null;
+                        }
+                    }
+                }
+            }
+
+            LOG.info("Finished!");
+            System.exit(0);
+        } catch (SQLException se) {
+            se.printStackTrace();
+            System.exit(1);
+        }
+        
     }
 }
 

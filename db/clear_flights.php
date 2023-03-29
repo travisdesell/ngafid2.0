@@ -11,6 +11,8 @@ $drop_tables = false;
 //delete and reset events
 query_ngafid_db("DELETE FROM event_statistics");
 echo "deleted event statistics!\n";
+query_ngafid_db("DELETE FROM event_annotations");
+echo "deleted event annotations!\n";
 query_ngafid_db("DELETE FROM events");
 query_ngafid_db("ALTER TABLE events AUTO_INCREMENT = 1");
 echo "deleted events!\n";

@@ -96,7 +96,7 @@ class MapPopup extends React.Component {
 
     render() {
         console.log("rendering a map popup with info:");
-        console.log(this.props.info);
+        console.log(this.props);
         this.getRelevantEvents();
 
         var style = {

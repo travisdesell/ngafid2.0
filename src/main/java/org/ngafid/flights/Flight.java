@@ -60,8 +60,9 @@ import org.ngafid.airports.Runway;
 import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
+import org.ngafid.flights.calculations.*;
 
-import static org.ngafid.flights.CalculationParameters.*;
+import static org.ngafid.flights.calculations.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -121,6 +122,10 @@ public class Flight {
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
+    //
+    public static final String WARNING = "WARNING";
+    public static final String SUCCESS = "SUCCESS";
+    public static final String ERROR = "ERROR";
 
     private long processingStatus = 0;
 
@@ -135,8 +140,8 @@ public class Flight {
     //the tags associated with this flight
     private List<FlightTag> tags = null;
 
-    private HashMap<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
-    private HashMap<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
+    private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
+    private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
     private HashMap<String, Double> calculationCriticalValues;
 
@@ -249,7 +254,7 @@ public class Flight {
         }
     }
 
-    public List<String> checkCalculationParameters(String [] seriesNames) throws MalformedFlightFileException, SQLException {
+    public List<String> checkCalculationParameters(String [] seriesNames) throws SQLException {
         List<String> missingParams = new ArrayList<>();
 
         for (String param : seriesNames) {
@@ -1865,7 +1870,8 @@ public class Flight {
                                 airframeName.equals("Beechcraft A36/G36") ||
                                 airframeName.equals("Beechcraft G58")) {
                             airframeType = "Fixed Wing";
-                        } else if (airframeName.equals("R44")) {
+                        } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
+                            airframeName = "R44";
                             airframeType = "Rotorcraft";
                         } else {
                             System.err.println("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
@@ -1908,6 +1914,8 @@ public class Flight {
         } else {
             //the next line is the column data types
             String dataTypesLine = bufferedReader.readLine();
+            if (dataTypesLine.length() == 0) dataTypesLine = bufferedReader.readLine(); //handle windows files with carriage returns
+
             if (dataTypesLine.charAt(0) != '#')
                 throw new FatalFlightFileException("Second line of the flight file should begin with a '#' and contain column data types.");
             dataTypesLine = dataTypesLine.substring(1);
@@ -1917,6 +1925,8 @@ public class Flight {
 
             //the next line is the column headers
             String headersLine = bufferedReader.readLine();
+            if (headersLine.length() == 0) headersLine = bufferedReader.readLine(); //handle windows files with carriage returns
+
             System.out.println("Headers line is: " + headersLine);
             headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
             headers.replaceAll(String::trim);
@@ -1943,6 +1953,11 @@ public class Flight {
         String line;
         String lastWarning = "";
         while ((line = bufferedReader.readLine()) != null) {
+            if (line.length() == 0) {
+                line = bufferedReader.readLine(); //handle windows files with carriage returns
+                if (line == null) break;
+            }
+
 
             if (line.contains("Lcl Time")) {
                 System.out.println("SKIPPING line[" + lineNumber + "]: " + line + " (THIS SHOULD NOT HAPPEN)");
@@ -2121,7 +2136,7 @@ public class Flight {
             exceptions.add(e);
         }
 
-        if (!airframeName.equals("ScanEagle")) {
+        if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
             } catch (MalformedFlightFileException e) {
@@ -2290,7 +2305,7 @@ public class Flight {
     // "initialize" method, files that are not CSV, and files that need to be synthetically splin into
     // separate flights.
     public Flight(int fleetId, String filename, String suggestedTailNumber, String airframeName,
-                  HashMap<String, DoubleTimeSeries> doubleTimeSeries, HashMap<String, StringTimeSeries> stringTimeSeries, Connection connection)
+                  Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries, Connection connection)
             throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
         this.doubleTimeSeries = doubleTimeSeries;
         this.stringTimeSeries = stringTimeSeries;
@@ -3172,6 +3187,23 @@ public class Flight {
 
     }
 
+    public void updateTail(Connection connection, String tailNumber) throws SQLException {
+        if (this.systemId != null && !this.systemId.isBlank()) {
+            String sql = "INSERT INTO tails(system_id, fleet_id, tail, confirmed) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tail = ?";
+            PreparedStatement query = connection.prepareStatement(sql);
+
+            query.setString(1, this.systemId);
+            query.setInt(2, this.fleetId);
+            query.setString(3, tailNumber);
+            query.setBoolean(4, true);
+            query.setString(5, tailNumber);
+
+            System.out.println(query.toString());
+
+            query.executeUpdate();
+        }
+    }
+
     public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
         //cannot calculate the itinerary without airport/runway calculate, which requires
         //lat and longs
@@ -3456,5 +3488,17 @@ public class Flight {
         }
 
         printWriter.close();
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public void setAirframeType(String type) {
+        this.airframeType = type;
+    }
+
+    public void setAirframeTypeID(Integer typeID) {
+        this.airframeTypeId  = typeID;
     }
 }
