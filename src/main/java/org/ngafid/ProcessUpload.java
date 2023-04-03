@@ -331,7 +331,7 @@ public class ProcessUpload {
                         }
                     } else if (entry.getName().endsWith(".json")) {
                         try {
-                            Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
+                            Flight flight = fileProcessors.get(".json").process(fleetId, entry.getName(), zipFile.getInputStream(entry), connection);
 
                             if (connection != null) {
                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
@@ -340,8 +340,7 @@ public class ProcessUpload {
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                             validFlights++;
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
-                                 ParseException e) {
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | MalformedFlightFileException e) {
                             System.err.println("ERROR: " + e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
