@@ -15,6 +15,8 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import Files.*;
+import org.ngafid.flights.processing.DATFileProcessor;
+import org.ngafid.flights.processing.FileProcessor;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -46,6 +48,14 @@ public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
+    private static final Map<String, FileProcessor> fileProcessors = new HashMap<>();
+
+    static {
+        fileProcessors.put(".csv", null);
+        fileProcessors.put(".json", null);
+        fileProcessors.put(".gpx", null);
+        fileProcessors.put(".dat", new DATFileProcessor());
+    }
     
     public static void main(String[] arguments) {
         System.out.println("arguments are:");

@@ -1,4 +1,8 @@
-package org.ngafid.flights;
+package org.ngafid.flights.processing;
+
+import com.opencsv.CSVReader;
+import com.opencsv.exceptions.CsvValidationException;
+import org.ngafid.flights.*;
 
 import java.io.*;
 import java.sql.Connection;
@@ -9,18 +13,15 @@ import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import com.opencsv.CSVReader;
-import com.opencsv.exceptions.CsvValidationException;
-
 import static org.ngafid.common.TimeUtils.addMilliseconds;
 
-public class DJIFlightProcessor {
-    private static final Logger LOG = Logger.getLogger(DJIFlightProcessor.class.getName());
+public class DATFileProcessor implements FileProcessor {
+    private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
-    public static Flight processDATFile(int fleetId, String entry, InputStream stream, Connection connection)
+    public Flight process(int fleetId, String entry, InputStream stream, Connection connection)
             throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, MalformedFlightFileException {
         List<InputStream> inputStreams = duplicateInputStream(stream, 2);
         Map<Integer, String> indexedCols = new HashMap<>();
