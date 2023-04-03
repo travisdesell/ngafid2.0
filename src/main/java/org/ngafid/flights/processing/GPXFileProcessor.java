@@ -10,9 +10,9 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public class CSVFileProcessor implements FileProcessor {
+public class GPXFileProcessor implements FileProcessor{
     @Override
     public Flight process(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
-        return new Flight(fleetId, entry, stream, connection);
+        return null;
     }
 }

@@ -15,8 +15,7 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import Files.*;
-import org.ngafid.flights.processing.DATFileProcessor;
-import org.ngafid.flights.processing.FileProcessor;
+import org.ngafid.flights.processing.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -51,9 +50,9 @@ public class ProcessUpload {
     private static final Map<String, FileProcessor> fileProcessors = new HashMap<>();
 
     static {
-        fileProcessors.put(".csv", null);
-        fileProcessors.put(".json", null);
-        fileProcessors.put(".gpx", null);
+        fileProcessors.put(".csv", new CSVFileProcessor());
+        fileProcessors.put(".json", new JSONFileProcessor());
+        fileProcessors.put(".gpx", new GPXFileProcessor());
         fileProcessors.put(".dat", new DATFileProcessor());
     }
     
@@ -293,8 +292,7 @@ public class ProcessUpload {
 
                     if (entryName.contains(".csv")) {
                         try {
-                            InputStream stream = zipFile.getInputStream(entry);
-                            Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
+                            Flight flight = fileProcessors.get(".csv").process(fleetId, entry.getName(), zipFile.getInputStream(entry), connection);
 
                             if (connection != null) {
                                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
@@ -305,12 +303,11 @@ public class ProcessUpload {
                             flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
                             validFlights++;
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                        } catch (IOException | FatalFlightFileException | MalformedFlightFileException | FlightAlreadyExistsException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
                         }
-
                     } else if (entryName.contains(".gpx")) {
                         try {
                             InputStream stream = zipFile.getInputStream(entry);
