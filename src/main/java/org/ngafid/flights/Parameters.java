@@ -8,7 +8,7 @@
  * @author <a href = mailto:josh@mail.rit.edu>Josh Karns</a>
  * @author <a href = mailto:apl@mail.rit.edu>Aidan LaBella</a>
  */
-package org.ngafid.flights.calculations;
+package org.ngafid.flights;
 
 public interface Parameters {
     /**
@@ -24,7 +24,7 @@ public interface Parameters {
     public static final String PARAM_JSON_LONGITUDE = "lon";
 
     public static final double STD_PRESS_INHG = 29.92;
-    public static final double COMP_CONV = (double) (Math.PI / 180); 
+    public static final double COMP_CONV = Math.PI / 180.0; 
 
     /**
      * Critical Values
@@ -87,6 +87,16 @@ public interface Parameters {
     public static final String STALL_PROBABILITY = "PStall";
     public static final String LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
     public static final String HDG_TRK_DIFF = "HDG TRK Diff";
+
+    public static final String NEAREST_RUNWAY = "NearestRunway";
+    public static final String RUNWAY_DISTANCE = "RunwayDistance";
+    public static final String NEAREST_AIRPORT = "NearestAirport";
+    public static final String AIRPORT_DISTANCE = "AirportDistance";
+   
+    /**
+     * Units
+     **/
+    public static final String UNIT_FT_AGL = "ft agl";
 
     /**
      * {@link Airframes} id's

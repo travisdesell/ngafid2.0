@@ -15,7 +15,7 @@ import java.sql.*;
 
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.events.CustomEvent.*;
 
 /**

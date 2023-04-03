@@ -18,7 +18,7 @@ import java.util.Objects;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 public class NIFA implements Serializable {
 

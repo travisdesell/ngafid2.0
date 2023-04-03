@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 

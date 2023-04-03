@@ -4,6 +4,8 @@ import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.time.*;
+import java.lang.Class;
+import java.lang.reflect.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
@@ -41,6 +43,7 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Optional;
@@ -61,8 +64,9 @@ import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.calculations.*;
+import org.ngafid.flights.process.*;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -1480,8 +1484,25 @@ public class Flight {
         return endDateTime;
     }
 
+    public void addException(MalformedFlightFileException me) {
+        exceptions.add(me);
+    }
+
+    public void addHeader(String column, String dataType) {
+        headers.add(column);
+        dataTypes.add(dataType);
+    }
+
     public void addDoubleTimeSeries(String name, DoubleTimeSeries doubleTimeSeries) {
         this.doubleTimeSeries.put(name, doubleTimeSeries);
+    }
+
+    public Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap() {
+        return doubleTimeSeries;
+    }
+
+    public Map<String, StringTimeSeries> getStringTimeSeriesMap() {
+        return stringTimeSeries;
     }
 
     public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
@@ -2071,7 +2092,32 @@ public class Flight {
         process(connection);
     }
 
-    private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
+    List<ProcessStep.Factory> defaultPasses = List.<ProcessStep.Factory>of();
+
+    private ArrayList<ProcessStep> gatherProcessSteps(Connection connection) {
+        ArrayList<ProcessStep> steps = new ArrayList<>();
+
+        steps.add(new ProcessAltAGL(connection, this));
+        steps.add(new ProcessAirportProximity(connection, this));
+
+        return steps;
+    }
+
+    final private void newProcess(Connection connection) throws FatalFlightFileException {
+        ArrayList<ProcessStep> steps = gatherProcessSteps(connection); // gatherProcessSteps will be an abstract method
+        
+        // These fields will be written to directly by the ProcessSteps.
+        doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
+        stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
+
+        ArrayList<Exception> fatalExceptions = new DependencyGraph(this, steps).compute();
+
+        // Probably not worth the time to convert back to serial versions
+        // doubleTimeSeries = new HashMap<>(doubleTimeSeries);
+        // stringTimeSeries = new HashMap<>(stringTimeSeries);
+    }
+
+    final private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
         //we should specify these.
@@ -2111,8 +2157,6 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-            } else if (airframeName.equals("")) {
-
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
@@ -2120,12 +2164,15 @@ public class Flight {
             exceptions.add(e);
         }
 
+        // DONE
         try {
             calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
+        // END
 
+        
         try {
             calculateAirportProximity(connection, "Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
@@ -3479,5 +3526,13 @@ public class Flight {
 
     public void setAirframeTypeID(Integer typeID) {
         this.airframeTypeId  = typeID;
+    }
+
+    public void setHasCoords(boolean hasCoords) {
+        this.hasCoords = hasCoords;
+    }
+
+    public void setHasAGL(boolean hasAGL) {
+        this.hasAGL = hasAGL;
     }
 }

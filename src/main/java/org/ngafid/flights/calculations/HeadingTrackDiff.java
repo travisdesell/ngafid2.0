@@ -8,7 +8,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 import org.apache.commons.cli.*;
 import org.ngafid.Database;
