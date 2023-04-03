@@ -3,6 +3,7 @@ package org.ngafid.routes;
 import com.google.gson.Gson;
 import org.ngafid.Database;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.flights.Airframes;
 import spark.Request;
 import spark.Response;
 import spark.Route;
@@ -28,6 +29,10 @@ public class GetEventDescription implements Route {
         LOG.info("expectedName: " + expectedName);
 
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = " + "\"" + expectedName + "\"";
+        if (request.queryParams("airframe_id") != null) { // If airframe ID is not null, filter for specific airframe + shared descriptions
+            query += " AND airframe_id = " + request.queryParams("airframe") + " OR airframe_id = 0";
+        }
+
         LOG.info("query: " + query);
 
         PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
@@ -36,13 +41,29 @@ public class GetEventDescription implements Route {
         ResultSet resultSet = preparedStatement.executeQuery();
         LOG.info("resultSet: " + resultSet);
 
-        resultSet.next();
-        EventDefinition eventDefinition = new EventDefinition(resultSet);
-        LOG.info("eventDefinition: " + eventDefinition);
+        // Get airframe_id
+        if (resultSet.getInt("airframe_id") == 0) {
+            EventDefinition eventDefinition = new EventDefinition(resultSet);
+            String text = eventDefinition.toHumanReadable();
 
-        String text = eventDefinition.toHumanReadable();
-        LOG.info("text: " + text);
+            LOG.info("text: " + text);
+            return gson.toJson(text);
+        } else {
+            StringBuilder textBuilder = new StringBuilder();
+            EventDefinition eventDefinition = new EventDefinition(resultSet);
+            String airframeName = Airframes.getAirframeName(preparedStatement.getConnection(), resultSet.getInt("airframe_id"));
 
-        return gson.toJson(text);
+            while (!resultSet.next()) {
+
+                textBuilder.append("\n");
+                textBuilder.append(eventDefinition.toHumanReadable());
+            }
+
+        }
+
+
+
+
+
     }
 }
