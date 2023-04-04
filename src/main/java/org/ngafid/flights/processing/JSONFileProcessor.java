@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 public class JSONFileProcessor implements FileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    @Override
+    @Override // TODO: Break this method down into smaller methods
     public Flight process(int fleetId, String entry, InputStream stream, Connection connection) throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         String status = "";
         Gson gson = new Gson();
@@ -123,9 +123,9 @@ public class JSONFileProcessor implements FileProcessor {
         stringSeries.put("UTCOfst", offset);
 
         Flight flight = new Flight(fleetId, entry, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
-        flight.status = status;
-        flight.airframeType = "UAS Rotorcraft";
-        flight.airframeTypeId = 4;
+        flight.setStatus(status);
+        flight.setAirframeType("UAS Rotorcraft");
+        flight.setAirframeTypeID(4);
 
 //        try {
 //            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
