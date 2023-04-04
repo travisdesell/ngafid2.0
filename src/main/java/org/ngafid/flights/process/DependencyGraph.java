@@ -1,32 +1,16 @@
 package org.ngafid.flights.process;
 
-import java.util.Set;
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.Executor;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
-import java.util.HashSet;
-import java.util.Queue;
-import java.util.HashMap;
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.*;
 import java.util.logging.Logger;
 
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
-
-import org.ngafid.flights.process.ProcessStep;
 
 /**
  * A dependency graph which represents the dependencies of ProcessSteps on one another.
@@ -34,8 +18,6 @@ import org.ngafid.flights.process.ProcessStep;
 public class DependencyGraph {
     private static final Logger LOG = Logger.getLogger(DependencyGraph.class.getName());
 
-    private static final int PARALLELISM = Runtime.getRuntime().availableProcessors();
-    
     class DependencyNode {
         final ProcessStep step;
 
@@ -148,10 +130,9 @@ public class DependencyGraph {
     // Maps column name to the node where that column is computed
     HashMap<String, DependencyNode> columnToSource = new HashMap<>(64);
     HashSet<DependencyNode> nodes = new HashSet<>(64);
-    DependencyNode rootNode;
     FlightBuilder builder;
     
-    public DependencyGraph(FlightBuilder builder, ArrayList<ProcessStep> steps) throws FlightProcessingException {
+    public DependencyGraph(FlightBuilder builder, List<ProcessStep> steps) throws FlightProcessingException {
         /**
          *  Create nodes for each step and create a mapping from output column name
          *  to the node that outputs that column. This should be a unique mapping, as
@@ -161,7 +142,6 @@ public class DependencyGraph {
         this.builder = builder;
         
         try {
-            rootNode = registerStep(new DummyProcessStep(flight));
             for (var step : steps) registerStep(step);
             for (var node : nodes) createEdges(node);
         } catch (FatalFlightFileException e) {
@@ -176,7 +156,7 @@ public class DependencyGraph {
         ArrayList<ForkJoinTask<Void>> initialTasks = new ArrayList<>();
         for (var node : nodes) {
             if (node.requiredBy.size() == 0) {
-                var task = new DependencyNodeTask(rootNode, tasks);
+                var task = new DependencyNodeTask(node, tasks);
                 initialTasks.add(task);
                 tasks.put(node, task);
             }

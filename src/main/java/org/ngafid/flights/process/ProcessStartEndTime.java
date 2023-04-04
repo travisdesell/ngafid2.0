@@ -6,22 +6,21 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.logging.Logger;
+import java.time.format.DateTimeFormatter;
 
 import static org.ngafid.flights.Parameters.*;
 import org.ngafid.common.*;
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.process.ProcessStep;
 
 public class ProcessStartEndTime extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStartEndTime.class.getName());
 
     public static Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
 
-    public ProcessStartEndTime(Connection connection, Flight flight) {
-        super(connection, flight);
+    public ProcessStartEndTime(Connection connection, FlightBuilder builder) {
+        super(connection, builder);
     }
 
     public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
@@ -33,9 +32,9 @@ public class ProcessStartEndTime extends ProcessStep {
     public boolean isRequired() { return true; }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        StringTimeSeries dates = stringTimeSeries.get(LCL_DATE);
-        StringTimeSeries times = stringTimeSeries.get(LCL_TIME);
-        StringTimeSeries offsets = stringTimeSeries.get(UTC_OFFSET);
+        StringTimeSeries dates = builder.stringTimeSeries.get(LCL_DATE);
+        StringTimeSeries times = builder.stringTimeSeries.get(LCL_TIME);
+        StringTimeSeries offsets = builder.stringTimeSeries.get(UTC_OFFSET);
 
         int dateSize = dates.size();
         int timeSize = times.size();
@@ -61,9 +60,8 @@ public class ProcessStartEndTime extends ProcessStep {
 
         LOG.info("\tfirst date time and offset not null at index: " + start);
 
-        if (start >= minSize) {
+        if (start >= minSize)
             throw new MalformedFlightFileException("Date, Time or Offset columns were all null! Cannot set start/end times.");
-        }
 
         //find the last full date time offset entry row
         int end = minSize - 1;
@@ -90,8 +88,7 @@ public class ProcessStartEndTime extends ProcessStep {
         try {
             startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
         } catch (DateTimeException dte) {
-            System.err.println("Corrupt start time data in flight file: " + dte.getMessage());
-            //System.exit(1);
+            LOG.severe("Corrupt start time data in flight file: " + dte.getMessage());
             throw new MalformedFlightFileException("Corrupt start time data in flight file: '" + dte.getMessage() + "'");
         }
 
@@ -99,19 +96,17 @@ public class ProcessStartEndTime extends ProcessStep {
         try {
             endODT = TimeUtils.convertToOffset(endDate, endTime, endOffset, "+00:00");
         } catch (DateTimeException dte) {
-            System.err.println("Corrupt end time data in flight file: " + dte.getMessage());
-            //System.exit(1);
+            LOG.severe("Corrupt end time data in flight file: " + dte.getMessage());
             throw new MalformedFlightFileException("Corrupt end time data in flight file: '" + dte.getMessage() + "'");
         }
 
         if (startODT.isAfter(endODT)) {
-            startDateTime = null;
-            endDateTime = null;
-
+            builder.setStartDateTime(null);
+            builder.setEndDateTime(null);
             throw new MalformedFlightFileException("Corrupt time data in flight file, start time was after the end time");
         }
 
-        startDateTime = startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        endDateTime = endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        builder.setStartDateTime(startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
+        builder.setEndDateTime(endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
     }
 }

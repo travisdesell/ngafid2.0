@@ -1,21 +1,19 @@
 package org.ngafid.flights.process;
 
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.FatalFlightFileException;
-import org.ngafid.flights.MalformedFlightFileException;
-
-import org.ngafid.flights.process.FlightBuilder;
-
-import java.util.Map;
 import java.util.Set;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.HashSet;
+
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.MalformedFlightFileException;
 
 
 public abstract class ProcessStep {
+
+    public interface Factory {
+        ProcessStep create(Connection connection, FlightBuilder builder);
+    }
+    
     protected FlightBuilder builder;
     
     // Connection is not accessible by subclasses directly by design, instead use the `withConnection` function.
@@ -34,6 +32,7 @@ public abstract class ProcessStep {
     public abstract Set<String> getOutputColumns();
     
     // Whether or not this ProcessStep is required / mandatory
+    // If a required step cannot be computed, a MalformedFlightFileException will be raised
     public abstract boolean isRequired();
 
     // Whether or not this ProcessStep can be performed for a given airframe
@@ -41,7 +40,7 @@ public abstract class ProcessStep {
 
     final public boolean applicable() {
         return 
-            airframeIsValid(builder.airframeName)
+            airframeIsValid(builder.meta.airframeName)
             && builder
                 .stringTimeSeries
                 .keySet()

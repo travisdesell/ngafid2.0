@@ -21,6 +21,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import java.text.ParseException;
 
 import java.util.Arrays;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -226,9 +227,9 @@ public class ProcessUpload {
         int id;
         int length;
         String filename;
-        ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+        List<MalformedFlightFileException> exceptions;
 
-        public FlightInfo(int id, int length, String filename, ArrayList<MalformedFlightFileException> exceptions) {
+        public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;
             this.filename = filename;

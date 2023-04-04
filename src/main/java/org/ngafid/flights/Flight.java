@@ -12,6 +12,7 @@ import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Calendar;
+import java.util.Collections;
 
 // XML stuff.
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -54,8 +55,8 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.*;
+import org.apache.commons.lang.NotImplementedException;
 import org.ngafid.Database;
-import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -85,6 +86,7 @@ public class Flight {
     private final static String FLIGHT_COLUMNS = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status";
     private final static String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status";
 
+    // TODO: Roll a lot of this stuff up into some sort of meta-data object?
     private int id = -1;
     private int fleetId = -1;
     private int uploaderId = -1;
@@ -99,7 +101,6 @@ public class Flight {
 
     private String tailNumber;
     private String suggestedTailNumber;
-    private String calculationEndpoint;
     private boolean tailConfirmed;
 
     private String md5Hash;
@@ -129,7 +130,7 @@ public class Flight {
     private long processingStatus = 0;
 
     private String status;
-    private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+    private List<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
@@ -165,7 +166,7 @@ public class Flight {
         return flights;
     }
 
-    public ArrayList<MalformedFlightFileException> getExceptions() {
+    public List<MalformedFlightFileException> getExceptions() {
         return exceptions;
     }
 
@@ -1353,6 +1354,34 @@ public class Flight {
         return paths;
     }
 
+    public Flight(Connection connection, FlightMeta meta, Map<String, DoubleTimeSeries> doubletimeSeries, Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary, List<MalformedFlightFileException> exceptions) throws SQLException {
+        fleetId = meta.fleetId;
+        uploaderId = meta.uploaderId;
+        uploadId = meta.uploadId;
+
+        filename = meta.filename;
+
+        airframeName = meta.airframeName;
+        airframeNameId = Airframes.getNameId(connection, airframeName);
+        
+        airframeType = meta.airframeType;
+        airframeTypeId = Airframes.getTypeId(connection, airframeType);
+        
+        systemId = meta.systemId;
+        suggestedTailNumber = meta.suggestedTailNumber;
+        md5Hash = meta.md5Hash;
+        startDateTime = meta.startDateTime;
+        endDateTime = meta.endDateTime;
+
+        hasCoords = doubleTimeSeries.containsKey(LATITUDE) && doubleTimeSeries.containsKey(LONGITUDE);
+        hasAGL = doubleTimeSeries.containsKey(ALT_AGL);
+
+        this.exceptions = exceptions;
+        checkExceptions();
+
+        this.stringTimeSeries = Collections.unmodifiableMap(new HashMap<>(stringTimeSeries));
+    }
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -2093,52 +2122,6 @@ public class Flight {
 
     List<ProcessStep.Factory> defaultPasses = List.<ProcessStep.Factory>of();
 
-    private ArrayList<ProcessStep> gatherProcessSteps(Connection connection) {
-        ArrayList<ProcessStep> steps = new ArrayList<>();
-
-        // TODO: add ScanEagle steps
-
-        steps.add(new ProcessAltAGL(connection, this));
-        // TODO: Finish implementing this
-        steps.add(new ProcessAirportProximity(connection, this));
-
-        // TODO:  Lcl Date; calculateStartEndTime
-        //        startDateTime; endDateTime
-        // TODO:  Total Fuel; calculateTotalFuel
-        //        doubleTimeSeries
-        // TODO:  AltMSL Lag Diff; calculateLaggedAltMSL
-        //        doubleTimeSeries
-        // TODO:  engine divergences; calculateDivergence
-        //        doubleTiemSeries
-        // TODO:  Frequency check
-        //        (nil)
-        // TODO:  calculateItinerary
-        //        itinerary
-        // TODO:  runLOCICalculations
-        //        doubleTimeSeries
-
-        return steps;
-    }
-
-    private void newProcess(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException, FlightProcessingException {
-        initialize(connection, inputStream);
-        newProcess(connection);
-    }
-
-    final private void newProcess(Connection connection) throws FlightProcessingException {
-        ArrayList<ProcessStep> steps = gatherProcessSteps(connection); // gatherProcessSteps will be an abstract method
-        
-        // These fields will be written to directly by the ProcessSteps.
-        doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
-        stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
-
-        DependencyGraph dg = new DependencyGraph(this, steps);
-        dg.cycleCheck();
-        dg.compute();
-
-        checkExceptions();
-    }
-
     final private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
@@ -2436,15 +2419,11 @@ public class Flight {
                 checkIfExists(connection);
 
             inputStream.reset();
-            newProcess(connection, inputStream);
+            process(connection, inputStream);
 
         } catch (FatalFlightFileException | IOException | FlightAlreadyExistsException | SQLException e) {
             status = "WARNING";
             throw new FlightProcessingException(e);
-        } catch (FlightProcessingException e) {
-            System.out.println(e);
-            e.printStackTrace();
-            System.exit(1);
         }
 
         checkExceptions();
@@ -3126,7 +3105,7 @@ public class Flight {
         for (int j = i; j < i + n; j++) {
             if (v > a[j]) {
                 mindex = j;
-                v t
+                v = a[j];
             }
         }
 
