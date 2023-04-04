@@ -6,6 +6,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
+import org.ngafid.flights.process.FlightBuilder;
+
 import java.util.Map;
 import java.util.Set;
 import java.sql.Connection;
@@ -14,27 +16,15 @@ import java.util.HashSet;
 
 
 public abstract class ProcessStep {
-
-    public interface Factory {
-        ProcessStep create(Flight flight);
-    }
-    
-    protected Flight flight;
+    protected FlightBuilder builder;
     
     // Connection is not accessible by subclasses directly by design, instead use the `withConnection` function.
     // This grabs the lock on the object so only one thread is using the connection at any given point in time.
     private Connection connection;
 
-    // References to the corresponding fields in `flight` 
-    protected Map<String, DoubleTimeSeries> doubleTimeSeries;
-    protected Map<String, StringTimeSeries> stringTimeSeries;
-
-    public ProcessStep(Connection connection, Flight flight) {
+    public ProcessStep(Connection connection, FlightBuilder builder) {
         this.connection = connection;
-        this.flight = flight;
-
-        this.doubleTimeSeries = flight.getDoubleTimeSeriesMap();
-        this.stringTimeSeries = flight.getStringTimeSeriesMap();
+        this.builder = builder;
     }
 
     // These should probably return references to static immutable Sets.
@@ -51,11 +41,13 @@ public abstract class ProcessStep {
 
     final public boolean applicable() {
         return 
-            airframeIsValid(flight.getAirframeName())
-            && stringTimeSeries
+            airframeIsValid(builder.airframeName)
+            && builder
+                .stringTimeSeries
                 .keySet()
                 .containsAll(getRequiredStringColumns()) 
-            && doubleTimeSeries
+            && builder
+                .doubleTimeSeries
                 .keySet()
                 .containsAll(getRequiredDoubleColumns());
     }
@@ -64,11 +56,15 @@ public abstract class ProcessStep {
         public T compute(Connection connection) throws SQLException;
     }
     
+    // This interface must be used to access the connection so that we can guarantee that only one
+    // thread is using it at any given time.
     final public <T> T withConnection(ConnectionFunctor<T> functor) throws SQLException {
         T value = null;
+
         synchronized (connection) {
             value = functor.compute(connection);
         }
+
         return value;
     }
 

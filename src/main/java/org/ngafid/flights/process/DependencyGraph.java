@@ -109,32 +109,6 @@ public class DependencyGraph {
         }
     }
 
-    /** 
-     * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file
-     * as output columns, so all other steps will depend on this. 
-     **/
-    class DummyProcessStep extends ProcessStep {
-        Set<String> outputColumns = new HashSet<>();
-        
-        public DummyProcessStep(Flight flight) {
-            // We can pass in null rather than a connection object
-            super(null, flight);
-            outputColumns.addAll(doubleTimeSeries.keySet());
-            outputColumns.addAll(stringTimeSeries.keySet());
-        }
-
-        public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getRequiredColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getOutputColumns() { return outputColumns; }
-        
-        public boolean airframeIsValid(String airframe) { return true; }
-        public boolean isRequired() { return true; }
-
-        // Left blank intentionally
-        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {}
-    }    
-
     private void nodeConflictError(ProcessStep first, ProcessStep second) throws FatalFlightFileException {
         throw new FatalFlightFileException( 
            "ERROR when building dependency graph! "
@@ -175,16 +149,16 @@ public class DependencyGraph {
     HashMap<String, DependencyNode> columnToSource = new HashMap<>(64);
     HashSet<DependencyNode> nodes = new HashSet<>(64);
     DependencyNode rootNode;
-    Flight flight;
+    FlightBuilder builder;
     
-    public DependencyGraph(Flight flight, ArrayList<ProcessStep> steps) throws FlightProcessingException {
+    public DependencyGraph(FlightBuilder builder, ArrayList<ProcessStep> steps) throws FlightProcessingException {
         /**
          *  Create nodes for each step and create a mapping from output column name
          *  to the node that outputs that column. This should be a unique mapping, as
          *  we don't want two steps generating the same output column.
          **/
 
-        this.flight = flight;
+        this.builder = builder;
         
         try {
             rootNode = registerStep(new DummyProcessStep(flight));
@@ -208,7 +182,8 @@ public class DependencyGraph {
             }
         }
 
-        ForkJoinPool ex = new ForkJoinPool(); 
+        ForkJoinPool ex = new ForkJoinPool();
+
         try {
             ex.invoke(new RecursiveTask<Void>() {
                 public Void compute() {
@@ -228,7 +203,7 @@ public class DependencyGraph {
         for (var node : nodes) {
             for (var e : node.exceptions) {
                 if (e instanceof MalformedFlightFileException me) {
-                    flight.addException(me);
+                    builder.exceptions.add(me);
                 } else if (e instanceof FatalFlightFileException fe) {
                     fatalExceptions.add(fe);
                 } else if (e instanceof SQLException se) {
