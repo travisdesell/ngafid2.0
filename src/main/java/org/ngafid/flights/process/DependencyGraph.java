@@ -177,7 +177,7 @@ public class DependencyGraph {
     DependencyNode rootNode;
     Flight flight;
     
-    public DependencyGraph(Flight flight, ArrayList<ProcessStep> steps) throws FatalFlightFileException {
+    public DependencyGraph(Flight flight, ArrayList<ProcessStep> steps) throws FlightProcessingException {
         /**
          *  Create nodes for each step and create a mapping from output column name
          *  to the node that outputs that column. This should be a unique mapping, as
@@ -186,12 +186,17 @@ public class DependencyGraph {
 
         this.flight = flight;
         
-        rootNode = registerStep(new DummyProcessStep(flight));
-        for (var step : steps) registerStep(step);
-        for (var node : nodes) createEdges(node);
+        try {
+            rootNode = registerStep(new DummyProcessStep(flight));
+            for (var step : steps) registerStep(step);
+            for (var node : nodes) createEdges(node);
+        } catch (FatalFlightFileException e) {
+            throw new FlightProcessingException(e);
+        }
     }
 
-    public ArrayList<Exception> compute() {
+    // Modifies the flight object in place.
+    public void compute() throws FlightProcessingException {
         // Start with all of the leaf nodes.
         ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> tasks = new ConcurrentHashMap<>();
         ArrayList<ForkJoinTask<Void>> initialTasks = new ArrayList<>();
@@ -222,18 +227,29 @@ public class DependencyGraph {
         ArrayList<Exception> fatalExceptions = new ArrayList<>();
         for (var node : nodes) {
             for (var e : node.exceptions) {
-                // TODO:  Consider whether or not we should throw the first unrecoverable exception
-                //        we encounter, or if we shoud batch them all together. 
                 if (e instanceof MalformedFlightFileException me) {
                     flight.addException(me);
                 } else if (e instanceof FatalFlightFileException fe) {
                     fatalExceptions.add(fe);
                 } else if (e instanceof SQLException se) {
                     fatalExceptions.add(se);
+                } else {
+                    LOG.severe(
+                        "Encountered exception of unknown type when executing dependency graph. "
+                        + "\"" + e.getMessage() + "\"" + "\n."
+                        + "This should not be possible - if this seems plausible you should add a handler for this "
+                        + "type of exception in DependencyGraph::compute.");
+                    e.printStackTrace();
+                    System.exit(1);
                 }
             }
         }
 
-        return fatalExceptions;
+        if (fatalExceptions.size() != 0)
+            throw new FlightProcessingException(fatalExceptions);
+    }
+
+    public void cycleCheck() throws FlightProcessingException {
+        // TODO: Cycle check
     }
 }

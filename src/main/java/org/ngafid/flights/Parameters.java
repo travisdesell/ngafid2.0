@@ -82,6 +82,7 @@ public interface Parameters {
     public static final String TOTAL_FUEL = "Total Fuel";
     public static final String LCL_DATE = "Lcl Date";
     public static final String LCL_TIME = "Lcl Time";
+    public static final String UTC_OFFSET = "UTCOfst";
     public static final String LATITUDE = "Latitude";
     public static final String LONGITUDE = "Longitude";
     public static final String STALL_PROBABILITY = "PStall";

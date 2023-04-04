@@ -43,7 +43,6 @@ import java.util.Map;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.HashSet;
 import java.util.Optional;
@@ -2097,24 +2096,47 @@ public class Flight {
     private ArrayList<ProcessStep> gatherProcessSteps(Connection connection) {
         ArrayList<ProcessStep> steps = new ArrayList<>();
 
+        // TODO: add ScanEagle steps
+
         steps.add(new ProcessAltAGL(connection, this));
+        // TODO: Finish implementing this
         steps.add(new ProcessAirportProximity(connection, this));
+
+        // TODO:  Lcl Date; calculateStartEndTime
+        //        startDateTime; endDateTime
+        // TODO:  Total Fuel; calculateTotalFuel
+        //        doubleTimeSeries
+        // TODO:  AltMSL Lag Diff; calculateLaggedAltMSL
+        //        doubleTimeSeries
+        // TODO:  engine divergences; calculateDivergence
+        //        doubleTiemSeries
+        // TODO:  Frequency check
+        //        (nil)
+        // TODO:  calculateItinerary
+        //        itinerary
+        // TODO:  runLOCICalculations
+        //        doubleTimeSeries
 
         return steps;
     }
 
-    final private void newProcess(Connection connection) throws FatalFlightFileException {
+    private void newProcess(Connection connection, InputStream inputStream) throws IOException, FatalFlightFileException, SQLException, FlightProcessingException {
+        initialize(connection, inputStream);
+        newProcess(connection);
+    }
+
+    final private void newProcess(Connection connection) throws FlightProcessingException {
         ArrayList<ProcessStep> steps = gatherProcessSteps(connection); // gatherProcessSteps will be an abstract method
         
         // These fields will be written to directly by the ProcessSteps.
         doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
         stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
 
-        ArrayList<Exception> fatalExceptions = new DependencyGraph(this, steps).compute();
+        DependencyGraph dg = new DependencyGraph(this, steps);
+        dg.cycleCheck();
+        dg.compute();
 
-        // Probably not worth the time to convert back to serial versions
-        // doubleTimeSeries = new HashMap<>(doubleTimeSeries);
-        // stringTimeSeries = new HashMap<>(stringTimeSeries);
+        checkExceptions();
     }
 
     final private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
@@ -2388,16 +2410,10 @@ public class Flight {
         this.status = "SUCCESS";
     }
 
-    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws FlightProcessingException {
         this.fleetId = fleetId;
         this.filename = zipEntryName;
         this.tailConfirmed = false;
-
-        /*
-        if (!filename.contains("/")) {
-            throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
-        }
-        */
 
         String[] parts = zipEntryName.split("/");
         if (parts.length <= 1) {
@@ -2416,26 +2432,22 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            if (connection != null) checkIfExists(connection);
+            if (connection != null)
+                checkIfExists(connection);
 
             inputStream.reset();
-            process(connection, inputStream);
+            newProcess(connection, inputStream);
 
-        } catch (FatalFlightFileException | IOException e) {
+        } catch (FatalFlightFileException | IOException | FlightAlreadyExistsException | SQLException e) {
             status = "WARNING";
-            throw e;
-        } catch (SQLException e) {
+            throw new FlightProcessingException(e);
+        } catch (FlightProcessingException e) {
             System.out.println(e);
             e.printStackTrace();
             System.exit(1);
         }
 
         checkExceptions();
-    }
-
-    // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
-    private Flight(Connection connection, ArrayList<DoubleTimeSeries> doubleTimeSeries, ArrayList<StringTimeSeries> stringTimeSeries, Timestamp startTime, Timestamp endTime) {
-
     }
 
     /**
@@ -3114,7 +3126,7 @@ public class Flight {
         for (int j = i; j < i + n; j++) {
             if (v > a[j]) {
                 mindex = j;
-                v = a[j];
+                v t
             }
         }
 

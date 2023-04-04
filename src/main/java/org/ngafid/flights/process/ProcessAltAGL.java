@@ -24,7 +24,7 @@ public class ProcessAltAGL extends ProcessStep {
 
     public Set<String> getRequiredDoubleColumns() { return REQUIRED_DOUBLE_COLUMNS; }
     public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredColumns() { return Collections.<String>emptySet(); }
+    public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
     public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
     
     public boolean airframeIsValid(String airframe) { return true; }

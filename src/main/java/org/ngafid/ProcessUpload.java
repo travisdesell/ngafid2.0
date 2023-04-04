@@ -37,6 +37,7 @@ import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
+import org.ngafid.flights.process.*;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
@@ -295,7 +296,7 @@ public class ProcessUpload {
                             flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
                             validFlights++;
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+                        } catch (FlightProcessingException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
@@ -317,7 +318,7 @@ public class ProcessUpload {
                                 }
                             }
                         } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
-                                 ParserConfigurationException | SAXException | SQLException | ParseException e) {
+                                 ParserConfigurationException | SAXException | ParseException e) {
                             System.err.println(e.getMessage());
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
@@ -438,7 +439,6 @@ public class ProcessUpload {
         //insert all the flight errors to the database
         for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {
             UploadException exception = entry.getValue();
-
             FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
         }
 
