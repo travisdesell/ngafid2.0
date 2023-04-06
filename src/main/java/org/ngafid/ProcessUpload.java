@@ -1,9 +1,9 @@
 package org.ngafid;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.Console;
+import java.io.*;
 
+import java.net.URI;
+import java.nio.file.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
@@ -14,6 +14,7 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
+import Files.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -25,10 +26,11 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.SendEmail;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
@@ -39,9 +41,13 @@ import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
+import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
+
 public class ProcessUpload {
     private static Connection connection = null;
-
+    private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
+    private static final String ERROR_STATUS_STR = "ERROR";
+    
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
         System.out.println(Arrays.toString(arguments));
@@ -334,6 +340,46 @@ public class ProcessUpload {
                             flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
                             errorFlights++;
                         }
+                    } else if (entry.getName().endsWith(".DAT")) {
+                        String zipName = entry.getName().substring(entry.getName().lastIndexOf("/"));
+                        String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
+                        File tempExtractedFile = new File(parentFolder, zipName);
+
+                        System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
+                        try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
+                            int len;
+                            byte[] buffer = new byte[1024];
+
+                            while ((len = inputStream.read(buffer)) > 0) {
+                                fileOutputStream.write(buffer, 0, len);
+                            }
+                        }
+
+                        convertDATFile(tempExtractedFile);
+                        File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
+                        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+
+                        try (InputStream stream = new FileInputStream(processedCSVFile)) {
+                            Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
+
+                            if (connection != null) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                            }
+
+                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                            flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+
+                            validFlights++;
+                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | MalformedFlightFileException |
+                                 SQLException e) {
+                            System.err.println(e.getMessage());
+                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                            errorFlights++;
+                        } finally {
+                            Files.delete(Paths.get(processedCSVFile.getAbsolutePath()));
+                            Files.delete(Paths.get(tempExtractedFile.getAbsolutePath()));
+                        }
                     } else {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
                         errorFlights++;
@@ -342,24 +388,39 @@ public class ProcessUpload {
 
             } catch (java.nio.file.NoSuchFileException e) {
                 System.err.println("NoSuchFileException: " + e);
+                LOG.log(Level.SEVERE, "NoSuchFileException: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Broken upload: please delete this upload and re-upload.");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e.toString() + ", broken upload: please delete this upload and re-upload.");
 
             } catch (IOException e) {
-                System.err.println("IOException: " + e);
+                LOG.log(Level.SEVERE, "IOException: {0}", e.toString());
                 e.printStackTrace();
 
                 UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
-                status = "ERROR";
+                status = ERROR_STATUS_STR;
                 uploadException = new Exception(e.toString() + ", could not read from zip file: please delete this upload and re-upload.");
+            } catch (NotDatFile e) {
+                LOG.log(Level.SEVERE, "NotDatFile: {0}", e.toString());
+                e.printStackTrace();
+
+                UploadError.insertError(connection, uploadId, "Tried to process a non-DAT file as a DAT file.");
+                status = ERROR_STATUS_STR;
+                uploadException = new Exception(e + ", tried to process a non-DAT file as a DAT file.");
+            } catch (FileEnd e) {
+                LOG.log(Level.SEVERE, "FileEnd: {0}", e.toString());
+                e.printStackTrace();
+
+                UploadError.insertError(connection, uploadId, "Reached the end of a file while doing DAT processing");
+                status = ERROR_STATUS_STR;
+                uploadException = new Exception(e + ", reached the end of a file while doing DAT processing");
             }
 
         } else {
             //insert an upload error for this upload
-            status = "ERROR";
+            status = ERROR_STATUS_STR;
             UploadError.insertError(connection, uploadId, "Uploaded file was not a zip file.");
 
             uploadException = new Exception("Uploaded file was not a zip file.");
@@ -435,5 +496,40 @@ public class ProcessUpload {
 
         //ingestion was successfull
         return true;
+    }
+
+    private static void placeInZip(String file, String zipFileName) throws IOException {
+        LOG.info("Placing " + file + " in zip");
+        
+        Map<String, String> zipENV = new HashMap<>();
+        zipENV.put("create", "true");
+
+        Path csvFilePath = Paths.get(file);
+        Path zipFilePath = Paths.get(csvFilePath.getParent() + "/" + zipFileName);
+
+        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
+        try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
+            Path zipFileSystemPath = fileSystem.getPath(file.substring(file.lastIndexOf("/") + 1));
+            Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
+        }
+    }
+
+    private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
+        System.out.println("Converting to CSV: " + file.getAbsolutePath());
+        DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
+        datFile.reset();
+        datFile.preAnalyze();
+
+        ConvertDat convertDat = datFile.createConVertDat();
+
+        String csvFilename = file.getAbsolutePath() + ".csv";
+        convertDat.csvWriter = new CsvWriter(csvFilename);
+        convertDat.createRecordParsers();
+
+        datFile.reset();
+        AnalyzeDatResults results = convertDat.analyze(false);
+        System.out.println(datFile.getFile().getAbsolutePath());
+
+        return datFile.getFile();
     }
 }
