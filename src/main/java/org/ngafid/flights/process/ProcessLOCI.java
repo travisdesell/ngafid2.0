@@ -14,17 +14,17 @@ import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.FatalFlightFileException;
 
-public class ProcessStartEndTime extends ProcessStep {
+public class ProcessLOCI extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStartEndTime.class.getName());
 
-    public static Set<String> REQUIRED_STRING_COLUMNS = Set.of(LCL_DATE, LCL_TIME, UTC_OFFSET);
+    public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(STALL_DEPENDENCIES);
 
-    public ProcessStartEndTime(Connection connection, FlightBuilder builder) {
+    public ProcessLOCI(Connection connection, FlightBuilder builder) {
         super(connection, builder);
     }
 
     public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredStringColumns() { return REQUIRED_STRING_COLUMNS; }
+    public Set<String> getRequiredStringColumns() { return Collections.emptySet(); }
     public Set<String> getRequiredColumns() { return REQUIRED_STRING_COLUMNS; }
     public Set<String> getOutputColumns() { return Collections.<String>emptySet(); }
 

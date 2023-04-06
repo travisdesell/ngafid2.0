@@ -2177,13 +2177,15 @@ public class Flight {
         }
         // END
 
-        
+        // DONE
         try {
             calculateAirportProximity(connection, "Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
+        // END
 
+        // DONE
         if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
@@ -2197,7 +2199,9 @@ public class Flight {
                 exceptions.add(e);
             }
         }
+        // END
 
+        // DONE
         try {
             if (airframeName.equals("Cessna 172S") || airframeName.equals("Cessna 172R")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
@@ -2217,8 +2221,6 @@ public class Flight {
 
                 String egt2Names[] = {"E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"};
                 calculateDivergence(connection, egt2Names, "E2 EGT Divergence", "deg F");
-
-
             } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Cessna T182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22") || airframeName.equals("Cessna 400")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
@@ -2255,6 +2257,7 @@ public class Flight {
                 LOG.severe("Skipping...");
                 // System.exit(1);
             }
+            // END
 
             if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
                 //LOCI doesn't apply to UAS
@@ -2304,7 +2307,6 @@ public class Flight {
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
-
     }
 
     private void checkExceptions() {

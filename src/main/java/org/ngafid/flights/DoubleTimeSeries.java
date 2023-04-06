@@ -47,16 +47,12 @@ public class DoubleTimeSeries {
     private double avg;
     private double max = -Double.MAX_VALUE;
 
-    public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
-        this(connection, name, dataType, 16);
-    }
-
-    public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
+    // Construct from an array
+    public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
         this.name = name;
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
         this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
-        this.data = new double[sizeHint];
+        this.data = data;
+        this.size = size;
 
         min = Double.NaN;
         avg = Double.NaN;
@@ -65,10 +61,30 @@ public class DoubleTimeSeries {
         validCount = 0;
     }
 
+    public DoubleTimeSeries(String name, String dataType, double[] data) {
+        this(name, dataType, data, data.length);
+    }
+
+    public DoubleTimeSeries(String name, String dataType, int sizeHint) {
+        this(name, dataType, new double[sizeHint], 0);
+     }
+
+    public DoubleTimeSeries(String name, String dataType) {
+        this(name, dataType, 16);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
+        this(name, dataType, sizeHint);
+        setNameId(connection);
+        setTypeId(connection);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
+        this(connection, name, dataType, 16);
+    }
 
     public DoubleTimeSeries(Connection connection, String name, String dataType, boolean cache) throws SQLException {
         this(connection, name, dataType);
-
         this.cache = cache;
     }
 
@@ -116,6 +132,14 @@ public class DoubleTimeSeries {
         }
 
         avg /= validCount;
+    }
+
+    private void setNameId(Connection connection) throws SQLException {
+        this.nameId = SeriesNames.getDoubleNameId(connection, name);
+    }
+
+    private void setTypeId(Connection connection) throws SQLException {
+        this.typeId = TypeNames.getId(connection, dataType);
     }
 
     /**
@@ -376,6 +400,11 @@ public class DoubleTimeSeries {
         if (!this.cache) return;
 
         try {
+            if (typeId == -1)
+                setTypeId(connection);
+            if (nameId == -1)
+                setNameId(connection);
+
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);

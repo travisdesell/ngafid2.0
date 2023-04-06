@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.ngafid.flights.*;
 import org.ngafid.flights.process.*;
 import org.ngafid.flights.process.FlightMeta;
+import static org.ngafid.flights.process.ProcessStep.required;
 
 public class FlightBuilder {
 
@@ -62,7 +63,7 @@ public class FlightBuilder {
     private static final List<ProcessStep.Factory> processSteps = List.of(
         ProcessAltAGL::new,
         ProcessAirportProximity::new,
-        ProcessStartEndTime::new
+        required(ProcessStartEndTime::new)
     );
 
     // This can be overridden.

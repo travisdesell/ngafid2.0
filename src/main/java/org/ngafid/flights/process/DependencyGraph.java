@@ -34,23 +34,40 @@ public class DependencyGraph {
             this.step = step;
         }
 
-        void disable() {
-            enabled.set(false);
-            if (step.isRequired()) {
-                LOG.severe("Required step " + step.toString() + " has been disabled.");
-                exceptions.add(new FatalFlightFileException("Required step " + step.toString() + " has been disabled."));
+        void disableChildren() {
+            if (enabled.get()) {
+                enabled.set(false);
+                if (step.isRequired()) {
+                    String reason = step.explainApplicability();
+                    LOG.severe("Required step " + step.toString() + " has been disabled for <reason>:\n    " + reason);
+                    exceptions.add(new FatalFlightFileException(reason));
+                }
+                for (var child : requiredBy) child.disable();
             }
-            for (var child : requiredBy)
-                child.disable();
+        }
+
+        void disable() {
+            if (enabled.get()) {
+                enabled.set(false);
+                if (step.isRequired()) {
+                    LOG.severe("Required step " + step.toString() + " has been disabled.");
+                    exceptions.add(
+                        new FatalFlightFileException(
+                            "Required step " + step.toString() 
+                            + " has been disabled because a required parent step has been disabled"));
+                }
+                for (var child : requiredBy) child.disable();
+            }
         }
 
         void compute() {
             try {
                 
-                if (step.applicable())
+                if (step.applicable()) {
                     step.compute();
-                else
-                    disable();
+                } else {
+                    disableChildren();
+                }
 
             } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
                 LOG.warning("Encountered exception when calculating process step " + step.toString() + ": " + e.toString());
@@ -81,11 +98,9 @@ public class DependencyGraph {
             for (var requiredNode : node.requires) {
                 getTask(requiredNode).join();
             }
-            
+           
             if (node.enabled.get())
                 node.compute();
-            else {} // TODO:  Add some sort of exception here. We don't want to just silently
-                    //        let the processing pipeline fail somewhere
 
             return null;
         }
@@ -204,7 +219,50 @@ public class DependencyGraph {
             throw new FlightProcessingException(fatalExceptions);
     }
 
-    public void cycleCheck() throws FlightProcessingException {
-        // TODO: Cycle check
+    public void scrutinize() {
+        cycleCheck();
+        requiredCheck();
+    }
+
+    // Ensure that there are no required steps that are children to optional steps,
+    // since that wouldn't make sense.
+    private void requiredCheck() {
+        for (var node : nodes) {
+            if (!node.step.isRequired())
+   src             continue;
+
+            for (var parent : node.requiredBy) {
+                if (!parent.step.isRequired()) {
+                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent + "' has a required dependent step '" + node + "'.");
+                    System.exit(1);
+                }
+            }
+        }
+    }
+
+    // Ensure there are no cycles!
+    private void cycleCheck() {
+        for (var src : nodes) {
+            for (var node : nodes)
+                node.mark = false;
+            
+            Queue<DependencyNode> q = new ArrayDeque<>();
+            var dst = src;
+            for (var child : src.requiredBy)
+                q.add(child);
+
+            while ((dst = q.poll()) != null) {
+                if (dst == src) {
+                    System.err.println("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to step '" + dst + "'.");
+                    System.exit(1);
+                }
+
+                dst.mark = true;
+                for (var child : dst.requiredBy) {
+                    if (!child.mark)
+                        q.add(child);
+                }
+            }
+        }
     }
 }

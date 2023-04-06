@@ -28,12 +28,11 @@ public class ProcessAltAGL extends ProcessStep {
     public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
     
     public boolean airframeIsValid(String airframe) { return true; }
-    public boolean isRequired() { return true; }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        DoubleTimeSeries altitudeMSLTS = builder.doubleTimeSeries.get(ALT_MSL);
-        DoubleTimeSeries latitudeTS = builder.doubleTimeSeries.get(LATITUDE);
-        DoubleTimeSeries longitudeTS = builder.doubleTimeSeries.get(LONGITUDE);
+        DoubleTimeSeries altitudeMSLTS = doubleTS.get(ALT_MSL);
+        DoubleTimeSeries latitudeTS = doubleTS.get(LATITUDE);
+        DoubleTimeSeries longitudeTS = doubleTS.get(LONGITUDE);
 
         DoubleTimeSeries altitudeAGLTS = withConnection(connection -> new DoubleTimeSeries(connection, ALT_AGL, UNIT_FT_AGL));
 
@@ -55,7 +54,7 @@ public class ProcessAltAGL extends ProcessStep {
             }
         }
 
-        builder.doubleTimeSeries.put(ALT_AGL, altitudeAGLTS);
+        doubleTS.put(ALT_AGL, altitudeAGLTS);
     }
 
 }
