@@ -2728,7 +2728,7 @@ public class Flight {
         }
 
         CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
-        vspdCalculated.create(new VSPDRegression(connection, this));
+        vspdCalculated.create(new VSPDRegression(getDoubleTimeSeries(ALT_B)));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
         densityRatio.create(index -> {

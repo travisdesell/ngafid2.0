@@ -106,6 +106,31 @@ public class DependencyGraph {
         }
     }
 
+    /** 
+     * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file
+     * as output columns, so all other steps will depend on this. 
+     **/
+    class DummyStep extends ProcessStep {
+        Set<String> outputColumns = new HashSet<>();
+
+        public DummyStep(FlightBuilder builder) {
+            // We can pass in null rather than a connection object
+            super(null, builder);
+            outputColumns.addAll(doubleTS.keySet());
+            outputColumns.addAll(stringTS.keySet());
+        }
+
+        public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
+        public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
+        public Set<String> getRequiredColumns() { return Collections.<String>emptySet(); }
+        public Set<String> getOutputColumns() { return outputColumns; }
+
+        public boolean airframeIsValid(String airframe) { return true; }
+
+        // Left blank intentionally
+        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {}
+    }
+
     private void nodeConflictError(ProcessStep first, ProcessStep second) throws FatalFlightFileException {
         throw new FatalFlightFileException( 
            "ERROR when building dependency graph! "
@@ -157,6 +182,7 @@ public class DependencyGraph {
         this.builder = builder;
         
         try {
+            registerStep(new DummyStep(builder));
             for (var step : steps) registerStep(step);
             for (var node : nodes) createEdges(node);
         } catch (FatalFlightFileException e) {
@@ -229,7 +255,7 @@ public class DependencyGraph {
     private void requiredCheck() {
         for (var node : nodes) {
             if (!node.step.isRequired())
-   src             continue;
+                continue;
 
             for (var parent : node.requiredBy) {
                 if (!parent.step.isRequired()) {
