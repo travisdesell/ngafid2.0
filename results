@@ -1,9 +1,0 @@
-With compression:
-- Took 454 seconds to import flights
-- Took up 429.6 MB after importing.
-- Took 59.524 seconds to calculate exceedences.
-
-Without compression:
-- Took 448 seconds to import flights
-- Took up 1692.0576 MB after importing
-- Took 61.102 seconds to calculate exceedences.
