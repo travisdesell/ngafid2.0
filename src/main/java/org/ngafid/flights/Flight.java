@@ -4,12 +4,15 @@ import java.io.*;
 import java.sql.*;
 import java.text.DateFormat;
 import java.time.*;
+import java.lang.Class;
+import java.lang.reflect.*;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import java.util.Iterator;
 import java.text.SimpleDateFormat;
 import java.text.ParseException;
 import java.util.Date;
 import java.util.Calendar;
+import java.util.Collections;
 
 // XML stuff.
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -52,8 +55,8 @@ import java.util.zip.ZipOutputStream;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.common.*;
+import org.apache.commons.lang.NotImplementedException;
 import org.ngafid.Database;
-import org.ngafid.common.*;
 import org.ngafid.airports.Airport;
 import org.ngafid.airports.Airports;
 import org.ngafid.airports.Runway;
@@ -61,8 +64,9 @@ import org.ngafid.terrain.TerrainCache;
 
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.calculations.*;
+import org.ngafid.flights.process.*;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 /**
  * This class represents a Flight in the NGAFID. It also contains static methods for database interaction
@@ -82,6 +86,7 @@ public class Flight {
     private final static String FLIGHT_COLUMNS = "id, fleet_id, uploader_id, upload_id, system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status";
     private final static String FLIGHT_COLUMNS_TAILS = "id, fleet_id, uploader_id, upload_id, f.system_id, airframe_id, airframe_type_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status";
 
+    // TODO: Roll a lot of this stuff up into some sort of meta-data object?
     private int id = -1;
     private int fleetId = -1;
     private int uploaderId = -1;
@@ -96,7 +101,6 @@ public class Flight {
 
     private String tailNumber;
     private String suggestedTailNumber;
-    private String calculationEndpoint;
     private boolean tailConfirmed;
 
     private String md5Hash;
@@ -126,7 +130,7 @@ public class Flight {
     private long processingStatus = 0;
 
     private String status;
-    private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+    private List<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
@@ -162,7 +166,7 @@ public class Flight {
         return flights;
     }
 
-    public ArrayList<MalformedFlightFileException> getExceptions() {
+    public List<MalformedFlightFileException> getExceptions() {
         return exceptions;
     }
 
@@ -1350,6 +1354,34 @@ public class Flight {
         return paths;
     }
 
+    public Flight(Connection connection, FlightMeta meta, Map<String, DoubleTimeSeries> doubletimeSeries, Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary, List<MalformedFlightFileException> exceptions) throws SQLException {
+        fleetId = meta.fleetId;
+        uploaderId = meta.uploaderId;
+        uploadId = meta.uploadId;
+
+        filename = meta.filename;
+
+        airframeName = meta.airframeName;
+        airframeNameId = Airframes.getNameId(connection, airframeName);
+        
+        airframeType = meta.airframeType;
+        airframeTypeId = Airframes.getTypeId(connection, airframeType);
+        
+        systemId = meta.systemId;
+        suggestedTailNumber = meta.suggestedTailNumber;
+        md5Hash = meta.md5Hash;
+        startDateTime = meta.startDateTime;
+        endDateTime = meta.endDateTime;
+
+        hasCoords = doubleTimeSeries.containsKey(LATITUDE) && doubleTimeSeries.containsKey(LONGITUDE);
+        hasAGL = doubleTimeSeries.containsKey(ALT_AGL);
+
+        this.exceptions = exceptions;
+        checkExceptions();
+
+        this.stringTimeSeries = Collections.unmodifiableMap(new HashMap<>(stringTimeSeries));
+    }
+
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
@@ -1480,8 +1512,25 @@ public class Flight {
         return endDateTime;
     }
 
+    public void addException(MalformedFlightFileException me) {
+        exceptions.add(me);
+    }
+
+    public void addHeader(String column, String dataType) {
+        headers.add(column);
+        dataTypes.add(dataType);
+    }
+
     public void addDoubleTimeSeries(String name, DoubleTimeSeries doubleTimeSeries) {
         this.doubleTimeSeries.put(name, doubleTimeSeries);
+    }
+
+    public Map<String, DoubleTimeSeries> getDoubleTimeSeriesMap() {
+        return doubleTimeSeries;
+    }
+
+    public Map<String, StringTimeSeries> getStringTimeSeriesMap() {
+        return stringTimeSeries;
     }
 
     public DoubleTimeSeries getDoubleTimeSeries(String name) throws SQLException {
@@ -2071,7 +2120,9 @@ public class Flight {
         process(connection);
     }
 
-    private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
+    List<ProcessStep.Factory> defaultPasses = List.<ProcessStep.Factory>of();
+
+    final private void process(Connection connection) throws IOException, FatalFlightFileException, SQLException {
         //TODO: these may be different for different airframes/flight
         //data recorders. depending on the airframe/flight data recorder 
         //we should specify these.
@@ -2111,8 +2162,6 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-            } else if (airframeName.equals("")) {
-
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
@@ -2120,18 +2169,23 @@ public class Flight {
             exceptions.add(e);
         }
 
+        // DONE
         try {
             calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
+        // END
 
+        // DONE
         try {
             calculateAirportProximity(connection, "Latitude", "Longitude", "AltAGL");
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
+        // END
 
+        // DONE
         if (!airframeName.equals("ScanEagle") && !airframeName.contains("DJI")) {
             try {
                 calculateTotalFuel(connection, new String[]{"FQtyL", "FQtyR"}, "Total Fuel");
@@ -2145,7 +2199,9 @@ public class Flight {
                 exceptions.add(e);
             }
         }
+        // END
 
+        // DONE
         try {
             if (airframeName.equals("Cessna 172S") || airframeName.equals("Cessna 172R")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4"};
@@ -2165,8 +2221,6 @@ public class Flight {
 
                 String egt2Names[] = {"E2 EGT1", "E2 EGT2", "E2 EGT3", "E2 EGT4"};
                 calculateDivergence(connection, egt2Names, "E2 EGT Divergence", "deg F");
-
-
             } else if (airframeName.equals("Cirrus SR20") || airframeName.equals("Cessna 182T") || airframeName.equals("Cessna T182T") || airframeName.equals("Beechcraft A36/G36") || airframeName.equals("Cirrus SR22") || airframeName.equals("Cessna 400")) {
                 String chtNames[] = {"E1 CHT1", "E1 CHT2", "E1 CHT3", "E1 CHT4", "E1 CHT5", "E1 CHT6"};
                 calculateDivergence(connection, chtNames, "E1 CHT Divergence", "deg F");
@@ -2203,6 +2257,7 @@ public class Flight {
                 LOG.severe("Skipping...");
                 // System.exit(1);
             }
+            // END
 
             if (!airframeName.equals("ScanEagle") && this.doubleTimeSeries.containsKey(ALT_B)) {
                 //LOCI doesn't apply to UAS
@@ -2252,7 +2307,6 @@ public class Flight {
         } catch (MalformedFlightFileException e) {
             exceptions.add(e);
         }
-
     }
 
     private void checkExceptions() {
@@ -2341,16 +2395,10 @@ public class Flight {
         this.status = "SUCCESS";
     }
 
-    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws IOException, FatalFlightFileException, FlightAlreadyExistsException, SQLException {
+    public Flight(int fleetId, String zipEntryName, InputStream inputStream, Connection connection) throws FlightProcessingException {
         this.fleetId = fleetId;
         this.filename = zipEntryName;
         this.tailConfirmed = false;
-
-        /*
-        if (!filename.contains("/")) {
-            throw new FatalFlightFileException("The flight file was not in a directory in the zip file. Flight files should be in a directory with the name of their tail number (or other aircraft identifier).");
-        }
-        */
 
         String[] parts = zipEntryName.split("/");
         if (parts.length <= 1) {
@@ -2369,26 +2417,18 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            if (connection != null) checkIfExists(connection);
+            if (connection != null)
+                checkIfExists(connection);
 
             inputStream.reset();
             process(connection, inputStream);
 
-        } catch (FatalFlightFileException | IOException e) {
+        } catch (FatalFlightFileException | IOException | FlightAlreadyExistsException | SQLException e) {
             status = "WARNING";
-            throw e;
-        } catch (SQLException e) {
-            System.out.println(e);
-            e.printStackTrace();
-            System.exit(1);
+            throw new FlightProcessingException(e);
         }
 
         checkExceptions();
-    }
-
-    // Constructor for a flight that takes lists of UNINSERTED time series (that is, they should not be in the database yet!)
-    private Flight(Connection connection, ArrayList<DoubleTimeSeries> doubleTimeSeries, ArrayList<StringTimeSeries> stringTimeSeries, Timestamp startTime, Timestamp endTime) {
-
     }
 
     /**
@@ -2558,7 +2598,111 @@ public class Flight {
      */
     @SuppressWarnings("deprecation")
     public static <T> Flight processJSON(int fleetId, Connection connection, InputStream inputStream, String filename) throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, ParseException {
-        return null;
+        String status = "";
+        Gson gson = new Gson();
+        JsonReader reader = new JsonReader(new InputStreamReader(inputStream));
+        Map jsonMap = gson.fromJson(reader, Map.class);
+
+        SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd'T'HHmmssZ");
+        Date parsedDate = dateFormat.parse((String) jsonMap.get("date"));
+
+        int timezoneOffset = parsedDate.getTimezoneOffset() / 60;
+        String timezoneOffsetString = (timezoneOffset >= 0 ? "+" : "-") + String.format("%02d:00", timezoneOffset);
+
+        ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
+        ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
+        int len = headers.size();
+
+        DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
+        DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
+        DoubleTimeSeries agl = new DoubleTimeSeries(connection, "AltAGL", "ft", len);
+        DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
+
+        ArrayList<Timestamp> timestamps = new ArrayList<>(len);
+        StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
+        StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
+        StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
+
+        SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
+        SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
+
+        int latIndex = headers.indexOf("product_gps_latitude");
+        int lonIndex = headers.indexOf("product_gps_longitude");
+        int altIndex = headers.indexOf("altitude");
+        int spdIndex = headers.indexOf("speed");
+        int timeIndex = headers.indexOf("time");
+
+        double timeDiff = ((double) lines.get(lines.size() - 1).get(timeIndex)) - ((double) lines.get(0).get(timeIndex));
+        if (timeDiff < 180) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+
+        double prevSeconds = 0;
+        double metersToFeet = 3.28084;
+
+        for (ArrayList<T> line : lines) {
+            double milliseconds = (double) line.get(timeIndex) - prevSeconds;
+            prevSeconds = (double) line.get(timeIndex);
+            parsedDate = TimeUtils.addMilliseconds(parsedDate, (int) milliseconds);
+
+            if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
+                LOG.severe("Invalid latitude: " + line.get(latIndex));
+                status = "WARNING";
+                lat.add(Double.NaN);
+            } else {
+                lat.add((Double) line.get(latIndex));
+            }
+
+            if((double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
+                LOG.severe("Invalid longitude: " + line.get(lonIndex));
+                status = "WARNING";
+                lon.add(Double.NaN);
+            } else {
+                lon.add((Double) line.get(lonIndex));
+            }
+
+            agl.add((Double) line.get(altIndex) * metersToFeet);
+            spd.add((Double) line.get(spdIndex));
+
+            localDateSeries.add(lclDateFormat.format(parsedDate));
+            localTimeSeries.add(lclTimeFormat.format(parsedDate));
+            utcOfstSeries.add(timezoneOffsetString);
+            timestamps.add(new Timestamp(parsedDate.getTime()));
+        }
+
+        int start = 0;
+        int end = timestamps.size() - 1;
+
+        DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
+        DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
+        DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
+        DoubleTimeSeries nagl = agl.subSeries(connection, start, end);
+
+        HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
+        doubleSeries.put("GndSpd", nspd);
+        doubleSeries.put("Longitude", nlon);
+        doubleSeries.put("Latitude", nlat);
+        doubleSeries.put("AltAGL", nagl); // Parrot data is stored as AGL and most likely in meters
+
+        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
+        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
+        StringTimeSeries offset = utcOfstSeries.subSeries(connection, start, end);
+
+        HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
+        stringSeries.put("Lcl Date", localDate);
+        stringSeries.put("Lcl Time", localTime);
+        stringSeries.put("UTCOfst", offset);
+
+        Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
+        flight.status = status;
+        flight.airframeType = "UAS Rotorcraft";
+        flight.airframeTypeId = 4;
+
+//        try {
+//            flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
+//        } catch (MalformedFlightFileException e) {
+//            flight.exceptions.add(e);
+//        }
+
+        return flight;
     }
 
     /**
@@ -2584,7 +2728,7 @@ public class Flight {
         }
 
         CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
-        vspdCalculated.create(new VSPDRegression(connection, this));
+        vspdCalculated.create(new VSPDRegression(getDoubleTimeSeries(ALT_B)));
 
         CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
         densityRatio.create(index -> {
@@ -3375,5 +3519,13 @@ public class Flight {
 
     public void setAirframeTypeID(Integer typeID) {
         this.airframeTypeId  = typeID;
+    }
+
+    public void setHasCoords(boolean hasCoords) {
+        this.hasCoords = hasCoords;
+    }
+
+    public void setHasAGL(boolean hasAGL) {
+        this.hasAGL = hasAGL;
     }
 }

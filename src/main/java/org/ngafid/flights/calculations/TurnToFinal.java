@@ -18,7 +18,7 @@ import java.util.stream.Stream;
 
 import org.ngafid.flights.*;
 
-import static org.ngafid.flights.calculations.Parameters.*; //eliminates the need to use Parameters.<PARAM>
+import static org.ngafid.flights.Parameters.*; //eliminates the need to use Parameters.<PARAM>
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L

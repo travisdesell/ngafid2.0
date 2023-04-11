@@ -33,31 +33,41 @@ import javax.sql.rowset.serial.SerialBlob;
 public class StringTimeSeries {
     private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
+    private static final int SIZE_HINT = 256;
 
-    private int nameId;
+    private int nameId = -1;
     private String name;
-    private int typeId;
+    private int typeId = -1;
     private String dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
 
 
-    public StringTimeSeries(Connection connection, String name, String dataType) throws SQLException {
+    public StringTimeSeries(String name, String dataType, int sizeHint) {
         this.name = name;
-        this.nameId = SeriesNames.getStringNameId(connection, name);
         this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
-        this.timeSeries = new ArrayList<String>();
+        this.timeSeries = new ArrayList<String>(sizeHint);
 
         validCount = 0;
+       
+    }
+
+    public StringTimeSeries(String name, String dataType) {
+        this(name, dataType, SIZE_HINT);
+    }
+
+    public StringTimeSeries(Connection connection, String name, String dataType) throws SQLException {
+        this(name, dataType, SIZE_HINT);
+        setNameId(connection);
+        setTypeId(connection);
     }
 
     public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries) throws SQLException {
         this.name = name;
-        this.nameId = SeriesNames.getStringNameId(connection, name);
         this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
         this.timeSeries = timeSeries;
+        setNameId(connection);
+        setTypeId(connection);
 
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
@@ -65,10 +75,33 @@ public class StringTimeSeries {
                 validCount++;
             }
         }
+    } 
+
+    // Added to get results for StringTimeSeries
+    public StringTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException, ClassNotFoundException {
+
+        this.nameId = resultSet.getInt(1);
+        this.name = SeriesNames.getStringName(connection, this.nameId);
+        //System.out.println("name: " + name);
+
+        this.typeId = resultSet.getInt(2);
+        this.dataType = TypeNames.getName(connection, this.typeId);
+        //System.out.println("data type: " + dataType);
+
+        int length = resultSet.getInt(3);
+        //System.out.println("length: " + length);
+        validCount = resultSet.getInt(4);
+        //System.out.println("valid count: " + validCount);
+
+        Blob values = resultSet.getBlob(5);
+        byte[] bytes = values.getBytes(1, (int)values.length());
+        //System.out.println("values.length: " + (int)values.length());
+        values.free();
+        
+        // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String> objects into the StringTimeSeries cache.
+        this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
     }
-
-
-    // Added to get StringTimeSeries
+    
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
         PreparedStatement query = connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
 
@@ -99,32 +132,14 @@ public class StringTimeSeries {
             return null;
         }
     }
-
-    // Added to get results for StringTimeSeries
-    public StringTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException, ClassNotFoundException {
-
-        this.nameId = resultSet.getInt(1);
-        this.name = SeriesNames.getStringName(connection, this.nameId);
-        //System.out.println("name: " + name);
-
-        this.typeId = resultSet.getInt(2);
-        this.dataType = TypeNames.getName(connection, this.typeId);
-        //System.out.println("data type: " + dataType);
-
-        int length = resultSet.getInt(3);
-        //System.out.println("length: " + length);
-        validCount = resultSet.getInt(4);
-        //System.out.println("valid count: " + validCount);
-
-        Blob values = resultSet.getBlob(5);
-        byte[] bytes = values.getBytes(1, (int)values.length());
-        //System.out.println("values.length: " + (int)values.length());
-        values.free();
-        
-        // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String> objects into the StringTimeSeries cache.
-        this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
+    
+    private void setNameId(Connection connection) throws SQLException {
+        this.nameId = SeriesNames.getDoubleNameId(connection, name);
     }
 
+    private void setTypeId(Connection connection) throws SQLException {
+        this.typeId = TypeNames.getId(connection, dataType);
+    }
     public String toString() {
         return "[StringTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + "]";
     }
@@ -197,6 +212,11 @@ public class StringTimeSeries {
         //System.out.println("Updating database for " + this);
 
         try {
+            if (nameId == -1)
+                setNameId(connection);
+            if (typeId == -1) 
+                setTypeId(connection);
+
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
 
             preparedStatement.setInt(1, flightId);

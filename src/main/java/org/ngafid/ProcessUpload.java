@@ -15,15 +15,28 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import Files.*;
-import org.ngafid.flights.processing.*;
 import org.xml.sax.SAXException;
 
 import javax.xml.parsers.ParserConfigurationException;
 import java.text.ParseException;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Spliterator;
+import java.util.Spliterators;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -34,6 +47,7 @@ import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
+import org.ngafid.flights.process.*;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
@@ -43,14 +57,6 @@ public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
-    private static final Map<String, FileProcessor> fileProcessors = new HashMap<>();
-
-    static {
-        fileProcessors.put(".csv", new CSVFileProcessor());
-        fileProcessors.put(".json", new JSONFileProcessor());
-        fileProcessors.put(".gpx", new GPXFileProcessor());
-        fileProcessors.put(".dat", new DATFileProcessor());
-    }
     
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
@@ -230,9 +236,9 @@ public class ProcessUpload {
         int id;
         int length;
         String filename;
-        ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+        List<MalformedFlightFileException> exceptions;
 
-        public FlightInfo(int id, int length, String filename, ArrayList<MalformedFlightFileException> exceptions) {
+        public FlightInfo(int id, int length, String filename, List<MalformedFlightFileException> exceptions) {
             this.id = id;
             this.length = length;
             this.filename = filename;
@@ -240,6 +246,39 @@ public class ProcessUpload {
         }
     }
 
+    interface CheckedFunction<T, R, E extends Exception> {
+        public R apply(T t) throws E;
+    }
+
+    static class CheckedMap<T, R, E extends Exception> implements Function<T, R> {
+        final BiConsumer<T, E> exceptionHandler;
+        final CheckedFunction<T, R, E> f;
+
+        public CheckedMap(CheckedFunction<T, R, E> f, BiConsumer<T, E> exceptionHandler) {
+            this.exceptionHandler = exceptionHandler;
+            this.f = f;
+        }
+
+        public R apply(T t) {
+            try {
+                return f.apply(t);
+            } catch (Error | RuntimeException e) {
+                throw e;
+            } catch (Exception ex) {
+                @SuppressWarnings("unchecked") E e = (E) ex;
+                exceptionHandler.accept(t, e);
+                return null;
+            }
+        }
+    }
+
+
+    // Generates a function which when called will call the supplied function f which may raise an exception. 
+    // In the event of an exception the exception the exceptionHandler is called and supplied the value T as 
+    // well as the exception object, and finally null is returned.
+    private static <T, R, E extends Exception> CheckedMap<T, R, E> mapOrNull(CheckedFunction<T, R, E> f, BiConsumer<T, E> exceptionHandler) {
+        return new CheckedMap<T, R, E>(f, exceptionHandler);
+    }
 
     public static boolean ingestFlights(Connection connection, int uploadId, int fleetId, int uploaderId, String filename, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
@@ -261,13 +300,53 @@ public class ProcessUpload {
         int validFlights = 0;
         int warningFlights = 0;
         int errorFlights = 0;
+
         if (extension.equals(".zip")) {
+            BiConsumer<ZipEntry, FlightFileFormatException> handleFlightFileFormatException =
+                (z, e) -> {
+                    flightErrors.put(z.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", z.getName()));
+                    errorFlights++;
+                };
+    
+            BiConsumer<FlightFileProcessor, FlightProcessingException> handleExceptionInProcessor =
+                (p, e) -> {
+                    flightErrors.put(p.filename, new UploadException(e.getMessage(), e, p.filename));
+                    errorFlights++;
+                };
+            BiConsumer<FlightBuilder, FlightProcessingException> handleExceptionInBuilder =
+                (b, e) -> {
+                    flightErrors.put(b.meta.filename, new UploadException(e.getMessage(), e, b.meta.filename));
+                    errorFlights++;
+                };
+
             try {
                 System.err.println("processing zip file: '" + filename + "'");
                 ZipFile zipFile = new ZipFile(filename);
 
                 Enumeration<? extends ZipEntry> entries = zipFile.entries();
+                Stream<? extends ZipEntry> validFiles = 
+                    StreamSupport.stream(
+                        Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
+                        false
+                    )
+                    .filter(z -> !z.getName().contains("__MACOSX"))
+                    .filter(z -> !z.isDirectory());
 
+                Stream<Flight> pipeline =
+                    validFiles
+                    .map(mapOrNull(FlightFileProcessor::create, handleFlightFileFormatException)) // Create a FlightFileProcessor for each file
+                    .filter(Objects::nonNull) // Filter out any null values (nulls indicate files we cant process)
+                    .map(mapOrNull(p -> p.parse(), handleExceptionInProcessor)) // Parse the files (this is the initial parsing step
+                    .filter(Objects::nonNull) // Filter out any null values (nulls indicate something went awry in the parsing step)
+                    .flatMap(builder -> builder) // Merge streams together
+                    .map(mapOrNull(builder -> builder.build(connection), handleExceptionInBuilder)) // 
+                    .filter(Objects::nonNull);
+                
+                pipeline.forEach((Flight flight) -> {
+                    flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                    if (flight.getStatus().equals("WARNING")) warningFlights++;
+                });
+                  
                 while (entries.hasMoreElements()) {
                     ZipEntry entry = entries.nextElement();
                     String name = entry.getName();
@@ -286,71 +365,108 @@ public class ProcessUpload {
 
                     String entryName = entry.getName();
 
-                    List<Flight> flights = new ArrayList<>(); // Re-init for each file. Designed for GPX files with multiple flights in one file.
-                    String fileType = entryName.substring(entryName.lastIndexOf("."));
-                    if (fileProcessors.containsKey(fileType)) {
-                        flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
-                        errorFlights++;
-                    }
+                    // if (entryName.contains(".csv")) {
+                    //     try {
+                    //         InputStream stream = zipFile.getInputStream(entry);
+                    //         Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
 
-                    try {
-                        fileProcessors.get(entryName.substring(entryName.lastIndexOf("."))).process(fleetId, entry.getName(), zipFile.getInputStream(entry), connection, flights);
-                    } catch (IOException | FatalFlightFileException | MalformedFlightFileException | FlightAlreadyExistsException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                    }
+                    //         if (connection != null) {
+                    //             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                    //         }
 
-                    for (Flight flight : flights) {
-                        if (connection != null) flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                        if (flight.getStatus().equals("WARNING")) warningFlights++;
+                    //         if (flight.getStatus().equals("WARNING")) warningFlights++;
 
-                        flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
-                        validFlights++;
-                    }
+                    //         flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
-                    // TODO: Integrate
-                    if (entry.getName().endsWith(".DAT")) {
-                        String zipName = entry.getName().substring(entry.getName().lastIndexOf("/"));
-                        String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
-                        File tempExtractedFile = new File(parentFolder, zipName);
+                    //         validFlights++;
+                    //     } catch (FlightProcessingException e) {
+                    //         System.err.println(e.getMessage());
+                    //         flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                    //         errorFlights++;
+                    //     }
 
-                        System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
-                        try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
-                            int len;
-                            byte[] buffer = new byte[1024];
+                    // } else if (entryName.contains(".gpx")) {
+                    //     try {
+                    //         InputStream stream = zipFile.getInputStream(entry);
+                    //         ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
 
-                            while ((len = inputStream.read(buffer)) > 0) {
-                                fileOutputStream.write(buffer, 0, len);
-                            }
-                        }
+                    //         if (connection != null) {
+                    //             for (Flight flight : flights) {
+                    //                 flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+                    //             }
+                    //             for (Flight flight : flights) {
+                    //                 flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                    //                 if (flight.getStatus().equals("WARNING")) warningFlights++;
+                    //                 validFlights++;
+                    //             }
+                    //         }
+                    //     } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
+                    //              ParserConfigurationException | SAXException | ParseException e) {
+                    //         System.err.println(e.getMessage());
+                    //         flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                    //         errorFlights++;
+                    //     }
+                    // } else if (entry.getName().endsWith(".json")) {
+                    //     try {
+                    //         Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
 
-                        convertDATFile(tempExtractedFile);
-                        File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
-                        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+                    //         if (connection != null) {
+                    //             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                    //         }
 
-                        try (InputStream stream = new FileInputStream(processedCSVFile)) {
-                            Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
+                    //         if (flight.getStatus().equals("WARNING")) warningFlights++;
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                    //         validFlights++;
+                    //     } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
+                    //              ParseException e) {
+                    //         System.err.println("ERROR: " + e.getMessage());
+                    //         flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                    //         errorFlights++;
+                    //     }
+                    // } else if (entry.getName().endsWith(".DAT")) {
+                    //     String zipName = entry.getName().substring(entry.getName().lastIndexOf("/"));
+                    //     String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
+                    //     File tempExtractedFile = new File(parentFolder, zipName);
 
-                            if (flight.getStatus().equals("WARNING")) warningFlights++;
+                    //     System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
+                    //     try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
+                    //         int len;
+                    //         byte[] buffer = new byte[1024];
 
-                            flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+                    //         while ((len = inputStream.read(buffer)) > 0) {
+                    //             fileOutputStream.write(buffer, 0, len);
+                    //         }
+                    //     }
 
-                            validFlights++;
-                        } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | MalformedFlightFileException |
-                                 SQLException e) {
-                            System.err.println(e.getMessage());
-                            flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
-                            errorFlights++;
-                        } finally {
-                            Files.delete(Paths.get(processedCSVFile.getAbsolutePath()));
-                            Files.delete(Paths.get(tempExtractedFile.getAbsolutePath()));
-                        }
-                    }
+                    //     convertDATFile(tempExtractedFile);
+                    //     File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
+                    //     placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+
+                    //     try (InputStream stream = new FileInputStream(processedCSVFile)) {
+                    //         Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
+
+                    //         if (connection != null) {
+                    //             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                    //         }
+
+                    //         if (flight.getStatus().equals("WARNING")) warningFlights++;
+
+                    //         flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+
+                    //         validFlights++;
+                    //     } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException | MalformedFlightFileException |
+                    //              SQLException e) {
+                    //         System.err.println(e.getMessage());
+                    //         flightErrors.put(entry.getName(), new UploadException(e.getMessage(), e, entry.getName()));
+                    //         errorFlights++;
+                    //     } finally {
+                    //         Files.delete(Paths.get(processedCSVFile.getAbsolutePath()));
+                    //         Files.delete(Paths.get(tempExtractedFile.getAbsolutePath()));
+                    //     }
+                    // } else {
+                    //     flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", entry.getName()));
+                    //     errorFlights++;
+                    // }
                 }
 
             } catch (java.nio.file.NoSuchFileException e) {
@@ -383,10 +499,6 @@ public class ProcessUpload {
                 UploadError.insertError(connection, uploadId, "Reached the end of a file while doing DAT processing");
                 status = ERROR_STATUS_STR;
                 uploadException = new Exception(e + ", reached the end of a file while doing DAT processing");
-            } catch (FatalFlightFileException e) {
-                throw new RuntimeException(e);
-            } catch (FlightAlreadyExistsException e) {
-                throw new RuntimeException(e);
             }
 
         } else {
@@ -410,7 +522,6 @@ public class ProcessUpload {
         //insert all the flight errors to the database
         for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {
             UploadException exception = entry.getValue();
-
             FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
         }
 
@@ -438,7 +549,7 @@ public class ProcessUpload {
             for (FlightInfo info : flightInfo) {
                 uploadProcessedEmail.addFlight(info.filename, info.id, info.length);
 
-                ArrayList<MalformedFlightFileException> exceptions = info.exceptions;
+                List<MalformedFlightFileException> exceptions = info.exceptions;
                 if (exceptions.size() == 0) {
                     uploadProcessedEmail.flightImportOK(info.filename);
                 }
@@ -455,7 +566,7 @@ public class ProcessUpload {
             uploadProcessedEmail.setWarningFlights(warningFlights);
 
             for (FlightInfo info : flightInfo) {
-                ArrayList<MalformedFlightFileException> exceptions = info.exceptions;
+                List<MalformedFlightFileException> exceptions = info.exceptions;
 
                 if (exceptions.size() > 0) {
                     for (MalformedFlightFileException exception : exceptions) {
@@ -471,7 +582,7 @@ public class ProcessUpload {
 
     private static void placeInZip(String file, String zipFileName) throws IOException {
         LOG.info("Placing " + file + " in zip");
-
+        
         Map<String, String> zipENV = new HashMap<>();
         zipENV.put("create", "true");
 
