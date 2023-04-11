@@ -5,6 +5,8 @@ import com.opencsv.exceptions.CsvValidationException;
 import org.ngafid.flights.*;
 
 import java.io.*;
+import java.net.URI;
+import java.nio.file.*;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -12,8 +14,17 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.zip.ZipFile;
 
 import static org.ngafid.common.TimeUtils.addMilliseconds;
+
+import Files.*;
+
+
+import org.ngafid.flights.FatalFlightFileException;
+import org.ngafid.flights.Flight;
+import org.ngafid.flights.FlightAlreadyExistsException;
+import org.ngafid.flights.MalformedFlightFileException;
 
 public class DATFileProcessor implements FileProcessor {
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
@@ -23,6 +34,15 @@ public class DATFileProcessor implements FileProcessor {
 
     public Flight process(int fleetId, String entry, InputStream stream, Connection connection)
             throws SQLException, IOException, FatalFlightFileException, FlightAlreadyExistsException, MalformedFlightFileException {
+        try {
+            convertAndInsert();
+        } catch (NotDatFile notDatFile) {
+            throw new RuntimeException(notDatFile);
+        } catch (FileEnd fileEnd) {
+            throw new RuntimeException(fileEnd);
+        }
+
+
         List<InputStream> inputStreams = duplicateInputStream(stream, 2);
         Map<Integer, String> indexedCols = new HashMap<>();
         Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
@@ -71,6 +91,61 @@ public class DATFileProcessor implements FileProcessor {
         flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
 
         return flight;
+    }
+
+    private void convertAndInsert(String entry, ZipFile zipFile) throws NotDatFile, IOException, FileEnd {
+        String zipName = entry.substring(entry.lastIndexOf("/"));
+        String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
+        File tempExtractedFile = new File(parentFolder, zipName);
+
+        System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
+        try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
+            int len;
+            byte[] buffer = new byte[1024];
+
+            while ((len = inputStream.read(buffer)) > 0) {
+                fileOutputStream.write(buffer, 0, len);
+            }
+        }
+
+        convertDATFile(tempExtractedFile);
+        File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
+        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+    }
+
+    private static void placeInZip(String file, String zipFileName) throws IOException {
+        LOG.info("Placing " + file + " in zip");
+
+        Map<String, String> zipENV = new HashMap<>();
+        zipENV.put("create", "true");
+
+        Path csvFilePath = Paths.get(file);
+        Path zipFilePath = Paths.get(csvFilePath.getParent() + "/" + zipFileName);
+
+        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
+        try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
+            Path zipFileSystemPath = fileSystem.getPath(file.substring(file.lastIndexOf("/") + 1));
+            Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
+        }
+    }
+
+    private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
+        LOG.info("Converting to CSV: " + file.getAbsolutePath());
+        DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
+        datFile.reset();
+        datFile.preAnalyze();
+
+        ConvertDat convertDat = datFile.createConVertDat();
+
+        String csvFilename = file.getAbsolutePath() + ".csv";
+        convertDat.csvWriter = new CsvWriter(csvFilename);
+        convertDat.createRecordParsers();
+
+        datFile.reset();
+        AnalyzeDatResults results = convertDat.analyze(false);
+        LOG.info(datFile.getFile().getAbsolutePath());
+
+        return datFile.getFile();
     }
 
     private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
