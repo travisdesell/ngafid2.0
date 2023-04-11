@@ -1,4 +1,4 @@
-package org.ngafid.flights.processing;
+package org.ngafid.flights.process;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 import static org.ngafid.common.TimeUtils.addMilliseconds;
@@ -26,7 +27,7 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.MalformedFlightFileException;
 
-public class DATFileProcessor implements FileProcessor {
+public class DATFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
@@ -628,4 +629,8 @@ public class DATFileProcessor implements FileProcessor {
         }
     }
 
+    @Override
+    public Stream<FlightBuilder> parse() throws FlightProcessingException {
+        return null;
+    }
 }

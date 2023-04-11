@@ -1,4 +1,4 @@
-package org.ngafid.flights.processing;
+package org.ngafid.flights.process;
 
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;

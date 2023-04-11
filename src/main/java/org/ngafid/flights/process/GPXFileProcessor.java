@@ -1,4 +1,4 @@
-package org.ngafid.flights.processing;
+package org.ngafid.flights.process;
 
 import org.ngafid.flights.*;
 import org.w3c.dom.Document;

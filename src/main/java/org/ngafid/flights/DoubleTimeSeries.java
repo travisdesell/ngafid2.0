@@ -554,5 +554,12 @@ public class DoubleTimeSeries {
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;
     }
+
+    public DoubleTimeSeries subSeries(int from, int until) throws SQLException {
+        DoubleTimeSeries newSeries = new DoubleTimeSeries(name, dataType, until - from);
+        newSeries.size = until - from;
+        System.arraycopy(data, from, newSeries.data, 0, until - from);
+        return newSeries;
+    }
 }
 
