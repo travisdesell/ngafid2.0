@@ -67,8 +67,8 @@ public class TerrainCache {
         int ilatitude = Math.abs(latitude);
         int ilongitude = Math.abs(longitude);
 
-        String strLongitude = Integer.toString(ilongitude);
-        while (strLongitude.length() < 3) strLongitude = "0" + strLongitude;
+        StringBuilder strLongitude = new StringBuilder(Integer.toString(ilongitude));
+        while (strLongitude.length() < 3) strLongitude.insert(0, "0");
 
         String file = ns + ilatitude + ew + strLongitude + ".hgt";
         return file;

@@ -246,8 +246,6 @@ public class Filter {
                 return "DATE(flights.end_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "Start Time":
-                parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
-                return "TIME(flights.start_time) " + checkOperator(inputs.get(1)) + " ?";
 
             case "End Time":
                 parameters.add(getOffsetTime(inputs.get(2), inputs.get(3)));
@@ -271,7 +269,7 @@ public class Filter {
             case "Runway":
                 String iataRunway = inputs.get(1);
                 String iataCode2 = iataRunway.substring(0, 3);
-                String runway = iataRunway.substring(6, iataRunway.length());
+                String runway = iataRunway.substring(6);
                 parameters.add(iataCode2);
                 parameters.add(runway);
 
@@ -373,10 +371,10 @@ public class Filter {
             return "(" + getRuleQuery(fleetId, parameters) + ")";
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += filters.get(i).toQueryString(fleetId, parameters);
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(filters.get(i).toQueryString(fleetId, parameters));
             }
 
             return "(" + string + ")";
@@ -402,19 +400,19 @@ public class Filter {
         }
 
         if (type.equals("RULE")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < inputs.size(); i++) {
-                if (i > 0) string += " ";
-                string +=  inputs.get(i);
+                if (i > 0) string.append(" ");
+                string.append(inputs.get(i));
             }
 
-            return string;
+            return string.toString();
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += filters.get(i).toHumanReadable();
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(filters.get(i).toHumanReadable());
             }
 
             return "(" + string + ")";
@@ -433,19 +431,19 @@ public class Filter {
      */
     public String toString() {
         if (type.equals("RULE")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < inputs.size(); i++) {
-                if (i > 0) string += " ";
-                string += "'" + inputs.get(i) + "'";
+                if (i > 0) string.append(" ");
+                string.append("'").append(inputs.get(i)).append("'");
             }
 
             return "(" + string + ")";
 
         } else if (type.equals("GROUP")) {
-            String string = "";
+            StringBuilder string = new StringBuilder();
             for (int i = 0; i < filters.size(); i++) {
-                if (i > 0) string += " " + condition + " ";
-                string += filters.get(i).toString();
+                if (i > 0) string.append(" ").append(condition).append(" ");
+                string.append(filters.get(i).toString());
             }
 
             return "(" + string + ")";

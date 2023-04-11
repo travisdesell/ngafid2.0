@@ -242,7 +242,7 @@ public class Flight {
      */
     public void checkCalculationParameters(String calculationName, String ... seriesNames) throws MalformedFlightFileException, SQLException {
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
+            if (!this.doubleTimeSeries.containsKey(param) && this.getDoubleTimeSeries(param) == null) {
                 String errMsg = "Cannot calculate '" + calculationName + "' as parameter '" + param + "' was missing.";
                 LOG.severe("WARNING: " + errMsg);
                 throw new MalformedFlightFileException(errMsg);
@@ -254,7 +254,7 @@ public class Flight {
         List<String> missingParams = new ArrayList<>();
 
         for (String param : seriesNames) {
-            if (!this.doubleTimeSeries.keySet().contains(param) && this.getDoubleTimeSeries(param) == null) {
+            if (!this.doubleTimeSeries.containsKey(param) && this.getDoubleTimeSeries(param) == null) {
                 missingParams.add(param);
             }
         }
@@ -1263,7 +1263,7 @@ public class Flight {
                 queryString.append("' ");
             }
 
-            queryString.append("WHERE id = " + flightTag.hashCode());
+            queryString.append("WHERE id = ").append(flightTag.hashCode());
             System.out.println("Query String Update: " + queryString.toString());
             PreparedStatement query = connection.prepareStatement(queryString.toString());
             query.executeUpdate();

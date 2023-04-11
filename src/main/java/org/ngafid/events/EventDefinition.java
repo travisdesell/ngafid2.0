@@ -140,9 +140,7 @@ public class EventDefinition {
             this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
             try {
-                if (id <= -1) {
-                    this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
-                }
+                this.filter = gson.fromJson(resultSet.getString(7), Filter.class);
             } catch (NullPointerException e) {
                 this.filter = null;
             }

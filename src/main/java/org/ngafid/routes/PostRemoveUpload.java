@@ -68,6 +68,9 @@ public class PostRemoveUpload implements Route {
             String md5Hash = request.queryParams("md5Hash");
 
             Upload upload = Upload.getUploadById(connection, uploadId, md5Hash);
+            if (upload == null) {
+                throw new Exception("Retrieved upload was not found");
+            }
 
             //check to see if the user has upload access for this fleet.
             if (!user.hasUploadAccess(upload.getFleetId())) {

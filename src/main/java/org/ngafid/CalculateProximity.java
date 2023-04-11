@@ -484,7 +484,6 @@ public class CalculateProximity {
                                     endTime = null;
                                     otherEndTime = null;
                                     startLine = -1;
-                                    otherEndLine = -1;
                                     endLine = -1;
                                     otherEndLine = -1;
 

@@ -90,47 +90,47 @@ public class UploadProcessedEmail {
 
         public void getDetails(StringBuilder body) {
             if (status == FlightStatus.ERROR) {
-                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=" + id + "'>flight " + id + "</a> imported with errors:");
+                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=").append(id).append("'>flight ").append(id).append("</a> imported with errors:");
                 body.append("<br>");
                 if (errorMessages.size() > 1) {
                     body.append("<br>");
                     for (String message : errorMessages) {
-                        body.append("&emsp; &emsp; " + message + "<br>");
+                        body.append("&emsp; &emsp; ").append(message).append("<br>");
                     }
                 } else {
                     for (String message : errorMessages) {
-                        body.append("&emsp; &emsp; " + message + "<br>");
+                        body.append("&emsp; &emsp; ").append(message).append("<br>");
                     }
                 }
                 return;
 
             } else if (status == FlightStatus.WARNING) {
-                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=" + id + "'>flight " + id + "</a> imported with warnings:<br>");
+                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=").append(id).append("'>flight ").append(id).append("</a> imported with warnings:<br>");
                 for (String message : warningMessages) {
-                    body.append("&emsp; &emsp; " + message + "<br>");
+                    body.append("&emsp; &emsp; ").append(message).append("<br>");
                 }
             } else {
-                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=" + id + "'>flight " + id + "</a> imported OK:<br>");
+                body.append("&emsp; <a href='http://ngafid.org/protected/flight?flight_id=").append(id).append("'>flight ").append(id).append("</a> imported OK:<br>");
             }
 
             for (String message : exceedenceMessages) {
-                body.append("&emsp; &emsp; event found: " + message + "<br>");
+                body.append("&emsp; &emsp; event found: ").append(message).append("<br>");
             }
 
             for (String message : exceedenceErrorMessages) {
-                body.append("&emsp; &emsp; event calculation warning: " + message + "<br>");
+                body.append("&emsp; &emsp; event calculation warning: ").append(message).append("<br>");
             }
 
             for (String message : proximityMessages) {
-                body.append("&emsp; &emsp; proximity event found: " + message + "<br>");
+                body.append("&emsp; &emsp; proximity event found: ").append(message).append("<br>");
             }
 
             for (String message : proximityErrorMessages) {
-                body.append("&emsp; &emsp; proximity calculation warning: " + message + "<br>");
+                body.append("&emsp; &emsp; proximity calculation warning: ").append(message).append("<br>");
             }
 
             for (String message : ttfErrorMessages) {
-                body.append("&emsp; &emsp; turn-to-final calculation warning: " + message + "<br>");
+                body.append("&emsp; &emsp; turn-to-final calculation warning: ").append(message).append("<br>");
             }
         }
     }
@@ -260,7 +260,7 @@ public class UploadProcessedEmail {
         StringBuilder body = new StringBuilder();
 
         body.append("<body><html><br>");
-        body.append("importing " + flightInfoMap.size() + " flight files to the database took " + importElapsedTime + "<br>");
+        body.append("importing ").append(flightInfoMap.size()).append(" flight files to the database took ").append(importElapsedTime).append("<br>");
 
         int numberOkFlights = 0;
         int numberWarningFlights = 0;
@@ -276,24 +276,24 @@ public class UploadProcessedEmail {
             }
         }
 
-        body.append("&emsp; " + numberOkFlights + " imported with no issues.<br>");
-        body.append("&emsp; " + numberWarningFlights + " imported with warnings.<br>");
-        body.append("&emsp; " + numberErrorFlights + " had errors and could not be imported.<br>");
+        body.append("&emsp; ").append(numberOkFlights).append(" imported with no issues.<br>");
+        body.append("&emsp; ").append(numberWarningFlights).append(" imported with warnings.<br>");
+        body.append("&emsp; ").append(numberErrorFlights).append(" had errors and could not be imported.<br>");
         body.append("<br>");
 
         int numberImportedFlights = numberOkFlights + numberWarningFlights;
-        body.append("calculating flight events for " + numberImportedFlights + " took " + exceedencesElapsedTime + " seconds.<br>");
-        body.append("&emsp; " + numberEvents + " events were found.<br>");
-        body.append("&emsp; " + numberEventErrors + " events could not be calculated due to data issues.<br>");
+        body.append("calculating flight events for ").append(numberImportedFlights).append(" took ").append(exceedencesElapsedTime).append(" seconds.<br>");
+        body.append("&emsp; ").append(numberEvents).append(" events were found.<br>");
+        body.append("&emsp; ").append(numberEventErrors).append(" events could not be calculated due to data issues.<br>");
         body.append("<br>");
 
-        body.append("calculating proximity events for " + numberImportedFlights + " took " + proximityElapsedTime + " seconds, averaging " + proximityAvgTime + " seconds per flight, time bound matching averaged " + proximityAvgTimeMatchTime + " seconds and location bound matching took " + proximityAvgLocationMatchTime + " seconds on average.<br>");
-        body.append("&emsp; " + numberProximityEvents + " proximity events were found.<br>");
-        body.append("&emsp; " + numberProximityErrors + " flights could not be processed for proximity due to data issues.<br>");
+        body.append("calculating proximity events for ").append(numberImportedFlights).append(" took ").append(proximityElapsedTime).append(" seconds, averaging ").append(proximityAvgTime).append(" seconds per flight, time bound matching averaged ").append(proximityAvgTimeMatchTime).append(" seconds and location bound matching took ").append(proximityAvgLocationMatchTime).append(" seconds on average.<br>");
+        body.append("&emsp; ").append(numberProximityEvents).append(" proximity events were found.<br>");
+        body.append("&emsp; ").append(numberProximityErrors).append(" flights could not be processed for proximity due to data issues.<br>");
         body.append("<br>");
 
-        body.append("calculating turn to final information for " + numberImportedFlights + " took " + ttfElapsedTime + " seconds.");
-        body.append("&emsp; " + numberTTFErrors + " flights could not be processed for turn-to-final due to data issues.<br>");
+        body.append("calculating turn to final information for ").append(numberImportedFlights).append(" took ").append(ttfElapsedTime).append(" seconds.");
+        body.append("&emsp; ").append(numberTTFErrors).append(" flights could not be processed for turn-to-final due to data issues.<br>");
         body.append("<br>");
 
         body.append("flight details:<br>");

@@ -108,9 +108,9 @@ public class PostNewUpload implements Route {
 
             if (!resultSet.next()) {
                 //  1. file does not exist, insert into database -- start upload
-                String chunkStatus = ""; 
+                StringBuilder chunkStatus = new StringBuilder();
                 for (int i = 0; i < numberChunks; i++) {
-                    chunkStatus += '0';
+                    chunkStatus.append('0');
                 }   
 
                 query = connection.prepareStatement("INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, filename = ?, identifier = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = 0, chunk_status = ?, status = 'UPLOADING', start_time = now()");
@@ -121,7 +121,7 @@ public class PostNewUpload implements Route {
                 query.setLong(5, sizeBytes);
                 query.setInt(6, numberChunks);
                 query.setString(7, md5Hash);
-                query.setString(8, chunkStatus);
+                query.setString(8, chunkStatus.toString());
 
                 query.executeUpdate();
 

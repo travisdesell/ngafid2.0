@@ -289,7 +289,7 @@ public class ExtractMaintenanceFlights {
 
                     //System.err.println("current aircraft: " + ac);
                     //System.err.println("starting with record: " + record);
-                    while (record != null && ac.getEndTime().compareTo(record.getOpenDate()) > 0) {
+                    while (record != null && ac.getEndTime().isAfter(record.getOpenDate())) {
                         previousRecord = record;
                         currentRecord++;
                         if (currentRecord >= tailRecords.size()) {
@@ -301,7 +301,7 @@ public class ExtractMaintenanceFlights {
                     }
                     //System.out.println("moved to record: " + record);
 
-                    while (record == null || ac.getEndTime().compareTo(record.getCloseDate()) <= 0) {
+                    while (record == null || !ac.getEndTime().isAfter(record.getCloseDate())) {
                         long daysToNext = -1;
                         if (record != null) daysToNext = Math.max(0, ChronoUnit.DAYS.between(ac.getEndTime(), record.getOpenDate()));
 
@@ -437,7 +437,7 @@ public class ExtractMaintenanceFlights {
                         }
                         if (labelToCluster == null) System.err.println("ERROR: labelToCluster is null!");
 
-                        String eventCluster = labelToCluster.get(event.getLabel());
+                        String eventCluster = labelToCluster.get(event.getLabel()); // TODO: Throws a NPE here because null check only prints message
 
                         if (!eventCluster.equals(targetCluster)) continue;
                         //System.out.println(ac.toString());

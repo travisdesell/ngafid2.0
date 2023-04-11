@@ -37,32 +37,33 @@ public class GetAllEventDescriptions implements Route {
                 "FROM event_definitions INNER JOIN airframes ON event_definitions.airframe_id=airframes.id";
         LOG.info("query: " + query);
 
-        PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query);
-        LOG.info("preparedStatement: " + preparedStatement);
+        try (PreparedStatement preparedStatement = Database.getConnection().prepareStatement(query)) {
+            LOG.info("preparedStatement: " + preparedStatement);
 
-        ResultSet resultSet = preparedStatement.executeQuery();
-        LOG.info("resultSet: " + resultSet);
-        Map<String, Map<String, String>> definitions = new TreeMap<>();
-        Map<Integer, String> airframeNames = new HashMap<>();
+            ResultSet resultSet = preparedStatement.executeQuery();
+            LOG.info("resultSet: " + resultSet);
+            Map<String, Map<String, String>> definitions = new TreeMap<>();
+            Map<Integer, String> airframeNames = new HashMap<>();
 
-        while (resultSet.next()) {
-            EventDefinition eventDefinition = new EventDefinition(resultSet);
-            LOG.info("eventDefinition: " + eventDefinition);
+            while (resultSet.next()) {
+                EventDefinition eventDefinition = new EventDefinition(resultSet);
+                LOG.info("eventDefinition: " + eventDefinition);
 
-            String text = eventDefinition.toHumanReadable();
-            LOG.info("text: " + text);
+                String text = eventDefinition.toHumanReadable();
+                LOG.info("text: " + text);
 
-            if (!definitions.containsKey(eventDefinition.getName())) {
-                definitions.put(eventDefinition.getName(), new HashMap<>());
+                if (!definitions.containsKey(eventDefinition.getName())) {
+                    definitions.put(eventDefinition.getName(), new HashMap<>());
+                }
+
+                if (!airframeNames.containsKey(eventDefinition.getAirframeNameId())) {
+                    airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
+                }
+
+                definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
             }
 
-            if (!airframeNames.containsKey(eventDefinition.getAirframeNameId())) {
-                airframeNames.put(eventDefinition.getAirframeNameId(), resultSet.getString(11));
-            }
-
-            definitions.get(eventDefinition.getName()).put(airframeNames.get(eventDefinition.getAirframeNameId()), eventDefinition.toHumanReadable());
+            return gson.toJson(definitions);
         }
-
-        return gson.toJson(definitions);
     }
 }
