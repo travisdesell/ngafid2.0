@@ -2,6 +2,7 @@ package org.ngafid.flights.process;
 
 import com.google.gson.Gson;
 import com.google.gson.stream.JsonReader;
+import com.opencsv.CSVReader;
 import org.apache.maven.cli.logging.Slf4jLogger;
 import org.ngafid.flights.*;
 
@@ -20,14 +21,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private String airframeName;
     private String startDateTime;
     private String endDateTime;
-    private String filename;
     private String airframeType;
     private String suggestedTailNumber;
     private String systemId;
+    private final List<String> headers;
+    private final List<String> dataTypes;
 
 
     public CSVFileProcessor(InputStream stream, String filename) {
         super(stream, filename);
+        headers = new ArrayList<>();
+        dataTypes = new ArrayList<>();
     }
 
     @Override
@@ -48,9 +52,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8))) {
             String fileInformation = getFileInformation(bufferedReader);
 
-            if (airframeName != null && airframeName.equals("ScanEagle")) {
-                scanEagleParsing();
+            CSVReader reader = new CSVReader(bufferedReader);
 
+            if (airframeName != null && airframeName.equals("ScanEagle")) {
+                scanEagleParsing(fileInformation);
             } else {
                 //grab the airframe info from the header for other file types
                 String[] infoParts = null;
@@ -62,13 +67,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         //process everything else (G1000 data)
                         if (infoParts[i].trim().length() == 0) continue;
 
-                        //System.err.println("splitting key/value: '" + infoParts[i] + "'");
                         String subParts[] = infoParts[i].trim().split("=");
                         String key = subParts[0];
                         String value = subParts[1];
-
-                        //System.err.println("key: '" + key + "'");
-                        //System.err.println("value: '" + value + "'");
 
                         if (key.equals("airframe_name")) {
                             airframeName = value.substring(1, value.length() - 1);
@@ -134,6 +135,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 }
             }
 
+//            -----------------------------------------------------
             if (airframeName == null)
                 throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'airframe_name' key/value pair.");
             System.err.println("detected airframe type: '" + airframeName + "'");
@@ -144,16 +146,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             if (airframeName.equals("ScanEagle")) {
                 //for the ScanEagle, the first line is the headers of the columns
-                String headersLine = fileInformation;
-                //System.out.println("Headers line is: " + headersLine);
-                headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
-                headers.replaceAll(String::trim);
-                System.out.println("headers are:\n" + headers.toString());
 
-                //scan eagle files have no data types, set all to ""
-                for (int i = 0; i < headers.size(); i++) {
-                    dataTypes.add("none");
-                }
 
             } else {
                 //the next line is the column data types
@@ -331,10 +324,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
 
-    private void scanEagleParsing() {
+    private void scanEagleParsing(String fileInformation) {
 
         //need a custom method to process ScanEagle data because the column
         //names are different and there is no header info
+        scanEagleSetTailAndID();
+        scanEagleHeaders(fileInformation);
+
 
 
     }
@@ -354,4 +350,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
         LOG.log(Level.INFO, "system id: '{0}'", systemId);
     }
 
+
+    private void scanEagleHeaders(String fileInformation) {
+        String headersLine = fileInformation;
+        headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
+        headers.replaceAll(String::trim);
+        System.out.println("headers are:\n" + headers.toString());
+        //scan eagle files have no data types, set all to ""
+        for (int i = 0; i < headers.size(); i++) {
+            dataTypes.add("none");
+        }
+    }
 }
