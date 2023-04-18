@@ -52,7 +52,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             updateAirframe();
 
             if (airframeName != null && airframeName.equals("ScanEagle")) {
-                scanEagleParsing(fileInformation);
+                scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
                 bufferedReader.read(); // Skip first char (#)
                 dataTypes = List.of(csvReader.readNext());
@@ -65,18 +65,18 @@ public class CSVFileProcessor extends FlightFileProcessor {
             for (String data : firstRow) {
                 try {
                     Double.parseDouble(data);
-                    doubleTimeSeries.put(headers.get(colIndex), new DoubleTimeSeries(headers.get(i), dataTypes.get(i)));
+                    doubleTimeSeries.put(headers.get(colIndex), new DoubleTimeSeries(headers.get(colIndex), dataTypes.get(colIndex)));
                 } catch (NumberFormatException e) {
-                    stringTimeSeries.put(headers.get(colIndex), new StringTimeSeries(headers.get(i), dataTypes.get(i)));
+                    stringTimeSeries.put(headers.get(colIndex), new StringTimeSeries(headers.get(colIndex), dataTypes.get(colIndex)));
                 }
 
                 colIndex++;
             }
 
-
-            for (String[] row : csvValues) {
+            List<String> finalHeaders = headers;
+            csvValues.forEach(row -> {
                 for (int i = 0; i < row.length; i++) {
-                    String header = headers.get(i);
+                    String header = finalHeaders.get(i);
                     String value = row[i];
 
                     try {
@@ -85,7 +85,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         stringTimeSeries.get(header).add(value);
                     }
                 }
-            }
+            });
 
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
@@ -154,6 +154,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
 
+    // TODO: Figure out ScanEagle data
     private void scanEagleHeaders(String fileInformation) {
         String headersLine = fileInformation;
         headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
