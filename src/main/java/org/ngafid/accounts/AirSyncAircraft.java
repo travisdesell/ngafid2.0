@@ -26,7 +26,7 @@ import java.io.InputStream;
 public class AirSyncAircraft {
     private int id;
     private String tailNumber;
-    private Fleet fleet;
+    private AirSyncFleet fleet;
     private static final Gson gson = WebServer.gson;
 
     // NOTE: If this code exists in the year 9999, this may want to be adjusted :p
@@ -41,7 +41,7 @@ public class AirSyncAircraft {
         this.tailNumber = tailNumber;
     }
 
-    public void initialize(Fleet fleet) {
+    public void initialize(AirSyncFleet fleet) {
         this.fleet = fleet;
     }
 

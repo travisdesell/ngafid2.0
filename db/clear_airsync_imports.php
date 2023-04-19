@@ -9,7 +9,14 @@ require_once($cwd[__FILE__] . "/my_query.php");
 $drop_tables = false;
 
 //delete and reset events
-$result = query_ngafid_db("SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user' AND email = 'info@airsync.com';");
+$query = "SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user' AND email = 'info@airsync.com'";
+$result = query_ngafid_db($query);
+
+if (!$result) {
+    echo "Unable to get AirSync user info. \n";
+    exit;
+}
+
 $row = $result->fetch_assoc();
 $as_uploader_id = $row['id'];
 
@@ -23,6 +30,20 @@ query_ngafid_db("DELETE FROM itinerary WHERE flight_id IN (SELECT id FROM flight
 query_ngafid_db("DELETE FROM flights WHERE uploader_id = " . $as_uploader_id . ";");
 query_ngafid_db("UPDATE airsync_fleet_info SET last_upload_time = null;");
 
-echo "Cleared all AirSync uploads\n";
+echo "Cleared all AirSync uploads from DB\n";
+
+//TODO: write code to use env vars to clear archive dir as well
+$arch_dir = getenv("NGAFID_ARCHIVE_DIR");
+
+if (!$arch_dir) {
+    echo "Cant find NGAFID_ARCHIVE_DIR in vars. Make sure you have these properly defined";
+    exit;
+}
+
+$airsync_uploads = $arch_dir . "/AirSyncUploader";
+
+system('rm -rf ' . $airsync_uploads);
+
+echo "Cleared all AirSync uploads from Archive\n";
 
 ?>
