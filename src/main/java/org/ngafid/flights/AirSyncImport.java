@@ -9,9 +9,9 @@ import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.*;
 import java.util.zip.*;
 
+import javax.net.ssl.HttpsURLConnection;
 import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.CalculateExceedences;
@@ -19,14 +19,16 @@ import org.ngafid.Database;
 import org.ngafid.UploadException;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
+import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.Fleet;
 
 public class AirSyncImport {
-    private int id, uploadId, aircraftId, fleetId;
+    private int id, uploadId, aircraftId;
     private byte [] data;
     private String origin, destination, timeStart, timeEnd, md5Hash, fileUrl, timestampUploaded;
     private LocalDateTime localDateTimeStart, localDateTimeEnd, localDateTimeUpload;
     private AirSyncAircraft aircraft;
+    private AirSyncFleet fleet;
 
     private static final String STATUS_IMPORTED = "IMPORTED";
     private static final String STATUS_ERR = "ERROR";
@@ -39,10 +41,15 @@ public class AirSyncImport {
 
     private static final Logger LOG = Logger.getLogger(AirSyncImport.class.getName());
 
-    private AirSyncImport(int id, int uploadId, int fleetId) {
+    private static class LogResponse {
+        int id;
+        String fileUrl;
+    }
+
+    private AirSyncImport(int id, int uploadId, AirSyncFleet fleet) {
         this.uploadId = uploadId;
         this.id = id;
-        this.fleetId = fleetId;
+        this.fleet = fleet;
     }
 
     /**
@@ -55,8 +62,8 @@ public class AirSyncImport {
      * @param {fleet} a reference to the fleet that this upload is for
      * @param {aircraft} a reference to the aircraft this import is from {@link AirSyncAircraft}
      */
-    public void init(Fleet fleet, AirSyncAircraft aircraft) {
-        this.fleetId = fleet.getId();
+    public void init(AirSyncFleet fleet, AirSyncAircraft aircraft) {
+        this.fleet = fleet;
         this.aircraft = aircraft;
 
         //This does not include timezones yet
@@ -94,7 +101,7 @@ public class AirSyncImport {
     public void process(Connection connection) throws MalformedFlightFileException {
         //Ensure there is data to read before proceeding...
         int count = 0;
-        String identifier = getUploadIdentifier(fleetId, aircraftId, this.localDateTimeStart);
+        String identifier = getUploadIdentifier(this.fleet.getId(), aircraftId, this.localDateTimeStart);
 
         if ((count = readCsvData()) > 0) {
             String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
@@ -170,7 +177,7 @@ public class AirSyncImport {
                 // The identifier of any AirSync upload will be unique! 
                 // NOTE: multiple imports will reside in one upload.
                 // Format: AS-<ngafid_fleet_id>.<airsync_aircraft_id>-<UPLOAD_YYYY>-<UPLOAD_MM>
-                Flight flight = new Flight(fleetId, csvName, new ByteArrayInputStream(this.data), connection);
+                Flight flight = new Flight(this.fleet.getId(), csvName, new ByteArrayInputStream(this.data), connection);
 
                 if (connection != null) {
                     //TODO: change the status based on the month!
@@ -178,7 +185,7 @@ public class AirSyncImport {
                 }
 
                 flight.updateTail(connection, aircraft.getTailNumber());
-                flight.updateDatabase(connection, this.uploadId, getUploaderId(), fleetId);
+                flight.updateDatabase(connection, this.uploadId, getUploaderId(), this.fleet.getId());
 
                 this.createImport(connection, flight);
 
@@ -301,7 +308,7 @@ public class AirSyncImport {
             //String hash = this.getMd5Hash();
 
             query.setString(1, status);
-            query.setInt(2, this.fleetId);
+            query.setInt(2, this.fleet.getId());
             query.setString(3, fileName);
             query.setString(4, identifier);
             query.setInt(5, count);
@@ -343,7 +350,7 @@ public class AirSyncImport {
         //column in `uploads`
         query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
         query.setInt(4, this.uploadId);
-        query.setInt(5, this.fleetId);
+        query.setInt(5, this.fleet.getId());
         query.setInt(6, flight.getId());
 
         query.executeUpdate();
@@ -438,13 +445,44 @@ public class AirSyncImport {
         return numImports;
     }
 
+    private InputStream getFileInputStream() {
+        InputStream is = null;
+
+        try {
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
+
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());     
+
+            is = connection.getInputStream();
+            byte [] respRaw = is.readAllBytes();
+            
+            String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
+
+            LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);
+            URL input = new URL(log.fileUrl);
+            LOG.info("Got URL for logfile " + log.fileUrl);
+
+            is = input.openStream();
+
+        } catch (IOException ie) {
+            AirSync.crashGracefully(ie);
+        }
+
+        return is;
+    }
 
     public int readCsvData() {
         try {
-            URL input = new URL(fileUrl);
-            InputStream is = input.openStream();
+            InputStream is = getFileInputStream();
 
-            this.data = is.readAllBytes();
+            if (is == null) {
+                AirSync.logFile.println("ERROR: Unable to read fileUrl from log endpoint for aircraft " + this.aircraftId + ": " + fileUrl + " with log: " + this.id + ".");
+                return -1;
+            } else {
+                this.data = is.readAllBytes();
+            }
         } catch (Exception e) {
             AirSync.logFile.println("ERROR: Unable to read fileUrl for aircraftId " + this.aircraftId + ": " + fileUrl);
             return -1;
