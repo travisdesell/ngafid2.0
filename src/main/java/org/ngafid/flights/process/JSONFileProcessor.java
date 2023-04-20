@@ -24,31 +24,30 @@ import java.util.stream.Stream;
 
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
-    private final Map<String, DoubleTimeSeries> doubleTimeSeries;
-    private final Map<String, StringTimeSeries> stringTimeSeries;
-    private final FlightMeta flightMeta;
 
     public JSONFileProcessor(InputStream stream, String filename) throws FlightFileFormatException {
         super(stream, filename);
-        doubleTimeSeries = new HashMap<>();
-        stringTimeSeries = new HashMap<>();
-        flightMeta = new FlightMeta();
+
     }
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
+        FlightMeta flightMeta = new FlightMeta();
+        final Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
+        final Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
+
+
         try {
-            processTimeSeries();
+            processTimeSeries(flightMeta, doubleTimeSeries, stringTimeSeries);
         } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException |
                  FlightAlreadyExistsException e) {
             throw new FlightProcessingException(e);
         }
 
-        return Stream.of(new FlightBuilder(new FlightMeta(), doubleTimeSeries, stringTimeSeries));
-
+        return Stream.of(new FlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
     }
 
-    private void processTimeSeries() throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    private void processTimeSeries(FlightMeta flightMeta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         String status = "";
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(super.stream));
@@ -142,10 +141,9 @@ public class JSONFileProcessor extends FlightFileProcessor {
         StringTimeSeries localTime = localTimeSeries.subSeries(start, end);
         StringTimeSeries offset = utcOfstSeries.subSeries(start, end);
 
-        HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
-        stringSeries.put("Lcl Date", localDate);
-        stringSeries.put("Lcl Time", localTime);
-        stringSeries.put("UTCOfst", offset);
+        stringTimeSeries.put("Lcl Date", localDate);
+        stringTimeSeries.put("Lcl Time", localTime);
+        stringTimeSeries.put("UTCOfst", offset);
 
         MessageDigest md = null;
         try {
