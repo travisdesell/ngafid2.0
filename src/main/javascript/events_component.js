@@ -6,6 +6,7 @@ import Plotly from 'plotly.js';
 import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
+import {errorModal} from "./error_modal";
 
 
 // establish set of RGB values to combine //
@@ -245,9 +246,19 @@ class Events extends React.Component {
                         let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         let otherFlightText = "";
                         let otherFlightURL = "";
-                        if (event.eventDefinitionId == -1) { 
+                        let rateOfClosureBtn = "";
+                        let rocPlot = "";
+                        if (event.eventDefinitionId == -1) {
+                            var rocPlotData = this.getRateOfClosureData(event);
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+                            if (rocPlotData != null) {
+                                rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
+                                    <i className="fa fa-area-chart p-1" ></i></button>   );
+                                if (!event.rocPlotVisible) {
+                                    rocPlot = (<div id={event.id + "-rocPlot"}></div>);
+                                }
+                            }
                         }
 
                         return (
@@ -257,9 +268,12 @@ class Events extends React.Component {
                                 </div>
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
+                                    {rocPlot}
                                 </button>
+
                             </div>
+
                         );
                     })
                 }
@@ -268,6 +282,73 @@ class Events extends React.Component {
         );
 
     }
+
+    displayRateOfClosurePlot(data, event) {
+        var id = event.id + "-rocPlot";
+        if (!event.rocPlotVisible) {
+            var trace = {
+                x : data.x,
+                y : data.y,
+                type : "scatter",
+            }
+            var layout = {
+                shapes: [
+                    {
+                        type: 'rect',
+                        x0: 0,
+                        y0: Math.min(...data.y),
+                        x1: data.x.length - 10,
+                        y1: Math.max(...data.y),
+                        fillcolor: '#d3d3d3',
+                        opacity: 0.3,
+                        line: {
+                            width: 0
+                        }
+                    }],
+                yaxis : {
+                    title:{
+                        text: "Rate of closure (distance in ft)"
+                    }
+                },
+                xaxis : {
+                    title : {
+                        text : "Proximity Event (seconds)"
+                    }
+                }
+            }
+            Plotly.newPlot(id, [trace], layout)
+            event.rocPlotVisible = true
+            $("#"+id).show();
+        } else {
+            event.rocPlotVisible = false;
+            $("#"+id).hide();
+        }
+    };
+
+
+    getRateOfClosureData(event) {
+        var eventId = event.id;
+        var rocPlotData = null;
+        console.log("Calculating Rate of Closure")
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/rate_of_closure',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                rocPlotData =  response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Rate of closure ", errorThrown);
+            },
+            async: false
+        })
+        return rocPlotData;
+    };
+
 }
 
 export { Events, eventColorScheme };
