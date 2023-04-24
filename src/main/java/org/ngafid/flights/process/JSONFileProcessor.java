@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    public JSONFileProcessor(InputStream stream, String filename) throws FlightFileFormatException {
+    public JSONFileProcessor(InputStream stream, String filename) {
         super(stream, filename);
 
     }
