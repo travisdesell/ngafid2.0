@@ -1,21 +1,12 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-import Dropdown from 'react-bootstrap/Dropdown';
-import Popover from 'react-bootstrap/Popover';
-import Col from 'react-bootstrap/Col';
-import Row from 'react-bootstrap/Row';
-import Button from 'react-bootstrap/Button';
-import Table from 'react-bootstrap/Table';
-import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 
 import Plotly from 'plotly.js';
 import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
-import { EventAnnotation } from './event_annotation.js';
-import { errorModal } from './error_modal.js';
-import { confirmModal } from './confirm_modal.js';
+import {errorModal} from "./error_modal";
 
 
 // establish set of RGB values to combine //
@@ -64,7 +55,7 @@ class Events extends React.Component {
 
         this.state = {
             events : props.events,
-            definitions : definitionsPresent,
+            definitions : definitionsPresent
         };
     }
 
@@ -177,27 +168,9 @@ class Events extends React.Component {
         this.updateEventDisplay(index, true);
     }
 
-    getAnnotationTypes() {
-        let types = [];
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/event_classes',
-            dataType : 'json',
-            success : function(response) {
-                types = new Map(Object.entries(response));
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-            },
-            async: false
-        });
-
-        return types;
-    }
-
     render() {
         let cellClasses = "d-flex flex-row p-1";
-        let cellStyle = { "overflow" : "visible" };
+        let cellStyle = { "overflowX" : "auto" };
         let buttonClasses = "m-1 btn btn-outline-secondary";
         const styleButton = {
             flex : "0 0 10em"
@@ -208,8 +181,6 @@ class Events extends React.Component {
         let eventTypeSet = new Set();
         let eventTypeButtons = [];
         let thisFlight = this.props.parent;
-
-        const eventAnnotationTypes = this.getAnnotationTypes();
 
         this.state.events.map((event, index) => {
             if (!eventTypeSet.has(event.eventDefinitionId)) {
@@ -275,12 +246,10 @@ class Events extends React.Component {
                         let buttonID = "_" + this.props.parent.props.flightInfo.id + index;
                         let otherFlightText = "";
                         let otherFlightURL = "";
-                        let eventAnnotations = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
-
                         if (event.eventDefinitionId == -1) {
-                            var rocPlotData = this.getRocData(event);
+                            var rocPlotData = this.getRateOfClosureData(event);
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
                             if (rocPlotData != null) {
@@ -292,17 +261,6 @@ class Events extends React.Component {
                             }
                         }
 
-                        if (event.eventDefinitionId >= 50 && event.eventDefinitionId <= 53) {
-                            eventAnnotations = (
-                                <EventAnnotation style={cellStyle}
-                                    id={event.id}
-                                    event={event}
-                                    annotationTypes={eventAnnotationTypes}
-                                >
-                                </EventAnnotation>
-                            );
-                        }
-
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
                                 <div style={{flex: "0 0"}}>
@@ -310,12 +268,10 @@ class Events extends React.Component {
                                 </div>
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL }
-                                    { rateOfClosureBtn }
+                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
                                     {rocPlot}
                                 </button>
 
-                                {eventAnnotations}
                             </div>
 
                         );
@@ -370,7 +326,7 @@ class Events extends React.Component {
     };
 
 
-    getRocData(event) {
+    getRateOfClosureData(event) {
         var eventId = event.id;
         var rocPlotData = null;
         console.log("Calculating Rate of Closure")
