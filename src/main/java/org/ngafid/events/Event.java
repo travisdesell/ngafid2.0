@@ -35,6 +35,8 @@ public class Event {
 
     private Integer otherFlightId = null;
 
+    private RateOfClosure rateOfClosure;
+
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
@@ -52,7 +54,6 @@ public class Event {
         this.severity = severity;
         this.otherFlightId = otherFlightId;
     }
-
 
     /**
      * Creates an event from a mysql query result
@@ -178,7 +179,7 @@ public class Event {
         this.eventDefinitionId = eventDefinitionId;
 
         try {
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
             preparedStatement.setInt(2, flightId);
             preparedStatement.setInt(3, eventDefinitionId);
@@ -208,6 +209,14 @@ public class Event {
             System.err.println(preparedStatement);
 
             preparedStatement.executeUpdate();
+            ResultSet resultSet = preparedStatement.getGeneratedKeys();
+            if (resultSet.next()) {
+                int eventId = resultSet.getInt(1);
+                if (this.rateOfClosure != null) {
+                    this.rateOfClosure.updateDatabase(connection, eventId);
+
+                }
+            }
             preparedStatement.close();
         } catch (SQLException e) {
             System.err.println("ERROR commiting event do database.");
@@ -360,6 +369,9 @@ public class Event {
         resultSet.close();
 
         return eventsByAirframe;
+    }
+    public void setRateOfClosure(RateOfClosure rateOfClosure) {
+        this.rateOfClosure = rateOfClosure;
     }
 }
 
