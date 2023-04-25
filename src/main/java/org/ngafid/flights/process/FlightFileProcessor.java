@@ -23,11 +23,16 @@ public abstract class FlightFileProcessor {
     public final String filename;
     public final InputStream stream;
 
-    public FlightFileProcessor(InputStream stream, String filename) {
-        this.filename = filename;
+    public FlightFileProcessor(InputStream stream, String filename, Object... args) {
         this.stream = stream;
+        this.filename = filename;
     }
 
 
+    /**
+     * Parses the file for flight data to be processed
+     * @return A stream of FlightBuilders
+     * @throws FlightProcessingException
+     */
     public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 }

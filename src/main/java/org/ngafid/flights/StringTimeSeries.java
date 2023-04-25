@@ -248,5 +248,14 @@ public class StringTimeSeries {
 
         return newSeries;
     }
+
+    public StringTimeSeries subSeries(int from, int until) throws SQLException {
+        StringTimeSeries newSeries = new StringTimeSeries(name, dataType);
+
+        for (int i = from; i < until; i++)
+          newSeries.add(this.timeSeries.get(i));
+
+        return newSeries;
+    }
 }
 

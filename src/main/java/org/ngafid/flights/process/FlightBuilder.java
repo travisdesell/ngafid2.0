@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 import org.ngafid.flights.*;
 import org.ngafid.flights.process.*;
@@ -71,7 +72,7 @@ public class FlightBuilder {
         // Add all of our processing steps here...
         // The order doesn't matter; the DependencyGraph will resolve
         // the order in the event that there are dependencies.
-        return processSteps.stream().map(factory -> factory.create(connection, this)).toList();
+        return processSteps.stream().map(factory -> factory.create(connection, this)).collect(Collectors.toList());
     }
 
     // throws a flight processing exception if an unrecoverable error occurred.
