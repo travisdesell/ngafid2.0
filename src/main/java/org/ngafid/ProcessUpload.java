@@ -15,10 +15,6 @@ import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
 import Files.*;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.text.ParseException;
 
 import java.util.Arrays;
 import java.util.List;
@@ -29,10 +25,9 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
@@ -40,9 +35,7 @@ import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.Upload;
@@ -309,25 +302,25 @@ public class ProcessUpload {
         HashMap<String, UploadException> flightErrors = new HashMap<String, UploadException>();
 
         int validFlights = 0;
-        int warningFlights = 0;
-        int errorFlights = 0;
+        AtomicInteger warningFlights = new AtomicInteger();
+        AtomicInteger errorFlights = new AtomicInteger();
 
         if (extension.equals(".zip")) {
             BiConsumer<ZipEntry, FlightFileFormatException> handleFlightFileFormatException =
                 (z, e) -> {
                     flightErrors.put(z.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", z.getName()));
-                    errorFlights++;
+                    errorFlights.getAndIncrement();
                 };
     
             BiConsumer<FlightFileProcessor, FlightProcessingException> handleExceptionInProcessor =
                 (p, e) -> {
                     flightErrors.put(p.filename, new UploadException(e.getMessage(), e, p.filename));
-                    errorFlights++;
+                    errorFlights.getAndIncrement();
                 };
             BiConsumer<FlightBuilder, FlightProcessingException> handleExceptionInBuilder =
                 (b, e) -> {
                     flightErrors.put(b.meta.filename, new UploadException(e.getMessage(), e, b.meta.filename));
-                    errorFlights++;
+                    errorFlights.getAndIncrement();
                 };
 
             try {
@@ -355,7 +348,7 @@ public class ProcessUpload {
                 
                 pipeline.forEach((Flight flight) -> {
                     flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                    if (flight.getStatus().equals("WARNING")) warningFlights++;
+                    if (flight.getStatus().equals("WARNING")) warningFlights.getAndIncrement();
                 });
                   
                 while (entries.hasMoreElements()) {
@@ -374,7 +367,7 @@ public class ProcessUpload {
 
                     if (!PROCESSORS.containsKey(entryExtension)) {
                         flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file", entry.getName()));
-                        errorFlights++;
+                        errorFlights.getAndIncrement();
                         continue;
                     }
 
@@ -430,20 +423,6 @@ public class ProcessUpload {
                 UploadError.insertError(connection, uploadId, "Could not read from zip file: please delete this upload and re-upload.");
                 status = ERROR_STATUS_STR;
                 uploadException = new Exception(e.toString() + ", could not read from zip file: please delete this upload and re-upload.");
-            } catch (NotDatFile e) {
-                LOG.log(Level.SEVERE, "NotDatFile: {0}", e.toString());
-                e.printStackTrace();
-
-                UploadError.insertError(connection, uploadId, "Tried to process a non-DAT file as a DAT file.");
-                status = ERROR_STATUS_STR;
-                uploadException = new Exception(e + ", tried to process a non-DAT file as a DAT file.");
-            } catch (FileEnd e) {
-                LOG.log(Level.SEVERE, "FileEnd: {0}", e.toString());
-                e.printStackTrace();
-
-                UploadError.insertError(connection, uploadId, "Reached the end of a file while doing DAT processing");
-                status = ERROR_STATUS_STR;
-                uploadException = new Exception(e + ", reached the end of a file while doing DAT processing");
             } catch (FlightProcessingException e) {
                 LOG.log(Level.SEVERE, "FlightProcessingException: {0}", e.toString());
                 e.printStackTrace();
@@ -465,8 +444,8 @@ public class ProcessUpload {
         PreparedStatement updateStatement = connection.prepareStatement("UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?");
         updateStatement.setString(1, status);
         updateStatement.setInt(2, validFlights);
-        updateStatement.setInt(3, warningFlights);
-        updateStatement.setInt(4, errorFlights);
+        updateStatement.setInt(3, warningFlights.get());
+        updateStatement.setInt(4, errorFlights.get());
         updateStatement.setInt(5, uploadId);
         updateStatement.executeUpdate();
         updateStatement.close();
@@ -507,7 +486,7 @@ public class ProcessUpload {
                 }
             }
 
-            uploadProcessedEmail.setErrorFlights(errorFlights);
+            uploadProcessedEmail.setErrorFlights(errorFlights.get());
 
             for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {
                 UploadException exception = entry.getValue();
@@ -515,7 +494,7 @@ public class ProcessUpload {
                 uploadProcessedEmail.flightImportError(exception.getFilename(), exception.getMessage());
             }
 
-            uploadProcessedEmail.setWarningFlights(warningFlights);
+            uploadProcessedEmail.setWarningFlights(warningFlights.get());
 
             for (FlightInfo info : flightInfo) {
                 List<MalformedFlightFileException> exceptions = info.exceptions;

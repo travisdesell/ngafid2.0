@@ -40,62 +40,52 @@ public class DATFileProcessor extends FlightFileProcessor {
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
-            convertAndInsert(); // TODO
-        } catch (NotDatFile notDatFile) {
-            throw new RuntimeException(notDatFile);
-        } catch (FileEnd fileEnd) {
-            throw new RuntimeException(fileEnd);
-        }
+            convertAndInsert(filename); // TODO
 
-        List<InputStream> inputStreams = duplicateInputStream(stream, 2);
-        Map<Integer, String> indexedCols = new HashMap<>();
-        Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
-        Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-        Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
-        String flightStatus = "SUCCESS";
+            List<InputStream> inputStreams = duplicateInputStream(stream, 2);
+            Map<Integer, String> indexedCols = new HashMap<>();
+            Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
+            Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
+            Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
 
-
-        if (!attributeMap.containsKey("mcID(SN)")) {
-            throw new FatalFlightFileException("No DJI serial number provided in binary.");
-        }
-
-        try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
-            processCols(reader.readNext(), indexedCols, doubleTimeSeriesMap, stringTimeSeriesMap);
-
-            readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
-            calculateLatLonGPS(doubleTimeSeriesMap);
-
-
-            if (attributeMap.containsKey("dateTime")) {
-                calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
-                String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
-
-                if (dateTimeStr != null) {
-                    calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
-                } else {
-                    flightStatus = "WARNING";
-                }
-
+            if (!attributeMap.containsKey("mcID(SN)")) {
+                throw new FlightProcessingException(new FatalFlightFileException("No DJI serial number provided in binary."));
             }
-        } catch (CsvValidationException | FatalFlightFileException | IOException e) {
+
+            try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
+                processCols(reader.readNext(), indexedCols, doubleTimeSeriesMap, stringTimeSeriesMap);
+
+                readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
+                calculateLatLonGPS(doubleTimeSeriesMap);
+
+                if (attributeMap.containsKey("dateTime")) {
+                    calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, attributeMap.get("dateTime"));
+                    String dateTimeStr = findStartDateTime(doubleTimeSeriesMap);
+
+                    if (dateTimeStr != null) {
+                        calculateDateTime(doubleTimeSeriesMap, stringTimeSeriesMap, dateTimeStr);
+                    }
+                }
+            } catch (CsvValidationException | FatalFlightFileException | IOException e) {
+                throw new FlightProcessingException(e);
+            } catch (ParseException e) {
+                e.printStackTrace();
+            }
+
+            dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
+            doubleTimeSeriesMap.put("AltAGL", new DoubleTimeSeries("AltAGL", "ft")); // TODO: Should this be done in proc?
+
+            FlightMeta meta = new FlightMeta();
+            meta.setFilename(filename);
+            meta.setAirframeType("UAS Rotorcraft");
+            meta.setAirframeName("DJI " + attributeMap.get("ACType"));
+            meta.setSystemId(attributeMap.get("mcID(SN)"));
+
+
+            return Stream.of(new FlightBuilder[]{new FlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)});
+        } catch (NotDatFile | FileEnd | IOException e) {
             throw new FlightProcessingException(e);
-        } catch (ParseException e) {
-            e.printStackTrace();
         }
-
-        dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
-
-//        Flight flight = new Flight(fleetId, filename, attributeMap.get("mcID(SN)"), "DJI " + attributeMap.get("ACType"),
-//                doubleTimeSeriesMap, stringTimeSeriesMap, connection);
-//        flight.setStatus(flightStatus);
-//        flight.setAirframeType("UAS Rotorcraft");
-//        flight.setAirframeTypeID(4);
-
-        doubleTimeSeriesMap.put("AltAGL", new DoubleTimeSeries("AltAGL", "ft"));
-//        flight.calculateAGL(connection, "AltAGL", "AltMSL", "Latitude", "Longitude");
-
-
-        return flight;
     }
 
 
@@ -351,7 +341,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
-    private static void processCols(String[] cols, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap)  {
+    private static void processCols(String[] cols, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         int i = 0;
         for (String col : cols) {
             indexedCols.put(i++, col);
@@ -471,7 +461,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
-    private static void handleBatteryDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap)  {
+    private static void handleBatteryDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         String dataType = "number";
         String lowerColName = colName.toLowerCase();
 
@@ -496,7 +486,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
-    private static void handleMotorDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap)  {
+    private static void handleMotorDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         if (colName.contains("lowVoltage")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Low Voltage"));
             return;
@@ -528,7 +518,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
-    private static void handleRCDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap)  {
+    private static void handleRCDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType = "number";
 
         if (colName.contains("Aileron")) {
@@ -551,7 +541,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
-    private static void handleAirCompDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap)  {
+    private static void handleAirCompDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         String dataType;
 
         if (colName.contains("AirSpeed")) {
@@ -568,7 +558,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
-    private static void handleMiscDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap)  {
+    private static void handleMiscDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType;
         boolean isDouble = true;
         switch (colName) {
