@@ -51,12 +51,24 @@ import org.ngafid.flights.process.*;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
-import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
+
+@FunctionalInterface
+interface FlightFileProcessors {
+    FlightFileProcessor create(InputStream stream, String filename);
+}
 
 public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
+    private static final Map<String, FlightFileProcessors> PROCESSORS = new HashMap<>();
+
+    static {
+        PROCESSORS.put("csv", CSVFileProcessor::new);
+        PROCESSORS.put("gpx", GPXFileProcessor::new);
+        PROCESSORS.put("json", JSONFileProcessor::new);
+        PROCESSORS.put("dat", DATFileProcessor::new);
+    }
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
         System.out.println(Arrays.toString(arguments));
@@ -350,46 +362,23 @@ public class ProcessUpload {
                     ZipEntry entry = entries.nextElement();
                     String name = entry.getName();
 
-                    if (entry.isDirectory()) {
+                    if (entry.isDirectory() || name.contains("__MACOSX")) {
                         //System.err.println("SKIPPING: " + entry.getName());
                         continue;
                     }
 
-                    if (name.contains("__MACOSX")) {
-                        //System.err.println("SKIPPING: " + entry.getName());
-                        continue;
-                    }
-
-                    System.err.println("PROCESSING: " + name);
+                    System.err.println("PROCESSING: " + name); // TODO: Use a logger
 
                     String entryName = entry.getName();
                     String entryExtension = entryName.substring(entryName.lastIndexOf("."), entryName.length()).toLowerCase();
 
-                    // Abstract Factory here instead maybe?
-                    FlightFileProcessor processor;
-                    switch (entryExtension) {
-                        case "csv":
-                            processor = new CSVFileProcessor(zipFile.getInputStream(entry), entry.getName());
-                            break;
-
-                        case "gpx":
-                            processor = new GPXFileProcessor(zipFile.getInputStream(entry), entry.getName());
-                            break;
-
-                        case "json":
-                            processor = new JSONFileProcessor(zipFile.getInputStream(entry), entry.getName());
-                            break;
-
-                        case "dat":
-                            processor = new DATFileProcessor(zipFile.getInputStream(entry), entry.getName());
-                            break;
-
-                        default:
-                            flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file", entry.getName()));
-                            errorFlights++;
-                            continue;
+                    if (!PROCESSORS.containsKey(entryExtension)) {
+                        flightErrors.put(entry.getName(), new UploadException("Unknown file type contained in zip file", entry.getName()));
+                        errorFlights++;
+                        continue;
                     }
 
+                    FlightFileProcessor processor = PROCESSORS.get(entryExtension).create(zipFile.getInputStream(entry), entry.getName());
                     Stream<FlightBuilder> flights = processor.parse();
 
                     // } else if (entry.getName().endsWith(".DAT")) {
