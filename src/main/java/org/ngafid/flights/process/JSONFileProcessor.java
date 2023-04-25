@@ -22,6 +22,12 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+/**
+ * This class is responsible for parsing JSON files.
+ *
+ * @author Aaron Chan
+ */
+
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 

@@ -21,6 +21,12 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+/**
+ * This class is responsible for parsing GPX files.
+ *
+ * @author Josh Karns
+ */
+
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 

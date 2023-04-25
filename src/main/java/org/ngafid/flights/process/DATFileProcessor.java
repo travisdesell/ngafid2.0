@@ -27,6 +27,12 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.MalformedFlightFileException;
 
+/**
+ * Parses DAT files from DJI flights after converting them to CSV
+ *
+ * @author Aaron Chan
+ */
+
 public class DATFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
@@ -92,6 +98,12 @@ public class DATFileProcessor extends FlightFileProcessor {
 
     // TODO: Validate the conversion works still. Also maybe figure out another way of doing this since var args forced into FFP
 
+    /**
+     * Converts the DAT file to CSV and inserts it into the zip file
+     * @throws NotDatFile
+     * @throws IOException
+     * @throws FileEnd
+     */
     private void convertAndInsert() throws NotDatFile, IOException, FileEnd {
         String zipName = filename.substring(filename.lastIndexOf("/"));
         String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
@@ -112,6 +124,12 @@ public class DATFileProcessor extends FlightFileProcessor {
         placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
     }
 
+    /**
+     * Places a file into the given zip file
+     * @param file - File to place
+     * @param zipFileName - Name of the zip file
+     * @throws IOException
+     */
     private static void placeInZip(String file, String zipFileName) throws IOException {
         LOG.info("Placing " + file + " in zip");
 
@@ -128,6 +146,14 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Converts the DAT file to CSV
+     * @param file - File to convert
+     * @return - CSV converted file
+     * @throws NotDatFile
+     * @throws IOException
+     * @throws FileEnd
+     */
     private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
         LOG.info("Converting to CSV: " + file.getAbsolutePath());
         DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
@@ -147,6 +173,15 @@ public class DATFileProcessor extends FlightFileProcessor {
         return datFile.getFile();
     }
 
+    /**
+     * Reads the data from the converted CSV file
+     * @param reader - CSV reader
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @param stringTimeSeriesMap - Map of string time series data
+     * @param indexedCols - Map of indexed columns
+     * @throws IOException
+     * @throws CsvValidationException
+     */
     private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
                                  Map<String, StringTimeSeries> stringTimeSeriesMap, Map<Integer, String> indexedCols) throws IOException, CsvValidationException {
         String[] line;
@@ -174,6 +209,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Calculates GPS data from the given time series map
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @throws FatalFlightFileException
+     */
     private static void calculateLatLonGPS(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) throws FatalFlightFileException {
         DoubleTimeSeries lonRad = doubleTimeSeriesMap.get("GPS(0):Long");
         DoubleTimeSeries latRad = doubleTimeSeriesMap.get("GPS(0):Lat");
@@ -205,6 +245,13 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put("AltMSL", altMSL);
     }
 
+    /**
+     * Calculates the local date and time from the given time series map
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @param stringTimeSeriesMap - Map of string time series data
+     * @param dateTimeStr - Format of the date and time
+     * @throws ParseException
+     */
     private static void calculateDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws ParseException {
         StringTimeSeries localDateSeries = new StringTimeSeries("Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries("Lcl Time", "hh:mm:ss");
@@ -243,6 +290,11 @@ public class DATFileProcessor extends FlightFileProcessor {
     }
 
 
+    /**
+     * Determine the start date and time from the given time series map
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @return
+     */
     private static String findStartDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         DoubleTimeSeries dateSeries = doubleTimeSeriesMap.get("GPS(0):Date");
         DoubleTimeSeries timeSeries = doubleTimeSeriesMap.get("GPS(0):Time");
@@ -288,6 +340,13 @@ public class DATFileProcessor extends FlightFileProcessor {
         return null;
     }
 
+    /**
+     * Duplicate an input stream a given number of times
+     * @param inputStream - Input Stream to duplicate
+     * @param copies - Number of copies to make
+     * @return - List of input streams
+     * @throws IOException
+     */
     private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
         List<InputStream> inputStreams = new ArrayList<>();
         List<OutputStream> outputStreams = new ArrayList<>();
@@ -311,6 +370,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         return inputStreams;
     }
 
+    /**
+     * Gets the attributes of the flight
+     * @param stream - Input stream of flight file
+     * @return
+     */
     private static Map<String, String> getAttributeMap(InputStream stream) {
         Map<String, String> attributeMap = new HashMap<>();
         try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(stream)))) {
@@ -330,6 +394,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         return attributeMap;
     }
 
+    /**
+     * Drop all columns that have no data
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @param stringTimeSeriesMap - Map of string time series data
+     */
     private static void dropBlankCols(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         for (String key : doubleTimeSeriesMap.keySet()) {
             if (doubleTimeSeriesMap.get(key).size() == 0) {
@@ -344,6 +413,13 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Initialize columns based on flight data
+     * @param cols
+     * @param indexedCols
+     * @param doubleTimeSeriesMap
+     * @param stringTimeSeriesMap
+     */
     private static void processCols(String[] cols, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         int i = 0;
         for (String col : cols) {
@@ -395,6 +471,12 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    /**
+     * Helper for initializing IMU data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     * @param stringTimeSeriesMap - Map of string time series data
+     */
     private static void handleIMUDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType;
 
@@ -432,6 +514,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing battery data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType;
 
@@ -464,6 +551,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing battery data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleBatteryDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         String dataType = "number";
         String lowerColName = colName.toLowerCase();
@@ -489,6 +581,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing motor data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleMotorDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         if (colName.contains("lowVoltage")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Low Voltage"));
@@ -521,6 +618,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing RC data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleRCDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType = "number";
 
@@ -544,6 +646,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing air comp data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleAirCompDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap) {
         String dataType;
 
@@ -561,6 +668,11 @@ public class DATFileProcessor extends FlightFileProcessor {
         doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
     }
 
+    /**
+     * Helper for initializing other types of data
+     * @param colName - Name of column
+     * @param doubleTimeSeriesMap - Map of double time series data
+     */
     private static void handleMiscDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
         String dataType;
         boolean isDouble = true;

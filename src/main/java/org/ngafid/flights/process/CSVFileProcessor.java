@@ -1,23 +1,21 @@
 package org.ngafid.flights.process;
 
-import com.google.gson.Gson;
-import com.google.gson.stream.JsonReader;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
-import com.opencsv.exceptions.CsvValidationException;
-import org.apache.maven.cli.logging.Slf4jLogger;
 import org.ngafid.flights.*;
 
 import java.io.*;
-import java.nio.Buffer;
 import java.nio.charset.StandardCharsets;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
+
+/**
+ * Handles parsing of CSV files
+ *
+ * @author Aaron Chan
+ */
 
 public class CSVFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
@@ -48,7 +46,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         List<String> headers = new ArrayList<>();
 
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
-            String fileInformation = getFileInformation(bufferedReader); // Will read a line
+            String fileInformation = getFlightInfo(bufferedReader); // Will read a line
             updateAirframe();
 
             if (airframeName != null && airframeName.equals("ScanEagle")) {
@@ -108,7 +106,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
     }
 
-    private String getFileInformation(BufferedReader reader) throws FatalFlightFileException, IOException {
+    /**
+     * Gets the flight information from the first line of the file
+     * @param reader BufferedReader for reading the first line
+     * @return
+     * @throws FatalFlightFileException
+     * @throws IOException
+     */
+    private String getFlightInfo(BufferedReader reader) throws FatalFlightFileException, IOException {
         String fileInformation = reader.readLine();
 
         if (fileInformation == null || fileInformation.trim().length() == 0) {
@@ -130,6 +135,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
 
+    /**
+     * Parses for ScanEagle flight data
+     * @param fileInformation First line of the file
+     */
     private void scanEagleParsing(String fileInformation) {
 
         //need a custom method to process ScanEagle data because the column
@@ -138,6 +147,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
         scanEagleHeaders(fileInformation);
     }
 
+    /**
+     * Handles setting the tail number and system id for ScanEagle data
+     */
     private void scanEagleSetTailAndID() {
         String[] filenameParts = filename.split("_");
         startDateTime = filenameParts[0];
