@@ -54,14 +54,17 @@ public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
-    private static final Map<String, FlightFileProcessors> PROCESSORS = new HashMap<>();
+    private static final Map<String, FlightFileProcessors> PROCESSORS;
 
     static {
-        PROCESSORS.put("csv", CSVFileProcessor::new);
-        PROCESSORS.put("gpx", GPXFileProcessor::new);
-        PROCESSORS.put("json", JSONFileProcessor::new);
-        PROCESSORS.put("dat", DATFileProcessor::new);
+        PROCESSORS = Map.of(
+            "csv", CSVFileProcessor::new,
+            "gpx", GPXFileProcessor::new,
+            "json", JSONFileProcessor::new,
+            "dat", DATFileProcessor::new
+        );
     }
+
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
         System.out.println(Arrays.toString(arguments));
@@ -302,25 +305,26 @@ public class ProcessUpload {
         HashMap<String, UploadException> flightErrors = new HashMap<String, UploadException>();
 
         int validFlights = 0;
-        AtomicInteger warningFlights = new AtomicInteger();
-        AtomicInteger errorFlights = new AtomicInteger();
+        int warningFlights = 0;
+        int errorFlights = 0;
+
 
         if (extension.equals(".zip")) {
             BiConsumer<ZipEntry, FlightFileFormatException> handleFlightFileFormatException =
                 (z, e) -> {
                     flightErrors.put(z.getName(), new UploadException("Unknown file type contained in zip file (flight logs should be .csv files).", z.getName()));
-                    errorFlights.getAndIncrement();
+                    errorFlights++;
                 };
     
             BiConsumer<FlightFileProcessor, FlightProcessingException> handleExceptionInProcessor =
                 (p, e) -> {
                     flightErrors.put(p.filename, new UploadException(e.getMessage(), e, p.filename));
-                    errorFlights.getAndIncrement();
+                    errorFlights++;
                 };
             BiConsumer<FlightBuilder, FlightProcessingException> handleExceptionInBuilder =
                 (b, e) -> {
                     flightErrors.put(b.meta.filename, new UploadException(e.getMessage(), e, b.meta.filename));
-                    errorFlights.getAndIncrement();
+                    errorFlights++;
                 };
 
             try {
@@ -348,7 +352,7 @@ public class ProcessUpload {
                 
                 pipeline.forEach((Flight flight) -> {
                     flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                    if (flight.getStatus().equals("WARNING")) warningFlights.getAndIncrement();
+                    if (flight.getStatus().equals("WARNING")) warningFlights++;
                 });
                   
                 while (entries.hasMoreElements()) {
