@@ -29,5 +29,10 @@ public abstract class FlightFileProcessor {
     }
 
 
+    /**
+     * Parses the file for flight data to be processed
+     * @return A stream of FlightBuilders
+     * @throws FlightProcessingException
+     */
     public abstract Stream<FlightBuilder> parse() throws FlightProcessingException;
 }
