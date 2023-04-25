@@ -542,7 +542,13 @@ if (!$update_2022_02_17) {
     $query = "CREATE TABLE `user_preferences` (
         `user_id` INT(11) NOT NULL,
         `decimal_precision` INT(11) NOT NULL,
-
+        `email_opt_out` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_upload_processing` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_upload_status` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_upload_error` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_critical_events` BOOLEAN NOT NULL DEFAULT FALSE,
+        `email_report_frequency` VARCHAR(16) NOT NULL DEFAULT 'NEVER',
+        
         PRIMARY KEY(`user_id`),
         FOREIGN KEY(`user_id`) REFERENCES user(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

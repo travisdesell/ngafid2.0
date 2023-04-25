@@ -6,6 +6,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import org.ngafid.filters.Filter;
@@ -235,17 +236,24 @@ public class User {
      * @return an instane of {@link UserPreferences} with all the user's preferences and settings
      */
     public static UserPreferences getUserPreferences(Connection connection, int userId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT decimal_precision FROM user_preferences WHERE user_id = ?");
+        PreparedStatement query = connection.prepareStatement("SELECT * FROM user_preferences WHERE user_id = ?");
         query.setInt(1, userId);
 
         ResultSet resultSet = query.executeQuery();
 
         int decimalPrecision = 1;
-
+        int i = 2;
         if (resultSet.next()) {
-            decimalPrecision = resultSet.getInt(1);
+            decimalPrecision = resultSet.getInt(i++);
         }
-            
+
+        boolean optOut = resultSet.getBoolean(i++);
+        boolean uploadProcess = resultSet.getBoolean(i++);
+        boolean uploadStatus = resultSet.getBoolean(i++);
+        boolean criticalEvents = resultSet.getBoolean(i++);
+        boolean emailError = resultSet.getBoolean(i++);
+        EmailFrequency frequency = EmailFrequency.valueOf(resultSet.getString(i++));
+
         UserPreferences userPreferences = null;
 
         query = connection.prepareStatement("SELECT dsn.name FROM user_preferences_metrics AS upm INNER JOIN double_series_names AS dsn ON dsn.id = upm.metric_id WHERE upm.user_id = ? ORDER BY dsn.name");
@@ -263,7 +271,7 @@ public class User {
             userPreferences = UserPreferences.defaultPreferences(userId);
             storeUserPreferences(connection, userId, userPreferences);
         } else {
-            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames);
+            userPreferences = new UserPreferences(userId, decimalPrecision, metricNames, optOut, uploadProcess, uploadStatus, criticalEvents, emailError, frequency);
         }
 
         return userPreferences;
@@ -333,7 +341,7 @@ public class User {
      *
      * @param connection A connection to the mysql database
      * @param userId the userId to update for
-     * @param precision the new decimal precision value to store
+     * @param decimalPrecision the new decimal precision value to store
      */
     public static UserPreferences updateUserPreferencesPrecision(Connection connection, int userId, int decimalPrecision) throws SQLException {
         String queryString = "UPDATE user_preferences SET decimal_precision = ? WHERE user_id = ?";
@@ -346,6 +354,37 @@ public class User {
         query.executeUpdate();
 
         return getUserPreferences(connection, userId);
+    }
+
+    /**
+     * Updates the user's email preferences in the database
+     * @param connection A connection to the mysql database
+     * @param userID ID the update for
+     * @param optOut whether the user wants to opt out of emails
+     * @param uploadProcessing whether the user wants to receive emails when a flight is being processed
+     * @param uploadStatus whether the user wants to receive emails when a flight is finished processing
+     * @param criticalEvents whether the user wants to receive emails when a critical event occurs
+     * @param uploadError whether the user wants to receive emails when a flight fails to process
+     * @param frequency the frequency of emails the user wants to receive
+     * @return Updated User Preferences
+     * @throws SQLException
+     */
+    public static UserPreferences updateUserEmailPreferences(Connection connection, int userID, boolean optOut, boolean uploadProcessing, boolean uploadStatus, boolean criticalEvents, boolean uploadError, EmailFrequency frequency) throws SQLException {
+        String queryString = "UPDATE user_preferences SET email_opt_out = ?, email_upload_processing = ?, email_upload_status = ?, email_critical_events = ?, email_upload_error = ?, email_report_frequency = ? WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setBoolean(1, optOut);
+        query.setBoolean(2, uploadProcessing);
+        query.setBoolean(3, uploadStatus);
+        query.setBoolean(4, criticalEvents);
+        query.setBoolean(5, uploadProcessing);
+        query.setString(6, frequency.toString());
+        query.setInt(7, userID);
+
+        query.executeUpdate();
+
+        return getUserPreferences(connection, userID);
     }
 
     /**
