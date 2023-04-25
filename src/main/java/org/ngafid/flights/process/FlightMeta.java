@@ -19,7 +19,6 @@ public final class FlightMeta {
                   airframeName,
                   calculated,
                   suggestedTailNumber;
-
     public int getFleetId() {
         return fleetId;
     }
