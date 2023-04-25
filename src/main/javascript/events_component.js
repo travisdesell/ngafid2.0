@@ -249,7 +249,7 @@ class Events extends React.Component {
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
                         if (event.eventDefinitionId == -1) {
-                            var rocPlotData = this.getRocData(event);
+                            var rocPlotData = this.getRateOfClosureData(event);
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
                             if (rocPlotData != null) {
@@ -326,7 +326,7 @@ class Events extends React.Component {
     };
 
 
-    getRocData(event) {
+    getRateOfClosureData(event) {
         var eventId = event.id;
         var rocPlotData = null;
         console.log("Calculating Rate of Closure")

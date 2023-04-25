@@ -600,13 +600,14 @@ if (!$update_turn_to_final) {
 
 if ($update_rate_of_closure) {
     $query = "CREATE TABLE `rate_of_closure` (
-    `id` INT(11) NOT NULL AUTO_INCREMENT,
-    `event_id` INT(11) NOT NULL,
-    `size` INT(11) NOT NULL,
-    `data` MEDIUMBLOB,
-    PRIMARY KEY(`id`),
-    FOREIGN KEY(`event_id`) REFERENCES events(`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `event_id` INT(11) NOT NULL,
+        `size` INT(11) NOT NULL,
+        `data` MEDIUMBLOB,
+        
+        PRIMARY KEY(`id`),
+        FOREIGN KEY(`event_id`) REFERENCES events(`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
 }
