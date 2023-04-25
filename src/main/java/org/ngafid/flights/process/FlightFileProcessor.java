@@ -23,9 +23,9 @@ public abstract class FlightFileProcessor {
     public final String filename;
     public final InputStream stream;
 
-    public FlightFileProcessor(InputStream stream, String filename) {
-        this.filename = filename;
+    public FlightFileProcessor(InputStream stream, String filename, Object... args) {
         this.stream = stream;
+        this.filename = filename;
     }
 
 

@@ -33,15 +33,17 @@ public class DATFileProcessor extends FlightFileProcessor {
     private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
             "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
 
-    public DATFileProcessor(InputStream stream, String filename) {
+    private final ZipFile zipFile;
+
+    public DATFileProcessor(InputStream stream, String filename, Object... args) {
         super(stream, filename);
+        this.zipFile = (ZipFile) args[0];
     }
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
-            convertAndInsert(filename); // TODO
-
+            convertAndInsert();
             List<InputStream> inputStreams = duplicateInputStream(stream, 2);
             Map<Integer, String> indexedCols = new HashMap<>();
             Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
@@ -88,14 +90,15 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    // TODO: Validate the conversion works still
 
-    private void convertAndInsert(String entry, ZipFile zipFile) throws NotDatFile, IOException, FileEnd {
-        String zipName = entry.substring(entry.lastIndexOf("/"));
+    private void convertAndInsert() throws NotDatFile, IOException, FileEnd {
+        String zipName = filename.substring(filename.lastIndexOf("/"));
         String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
         File tempExtractedFile = new File(parentFolder, zipName);
 
         System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
-        try (InputStream inputStream = zipFile.getInputStream(entry); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
+        try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry(filename)); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
             int len;
             byte[] buffer = new byte[1024];
 

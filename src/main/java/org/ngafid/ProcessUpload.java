@@ -47,7 +47,7 @@ import org.ngafid.accounts.User;
 
 @FunctionalInterface
 interface FlightFileProcessors {
-    FlightFileProcessor create(InputStream stream, String filename);
+    FlightFileProcessor create(InputStream stream, String filename, Object... args);
 }
 
 public class ProcessUpload {
@@ -371,7 +371,7 @@ public class ProcessUpload {
                         continue;
                     }
 
-                    FlightFileProcessor processor = PROCESSORS.get(entryExtension).create(zipFile.getInputStream(entry), entry.getName());
+                    FlightFileProcessor processor = PROCESSORS.get(entryExtension).create(zipFile.getInputStream(entry), entry.getName(), new Object[]{zipFile});
                     Stream<FlightBuilder> flights = processor.parse();
 
                     // } else if (entry.getName().endsWith(".DAT")) {

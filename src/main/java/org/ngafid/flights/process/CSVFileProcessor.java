@@ -30,7 +30,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private final List<String> headers;
     private final List<String> dataTypes;
 
-    public CSVFileProcessor(InputStream stream, String filename) {
+    public CSVFileProcessor(InputStream stream, String filename, Object... args) {
         super(stream, filename);
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();

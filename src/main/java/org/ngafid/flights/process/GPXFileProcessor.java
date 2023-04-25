@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(InputStream stream, String filename) {
+    public GPXFileProcessor(InputStream stream, String filename, Object... args) {
         super(stream, filename);
     }
 
