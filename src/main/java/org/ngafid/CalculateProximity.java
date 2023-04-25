@@ -293,14 +293,17 @@ public class CalculateProximity {
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
                                                         int endLine, int otherStartLine,int otherEndLine ) {
 
-        double previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
-                    otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1], flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
-        startLine = (startLine - 5) > 0 ? (startLine - 5) : 0;
+        startLine = (startLine - 6) > 0 ? (startLine - 5) : 0;
         endLine = (endLine + 5) < flightInfo.epochTime.length ? (endLine + 5) : endLine;
-        otherStartLine = (otherStartLine - 5) > 0 ? (otherStartLine - 5) : 0;
+        otherStartLine = (otherStartLine - 6) > 0 ? (otherStartLine - 5) : 0;
         otherEndLine = (otherEndLine + 5) < otherInfo.epochTime.length ? (otherEndLine + 5) : otherEndLine;
         double rateOfClosure[] = new double[endLine - startLine];
         int i = startLine, j = otherStartLine, index = 0;
+
+        double previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
+                otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1], flightInfo.altitudeMSL[startLine-1],
+                otherInfo.altitudeMSL[otherStartLine-1]);
+
         while (i < endLine && j < otherEndLine) {
             if (flightInfo.epochTime[i] == 0) {
                 i++;
