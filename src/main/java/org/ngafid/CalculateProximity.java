@@ -298,9 +298,17 @@ public class CalculateProximity {
         otherStartLine = (otherStartLine - 6) > 0 ? (otherStartLine - 5) : 0;
         otherEndLine = (otherEndLine + 5) < otherInfo.epochTime.length ? (otherEndLine + 5) : otherEndLine;
 
-        double previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
-                otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1],
-                flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
+        double previousDistance = 0;
+        if (startLine > 0 && otherStartLine > 0) {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
+                    otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1],
+                    flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
+        }
+        else {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
+                    otherInfo.latitude[otherStartLine], otherInfo.longitude[otherStartLine],
+                    flightInfo.altitudeMSL[startLine], otherInfo.altitudeMSL[otherStartLine]);
+        }
 
         double rateOfClosure[] = new double[endLine - startLine];
         int i = startLine, j = otherStartLine, index = 0;
