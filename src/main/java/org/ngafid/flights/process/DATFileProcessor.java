@@ -90,7 +90,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
-    // TODO: Validate the conversion works still
+    // TODO: Validate the conversion works still. Also maybe figure out another way of doing this since var args forced into FFP
 
     private void convertAndInsert() throws NotDatFile, IOException, FileEnd {
         String zipName = filename.substring(filename.lastIndexOf("/"));
