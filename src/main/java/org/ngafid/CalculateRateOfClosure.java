@@ -84,17 +84,26 @@ public class CalculateRateOfClosure {
     }
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo ) {
 
-        double previousDistance = calculateDistance(flightInfo.latitude[flightInfo.startLine-1], flightInfo.longitude[flightInfo.startLine-1],
-                otherInfo.latitude[otherInfo.startLine-1], otherInfo.longitude[otherInfo.startLine-1], flightInfo.altitudeMSL[flightInfo.startLine-1], otherInfo.altitudeMSL[otherInfo.startLine-1]);
 
         int startLine = flightInfo.startLine;
         int endLine = flightInfo.endLine;
         int otherStartLine = otherInfo.startLine;
         int otherEndLine = otherInfo.endLine;
-        startLine = (startLine - 5) > 0 ? (startLine - 5) : 0;
+        startLine = (startLine - 6) > 0 ? (startLine - 5) : 0;
         endLine = (endLine + 5) < flightInfo.epochTime.length ? (endLine + 5) : endLine;
-        otherStartLine = (otherStartLine - 5) > 0 ? (otherStartLine - 5) : 0;
+        otherStartLine = (otherStartLine - 6) > 0 ? (otherStartLine - 5) : 0;
         otherEndLine = (otherEndLine + 5) < otherInfo.epochTime.length ? (otherEndLine + 5) : otherEndLine;
+        double previousDistance = 0;
+        if (startLine > 0 && otherStartLine > 0) {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine-1], flightInfo.longitude[startLine-1],
+                    otherInfo.latitude[otherStartLine-1], otherInfo.longitude[otherStartLine-1],
+                    flightInfo.altitudeMSL[startLine-1], otherInfo.altitudeMSL[otherStartLine-1]);
+        }
+        else {
+            previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
+                    otherInfo.latitude[otherStartLine], otherInfo.longitude[otherStartLine],
+                    flightInfo.altitudeMSL[startLine], otherInfo.altitudeMSL[otherStartLine]);
+        }
 
         double rateOfClosure[] = new double[endLine - startLine];
         int i = startLine, j = otherStartLine, index = 0;
