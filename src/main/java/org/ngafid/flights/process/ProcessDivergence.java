@@ -17,6 +17,7 @@ import org.ngafid.flights.Flight;
 import org.ngafid.terrain.TerrainCache;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;
+import static org.ngafid.flights.Airframes.*;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
@@ -60,17 +61,17 @@ public class ProcessDivergence extends ProcessStep {
         Map.ofEntries(
             entry(AIRFRAME_CESSNA_172R,         CESSNA_CONFIG),
             entry(AIRFRAME_CESSNA_172S,         CESSNA_CONFIG),
-            entry(AIRFRAME_PA_28,               PA_28_CONFIG),
-            entry(AIRFRAME_PA_44,               PA_44_CONFIG),
+            entry(AIRFRAME_PA_28_181,           PA_28_CONFIG),
+            entry(AIRFRAME_PA_44_180,           PA_44_CONFIG),
             entry(AIRFRAME_CIRRUS_SR20,         SIX_CYLINDER_CIRRUS),
             entry(AIRFRAME_CESSNA_T182T,        SIX_CYLINDER_CIRRUS),
             entry(AIRFRAME_CESSNA_182T,         SIX_CYLINDER_CIRRUS),
             entry(AIRFRAME_BEECHCRAFT_A36_G36,  SIX_CYLINDER_CIRRUS),
             entry(AIRFRAME_CIRRUS_SR22,         SIX_CYLINDER_CIRRUS),
             entry(AIRFRAME_CESSNA_400,          SIX_CYLINDER_CIRRUS),
-            entry(AIRFRAME_DIAMOND_DA_40F,      DIAMOND_CONFIG),
+            entry(AIRFRAME_DIAMOND_DA_40_F,     DIAMOND_CONFIG),
             entry(AIRFRAME_DIAMOND_DA_40,       DIAMOND_CONFIG),
-            entry(AIRFRAME_DIAMOND_DA__40,      DIAMOND_CONFIG)
+            entry(AIRFRAME_DIAMOND_DA40,        DIAMOND_CONFIG)
         );
 
     public ProcessDivergence(Connection connection, FlightBuilder builder) {

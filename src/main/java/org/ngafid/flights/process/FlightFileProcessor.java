@@ -22,7 +22,7 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
 
 public abstract class FlightFileProcessor {
-
+    
     interface Factory {
         FlightFileProcessor create(Connection connection, InputStream is, String filename);
     }
@@ -45,7 +45,7 @@ public abstract class FlightFileProcessor {
             this.zipFile = zipFile;
 
             this.factories = Map.of(
-                "csv",  CSVFileProcessor::new,
+                "csv",  this::createCSVFileProcessor,
                 "dat",  this::createDATFileProcessor,
                 "json", JSONFileProcessor::new,
                 "gpx",  GPXFileProcessor::new
@@ -58,6 +58,10 @@ public abstract class FlightFileProcessor {
 
         private FlightFileProcessor createDATFileProcessor(Connection connection, InputStream is, String filename) {
             return new DATFileProcessor(connection, is, filename, zipFile);
+        }
+
+        private FlightFileProcessor createCSVFileProcessor(Connection connection, InputStream is, String filename) {
+            return new CSVFileProcessor(connection, is, filename, upload);
         }
 
         public Stream<FlightFileProcessor> stream() {
@@ -136,14 +140,14 @@ public abstract class FlightFileProcessor {
         }
     }
 
-    public final Connection connection;
-    public final String filename;
-    public final InputStream stream;
+    protected final Connection connection;
+    protected final InputStream stream;
+    protected final String filename;
 
     public FlightFileProcessor(Connection connection, InputStream stream, String filename) {
         this.connection = connection;
-        this.filename = filename;
         this.stream = stream;
+        this.filename = filename;
     }
 
     // If an exception occurs, it will be stored here.

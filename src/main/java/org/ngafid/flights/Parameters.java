@@ -108,28 +108,6 @@ public interface Parameters {
     public static final String UNIT_DEG_F = "deg F";
 
     /**
-     * {@link Airframes} names
-     *
-     * TODO: In the future, we may want to consider using Set<String> reather than hardcoded strings.
-     *       This would make our code more robust to varying airframe names
-     **/
-    public static final String AIRFRAME_SCAN_EAGLE = "ScanEagle";
-    public static final String AIRFRAME_DJI = "DJI";
-    public static final String AIRFRAME_CESSNA_172S = "Cessna 172S";
-    public static final String AIRFRAME_CESSNA_172R = "Cessna 172R";
-    public static final String AIRFRAME_PA_28 = "PA-28-181";
-    public static final String AIRFRAME_PA_44 = "PA-44-180";
-    public static final String AIRFRAME_CIRRUS_SR20 = "Cirrus SR20";
-    public static final String AIRFRAME_CIRRUS_SR22 = "Cirrus SR22";
-    public static final String AIRFRAME_CESSNA_182T = "Cessna 182T";
-    public static final String AIRFRAME_CESSNA_T182T = "Cessna T182T";
-    public static final String AIRFRAME_BEECHCRAFT_A36_G36 = "Beechcraft A36/G36";
-    public static final String AIRFRAME_CESSNA_400 = "Cessna 400";
-    public static final String AIRFRAME_DIAMOND_DA__40 = "Diamond DA 40";
-    public static final String AIRFRAME_DIAMOND_DA_40 = "Diamond DA40";;
-    public static final String AIRFRAME_DIAMOND_DA_40F = "Diamond DA 40 F";
-
-    /**
      * {@link Airframes} id's
      */
     public static final int C172SP_ID = 1;
