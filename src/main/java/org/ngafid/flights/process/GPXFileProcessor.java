@@ -30,15 +30,14 @@ import java.util.stream.Stream;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(InputStream stream, String filename, Object... args) {
-        super(stream, filename);
+    public GPXFileProcessor(Connection connection, InputStream stream, String filename) {
+        super(connection, stream, filename);
     }
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
-            List<FlightBuilder> flights = new ArrayList<>();
-            parseFlights(filename, stream);
+            List<FlightBuilder> flights = parseFlights(filename, stream);
 
             return flights.stream();
         } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException |
@@ -182,7 +181,7 @@ public class GPXFileProcessor extends FlightFileProcessor {
                     stringSeries.put("UTCOfst", offset);
 
                     FlightMeta meta = new FlightMeta();
-                    meta.setFilename(this.filename);
+                    meta.setFilename(this.filename + ":" + start + "-" + end);
                     meta.setAirframeName(airframeName);
                     meta.setSuggestedTailNumber(nickname);
                     meta.setSystemId(nickname);

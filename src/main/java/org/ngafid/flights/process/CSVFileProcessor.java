@@ -4,6 +4,7 @@ import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.ngafid.flights.*;
 
+import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -28,8 +29,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private final List<String> headers;
     private final List<String> dataTypes;
 
-    public CSVFileProcessor(InputStream stream, String filename, Object... args) {
-        super(stream, filename);
+    public CSVFileProcessor(Connection connection, InputStream stream, String filename) {
+        super(connection, stream, filename);
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 

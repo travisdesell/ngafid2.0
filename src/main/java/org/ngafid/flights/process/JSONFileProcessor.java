@@ -31,9 +31,8 @@ import java.util.stream.Stream;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    public JSONFileProcessor(InputStream stream, String filename, Object... args) {
-        super(stream, filename);
-
+    public JSONFileProcessor(Connection connection, InputStream stream, String filename) {
+        super(connection, stream, filename);
     }
 
     @Override

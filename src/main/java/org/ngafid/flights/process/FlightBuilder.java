@@ -62,9 +62,16 @@ public class FlightBuilder {
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        ProcessAltAGL::new,
+        required(ProcessAltAGL::new),
+        required(ProcessAirportProximity::new),
+        required(ProcessStartEndTime::new),
+        ProcessLaggedAltMSL::new,
+        ProcessStallIndex::new,
+        ProcessTotalFuel::new,
         ProcessAirportProximity::new,
-        required(ProcessStartEndTime::new)
+        ProcessDivergence::new,
+        ProcessLOCI::new,
+        ProcessItinerary::new
     );
 
     // This can be overridden.

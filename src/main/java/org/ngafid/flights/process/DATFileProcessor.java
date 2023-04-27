@@ -41,9 +41,9 @@ public class DATFileProcessor extends FlightFileProcessor {
 
     private final ZipFile zipFile;
 
-    public DATFileProcessor(InputStream stream, String filename, Object... args) {
-        super(stream, filename);
-        this.zipFile = (ZipFile) args[0];
+    public DATFileProcessor(Connection connection, InputStream stream, String filename, ZipFile file) {
+        super(connection, stream, filename);
+        this.zipFile = file;
     }
 
     @Override
