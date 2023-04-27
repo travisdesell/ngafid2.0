@@ -79,7 +79,7 @@ public class CalculateProximity {
         System.out.println("shifted start line: " + newStart1 + ", otherStartLine: " + newStart2);
 
         int newEnd1 = (endLine + shift) <= flightInfo.epochTime.length ? (endLine + shift) : flightInfo.epochTime.length;
-        int newEnd2 = (endLine + shift) <= otherInfo.epochTime.length ? (endLine + shift) : otherInfo.epochTime.length;
+        int newEnd2 = (otherEndLine + shift) <= otherInfo.epochTime.length ? (otherEndLine + shift) : otherInfo.epochTime.length;
 
         int endShift1 = newEnd1 - endLine;
         int endShift2 = newEnd2 - otherEndLine;
