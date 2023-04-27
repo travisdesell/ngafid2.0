@@ -30,6 +30,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.ngafid.proximity.CalculateProximity;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
