@@ -7,8 +7,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.NoSuchFileException;
+import java.util.logging.*;
 
 public class SRTMTile {
+    private static final Logger LOG = Logger.getLogger(SRTMTile.class.getName());
+    
     public static final int srtmTileSize = 1201;
     public static final double srtmGridSize = 1.0/(srtmTileSize - 1.0);
 
@@ -29,8 +32,8 @@ public class SRTMTile {
         directory = TerrainCache.getDirectoryFromLatLon(latitudeS, longitudeW);
         filename = TerrainCache.getFilenameFromLatLon(latitudeS, longitudeW);
 
-        System.out.println("loading terrain from: '" + directory + "/" + filename + "'");
-        System.out.println("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
+        LOG.info("loading terrain from: '" + directory + "/" + filename + "'");
+        LOG.info("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
 
         Path path = Paths.get(TerrainCache.TERRAIN_DIRECTORY + "/" + directory + "/" + filename);
         //Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
@@ -79,11 +82,11 @@ public class SRTMTile {
             }
         }
 
-        System.out.println("read " + bytes.length + " bytes.");
-        System.out.println("final offset: " + offset);
+        LOG.info("read " + bytes.length + " bytes.");
+        LOG.info("final offset: " + offset);
 
-        System.out.println("max: " + max);
-        System.out.println("min: " + min);
+        LOG.info("max: " + max);
+        LOG.info("min: " + min);
     }
 
     public double getAltitudeFt(double latitude, double longitude) {

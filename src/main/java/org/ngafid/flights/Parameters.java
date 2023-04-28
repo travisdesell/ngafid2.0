@@ -123,7 +123,7 @@ public interface Parameters {
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */
-    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL};
+    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL, TAS_FTMIN};
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
     public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};

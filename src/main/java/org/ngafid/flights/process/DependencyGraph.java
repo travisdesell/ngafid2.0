@@ -8,6 +8,7 @@ import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
@@ -39,6 +40,7 @@ public class DependencyGraph {
                 enabled.set(false);
                 if (step.isRequired()) {
                     String reason = step.explainApplicability();
+                    LOG.severe(builder.doubleTimeSeries.keySet().toString());
                     LOG.severe("Required step " + step.toString() + " has been disabled for <reason>:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
                 }
@@ -98,7 +100,7 @@ public class DependencyGraph {
             for (var requiredNode : node.requires) {
                 getTask(requiredNode).join();
             }
-           
+          
             if (node.enabled.get())
                 node.compute();
 
@@ -128,7 +130,9 @@ public class DependencyGraph {
         public boolean airframeIsValid(String airframe) { return true; }
 
         // Left blank intentionally
-        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {}
+        public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
+            LOG.info("Computed dummy step!");
+        }
     }
 
     private void nodeConflictError(ProcessStep first, ProcessStep second) throws FatalFlightFileException {
@@ -202,8 +206,7 @@ public class DependencyGraph {
                 tasks.put(node, task);
             }
         }
-
-        ForkJoinPool ex = new ForkJoinPool();
+        ForkJoinPool ex = new ForkJoinPool(8);
 
         try {
             ex.invoke(new RecursiveTask<Void>() {
@@ -211,8 +214,7 @@ public class DependencyGraph {
                     initialTasks
                         .stream()
                         .map(x -> x.fork())
-                        .map(x -> x.join())
-                        .count();
+                        .forEach(ForkJoinTask::join);
                     return null;
                 }
             });

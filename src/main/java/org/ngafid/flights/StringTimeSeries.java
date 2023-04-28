@@ -49,7 +49,6 @@ public class StringTimeSeries {
         this.timeSeries = new ArrayList<String>(sizeHint);
 
         validCount = 0;
-       
     }
 
     public StringTimeSeries(String name, String dataType) {
@@ -63,12 +62,15 @@ public class StringTimeSeries {
     }
 
     public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries) throws SQLException {
+        this(name, dataType, timeSeries);
+        setNameId(connection);
+        setTypeId(connection);
+    }
+
+    public StringTimeSeries(String name, String dataType, ArrayList<String> timeSeries) {
         this.name = name;
         this.dataType = dataType;
         this.timeSeries = timeSeries;
-        setNameId(connection);
-        setTypeId(connection);
-
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
             if (!timeSeries.get(i).equals("")) {
@@ -134,7 +136,7 @@ public class StringTimeSeries {
     }
     
     private void setNameId(Connection connection) throws SQLException {
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
+        this.nameId = SeriesNames.getStringNameId(connection, name);
     }
 
     private void setTypeId(Connection connection) throws SQLException {
@@ -209,7 +211,6 @@ public class StringTimeSeries {
     }
 
     public void updateDatabase(Connection connection, int flightId) {
-        //System.out.println("Updating database for " + this);
 
         try {
             if (nameId == -1)

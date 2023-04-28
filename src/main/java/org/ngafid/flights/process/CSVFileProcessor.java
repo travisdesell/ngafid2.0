@@ -10,6 +10,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -20,14 +21,9 @@ import java.util.stream.Stream;
 
 public class CSVFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
-    private String airframeName;
-    private String startDateTime;
-    private String endDateTime;
-    private String airframeType;
-    private String suggestedTailNumber;
-    private String systemId;
     private final List<String> headers;
     private final List<String> dataTypes;
+    private final FlightMeta meta = new FlightMeta();
 
     private final Upload upload;
 
@@ -38,7 +34,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 
-        this.airframeType = "Fixed Wing"; // Fixed Wing By default
+        meta.airframeType = "Fixed Wing"; // Fixed Wing By default
+        meta.filename = filename;
     }
 
     @Override
@@ -52,51 +49,45 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
             String fileInformation = getFlightInfo(bufferedReader); // Will read a line
-            updateAirframe();
 
-            if (airframeName != null && airframeName.equals("ScanEagle")) {
+            if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
                 processFileInormation(fileInformation);
                 bufferedReader.read(); // Skip first char (#)
                 dataTypes = List.of(csvReader.readNext());
-                headers = List.of(csvReader.readNext());
-                csvValues = csvReader.readAll();
+                headers = Arrays.stream(csvReader.readNext()).map(String::strip).collect(Collectors.toList());
             }
+            
+            updateAirframe();
 
-            int colIndex = 0;
-            String[] firstRow = csvValues.get(0);
-            for (String data : firstRow) {
+            ArrayList<ArrayList<String>> columns = new ArrayList<>();
+            String[] firstRow = csvReader.peek();
+            for (int i = 0; i < firstRow.length; i++)
+                columns.add(new ArrayList<>());
+
+            String[] row = null;
+            while ((row = csvReader.readNext()) != null && row.length == firstRow.length)
+                for (int i = 0; i < row.length; i++)
+                    columns.get(i).add(row[i].trim());
+
+            for (int i = 0; i < columns.size(); i++) {
+                ArrayList<String> column = columns.get(i);
+                String name = headers.get(i);
+                String dataType = dataTypes.get(i);
                 try {
-                    Double.parseDouble(data);
-                    doubleTimeSeries.put(headers.get(colIndex), new DoubleTimeSeries(headers.get(colIndex), dataTypes.get(colIndex)));
+                    Double.parseDouble(column.get(0));
+                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
                 } catch (NumberFormatException e) {
-                    stringTimeSeries.put(headers.get(colIndex), new StringTimeSeries(headers.get(colIndex), dataTypes.get(colIndex)));
+                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                 }
-
-                colIndex++;
             }
-
-            List<String> finalHeaders = headers;
-            csvValues.forEach(row -> {
-                for (int i = 0; i < row.length; i++) {
-                    String header = finalHeaders.get(i);
-                    String value = row[i];
-
-                    try {
-                        doubleTimeSeries.get(header).add(Double.parseDouble(value));
-                    } catch (NumberFormatException e) {
-                        stringTimeSeries.get(header).add(value);
-                    }
-                }
-            });
-
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         }
 
-        FlightBuilder builder = new FlightBuilder(new FlightMeta(), doubleTimeSeries, stringTimeSeries);
+        FlightBuilder builder = new FlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(builder);
     }
@@ -106,9 +97,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * Updates the airframe type if airframe name does not belong to fixed wing
      */
     private void updateAirframe() {
-        if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
-            airframeName = "R44";
-            airframeType = "Rotorcraft";
+        if (meta.airframeName.equals("R44") || meta.airframeName.equals("Robinson R44")) {
+            meta.airframeName = "R44";
+            meta.airframeType = "Rotorcraft";
         }
     }
 
@@ -121,7 +112,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private String getFlightInfo(BufferedReader reader) throws FatalFlightFileException, IOException {
         String fileInformation = reader.readLine();
-        System.out.println("File information = " + fileInformation);
 
         if (fileInformation == null || fileInformation.trim().length() == 0) {
             throw new FatalFlightFileException("The flight file was empty.");
@@ -131,8 +121,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (fileInformation.startsWith("DID_")) {
                 LOG.info("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
 
-                this.airframeName = "ScanEagle";
-                this.airframeType = "UAS Fixed Wing";
+                meta.airframeName = "ScanEagle";
+                meta.airframeType = "UAS Fixed Wing";
             } else {
                 throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
             }
@@ -158,40 +148,40 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
                 // TODO: Create some sort of automatic mapping for synonomous airframe names.
                 if (key.equals("airframe_name")) {
-                    airframeName = value.substring(1, value.length() - 1);
+                    meta.airframeName = value.substring(1, value.length() - 1);
 
                     //throw an error for 'Unknown Aircraft'
-                    if (airframeName.equals("Unknown Aircraft")) {
+                    if (meta.airframeName.equals("Unknown Aircraft")) {
                         throw new FatalFlightFileException("Flight airframe name was 'Unknown Aircraft', please fix and re-upload so the flight can be properly identified and processed.");
                     }
 
 
-                    if (airframeName.equals("Diamond DA 40")) {
-                        airframeName = "Diamond DA40";
-                    } else if ((airframeName.equals("Garmin Flight Display") || airframeName.equals("Robinson R44 Raven I")) && upload.getFleetId() == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
-                        airframeName = "R44";
-                    } else if (airframeName.equals("Garmin Flight Display")) {
+                    if (meta.airframeName.equals("Diamond DA 40")) {
+                        meta.airframeName = "Diamond DA40";
+                    } else if ((meta.airframeName.equals("Garmin Flight Display") || meta.airframeName.equals("Robinson R44 Raven I")) && upload.getFleetId() == 1 /*This is a hack for UND who has their airframe names set up incorrectly for their helicopters*/) {
+                        meta.airframeName = "R44";
+                    } else if (meta.airframeName.equals("Garmin Flight Display")) {
                         throw new FatalFlightFileException("Flight airframe name was 'Garmin Flight Display' which does not specify what airframe type the flight was, please fix and re-upload so the flight can be properly identified and processed.");
 
                     }
 
-                    if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
-                        airframeName = "Cirrus SR22";
+                    if (meta.airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                        meta.airframeName = "Cirrus SR22";
                     }
 
-                    if (Airframes.FIXED_WING_AIRFRAMES.contains(airframeName) || airframeName.contains("Garmin")) {
-                        airframeType = "Fixed Wing";
-                    } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
-                        airframeName = "R44";
-                        airframeType = "Rotorcraft";
+                    if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframeName) || meta.airframeName.contains("Garmin")) {
+                        meta.airframeType = "Fixed Wing";
+                    } else if (meta.airframeName.equals("R44") || meta.airframeName.equals("Robinson R44")) {
+                        meta.airframeName = "R44";
+                        meta.airframeType = "Rotorcraft";
                     } else {
-                        System.err.println("Could not import flight because the aircraft type was unknown for the following airframe name: '" + airframeName + "'");
+                        System.err.println("Could not import flight because the aircraft type was unknown for the following airframe name: '" + meta.airframeName + "'");
                         System.err.println("Please add this to the the `airframe_type` table in the database and update this method.");
                         System.exit(1);
                     }
 
                 } else if (key.equals("system_id")) {
-                    systemId = value.substring(1, value.length() - 1);
+                    meta.systemId = value.substring(1, value.length() - 1);
                 }
             }
         } catch (Exception e) {
@@ -219,17 +209,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private void scanEagleSetTailAndID() {
         String[] filenameParts = filename.split("_");
-        startDateTime = filenameParts[0];
-        endDateTime = startDateTime;
-        LOG.log(Level.INFO, "start date: '{0}'", startDateTime);
-        LOG.log(Level.INFO, "end date: '{0}'", startDateTime);
+        meta.startDateTime = filenameParts[0];
+        meta.endDateTime = meta.startDateTime;
+        LOG.log(Level.INFO, "start date: '{0}'", meta.startDateTime);
+        LOG.log(Level.INFO, "end date: '{0}'", meta.startDateTime);
 
         //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
-        suggestedTailNumber = "N" + filenameParts[1] + "ND";
-        systemId = suggestedTailNumber;
+        meta.suggestedTailNumber = "N" + filenameParts[1] + "ND";
+        meta.systemId = meta.suggestedTailNumber;
 
-        LOG.log(Level.INFO, "suggested tail number: '{0}'", suggestedTailNumber);
-        LOG.log(Level.INFO, "system id: '{0}'", systemId);
+        LOG.log(Level.INFO, "suggested tail number: '{0}'", meta.suggestedTailNumber);
+        LOG.log(Level.INFO, "system id: '{0}'", meta.systemId);
     }
 
 
@@ -238,7 +228,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String headersLine = fileInformation;
         headers.addAll(Arrays.asList(headersLine.split("\\,", -1)));
         headers.replaceAll(String::trim);
-        System.out.println("headers are:\n" + headers.toString());
         //scan eagle files have no data types, set all to ""
         for (int i = 0; i < headers.size(); i++) {
             dataTypes.add("none");

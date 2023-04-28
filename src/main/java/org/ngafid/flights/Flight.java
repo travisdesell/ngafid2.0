@@ -1268,7 +1268,7 @@ public class Flight {
             }
 
             queryString.append("WHERE id = " + flightTag.hashCode());
-            System.out.println("Query String Update: " + queryString.toString());
+            LOG.info("Query String Update: " + queryString.toString());
             PreparedStatement query = connection.prepareStatement(queryString.toString());
             query.executeUpdate();
 
@@ -3403,7 +3403,7 @@ public class Flight {
             preparedStatement.setString(17, startDateTime);
             preparedStatement.setString(18, endDateTime);
 
-            System.out.println(preparedStatement);
+            LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
 
             ResultSet resultSet = preparedStatement.getGeneratedKeys();
@@ -3439,7 +3439,7 @@ public class Flight {
                 ps.close();
 
             } else {
-                System.err.println("ERROR: insertion of flight to the database did not result in an id.  This should never happen.");
+                LOG.severe("ERROR: insertion of flight to the database did not result in an id.  This should never happen.");
                 System.exit(1);
             }
 
@@ -3467,10 +3467,9 @@ public class Flight {
         for (int i = 0; i < series.size(); i++) {
             String name = series.get(i).getName();
             if (name.equals("AirportDistance") || name.equals("RunwayDistance") || series.get(i).getMin() == series.get(i).getMax()) {
-                System.out.println("Skipping column: '" + name + "'");
+                LOG.warning("Skipping column: '" + name + "'");
                 continue;
             }
-            System.out.println("'" + name + "' min - max: " + (series.get(i).getMin() - series.get(i).getMax()));
 
             if (afterFirst) printWriter.print(",");
             printWriter.print(series.get(i).getName());

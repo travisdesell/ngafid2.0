@@ -193,10 +193,15 @@ public class ProcessUpload {
             upload.reset(connection);
             System.out.println("upload was reset!\n\n");
 
-
             UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
 
+            long start = System.nanoTime();
             boolean success = ingestFlights(connection, upload, uploadProcessedEmail);
+            long end = System.nanoTime();
+
+            long diff = end - start;
+            double asSeconds = ((double) diff) / 1.0e-9;
+            System.out.println("Took " + asSeconds + "s to ingest upload " + upload.getFilename());
 
             //only progress if the upload ingestion was successful
             if (success) {
@@ -244,41 +249,6 @@ public class ProcessUpload {
         }
     }
 
-    interface CheckedFunction<T, R, E extends Exception> {
-        public R apply(T t) throws E;
-    }
-
-    static class CheckedMap<T, R, E extends Exception> implements Function<T, R> {
-        final BiConsumer<T, E> exceptionHandler;
-        final CheckedFunction<T, R, E> f;
-
-        public CheckedMap(CheckedFunction<T, R, E> f, BiConsumer<T, E> exceptionHandler) {
-            this.exceptionHandler = exceptionHandler;
-            this.f = f;
-        }
-
-        public R apply(T t) {
-            try {
-                return f.apply(t);
-            } catch (Error | RuntimeException e) {
-                throw e;
-            } catch (Exception ex) {
-                @SuppressWarnings("unchecked") E e = (E) ex;
-                exceptionHandler.accept(t, e);
-                return null;
-            }
-        }
-    }
-
-
-    // Generates a function which when called will call the supplied function f which may raise an exception. 
-    // In the event of an exception the exception the exceptionHandler is called and supplied the value T as 
-    // well as the exception object, and finally null is returned.
-    private static <T, R, E extends Exception> CheckedMap<T, R, E> mapOrNull(CheckedFunction<T, R, E> f, BiConsumer<T, E> exceptionHandler) {
-        return new CheckedMap<T, R, E>(f, exceptionHandler);
-    }
-
-
     public static boolean ingestFlights(Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
 
@@ -313,8 +283,9 @@ public class ProcessUpload {
                 FlightFileProcessor.Pipeline pipeline = new FlightFileProcessor.Pipeline(connection, upload, zipFile);
                 pipeline
                     .stream()
-                    .map(pipeline::parse)
-                    .flatMap(pipeline::build)
+                    .flatMap(pipeline::parse)
+                    .map(pipeline::build)
+                    .filter(Objects::nonNull)
                     .map(pipeline::insert)
                     .forEach(pipeline::tabulateFlightStatus);
 

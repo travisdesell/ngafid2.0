@@ -104,7 +104,6 @@ public abstract class FlightFileProcessor {
 
             int index = filename.lastIndexOf('.');
             String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
-            System.out.println("Extension: " + extension); 
             Factory f = factories.get(extension);
             if (f != null) {
                 try {
@@ -120,7 +119,9 @@ public abstract class FlightFileProcessor {
         }
 
         public Flight insert(Flight flight) {
-            flight.updateDatabase(connection, upload.getId(), upload.getUploaderId(), upload.getFleetId());
+            synchronized (connection) {
+                flight.updateDatabase(connection, upload.getId(), upload.getUploaderId(), upload.getFleetId());
+            }
             return flight;
         }
 

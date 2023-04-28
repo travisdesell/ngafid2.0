@@ -18,7 +18,7 @@ import org.ngafid.flights.MalformedFlightFileException;
 
 public class ProcessItinerary extends ProcessStep {
     private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE, RUNWAY_DISTANCE, GND_SPD, E1_RPM);
-    private static Set<String> REQUIRED_STRING_COLUMNS = Set.of(AIRPORT_DISTANCE, NEAREST_AIRPORT, NEAREST_RUNWAY);
+    private static Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
     private static Set<String> OUTPUT_COLUMNS = Set.of("_itinerary"); // This is a fake column; never actually created.
 
     public ProcessItinerary(Connection connection, FlightBuilder builder) {

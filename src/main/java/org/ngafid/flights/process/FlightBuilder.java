@@ -10,9 +10,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import org.ngafid.flights.*;
-import org.ngafid.flights.process.*;
-import org.ngafid.flights.process.FlightMeta;
 import static org.ngafid.flights.process.ProcessStep.required;
+import org.ngafid.flights.process.*;
 
 public class FlightBuilder {
 
@@ -68,7 +67,6 @@ public class FlightBuilder {
         ProcessLaggedAltMSL::new,
         ProcessStallIndex::new,
         ProcessTotalFuel::new,
-        ProcessAirportProximity::new,
         ProcessDivergence::new,
         ProcessLOCI::new,
         ProcessItinerary::new

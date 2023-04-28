@@ -9,8 +9,8 @@ import java.util.logging.Logger;
 import java.time.format.DateTimeFormatter;
 
 import static org.ngafid.flights.Parameters.*;
+import static org.ngafid.flights.Airframes.*;
 import org.ngafid.common.*;
-import org.ngafid.flights.calculations.CalculatedDoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
@@ -21,6 +21,7 @@ public class ProcessStallIndex extends ProcessStep {
     private static final Logger LOG = Logger.getLogger(ProcessStallIndex.class.getName());
 
     public static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(STALL_DEPENDENCIES);
+    public static Set<String> OUTPUT_COLUMNS = Set.of(STALL_PROB, TAS_FTMIN, VSPD_CALCULATED, CAS);
 
     public ProcessStallIndex(Connection connection, FlightBuilder builder) {
         super(connection, builder);
@@ -29,7 +30,7 @@ public class ProcessStallIndex extends ProcessStep {
     public Set<String> getRequiredDoubleColumns() { return REQUIRED_DOUBLE_COLUMNS; }
     public Set<String> getRequiredStringColumns() { return Collections.emptySet(); }
     public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getOutputColumns() { return Collections.emptySet(); }
+    public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
 
     public boolean airframeIsValid(String airframe) { return true; }
 
@@ -48,11 +49,13 @@ public class ProcessStallIndex extends ProcessStep {
                     return iasValue;
                 }
             );
+            cas.setTemporary(true);
             doubleTS.put(CAS, cas);
         }
 
         DoubleTimeSeries vspdCalculated = 
             DoubleTimeSeries.computed(VSPD_CALCULATED, "ft/min", length, new VSPDRegression(doubleTS.get(ALT_B)));
+        vspdCalculated.setTemporary(true);
         doubleTS.put(VSPD_CALCULATED, vspdCalculated);
         
         DoubleTimeSeries baroA = doubleTS.get(BARO_A);
@@ -72,6 +75,7 @@ public class ProcessStallIndex extends ProcessStep {
             index -> {
                 return (airspeed.get(index) * Math.pow(densityRatio.get(index), -0.5)) * ((double) 6076 / 60);
         });
+        tasFtMin.setTemporary(true);
 
         DoubleTimeSeries pitch = doubleTS.get(PITCH);
         DoubleTimeSeries aoaSimple = DoubleTimeSeries.computed(AOA_SIMPLE, "degrees", length,
@@ -92,5 +96,6 @@ public class ProcessStallIndex extends ProcessStep {
             }
         );
         doubleTS.put(STALL_PROB, stallIndex);
+        doubleTS.put(TAS_FTMIN, tasFtMin);
     }
 }

@@ -39,6 +39,9 @@ public class DoubleTimeSeries {
     private double[] data;
     private int size = 0;
 
+    // Set this to true if this double time series is temporary and should not be written to the database.
+    private boolean temporary = false;
+
     // Now called size since data.length is the buffer length and size is the number of elements in the buffer
     // private int length = -1;
     private double min = Double.MAX_VALUE;
@@ -79,12 +82,15 @@ public class DoubleTimeSeries {
     }
 
     public DoubleTimeSeries(Connection connection, String name, String dataType, ArrayList<String> stringTimeSeries) throws SQLException {
-        this.name = name;
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
-        this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
+        this(name, dataType, stringTimeSeries);
+        setNameId(connection);
+        setTypeId(connection);
+    }
 
-        // timeSeries = new ArrayList<Double>();
+    public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
+        this.name = name;
+        this.dataType = dataType;
+
         this.data = new double[stringTimeSeries.size()];
 
         int emptyValues = 0;
@@ -94,7 +100,6 @@ public class DoubleTimeSeries {
         for (int i = 0; i < stringTimeSeries.size(); i++) {
             String currentValue = stringTimeSeries.get(i);
             if (currentValue.length() == 0) {
-                //System.err.println("WARNING: double column '" + name + "' value[" + i + "] is empty.");
                 this.add(Double.NaN);
                 emptyValues++;
                 continue;
@@ -146,6 +151,10 @@ public class DoubleTimeSeries {
   
     public interface TimeStepCalculation {
         double compute(int i);
+    }
+
+    public void setTemporary(boolean temp) {
+        this.temporary = temp;
     }
 
     public static DoubleTimeSeries computed(String name, String dataType, int length, TimeStepCalculation calculation) {
@@ -391,6 +400,8 @@ public class DoubleTimeSeries {
 
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
+        if (this.temporary)
+            return;
         try {
             if (typeId == -1)
                 setTypeId(connection);

@@ -37,7 +37,7 @@ public class FindLowEndingFuelEvents {
                 try {
                     findLowEndFuel(connection, flight);
                 } catch (MalformedFlightFileException e) {
-                    System.out.println("Could not process flight " + flight.getId());
+                    LOG.info("Could not process flight " + flight.getId());
                 } catch (ParseException e) {
                     LOG.info("Error parsing date");
                     e.printStackTrace();
@@ -81,7 +81,7 @@ public class FindLowEndingFuelEvents {
 
         String[] lastValidDateAndIndex = date.getLastValidAndIndex();
         int i = Integer.parseInt(lastValidDateAndIndex[1]);
-        System.out.println("last valid date and index: " + i);
+        LOG.info("last valid date and index: " + i);
 
         String endTime = lastValidDateAndIndex[0] + " " + time.getLastValid();
 
