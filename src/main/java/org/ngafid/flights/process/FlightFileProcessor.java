@@ -5,6 +5,8 @@ import java.io.InputStream;
 import java.sql.Connection;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
@@ -15,6 +17,7 @@ import java.util.Enumeration;
 import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.ngafid.filters.Pair;
 import org.ngafid.UploadException;
@@ -37,8 +40,8 @@ public abstract class FlightFileProcessor {
         private int validFlightsCount = 0;
         private int warningFlightsCount = 0;
 
-        private HashMap<String, UploadException> flightErrors = new HashMap<>();
-
+        private ConcurrentHashMap<String, UploadException> flightErrors = new ConcurrentHashMap<>();
+        
         public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
             this.connection = connection;
             this.upload = upload;
@@ -74,7 +77,7 @@ public abstract class FlightFileProcessor {
                 .filter(z -> !z.getName().contains("__MACOSX"))
                 .filter(z -> !z.isDirectory());
 
-            return validFiles.map(this::create).filter(Objects::nonNull);
+            return validFiles.map(this::create).filter(Objects::nonNull).collect(Collectors.toList()).stream();
         }
 
         public Stream<FlightBuilder> parse(FlightFileProcessor processor) {
@@ -95,8 +98,8 @@ public abstract class FlightFileProcessor {
             }
         }
 
-        public Stream<Flight> build(Stream<FlightBuilder> fbs) {
-            return fbs.map(this::build).filter(Objects::nonNull);
+        public List<Flight> build(Stream<FlightBuilder> fbs) {
+            return fbs.map(this::build).filter(Objects::nonNull).collect(Collectors.toList());
         }
 
         private FlightFileProcessor create(ZipEntry entry) {
@@ -107,7 +110,7 @@ public abstract class FlightFileProcessor {
             Factory f = factories.get(extension);
             if (f != null) {
                 try {
-                    return f.create(connection, zipFile.getInputStream(entry), zipFile.getName());
+                    return f.create(connection, zipFile.getInputStream(entry), filename);
                 } catch (IOException e) {
                     flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
                 }
@@ -118,18 +121,13 @@ public abstract class FlightFileProcessor {
             return null;
         }
 
-        public Flight insert(Flight flight) {
-            synchronized (connection) {
-                flight.updateDatabase(connection, upload.getId(), upload.getUploaderId(), upload.getFleetId());
-            }
-            return flight;
-        }
-
-        public void tabulateFlightStatus(Flight flight) {
+        public Flight tabulateFlightStatus(Flight flight) {
             if (flight.getStatus().equals("WARNING"))
                 warningFlightsCount++;
             else
                 validFlightsCount++;
+
+            return flight;
         }
 
         public int getWarningFlightsCount() {

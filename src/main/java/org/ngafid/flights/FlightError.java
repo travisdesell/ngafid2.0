@@ -25,8 +25,6 @@ public class FlightError {
         exceptionPreparedStatement.setString(2, filename);
         exceptionPreparedStatement.setInt(3, ErrorMessage.getMessageId(connection, message));
 
-        LOG.info(exceptionPreparedStatement.toString());
-
         exceptionPreparedStatement.executeUpdate();
         exceptionPreparedStatement.close();
     }

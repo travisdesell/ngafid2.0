@@ -40,8 +40,7 @@ public class DependencyGraph {
                 enabled.set(false);
                 if (step.isRequired()) {
                     String reason = step.explainApplicability();
-                    LOG.severe(builder.doubleTimeSeries.keySet().toString());
-                    LOG.severe("Required step " + step.toString() + " has been disabled for <reason>:\n    " + reason);
+                    LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
                 }
                 for (var child : requiredBy) child.disable();
@@ -55,7 +54,7 @@ public class DependencyGraph {
                     LOG.severe("Required step " + step.toString() + " has been disabled.");
                     exceptions.add(
                         new FatalFlightFileException(
-                            "Required step " + step.toString() 
+                            "Required step " + step.getClass().getName() 
                             + " has been disabled because a required parent step has been disabled"));
                 }
                 for (var child : requiredBy) child.disable();
@@ -206,21 +205,12 @@ public class DependencyGraph {
                 tasks.put(node, task);
             }
         }
-        ForkJoinPool ex = new ForkJoinPool(8);
 
-        try {
-            ex.invoke(new RecursiveTask<Void>() {
-                public Void compute() {
-                    initialTasks
-                        .stream()
-                        .map(x -> x.fork())
-                        .forEach(ForkJoinTask::join);
-                    return null;
-                }
-            });
-        } finally {
-            ex.shutdown();
-        }
+        var handles = initialTasks
+            .stream()
+            .map(x -> x.fork())
+            .collect(Collectors.toList());
+        handles.forEach(ForkJoinTask::join);
    
         ArrayList<Exception> fatalExceptions = new ArrayList<>();
         for (var node : nodes) {

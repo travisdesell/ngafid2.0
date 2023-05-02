@@ -76,7 +76,7 @@ public abstract class ProcessStep {
         }
 
         String className = this.getClass().getSimpleName();
-        StringBuilder sb = new StringBuilder("Step '" + className + "' cannot be applied for the following reason(s):");
+        StringBuilder sb = new StringBuilder("Step '" + className + "' cannot be applied for the following reason(s):\n");
 
         if (!airframeIsValid(builder.meta.airframeName)) {
             sb.append("  - airframeName '" + builder.meta.airframeName + "' is invalid (" 

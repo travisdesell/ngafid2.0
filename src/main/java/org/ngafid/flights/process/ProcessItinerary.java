@@ -2,6 +2,7 @@ package org.ngafid.flights.process;
 
 import java.util.Set;
 import java.util.ArrayList;
+import java.util.logging.Logger;
 import java.util.Collections;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -17,6 +18,8 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
 public class ProcessItinerary extends ProcessStep {
+    private static final Logger LOG = Logger.getLogger(ProcessItinerary.class.getName());
+
     private static Set<String> REQUIRED_DOUBLE_COLUMNS = Set.of(ALT_AGL, LATITUDE, LONGITUDE, AIRPORT_DISTANCE, RUNWAY_DISTANCE, GND_SPD, E1_RPM);
     private static Set<String> REQUIRED_STRING_COLUMNS = Set.of(NEAREST_AIRPORT, NEAREST_RUNWAY);
     private static Set<String> OUTPUT_COLUMNS = Set.of("_itinerary"); // This is a fake column; never actually created.
@@ -93,10 +96,10 @@ public class ProcessItinerary extends ProcessStep {
         }
         ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        System.err.println("Itinerary:");
-        for (int i = 0; i < itinerary.size(); i++) {
-            System.err.println(itinerary.get(i));
-        }
+        // LOG.info("Itinerary:");
+        // for (int i = 0; i < itinerary.size(); i++) {
+        //     LOG.info(itinerary.get(i).toString());
+        // }
 
         builder.setItinerary(itinerary);
     }

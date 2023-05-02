@@ -8,9 +8,11 @@ import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +33,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         super(connection, stream, filename);
         this.upload = upload;
 
+
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 
@@ -40,12 +43,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
-        Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
-        Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
+        Map<String, DoubleTimeSeries> doubleTimeSeries = new ConcurrentHashMap<>();
+        Map<String, StringTimeSeries> stringTimeSeries = new ConcurrentHashMap<>();
 
         List<String[]> csvValues = null;
-        List<String> dataTypes = new ArrayList<>();
-        List<String> headers = new ArrayList<>();
 
         try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
             String fileInformation = getFlightInfo(bufferedReader); // Will read a line
@@ -55,8 +56,12 @@ public class CSVFileProcessor extends FlightFileProcessor {
             } else {
                 processFileInormation(fileInformation);
                 bufferedReader.read(); // Skip first char (#)
-                dataTypes = List.of(csvReader.readNext());
-                headers = Arrays.stream(csvReader.readNext()).map(String::strip).collect(Collectors.toList());
+                Arrays.stream(csvReader.readNext())
+                    .map(String::strip)
+                    .forEachOrdered(dataTypes::add);;
+                Arrays.stream(csvReader.readNext())
+                    .map(String::strip)
+                    .forEachOrdered(headers::add);;
             }
             
             updateAirframe();
@@ -71,18 +76,24 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i].trim());
 
-            for (int i = 0; i < columns.size(); i++) {
-                ArrayList<String> column = columns.get(i);
-                String name = headers.get(i);
-                String dataType = dataTypes.get(i);
-                try {
-                    Double.parseDouble(column.get(0));
-                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
-                } catch (NumberFormatException e) {
-                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
-                }
-            }
-
+            final int granulatiry = 8; 
+            IntStream.range(0, columns.size() / granulatiry)
+                .parallel()
+                .forEach(g -> {
+                    var max = Math.max(g * granulatiry + granulatiry, columns.size());
+                    for (int i = g * granulatiry; i < max; i++) {
+                        var column = columns.get(i);
+                        var name = headers.get(i);
+                        var dataType = dataTypes.get(i);
+                        
+                        try {
+                            Double.parseDouble(column.get(0));
+                            doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                        } catch (NumberFormatException e) {
+                            stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                        }
+                    }
+                });
         } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         }

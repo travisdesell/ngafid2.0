@@ -20,20 +20,13 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Spliterator;
-import java.util.Spliterators;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
-import java.util.function.Function;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
-import java.util.stream.StreamSupport;
-import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import org.ngafid.flights.Flight;
@@ -46,19 +39,14 @@ import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
 
-@FunctionalInterface
-interface FlightFileProcessors {
-    FlightFileProcessor create(InputStream stream, String filename, Object... args);
-}
-
 public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
 
     public static void main(String[] arguments) {
-        System.out.println("arguments are:");
-        System.out.println(Arrays.toString(arguments));
+        LOG.info("arguments are:");
+        LOG.info(Arrays.toString(arguments));
 
         connection = Database.getConnection();
 
@@ -130,7 +118,7 @@ public class ProcessUpload {
     }
 
     public static void processFleetUploads(int fleetId) {
-        System.out.println("processing uploads from fleet with id: " + fleetId);
+        LOG.info("processing uploads from fleet with id: " + fleetId);
         try {
             Fleet fleet = Fleet.get(connection, fleetId);
             String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
@@ -154,7 +142,7 @@ public class ProcessUpload {
     }
 
     public static void processUpload(int uploadId) {
-        System.out.println("processing upload with id: " + uploadId);
+        LOG.info("processing upload with id: " + uploadId);
         try {
             Upload upload = Upload.getUploadById(connection, uploadId);
 
@@ -191,7 +179,7 @@ public class ProcessUpload {
             SendEmail.sendEmail(recipients, bccRecipients, subject, body);
 
             upload.reset(connection);
-            System.out.println("upload was reset!\n\n");
+            LOG.info("upload was reset!\n\n");
 
             UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
 
@@ -200,7 +188,7 @@ public class ProcessUpload {
             long end = System.nanoTime();
 
             long diff = end - start;
-            double asSeconds = ((double) diff) / 1.0e-9;
+            double asSeconds = ((double) diff) * 1.0e-9;
             System.out.println("Took " + asSeconds + "s to ingest upload " + upload.getFilename());
 
             //only progress if the upload ingestion was successful
@@ -249,6 +237,8 @@ public class ProcessUpload {
         }
     }
 
+    private static ForkJoinPool pool = new ForkJoinPool(4);
+
     public static boolean ingestFlights(Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
 
@@ -279,16 +269,32 @@ public class ProcessUpload {
             try {
                 System.err.println("processing zip file: '" + filename + "'");
                 ZipFile zipFile = new ZipFile(filename);
-
                 FlightFileProcessor.Pipeline pipeline = new FlightFileProcessor.Pipeline(connection, upload, zipFile);
-                pipeline
-                    .stream()
-                    .flatMap(pipeline::parse)
-                    .map(pipeline::build)
-                    .filter(Objects::nonNull)
-                    .map(pipeline::insert)
-                    .forEach(pipeline::tabulateFlightStatus);
 
+                var flights = new ConcurrentLinkedQueue<Flight>();
+                long startNanos = System.nanoTime();
+                pool.submit(() ->
+                    pipeline
+                        .stream()
+                        .parallel()
+                        .flatMap(pipeline::parse)
+                        .map(pipeline::build)
+                        .filter(Objects::nonNull)
+                        .map(pipeline::tabulateFlightStatus)
+                        .forEach(flights::add)
+                ).join();
+                long endNanos = System.nanoTime();
+                double s = 1e-9 * (double) (endNanos - startNanos);
+                System.out.println("Took " + s + "s to process flights");
+
+                startNanos = System.nanoTime();
+                
+                Flight.batchUpdateDatabase(connection, upload, flights);
+                flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
+                
+                endNanos = System.nanoTime();
+                s = 1e-9 * (double) (endNanos - startNanos); 
+                System.out.println("Took " + s + "s to upload flights to database");
                 flightErrors = pipeline.getFlightErrors();
                 errorFlights = flightErrors.size();
                 warningFlights = pipeline.getWarningFlightsCount();
@@ -332,7 +338,6 @@ public class ProcessUpload {
         //insert all the flight errors to the database
         for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {
             UploadException exception = entry.getValue();
-            exception.printStackTrace();
             FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
         }
 
@@ -351,9 +356,9 @@ public class ProcessUpload {
             System.err.println("email in " + elapsed_seconds);
             uploadProcessedEmail.setImportElapsedTime(elapsed_seconds);
 
-            System.out.println("valid flights: " + validFlights);
-            System.out.println("warning flights: " + warningFlights);
-            System.out.println("error flights: " + errorFlights);
+            LOG.info("valid flights: " + validFlights);
+            LOG.info("warning flights: " + warningFlights);
+            LOG.info("error flights: " + errorFlights);
 
             uploadProcessedEmail.setValidFlights(validFlights);
             //iterate over all the flights without warnings
@@ -408,7 +413,7 @@ public class ProcessUpload {
     }
 
     private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
-        System.out.println("Converting to CSV: " + file.getAbsolutePath());
+        LOG.info("Converting to CSV: " + file.getAbsolutePath());
         DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
         datFile.reset();
         datFile.preAnalyze();
@@ -421,7 +426,7 @@ public class ProcessUpload {
 
         datFile.reset();
         AnalyzeDatResults results = convertDat.analyze(false);
-        System.out.println(datFile.getFile().getAbsolutePath());
+        LOG.info(datFile.getFile().getAbsolutePath());
 
         return datFile.getFile();
     }

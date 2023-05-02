@@ -18,15 +18,22 @@ public class FlightWarning {
     private String filename;
     private String message;
     private String stackTrace;
+    
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message_id) VALUES (?, ?)");
+    }
 
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException {
+        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
+    }
+    
     public static void insertWarning(Connection connection, int flightId, String message) throws SQLException {
-        PreparedStatement exceptionPreparedStatement = connection.prepareStatement("INSERT INTO flight_warnings (flight_id, message_id) VALUES (?, ?)");
-        exceptionPreparedStatement.setInt(1, flightId);
-        exceptionPreparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
+        PreparedStatement exceptionPreparedStatement = createPreparedStatement(connection);
 
-        LOG.info(exceptionPreparedStatement.toString());
-
-        exceptionPreparedStatement.executeUpdate();
+        new FlightWarning(message).addBatch(connection, exceptionPreparedStatement, flightId);
+        
+        exceptionPreparedStatement.executeBatch();
         exceptionPreparedStatement.close();
     }
 
@@ -66,6 +73,10 @@ public class FlightWarning {
         resultSet.close();
         query.close();
         return count ;
+    }
+
+    public FlightWarning(String message) {
+        this.message = message;
     }
 
     public FlightWarning(Connection connection, ResultSet resultSet) throws SQLException {

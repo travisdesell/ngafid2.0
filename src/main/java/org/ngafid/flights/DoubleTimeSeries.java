@@ -398,6 +398,50 @@ public class DoubleTimeSeries {
         return slice;
     }
 
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    }
+
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException, IOException {
+        if (typeId == -1)
+            setTypeId(connection);
+        if (nameId == -1)
+            setNameId(connection);
+
+        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(2, nameId);
+        preparedStatement.setInt(3, typeId);
+
+        preparedStatement.setInt(4, this.size);
+        preparedStatement.setInt(5, validCount);
+
+        if (Double.isNaN(min)) {
+            preparedStatement.setNull(6, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(6, min);
+        }
+
+        if (Double.isNaN(avg)) {
+            preparedStatement.setNull(7, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(7, avg);
+        }
+
+        if (Double.isNaN(max)) {
+            preparedStatement.setNull(8, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(8, max);
+        }
+
+        // UPDATED COMPRESSION CODE
+        byte[] compressed = Compression.compressDoubleArray(this.data);
+        Blob seriesBlob = new SerialBlob(compressed);
+
+        preparedStatement.setBlob(9, seriesBlob);
+
+        preparedStatement.addBatch();
+    }
+
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
         if (this.temporary)
@@ -409,81 +453,10 @@ public class DoubleTimeSeries {
                 setNameId(connection);
 
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-            preparedStatement.setInt(1, flightId);
-            preparedStatement.setInt(2, nameId);
-            preparedStatement.setInt(3, typeId);
-
-            preparedStatement.setInt(4, this.size);
-            preparedStatement.setInt(5, validCount);
-
-            if (Double.isNaN(min)) {
-                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(6, min);
-            }
-
-            if (Double.isNaN(avg)) {
-                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(7, avg);
-            }
-
-            if (Double.isNaN(max)) {
-                preparedStatement.setNull(8, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(8, max);
-            }
-
-            // UPDATED COMPRESSION CODE
-            // byte[] compressed = Compression.compressDoubleArray(this.data);
-            // Blob seriesBlob = new SerialBlob(compressed);
-            
-            // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
-            // is a list of objects rather than a list of primitives - it consumes much more memory.
-            // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
-            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-            for (int i = 0; i < size; i++)
-                timeSeriesBytes.putDouble(data[i]);
-
-            // Hopefully this is enough memory. It should be enough.
-            int bufferSize = timeSeriesBytes.capacity() + 256;
-            ByteBuffer compressedTimeSeries;
-
-            // This is probably super overkill but it won't hurt?
-            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
-            // allocate more memory.
-            // I don't think it should happen unless the time series unless the compressed data is larger than the
-            // raw data, which should never happen.
-            int compressedDataLength;
-
-            for (;;) {
-                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
-                try {
-                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
-                    deflater.setInput(timeSeriesBytes.array());
-                    deflater.finish();
-                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
-                    deflater.end();
-                    break;
-                } catch (BufferOverflowException _boe) {
-                    bufferSize *= 2;
-                }
-            }
-
-            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
-            // we don't know what the compressed data size until after it is done being compressed
-            byte[] blobBytes = new byte[compressedDataLength];
-            compressedTimeSeries.get(blobBytes);
-            Blob seriesBlob = new SerialBlob(blobBytes);
-
-            preparedStatement.setBlob(9, seriesBlob);
-            preparedStatement.executeUpdate();
+            this.addBatch(connection, preparedStatement, flightId);
+            preparedStatement.executeBatch();
             preparedStatement.close();
-
-            seriesBlob.free();
-
-        } catch (SQLException e) { //  | IOException e) { // Re-enable this for the new compression code.
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             System.exit(1);
         }

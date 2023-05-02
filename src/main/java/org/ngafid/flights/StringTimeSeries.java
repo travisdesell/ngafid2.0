@@ -210,30 +210,38 @@ public class StringTimeSeries {
         return validCount;
     }
 
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+    }
+
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException, IOException {
+        if (nameId == -1)
+            setNameId(connection);
+        if (typeId == -1) 
+            setTypeId(connection);
+
+        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(2, nameId);
+        preparedStatement.setInt(3, typeId);
+        preparedStatement.setInt(4, timeSeries.size());
+        preparedStatement.setInt(5, validCount);
+
+        // To get rid of extra bytes at the end of the buffer
+        byte[] compressed = Compression.compressObject(this.timeSeries);
+        Blob seriesBlob = new SerialBlob(compressed);
+        preparedStatement.setBlob(6, seriesBlob);
+
+        preparedStatement.addBatch();
+    }
+
     public void updateDatabase(Connection connection, int flightId) {
-
         try {
-            if (nameId == -1)
-                setNameId(connection);
-            if (typeId == -1) 
-                setTypeId(connection);
+            PreparedStatement preparedStatement = createPreparedStatement(connection);
 
-            PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+            this.addBatch(connection, preparedStatement, flightId);
 
-            preparedStatement.setInt(1, flightId);
-            preparedStatement.setInt(2, nameId);
-            preparedStatement.setInt(3, typeId);
-            preparedStatement.setInt(4, timeSeries.size());
-            preparedStatement.setInt(5, validCount);
-
-            // To get rid of extra bytes at the end of the buffer
-            byte[] compressed = Compression.compressObject(this.timeSeries);
-            Blob seriesBlob = new SerialBlob(compressed);
-
-            preparedStatement.setBlob(6, seriesBlob);
             preparedStatement.executeUpdate();
             preparedStatement.close();
-            seriesBlob.free();
 
         } catch (SQLException | IOException e) {
             e.printStackTrace();

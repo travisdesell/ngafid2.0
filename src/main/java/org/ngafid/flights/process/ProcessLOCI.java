@@ -34,7 +34,7 @@ public class ProcessLOCI extends ProcessStep {
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
         DoubleTimeSeries hdg = doubleTS.get(HDG);
-        DoubleTimeSeries hdgLagged = withConnection((connection) -> hdg.lag(connection, YAW_RATE_LAG));
+        DoubleTimeSeries hdgLagged = hdg.lag(YAW_RATE_LAG);
         DoubleTimeSeries roll = doubleTS.get(ROLL);
         DoubleTimeSeries tas = doubleTS.get(TAS_FTMIN);
         DoubleTimeSeries stallIndex = doubleTS.get(STALL_PROB);
