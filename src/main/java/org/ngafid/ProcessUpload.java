@@ -290,7 +290,7 @@ public class ProcessUpload {
                 startNanos = System.nanoTime();
                 
                 Flight.batchUpdateDatabase(connection, upload, flights);
-                flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
+                // flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
                 
                 endNanos = System.nanoTime();
                 s = 1e-9 * (double) (endNanos - startNanos); 
