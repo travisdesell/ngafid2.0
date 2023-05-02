@@ -8,7 +8,9 @@
  * @author <a href = mailto:josh@mail.rit.edu>Josh Karns</a>
  * @author <a href = mailto:apl@mail.rit.edu>Aidan LaBella</a>
  */
-package org.ngafid.flights.calculations;
+package org.ngafid.flights;
+
+import java.util.Set;
 
 public interface Parameters {
     /**
@@ -24,7 +26,7 @@ public interface Parameters {
     public static final String PARAM_JSON_LONGITUDE = "lon";
 
     public static final double STD_PRESS_INHG = 29.92;
-    public static final double COMP_CONV = (double) (Math.PI / 180); 
+    public static final double COMP_CONV = Math.PI / 180.0; 
 
     /**
      * Critical Values
@@ -65,6 +67,7 @@ public interface Parameters {
     public static final String ROLL = "Roll";
     public static final String ALT_AGL = "AltAGL";
     public static final String ALT_MSL = "AltMSL";
+    public static final String ALT_MSL_LAG_DIFF = "AltMSL Lag Diff";
     public static final String ALT_B = "AltB";
     public static final String AOA_SIMPLE = "AOASimple"; 
     public static final String E1_RPM = "E1 RPM";
@@ -82,11 +85,27 @@ public interface Parameters {
     public static final String TOTAL_FUEL = "Total Fuel";
     public static final String LCL_DATE = "Lcl Date";
     public static final String LCL_TIME = "Lcl Time";
+    public static final String UTC_OFFSET = "UTCOfst";
     public static final String LATITUDE = "Latitude";
     public static final String LONGITUDE = "Longitude";
     public static final String STALL_PROBABILITY = "PStall";
     public static final String LOSS_OF_CONTROL_PROBABILITY = "PLOCI";
     public static final String HDG_TRK_DIFF = "HDG TRK Diff";
+    public static final String FUEL_QTY_LEFT = "FQtyL";
+    public static final String FUEL_QTY_RIGHT = "FQtyR";
+
+    public static final String NEAREST_RUNWAY = "NearestRunway";
+    public static final String RUNWAY_DISTANCE = "RunwayDistance";
+    public static final String NEAREST_AIRPORT = "NearestAirport";
+    public static final String AIRPORT_DISTANCE = "AirportDistance";
+   
+    /**
+     * Units
+     **/
+    public static final String UNIT_FT_AGL = "ft agl";
+    public static final String UNIT_FT_MSL = "ft msl";
+    public static final String UNIT_GALLONS = "gals";
+    public static final String UNIT_DEG_F = "deg F";
 
     /**
      * {@link Airframes} id's
@@ -104,7 +123,7 @@ public interface Parameters {
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */
-    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL};
+    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL, TAS_FTMIN};
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
     public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};

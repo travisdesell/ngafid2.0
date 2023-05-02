@@ -320,22 +320,15 @@ public class Itinerary {
     public void selectBestRunway() {
         runway = null;
         int maxCount = 0;
-        System.err.println("Selecting runway:");
-        System.err.println("min airport distance: " + minAirportDistance);
-        System.err.println("min runway distance: " + minRunwayDistance);
-        System.err.println("min altitude agl: " + minAltitude);
-
+    
         for (String key : runwayCounts.keySet()) {
             int count = runwayCounts.get(key);
-            System.err.println("\trunway: " + key + ", count: " + count);
 
             if (count > maxCount) {
                 runway = key;
                 maxCount = count;
             }
         }
-
-        System.err.println("selected runway '" + runway + "' with count: " + maxCount);
     }
 
     public boolean wasApproach() {
@@ -358,45 +351,59 @@ public class Itinerary {
         }
     }
 
-    public void updateDatabase(Connection connection, int fleetId, int flightId, int order) throws SQLException {
+    public static PreparedStatement createAirportPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
+    }
+
+    public static PreparedStatement createRunwayPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
+    }
+
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    }
+
+    public void addBatch(PreparedStatement itineraryStatement, PreparedStatement airportStatement, PreparedStatement runwayStatement, int fleetId, int flightId, int order) throws SQLException {
         this.order = order;
+        
+        airportStatement.setInt(1, fleetId);
+        airportStatement.setString(2, airport);
+        airportStatement.addBatch();
 
+        runwayStatement.setInt(1, fleetId);
+        runwayStatement.setString(2, airport + " - " + runway);
+        runwayStatement.addBatch();
+
+        itineraryStatement.setInt(1, flightId);
+        itineraryStatement.setInt(2, order);
+        itineraryStatement.setInt(3, minAltitudeIndex);
+        itineraryStatement.setDouble(4, minAltitude);
+        itineraryStatement.setDouble(5, minAirportDistance);
+        itineraryStatement.setDouble(6, minRunwayDistance);
+        itineraryStatement.setString(7, airport);
+        itineraryStatement.setString(8, runway);
+        itineraryStatement.setInt(9, startOfApproach);
+        itineraryStatement.setInt(10, endOfApproach);
+        itineraryStatement.setInt(11, startOfTakeoff);
+        itineraryStatement.setInt(12, endOfTakeoff);
+        itineraryStatement.setString(13, type);
+        itineraryStatement.addBatch();
+    }
+
+    public void updateDatabase(Connection connection, int fleetId, int flightId, int order) throws SQLException {
         //insert new visited airports and runways -- will ignore if it already exists
-        PreparedStatement preparedStatement = connection.prepareStatement("INSERT IGNORE INTO visited_airports SET fleet_id = ?, airport = ?");
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setString(2, airport);
+        PreparedStatement statement = createPreparedStatement(connection);
+        PreparedStatement airportStatement = createAirportPreparedStatement(connection);
+        PreparedStatement runwayStatement = createRunwayPreparedStatement(connection);
+        
+        this.addBatch(statement, airportStatement, runwayStatement, fleetId, flightId, order);
 
-        System.err.println(preparedStatement);
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-
-        preparedStatement = connection.prepareStatement("INSERT IGNORE INTO visited_runways SET fleet_id = ?, runway = ?");
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setString(2, airport + " - " + runway);
-
-        System.err.println(preparedStatement);
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
-
-        //now insert the itinerary
-        preparedStatement = connection.prepareStatement("INSERT INTO itinerary (flight_id, `order`, min_altitude_index, min_altitude, min_airport_distance, min_runway_distance, airport, runway, start_of_approach, end_of_approach, start_of_takeoff, end_of_takeoff, type) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-        preparedStatement.setInt(1, flightId);
-        preparedStatement.setInt(2, order);
-        preparedStatement.setInt(3, minAltitudeIndex);
-        preparedStatement.setDouble(4, minAltitude);
-        preparedStatement.setDouble(5, minAirportDistance);
-        preparedStatement.setDouble(6, minRunwayDistance);
-        preparedStatement.setString(7, airport);
-        preparedStatement.setString(8, runway);
-        preparedStatement.setInt(9, startOfApproach);
-        preparedStatement.setInt(10, endOfApproach);
-        preparedStatement.setInt(11, startOfTakeoff);
-        preparedStatement.setInt(12, endOfTakeoff);
-        preparedStatement.setString(13, type);
-
-        System.err.println(preparedStatement);
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+        statement.executeBatch();
+        statement.close();
+        airportStatement.executeBatch();
+        airportStatement.close();
+        runwayStatement.executeBatch();
+        runwayStatement.close();
     }
 
     public String toString() {          // TODO: add new columns to toString?

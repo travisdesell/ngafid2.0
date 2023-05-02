@@ -9,11 +9,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-
+import java.util.logging.*;
 import org.ngafid.common.MutableDouble;
 
 
 public class Airports {
+    private static final Logger LOG = Logger.getLogger(Airports.class.getName());
+
     public final static double AVERAGE_RADIUS_OF_EARTH_KM = 6371;
 
     private static HashMap<String, ArrayList<Airport>> geoHashToAirport;
@@ -33,7 +35,7 @@ public class Airports {
             System.err.println("export AIRPORTS_FILE=<path_to_airports_file>");
             System.exit(1);
         }
-        System.out.println("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
+        LOG.info("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
 
         AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
         
@@ -96,13 +98,13 @@ public class Airports {
                 numberAirports++;
             }
 
-            System.out.println("Creating buffered reader for '" + RUNWAYS_FILE + "'");
+            LOG.info("Creating buffered reader for '" + RUNWAYS_FILE + "'");
             //now read the runways file and add runways to airports
             br = new BufferedReader(new FileReader(RUNWAYS_FILE));
-            System.out.println("buffered reader is ready? " + br.ready());
+            LOG.info("buffered reader is ready? " + br.ready());
 
             while ((line = br.readLine()) != null) {
-                //System.out.println("read runways line: " + line);
+                //LOG.info("read runways line: " + line);
 
                 String[] values = line.split(",");
 
@@ -135,7 +137,7 @@ public class Airports {
                 }
 
                 airport.addRunway(runway);
-                //System.out.println("Adding " + runway + " to " + airport);
+                //LOG.info("Adding " + runway + " to " + airport);
              }
  
         } catch (Exception e) {
@@ -143,9 +145,9 @@ public class Airports {
             System.exit(1);
         }
 
-        System.out.println("Read " + numberAirports + " airports.");
-        System.out.println("airports HashMap size: " + geoHashToAirport.size());
-        System.out.println("max airport ArrayList: " + maxHashSize);
+        LOG.info("Read " + numberAirports + " airports.");
+        LOG.info("airports HashMap size: " + geoHashToAirport.size());
+        LOG.info("max airport ArrayList: " + maxHashSize);
     }
 
     /**
@@ -231,11 +233,11 @@ public class Airports {
             ArrayList<Airport> hashedAirports = geoHashToAirport.get(geoHashes[i]);
 
             if (hashedAirports != null) {
-                // System.out.println("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
+                // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (int j = 0; j < hashedAirports.size(); j++) {
                     Airport airport = hashedAirports.get(j);
                     double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude, airport.longitude);
-                    // System.out.println("\t\t" + airport + ", distanceFt: " + distanceFt);
+                    // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {
                         nearestAirport = airport;
@@ -248,9 +250,9 @@ public class Airports {
 
         /*
         if (nearestAirport != null) {
-            System.out.println("nearest airport: " + nearestAirport + ", " + minDistance);
+            LOG.info("nearest airport: " + nearestAirport + ", " + minDistance);
         } else {
-            System.out.println("nearest airport: NULL");
+            LOG.info("nearest airport: NULL");
         }
         */
 
@@ -258,7 +260,6 @@ public class Airports {
     }
 
     public static boolean hasRunwayInfo(String iataCode) {
-        System.out.println("checking to see if airport '" + iataCode + "' has runway info");
         return iataToAirport.get(iataCode).hasRunways();
     }
 

@@ -21,15 +21,13 @@ public class ErrorMessage {
 
         if (id != null) {
             return id;
-
         } else {
             //id wasn't in the hashmap, look it up
             String queryString = "SELECT id FROM flight_messages WHERE message = ?";
             PreparedStatement query = connection.prepareStatement(queryString);
             query.setString(1, message);
 
-            LOG.info(query.toString());
-            System.out.println(query);
+            // LOG.info(query.toString());
             ResultSet resultSet = query.executeQuery();
 
             if (resultSet.next()) {

@@ -49,7 +49,7 @@ public class TerrainCache {
         ilongitude /= 6;
         ilongitude += 1;
 
-        System.out.println("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
+        // System.out.println("iLatitude: " + ilatitude + ", iLongitude: " + ilongitude);
 
         //note that ascii 65 == 'A'
         directory += Character.toString((char)(65 + ilatitude)) + ilongitude;
@@ -92,7 +92,7 @@ public class TerrainCache {
         SRTMTile tile = tiles[latIndex][lonIndex];
 
         if (tile == null) {
-            System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
+            // System.out.println("tiles[" + latIndex + "][" + lonIndex + "] not initialized, loading!");
             tile = new SRTMTile(90 - latIndex, lonIndex - 180);
             tiles[latIndex][lonIndex] = tile;
         }

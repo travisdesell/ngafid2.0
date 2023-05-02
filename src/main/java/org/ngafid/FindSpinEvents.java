@@ -15,7 +15,7 @@ import java.sql.*;
 
 import java.util.logging.Logger;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.events.CustomEvent.*;
 
 /**
@@ -216,7 +216,7 @@ public class FindSpinEvents {
         if (dts == null) {
             flight.checkCalculationParameters(VSPD_CALCULATED, ALT_B);
             CalculatedDoubleTimeSeries dVSI = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, flight);
-            dVSI.create(new VSPDRegression(connection, flight));
+            dVSI.create(new VSPDRegression(flight.getDoubleTimeSeries(ALT_B)));
             dVSI.updateDatabase(connection, flightId);
         }
     }

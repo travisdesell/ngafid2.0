@@ -13,14 +13,14 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.DoubleStream;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import org.ngafid.Database;
 import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 import javax.sql.rowset.serial.SerialBlob;
 
@@ -29,7 +29,6 @@ public class DoubleTimeSeries {
     private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
-    private boolean cache = true;
     private int id = -1;
     private int flightId = -1;
     private int nameId;
@@ -40,6 +39,9 @@ public class DoubleTimeSeries {
     private double[] data;
     private int size = 0;
 
+    // Set this to true if this double time series is temporary and should not be written to the database.
+    private boolean temporary = false;
+
     // Now called size since data.length is the buffer length and size is the number of elements in the buffer
     // private int length = -1;
     private double min = Double.MAX_VALUE;
@@ -47,38 +49,48 @@ public class DoubleTimeSeries {
     private double avg;
     private double max = -Double.MAX_VALUE;
 
+    // Construct from an array
+    public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
+        this.name = name;
+        this.dataType = dataType;
+        this.data = data;
+        this.size = size;
+
+        calculateValidCountMinMaxAvg();
+    }
+
+    public DoubleTimeSeries(String name, String dataType, double[] data) {
+        this(name, dataType, data, data.length);
+    }
+
+    public DoubleTimeSeries(String name, String dataType, int sizeHint) {
+        this(name, dataType, new double[sizeHint], 0);
+     }
+
+    public DoubleTimeSeries(String name, String dataType) {
+        this(name, dataType, 16);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
+        this(name, dataType, sizeHint);
+        setNameId(connection);
+        setTypeId(connection);
+    }
+
     public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
         this(connection, name, dataType, 16);
     }
 
-    public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
-        this.name = name;
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
-        this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
-        this.data = new double[sizeHint];
-
-        min = Double.NaN;
-        avg = Double.NaN;
-        max = Double.NaN;
-
-        validCount = 0;
-    }
-
-
-    public DoubleTimeSeries(Connection connection, String name, String dataType, boolean cache) throws SQLException {
-        this(connection, name, dataType);
-
-        this.cache = cache;
-    }
-
     public DoubleTimeSeries(Connection connection, String name, String dataType, ArrayList<String> stringTimeSeries) throws SQLException {
-        this.name = name;
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
-        this.dataType = dataType;
-        this.typeId = TypeNames.getId(connection, dataType);
+        this(name, dataType, stringTimeSeries);
+        setNameId(connection);
+        setTypeId(connection);
+    }
 
-        // timeSeries = new ArrayList<Double>();
+    public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
+        this.name = name;
+        this.dataType = dataType;
+
         this.data = new double[stringTimeSeries.size()];
 
         int emptyValues = 0;
@@ -88,7 +100,6 @@ public class DoubleTimeSeries {
         for (int i = 0; i < stringTimeSeries.size(); i++) {
             String currentValue = stringTimeSeries.get(i);
             if (currentValue.length() == 0) {
-                //System.err.println("WARNING: double column '" + name + "' value[" + i + "] is empty.");
                 this.add(Double.NaN);
                 emptyValues++;
                 continue;
@@ -118,45 +129,40 @@ public class DoubleTimeSeries {
         avg /= validCount;
     }
 
-    /**
-     * Checks to see whether this series will be cached in the database
-     *
-     * @return a boolean representaion of wheteher or not it should be cached
-     */
-    public final boolean isCached() {
-        return this.cache;
+    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException {
+        id = resultSet.getInt(1);
+        flightId = resultSet.getInt(2);
+        nameId = resultSet.getInt(3);
+        name = SeriesNames.getDoubleName(connection, nameId);
+        typeId = resultSet.getInt(4);
+        dataType = TypeNames.getName(connection, typeId);
+        size = resultSet.getInt(5);
+        validCount = resultSet.getInt(6);
+        min = resultSet.getDouble(7);
+        avg = resultSet.getDouble(8);
+        max = resultSet.getDouble(9);
+
+        Blob values = resultSet.getBlob(10);
+        byte[] bytes = values.getBytes(1, (int)values.length());
+        values.free();
+        
+        this.data = Compression.inflateDoubleArray(bytes, size);
+    }
+  
+    public interface TimeStepCalculation {
+        double compute(int i);
     }
 
-    /**
-     * Gets the name of the DoubleTimeSeries.
-     * @return the column name of the DoubleTimeSeries
-     */
-    public String getName() {
-        return name;
+    public void setTemporary(boolean temp) {
+        this.temporary = temp;
     }
 
-    /**
-     * Gets the minimum value of the DoubleTimeSeries.
-     * @return the minimum value of the DoubleTimeSeries
-     */
-    public double getMin() {
-        return min;
-    }
-
-    /**
-     * Gets the maximum value of the DoubleTimeSeries.
-     * @return the maximum value of the DoubleTimeSeries
-     */
-    public double getMax() {
-        return max;
-    }
-
-    /**
-     * Gets the average value of the DoubleTimeSeries.
-     * @return the average value of the DoubleTimeSeries
-     */
-    public double getAvg() {
-        return avg;
+    public static DoubleTimeSeries computed(String name, String dataType, int length, TimeStepCalculation calculation) {
+        double[] data = new double[length];
+        for (int i = 0; i < length; i++)
+            data[i] = calculation.compute(i);
+        
+        return new DoubleTimeSeries(name, dataType, data, length);
     }
 
     public static Pair<Double,Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
@@ -263,44 +269,65 @@ public class DoubleTimeSeries {
         }
     }
 
-    public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException {
-        id = resultSet.getInt(1);
-        flightId = resultSet.getInt(2);
-        nameId = resultSet.getInt(3);
-        name = SeriesNames.getDoubleName(connection, nameId);
-        typeId = resultSet.getInt(4);
-        dataType = TypeNames.getName(connection, typeId);
-        size = resultSet.getInt(5);
-        validCount = resultSet.getInt(6);
-        min = resultSet.getDouble(7);
-        avg = resultSet.getDouble(8);
-        max = resultSet.getDouble(9);
+    private void setNameId(Connection connection) throws SQLException {
+        this.nameId = SeriesNames.getDoubleNameId(connection, name);
+    }
 
-        Blob values = resultSet.getBlob(10);
-        byte[] bytes = values.getBytes(1, (int)values.length());
-        values.free();
+    private void setTypeId(Connection connection) throws SQLException {
+        this.typeId = TypeNames.getId(connection, dataType);
+    }
+
+    private void calculateValidCountMinMaxAvg() {
+        if (size <= 0)
+            return;
         
-        this.data = Compression.inflateDoubleArray(bytes, size);
-       
-        // OLD COMPRESSION CODE
-        // byte[] bytes = values.getBytes(1, (int)values.length());
-        // values.free();
+        min = data[0];
+        max = data[0];
+        
+        double sum = 0.0;
+        for (int i = 1; i < size; i++) {
+            if (Double.isNaN(data[i]))
+                continue;
+                
+            sum += data[i];
 
-        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+            min = min > data[i] ? data[i] : min;
+            max = max < data[i] ? data[i] : max;
+        }
 
-        // try {
-        //     Inflater inflater = new Inflater();
-        //     inflater.setInput(bytes, 0, bytes.length);
-        //     ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-        //     int _inflatedSize = inflater.inflate(timeSeriesBytes.array());
-        //     double[] timeSeriesArray = new double[size];
-        //     timeSeriesBytes.asDoubleBuffer().get(timeSeriesArray);
-        //     this.data = timeSeriesArray;
-        // } catch (Exception e) {
-        //     e.printStackTrace();
-        // }
-        // 
-        // LOG.info("id: " + id + ", flightId: " + flightId + ", name: " + name + ", length: " + size + ", validLength: " + validCount + ", min: " + min + ", avg: " + avg + ", max: " + max);
+        avg = sum / validCount;
+    }
+
+    /**
+     * Gets the name of the DoubleTimeSeries.
+     * @return the column name of the DoubleTimeSeries
+     */
+    public String getName() {
+        return name;
+    }
+
+    /**
+     * Gets the minimum value of the DoubleTimeSeries.
+     * @return the minimum value of the DoubleTimeSeries
+     */
+    public double getMin() {
+        return min;
+    }
+
+    /**
+     * Gets the maximum value of the DoubleTimeSeries.
+     * @return the maximum value of the DoubleTimeSeries
+     */
+    public double getMax() {
+        return max;
+    }
+
+    /**
+     * Gets the average value of the DoubleTimeSeries.
+     * @return the average value of the DoubleTimeSeries
+     */
+    public double getAvg() {
+        return avg;
     }
 
     public String toString() {
@@ -371,87 +398,65 @@ public class DoubleTimeSeries {
         return slice;
     }
 
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
+        return connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+    }
+
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException, IOException {
+        if (typeId == -1)
+            setTypeId(connection);
+        if (nameId == -1)
+            setNameId(connection);
+
+        preparedStatement.setInt(1, flightId);
+        preparedStatement.setInt(2, nameId);
+        preparedStatement.setInt(3, typeId);
+
+        preparedStatement.setInt(4, this.size);
+        preparedStatement.setInt(5, validCount);
+
+        if (Double.isNaN(min)) {
+            preparedStatement.setNull(6, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(6, min);
+        }
+
+        if (Double.isNaN(avg)) {
+            preparedStatement.setNull(7, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(7, avg);
+        }
+
+        if (Double.isNaN(max)) {
+            preparedStatement.setNull(8, java.sql.Types.DOUBLE);
+        } else {
+            preparedStatement.setDouble(8, max);
+        }
+
+        // UPDATED COMPRESSION CODE
+        byte[] compressed = Compression.compressDoubleArray(this.data);
+        Blob seriesBlob = new SerialBlob(compressed);
+
+        preparedStatement.setBlob(9, seriesBlob);
+
+        preparedStatement.addBatch();
+    }
+
     public void updateDatabase(Connection connection, int flightId) {
         //System.out.println("Updating database for " + this);
-        if (!this.cache) return;
-
+        if (this.temporary)
+            return;
         try {
+            if (typeId == -1)
+                setTypeId(connection);
+            if (nameId == -1)
+                setNameId(connection);
+
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-
-            preparedStatement.setInt(1, flightId);
-            preparedStatement.setInt(2, nameId);
-            preparedStatement.setInt(3, typeId);
-
-            preparedStatement.setInt(4, this.size);
-            preparedStatement.setInt(5, validCount);
-
-            if (Double.isNaN(min)) {
-                preparedStatement.setNull(6, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(6, min);
-            }
-
-            if (Double.isNaN(avg)) {
-                preparedStatement.setNull(7, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(7, avg);
-            }
-
-            if (Double.isNaN(max)) {
-                preparedStatement.setNull(8, java.sql.Types.DOUBLE);
-            } else {
-                preparedStatement.setDouble(8, max);
-            }
-
-            // UPDATED COMPRESSION CODE
-            // byte[] compressed = Compression.compressDoubleArray(this.data);
-            // Blob seriesBlob = new SerialBlob(compressed);
-            
-            // Possible optimization: using an array instead of an array list for timeSeries, since ArrayList<Double>
-            // is a list of objects rather than a list of primitives - it consumes much more memory.
-            // It may also be possible to use some memory tricks to do this with no copying by wrapping the double[].
-            ByteBuffer timeSeriesBytes = ByteBuffer.allocate(size * Double.BYTES);
-            for (int i = 0; i < size; i++)
-                timeSeriesBytes.putDouble(data[i]);
-
-            // Hopefully this is enough memory. It should be enough.
-            int bufferSize = timeSeriesBytes.capacity() + 256;
-            ByteBuffer compressedTimeSeries;
-
-            // This is probably super overkill but it won't hurt?
-            // If there is not enough memory in the buffer it will through BufferOverflowException. If that happens,
-            // allocate more memory.
-            // I don't think it should happen unless the time series unless the compressed data is larger than the
-            // raw data, which should never happen.
-            int compressedDataLength;
-
-            for (;;) {
-                compressedTimeSeries = ByteBuffer.allocate(bufferSize);
-                try {
-                    Deflater deflater = new Deflater(DoubleTimeSeries.COMPRESSION_LEVEL);
-                    deflater.setInput(timeSeriesBytes.array());
-                    deflater.finish();
-                    compressedDataLength = deflater.deflate(compressedTimeSeries.array());
-                    deflater.end();
-                    break;
-                } catch (BufferOverflowException _boe) {
-                    bufferSize *= 2;
-                }
-            }
-
-            // Have to do this to make sure there are no extra zeroes at the end of the buffer, which may happen because
-            // we don't know what the compressed data size until after it is done being compressed
-            byte[] blobBytes = new byte[compressedDataLength];
-            compressedTimeSeries.get(blobBytes);
-            Blob seriesBlob = new SerialBlob(blobBytes);
-
-            preparedStatement.setBlob(9, seriesBlob);
-            preparedStatement.executeUpdate();
+            this.addBatch(connection, preparedStatement, flightId);
+            preparedStatement.executeBatch();
             preparedStatement.close();
-
-            seriesBlob.free();
-
-        } catch (SQLException e) { //  | IOException e) { // Re-enable this for the new compression code.
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
@@ -491,15 +496,19 @@ public class DoubleTimeSeries {
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
+        } else {
+            return lag(n);
         }
+    }
 
-        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(connection, this.name + LAG_SUFFIX + n, "double");
+    public DoubleTimeSeries lag(int n) {
+        DoubleTimeSeries laggedSeries = new DoubleTimeSeries(this.name + LAG_SUFFIX + n, "double");
 
         for (int i = 0; i < data.length; i++) {
             laggedSeries.add((i >= n) ? data[i - n] : Double.NaN);
         }
 
-        return laggedSeries;
+        return laggedSeries;   
     }
 
     public DoubleTimeSeries lead(Connection connection, int n) throws SQLException {
@@ -507,9 +516,13 @@ public class DoubleTimeSeries {
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
+        } else {
+            return lead(n);
         }
+    }
 
-        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(connection, this.name + LEAD_SUFFIX + n, "double");
+    public DoubleTimeSeries lead(int n) {
+        DoubleTimeSeries leadingSeries = new DoubleTimeSeries(this.name + LEAD_SUFFIX + n, "double");
 
         int len = data.length;
         for (int i = 0; i < len; i++) {
@@ -521,6 +534,13 @@ public class DoubleTimeSeries {
     // Creates a new DoubleTimeSeries from a slice in the range [from, until)
     public DoubleTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
         DoubleTimeSeries newSeries = new DoubleTimeSeries(connection, name, dataType, until - from);
+        newSeries.size = until - from;
+        System.arraycopy(data, from, newSeries.data, 0, until - from);
+        return newSeries;
+    }
+
+    public DoubleTimeSeries subSeries(int from, int until) throws SQLException {
+        DoubleTimeSeries newSeries = new DoubleTimeSeries(name, dataType, until - from);
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;
