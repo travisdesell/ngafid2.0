@@ -167,8 +167,27 @@ public class Flight {
     }
 
     public void remove(Connection connection) throws SQLException {
-        String query = "DELETE FROM events WHERE flight_id = ?";
+        String query = "SELECT id FROM events WHERE flight_id = ? AND event_definition_id = -1";
         PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        ResultSet resultSet = preparedStatement.executeQuery();
+        while (resultSet.next()) {
+            int eventId = resultSet.getInt(1);
+            query = "DELETE FROM rate_of_closure WHERE event_id = ?";
+            PreparedStatement eventStatement = connection.prepareStatement(query);
+            eventStatement.setInt(1, eventId);
+            LOG.info(preparedStatement.toString());
+            System.exit(1);
+            eventStatement.executeUpdate();
+            eventStatement.close();
+        }
+
+        resultSet.close();
+        preparedStatement.close();
+
+        query = "DELETE FROM events WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
@@ -2277,6 +2296,10 @@ public class Flight {
             preparedStatement.setInt(2, fleetId);
             ResultSet resultSet = preparedStatement.executeQuery();
 
+            System.err.println("\n\nCHECKING IF FLIGHT EXISTS:");
+            System.err.println(preparedStatement);
+            System.err.println("\n\n");
+
             if (resultSet.next()) {
                 String uploadFilename = resultSet.getString(2);
                 String flightsFilename = resultSet.getString(3);
@@ -2368,7 +2391,7 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            if (connection != null) checkIfExists(connection);
+            checkIfExists(connection);
 
             inputStream.reset();
             process(connection, inputStream);
@@ -2776,7 +2799,7 @@ public class Flight {
             setMD5Hash(inputStream);
 
             //check to see if a flight with this MD5 hash already exists in the database
-            if (connection != null) checkIfExists(connection);
+            checkIfExists(connection);
 
             inputStream.reset();
             process(connection, inputStream);
