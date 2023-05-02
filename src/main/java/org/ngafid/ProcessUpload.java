@@ -285,9 +285,7 @@ public class ProcessUpload {
                             InputStream stream = zipFile.getInputStream(entry);
                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
@@ -305,15 +303,13 @@ public class ProcessUpload {
                             InputStream stream = zipFile.getInputStream(entry);
                             ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
 
-                            if (connection != null) {
-                                for (Flight flight : flights) {
-                                    flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
-                                }
-                                for (Flight flight : flights) {
-                                    flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                                    if (flight.getStatus().equals("WARNING")) warningFlights++;
-                                    validFlights++;
-                                }
+                            for (Flight flight : flights) {
+                                flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+                            }
+                            for (Flight flight : flights) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                if (flight.getStatus().equals("WARNING")) warningFlights++;
+                                validFlights++;
                             }
                         } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
                                  ParserConfigurationException | SAXException | SQLException | ParseException e) {
@@ -325,9 +321,7 @@ public class ProcessUpload {
                         try {
                             Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
@@ -360,9 +354,7 @@ public class ProcessUpload {
                         try (InputStream stream = new FileInputStream(processedCSVFile)) {
                             Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
