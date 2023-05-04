@@ -76,10 +76,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i].trim());
 
-            final int granulatiry = 8; 
+            final int granulatiry = 16; 
             IntStream.range(0, columns.size() / granulatiry)
-                .parallel()
-                .forEach(g -> {
+                .forEachOrdered(g -> {
                     var max = Math.max(g * granulatiry + granulatiry, columns.size());
                     for (int i = g * granulatiry; i < max; i++) {
                         var column = columns.get(i);
@@ -92,6 +91,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         } catch (NumberFormatException e) {
                             stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                         }
+
                     }
                 });
         } catch (IOException | FatalFlightFileException | CsvException e) {

@@ -44,9 +44,19 @@ public class ProcessUpload {
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
 
+    static int poolSize = 1;
+    static boolean batchedDB = false;
+
     public static void main(String[] arguments) {
         LOG.info("arguments are:");
         LOG.info(Arrays.toString(arguments));
+
+        String poolSizeS = System.getenv("POOL_SIZE");
+        if (poolSizeS != null) poolSize = Integer.parseInt(poolSizeS);
+        pool = new ForkJoinPool(poolSize);
+
+        String batchedDBS = System.getenv("BATCHED_DB");
+        if (batchedDBS != null) batchedDB = Boolean.parseBoolean(batchedDBS);
 
         connection = Database.getConnection();
 
@@ -60,6 +70,8 @@ public class ProcessUpload {
         } else {
             operateAsDaemon();
         }
+        System.out.println("Pool size = " + pool.getParallelism());
+        System.out.println("batchedDB = " + batchedDB);
     }
 
     public static void operateAsDaemon() {
@@ -190,7 +202,7 @@ public class ProcessUpload {
             long diff = end - start;
             double asSeconds = ((double) diff) * 1.0e-9;
             System.out.println("Took " + asSeconds + "s to ingest upload " + upload.getFilename());
-
+            if (1==1)return;
             //only progress if the upload ingestion was successful
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
@@ -237,7 +249,7 @@ public class ProcessUpload {
         }
     }
 
-    private static ForkJoinPool pool = new ForkJoinPool(4);
+    private static ForkJoinPool pool;
 
     public static boolean ingestFlights(Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
         Instant start = Instant.now();
@@ -271,26 +283,32 @@ public class ProcessUpload {
                 ZipFile zipFile = new ZipFile(filename);
                 FlightFileProcessor.Pipeline pipeline = new FlightFileProcessor.Pipeline(connection, upload, zipFile);
 
-                var flights = new ConcurrentLinkedQueue<Flight>();
                 long startNanos = System.nanoTime();
+                var flights = new ConcurrentLinkedQueue<Flight>();
+                var builders = new ConcurrentLinkedQueue<FlightBuilder>();
+
                 pool.submit(() ->
                     pipeline
                         .stream()
                         .parallel()
-                        .flatMap(pipeline::parse)
-                        .map(pipeline::build)
-                        .filter(Objects::nonNull)
-                        .map(pipeline::tabulateFlightStatus)
-                        .forEach(flights::add)
+                        .map(pipeline::parse)
+                        .forEach(s -> 
+                            s.parallel()
+                                .map(pipeline::build)
+                                .filter(Objects::nonNull)
+                                .map(pipeline::tabulateFlightStatus)
+                                .forEach(flights::add)
+                        )
                 ).join();
+
                 long endNanos = System.nanoTime();
                 double s = 1e-9 * (double) (endNanos - startNanos);
                 System.out.println("Took " + s + "s to process flights");
 
                 startNanos = System.nanoTime();
                 
-                Flight.batchUpdateDatabase(connection, upload, flights);
-                // flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
+                if (batchedDB) Flight.batchUpdateDatabase(connection, upload, flights);
+                else flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
                 
                 endNanos = System.nanoTime();
                 s = 1e-9 * (double) (endNanos - startNanos); 
