@@ -48,7 +48,7 @@ import com.github.mustachejava.MustacheFactory;
 
 
 
-public class GetTrends implements Route {
+public class GetAggregateTrends implements Route {
     private static final Logger LOG = Logger.getLogger(GetTrends.class.getName());
     private Gson gson;
 
@@ -64,13 +64,13 @@ public class GetTrends implements Route {
 
     private List<Message> messages = new ArrayList<Message>();
 
-    public GetTrends(Gson gson) {
+    public GetAggregateTrends(Gson gson) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetTrends(Gson gson, String messageType, String messageText) {
+    public GetAggregateTrends(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
@@ -84,12 +84,11 @@ public class GetTrends implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String resultString = "";
-        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "trends.html";
+        String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "aggregate_trends.html";
         LOG.severe("template file: '" + templateFile + "'");
 
         final Session session = request.session();
         User user = session.attribute("user");
-        int fleetId = user.getFleetId();
 
         try  {
             MustacheFactory mf = new DefaultMustacheFactory();
@@ -107,8 +106,8 @@ public class GetTrends implements Route {
 
             long startTime = System.currentTimeMillis();
             String fleetInfo =
-                "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
-                "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n";
+                    "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
+                            "var eventNames = " + gson.toJson(EventDefinition.getAllUniqueNames(connection)) + ";\n";
             System.out.println("Fleet info : " + fleetInfo);
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

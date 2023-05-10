@@ -59,6 +59,7 @@ public class PostMonthlyEventCounts implements Route {
             Connection connection = Database.getConnection();
 
             HashMap<String, EventStatistics.MonthlyEventCounts> eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            System.out.println(gson.toJson(eventCountsMap));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {
