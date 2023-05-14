@@ -117,7 +117,6 @@ public class GetTrends implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-            System.out.println("Result String : " + resultString);
 
         } catch (SQLException e) {
             LOG.severe(e.toString());

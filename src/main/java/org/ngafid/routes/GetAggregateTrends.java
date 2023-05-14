@@ -105,6 +105,7 @@ public class GetAggregateTrends implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             long startTime = System.currentTimeMillis();
+            System.out.println("-------------------- In GetAggragateTrends -------------------");
             String fleetInfo =
                     "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
                             "var eventNames = " + gson.toJson(EventDefinition.getAllUniqueNames(connection)) + ";\n";
@@ -116,7 +117,6 @@ public class GetAggregateTrends implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-            System.out.println("Result String : " + resultString);
 
         } catch (SQLException e) {
             LOG.severe(e.toString());

@@ -48,6 +48,8 @@ var eventNGAFIDPercents = {};
 class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
+        console.log("Props");
+        console.log(props.aggregate_page);
 
         let eventChecked = {};
         for (let i = 0; i < eventNames.length; i++) {
@@ -260,7 +262,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    displayPlots(selectedAirframe) {
+    displayFleetPlots(selectedAirframe) {
         console.log("displaying plots with airframe: '" + selectedAirframe + "'");
 
         eventFleetPercents = {};
@@ -285,27 +287,27 @@ class TrendsPage extends React.Component {
             } else {
                 console.log('setting initial fleetPercents!');
 
-                fleetPercents = { 
+                fleetPercents = {
                     name : eventName + ' - Your Fleet',
                     type : 'scatter',
                     hoverinfo : 'x+text',
-                    hovertext : [], 
-                    y : [], 
-                    x : [], 
+                    hovertext : [],
+                    y : [],
+                    x : [],
                     flightsWithEventCounts : {},
                     totalFlightsCounts : {}
-                }   
+                }
 
-                ngafidPercents = { 
+                ngafidPercents = {
                     name : eventName + ' - All Other Fleets',
                     type : 'scatter',
                     hoverinfo : 'x+text',
-                    hovertext : [], 
-                    y : [], 
-                    x : [], 
-                    flightsWithEventCounts : {}, 
-                    totalFlightsCounts :{} 
-                }   
+                    hovertext : [],
+                    y : [],
+                    x : [],
+                    flightsWithEventCounts : {},
+                    totalFlightsCounts :{}
+                }
 
                 eventFleetPercents[eventName] = fleetPercents;
                 eventNGAFIDPercents[eventName] = ngafidPercents;
@@ -317,7 +319,7 @@ class TrendsPage extends React.Component {
                 if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
 
                 /*
-                console.log("airframes, airframeName, value:"); 
+                console.log("airframes, airframeName, value:");
                 console.log(airframes);
                 console.log(airframe);
                 console.log(value);
@@ -477,6 +479,168 @@ class TrendsPage extends React.Component {
 
         Plotly.newPlot('count-trends-plot', countData, countLayout, config);
         Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
+
+    }
+
+    displayAggregatePlots(selectedAirframe) {
+            console.log("displaying plots with airframe: '" + selectedAirframe + "'");
+
+            eventFleetPercents = {};
+            eventNGAFIDPercents = {};
+
+            countData = [];
+            percentData = [];
+
+            for (let [eventName, countsObject] of Object.entries(eventCounts)) {
+
+                console.log("Event count ");
+                console.log(eventCounts);
+                //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
+                if (!this.state.eventChecked[eventName]) continue;
+                let ngafidPercents = null;
+                if (eventName in eventNGAFIDPercents) {
+                    console.log('getting existing fleetPercents!');
+                    ngafidPercents = eventNGAFIDPercents[eventName];
+                } else {
+                    console.log('setting initial fleetPercents!');
+                    ngafidPercents = {
+                        name : eventName + ' - All Fleets',
+                        type : 'scatter',
+                        hoverinfo : 'x+text',
+                        hovertext : [],
+                        y : [],
+                        x : [],
+                        flightsWithEventCounts : {},
+                        totalFlightsCounts :{}
+                    }
+                    eventNGAFIDPercents[eventName] = ngafidPercents;
+                }
+                console.log("Counts object : ");
+                console.log(countsObject);
+
+
+                for (let [airframe, value] of Object.entries(countsObject)) {
+                    console.log("Value : ");
+                    console.log(value);
+                    if (value.airframeName === "Garmin Flight Display") continue;
+                    if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
+
+                    /*
+                    console.log("airframes, airframeName, value:");
+                    console.log(airframes);
+                    console.log(airframe);
+                    console.log(value);
+                    */
+
+
+                    value.name = value.eventName + " - " + value.airframeName;
+                    value.x = value.dates;
+                    value.type = 'scatter';
+                    value.hoverinfo = 'x+text';
+
+                    console.log("Value update 1 : ");
+                    console.log(value);
+                    console.log("Airframes : " );
+                    console.log(airframes);
+                    if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
+                    //don't add airframes to the count plot that the fleet doesn't have
+                    value.y = value.aggregateTotalEventsCounts;
+                    value.hovertext = [];
+
+                    console.log("Count Data ");
+                    console.log(countData);
+                    for (let i = 0; i < value.dates.length; i++) {
+                        let date = value.dates[i];
+                        if (date in ngafidPercents.flightsWithEventCounts) {
+                            ngafidPercents.flightsWithEventCounts[date] += value.aggregateFlightsWithEventCounts[i];
+                            ngafidPercents.totalFlightsCounts[date] += value.aggregateTotalFlightsCounts[i];
+                        }
+                        else {
+                            ngafidPercents.flightsWithEventCounts[date] = value.aggregateFlightsWithEventCounts[i];
+                            ngafidPercents.totalFlightsCounts[date] = value.aggregateTotalFlightsCounts[i];
+                        }
+                    }
+
+                    for (let i = 0; i < value.dates.length; i++) {
+                        let date = value.dates[i];
+                        value.hovertext.push(value.y[i] + " events in " + value.flightsWithEventCounts[i] + " of " + value.totalFlightsCounts[i] + " flights : " + value.eventName + " - " + value.airframeName);
+                    }
+
+                }
+            }
+            console.log("Event NGAFID Percents ");
+            console.log(eventNGAFIDPercents);
+            for (let [eventName, ngafidValue] of Object.entries(eventNGAFIDPercents)) {
+                // let ngafidValue = eventNGAFIDPercents[eventName];
+                percentData.push(ngafidValue);
+                ngafidValue.x = [];
+                ngafidValue.y = [];
+
+                for (let date of Object.keys(ngafidValue.flightsWithEventCounts).sort()) {
+                    ngafidValue.x.push(date);
+                    let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
+                    ngafidValue.y.push(v);
+                    var fixedText = "";
+                    if (v > 0 && v < 1) {
+                        fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
+                    } else {
+                        fixedText = v.toFixed(2) + "%";
+                    }
+                    console.log("Hover text ");
+                    console.log(fixedText  + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name)
+                    ngafidValue.hovertext.push(fixedText  + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
+
+                }
+            }
+            console.log("Count Data");
+            console.log(countData);
+            var countLayout = {
+                title : 'Event Counts Over Time',
+                hovermode : "x unified",
+                //autosize: false,
+                //width: 500,
+                //height: 500,
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 50,
+                    pad: 4
+                }
+            };
+
+            var percentLayout = {
+                title : 'Percentage of Flights With Event Over Time',
+                hovermode : "x unified",
+                //autosize: false,
+                //width: 500,
+                //height: 500,
+                margin: {
+                    l: 50,
+                    r: 50,
+                    b: 50,
+                    t: 50,
+                    pad: 4
+                }
+            };
+
+            var config = {responsive: true};
+            Plotly.newPlot('count-trends-plot', countData, countLayout, config);
+            Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
+    }
+
+
+
+    displayPlots(selectedAirframe) {
+
+        if (this.props.aggregate_page) {
+            console.log("Display fleet ");
+            this.displayAggregatePlots(selectedAirframe);
+        }
+        else {
+            this.displayFleetPlots(selectedAirframe);
+        }
+
     }
 
 
@@ -497,7 +661,8 @@ class TrendsPage extends React.Component {
         var submission_data = {
             startDate : startDate + "-01",
             endDate : endDate + "-28",
-            eventName : eventName
+            eventName : eventName,
+            aggregatePage : this.props.aggregate_page
         };
 
         if (eventName in eventCounts) {
@@ -631,10 +796,7 @@ class TrendsPage extends React.Component {
                                                             <label className="form-check-label">
                                                                 {eventName}
                                                             </label>
-
-
                                                         </OverlayTrigger>
-                                                            
 
                                                     </div>
                                                 );
@@ -659,9 +821,6 @@ class TrendsPage extends React.Component {
 }
 
 
-var trendsPage = ReactDOM.render(
-    <TrendsPage />,
-    document.querySelector('#trends-page')
-);
 
-trendsPage.displayPlots("All Airframes");
+
+export default TrendsPage
