@@ -563,7 +563,7 @@ class TrendsPage extends React.Component {
 
                     for (let i = 0; i < value.dates.length; i++) {
                         let date = value.dates[i];
-                        value.hovertext.push(value.y[i] + " events in " + value.flightsWithEventCounts[i] + " of " + value.totalFlightsCounts[i] + " flights : " + value.eventName + " - " + value.airframeName);
+                        value.hovertext.push(value.y[i] + " events in " + value.aggregateFlightsWithEventCounts[i] + " of " + value.aggregateTotalFlightsCounts[i] + " flights : " + value.eventName + " - " + value.airframeName);
                     }
 
                 }

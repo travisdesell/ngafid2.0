@@ -43,8 +43,8 @@ public class PostMonthlyEventCounts implements Route {
         String startDate = request.queryParams("startDate");
         String endDate = request.queryParams("endDate");
         String eventName = request.queryParams("eventName");
-        boolean aggregateTrenndsPage = Boolean.parseBoolean(request.queryParams("aggregatePage"));
-        System.out.println("Aggregate Trends Page : " + aggregateTrenndsPage );
+        boolean aggregateTrendsPage = Boolean.parseBoolean(request.queryParams("aggregatePage"));
+        System.out.println("Aggregate Trends Page : " + aggregateTrendsPage );
 
         final Session session = request.session();
         User user = session.attribute("user");
@@ -60,7 +60,7 @@ public class PostMonthlyEventCounts implements Route {
         try {
             Connection connection = Database.getConnection();
             HashMap<String, EventStatistics.MonthlyEventCounts> eventCountsMap = null;
-            if (aggregateTrenndsPage) {
+            if (aggregateTrendsPage) {
                 eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, null, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
             else {

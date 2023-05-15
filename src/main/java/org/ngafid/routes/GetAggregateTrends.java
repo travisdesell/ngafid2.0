@@ -1,47 +1,21 @@
 package org.ngafid.routes;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
 import java.util.HashMap;
-
 import java.sql.Connection;
 import java.sql.SQLException;
-
-
-import java.time.LocalDate;
-import java.time.temporal.TemporalAdjusters;
-
 import com.google.gson.Gson;
-
-import spark.Route;
-import spark.Request;
-import spark.Response;
-import spark.Session;
-
+import spark.*;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-
 import org.ngafid.events.EventDefinition;
-import org.ngafid.events.EventStatistics;
-
-import org.ngafid.filters.Filter;
-
 import org.ngafid.flights.Airframes;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.FlightError;
-import org.ngafid.flights.FlightWarning;
-import org.ngafid.flights.Tail;
-import org.ngafid.flights.Tails;
-import org.ngafid.flights.Upload;
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
@@ -90,6 +64,11 @@ public class GetAggregateTrends implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
+            Spark.halt(401, "User did not have aggregate access to view aggregate trends page.");
+            return null;
+        }
         try  {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
