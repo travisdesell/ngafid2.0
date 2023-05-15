@@ -87,7 +87,7 @@ public class GetAggregateTrends implements Route {
             System.out.println("-------------------- In GetAggragateTrends -------------------");
             String fleetInfo =
                     "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                            "var eventNames = " + gson.toJson(EventDefinition.getAllUniqueNames(connection)) + ";\n";
+                            "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n";
             System.out.println("Fleet info : " + fleetInfo);
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

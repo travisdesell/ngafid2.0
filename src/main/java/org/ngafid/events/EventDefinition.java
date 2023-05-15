@@ -667,11 +667,10 @@ public class EventDefinition {
      * Gets a list of all the event definition names, will only have one name for non-generic events.
      *
      * @param connection is the connection to the database.
-     * @param fleetId is the fleet id for the event definitions
      *
      * @return an array list of all event names in the database for this fleet
      */
-    public static ArrayList<String> getAllUniqueNames(Connection connection) throws SQLException {
+    public static ArrayList<String> getUniqueNames(Connection connection) throws SQLException {
         //add all the generic event names
         String query = "SELECT DISTINCT(name) FROM event_definitions";
 
