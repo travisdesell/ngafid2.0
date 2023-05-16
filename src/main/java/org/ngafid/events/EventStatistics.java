@@ -1,6 +1,7 @@
 package org.ngafid.events;
 
 import java.sql.Connection;
+import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.Statement;
@@ -1438,7 +1439,6 @@ public class EventStatistics {
         //ensure these are the right date/time names!
 
         query = connection.prepareStatement(sql);
-
         query.setInt(1, flightId);
         query.setInt(2, flightId);
 

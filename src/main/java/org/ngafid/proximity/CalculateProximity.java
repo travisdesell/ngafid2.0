@@ -1,4 +1,4 @@
-package org.ngafid;
+package org.ngafid.proximity;
 
 import org.ngafid.Database;
 import org.ngafid.UploadProcessedEmail;
