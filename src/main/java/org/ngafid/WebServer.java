@@ -1,7 +1,5 @@
 package org.ngafid;
 
-
-
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;

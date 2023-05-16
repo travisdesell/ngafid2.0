@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
 import com.google.gson.Gson;
-import spark.*;
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -19,7 +18,11 @@ import org.ngafid.flights.Airframes;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
+import spark.Request;
+import spark.Response;
+import spark.Route;
+import spark.Session;
+import spark.Spark;
 
 
 public class GetAggregateTrends implements Route {
@@ -84,14 +87,12 @@ public class GetAggregateTrends implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             long startTime = System.currentTimeMillis();
-            System.out.println("-------------------- In GetAggragateTrends -------------------");
             String fleetInfo =
                     "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
                             "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n";
-            System.out.println("Fleet info : " + fleetInfo);
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
+            LOG.info("getting aggreagte data info took " + (endTime-startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

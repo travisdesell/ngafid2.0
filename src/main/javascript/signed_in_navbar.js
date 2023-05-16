@@ -173,7 +173,6 @@ class SignedInNavbar extends React.Component {
                     <ul className="navbar-nav">
                         <NavLink name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
 
-
                         {aggregateView ?
                             <li className="nav-item dropdown">
                                 <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -184,8 +183,6 @@ class SignedInNavbar extends React.Component {
                                     <DropdownLink name={"Aggregate Trends"} hidden={false} href="/protected/aggregate_trends"/>
                                 </div>
                             </li> : ""
-                            // ? <NavLink name={"Aggregate Dashboard"} active={this.props.activePage === "aggregate"} href="/protected/aggregate"/>
-                            // : ""
                         }
 
                         <li className="nav-item dropdown">

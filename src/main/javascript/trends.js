@@ -48,9 +48,6 @@ var eventNGAFIDPercents = {};
 class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
-        console.log("Props");
-        console.log(props.aggregate_page);
-
         let eventChecked = {};
         for (let i = 0; i < eventNames.length; i++) {
             eventChecked[eventNames[i]] = false;
@@ -407,8 +404,6 @@ class TrendsPage extends React.Component {
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
             let ngafidValue = eventNGAFIDPercents[eventName];
 
-
-
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
                 fleetValue.x = [];
@@ -433,7 +428,6 @@ class TrendsPage extends React.Component {
                     fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
                 }
             }
-            //console.log(fleetValue);
             percentData.push(ngafidValue);
             ngafidValue.x = [];
             ngafidValue.y = [];
