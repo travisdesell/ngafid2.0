@@ -64,7 +64,7 @@ class TrendsPage extends React.Component {
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,
             datesChanged : false,
-
+            aggregatePage : props.aggregate_page,
             eventChecked : eventChecked
         };
     }
@@ -111,9 +111,16 @@ class TrendsPage extends React.Component {
                 for (let i = 0; i < value.dates.length; i++) {
                     let date = value.dates[i];
                     let eventCount = value.y[i];
-                    let flightsWithEventCount = value.flightsWithEventCounts[i];
-                    let totalFlights = value.totalFlightsCounts[i];
-
+                    let flightsWithEventCount;
+                    let totalFlights;
+                    if (this.state.aggregatePage) {
+                        flightsWithEventCount = value.aggregateFlightsWithEventCounts[i];
+                        totalFlights = value.aggregateTotalFlightsCounts[i];
+                    }
+                    else {
+                        flightsWithEventCount = value.flightsWithEventCounts[i];
+                        totalFlights = value.totalFlightsCounts[i];
+                    }
 
                     //make sure the dates array is unique dates only
                     if (!dates.includes(date)) {
@@ -262,7 +269,7 @@ class TrendsPage extends React.Component {
 
     }
 
-    displayFleetPlots(selectedAirframe) {
+    displayPlots(selectedAirframe) {
         console.log("displaying plots with airframe: '" + selectedAirframe + "'");
 
         eventFleetPercents = {};
@@ -333,14 +340,19 @@ class TrendsPage extends React.Component {
 
                 //don't add airframes to the count plot that the fleet doesn't have
                 if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
-                value.y = value.totalEventsCounts;
+                if (this.state.aggregatePage) {
+                    value.y = value.aggregateTotalEventsCounts;
+                }
+                else {
+                    value.y = value.totalEventsCounts;
+                }
                 value.hovertext = [];
 
                 for (let i = 0; i < value.dates.length; i++) {
                     let date = value.dates[i];
 
                     //don't add airframes to the fleet percentage plot that the fleet doesn't have
-                    if (airframes.indexOf(value.airframeName) >= 0) {
+                    if (airframes.indexOf(value.airframeName) >= 0 && !this.state.aggregatePage) {
                         if (date in fleetPercents.flightsWithEventCounts) {
                             //console.log("incremented fleetPercents.flightsWithEventCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.flightsWithEventCounts[date] + " by " + value.flightsWithEventCounts[i]);
                             //console.log("incremented fleetPercents.totalFlightsCounts for date: " + date + " and airframe: " + value.airframeName + " initially " + fleetPercents.totalFlightsCounts[date] + " by " + value.totalFlightsCounts[i]);
@@ -369,7 +381,17 @@ class TrendsPage extends React.Component {
 
                 for (let i = 0; i < value.dates.length; i++) {
                     let date = value.dates[i];
-                    value.hovertext.push(value.y[i] + " events in " + value.flightsWithEventCounts[i] + " of " + value.totalFlightsCounts[i] + " flights : " + value.eventName + " - " + value.airframeName);
+                    let flightsWithEventCount;
+                    let totalFlightsCount;
+                    if (this.state.aggregatePage) {
+                        flightsWithEventCount = value.aggregateFlightsWithEventCounts[i];
+                        totalFlightsCount = value.aggregateTotalFlightsCounts[i];
+                    }
+                    else {
+                        flightsWithEventCount = value.flightsWithEventCounts[i];
+                        totalFlightsCount = value.totalFlightsCounts[i];
+                    }
+                    value.hovertext.push(value.y[i] + " events in " + flightsWithEventCount + " of " + totalFlightsCount + " flights : " + value.eventName + " - " + value.airframeName);
                 }
 
             }
@@ -384,32 +406,35 @@ class TrendsPage extends React.Component {
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
             let ngafidValue = eventNGAFIDPercents[eventName];
-            percentData.push(fleetValue);
-            percentData.push(ngafidValue);
 
-            fleetValue.x = [];
-            fleetValue.y = [];
-            for (let date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
-                fleetValue.x.push(date);
 
-                let v = 100.0 * parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]);
-                fleetValue.y.push(v);
 
-                //console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
+            if (!this.state.aggregatePage) {
+                percentData.push(fleetValue);
+                fleetValue.x = [];
+                fleetValue.y = [];
 
-                //this will give 2 significant figures (and leading 0s if it is quite small)
-                var fixedText = "";
-                if (v > 0 && v < 1) {
-                    //console.log("Log10 of y is " + Math.log10(v);
-                    fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
-                } else {
-                    fixedText = v.toFixed(2) + "%";
+                for (let date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
+                    fleetValue.x.push(date);
+
+                    let v = 100.0 * parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]);
+                    fleetValue.y.push(v);
+
+                    //console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
+
+                    //this will give 2 significant figures (and leading 0s if it is quite small)
+                    var fixedText = "";
+                    if (v > 0 && v < 1) {
+                        //console.log("Log10 of y is " + Math.log10(v);
+                        fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
+                    } else {
+                        fixedText = v.toFixed(2) + "%";
+                    }
+                    fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
                 }
-                fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
             }
-
             //console.log(fleetValue);
-
+            percentData.push(ngafidValue);
             ngafidValue.x = [];
             ngafidValue.y = [];
             for (let date of Object.keys(ngafidValue.flightsWithEventCounts).sort()) {
@@ -480,172 +505,13 @@ class TrendsPage extends React.Component {
         Plotly.newPlot('count-trends-plot', countData, countLayout, config);
         Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
 
-    }
-
-    displayAggregatePlots(selectedAirframe) {
-            console.log("displaying plots with airframe: '" + selectedAirframe + "'");
-
-            eventFleetPercents = {};
-            eventNGAFIDPercents = {};
-
-            countData = [];
-            percentData = [];
-
-            for (let [eventName, countsObject] of Object.entries(eventCounts)) {
-
-                console.log("Event count ");
-                console.log(eventCounts);
-                //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-                if (!this.state.eventChecked[eventName]) continue;
-                let ngafidPercents = null;
-                if (eventName in eventNGAFIDPercents) {
-                    console.log('getting existing fleetPercents!');
-                    ngafidPercents = eventNGAFIDPercents[eventName];
-                } else {
-                    console.log('setting initial fleetPercents!');
-                    ngafidPercents = {
-                        name : eventName + ' - All Fleets',
-                        type : 'scatter',
-                        hoverinfo : 'x+text',
-                        hovertext : [],
-                        y : [],
-                        x : [],
-                        flightsWithEventCounts : {},
-                        totalFlightsCounts :{}
-                    }
-                    eventNGAFIDPercents[eventName] = ngafidPercents;
-                }
-                console.log("Counts object : ");
-                console.log(countsObject);
-
-
-                for (let [airframe, value] of Object.entries(countsObject)) {
-                    console.log("Value : ");
-                    console.log(value);
-                    if (value.airframeName === "Garmin Flight Display") continue;
-                    if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
-
-                    /*
-                    console.log("airframes, airframeName, value:");
-                    console.log(airframes);
-                    console.log(airframe);
-                    console.log(value);
-                    */
-
-
-                    value.name = value.eventName + " - " + value.airframeName;
-                    value.x = value.dates;
-                    value.type = 'scatter';
-                    value.hoverinfo = 'x+text';
-
-                    console.log("Value update 1 : ");
-                    console.log(value);
-                    console.log("Airframes : " );
-                    console.log(airframes);
-                    if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
-                    //don't add airframes to the count plot that the fleet doesn't have
-                    value.y = value.aggregateTotalEventsCounts;
-                    value.hovertext = [];
-
-                    console.log("Count Data ");
-                    console.log(countData);
-                    for (let i = 0; i < value.dates.length; i++) {
-                        let date = value.dates[i];
-                        if (date in ngafidPercents.flightsWithEventCounts) {
-                            ngafidPercents.flightsWithEventCounts[date] += value.aggregateFlightsWithEventCounts[i];
-                            ngafidPercents.totalFlightsCounts[date] += value.aggregateTotalFlightsCounts[i];
-                        }
-                        else {
-                            ngafidPercents.flightsWithEventCounts[date] = value.aggregateFlightsWithEventCounts[i];
-                            ngafidPercents.totalFlightsCounts[date] = value.aggregateTotalFlightsCounts[i];
-                        }
-                    }
-
-                    for (let i = 0; i < value.dates.length; i++) {
-                        let date = value.dates[i];
-                        value.hovertext.push(value.y[i] + " events in " + value.aggregateFlightsWithEventCounts[i] + " of " + value.aggregateTotalFlightsCounts[i] + " flights : " + value.eventName + " - " + value.airframeName);
-                    }
-
-                }
-            }
-            console.log("Event NGAFID Percents ");
-            console.log(eventNGAFIDPercents);
-            for (let [eventName, ngafidValue] of Object.entries(eventNGAFIDPercents)) {
-                // let ngafidValue = eventNGAFIDPercents[eventName];
-                percentData.push(ngafidValue);
-                ngafidValue.x = [];
-                ngafidValue.y = [];
-
-                for (let date of Object.keys(ngafidValue.flightsWithEventCounts).sort()) {
-                    ngafidValue.x.push(date);
-                    let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
-                    ngafidValue.y.push(v);
-                    var fixedText = "";
-                    if (v > 0 && v < 1) {
-                        fixedText = v.toFixed(-Math.ceil(Math.log10(v)) + 2) + "%";
-                    } else {
-                        fixedText = v.toFixed(2) + "%";
-                    }
-                    console.log("Hover text ");
-                    console.log(fixedText  + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name)
-                    ngafidValue.hovertext.push(fixedText  + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
-
-                }
-            }
-            console.log("Count Data");
-            console.log(countData);
-            var countLayout = {
-                title : 'Event Counts Over Time',
-                hovermode : "x unified",
-                //autosize: false,
-                //width: 500,
-                //height: 500,
-                margin: {
-                    l: 50,
-                    r: 50,
-                    b: 50,
-                    t: 50,
-                    pad: 4
-                }
-            };
-
-            var percentLayout = {
-                title : 'Percentage of Flights With Event Over Time',
-                hovermode : "x unified",
-                //autosize: false,
-                //width: 500,
-                //height: 500,
-                margin: {
-                    l: 50,
-                    r: 50,
-                    b: 50,
-                    t: 50,
-                    pad: 4
-                }
-            };
-
-            var config = {responsive: true};
-            Plotly.newPlot('count-trends-plot', countData, countLayout, config);
-            Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
-    }
-
-
-
-    displayPlots(selectedAirframe) {
-
-        if (this.props.aggregate_page) {
-            console.log("Display fleet ");
-            this.displayAggregatePlots(selectedAirframe);
-        }
-        else {
-            this.displayFleetPlots(selectedAirframe);
-        }
 
     }
 
 
     checkEvent(eventName) {
         console.log("checking event: '" + eventName + "'");
+        console.log("Changing event state : " + eventName + " from " + this.state.eventChecked[eventName] + " to " + !this.state.eventChecked[eventName]);
         this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
         this.setState(this.state);
 
@@ -664,7 +530,7 @@ class TrendsPage extends React.Component {
             eventName : eventName,
             aggregatePage : this.props.aggregate_page
         };
-
+        let trendsPage = this;
         if (eventName in eventCounts) {
             console.log("already loaded counts for event: '" + eventName + "'");
             trendsPage.displayPlots(trendsPage.state.airframe);
@@ -672,9 +538,6 @@ class TrendsPage extends React.Component {
         } else {
             $('#loading').show();
             console.log("showing loading spinner!");
-
-            let trendsPage = this;
-
             $.ajax({
                 type: 'POST',
                 url: '/protected/monthly_event_counts',

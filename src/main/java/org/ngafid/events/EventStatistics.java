@@ -586,6 +586,12 @@ public class EventStatistics {
             aggregateFlightsWithEventMap = null;
             aggregateTotalFlightsMap = null;
             aggregateTotalEventsMap = null;
+
+            if (fleetId == null) {
+                flightsWithEventCounts = null;
+                totalFlightsCounts = null;
+                totalEventsCounts = null;
+            }
         }
     }
 
@@ -706,6 +712,7 @@ public class EventStatistics {
             aggregateFlightsWithEventMap = null;
             aggregateTotalFlightsMap = null;
             aggregateTotalEventsMap = null;
+
         }
     }
 
@@ -949,7 +956,7 @@ public class EventStatistics {
      * so plotly can display it on the webpage
      *
      * @param connection is the connection to the database
-     * @param fleetId is the id of the fleet
+     * @param fleetId is the id of the fleet, if null get data for all fleets
      * @param eventName is the name of the event
      * @param startTime is the earliest time to start getting events (it will get events from the beginning of time if it is null)
      * @param endTime is the latest time to getting events (it will get events until the current date if it is null)
