@@ -115,6 +115,8 @@ public interface Parameters {
     // Used to determine average fuel
     public static final String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
 
+    public static final String[] EVENT_RECOGNITION_COLUMNS = {TOTAL_FUEL};
+
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
