@@ -2,10 +2,10 @@
 .idea
 *.class
 connect_db.sh
-dbinfo
-dbinfo.php
-db/dbinfo.php
 node_modules
 target/*
 src/main/resources/public/js/*
 .cache-loader/*
+db/db_info
+db/db_info.php
+init_env.sh
