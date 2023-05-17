@@ -109,6 +109,7 @@ public class GetTrends implements Route {
             String fleetInfo =
                 "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
                 "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n";
+
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
             LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
