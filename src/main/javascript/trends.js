@@ -301,9 +301,15 @@ class TrendsPage extends React.Component {
                     flightsWithEventCounts : {},
                     totalFlightsCounts : {}
                 }
-
+                let ngafidPercentsName = eventName + " - ";
+                if (this.state.aggregatePage) {
+                    ngafidPercentsName += "All Fleets";
+                }
+                else {
+                    ngafidPercentsName += "All Other Fleets";
+                }
                 ngafidPercents = {
-                    name : eventName + ' - All Other Fleets',
+                    name : ngafidPercentsName,
                     type : 'scatter',
                     hoverinfo : 'x+text',
                     hovertext : [],

@@ -46,7 +46,7 @@ module.exports = {
         system_ids: __dirname + "/src/main/javascript/system_ids.js",
         welcome: __dirname + "/src/main/javascript/welcome.js",
         aggregate: __dirname + "/src/main/javascript/aggregate.js",
-        trends: __dirname + "/src/main/javascript/trends.js",
+        // trends: __dirname + "/src/main/javascript/trends.js",
         severities: __dirname + "/src/main/javascript/severities.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         update_event: __dirname + "/src/main/javascript/update_event.js",
