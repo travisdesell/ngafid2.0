@@ -1,7 +1,8 @@
+.DS_Store
 .idea
 *.class
 connect_db.sh
-dbinfo
+db/dbinfo
 dbinfo.php
 db/dbinfo.php
 node_modules
