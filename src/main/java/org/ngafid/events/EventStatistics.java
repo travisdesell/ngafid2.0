@@ -4,11 +4,10 @@ import java.sql.Connection;
 import java.sql.Date;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.Statement;
 import java.sql.SQLException;
-
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +32,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 
 import spark.utils.StringUtils;
+
 
 import java.util.logging.Logger;
 
@@ -1291,13 +1291,10 @@ public class EventStatistics {
                 int totalFlights = statSet.getInt(3);
                 int totalEvents = statSet.getInt(4);
                 String date = statSet.getString(5);
-                LOG.info("-------------------------------------------------------------------------------------------------------------");
-                LOG.info("event name: '" + eventName + "', statFleetId: " + statFleetId + ", flightsWithEvent: " + flightsWithEvent + ", totalFlights: " + totalFlights + ", totalEvents: " + totalEvents);
+//                LOG.info("event name: '" + eventName + "', statFleetId: " + statFleetId + ", flightsWithEvent: " + flightsWithEvent + ", totalFlights: " + totalFlights + ", totalEvents: " + totalEvents);
 
                 if (fleetId == null) {
-                    System.out.println("Fleetid null - updating aggregate");
                     eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
-                    LOG.info("Aggregate Total Event map : " + eventCount.aggregateTotalEventsMap + " Aggregate Flights event map : " + eventCount.aggregateFlightsWithEventMap);
                 }
                 else {
                     if (statFleetId == fleetId) {
@@ -1324,15 +1321,6 @@ public class EventStatistics {
 
         }
 
-        for (String airFrame : eventCounts.keySet()) {
-            LOG.info("-------------------------------------------------------------------------------------------------------------");
-            System.out.println("Airframe : " + airFrame);
-            MonthlyEventCounts eventCount = eventCounts.get(airFrame);
-            LOG.info("Aggregate Total Event map : " + eventCount.aggregateTotalEventsCounts + " Aggregate Flights " +
-                    "event map : " + eventCount.aggregateFlightsWithEventCounts);
-            LOG.info("-------------------------------------------------------------------------------------------------------------");
-        }
-        System.out.println(eventCounts);
         return eventCounts;
     }
 

@@ -1,7 +1,5 @@
 package org.ngafid;
 
-
-
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
@@ -204,7 +202,6 @@ public final class WebServer {
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
-        Spark.post("/protected/aggregate_monthly_event_counts", new PostAggregateMonthlyCounts(gson));
 
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
