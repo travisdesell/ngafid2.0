@@ -1,10 +1,13 @@
 package org.ngafid.events;
 
 import org.ngafid.common.Compression;
-
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.Blob;
+import java.sql.SQLException;
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
-import java.sql.*;
 import java.util.logging.Logger;
 
 public class RateOfClosure {
@@ -47,7 +50,7 @@ public class RateOfClosure {
 
     }
 
-    public void updateDatabase(Connection connection ,int eventId) {
+    public void updateDatabase(Connection connection , int eventId) {
         try {
             byte blobBytes[] = Compression.compressDoubleArray(this.rateOfClosureArray);
             Blob rateOfClosureBlob = new SerialBlob(blobBytes);

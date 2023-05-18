@@ -2223,13 +2223,12 @@ public class Flight {
             int rowCount = 0;
             LocalTime prevTimeStamp = null;
             int secondsDiffSum = 0;
-            for(int i = 0; i < lclTime.size(); i++){
-                if (!lclTime.get(i).isBlank()){
-                    if (prevTimeStamp == null){
+            for (int i = 0; i < lclTime.size(); i++) {
+                if (!lclTime.get(i).isBlank()) {
+                    if (prevTimeStamp == null) {
                         prevTimeStamp = LocalTime.parse(lclTime.get(i));
                         rowCount++;
-                    }
-                    else {
+                    } else {
                         LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
                         if (!currTimeStamp.equals(prevTimeStamp)) {
                             secondsDiffSum = secondsDiffSum + (int)SECONDS.between(prevTimeStamp,currTimeStamp);
@@ -2239,7 +2238,7 @@ public class Flight {
                     }
                 }
             }
-            if ((double)secondsDiffSum/rowCount > 1){
+            if ((double)secondsDiffSum/(double)rowCount > 1.1) {
                 exceptions.add(new MalformedFlightFileException("Time series have frequency greater than 1Hz"));
             }
         }

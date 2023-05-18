@@ -91,6 +91,39 @@ public class Upload {
      * it can be reprocessed or deleted
      *
      * @param connection is the database connection
+     * @param uploadId is the id of the upload to delete (in case it does not exist for some reason)
+     *
+     * @throws SQLException if there is an error in the database
+     */
+    public static void clearUpload(Connection connection, int uploadId) throws SQLException {
+        String query = "DELETE FROM upload_errors WHERE upload_id = ?";
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, uploadId);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+
+        query = "DELETE FROM flight_errors WHERE upload_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, uploadId);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
+
+        for (Flight flight : flights) {
+            flight.remove(connection);
+        }
+    }
+
+
+    /**
+     * Removes all other entries in the database related to this upload so
+     * it can be reprocessed or deleted
+     *
+     * @param connection is the database connection
      *
      * @throws SQLException if there is an error in the database
      */
