@@ -1,6 +1,7 @@
 package org.ngafid.routes;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import java.sql.SQLException;
@@ -29,9 +30,9 @@ public class PostMainContent implements Route {
     }
 
     private class MainContent {
-        ArrayList<Flight> flights;
-        ArrayList<Upload> uploads;
-        ArrayList<Upload> imports;
+        List<Flight> flights;
+        List<Upload> uploads;
+        List<Upload> imports;
 
         public MainContent(int fleetId) throws SQLException {
             flights = Flight.getFlights(Database.getConnection(), fleetId);
