@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
 
+import com.google.protobuf.ExperimentalApi;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -785,14 +786,18 @@ public class EventStatistics {
             aggregateTotalEventsMap.put(date, aggregateTotalEventsCount);
         }
 
+        public void setDates(HashMap<String, Integer> eventMap) {
+            ArrayList<String> sortedKeys = new ArrayList<String>(eventMap.keySet());;
+            Collections.sort(sortedKeys);
+            dates.addAll(sortedKeys);
+        }
 
         public void assignLists() {
-            ArrayList<String> sortedKeys = new ArrayList<String>(flightsWithEventMap.keySet());;
-            Collections.sort(sortedKeys);
+//            ArrayList<String> sortedKeys = new ArrayList<String>(flightsWithEventMap.keySet());;
+//            Collections.sort(sortedKeys);
 
-            for (String date : sortedKeys) {
-                dates.add(date);
-
+            for (String date : dates) {
+//                dates.add(date);
                 Integer flightsWithEventCount = flightsWithEventMap.get(date);
                 Integer totalFlightsCount = totalFlightsMap.get(date);
                 Integer totalEventsCount = totalEventsMap.get(date);
@@ -806,10 +811,10 @@ public class EventStatistics {
         }
 
         public void assignAggregateLists() {
-            ArrayList<String> sortedKeys = new ArrayList<String>(aggregateFlightsWithEventMap.keySet());
-            Collections.sort(sortedKeys);
-            for (String date : sortedKeys) {
-                dates.add(date);
+//            ArrayList<String> sortedKeys = new ArrayList<String>(aggregateFlightsWithEventMap.keySet());
+//            Collections.sort(sortedKeys);
+            for (String date : dates) {
+//                dates.add(date);
                 Integer aggregateFlightsWithEventCount = aggregateFlightsWithEventMap.get(date);
                 Integer aggregateTotalFlightsCount = aggregateTotalFlightsMap.get(date);
                 Integer aggregateTotalEventsCount = aggregateTotalEventsMap.get(date);
@@ -1291,12 +1296,19 @@ public class EventStatistics {
         }
 
         for (MonthlyEventCounts eventCount : eventCounts.values()) {
-            eventCount.assignAggregateLists();
-            //we don't need the fleetEvent data in aggregate page, set it to null to reduce
-            //transfer costs when sending this to the webpages
-            eventCount.flightsWithEventCounts = null;
-            eventCount.totalFlightsCounts = null;
-            eventCount.totalEventsCounts = null;
+            try {
+                eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
+                eventCount.assignAggregateLists();
+                //we don't need the fleetEvent data in aggregate page, set it to null to reduce
+                //transfer costs when sending this to the webpages
+                eventCount.flightsWithEventCounts = null;
+                eventCount.totalFlightsCounts = null;
+                eventCount.totalEventsCounts = null;
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
         }
 
         return eventCounts;
@@ -1419,8 +1431,16 @@ public class EventStatistics {
         }
 
         for (MonthlyEventCounts eventCount : eventCounts.values()) {
-            eventCount.assignLists();
-            eventCount.assignAggregateLists();
+            try {
+                eventCount.setDates(eventCount.flightsWithEventMap);
+                eventCount.assignLists();
+                eventCount.assignAggregateLists();
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+
+
         }
 
         return eventCounts;
