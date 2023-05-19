@@ -95,7 +95,7 @@ public class GetImports implements Route {
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            ArrayList<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
@@ -106,7 +106,6 @@ public class GetImports implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
 

@@ -14,22 +14,30 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
 import java.time.Duration;
 import java.time.Instant;
+
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
+
+
+import java.util.*;
 //import java.util.logging.Level;
 //import java.util.logging.Logger;
+
 import org.ngafid.common.TimeUtils;
+
 import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
+
 import org.ngafid.filters.Conditional;
 import org.ngafid.filters.Filter;
 import org.ngafid.filters.Pair;
+
 import org.ngafid.airports.Airports;
 
 
@@ -106,7 +114,6 @@ public class CalculateProximity {
         ArrayList<Double> rateOfClosure = new ArrayList<Double>();
         int i = startLine + 1, j = otherStartLine + 1, index = 0;
         while (i < endLine && j < otherEndLine) {
-            // System.out.println("flight1.epochTime[" + i + "]: " + flightInfo.epochTime[i] + ", flight2.epochTime[" + j + "]: " + otherInfo.epochTime[j] + ", previousDistance: " + previousDistance);
             if (flightInfo.epochTime[i] == 0) {
                 i++;
                 continue;
@@ -330,7 +337,7 @@ public class CalculateProximity {
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
                                         if ( severity > 0) {
-                                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine, otherEndLine);
+                                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
                                             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                                             event.setRateOfClosure(rateOfClosure);
                                             otherEvent.setRateOfClosure(rateOfClosure);
