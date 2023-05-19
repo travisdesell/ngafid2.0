@@ -1,4 +1,4 @@
-<database_name - ngafid>
+<database_name - ngafid_test>
 <database_host - localhost>
-<database_user - ngafid_user>
-<database_password - OLSW!qHIUHweYsbejFCqM&Vs>
+<database_user - ngafid>
+<database_password - ngafid>
