@@ -2218,31 +2218,31 @@ public class Flight {
         }
 
         // Checking whether the timeseries contains data with frequency greater than 1Hz
-        StringTimeSeries lclTime = this.getStringTimeSeries(LCL_TIME);
-        if (lclTime != null){
-            int rowCount = 0;
-            LocalTime prevTimeStamp = null;
-            int secondsDiffSum = 0;
-            for(int i = 0; i < lclTime.size(); i++){
-                if (!lclTime.get(i).isBlank()){
-                    if (prevTimeStamp == null){
-                        prevTimeStamp = LocalTime.parse(lclTime.get(i));
-                        rowCount++;
-                    }
-                    else {
-                        LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
-                        if (!currTimeStamp.equals(prevTimeStamp)) {
-                            secondsDiffSum = secondsDiffSum + (int)SECONDS.between(prevTimeStamp,currTimeStamp);
-                            rowCount++;
-                        }
-                        prevTimeStamp = currTimeStamp;
-                    }
-                }
-            }
-            if ((double)secondsDiffSum/rowCount > 1){
-                exceptions.add(new MalformedFlightFileException("Time series have frequency greater than 1Hz"));
-            }
-        }
+        //StringTimeSeries lclTime = this.getStringTimeSeries(LCL_TIME);
+        //if (lclTime != null){
+            //int rowCount = 0;
+            //LocalTime prevTimeStamp = null;
+            //int secondsDiffSum = 0;
+            //for(int i = 0; i < lclTime.size(); i++){
+                //if (!lclTime.get(i).isBlank()){
+                    //if (prevTimeStamp == null){
+                        //prevTimeStamp = LocalTime.parse(lclTime.get(i));
+                        //rowCount++;
+                    //}
+                    //else {
+                        //LocalTime currTimeStamp = LocalTime.parse(lclTime.get(i));
+                        //if (!currTimeStamp.equals(prevTimeStamp)) {
+                            //secondsDiffSum = secondsDiffSum + (int)SECONDS.between(prevTimeStamp,currTimeStamp);
+                            //rowCount++;
+                        //}
+                        //prevTimeStamp = currTimeStamp;
+                    //}
+                //}
+            //}
+            //if ((double)secondsDiffSum/rowCount > 1){
+                //exceptions.add(new MalformedFlightFileException("Time series have frequency greater than 1Hz"));
+            //}
+        //}
 
         try {
             if (!airframeName.equals("ScanEagle") && hasCoords && hasAGL) {

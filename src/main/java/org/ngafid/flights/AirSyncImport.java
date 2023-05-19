@@ -104,7 +104,13 @@ public class AirSyncImport {
         String identifier = getUploadIdentifier(this.fleet.getId(), aircraftId, this.localDateTimeStart);
 
         if ((count = readCsvData()) > 0) {
-            String csvName = this.aircraftId + "_" + this.localDateTimeStart.getYear() + "_" + this.localDateTimeStart.getMonthValue() + "_" + this.localDateTimeStart.getDayOfMonth() + ".csv";
+            String csvName = String.format("%d_%d_%d_%d_%d_%d.csv",
+                    this.aircraftId,
+                    this.localDateTimeStart.getYear(),
+                    this.localDateTimeStart.getMonthValue(),
+                    this.localDateTimeStart.getDayOfMonth(),
+                    this.localDateTimeStart.getHour(),
+                    this.localDateTimeStart.getMinute());
 
             try {
                 String zipId = aircraftId + ".zip";
@@ -159,6 +165,7 @@ public class AirSyncImport {
                     return;
                 }
 
+                // Put the new entry from this import into the ZIP archive.
                 ZipEntry csvEntry = new ZipEntry(csvName);
 
                 zipOutputStream.putNextEntry(csvEntry);
