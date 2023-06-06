@@ -148,6 +148,32 @@ public class Fleet {
         return new Fleet(resultSet.getInt(1), name);
     }
 
+    /**
+     * Used to determine if AirSync-specific features apply to this fleet.
+     *
+     * @param connection the DBMS connection
+     *
+     * @return true if there is a tuple in the `airsync_fleet_info` table,
+     * this indicates that the fleet is AirSync-ready
+     *
+     * @throws SQLException if there are DBMS issues
+     */
+    public boolean hasAirsync(Connection connection) throws SQLException {
+        String sql = "SELECT 1 FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, this.id);
+
+        ResultSet rs = query.executeQuery();
+
+        if (rs.next()) {
+            return true;
+        }
+
+        return false;
+
+    }
+
     public static List<Fleet> getAirSyncFleets(Connection connection) {
         String queryString = "SELECT fleet_id FROM airsync";
 

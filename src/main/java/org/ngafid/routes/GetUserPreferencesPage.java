@@ -24,6 +24,7 @@ import spark.Session;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.Tail;
@@ -57,9 +58,9 @@ public class GetUserPreferencesPage implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
-        int fleetId = user.getFleetId();
 
         try {
+            Fleet fleet = Fleet.get(connection, user.getId());
             UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 
             MustacheFactory mf = new DefaultMustacheFactory();
@@ -69,6 +70,8 @@ public class GetUserPreferencesPage implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
+            scopes.put("airsync", "var airsync = JSON.parse('" + gson.toJson(fleet.hasAirsync(connection)) + "');\n");
             scopes.put("user_prefs_json",
                        "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
