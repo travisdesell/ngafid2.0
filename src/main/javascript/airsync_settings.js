@@ -23,32 +23,55 @@ class AirSyncSettings extends React.Component {
             decimalPrecision : props.decimalPrecision,
             timeout : props.timeout
         }
+
+        console.log(this.state);
     }
 
-    updateTimeout(precision) {
+    updateTimeout(timeout) {
+        var submissionData = {
+            timeout : timeout
+        }
+
+        console.log(submissionData);
+
+        var theseSettings = this;
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/airsync_settings',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("got airsync_settings response:");
+                console.log(response);
+
+                theseSettings.state = {
+                    timeout : response.timeout
+                };
+
+                theseSettings.setState(theseSettings.state);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log("error updating the timeout");
+            },   
+
+            async: false 
+        });  
+    }
+
+    timeoutChanged() {
         let timeout = event.target.value;
         console.log("New timeout is: " + timeout);
 
-        this.setState({timeout: timeout});
+        this.updateTimeout(timeout);
     }
 
     render() {
-
-        let styleButtonSq = {
-            flex : "right",
-            float : "auto"
-        };
-
         let labelStyle = {
             padding : '7 0 7 0',
             margin : '0',
             display: 'block',
             textAlign: 'left'
-        };
-
-        let listStyle = {
-            maxHeight: "400px",
-            overflowY: "scroll"
         };
 
         let formGroupStyle = {
@@ -64,19 +87,12 @@ class AirSyncSettings extends React.Component {
             $('[data-toggle="tooltip"]').tooltip()
         })
 
-
-        //let listStyle = {
-            //maxHeight: "400px",
-            //overflowX: "scroll",
-            //flexDirection: "row"
-        //}
-
-              return (
+          return (
                 <div className="card-body">
                     <div className="col" style={{padding:"0 0 0 0"}}>
                         <div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
                             <h6 className="card-header">
-                                <span className="badge badge-info mr-1">ADMIN</span>
+                                <span className="badge badge-info mr-1">FLEET-WIDE</span>
                                 Your AirSync Settings:
                             </h6>
                             <div className="form-group" style={formGroupStyle}>
@@ -88,7 +104,7 @@ class AirSyncSettings extends React.Component {
                                     </label>
                                 </div>
                                 <div className="p-2 d-flex">
-                                    <select id="columnNames" className="form-control" onChange={this.updateTimeout.bind(this)} value={this.state.timeout}>
+                                    <select id="columnNames" className="form-control" onChange={() => this.timeoutChanged()} value={this.state.timeout}>
                                         <option key={72}>72 Hours</option>
                                         <option key={48}>48 Hours</option>
                                         <option key={24}>24 Hours</option>
