@@ -52,7 +52,7 @@ public class AirSyncFleet extends Fleet {
 
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
-        //this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
+        this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
 
         Timestamp timestamp = resultSet.getTimestamp(5);
         if (timestamp == null) {
