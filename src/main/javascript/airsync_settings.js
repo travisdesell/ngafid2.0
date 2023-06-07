@@ -20,120 +20,19 @@ class AirSyncSettings extends React.Component {
 
         this.state = {
             selectedMetrics : props.selectedMetrics,
-            decimalPrecision : props.decimalPrecision
+            decimalPrecision : props.decimalPrecision,
+            timeout : props.timeout
         }
     }
 
-    updatePrecision() {
-        console.log("Updating Precision to " + this.state.decimalPrecision);
+    updateTimeout(precision) {
+        let timeout = event.target.value;
+        console.log("New timeout is: " + timeout);
 
-        var submissionData = {
-            decimal_precision : this.state.decimalPrecision
-        };
-
-        let prefsPage = this;
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/preferences',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-
-                prefsPage.setState({
-                    selectedMetrics : response.flightMetrics,
-                    decimalPrecision : response.decimalPrecision
-                });
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Updating User Preferences", errorThrown);
-            },   
-            async: true 
-        });  
-    }
-
-    getAllDoubleSeriesNames() {
-        let prefsPage = this;
-        let metrics = [];
-
-        $.ajax({
-            type: 'GET',
-            url: '/protected/all_double_series_names',
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-
-                metrics = response.names;
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Getting Column Names", errorThrown);
-            },   
-            async: false 
-        });  
-
-        return metrics;
-    }
-
-    addMetric(event) {
-        console.log(event);
-
-        let name = event.target.value;
-        console.log("adding " + name + " to metric list.");
-
-        this.modifyMetric(name, "addition");
-    }
-
-    removeMetric(index) {
-        let name = this.state.selectedMetrics[index];
-
-        console.log("removing " + name + " from metric list.");
-
-        this.modifyMetric(name, "deletion");
-    }
-
-    modifyMetric(name, type) {
-        let prefsPage = this;
-
-        let submissionData = {
-            metricName : name,
-            modificationType : type
-        }
-
-        $.ajax({
-            type: 'POST',
-            url: '/protected/preferences_metric',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-
-                prefsPage.setState({
-                    selectedMetrics : response
-                });
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Updating User Preferences", errorThrown);
-            },   
-            async: true 
-        });  
-    }
-    
-    changePrecision(precision) {
-        this.state.decimalPrecision = event.target.value;
-
-        this.updatePrecision();
+        this.setState({timeout: timeout});
     }
 
     render() {
-        let exemptCols = ["LOC-I Index", "Stall Index"]; //put columns here that we dont want to show in the popup
-        let selectedMetrics = this.state.selectedMetrics;
-        let defSeriesNames = this.getAllDoubleSeriesNames();
-        let serverMetrics = defSeriesNames.filter((e) => !selectedMetrics.includes(e));
-        serverMetrics = serverMetrics.filter((e) => !exemptCols.includes(e));
 
         let styleButtonSq = {
             flex : "right",
@@ -161,6 +60,10 @@ class AirSyncSettings extends React.Component {
             flex: '0 0 180px'
         };
 
+        $(function () {
+            $('[data-toggle="tooltip"]').tooltip()
+        })
+
 
         //let listStyle = {
             //maxHeight: "400px",
@@ -173,17 +76,27 @@ class AirSyncSettings extends React.Component {
                     <div className="col" style={{padding:"0 0 0 0"}}>
                         <div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
                             <h6 className="card-header">
+                                <span className="badge badge-info mr-1">ADMIN</span>
                                 Your AirSync Settings:
                             </h6>
                             <div className="form-group" style={formGroupStyle}>
                             <div className="d-flex">
                                 <div className="p-2 d-flex" style={formHeaderStyle}>
-                                    <label htmlFor="selectedMetricsNames" style={labelStyle}>Timeout</label>
+                                    <label htmlFor="selectedMetricsNames" style={labelStyle}>
+                                      Sync Frequency
+                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="This is the amount of time the NGAFID waits to check for new AirSync flights. For example, if this is set to 12 hours, the NGAFID will check with the AirSync servers once every 12 hours."></i>
+                                    </label>
                                 </div>
                                 <div className="p-2 d-flex">
-                                    <select id="columnNames" className="form-control" onChange={this.changePrecision.bind(this)} value="1 Day">
-                                        <option key={0}>12 Hours</option>
-                                        <option key={1}>1440</option>
+                                    <select id="columnNames" className="form-control" onChange={this.updateTimeout.bind(this)} value={this.state.timeout}>
+                                        <option key={72}>72 Hours</option>
+                                        <option key={48}>48 Hours</option>
+                                        <option key={24}>24 Hours</option>
+                                        <option key={12}>12 Hours</option>
+                                        <option key={6}>6 Hours</option>
+                                        <option key={3}>3 Hours</option>
+                                        <option key={1}>1 Hour</option>
+                                        <option key={0}>30 Minutes</option>
                                     </select>               
                                 </div>
                             <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>

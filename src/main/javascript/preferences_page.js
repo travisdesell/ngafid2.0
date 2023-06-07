@@ -30,11 +30,26 @@ class PreferencesPage extends React.Component {
         };
 
         console.log("this users prefs:");
-        console.log(this.state);
+        console.log(this.props);
     }
 
 
     render() {
+
+        let adminContent = "";
+
+        if (this.props.isAdmin) {
+            if (this.props.airsyncEnabled) {
+                adminContent = (
+                    <AirSyncSettings
+                        isVertical={false}
+                        selectedMetrics={this.state.selectedMetrics}
+                        decimalPrecision={this.state.decimalPrecision}>
+                    </AirSyncSettings>
+                );
+            }
+        }
+
         return (
             <div>
                 <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
@@ -53,11 +68,8 @@ class PreferencesPage extends React.Component {
                                                 selectedMetrics={this.state.selectedMetrics}
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
-                                            <AirSyncSettings
-                                                isVertical={false}
-                                                selectedMetrics={this.state.selectedMetrics}
-                                                decimalPrecision={this.state.decimalPrecision}>
-                                            </AirSyncSettings>
+
+                                            {adminContent}
                                     </div>
                                 </div>
                             </div>
@@ -72,6 +84,6 @@ class PreferencesPage extends React.Component {
 console.log("setting preferences page with react!");
 
 var preferencesPage = ReactDOM.render(
-    <PreferencesPage userPreferences={userPreferences} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
+    <PreferencesPage userPreferences={userPreferences} isAdmin={isAdmin} airsyncEnabled={airsync} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
    document.querySelector('#preferences-page')
 )
