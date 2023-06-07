@@ -174,26 +174,6 @@ public class Fleet {
 
     }
 
-    public static List<Fleet> getAirSyncFleets(Connection connection) {
-        String queryString = "SELECT fleet_id FROM airsync";
-
-        List<Fleet> fleets = new ArrayList<>();
-        
-        try {
-            PreparedStatement ps = connection.prepareStatement(queryString);
-
-            ResultSet rs = ps.executeQuery();
-
-            while (rs.next()) {
-                fleets.add(get(connection, rs.getInt(1)));
-            }
-        } catch (SQLException se) {
-            se.printStackTrace();
-        }
-
-        return fleets;
-    }
-
     /**
      * Gets all the fleets in this database
      *

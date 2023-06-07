@@ -27,10 +27,10 @@ public class AirSyncFleet extends Fleet {
     private LocalDateTime lastQueryTime;
 
     //timeout in minutes
-    private long timeout = -1;
+    private int timeout = -1;
 
     // 1 Day
-    private static final long DEFAULT_TIMEOUT = 1440;
+    private static final int DEFAULT_TIMEOUT = 1440;
 
     private static AirSyncFleet [] fleets = null;
         
@@ -38,7 +38,7 @@ public class AirSyncFleet extends Fleet {
 
     private static final Gson gson = WebServer.gson;
 
-    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastQueryTime, long timeout) {
+    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastQueryTime, int timeout) {
         super(id, name);
         this.authCreds = airSyncAuth;
         this.lastQueryTime = lastQueryTime;
@@ -52,7 +52,7 @@ public class AirSyncFleet extends Fleet {
 
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
-        this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
+        //this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
 
         Timestamp timestamp = resultSet.getTimestamp(5);
         if (timestamp == null) {
@@ -61,7 +61,7 @@ public class AirSyncFleet extends Fleet {
             this.lastQueryTime = timestamp.toLocalDateTime();
         }
 
-        long timeout = resultSet.getLong(6);
+        int timeout = resultSet.getInt(6);
         if (timeout <= 0) {
             this.timeout = DEFAULT_TIMEOUT;
         } else {
@@ -90,8 +90,17 @@ public class AirSyncFleet extends Fleet {
         return this.lastQueryTime;
     } 
 
-    public long getTimeout(Connection connection) throws SQLException {
-        if (timeout <= 0) {
+    /**
+     * Gets the timeout of the AirSyncFleet
+     *
+     * @param connection the DBMS connection
+     *
+     * @return the timeout in minutes as an int
+     *
+     * @throws SQLException if there is an error with the DBMS
+     */
+    public int getTimeout(Connection connection) throws SQLException {
+        if (this.timeout <= 0) {
             String sql = "SELECT timeout FROM airsync_fleet_info WHERE fleet_id = ?";
             PreparedStatement query = connection.prepareStatement(sql);
 
@@ -100,7 +109,7 @@ public class AirSyncFleet extends Fleet {
             ResultSet resultSet = query.executeQuery();
 
             if (resultSet.next()) {
-                long timeout = resultSet.getLong(1);
+                int timeout = resultSet.getInt(1);
 
                 if (timeout > 0) {
                     this.timeout = timeout;
@@ -113,8 +122,115 @@ public class AirSyncFleet extends Fleet {
         return timeout;
     }
 
+    /**
+     * Gets the timeout this fleet chose in a human-readable form
+     *
+     * @param connection the DBMS connection
+     * @param fleetId the Fleets's id
+     *
+     * @return the timeout as "X hours" or "XX minutes"
+     *
+     * @throws SQLException is there is a DBMS error
+     */
+    public static String getTimeout(Connection connection, int fleetId) throws SQLException {
+        String sql = "SELECT timeout FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+        int timeout = 0;
+
+        if (resultSet.next()) {
+            timeout = resultSet.getInt(1);
+        } 
+
+        String formattedString = null;
+
+        if (timeout > 0) {
+            if (timeout >= 60) {
+                formattedString = String.format("%d Hours", (timeout / 60));
+            } else {
+                formattedString = String.format("%d Minutes", timeout); 
+            }
+        }
+
+        query.close();
+
+        return formattedString;
+    }
+
     public boolean isQueryOutdated(Connection connection) throws SQLException {
         return (Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection));
+    }
+
+    /**
+     * This gets an existing AirSyncFleet by its fleet id
+     *
+     * @param connection is the DBMS connection
+     * @param fleetId is the id of the fleet to get
+     *
+     * @return an instance of an AirSyncFleet with the given id
+     *
+     * @throws SQLException if the DBMS has an error
+     */
+    public static AirSyncFleet getAirSyncFleet(Connection connection, int fleetId) throws SQLException {
+        String sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id WHERE fl.id = ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, fleetId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            AirSyncFleet fleet = new AirSyncFleet(resultSet);
+
+            query.close();
+            return fleet;
+        }
+
+        query.close();
+        return null;
+    }
+
+    /**
+     * Updates the fleets timeout for AirSync (how long to wait between checks)
+     *
+     * @param connection the DBMS connection
+     * @param user the User that is making the request
+     *
+     * @throws SQLException if the DBMS has an issue
+     */
+    public void updateTimeout(Connection connection, User user, String newTimeout) throws SQLException {
+        // It is assumed that the UI will prevent non-admins from doing this, 
+        // but just to be safe we will have this check.
+        if (user.isAdmin()) {
+            String [] timeoutTok = newTimeout.split("\\s");
+
+            int duration = Integer.parseInt(timeoutTok[0]);
+
+            int timeoutMinutes = -1;
+
+            if (timeoutTok[1].equalsIgnoreCase("Hours")) {
+                timeoutMinutes = duration * 60;
+            } else if (timeoutTok[1].equalsIgnoreCase("Minutes")) {
+                timeoutMinutes = duration;
+            } else {
+                // This should not happen as long as the options for on the UI contain "minutes" or "hours"
+                return;
+            }
+
+            String sql = "UPDATE airsync_fleet_info SET timeout = ? WHERE fleet_id = ?";
+            PreparedStatement query = connection.prepareStatement(sql);
+            
+            query.setInt(1, timeoutMinutes);
+            query.setInt(2, super.getId());
+
+            query.executeUpdate();
+            query.close();
+        } else {
+            LOG.severe("Non-admin user attempted to change AirSync settings! This should not happen! Offending user: " + user.getFullName());
+        }
     }
 
     public void setLastQueryTime(Connection connection) throws SQLException {
