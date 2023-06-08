@@ -202,6 +202,34 @@ class AirSyncUploadsCard extends React.Component {
         });
     }
 
+    manualSync() {
+        console.log("Manual AirSync update requested!");
+        $("#loading").show();
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/airsync_update',
+            //data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log(response);
+
+                $("#loading").hide();
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                $("#loading").hide();
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },
+            async: true
+        });
+    }
+
 
     render() {
         const hidden = this.props.hidden;
@@ -216,7 +244,7 @@ class AirSyncUploadsCard extends React.Component {
                 <div className="card-body" hidden={hidden}>
                     <div className="card mb-1 border-secondary">
                         <div className="p-2">
-                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.manualSync()}>
                                 <i className="fa fa-refresh"></i> Sync with AirSync Server Now
                             </button>
                         </div>

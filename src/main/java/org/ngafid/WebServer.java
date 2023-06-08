@@ -225,6 +225,7 @@ public final class WebServer {
 
         Spark.get("/protected/imports", new GetImports(gson));
         Spark.get("/protected/airsync_imports", new GetAirSyncImports(gson));
+        Spark.post("/protected/airsync_update", new PostManualAirSyncUpdate(gson));
         Spark.post("/protected/airsync_imports", new PostAirSyncImports(gson));
         Spark.post("/protected/airsync_settings", new PostUpdateAirSyncTimeout(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));

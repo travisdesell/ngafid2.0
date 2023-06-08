@@ -588,6 +588,7 @@ if (!$update_2022_02_17) {
         `api_secret` varchar(64) NOT NULL,                                                      
         `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
         `timeout` int(11) DEFAULT NULL,                                                             
+        `mutex` TINYINT DEFAULT 0,                                                             
         KEY `airsync_fleet_id_fk` (`fleet_id`),                                                     
         CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
     );";
