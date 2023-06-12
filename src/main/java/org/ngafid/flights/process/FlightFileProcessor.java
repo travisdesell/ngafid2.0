@@ -2,6 +2,13 @@ package org.ngafid.flights.process;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.nio.file.FileSystem;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
 import java.util.Map;
 import java.util.HashMap;
@@ -18,6 +25,8 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.ngafid.filters.Pair;
 import org.ngafid.UploadException;
@@ -37,10 +46,11 @@ public abstract class FlightFileProcessor {
         final ZipFile zipFile;
         final Map<String, FlightFileProcessor.Factory> factories;
         final Upload upload;
-        private int validFlightsCount = 0;
-        private int warningFlightsCount = 0;
+        private AtomicInteger validFlightsCount = new AtomicInteger(0);
+        private AtomicInteger warningFlightsCount = new AtomicInteger(0);
 
         private ConcurrentHashMap<String, UploadException> flightErrors = new ConcurrentHashMap<>();
+        private ConcurrentLinkedQueue<String> convertedFiles = new ConcurrentLinkedQueue<>();
         
         public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
             this.connection = connection;
@@ -78,6 +88,10 @@ public abstract class FlightFileProcessor {
                 .filter(z -> !z.isDirectory());
 
             return validFiles.map(this::create).filter(Objects::nonNull).collect(Collectors.toList()).stream();
+        }
+
+        public Stream<FlightFileProcessor> parallelStream() {
+            return this.stream().parallel();
         }
 
         public Stream<FlightBuilder> parse(FlightFileProcessor processor) {
@@ -121,27 +135,40 @@ public abstract class FlightFileProcessor {
             return null;
         }
 
-        public Flight tabulateFlightStatus(Flight flight) {
+        public Flight finalize(Flight flight) {
             if (flight.getStatus().equals("WARNING"))
-                warningFlightsCount++;
+                warningFlightsCount.incrementAndGet();
             else
-                validFlightsCount++;
+                validFlightsCount.incrementAndGet();
 
             return flight;
         }
 
+        public void insertConvertedFiles(URI zipURI) throws IOException {
+            Map<String, String> zipENV = new HashMap<>();
+            zipENV.put("create", "true");
+            
+            try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
+                for (String convertedFile : convertedFiles) {
+                    Path csvFilePath = Paths.get(convertedFile);
+                    Path zipFileSystemPath = fileSystem.getPath(convertedFile.substring(convertedFile.lastIndexOf("/") + 1));
+                    Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
+                }
+            }
+        }
+
         public int getWarningFlightsCount() {
-            return warningFlightsCount;
+            return warningFlightsCount.get();
         }
 
         public int getValidFlightsCount() {
-            return validFlightsCount;
+            return validFlightsCount.get();
         }
     }
 
     protected final Connection connection;
     protected final InputStream stream;
-    protected final String filename;
+    protected final String filename;convertedFile
 
     public FlightFileProcessor(Connection connection, InputStream stream, String filename) {
         this.connection = connection;

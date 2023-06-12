@@ -36,10 +36,11 @@ import org.ngafid.flights.MalformedFlightFileException;
 public class DATFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(DATFileProcessor.class.getName());
 
-    private static final Set<String> STRING_COLS = new HashSet<>(List.of(new String[]{"flyCState", "flycCommand", "flightAction",
-            "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"}));
+    private static final Set<String> STRING_COLS = new HashSet<>(List.of("flyCState", "flycCommand", "flightAction",
+            "nonGPSCause", "connectedToRC", "Battery:lowVoltage", "RC:ModeSwitch", "gpsUsed", "visionUsed", "IMUEX(0):err"));
 
     private final ZipFile zipFile;
+    private File processedCSVFile;
 
     public DATFileProcessor(Connection connection, InputStream stream, String filename, ZipFile file) {
         super(connection, stream, filename);
@@ -50,6 +51,7 @@ public class DATFileProcessor extends FlightFileProcessor {
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
             convertAndInsert();
+            stream.
             List<InputStream> inputStreams = duplicateInputStream(stream, 2);
             Map<Integer, String> indexedCols = new HashMap<>();
             Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
@@ -120,8 +122,8 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
 
         convertDATFile(tempExtractedFile);
-        File processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
-        placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
+        processedCSVFile = new File(tempExtractedFile.getAbsolutePath() + ".csv");
+        // placeInZip(processedCSVFile.getAbsolutePath(), zipFile.getName().substring(zipFile.getName().lastIndexOf("/") + 1));
     }
 
     /**
@@ -471,6 +473,32 @@ public class DATFileProcessor extends FlightFileProcessor {
         }
     }
 
+    static final Map<String, String> DATA_TYPE_MAP = Map.ofEntries(
+        Map.entry("accel", "m/s^2"),
+        Map.entry("gyro", "deg/s"),
+        Map.entry("Gyro", "deg/s"),
+        Map.entry("vel", "m/s"),
+        Map.entry("Velocity", "m/s"),
+        Map.entry("mag", "A/m"),
+        Map.entry("Longitude", "degrees"),
+        Map.entry("Latitude", "degrees"),
+        Map.entry("roll", "degrees"),
+        Map.entry("pitch", "degrees"),
+        Map.entry("yaw", "degrees"),
+        Map.entry("directionOfTravel", "degrees"),
+        Map.entry("distance", "ft"),
+        Map.entry("GPS-H", "ft"),
+        Map.entry("Alti", "ft"),
+        Map.entry("temperature", "Celsius"),
+        Map.entry("barometer", "atm"),
+        Map.entry("Long", "degrees"),
+        Map.entry("Lat", "degrees"),
+        Map.entry("DOP", "DOP Value"),
+        Map.entry("Date", "Date"),
+        Map.entry("Time", "Time"),
+        Map.entry("sAcc", "cm/s")
+    );
+
     /**
      * Helper for initializing IMU data
      * @param colName - Name of column
@@ -478,27 +506,9 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param stringTimeSeriesMap - Map of string time series data
      */
     private static void handleIMUDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
-        String dataType;
+        String dataType = DATA_TYPE_MAP.get(colName);
 
-        if (colName.contains("accel")) {
-            dataType = "m/s^2";
-        } else if (colName.contains("gyro") || colName.contains("Gyro")) {
-            dataType = "deg/s";
-        } else if (colName.contains("vel") || colName.contains("Velocity")) {
-            dataType = "m/s";
-        } else if (colName.contains("mag")) {
-            dataType = "A/m";
-        } else if (colName.contains("Longitude") || colName.contains("Latitude")) {
-            dataType = "degrees";
-        } else if (colName.contains("roll") || colName.contains("pitch") || colName.contains("yaw") || colName.contains("directionOfTravel")) {
-            dataType = "degrees";
-        } else if (colName.contains("distance") || colName.contains("GPS-H") || colName.contains("Alti")) {
-            dataType = "ft";
-        } else if (colName.contains("temperature")) {
-            dataType = "Celsius";
-        } else if (colName.contains("barometer")) {
-            dataType = "atm";
-        } else {
+        if (dataType == null) {
             if (colName.contains("err")) {
                 stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries("IMUEX Error", "error"));
                 return;
@@ -507,7 +517,6 @@ public class DATFileProcessor extends FlightFileProcessor {
             dataType = "number";
             if (!colName.contains("num")) {
                 LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
-
             }
         }
 
@@ -520,28 +529,15 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      */
     private static void handleGPSDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
-        String dataType;
 
         if (colName.contains("dateTimeStamp")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "yyyy-mm-ddThh:mm:ssZ"));
             return;
         }
+        
+        String dataType = DATA_TYPE_MAP.get(colName);
 
-        if (colName.contains("Long") || colName.contains("Lat")) {
-            dataType = "degrees";
-        } else if (colName.contains("vel")) {
-            dataType = "m/s";
-        } else if (colName.contains("height")) {
-            dataType = "ft";
-        } else if (colName.contains("DOP")) {
-            dataType = "DOP Value";
-        } else if (colName.contains("Date")) {
-            dataType = "Date";
-        } else if (colName.contains("Time")) {
-            dataType = "Time";
-        } else if (colName.contains("sAcc")) {
-            dataType = "cm/s";
-        } else {
+        if (dataType == null) {
             dataType = "number";
             if (!colName.contains("num")) {
                 LOG.log(Level.WARNING, "GPS Unknown data type: {0}", colName);

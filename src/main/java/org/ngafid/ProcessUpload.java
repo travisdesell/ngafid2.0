@@ -27,6 +27,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
 import org.ngafid.flights.Flight;
@@ -285,21 +286,27 @@ public class ProcessUpload {
 
                 long startNanos = System.nanoTime();
                 var flights = new ConcurrentLinkedQueue<Flight>();
-                var builders = new ConcurrentLinkedQueue<FlightBuilder>();
 
                 pool.submit(() ->
                     pipeline
                         .stream()
                         .parallel()
                         .map(pipeline::parse)
-                        .forEach(s -> 
-                            s.parallel()
+                        .forEach(s ->
+                            flights.addAll(
+                                s.sequential()
                                 .map(pipeline::build)
                                 .filter(Objects::nonNull)
-                                .map(pipeline::tabulateFlightStatus)
-                                .forEach(flights::add)
+                                .map(pipeline::finalize)
+                                .collect(Collectors.toList())
+                            )
                         )
                 ).join();
+
+                zipFile.close();
+
+                URI zipURI = URI.create("jar:" + Paths.get(filename).toUri());
+                pipeline.insertConvertedFiles(zipURI);
 
                 long endNanos = System.nanoTime();
                 double s = 1e-9 * (double) (endNanos - startNanos);
@@ -359,7 +366,6 @@ public class ProcessUpload {
             FlightError.insertError(connection, uploadId, exception.getFilename(), exception.getMessage());
         }
 
-
         //prepare the response email
         if (uploadException != null) {
             uploadProcessedEmail.addImportFailure("Could not import upload '" + filename + "' due to the following error:\n");
@@ -414,38 +420,4 @@ public class ProcessUpload {
         return true;
     }
 
-    private static void placeInZip(String file, String zipFileName) throws IOException {
-        LOG.info("Placing " + file + " in zip");
-        
-        Map<String, String> zipENV = new HashMap<>();
-        zipENV.put("create", "true");
-
-        Path csvFilePath = Paths.get(file);
-        Path zipFilePath = Paths.get(csvFilePath.getParent() + "/" + zipFileName);
-
-        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
-        try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
-            Path zipFileSystemPath = fileSystem.getPath(file.substring(file.lastIndexOf("/") + 1));
-            Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
-        }
-    }
-
-    private static File convertDATFile(File file) throws NotDatFile, IOException, FileEnd {
-        LOG.info("Converting to CSV: " + file.getAbsolutePath());
-        DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
-        datFile.reset();
-        datFile.preAnalyze();
-
-        ConvertDat convertDat = datFile.createConVertDat();
-
-        String csvFilename = file.getAbsolutePath() + ".csv";
-        convertDat.csvWriter = new CsvWriter(csvFilename);
-        convertDat.createRecordParsers();
-
-        datFile.reset();
-        AnalyzeDatResults results = convertDat.analyze(false);
-        LOG.info(datFile.getFile().getAbsolutePath());
-
-        return datFile.getFile();
-    }
 }
