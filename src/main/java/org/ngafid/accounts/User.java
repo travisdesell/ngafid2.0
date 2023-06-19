@@ -8,6 +8,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
 
+import org.apache.commons.lang.RandomStringUtils;
+import org.ngafid.SendEmail;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
@@ -496,7 +498,7 @@ public class User {
      * @param lastName The user's last name (optional, may be null).
      * @param country The user's country (optional, may be null).
      * @param state The user's state (optional, may be null).
-     * @param ciy The user's ciy (optional, may be null).
+     * @param city The user's ciy (optional, may be null).
      * @param address The user's address (optional, may be null).
      * @param phoneNumber The user's phone number (optional, may be null).
      * @param zipCode The user's zip code (optional, may be null).
@@ -550,6 +552,13 @@ public class User {
         query.executeUpdate();
     }
 
+    public static void updateResetPhrase(Connection connection, String email, String resetPhrase) throws SQLException {
+        PreparedStatement query = connection.prepareStatement("UPDATE user SET reset_phrase = ? WHERE email = ?");
+        query.setString(1, resetPhrase);
+        query.setString(2, email);
+        LOG.info(query.toString());
+        query.executeUpdate();
+    }
  
     /**
      * Updates the password for a user in the database.
@@ -728,6 +737,26 @@ public class User {
         user.fleetAccess = FleetAccess.create(connection, user.getId(), user.fleet.getId(), FleetAccess.WAITING);
 
         return user;
+    }
+
+    public static void sendPasswordResetEmail(Connection connection, String email) throws SQLException{
+
+        int resetPhraseLength = 10;
+        boolean useLetters = true;
+        boolean useDigits = true;
+        String resetPhrase = RandomStringUtils.random(resetPhraseLength, useLetters, useDigits);
+        System.out.println("Reset Phrase : " + resetPhrase);
+        updateResetPhrase(connection, email, resetPhrase);
+        ArrayList<String> recipients = new ArrayList<>();
+        recipients.add(email);
+        StringBuilder body = new StringBuilder();
+        body.append("<html><body><br>");
+        body.append("<p> Please use the below phrase to reset your NGAFID password </p>");
+        body.append("<p> Password Reset Phrase : <b>" + resetPhrase+"</b></p><br>");
+        body.append("<p> Password Reset Link : <a href=\"https://www.ngafid.org/reset_password\">Reset Password</a> </p><br>");
+        body.append("</body></html>");
+        System.out.println(body.toString());
+        SendEmail.sendEmail(recipients, null,"NGAFID Password Reset Request Information", body.toString() );
     }
 
     public void updateLastLoginTimeStamp(Connection connection) throws SQLException {
