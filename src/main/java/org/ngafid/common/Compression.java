@@ -85,11 +85,24 @@ public class Compression {
         return compress(bytes.array());
     }
 
+    public static Object inflateTTFObject(byte[] bytes) throws IOException, ClassNotFoundException {
+        byte[] inflated = inflate(bytes);
+
+        // Deserialize
+        // Use the custom TTFFixObjectInputStream which will properly recognize the outdated reference to the turn to final class
+        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        Object o = inputStream.readObject();
+        inputStream.close();
+
+        return o;
+    }
+
+
     public static Object inflateObject(byte[] bytes) throws IOException, ClassNotFoundException {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
-        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(inflated));
         Object o = inputStream.readObject();
         inputStream.close();
 

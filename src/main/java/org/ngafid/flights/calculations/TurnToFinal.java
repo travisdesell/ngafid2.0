@@ -220,7 +220,7 @@ public class TurnToFinal implements Serializable {
         blob.free();
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight) throws SQLException, IOException, ClassNotFoundException {
+    public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight) throws SQLException, IOException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
         query.setInt(1, flight.getId());
         LOG.info(query.toString());
@@ -249,30 +249,22 @@ public class TurnToFinal implements Serializable {
             return null;
         }
 
-        Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
-        assert o instanceof ArrayList;
+        try {
+            Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
+            assert o instanceof ArrayList;
 
-        LOG.info("FOUND IN TTF CACHE: " + o.toString());
-        
-        return (ArrayList<TurnToFinal>) o;
+            @SuppressWarnings("unchecked")
+            ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
+            
+            return ttfs;
+        } catch (ClassNotFoundException ce) {
+            LOG.info("TTF object is outdated - recalculating.");
+            query = connection.prepareStatement("DELETE * FROM turn_to_final WHERE flight_id = ?");
+            query.setInt(1, flight.getId());
+            LOG.info(query.toString());
+            return null;
+        }
 
-        // If you want to get rid of the unchecked caste
-        // if (o instanceof ArrayList<?>) {
-        //     ArrayList<?> a = (ArrayList<?>) o;
-        //     ArrayList<TurnToFinal> ttfs = new ArrayList<TurnToFinal>(a.size());
-        //     for (Object i : a) {
-        //         if (i instanceof TurnToFinal) {
-        //             ttfs.add((TurnToFinal) i);
-        //         } else {
-        //             LOG.severe("Found incorrect element object in TurnToFinal cache.");
-        //             return null;
-        //         }
-        //     }
-        //     return ttfs;
-        // } else {
-        //     LOG.severe("Found incorrect object in TurnToFinal cache.");
-        //     return null;
-        // }
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {
