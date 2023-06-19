@@ -272,7 +272,7 @@ public class TurnToFinal implements Serializable {
             ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
             cacheTurnToFinal(connection, flight.getId(), ttfs);
 
-            return null;
+            return ttfs;
         }
 
     }
