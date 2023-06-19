@@ -220,7 +220,7 @@ public class TurnToFinal implements Serializable {
         blob.free();
     }
 
-    public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight) throws SQLException, IOException {
+    public static ArrayList<TurnToFinal> getTurnToFinalFromCache(Connection connection, Flight flight) throws SQLException, IOException, ClassNotFoundException {
         PreparedStatement query = connection.prepareStatement("SELECT * FROM turn_to_final WHERE flight_id = ?");
         query.setInt(1, flight.getId());
         LOG.info(query.toString());
@@ -262,6 +262,16 @@ public class TurnToFinal implements Serializable {
             query = connection.prepareStatement("DELETE * FROM turn_to_final WHERE flight_id = ?");
             query.setInt(1, flight.getId());
             LOG.info(query.toString());
+            query.execute();
+            query.close();
+
+            Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
+            assert o instanceof ArrayList;
+
+            @SuppressWarnings("unchecked")
+            ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
+            cacheTurnToFinal(connection, flight.getId(), ttfs);
+
             return null;
         }
 
