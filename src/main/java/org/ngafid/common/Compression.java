@@ -8,7 +8,28 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.zip.*;
 
+import org.ngafid.flights.calculations.TurnToFinal;
+
 public class Compression {
+
+    private static class TTFFixObjectInputStream extends ObjectInputStream {
+        public TTFFixObjectInputStream() throws IOException {
+            super();
+        }
+
+        public TTFFixObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
+            ObjectStreamClass read = super.readClassDescriptor();
+            if (read.getName().equals("org.ngafid.flights.TurnToFinal")) {
+                return ObjectStreamClass.lookup(TurnToFinal.class);
+            } else {
+                return read;
+            }
+        }
+    }
 
     private static Logger LOG = Logger.getLogger(Compression.class.getName());
 
@@ -68,7 +89,7 @@ public class Compression {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
-        ObjectInputStream inputStream = new ObjectInputStream(new ByteArrayInputStream(inflated));
+        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
         Object o = inputStream.readObject();
         inputStream.close();
 
