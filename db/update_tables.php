@@ -204,4 +204,8 @@ if ($update_for_airsync) {
     query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', 'A');");
 }
 
+$update_system_id_length = true;
+if ($update_system_id_length) {
+    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24);
+}
 ?>

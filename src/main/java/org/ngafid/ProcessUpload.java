@@ -31,6 +31,7 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.ngafid.proximity.CalculateProximity;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightAlreadyExistsException;
@@ -75,7 +76,6 @@ public class ProcessUpload {
             try {
                 PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
-
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
@@ -189,7 +189,6 @@ public class ProcessUpload {
             UploadProcessedEmail uploadProcessedEmail = new UploadProcessedEmail(recipients, bccRecipients);
 
             boolean success = ingestFlights(connection, uploadId, fleetId, uploaderId, filename, uploadProcessedEmail);
-
             //only progress if the upload ingestion was successful
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
@@ -287,9 +286,7 @@ public class ProcessUpload {
                             InputStream stream = zipFile.getInputStream(entry);
                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
@@ -307,15 +304,13 @@ public class ProcessUpload {
                             InputStream stream = zipFile.getInputStream(entry);
                             ArrayList<Flight> flights = Flight.processGPXFile(fleetId, connection, stream, entry.getName());
 
-                            if (connection != null) {
-                                for (Flight flight : flights) {
-                                    flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
-                                }
-                                for (Flight flight : flights) {
-                                    flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                                    if (flight.getStatus().equals("WARNING")) warningFlights++;
-                                    validFlights++;
-                                }
+                            for (Flight flight : flights) {
+                                flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+                            }
+                            for (Flight flight : flights) {
+                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
+                                if (flight.getStatus().equals("WARNING")) warningFlights++;
+                                validFlights++;
                             }
                         } catch (IOException | FatalFlightFileException | FlightAlreadyExistsException |
                                  ParserConfigurationException | SAXException | SQLException | ParseException e) {
@@ -327,9 +322,7 @@ public class ProcessUpload {
                         try {
                             Flight flight = Flight.processJSON(fleetId, connection, zipFile.getInputStream(entry), entry.getName());
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
@@ -362,9 +355,7 @@ public class ProcessUpload {
                         try (InputStream stream = new FileInputStream(processedCSVFile)) {
                             Flight flight = processDATFile(fleetId, entry.getName(), stream, connection);
 
-                            if (connection != null) {
-                                flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
-                            }
+                            flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 

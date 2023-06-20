@@ -664,6 +664,30 @@ public class EventDefinition {
     }
 
     /**
+     * Gets a list of all the event definition names, will only have one name for non-generic events.
+     *
+     * @param connection is the connection to the database.
+     *
+     * @return an array list of all event names in the database for this fleet
+     */
+    public static ArrayList<String> getUniqueNames(Connection connection) throws SQLException {
+        //add all the generic event names
+        String query = "SELECT DISTINCT(name) FROM event_definitions";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        LOG.info(preparedStatement.toString());
+        ResultSet resultSet = preparedStatement.executeQuery();
+        ArrayList<String > uniqueNames = new ArrayList<>();
+        while (resultSet.next()) {
+            uniqueNames.add(resultSet.getString(1));
+        }
+        resultSet.close();
+        preparedStatement.close();
+
+        return uniqueNames;
+    }
+
+    /**
      * Gets a list of all the event definition names. Will have "- airframe" appended to it for non-generic events.
      *
      * @param connection is the connection to the database.
