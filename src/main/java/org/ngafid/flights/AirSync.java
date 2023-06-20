@@ -142,8 +142,10 @@ public class AirSync {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
 
                         if (fleet.lock(connection)) {
-                            fleet.update(connection);
+                            String status = fleet.update(connection);
                             fleet.unlock(connection);
+
+                            LOG.info("Update status: " + status);
                         } else {
                             LOG.info("Unable to lock fleet " + fleet.toString() + ", will skip for now. This usually means a user has requested to manually update the fleet.");
                         }

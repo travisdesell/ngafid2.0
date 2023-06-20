@@ -126,8 +126,8 @@ public class AirSyncFleet extends Fleet {
 
         query.setInt(1, super.getId());
         query.executeUpdate();
-        query.close();
 
+        query.close();
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
@@ -400,14 +400,44 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
+     * Gets the last update/upload time for an AirSyncFleet
+     *
+     * @param connection a DBMS connection
+     *
+     * @return the timestamp as a string form.
+     */
+    public String getLastUpdateTime(Connection connection) throws SQLException {
+        String sql = "SELECT last_upload_time FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, super.getId());
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            Timestamp timestamp = resultSet.getTimestamp(1);
+
+            if (timestamp != null) {
+                return timestamp.toString();
+            }
+        }
+
+        return "N/A";
+    }
+
+    /**
      * Updates this fleet with the AirSync servers
      * This is not thread-safe and should be guarded with a mutex!
      *
      * @param connection the DBMS connection
+     *
+     * @return a "status" string that is human readable
      * 
      * @throws SQLException if the DBMS has an issue
      */
-    public void update(Connection connection) throws Exception {
+    public String update(Connection connection) throws Exception {
+        int nImports = 0;
+
         List<AirSyncAircraft> aircraft = this.getAircraft();
         for (AirSyncAircraft a : aircraft) {
             List<Integer> processedIds = getProcessedIds(connection);
@@ -432,6 +462,8 @@ public class AirSyncFleet extends Fleet {
                         LOG.info("Skipping AirSync with upload id: " + i.getId() + " as it already exists in the database");
                     } else {
                         i.process(connection);
+                        System.out.println("Done processing " + i.getId());
+                        nImports++;
                     }
                 }
             } else {
@@ -440,5 +472,11 @@ public class AirSyncFleet extends Fleet {
         }
 
         this.setLastQueryTime(connection);
+
+        if (nImports > 0) {
+            return String.format("AirSync update complete! %d new flights imported.", nImports);
+        } else {
+            return "No new imports found from AirSync.";
+        }
     }
 }

@@ -1,5 +1,7 @@
 import 'bootstrap';
 import { Paginator } from "./paginator_component.js";
+import { confirmModal } from "./confirm_modal.js";
+import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
@@ -151,6 +153,7 @@ class AirSyncUploadsCard extends React.Component {
             numberPages : numberPages,
             currentPage : currentPage,
             pageSize : 10,
+            lastUpdateTime : props.lastUpdateTime,
         };
     }
 
@@ -204,7 +207,11 @@ class AirSyncUploadsCard extends React.Component {
 
     manualSync() {
         console.log("Manual AirSync update requested!");
-        $("#loading").show();
+        confirmModal.show("Confirm Operation", "Confirm that you would like to update with the AirSync servers. This operation can take a lot of time, especially if there are a lot of new flights! You will recieve and email once the process is complete.", () => {this.requestUpdate()});
+    }
+
+    requestUpdate() {
+        let theseUploads = this;
 
         $.ajax({
             type: 'POST',
@@ -212,19 +219,16 @@ class AirSyncUploadsCard extends React.Component {
             //data : submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log(response);
-
-                $("#loading").hide();
-                if (response.errorTitle) {
+                if (response == "UNABLE_MUTEX") {
                     console.log("displaying error modal!");
-                    errorModal.show(response.errorTitle, response.errorMessage);
-                    return false;
+                    errorModal.show("Unable to manually sync!", "This could be because your fleet is already being updated, or someone else has already requested an update!");
+                } else {
+                    theseUploads.state.lastUpdateTime = response;
+                    theseUploads.setState(theseUploads.state);
                 }
-
             },
             error : function(jqXHR, textStatus, errorThrown) {
-                $("#loading").hide();
-                errorModal.show("Error Loading Uploads", errorThrown);
+                errorModal.show("Error Updating:", errorThrown);
             },
             async: true
         });
@@ -237,6 +241,8 @@ class AirSyncUploadsCard extends React.Component {
             display : "none"
         };
 
+        const updateTimeInfo = "Last Sync Time: " + this.state.lastUpdateTime;
+
         return (
             <div>
                 <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
@@ -244,7 +250,10 @@ class AirSyncUploadsCard extends React.Component {
                 <div className="card-body" hidden={hidden}>
                     <div className="card mb-1 border-secondary">
                         <div className="p-2">
-                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.manualSync()}>
+                            <button id="upload-airsync-button" className="btn btn-info btn-sm float-left" disabled>
+                                <i className="fa fa-cloud-download"></i> {updateTimeInfo}
+                            </button>
+                            <button id="upload-airsync-button" className="btn btn-primary btn-sm float-right" onClick={() => this.manualSync()}>
                                 <i className="fa fa-refresh"></i> Sync with AirSync Server Now
                             </button>
                         </div>
@@ -296,6 +305,6 @@ class AirSyncUploadsCard extends React.Component {
 }
 
 var preferencesPage = ReactDOM.render(
-    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} currentPage={currentPage}/>,
+    <AirSyncUploadsCard numberPages={numberPages} uploads={uploads} lastUpdateTime={lastUpdateTime} currentPage={currentPage}/>,
    document.querySelector('#airsync-uploads-page')
 )

@@ -16,6 +16,7 @@ import spark.Session;
 import spark.Spark;
 
 import org.ngafid.Database;
+import org.ngafid.SendEmail;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;
@@ -39,7 +40,6 @@ public class PostManualAirSyncUpdate implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
-        System.out.println("Manual AS Req!!");
 
         final Session session = request.session();
         Connection connection = Database.getConnection();
@@ -58,11 +58,30 @@ public class PostManualAirSyncUpdate implements Route {
             AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
 
             if (fleet.lock(connection)) {
+                LOG.info("Beginning AirSync update process!");
+                String status = fleet.update(connection);
+                LOG.info("AirSync update process complete! Status: " + status);
 
+                fleet.unlock(connection);
+
+                StringBuilder sb = new StringBuilder("<h1>NGAFID Manual AirSync Update Report</h1>");
+                sb.append("<br><p>");
+                sb.append(status);
+                sb.append("</p>");
+
+                //Send email
+                ArrayList<String> emailList = new ArrayList<>();
+                emailList.add(user.getEmail());
+
+                SendEmail.sendEmail(emailList, new ArrayList<String>(), "NGAFID AirSync Update Report", sb.toString());
+                String lastUpdateTime = fleet.getLastUpdateTime(connection);
+
+                return gson.toJson(lastUpdateTime);
+            } else {
+                LOG.info("Unable to enter critical section!");
+                return gson.toJson("UNABLE_MUTEX");
             }
-
-            return gson.toJson("Hello");
-        } catch (SQLException e) {
+        } catch (Exception e) {
             return gson.toJson(new ErrorResponse(e));
         }
     }
