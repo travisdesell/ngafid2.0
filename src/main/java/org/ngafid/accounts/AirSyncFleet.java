@@ -7,7 +7,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Logger;
 import java.net.URL;
 
@@ -17,6 +19,7 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
+import org.ngafid.flights.AirSyncImport;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.*;
@@ -67,6 +70,64 @@ public class AirSyncFleet extends Fleet {
         } else {
             this.timeout = timeout;
         }
+    }
+
+    /**
+     * Semaphore-style (P) mutex that allows for an entity (i.e. the daemon or user) to 
+     * ask AirSync for updates
+     *
+     * In this case, the database holds the "signal" or lock flag
+     *
+     * @param connection the DBMS connection
+     *
+     * @return true if able to enter the critical section, false otherwise. This
+     * can allow for a busy-wait elsewhere
+     *
+     * @throws SQLException if the DMBS has an issue
+     */
+    public boolean lock(Connection connection) throws SQLException {
+        String sql = "SELECT mutex FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, super.getId());
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next() && !resultSet.getBoolean(1)) {
+            sql = "UPDATE airsync_fleet_info SET mutex = 1 WHERE fleet_id = ?";
+            query = connection.prepareStatement(sql);
+
+            query.setInt(1, super.getId());
+            query.executeUpdate();
+            query.close();
+
+            return true;
+        }
+
+        query.close();
+        return false;
+    }
+
+
+
+
+    /**
+     * Semaphore-style (V) mutex that allows for an entity (i.e. the daemon or user) to 
+     * ask AirSync for updates
+     *
+     * In this case, the database holds the "signal" or lock flag
+     *
+     * @param connection the DBMS connection
+     *
+     * @throws SQLException if the DMBS has an issue
+     */
+     public void unlock(Connection connection) throws SQLException {
+        String sql = "UPDATE airsync_fleet_info SET mutex = 0 WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, super.getId());
+        query.executeUpdate();
+
+        query.close();
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
@@ -320,5 +381,102 @@ public class AirSyncFleet extends Fleet {
         }
 
         return fleets;
+    }
+
+    private List<Integer> getProcessedIds(Connection connection) throws SQLException {
+        String sql = "SELECT id FROM airsync_imports WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, super.getId());
+
+        ResultSet resultSet = query.executeQuery();
+        List<Integer> ids = new LinkedList<>();
+
+        while (resultSet.next()) {
+            ids.add(resultSet.getInt(1));
+        }
+
+        return ids;
+    }
+
+    /**
+     * Gets the last update/upload time for an AirSyncFleet
+     *
+     * @param connection a DBMS connection
+     *
+     * @return the timestamp as a string form.
+     */
+    public String getLastUpdateTime(Connection connection) throws SQLException {
+        String sql = "SELECT last_upload_time FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, super.getId());
+
+        ResultSet resultSet = query.executeQuery();
+
+        if (resultSet.next()) {
+            Timestamp timestamp = resultSet.getTimestamp(1);
+
+            if (timestamp != null) {
+                return timestamp.toString();
+            }
+        }
+
+        return "N/A";
+    }
+
+    /**
+     * Updates this fleet with the AirSync servers
+     * This is not thread-safe and should be guarded with a mutex!
+     *
+     * @param connection the DBMS connection
+     *
+     * @return a "status" string that is human readable
+     * 
+     * @throws SQLException if the DBMS has an issue
+     */
+    public String update(Connection connection) throws Exception {
+        int nImports = 0;
+
+        List<AirSyncAircraft> aircraft = this.getAircraft();
+        for (AirSyncAircraft a : aircraft) {
+            List<Integer> processedIds = getProcessedIds(connection);
+
+            Optional<LocalDateTime> aircraftLastImportTime = a.getLastImportTime(connection);
+
+            List<AirSyncImport> imports;
+
+            if (aircraftLastImportTime.isPresent()) {
+                // We must make the interval exclusive when asking the server for flights
+                LocalDateTime importTime = aircraftLastImportTime.get().plusSeconds(1);
+                imports = a.getImportsAfterDate(connection, this, importTime);
+                LOG.info(String.format("Getting imports for fleet %s after %s.", super.getName(), importTime.toString()));
+            } else {
+                imports = a.getImports(connection, this);
+                LOG.info(String.format("Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.", super.getName()));
+            }
+
+            if (imports != null && !imports.isEmpty()) {
+                for (AirSyncImport i : imports) {
+                    if (processedIds.contains(i.getId())) {
+                        LOG.info("Skipping AirSync with upload id: " + i.getId() + " as it already exists in the database");
+                    } else {
+                        i.process(connection);
+                        System.out.println("Done processing " + i.getId());
+                        nImports++;
+                    }
+                }
+            } else {
+                LOG.info("No imports found for aircraft: " + a.getTailNumber() + " in fleet " + super.getName() + ", continuing.");
+            }
+        }
+
+        this.setLastQueryTime(connection);
+
+        if (nImports > 0) {
+            return String.format("AirSync update complete! %d new flights imported.", nImports);
+        } else {
+            return "No new imports found from AirSync.";
+        }
     }
 }

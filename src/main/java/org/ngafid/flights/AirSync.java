@@ -52,21 +52,6 @@ public class AirSync {
         return false;
     }
 
-    public static List<Integer> getProcessedIds(Connection connection, int fleetId) throws SQLException {
-        String sql = "SELECT id FROM airsync_imports WHERE fleet_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        query.setInt(1, fleetId);
-
-        ResultSet resultSet = query.executeQuery();
-        List<Integer> ids = new LinkedList<>();
-
-        while (resultSet.next()) {
-            ids.add(resultSet.getInt(1));
-        }
-
-        return ids;
-    }
 
     public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
         String message = e.getMessage();
@@ -122,8 +107,9 @@ public class AirSync {
             waitTime = 1000 * 60 * resultSet.getLong(1);
         }
 
-        return waitTime;
+        return Math.max(waitTime, 0);
     }
+
 
     /**
      * This daemon's entry point
@@ -138,8 +124,8 @@ public class AirSync {
             LocalDateTime now = LocalDateTime.now();
             String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-" + now.getHour() + now.getMinute() + now.getSecond();
 
-            logFile = new PrintStream(new File("/var/log/ngafid/airsync_" + timeStamp + ".log"));
-            logFile.println("Starting AirSync daemon error log at: " + now.toString());
+            //logFile = new PrintStream(new File("/var/log/ngafid/airsync_" + timeStamp + ".log"));
+            //logFile.println("Starting AirSync daemon error log at: " + now.toString());
 
             while (true) {
                 AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
@@ -155,38 +141,14 @@ public class AirSync {
                     if (fleet.isQueryOutdated(connection)) {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
 
-                        List<AirSyncAircraft> aircraft = fleet.getAircraft();
-                        for (AirSyncAircraft a : aircraft) {
-                            List<Integer> processedIds = getProcessedIds(connection, fleet.getId());
+                        if (fleet.lock(connection)) {
+                            String status = fleet.update(connection);
+                            fleet.unlock(connection);
 
-                            Optional<LocalDateTime> aircraftLastImportTime = a.getLastImportTime(connection);
-
-                            List<AirSyncImport> imports;
-
-                            if (aircraftLastImportTime.isPresent()) {
-                                // We must make the interval exclusive when asking the server for flights
-                                LocalDateTime importTime = aircraftLastImportTime.get().plusSeconds(1);
-                                imports = a.getImportsAfterDate(connection, fleet, importTime);
-                                LOG.info(String.format("Getting imports for fleet %s after %s.", fleet.getName(), importTime.toString()));
-                            } else {
-                                imports = a.getImports(connection, fleet);
-                                LOG.info(String.format("Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.", fleet.getName()));
-                            }
-
-                            if (imports != null && !imports.isEmpty()) {
-                                for (AirSyncImport i : imports) {
-                                    if (processedIds.contains(i.getId())) {
-                                        LOG.info("Skipping AirSync with upload id: " + i.getId() + " as it already exists in the database");
-                                    } else {
-                                        i.process(connection);
-                                    }
-                                }
-                            } else {
-                                LOG.info("No imports found for aircraft: " + a.getTailNumber() + " in fleet " + fleet.getName() + ", continuing.");
-                            }
+                            LOG.info("Update status: " + status);
+                        } else {
+                            LOG.info("Unable to lock fleet " + fleet.toString() + ", will skip for now. This usually means a user has requested to manually update the fleet.");
                         }
-
-                        fleet.setLastQueryTime(connection);
                     } else {
                         LOG.info(String.format(logMessage, "does not need to be updated, will skip."));
                     }

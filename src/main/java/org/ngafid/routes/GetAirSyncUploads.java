@@ -24,6 +24,7 @@ import spark.Session;
 import org.ngafid.Database;
 import org.ngafid.common.*;
 import org.ngafid.WebServer;
+import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;
 import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
@@ -52,6 +53,8 @@ public class GetAirSyncUploads implements Route {
         LOG.severe("template file: '" + templateFile + "'");
 
         try  {
+            Connection connection = Database.getConnection();
+
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -61,23 +64,21 @@ public class GetAirSyncUploads implements Route {
 
             final Session session = request.session();
             User user = session.attribute("user");
-            int fleetId = user.getFleetId();
+            AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, user.getFleetId());
 
             //default page values
             int currentPage = 0;
             int pageSize = 10;
 
-            Connection connection = Database.getConnection();
-
-            int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
-            List<Upload> uploads = AirSyncImport.getUploads(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
-
+            String timestamp = fleet.getLastUpdateTime(connection);
+            int totalUploads = AirSyncImport.getNumUploads(connection, fleet.getId(), null);
+            List<Upload> uploads = AirSyncImport.getUploads(connection, fleet.getId(), " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
             int numberPages = totalUploads / pageSize;
 
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");
-
+            scopes.put("lastUpdateTime_js", "var lastUpdateTime = " + gson.toJson(timestamp) + ";");
             scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(uploads) + "');");
 
             StringWriter stringOut = new StringWriter();
