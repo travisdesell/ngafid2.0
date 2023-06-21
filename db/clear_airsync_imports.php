@@ -29,7 +29,7 @@ query_ngafid_db("DELETE FROM flight_processed WHERE flight_id IN (SELECT id FROM
 query_ngafid_db("DELETE FROM itinerary WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM turn_to_final WHERE flight_id IN (SELECT id FROM flights WHERE uploader_id = " . $as_uploader_id . ");");
 query_ngafid_db("DELETE FROM flights WHERE uploader_id = " . $as_uploader_id . ";");
-query_ngafid_db("UPDATE airsync_fleet_info SET last_upload_time = '1970-01-01 00:00:00';");
+query_ngafid_db("UPDATE airsync_fleet_info SET last_upload_time = '1970-01-01 00:00:00', mutex = 0;");
 
 echo "Cleared all AirSync uploads from DB\n";
 
