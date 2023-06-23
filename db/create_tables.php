@@ -582,6 +582,37 @@ if (!$update_2022_02_17) {
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
+
+    $query = "CREATE TABLE `airsync_fleet_info` (
+        `fleet_id` int(11) NOT NULL,                                                            
+        `api_key` varchar(32) NOT NULL,                                                         
+        `api_secret` varchar(64) NOT NULL,                                                      
+        `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
+        `timeout` int(11) DEFAULT NULL,                                                             
+        `mutex` TINYINT DEFAULT 0,                                                             
+        KEY `airsync_fleet_id_fk` (`fleet_id`),                                                     
+        CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
+    );";
+
+    query_ngafid_db($query);
+
+    $query = "CREATE TABLE `airsync_imports` (
+        `id` int(11) NOT NULL,
+        `time_received` timestamp NULL DEFAULT NULL,
+        `upload_id` int(11) NOT NULL,
+        `fleet_id` int(11) NOT NULL,
+        `flight_id` int(11) DEFAULT NULL,
+        `tail` varchar(512) NOT NULL,
+        PRIMARY KEY (`id`),
+        KEY `airsync_imports_uploads_null_fk` (`upload_id`),
+        KEY `airsync_imports_fleet_id_fk` (`fleet_id`),
+        KEY `airsync_imports_flights_null_fk` (`flight_id`),
+        CONSTRAINT `airsync_imports_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`),
+        CONSTRAINT `airsync_imports_flights_null_fk` FOREIGN KEY (`flight_id`) REFERENCES `flights` (`id`),
+        CONSTRAINT `airsync_imports_uploads_null_fk` FOREIGN KEY (`upload_id`) REFERENCES `uploads` (`id`)
+    );";
+
+    query_ngafid_db($query);
 }
 
 

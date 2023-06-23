@@ -38,6 +38,8 @@ module.exports = {
         update_password: __dirname + "/src/main/javascript/update_password.js",
         reset_password: __dirname + "/src/main/javascript/reset_password.js",
         update_profile: __dirname + "/src/main/javascript/update_profile.js",
+        airsync_uploads: __dirname + "/src/main/javascript/airsync_uploads.js",
+        airsync_imports: __dirname + "/src/main/javascript/airsync_imports.js",
         uploads: __dirname + "/src/main/javascript/uploads.js",
         imports: __dirname + "/src/main/javascript/imports.js",
         flights: __dirname + "/src/main/javascript/flights.js",

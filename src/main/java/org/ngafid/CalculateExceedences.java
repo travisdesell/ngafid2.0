@@ -83,6 +83,7 @@ public class CalculateExceedences {
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
                 stmt.close();
+                // Return with no update to stats count (rwnu)
                 return;
             }
 
@@ -106,6 +107,7 @@ public class CalculateExceedences {
                     System.out.println(stmt.toString());
                     stmt.executeUpdate();
                     stmt.close();
+                    // Return with no update to stats count (rwnu)
                     return;
                 }
 
@@ -146,6 +148,7 @@ public class CalculateExceedences {
                 System.out.println(stmt.toString());
                 stmt.executeUpdate();
                 stmt.close();
+                // Return with no update to stats count (rwnu)
                 return;
             }
 

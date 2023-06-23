@@ -161,6 +161,27 @@ public class User {
         return fleet.getId() == fleetId && (fleetAccess.isManager() || fleetAccess.isUpload() || fleetAccess.isView());
     }
 
+    public boolean isEnrolledInGroup(Connection connection) throws SQLException {
+        return this.getGroup(connection) != -1;
+    }
+
+    public int getGroup(Connection connection) throws SQLException {
+        String sql = "SELECT group_id FROM user_groups WHERE user_id = ?";
+
+        PreparedStatement query = connection.prepareStatement(sql);
+        query.setInt(1, this.id);
+
+        ResultSet resultSet = query.executeQuery();
+
+        int group = -1;
+
+        if (resultSet.next()) {
+            group = resultSet.getInt(1);
+        }
+
+        return group;
+    }
+
     /**
      * Return the number of users in the NGAFID
      *

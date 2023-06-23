@@ -11,7 +11,7 @@ public class ConvertDoubleSeriesNames {
 
     public static List<String> getDoubleSeriesNamesOriginal() throws SQLException {
         List<String> dsnOriginal = new ArrayList<>();
-        String queryString = "SELECT UNIQUE name FROM double_series";
+        String queryString = "SELECT DISTINCT name FROM double_series";
 
         PreparedStatement preparedStatement = connection.prepareStatement(queryString);
         ResultSet resultSet = preparedStatement.executeQuery();
@@ -60,13 +60,17 @@ public class ConvertDoubleSeriesNames {
                 nameChangeQuery.setInt(1, names.get(name));
                 nameChangeQuery.setString(2, name);
 
+                LOG.info(nameChangeQuery.toString());
+
                 if (nameChangeQuery.executeUpdate() == 1) {
-                   LOG.severe("Unable to alter name \"" + name + "\" to its respective id: " + names.get(name));
-                   LOG.severe("Aborting!");
+                   //LOG.severe("Unable to alter name \"" + name + "\" to its respective id: " + names.get(name));
+                   //LOG.severe("Aborting!");
 
-                   connection.close();
+                   //connection.close();
 
-                   System.exit(1);
+                   //System.exit(1);
+
+                    continue;
                 }
 
             }

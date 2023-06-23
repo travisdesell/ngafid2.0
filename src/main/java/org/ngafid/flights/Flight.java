@@ -122,6 +122,10 @@ public class Flight {
     //private final static long NEXT_CALCULATION = 0b10;
     //private final static long NEXT_NEXT_CALCULATION = 0b100;
     //etc
+    //
+    public static final String WARNING = "WARNING";
+    public static final String SUCCESS = "SUCCESS";
+    public static final String ERROR = "ERROR";
 
     private long processingStatus = 0;
 
@@ -3203,6 +3207,23 @@ public class Flight {
             System.err.println(itinerary.get(i));
         }
 
+    }
+
+    public void updateTail(Connection connection, String tailNumber) throws SQLException {
+        if (this.systemId != null && !this.systemId.isBlank()) {
+            String sql = "INSERT INTO tails(system_id, fleet_id, tail, confirmed) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tail = ?";
+            PreparedStatement query = connection.prepareStatement(sql);
+
+            query.setString(1, this.systemId);
+            query.setInt(2, this.fleetId);
+            query.setString(3, tailNumber);
+            query.setBoolean(4, true);
+            query.setString(5, tailNumber);
+
+            System.out.println(query.toString());
+
+            query.executeUpdate();
+        }
     }
 
     public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName) throws MalformedFlightFileException {
