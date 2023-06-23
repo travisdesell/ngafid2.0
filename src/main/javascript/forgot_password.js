@@ -10,8 +10,7 @@ class ForgotPassword extends React.Component {
         this.state = {
             validEmail : false,
             emailEmpty : true,
-            submitted : false,
-            registeredEmail : true
+            registeredEmail : false,
         };
         this.submit = this.submit.bind(this);
     }
@@ -22,6 +21,7 @@ class ForgotPassword extends React.Component {
         console.log(email);
         this.state.validEmail = re.test(String(email).toLowerCase());
         this.state.emailEmpty = email.length == 0;
+        this.state.error = false;
         this.setState(this.state);
     }
 
@@ -38,14 +38,14 @@ class ForgotPassword extends React.Component {
             dataType : 'json',
             success : function (response) {
                 console.log(response)
-                if (response) {
-                    console.log(forgotPasswordObj)
-                    forgotPasswordObj.state.submitted = true;
+                if (response.registeredEmail) {
                     forgotPasswordObj.state.validEmail = true;
+                    forgotPasswordObj.state.registeredEmail = true;
                 }
                 else {
                     forgotPasswordObj.state.registeredEmail = false;
                     forgotPasswordObj.state.validEmail = false;
+                    forgotPasswordObj.state.error = true;
                 }
             },
             async : false
@@ -81,20 +81,21 @@ class ForgotPassword extends React.Component {
             color: 'red'
         };
 
-        let submitDisabled = !validationHidden;
 
-        if (!this.state.validEmail) {
-            validationMessage = "Email was not valid.";
-            validationHidden = false;
-        }
-        if (this.state.emailEmpty) {
-            validationMessage = "Please enter your email.";
-            validationHidden = false;
-        }
-        if (!this.state.registeredEmail) {
+        if (this.state.error) {
             validationMessage = "Please enter a registered email address.";
             validationHidden = false;
         }
+        else if (this.state.emailEmpty) {
+            validationMessage = "Please enter your email.";
+            validationHidden = false;
+        }
+        else if (!this.state.validEmail) {
+            validationMessage = "Email was not valid.";
+            validationHidden = false;
+        }
+
+        let submitDisabled = !validationHidden;
 
         let forgotPasswordCard = (
             <div className="card mt-4">
@@ -117,7 +118,6 @@ class ForgotPassword extends React.Component {
                         </div>
                     </div>
                     <div className='modal-footer'>
-
                         <button id='forgotPasswordSubmitBtn' type='submit' className='btn btn-primary' onClick={() => {this.submit();}} disabled={submitDisabled}>Submit</button>
                     </div>
                 </div>
@@ -128,13 +128,8 @@ class ForgotPassword extends React.Component {
                 <h5 className="card-header">Reset Password</h5>
                 <div className="card-body">
                     <p className="card-text">
-                        A password reset passphrase has been sent to your registered email address. Please use it to reset your password using the below link
+                        A password reset link has been sent to your registered email address. Please click on it to reset your password.
                     </p>
-                    <div className='modal-footer'>
-                        <a href="/reset_password">
-                            <button className='btn btn-primary'>Reset Password</button>
-                        </a>
-                    </div>
                 </div>
             </div>
         )
@@ -143,7 +138,7 @@ class ForgotPassword extends React.Component {
                 <div className="row justify-content-center">
                     <div className="col-md-6">
                         {
-                            !this.state.submitted ? forgotPasswordCard : resetPaaswordCard
+                            !this.state.registeredEmail ? forgotPasswordCard : resetPaaswordCard
                         }
 
                     </div>

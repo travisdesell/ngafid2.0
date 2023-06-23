@@ -9,7 +9,7 @@ import { navbar } from "./home_navbar.js";
 class ResetPasswordCard extends React.Component {
     constructor(props) {
         super(props);
-
+        const urlParams = new URLSearchParams(window.location.search);
         this.state = {
             emailAddress : "",
             passphrase : urlParams.get("resetPhrase"),

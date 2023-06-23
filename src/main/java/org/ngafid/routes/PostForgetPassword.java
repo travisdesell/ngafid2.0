@@ -20,28 +20,31 @@ public class PostForgetPassword implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
+    private class ForgotPasswordResponse {
+        String message;
+        boolean registeredEmail;
+
+        public ForgotPasswordResponse(String message, boolean registeredEmail) {
+            this.message = message;
+            this.registeredEmail = registeredEmail;
+
+        }
+    }
 
     @Override
     public Object handle(Request request, Response response) throws Exception {
         Connection connection = Database.getConnection();
         LOG.info("handling " + this.getClass().getName() + " route");
         String email = request.queryParams("email");
-        LOG.info("email: '" + email + "'");
-
-
         if (User.exists(connection, email)) {
             LOG.info("User exists. Sending reset password email.");
-
-            //TODO : generate random reset phrase and send email and send boolean value if email was sent or not.
-            // TODO : Complete redirect to reset password page in js
-
             User.sendPasswordResetEmail(connection, email);
-            return gson.toJson(true);
+            return gson.toJson(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true));
 
         }
         else {
-            LOG.info("User doesn't exist.");
-            return gson.toJson(false);
+            LOG.info("User with email : "  + email +  " doesn't exist.");
+            return gson.toJson(new ForgotPasswordResponse("", false));
 
 
         }
