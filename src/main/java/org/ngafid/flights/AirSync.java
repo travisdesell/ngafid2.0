@@ -17,9 +17,12 @@ import org.ngafid.accounts.AirSyncAuth;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.Fleet;
 
+/**
+ * This class contains code for controlling the AirSync daemon, as well
+ * as many other methods may be used by the daemon
+ */
 public class AirSync {
-    private Upload upload;
-
+    //Used for debugging
     static PrintStream logFile;
 
     // How long the daemon will wait before making another request
@@ -28,31 +31,13 @@ public class AirSync {
 
     private static final Logger LOG = Logger.getLogger(AirSync.class.getName());
 
-    private File uploadFile;
-    private LocalDateTime uploadTime;
-
-    private byte [] fileData;
-
-    public AirSync(LocalDateTime uploadTime, Fleet fleet) {
-        this.uploadTime = uploadTime;
-    }
-
-    // Format should be:
-    // $NGAFID_ARCHIVE_DIR/<FLEET_ID>/<UPLOADER_ID>/<FLIGHT YYYY>/<FLIGHT MM>/<upload_id>__<upload_name>.zip
-    public String getUploadPathFormat() {
-        StringBuilder sb = new StringBuilder(WebServer.NGAFID_ARCHIVE_DIR + "/");
-        sb.append("");
-        return sb.toString();
-    }
-
-    public static boolean hasUploadsWaiting(AirSyncFleet fleet) throws IOException {
-        //TODO: Implement a way to see if there are uploads waiting on the AirSync servers;
-        System.out.println("fleet has creds: " + fleet.getAuth());
-
-        return false;
-    }
-
-
+    /**
+     * Gracefully handles an exception from the AirSync API
+     *
+     * @param e the exception caught
+     * @param authentication the authentication used at the time. We can use this 
+     * to request a new one if its simply outdated.
+     */
     public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
         String message = e.getMessage();
 
@@ -61,7 +46,7 @@ public class AirSync {
         if (message.contains("HTTP response code: 40")) {
             LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
-            logFile.println("Got exception at time " + LocalDateTime.now().toString() + ": " + e.getMessage());
+            //logFile.println("Got exception at time " + LocalDateTime.now().toString() + ": " + e.getMessage());
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
@@ -70,6 +55,11 @@ public class AirSync {
         }
     }
 
+    /**
+     * Sends a notification to NGAFID admins that this daemon has crashed gracefully.
+     *
+     * @param message the message that needs to be sent
+     */
     public static void sendAdminCrashNotification(String message) {
         String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
         ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
@@ -78,6 +68,11 @@ public class AirSync {
         SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message);
     }
 
+    /**
+     * Handles a caught {@link Exception} and crashes gracefully
+     *
+     * @param e the exception caught
+     */
     public static void crashGracefully(Exception e) {
         System.err.println("FATAL: Exiting due to error " + e.getMessage() + "!");
         e.printStackTrace();
@@ -96,6 +91,13 @@ public class AirSync {
         System.exit(1);
     }
 
+    /**
+     * Gets the shortest wait time of all fleets so the daemon can sleep "smartly"
+     *
+     * @param connection the DBMS connection
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     private static long getWaitTime(Connection connection) throws SQLException {
         String sql = "SELECT MIN(timeout - TIMESTAMPDIFF(MINUTE, last_upload_time, CURRENT_TIMESTAMP)) AS remaining_time FROM airsync_fleet_info";
         PreparedStatement query = connection.prepareStatement(sql);
@@ -112,7 +114,8 @@ public class AirSync {
 
 
     /**
-     * This daemon's entry point
+     * This daemon's entry point. 
+     * This is where the logic for how the daemon operates will be defined.
      *
      * @param args command line args
      */

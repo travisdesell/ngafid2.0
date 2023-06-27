@@ -23,6 +23,9 @@ import java.util.logging.Logger;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Represents an Aircraft that is AirSync compatibile
+ */
 public class AirSyncAircraft {
     private int id;
     private String tailNumber;
@@ -36,27 +39,66 @@ public class AirSyncAircraft {
 
     private static final Logger LOG = Logger.getLogger(AirSyncAircraft.class.getName());
 
+    /**
+     * Private constructor, for instantiation within this class.
+     *
+     * @param id the Aircraft's id
+     * @param tailNumber the Aircraft's tail number
+     */
     private AirSyncAircraft(int id, String tailNumber) {
         this.id = id;
         this.tailNumber = tailNumber;
     }
 
+    /**
+     * Sets a reference to the fleet which this aircraft belongs to
+     *
+     * @param fleet the AirSyncFleet that is responsible for this aircraft
+     */
     public void initialize(AirSyncFleet fleet) {
         this.fleet = fleet;
     }
 
+    /**
+     * Public accessor method for this aircraft
+     *
+     * @return the tail number as a string
+     */
     public String getTailNumber() {
         return this.tailNumber;
     }
 
+    /**
+     * Gets the aircraft log URL from page number
+     *
+     * @param page the page number for AirSync servers
+     *
+     * @return a URL to the logfile
+     */
     private URL getAircraftLogURL(int page) throws MalformedURLException {
         return new URL(String.format(AirSyncEndpoints.ALL_LOGS, this.id, page, AirSyncEndpoints.PAGE_SIZE));
     }
 
+    /**
+     * Gets the aircraft log URL from page number AFTER
+     * the last import time
+     *
+     * @param page the page number for AirSync servers
+     * @param lastImportTime the last import time
+     *
+     * @return a URL to the logfile
+     */
     private URL getAircraftLogURL(int page, LocalDateTime lastImportTime) throws MalformedURLException {
         return new URL(String.format(AirSyncEndpoints.ALL_LOGS_BY_TIME, this.id, page, AirSyncEndpoints.PAGE_SIZE, lastImportTime.toString(), MAX_LCL_DATE_TIME.toString()));
     }
 
+    /**
+     * Gets the last import time for this fleet.
+     *
+     * @param connection the dbms connection
+     *
+     * @return an {@link Optional} of {@link LocalDateTime} representing the last import time
+     */
     public Optional<LocalDateTime> getLastImportTime(Connection connection) throws SQLException {
         String sql = "SELECT MAX(start_time) FROM uploads AS u JOIN airsync_imports AS imp ON imp.fleet_id = u.fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
@@ -75,6 +117,16 @@ public class AirSyncAircraft {
         return Optional.empty();
     }
 
+    /**
+     * Gets a list of AirSyncImports securely with HTTPS
+     *
+     * @param netConnection the connection to the AirSync servers
+     * @param authentication the instance of {@link AirSyncAuth} for this fleet
+     *
+     * @return a {@link List} of AirSyncImports 
+     *
+     * @throws an exception if there is a network or dbms issue
+     */
     private List<AirSyncImport> getImportsHTTPS(HttpsURLConnection netConnection, AirSyncAuth authentication) throws Exception {
         netConnection.setRequestMethod("GET");
         netConnection.setDoOutput(true);
@@ -100,6 +152,14 @@ public class AirSyncAircraft {
         return page;
     }
 
+    /**
+     * Gets ALL imports for this Aircraft
+     *
+     * @param connection the database connection
+     * @param fleet the fleet this aircraft belongs to
+     *
+     * @return a {@link List} of AirSyncImports 
+     */
     public List<AirSyncImport> getImports(Connection connection, AirSyncFleet fleet) {
         AirSyncAuth authentication = fleet.getAuth();
         List<AirSyncImport> imports = new LinkedList<>();
@@ -122,27 +182,36 @@ public class AirSyncAircraft {
         return imports;
     }
 
-     public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet fleet, LocalDateTime lastImportTime) {
-        AirSyncAuth authentication = fleet.getAuth();
-        List<AirSyncImport> imports = new LinkedList<>();
+    /**
+     * Gets a List of imports after a certian date
+     *
+     * @param connection the database connection
+     * @param fleet the AirSyncFleet that these imports belong to
+     * @param lastImportTime the last import time recorded in the database
+     *
+     * @return a {@link List} of AirSyncImports 
+     */
+    public List<AirSyncImport> getImportsAfterDate(Connection connection, AirSyncFleet fleet, LocalDateTime lastImportTime) {
+       AirSyncAuth authentication = fleet.getAuth();
+       List<AirSyncImport> imports = new LinkedList<>();
 
-        boolean continueIteration = true;
+       boolean continueIteration = true;
 
-        int nPage = 0;
-        
-        while (continueIteration) {
-            try {
-                HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
-                List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
+       int nPage = 0;
+       
+       while (continueIteration) {
+           try {
+               HttpsURLConnection netConnection = (HttpsURLConnection) getAircraftLogURL(nPage++, lastImportTime).openConnection();
+               List<AirSyncImport> page = getImportsHTTPS(netConnection, authentication);
 
-                continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
-                imports.addAll(page);
-            } catch (Exception e) {
-                AirSync.handleAirSyncAPIException(e, authentication);
-            }
-        }
+               continueIteration = page.size() == AirSyncEndpoints.PAGE_SIZE;
+               imports.addAll(page);
+           } catch (Exception e) {
+               AirSync.handleAirSyncAPIException(e, authentication);
+           }
+       }
 
-        return imports;
-     }
+       return imports;
+    }
     
 }
