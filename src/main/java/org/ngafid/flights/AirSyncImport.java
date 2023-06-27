@@ -2,9 +2,7 @@ package org.ngafid.flights;
 
 import java.io.*;
 import java.net.*;
-import java.security.MessageDigest;
 import java.sql.*;
-import java.sql.Date;
 import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -12,7 +10,6 @@ import java.util.logging.Logger;
 import java.util.zip.*;
 
 import javax.net.ssl.HttpsURLConnection;
-import javax.xml.bind.DatatypeConverter;
 
 import org.ngafid.CalculateExceedences;
 import org.ngafid.Database;
@@ -20,8 +17,10 @@ import org.ngafid.UploadException;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncFleet;
-import org.ngafid.accounts.Fleet;
 
+/**
+ * This class represents an Import from the airsync servers in the NGAFID
+ */
 public class AirSyncImport {
     private int id, uploadId, aircraftId;
     private byte [] data;
