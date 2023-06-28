@@ -131,6 +131,8 @@ public class SendEmail {
             return;
         }
 
+        //System.out.println(String.format("Username: %s, PW: %s", username, password));
+
         if (auth.isValid()) {
             System.out.println("emailing to " + String.join(", ", toRecipients));
             System.out.println("BCCing to " + String.join(", ", bccRecipients));
@@ -201,8 +203,8 @@ public class SendEmail {
         // Recipient's email ID needs to be mentioned.
 
         ArrayList<String> recipients = new ArrayList<String>();
-        recipients.add("tjdvse@rit.edu");
-        recipients.add("travis.desell@gmail.com");
+        recipients.add("apl1341@rit.edu");
+        recipients.add("aidan@labellahome.org");
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
 
