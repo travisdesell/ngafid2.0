@@ -149,7 +149,13 @@ public class CachedCSVWriter extends CSVWriter {
     public void writeToFile() {
         if (super.outputCSVFile.isPresent()) {
             try {
-                FileOutputStream fos = new FileOutputStream(this.outputCSVFile.get());
+                File outfile = this.outputCSVFile.get();
+
+                if (!outfile.exists()) {
+                    outfile.createNewFile();
+                }
+
+                FileOutputStream fos = new FileOutputStream(outfile);
 
                 fos.write(toBinaryData());
                 fos.close();
