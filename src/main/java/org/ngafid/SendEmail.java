@@ -169,6 +169,8 @@ public class SendEmail {
                 for (String toRecipient : toRecipients) {
                     //list of users who do not want emails: TODO: make this a user setting
                     if (toRecipient.equals("nievesn2@erau.edu")) continue;
+                    System.out.println("EMAILING TO: " + toRecipient);
+
                     message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
                 }
 

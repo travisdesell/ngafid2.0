@@ -298,6 +298,7 @@ public final class WebServer {
             String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
                                                 .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
                                                 .append(".\n The exception was: ").append(exception.getMessage()).append("\n")
+                                                .append(".\n The exception (to string): ").append(exception.toString()).append("\n")
                                                 .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
 
             LOG.severe("Exception occurred: " + exception.getMessage());
