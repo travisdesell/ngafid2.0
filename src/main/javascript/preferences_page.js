@@ -21,20 +21,43 @@ class PreferencesPage extends React.Component {
     constructor(props) {
         super(props);
 
+        let airsyncEnabled = false;
+        if (props.airsyncTimeout != -1) {
+            airsyncEnabled = true;
+        }
+
         this.state = {
             fullName : userName,
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount,
             selectedMetrics : userPreferences.flightMetrics,
-            decimalPrecision : userPreferences.decimalPrecision
+            decimalPrecision : userPreferences.decimalPrecision,
+            airsyncEnabled : airsyncEnabled
         };
 
         console.log("this users prefs:");
-        console.log(this.state);
+        console.log(this.props);
     }
 
 
     render() {
+        let adminContent = "";
+        let userName = this.state.fullName + "'s Preferences";
+
+        if (this.props.isAdmin) {
+            if (this.state.airsyncEnabled) {
+                console.log("timeout is: " + this.props.airsyncTimeout);
+                adminContent = (
+                    <AirSyncSettings
+                        isVertical={false}
+                        selectedMetrics={this.state.selectedMetrics}
+                        decimalPrecision={this.state.decimalPrecision}
+                        timeout={this.props.airsyncTimeout}>
+                    </AirSyncSettings>
+                );
+            }
+        }
+
         return (
             <div>
                 <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
@@ -53,11 +76,8 @@ class PreferencesPage extends React.Component {
                                                 selectedMetrics={this.state.selectedMetrics}
                                                 decimalPrecision={this.state.decimalPrecision}>
                                             </MetricViewerSettings>
-                                            <AirSyncSettings
-                                                isVertical={false}
-                                                selectedMetrics={this.state.selectedMetrics}
-                                                decimalPrecision={this.state.decimalPrecision}>
-                                            </AirSyncSettings>
+
+                                            {adminContent}
                                     </div>
                                 </div>
                             </div>
@@ -72,6 +92,6 @@ class PreferencesPage extends React.Component {
 console.log("setting preferences page with react!");
 
 var preferencesPage = ReactDOM.render(
-    <PreferencesPage userPreferences={userPreferences} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
+    <PreferencesPage userPreferences={userPreferences} isAdmin={isAdmin} airsyncTimeout={airsync_timeout} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
    document.querySelector('#preferences-page')
 )

@@ -58,7 +58,7 @@ public class AirSyncAircraft {
     }
 
     public Optional<LocalDateTime> getLastImportTime(Connection connection) throws SQLException {
-        String sql = "SELECT MAX(start_time), fleet_id, identifier FROM uploads WHERE id IN(SELECT upload_id FROM airsync_imports WHERE tail = ?) AND fleet_id = ?";
+        String sql = "SELECT MAX(start_time) FROM uploads AS u JOIN airsync_imports AS imp ON imp.fleet_id = u.fleet_id WHERE imp.tail = ? AND imp.fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
         query.setString(1, this.tailNumber);

@@ -230,7 +230,7 @@ class AirSyncImport extends React.Component {
                     <div className={textClasses } style={styleCount}>{importInfo.tail}</div>
                     {flightNumInfo}
                     <div className={fillClasses} style={styleCount}>Received at: {importInfo.timeReceived}</div>
-                    <div className={fillClasses} style={styleCount}>AirSync ref#{importInfo.id}</div>
+                    <div className={textClasses} style={styleStatus}>AirSync ref#{importInfo.id}</div>
                     <div className={cardClasses} style={styleStatus}>{statusText}</div>
                     <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
 
