@@ -1,6 +1,7 @@
 package org.ngafid.routes;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.logging.Logger;
 
 import java.sql.Connection;
@@ -31,10 +32,10 @@ public class PostImports implements Route {
     }
 
     public static class ImportsResponse {
-        public ArrayList<Upload> imports;
+        public List<Upload> imports;
         public int numberPages;
 
-        public ImportsResponse(ArrayList<Upload> imports, int numberPages) {
+        public ImportsResponse(List<Upload> imports, int numberPages) {
             this.imports = imports;
             this.numberPages = numberPages;
         }
@@ -66,7 +67,7 @@ public class PostImports implements Route {
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
-            ArrayList<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<Upload> imports = Upload.getUploads(connection, fleetId, new String[]{"IMPORTED", "ERROR"}, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
 
             return gson.toJson(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
