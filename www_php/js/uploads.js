@@ -462,5 +462,3 @@ class UploadsCard extends React.Component {
         );
     }
 }
-
-

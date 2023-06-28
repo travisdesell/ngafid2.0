@@ -68,7 +68,7 @@ public class SendEmail {
             } else {
                 bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
 
-                String username = bufferedReader.readLine();
+                username = bufferedReader.readLine();
 
                 if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
@@ -117,6 +117,8 @@ public class SendEmail {
             System.out.println("Emailing has been disabled, not sending email");
             return;
         }
+
+        //System.out.println(String.format("Username: %s, PW: %s", username, password));
 
         if (auth.isValid()) {
             System.out.println("emailing to " + String.join(", ", toRecipients));
@@ -186,8 +188,8 @@ public class SendEmail {
         // Recipient's email ID needs to be mentioned.
 
         ArrayList<String> recipients = new ArrayList<String>();
-        recipients.add("tjdvse@rit.edu");
-        recipients.add("travis.desell@gmail.com");
+        recipients.add("apl1341@rit.edu");
+        recipients.add("aidan@labellahome.org");
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
 
