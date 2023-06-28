@@ -22,6 +22,7 @@ Environment="MAVEN_OPTS=-Xmx4096M"
 Environment="NGAFID_DEV_INSTANCE=false"
 Environment="NGAFID_BACKUP_DIR=/www/ngafid/backups/system"
 Environment="NGAFID_EMAIL_INFO=/www/ngafid/ngafid2.0/email_info"
+Environment="NGAFID_ADMIN_EMAILS=mayurjs26@gmail.com"
 Environment="NGAFID_BACKUP_TABLES='user fleet airframes airframe_types tails user_preferences user_preferences_metrics double_series_names stored_filters string_series_names data_type_names flight_tags sim_aircraft uploads event_annotations loci_event_classes'"
 # This is the number of days to wait to perform another backup
 Environment="NGAFID_BACKUP_INTERVAL=3"
