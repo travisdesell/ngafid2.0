@@ -188,8 +188,9 @@ public class SendEmail {
         // Recipient's email ID needs to be mentioned.
 
         ArrayList<String> recipients = new ArrayList<String>();
-        recipients.add("tjdvse@rit.edu");
-        recipients.add("travis.desell@gmail.com");
+        recipients.add("mayurjs26@gmail.com");
+//        recipients.add("tjdvse@rit.edu");
+//        recipients.add("travis.desell@gmail.com");
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
 

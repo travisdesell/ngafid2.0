@@ -1196,4 +1196,3 @@ public class EventStatistics {
         return eventCounts;
     }
 }
-

@@ -59,8 +59,9 @@ module.exports = {
         event_definitions_display: __dirname + "/src/main/javascript/event_definitions_display.js",
         aggregate_trends : __dirname + "/src/main/javascript/aggregate_trends.js",
         fleet_trends: __dirname+ "/src/main/javascript/fleet_trends.js",
-        // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
 
+        forgot_password: __dirname + "/src/main/javascript/forgot_password.js",
+        // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         ttf: __dirname + "/src/main/javascript/ttf.js"
     },
 
