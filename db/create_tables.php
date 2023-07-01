@@ -7,11 +7,11 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$update_2022_02_17 = true;
+$update_2022_02_17 = false;
 $update_turn_to_final = false;
 $update_visited_airports = false;
 $update_uploads_for_raise = false;
-$update_rate_of_closure = false;
+$update_rate_of_closure = true;
 
 //need to drop and reload these tables for 2020_05_16 changes
 
