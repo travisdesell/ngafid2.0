@@ -3,6 +3,9 @@ import React, { Component, useState } from "react";
 import ReactDOM from "react-dom";
 import $ from "jquery";
 import { navbar } from "./home_navbar.js";
+import {errorModal} from "./error_modal";
+window.jQuery = $;
+window.$ = $;
 
 class ForgotPassword extends React.Component {
     constructor(props) {
@@ -26,6 +29,8 @@ class ForgotPassword extends React.Component {
     }
 
     submit() {
+
+        $("#loading").show();
         var submissionData = {
             email : $("#email").val(),
         };
@@ -37,18 +42,27 @@ class ForgotPassword extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function (response) {
+                $("#loading").hide();
                 console.log(response)
                 if (response.registeredEmail) {
                     forgotPasswordObj.state.validEmail = true;
                     forgotPasswordObj.state.registeredEmail = true;
+                    forgotPasswordObj.setState(forgotPasswordObj);
+                    return true;
                 }
                 else {
                     forgotPasswordObj.state.registeredEmail = false;
                     forgotPasswordObj.state.validEmail = false;
                     forgotPasswordObj.state.error = true;
+                    forgotPasswordObj.setState(forgotPasswordObj);
+                    return false;
                 }
             },
-            async : false
+            error : function(jqXHR, textStatus, errorThrown) {
+                $("#loading").hide();
+                errorModal.show("Error Submitting Account Information", errorThrown);
+            },
+            async : true
         });
         this.setState(forgotPasswordObj);
     }
@@ -80,8 +94,6 @@ class ForgotPassword extends React.Component {
             textAlign: 'left',
             color: 'red'
         };
-
-
         if (this.state.error) {
             validationMessage = "Please enter a registered email address.";
             validationHidden = false;
