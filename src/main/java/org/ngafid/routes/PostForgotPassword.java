@@ -11,12 +11,12 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
-public class PostForgetPassword implements Route {
+public class PostForgotPassword implements Route {
 
-    private static final Logger LOG = Logger.getLogger(PostForgetPassword.class.getName());
+    private static final Logger LOG = Logger.getLogger(PostForgotPassword.class.getName());
     private Gson gson;
 
-    public PostForgetPassword(Gson gson) {
+    public PostForgotPassword(Gson gson) {
         this.gson = gson;
         LOG.info("post " + this.getClass().getName() + " initalized");
     }

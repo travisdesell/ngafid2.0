@@ -190,7 +190,7 @@ public final class WebServer {
 
         //for submitting forgot password request
         Spark.get("/forgot_password", new GetForgotPasswordPage(gson));
-        Spark.post("/forgot_password", new PostForgetPassword(gson));
+        Spark.post("/forgot_password", new PostForgotPassword(gson));
 
         //to reset a password
         Spark.get("/reset_password", new GetResetPassword(gson));
