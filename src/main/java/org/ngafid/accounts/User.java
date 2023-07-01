@@ -745,18 +745,18 @@ public class User {
         boolean useLetters = true;
         boolean useDigits = true;
         String resetPhrase = RandomStringUtils.random(resetPhraseLength, useLetters, useDigits);
-        System.out.println("Reset Phrase : " + resetPhrase);
         updateResetPhrase(connection, email, resetPhrase);
-        String resetPassswordURl = "https://www.ngafid.org/reset_password?resetPhrase="+resetPhrase;
+        String resetPassswordURl = "https://ngafid.rit.edu/reset_password?resetPhrase="+resetPhrase;
         System.out.println("Reset Password URl : " + resetPassswordURl);
         ArrayList<String> recipients = new ArrayList<>();
         recipients.add(email);
         StringBuilder body = new StringBuilder();
-        body.append("<html><body><br>");
-        body.append("<p> Please use the below phrase to reset your NGAFID password </p>");
+        body.append("<html><body>");
+        body.append("<p>Hi,<p><br>");
+        body.append("<p>A password reset was requested for your account<p>");
+        body.append("<p>Please click the below link to change your password.<p>");
         body.append("<p> Password Reset Link : <a href=" + resetPassswordURl + ">Reset Password</a></p><br>");
         body.append("</body></html>");
-        System.out.println(body.toString());
         ArrayList<String> bccRecipients = new ArrayList<>();
         SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString() );
     }

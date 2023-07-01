@@ -31,7 +31,7 @@ class ResetPasswordCard extends React.Component {
     resetPassword(event) {
         event.preventDefault();
 
-        var submissionData = { 
+        var submissionData = {
             emailAddress : this.state.emailAddress,
             passphrase : this.state.passphrase,
             newPassword : this.state.newPassword,
@@ -82,10 +82,6 @@ class ResetPasswordCard extends React.Component {
         this.setState(this.state);
     }
 
-    // changePassphrase(event) {
-    //     this.state.passphrase = event.target.value;
-    //     this.setState(this.state);
-    // }
 
     changeNewPassword(event) {
         this.state.newPassword = event.target.value;
@@ -127,7 +123,6 @@ class ResetPasswordCard extends React.Component {
         };
 
         let emailAddress = this.state.emailAddress;
-        let passphrase = this.state.passphrase;
         let newPassword = this.state.newPassword;
         let confirmPassword = this.state.confirmPassword;
 
@@ -148,10 +143,6 @@ class ResetPasswordCard extends React.Component {
 
         } else if (!emailRe.test(emailAddress)) {
             passwordValidationMessage = "Email address was not valid.";
-            passwordValidationHidden = false;
-
-        } else if (passphrase.length == 0) {
-            passwordValidationMessage = "Please enter the passphrase that was emailed to you.";
             passwordValidationHidden = false;
 
         } else if (newPassword.length == 0) {
@@ -201,18 +192,6 @@ class ResetPasswordCard extends React.Component {
                                     </div>
                                 </div>
                             </div>
-
-                            {/*<div className="form-group" style={formGroupStyle}>*/}
-                            {/*    <div className="d-flex">*/}
-                            {/*        <div className="p-2" style={formHeaderStyle}>*/}
-                            {/*            <label htmlFor="resetPassphrase" style={labelStyle}>Reset Passphrase</label>*/}
-                            {/*        </div>*/}
-                            {/*        <div className="p-2 flex-fill">*/}
-                            {/*            <input type="text" className="form-control" id="resetPassphrase" aria-describedby="passphraseHelp" placeholder="Enter Reset Passphrase" onChange={(event) => this.changePassphrase(event)}/>*/}
-                            {/*        </div>*/}
-                            {/*    </div>*/}
-                            {/*</div>*/}
-
                             <div className="d-flex">
                                 <div className="p-2" style={formHeaderStyle}>
                                     <label htmlFor="createPassword" style={labelStyle}>New Password</label>
