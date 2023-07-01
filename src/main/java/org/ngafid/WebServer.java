@@ -95,6 +95,7 @@ public final class WebServer {
         //----- FOR HTTPS ONLY -----
         if (port == 8443 || port == 443) {
             LOG.info("HTTPS Detected, using a keyfile");
+            System.out.println("keyfile: " + System.getenv("HTTPS_CERT_PATH"));
             Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
 
             // Make sure we redirect all HTTP traffic to HTTPS now

@@ -24,6 +24,9 @@ import org.ngafid.flights.AirSyncImport;
 import com.google.gson.Gson;
 import com.google.gson.reflect.*;
 
+/**
+ * This is a representation of an AirSync enabled fleet in the NGAFID
+ */
 public class AirSyncFleet extends Fleet {
     private AirSyncAuth authCreds;
     private List<AirSyncAircraft> aircraft;
@@ -41,6 +44,15 @@ public class AirSyncFleet extends Fleet {
 
     private static final Gson gson = WebServer.gson;
 
+    /**
+     * Default constructor 
+     *
+     * @param id the fleet id
+     * @param name this fleet's name
+     * @param airSyncAuth the credentials for this fleet
+     * @param lastQueryTime the last time this fleet was synced with AirSync
+     * @param timeout how long the fleet is set to wait before checking for updates again
+     */
     public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastQueryTime, int timeout) {
         super(id, name);
         this.authCreds = airSyncAuth;
@@ -53,6 +65,11 @@ public class AirSyncFleet extends Fleet {
         }
     }
 
+    /**
+     * Private constructor for instantiation within this class
+     *
+     * @param resultSet a SQL ResultSet that has information from a query for the fleet requested.
+     */
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
         this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
@@ -107,9 +124,6 @@ public class AirSyncFleet extends Fleet {
         return false;
     }
 
-
-
-
     /**
      * Semaphore-style (V) mutex that allows for an entity (i.e. the daemon or user) to 
      * ask AirSync for updates
@@ -120,14 +134,14 @@ public class AirSyncFleet extends Fleet {
      *
      * @throws SQLException if the DMBS has an issue
      */
-     public void unlock(Connection connection) throws SQLException {
-        String sql = "UPDATE airsync_fleet_info SET mutex = 0 WHERE fleet_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
+    public void unlock(Connection connection) throws SQLException {
+       String sql = "UPDATE airsync_fleet_info SET mutex = 0 WHERE fleet_id = ?";
+       PreparedStatement query = connection.prepareStatement(sql);
 
-        query.setInt(1, super.getId());
-        query.executeUpdate();
+       query.setInt(1, super.getId());
+       query.executeUpdate();
 
-        query.close();
+       query.close();
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
@@ -221,6 +235,14 @@ public class AirSyncFleet extends Fleet {
         return formattedString;
     }
 
+    /**
+     * Determines if the fleet is "out of data" i.e., is the last time we checked with airsync longer 
+     * ago than the timeout specified?
+     *
+     * @param connection the DBMS connection
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
         return (Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection));
     }
@@ -294,10 +316,25 @@ public class AirSyncFleet extends Fleet {
         }
     }
 
+    /**
+     * Sets the last query time of the fleet to now
+     *
+     * @param connection the DBMS connection
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     public void setLastQueryTime(Connection connection) throws SQLException {
         this.setLastQueryTime(LocalDateTime.now(), connection);
     }
 
+    /**
+     * Sets the last query time for this fleet
+     *
+     * @param time the time that the fleet was last queried
+     * @param connection the DBMS connection
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     public void setLastQueryTime(LocalDateTime time, Connection connection) throws SQLException {
         String sql = "UPDATE airsync_fleet_info SET last_upload_time = CURRENT_TIMESTAMP WHERE fleet_id = ?";
 
@@ -313,6 +350,13 @@ public class AirSyncFleet extends Fleet {
         this.lastQueryTime = null;
     }
 
+    /**
+     * Checks to see if the authentication string os out of date and requests a new one if it is.
+     * This should always be used to access the credentials of the fleet for the AirSync server.
+     * Otherwise, exceptions may be thrown when using an out of data auth object.
+     *
+     * @return an unexpired {@link AirSyncAuth} instance
+     */
     public AirSyncAuth getAuth() {
         if (this.authCreds.isOutdated()) {
             LOG.info("Bearer token is out of date. Requesting a new one.");
@@ -322,6 +366,11 @@ public class AirSyncFleet extends Fleet {
         return this.authCreds;
     }
 
+    /**
+     * Gets all the AirSync aircraft that belong to this fleet
+     *
+     * @return a {@link List} of the {@link AirSyncAircraft} in this fleet.
+     */
     public List<AirSyncAircraft> getAircraft() {
         if (aircraft == null) {
             try {
@@ -348,6 +397,15 @@ public class AirSyncFleet extends Fleet {
         return this.aircraft;
     }
 
+    /**
+     * Gets all AirSync fleets in an array
+     *
+     * @param connection the DBMS connection
+     *
+     * @return an array of {@link AirSyncFleet}
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     public static AirSyncFleet [] getAll(Connection connection) throws SQLException {
         String sql = "SELECT COUNT(*) FROM airsync_fleet_info";
         PreparedStatement query = connection.prepareStatement(sql);
@@ -383,6 +441,15 @@ public class AirSyncFleet extends Fleet {
         return fleets;
     }
 
+    /**
+     * Gets a list of the processed flight ids for this fleet that are from AirSync
+     *
+     * @param connection the dbms connection
+     *
+     * @return a {@link List} of {@link Integer} with the ids of the processed imports
+     *
+     * @throws SQLException if there is a DBMS issue
+     */
     private List<Integer> getProcessedIds(Connection connection) throws SQLException {
         String sql = "SELECT id FROM airsync_imports WHERE fleet_id = ?";
         PreparedStatement query = connection.prepareStatement(sql);
