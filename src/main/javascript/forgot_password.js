@@ -43,18 +43,17 @@ class ForgotPassword extends React.Component {
             dataType : 'json',
             success : function (response) {
                 $("#loading").hide();
-                console.log(response)
                 if (response.registeredEmail) {
                     forgotPasswordObj.state.validEmail = true;
                     forgotPasswordObj.state.registeredEmail = true;
-                    forgotPasswordObj.setState(forgotPasswordObj);
+                    forgotPasswordObj.setState(forgotPasswordObj.state);
                     return true;
                 }
                 else {
                     forgotPasswordObj.state.registeredEmail = false;
                     forgotPasswordObj.state.validEmail = false;
                     forgotPasswordObj.state.error = true;
-                    forgotPasswordObj.setState(forgotPasswordObj);
+                    forgotPasswordObj.setState(forgotPasswordObj.state);
                     return false;
                 }
             },
