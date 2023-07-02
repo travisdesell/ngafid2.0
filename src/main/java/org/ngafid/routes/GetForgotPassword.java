@@ -14,12 +14,12 @@ import java.io.StringWriter;
 import java.util.HashMap;
 import java.util.logging.Logger;
 
-public class GetForgotPasswordPage implements Route {
+public class GetForgotPassword implements Route {
 
-    private static final Logger LOG = Logger.getLogger(GetForgotPasswordPage.class.getName());
+    private static final Logger LOG = Logger.getLogger(GetForgotPassword.class.getName());
     private Gson gson;
 
-    public GetForgotPasswordPage(Gson gson) {
+    public GetForgotPassword(Gson gson) {
         this.gson = gson;
         LOG.info("GET " + this.getClass().getName() + " initalized");
     }
