@@ -10,9 +10,10 @@ class ResetPasswordCard extends React.Component {
     constructor(props) {
         super(props);
         const urlParams = new URLSearchParams(window.location.search);
+        let passPhrase = urlParams.get("resetPhrase");
         this.state = {
             emailAddress : "",
-            passphrase : urlParams.get("resetPhrase"),
+            passphrase : passPhrase,
             newPassword : "",
             confirmPassword : ""
         };

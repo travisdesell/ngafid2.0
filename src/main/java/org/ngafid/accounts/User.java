@@ -739,15 +739,15 @@ public class User {
         return user;
     }
 
-    public static void sendPasswordResetEmail(Connection connection, String email) throws SQLException{
+    public static void sendPasswordResetEmail(Connection connection, String email) throws SQLException {
 
         int resetPhraseLength = 10;
         boolean useLetters = true;
         boolean useDigits = true;
         String resetPhrase = RandomStringUtils.random(resetPhraseLength, useLetters, useDigits);
         updateResetPhrase(connection, email, resetPhrase);
-        String resetPassswordURl = "https://ngafid.rit.edu/reset_password?resetPhrase="+resetPhrase;
-        System.out.println("Reset Password URl : " + resetPassswordURl);
+        String resetPassswordURL = "https://ngafid.org/reset_password?resetPhrase="+resetPhrase;
+        System.out.println("Reset Password URl : " + resetPassswordURL);
         ArrayList<String> recipients = new ArrayList<>();
         recipients.add(email);
         StringBuilder body = new StringBuilder();
@@ -755,7 +755,7 @@ public class User {
         body.append("<p>Hi,<p><br>");
         body.append("<p>A password reset was requested for your account<p>");
         body.append("<p>Please click the below link to change your password.<p>");
-        body.append("<p> Password Reset Link : <a href=" + resetPassswordURl + ">Reset Password</a></p><br>");
+        body.append("<p> Password Reset Link : <a href=" + resetPassswordURL + ">Reset Password</a></p><br>");
         body.append("</body></html>");
         ArrayList<String> bccRecipients = new ArrayList<>();
         SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString() );

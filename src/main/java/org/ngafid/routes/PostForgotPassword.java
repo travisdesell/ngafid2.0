@@ -43,7 +43,6 @@ public class PostForgotPassword implements Route {
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);
                 return gson.toJson(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true));
-
             }
             else {
                 LOG.info("User with email : "  + email +  " doesn't exist.");
