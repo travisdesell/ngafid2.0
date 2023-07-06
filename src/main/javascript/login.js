@@ -3,7 +3,6 @@ import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
-
 import $ from 'jquery';
 window.jQuery = $;
 window.$ = $;
@@ -214,6 +213,12 @@ class LoginModal extends React.Component {
                             </div>
                         <div className="p-2 flex-fill">
                             <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
+                        </div>
+                    </div>
+
+                    <div className="d-flex justify-content-end">
+                        <div className="p-2">
+                            <a href="/forgot_password">Forgot Password?</a>
                         </div>
                     </div>
 
