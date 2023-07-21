@@ -17,6 +17,11 @@ public class Fleet {
     private int id = -1;
     String name;
 
+    public Fleet(int id, String name) {
+        this.id = id;
+        this.name = name;
+    }
+
     /**
      * A list of all users who have access (or are requesting access) to this fleet.
      */
@@ -118,11 +123,7 @@ public class Fleet {
 
         if (!resultSet.next()) return null;
 
-        Fleet fleet = new Fleet();
-        fleet.id = id;
-        fleet.name = resultSet.getString(1);
-
-        return fleet;
+        return new Fleet(id, resultSet.getString(1));
     }
 
     /**
@@ -144,11 +145,33 @@ public class Fleet {
 
         if (!resultSet.next()) return null;
 
-        Fleet fleet = new Fleet();
-        fleet.id = resultSet.getInt(1);
-        fleet.name = name;
+        return new Fleet(resultSet.getInt(1), name);
+    }
 
-        return fleet;
+    /**
+     * Used to determine if AirSync-specific features apply to this fleet.
+     *
+     * @param connection the DBMS connection
+     *
+     * @return true if there is a tuple in the `airsync_fleet_info` table,
+     * this indicates that the fleet is AirSync-ready
+     *
+     * @throws SQLException if there are DBMS issues
+     */
+    public boolean hasAirsync(Connection connection) throws SQLException {
+        String sql = "SELECT 1 FROM airsync_fleet_info WHERE fleet_id = ?";
+        PreparedStatement query = connection.prepareStatement(sql);
+
+        query.setInt(1, this.id);
+
+        ResultSet rs = query.executeQuery();
+
+        if (rs.next()) {
+            return true;
+        }
+
+        return false;
+
     }
 
     /**
@@ -221,15 +244,19 @@ public class Fleet {
 
         ResultSet resultSet = query.getGeneratedKeys();
 
-        Fleet fleet = new Fleet();
+        Fleet fleet = null;
+
         if (resultSet.next()) {
-            fleet.id = resultSet.getInt(1);
-            fleet.name = name;
+            fleet = new Fleet(resultSet.getInt(1), name);
         } else {
             LOG.severe("Database Error: Could not get id of new fleet from database after insert.");
             throw new AccountException("Database Error", "Could not get id of new fleet from database after insert.");
         }
 
         return fleet;
+    }
+
+    public String toString() {
+        return "Fleet id: " + this.getId() + " name: " + this.getName() + ";";
     }
 }

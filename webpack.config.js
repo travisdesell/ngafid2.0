@@ -38,6 +38,8 @@ module.exports = {
         update_password: __dirname + "/src/main/javascript/update_password.js",
         reset_password: __dirname + "/src/main/javascript/reset_password.js",
         update_profile: __dirname + "/src/main/javascript/update_profile.js",
+        airsync_uploads: __dirname + "/src/main/javascript/airsync_uploads.js",
+        airsync_imports: __dirname + "/src/main/javascript/airsync_imports.js",
         uploads: __dirname + "/src/main/javascript/uploads.js",
         imports: __dirname + "/src/main/javascript/imports.js",
         flights: __dirname + "/src/main/javascript/flights.js",
@@ -57,8 +59,8 @@ module.exports = {
         event_definitions_display: __dirname + "/src/main/javascript/event_definitions_display.js",
         aggregate_trends : __dirname + "/src/main/javascript/aggregate_trends.js",
         fleet_trends: __dirname+ "/src/main/javascript/fleet_trends.js",
+        forgot_password: __dirname + "/src/main/javascript/forgot_password.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
-
         ttf: __dirname + "/src/main/javascript/ttf.js"
     },
 

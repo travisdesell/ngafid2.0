@@ -188,6 +188,10 @@ public final class WebServer {
         Spark.get("/create_account", new GetCreateAccount(gson));
         Spark.post("/create_account", new PostCreateAccount(gson));
 
+        //for submitting forgot password request
+        Spark.get("/forgot_password", new GetForgotPassword(gson));
+        Spark.post("/forgot_password", new PostForgotPassword(gson));
+
         //to reset a password
         Spark.get("/reset_password", new GetResetPassword(gson));
         Spark.post("/reset_password", new PostResetPassword(gson));
@@ -218,9 +222,15 @@ public final class WebServer {
         Spark.post("/protected/update_password", new PostUpdatePassword(gson));
 
         Spark.get("/protected/uploads", new GetUploads(gson));
+        Spark.get("/protected/airsync_uploads", new GetAirSyncUploads(gson));
+        Spark.post("/protected/airsync_uploads", new PostAirSyncUploads(gson));
         Spark.post("/protected/remove_upload", new PostRemoveUpload(gson));
 
         Spark.get("/protected/imports", new GetImports(gson));
+        Spark.get("/protected/airsync_imports", new GetAirSyncImports(gson));
+        Spark.post("/protected/airsync_update", new PostManualAirSyncUpdate(gson));
+        Spark.post("/protected/airsync_imports", new PostAirSyncImports(gson));
+        Spark.post("/protected/airsync_settings", new PostUpdateAirSyncTimeout(gson));
         Spark.post("/protected/upload_details", new PostUploadDetails(gson));
 
         Spark.post("/protected/uploads", new PostUploads(gson));
