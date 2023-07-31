@@ -77,7 +77,12 @@ public class FlightBuilder {
         // Add all of our processing steps here...
         // The order doesn't matter; the DependencyGraph will resolve
         // the order in the event that there are dependencies.
-        return processSteps.stream().map(factory -> factory.create(connection, this)).collect(Collectors.toList());
+        return processSteps.stream().map(factory -> factory.create(connection, this))
+          .filter(step -> 
+              step.getOutputColumns()
+              .stream()
+              .anyMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x))
+          ).collect(Collectors.toList());
     }
 
     // throws a flight processing exception if an unrecoverable error occurred.

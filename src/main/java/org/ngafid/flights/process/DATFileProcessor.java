@@ -14,6 +14,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
@@ -51,8 +52,8 @@ public class DATFileProcessor extends FlightFileProcessor {
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
         try {
             convertAndInsert();
-            stream.
-            List<InputStream> inputStreams = duplicateInputStream(stream, 2);
+            InputStream csvFileStream = new FileInputStream(processedCSVFile);
+            List<InputStream> inputStreams = duplicateInputStream(csvFileStream, 2);
             Map<Integer, String> indexedCols = new HashMap<>();
             Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
             Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
@@ -426,7 +427,12 @@ public class DATFileProcessor extends FlightFileProcessor {
         int i = 0;
         for (String col : cols) {
             indexedCols.put(i++, col);
-            String category = col.split(":")[0];
+            String[] splitCol = col.split(":");
+
+            // Format of a column is roughly:
+            // <CATEGORY>:<TYPE>:<SUBNAME>
+            // where :<SUBNAME> is optional.
+            String category = splitCol[0];
 
             if (category.contains("(")) {
                 category = category.substring(0, category.indexOf("("));
@@ -435,7 +441,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             switch (category) {
                 case "IMU_ATTI":
                 case "IMUEX":
-                    handleIMUDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
+                    handleIMUDataType(col, splitCol[1], doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
                 case "GPS":
                     handleGPSDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
@@ -447,6 +453,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                     break;
 
                 case "Motor":
+                case "MotorCtrl":
                     handleMotorDataType(col, doubleTimeSeriesMap, stringTimeSeriesMap);
                     break;
 
@@ -493,6 +500,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         Map.entry("barometer", "atm"),
         Map.entry("Long", "degrees"),
         Map.entry("Lat", "degrees"),
+        Map.entry("height", "ft"),
         Map.entry("DOP", "DOP Value"),
         Map.entry("Date", "Date"),
         Map.entry("Time", "Time"),
@@ -505,22 +513,38 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
      */
-    private static void handleIMUDataType(String colName, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
-        String dataType = DATA_TYPE_MAP.get(colName);
+    private static void handleIMUDataType(String col, String dataType, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
+        String unit = getBestUnitMatch(col);
 
-        if (dataType == null) {
-            if (colName.contains("err")) {
-                stringTimeSeriesMap.put("IMUEX(0):err", new StringTimeSeries("IMUEX Error", "error"));
+        if (unit == null) {
+            if (col.contains("err")) {
+                stringTimeSeriesMap.put(col, new StringTimeSeries("IMUEX Error", "error"));
                 return;
             }
 
-            dataType = "number";
-            if (!colName.contains("num")) {
-                LOG.log(Level.WARNING, "IMU Unknown data type: {0}", colName);
+            unit = "number";
+            if (!col.contains("num")) {
+                LOG.log(Level.WARNING, "IMU Unknown data type: {0}", col);
             }
         }
 
-        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
+        doubleTimeSeriesMap.put(col, new DoubleTimeSeries(col, dataType));
+    }
+
+    private static String getBestUnitMatch(String col) {
+        Set<String> units =
+            DATA_TYPE_MAP.keySet().stream()
+                .filter(key -> col.contains(key))
+                .collect(Collectors.toSet());
+        String unit = null;
+        if (units.size() == 1) {
+            for (String u : units)
+                unit = u;
+        } else if (units.size() > 1) {
+            unit = units.stream().max(Comparator.comparingInt(String::length)).get();
+        }
+
+        return unit;
     }
 
     /**
@@ -534,17 +558,17 @@ public class DATFileProcessor extends FlightFileProcessor {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "yyyy-mm-ddThh:mm:ssZ"));
             return;
         }
-        
-        String dataType = DATA_TYPE_MAP.get(colName);
+       
+        String unit = getBestUnitMatch(colName);
 
-        if (dataType == null) {
-            dataType = "number";
+        if (unit == null) {
+            unit = "number";
             if (!colName.contains("num")) {
                 LOG.log(Level.WARNING, "GPS Unknown data type: {0}", colName);
             }
         }
 
-        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, dataType));
+        doubleTimeSeriesMap.put(colName, new DoubleTimeSeries(colName, unit));
     }
 
     /**
@@ -570,6 +594,8 @@ public class DATFileProcessor extends FlightFileProcessor {
             dataType = "Percentage";
         } else if (lowerColName.contains("time")) {
             dataType = "seconds";
+        } else if (lowerColName.contains("status")) {
+            dataType = "Battery Status";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
         }
@@ -586,8 +612,8 @@ public class DATFileProcessor extends FlightFileProcessor {
         if (colName.contains("lowVoltage")) {
             stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Low Voltage"));
             return;
-        } else if (colName.contains("status")) {
-            stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Battery Status"));
+        } else if (colName.contains("status") || colName.contains("Status")) {
+            stringTimeSeriesMap.put(colName, new StringTimeSeries(colName, "Motor Status"));
             return;
         }
 
@@ -606,7 +632,9 @@ public class DATFileProcessor extends FlightFileProcessor {
         } else if (colName.contains("Status")) {
             dataType = "Status Number";
         } else if (colName.contains("Hz")) {
-            dataType = "Status Number";
+            dataType = "Hz";
+        } else if (colName.contains("PWM")) {
+            dataType = "PWM Reading";
         } else {
             LOG.log(Level.WARNING, "Battery Unknown data type: {0}", colName);
         }

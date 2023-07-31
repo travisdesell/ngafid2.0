@@ -168,7 +168,7 @@ public abstract class FlightFileProcessor {
 
     protected final Connection connection;
     protected final InputStream stream;
-    protected final String filename;convertedFile
+    protected final String filename;
 
     public FlightFileProcessor(Connection connection, InputStream stream, String filename) {
         this.connection = connection;

@@ -90,6 +90,10 @@ public final class WebServer {
 
         LOG.info("NGAFID WebServer is initializing.");
 
+        if (System.getenv().containsKey("SERVER_ADDRESS")) {
+            Spark.ipAddress(System.getenv("SERVER_ADDRESS"));
+        }
+
         // Get the port for the NGAFID webserver to listen on
         int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
         Spark.port(port);
