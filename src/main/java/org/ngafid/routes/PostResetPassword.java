@@ -1,11 +1,8 @@
 package org.ngafid.routes;
 
-import java.util.ArrayList;
 import java.util.logging.Logger;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -16,7 +13,6 @@ import spark.Response;
 
 import org.ngafid.Database;
 import org.ngafid.accounts.AccountException;
-import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
 
 public class PostResetPassword implements Route {
