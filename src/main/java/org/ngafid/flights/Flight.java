@@ -2598,67 +2598,118 @@ public class Flight {
         ArrayList<String> headers = (ArrayList<String>) jsonMap.get("details_headers");
         ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
         int len = headers.size();
-        
-        Map<String, String> doubleUnitMap = new HashMap<>();     
-        doubleUnitMap.put("time", "milliseconds");
-        doubleUnitMap.put("battery_level", "percentage");
-        doubleUnitMap.put("controller_gps_latitude","degrees");
-        doubleUnitMap.put("controller_gps_longitude","degrees");
-        doubleUnitMap.put("flying_state","flying_state");
-        doubleUnitMap.put("alert_state","alert_state");
-        doubleUnitMap.put("wifi_signal", "dBm");
-        doubleUnitMap.put("Latitude","degrees");
-        doubleUnitMap.put("Longitude","degrees");
-        doubleUnitMap.put("product_gps_position_error","unknown");
-        doubleUnitMap.put("product_gps_sv_number","unknown");
-        doubleUnitMap.put("speed_vx","kt");
-        doubleUnitMap.put("speed_vy","kt");
-        doubleUnitMap.put("speed_vz","kt"); 
-        doubleUnitMap.put("angle_phi","degrees");
-        doubleUnitMap.put("angle_theta","degrees");
-        doubleUnitMap.put("angle_psi","degrees");
-        doubleUnitMap.put("AltAGL","ft");
-        doubleUnitMap.put("flip_type","unknown");
-        doubleUnitMap.put("GndSpd","kt");
-
-        Map<String, String> stringUnitMap  = new HashMap<>();
-
-        stringUnitMap.put("product_gps_available","boolean");
 
         Map<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringSeries = new HashMap<>();
+
+        String dataType = ""; 
+
+        for(String column: headers) {
+            switch (column) {
+
+                case "altitude":
+                case "product_gps_latitude":
+                case "product_gps_longitude":
+                case "speed":
+                    break;
+
+                case "time":
+                    dataType = "milliseconds";
+                    break;
+                
+                case "battery_level":
+                    dataType = "percentage";
+                    break;   
+                
+                case "controller_gps_latitude":
+                    dataType = "degrees";
+                    break;
+                
+                case "controller_gps_longitude":
+                    dataType = "degrees";
+                    break; 
+                
+                case "flying_state":
+                    dataType = "flying_state";
+                    break;
+                
+                case "alert_state":
+                    dataType = "alert_state";
+                    break;   
+                
+                case "wifi_signal":
+                    dataType = "dBm";
+                    break;
+                
+                case "Latitude":
+                    dataType = "degrees";
+                    break; 
+
+                case "Longitude":
+                    dataType = "degrees";
+                    break;
+                
+                case "speed_vx":
+                    dataType = "kt";
+                    break;   
+                
+                case "speed_vy":
+                    dataType = "kt";
+                    break;
+                
+                case "speed_vz":
+                    dataType = "kt";
+                    break; 
+                
+                case "angle_phi":
+                    dataType = "degrees";
+                    break;
+                
+                case "angle_theta":
+                    dataType = "degrees";
+                    break;   
+                
+                case "angle_psi":
+                    dataType = "degrees";
+                    break;
+                
+                case "AltAGL":
+                    dataType = "ft";
+                    break;
+
+                case "GndSpd":
+                    dataType = "kt";
+                    break;
+
+                case "product_gps_available":
+                    dataType = "boolean";
+                    break;
+                
+                default:
+                    dataType = "unknown" ;
+                    break;       
+                
+            }
+        }
 
         for (String column : headers) {
             
             if (column.equals("altitude") || column.equals("product_gps_latitude") || column.equals("product_gps_longitude") || column.equals("speed")) {
                 continue;   
             }
-
-            if (doubleUnitMap.containsKey(column)) {
-
-                String unit = doubleUnitMap.get(column);
-                DoubleTimeSeries dseries = new DoubleTimeSeries(connection, column, unit, len);
-                doubleSeries.put(column, dseries);
-
-            } else if (stringUnitMap.containsKey(column)) {
-            
-                String unit = stringUnitMap.get(column);
-                StringTimeSeries sseries = new StringTimeSeries(connection, column, unit);
-                stringSeries.put(column, sseries);
-            
-            } else {
+            else {
         
                 int dataIndex = headers.indexOf(column);
                 Object data = lines.get(0).get(dataIndex);
 
                 if (data instanceof Double) {
 
-                    DoubleTimeSeries series = new DoubleTimeSeries(connection, column, "Unknown", len);
+                    DoubleTimeSeries series = new DoubleTimeSeries(connection, column, dataType, len);
                     doubleSeries.put(column, series);
 
                 } else {
             
-                    StringTimeSeries series = new StringTimeSeries(connection, column, "Unknown");
+                    StringTimeSeries series = new StringTimeSeries(connection, column, dataType);
                     stringSeries.put(column, series);
 
                 }
@@ -2755,13 +2806,11 @@ public class Flight {
                     default: 
                        
                         if ((line.get(i) instanceof Double) || doubleSeries.containsKey(column)) {
-                            
-                            String unit = doubleUnitMap.getOrDefault(column, "unknown");
                             DoubleTimeSeries dseries = doubleSeries.get(column);
                            
                             if (dseries == null) {
                               
-                               dseries = new DoubleTimeSeries(connection, column, unit, len);
+                               dseries = new DoubleTimeSeries(connection, column, dataType, len);
                                doubleSeries.put(column, dseries);
 
                             } 
@@ -2770,12 +2819,11 @@ public class Flight {
 
                         } else {
 
-                            String unit = stringUnitMap.getOrDefault(column, "unknown");
                             StringTimeSeries strSeries = stringSeries.get(column);
 
                             if (strSeries == null) {
 
-                               strSeries = new StringTimeSeries(connection, column, unit);
+                               strSeries = new StringTimeSeries(connection, column, dataType);
                                stringSeries.put(column, strSeries);
 
                             }
