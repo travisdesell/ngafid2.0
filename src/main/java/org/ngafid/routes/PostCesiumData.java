@@ -1,46 +1,35 @@
 package org.ngafid.routes;
 
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.util.Arrays;
-import java.util.ArrayList;
-import java.util.HashMap;
-
-import java.util.logging.Logger;
-
-import java.sql.Connection;
-import java.sql.SQLException;
-
 import com.google.gson.Gson;
-
-import com.github.mustachejava.DefaultMustacheFactory;
-import com.github.mustachejava.Mustache;
-import com.github.mustachejava.MustacheFactory;
-
-import org.ngafid.common.TimeUtils;
+import org.ngafid.Database;
+import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
-import spark.Route;
 import spark.Request;
 import spark.Response;
+import spark.Route;
 import spark.Session;
 import spark.Spark;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.logging.Logger;
 
-import org.ngafid.Database;
-import org.ngafid.WebServer;
-import org.ngafid.accounts.User;
-import org.ngafid.flights.Flight;
-import org.ngafid.flights.DoubleTimeSeries;
+public class PostCesiumData implements Route {
 
-import java.util.*;
-
-public class GetNgafidCesium implements Route {
     private static final Logger LOG = Logger.getLogger(GetNgafidCesium.class.getName());
     private Gson gson;
 
-    private static String CESIUM_DATA = "cesium_data";
+    public PostCesiumData(Gson gson) {
+        this.gson = gson;
+
+        LOG.info("get " + this.getClass().getName() + " initalized");
+    }
 
     public static class CesiumResponse {
         ArrayList<Double> flightGeoAglTaxiing;
@@ -84,14 +73,11 @@ public class GetNgafidCesium implements Route {
         }
     }
 
-    public GetNgafidCesium(Gson gson) {
-        this.gson = gson;
-        LOG.info("post " + this.getClass().getName() + " initialized");
-    }
-
     @Override
-    public Object handle(Request request, Response response) {
+    public Object handle(Request request, Response response) throws Exception {
+
         LOG.info("handling " + this.getClass().getName() + " route");
+
 
         String flightIdStr = request.queryParams("flight_id");
         LOG.info("getting information for flight id: " + flightIdStr);
@@ -134,7 +120,6 @@ public class GetNgafidCesium implements Route {
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
             Map<String, Object> flights = new HashMap<String, Object>();
-            String cesiumData = "";
             for (String flightIdNew : flightIdsAll) {
                 Flight incomingFlight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightIdNew));
                 int flightIdNewInteger = Integer.parseInt(flightIdNew);
@@ -267,34 +252,15 @@ public class GetNgafidCesium implements Route {
                 for (Event event : events) {
                     System.out.println(event);
                 }
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType, events);
-                cesiumData = "var cesium_data_new = " + gson.toJson(cr) + ";\n";
+                GetNgafidCesium.CesiumResponse cr = new GetNgafidCesium.CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType, events);
                 flights.put(flightIdNew, cr);
             }
 
-            scopes.put(CESIUM_DATA, gson.toJson(flights));
-            scopes.put("cesium_data_js", gson.toJson(cesiumData));
-
-            // This is for webpage section
-            String resultString = "";
-            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ngafid_cesium_new.html";
-            LOG.severe("template file: '" + templateFile + "'");
-
-            MustacheFactory mf = new DefaultMustacheFactory();
-            Mustache mustache = mf.compile(templateFile);
-
-            StringWriter stringOut = new StringWriter();
-            mustache.execute(new PrintWriter(stringOut), scopes).flush();
-
-            return stringOut.toString();
+            return gson.toJson(flights);
 
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
 
-        return "";
     }
 }
-

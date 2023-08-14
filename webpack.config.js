@@ -1,17 +1,23 @@
+
 const webpack = require('webpack');
-const HtmlWebPackPlugin = require("html-webpack-plugin");
+// const HtmlWebPackPlugin = require("html-webpack-plugin");
 var path = require('path');
+const HtmlPlugin = require("html-webpack-plugin");
+const HtmlTagsPlugin = require("html-webpack-tags-plugin");
+const CopyWebpackPlugin = require("copy-webpack-plugin");
 
 module.exports = {
-    watch: true,
 
+    watch: true,
     resolve: {
         fallback: {
             fs: false,
             path: false,
         }
     },
-
+    externals: {
+        cesium: "Cesium"
+    },
     /*
     node: {
         fs: 'empty'
@@ -60,6 +66,7 @@ module.exports = {
         aggregate_trends : __dirname + "/src/main/javascript/aggregate_trends.js",
         fleet_trends: __dirname+ "/src/main/javascript/fleet_trends.js",
         forgot_password: __dirname + "/src/main/javascript/forgot_password.js",
+        ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         ttf: __dirname + "/src/main/javascript/ttf.js"
     },
@@ -103,7 +110,8 @@ module.exports = {
                 test: /\.mjs$/,
                 include: /node_modules/,
                 type: "javascript/auto",
-            }
+            },
+
         ]
     },
 
@@ -113,7 +121,25 @@ module.exports = {
             jQuery: "jquery",
             'window.jQuery': 'jquery',
             Popper: ['popper.js', 'default']
-        })
+        }),
+        new CopyWebpackPlugin({
+            patterns: [
+                {
+                    from: "node_modules/cesium/Build/Cesium",
+                    to: "cesium",
+                },
+            ],
+        }),
+        new HtmlPlugin({
+            template: "src/main/resources/public/templates/ngafid_cesium_new.html",
+        }),
+        new HtmlTagsPlugin({
+            append: false,
+            tags: ["cesium/Widgets/widgets.css", "cesium/Cesium.js"],
+        }),
+        new webpack.DefinePlugin({
+            CESIUM_BASE_URL: JSON.stringify("/cesium"),
+        }),
 
         /*
         new HtmlWebPackPlugin({
