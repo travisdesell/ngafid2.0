@@ -17,6 +17,7 @@
         var plotMapHidden = true;
         {{{navbar_js}}}
         {{{events_js}}}
+        {{{cesium_data_js}}}
     </script>
 
     <style>
@@ -113,11 +114,19 @@
             left: 10px;
         }
 
+
         #toggle-path-color {
             z-index: 0;
             position: absolute;
             top: 8px;
             left: 215px;
+        }
+
+        #events-dropdown {
+            z-index: 0;
+            position: absolute;
+            top: 10px;
+            left: 800px;
         }
     </style>
 
@@ -142,6 +151,12 @@
         </select>
     </div>
 
+    <div id="events-dropdown" class="cesium-button">
+        <div id = "events-dropdown-content">
+            Events
+        </div>
+    </div>
+    
     <div id="toggle-path-color">
         <select class="cesium-button" id="color-options">
             <option value="0">Select Current Flight Path Color</option>
@@ -157,7 +172,6 @@
         </select>
          <button class="cesium-button" onClick="toggleAirframeLockCamera()">Toggle Camera</button>
                 <button class="cesium-button" onClick="window.location.reload();"> Refresh Cesium </button>
-
     </div>
 
 <!--        <script src = "src/main/javascript/cesium_page.js">-->
@@ -179,7 +193,10 @@
 
         viewer.scene.globe.depthTestAgainstTerrain = true;
 
+
         var scopes = {{{ cesium_data }}};
+        console.log("Cesium data");
+        console.log(scopes);
         var keys = Object.keys(scopes);
         var today = new Date();
 
@@ -294,7 +311,8 @@
         async function loadModel(airframe) {
             const pathColor = Cesium.Color.fromRandom();
             const model = airframeModels[airframe];
-
+            console.log("position property : ");
+            console.log(positionProperty);
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -323,6 +341,9 @@
                 let flightId = keys[i];
                 let InfoAglDemo = scopes[flightId].flightGeoInfoAgl;
                 let InfoAglDemoTimes = scopes[flightId].flightAglTimes;
+                console.log("InfoAglDemo : ");
+                console.log(InfoAglDemo);
+
                 var geoFlightLoadAGLEntireDemo = viewer.entities.add({
 
                     name: "NGAFID CESIUM DEMO: " + keys[i],
@@ -566,6 +587,54 @@
             }
         }
 
+        function addEventOptions() {
+            var eventsDropdown = document.getElementById("events-dropdown");
+            eventData = {}
+            var uniqueEventNames = [];
+            var eventCheckBox = "";
+            for (var i = 0; i < keys.length; i++ ) {
+                let flightId = keys[i];
+                let events = scopes[flightId].events;
+
+                for (var j = 0; j < events.length; j++) {
+                    console.log("event")
+                    console.log(events[j]);
+                    console.log(Object.keys(events[j]))
+                    var eventName = events[j]["eventDefinitionName"];
+                    if (!(eventName in eventData)) {
+                        eventData[eventName] = []
+                        uniqueEventNames.push(eventName);
+                    }
+                    var eventDetails = {}
+                    for ( const [key, value] of Object.entries( events[j])) {
+                        // console.log(key);
+                        eventDetails[key] = value;
+                    }
+                    eventData[eventName].push(eventDetails);
+                }
+            }
+            var content = document.createTextNode(eventCheckBox);
+            eventsDropdown.insertAdjacentText("afterbegin", content);
+            console.log(eventCheckBox);
+            console.log(eventData);
+
+            uniqueEventNames.map((eventName, index) => {
+                console.log(eventName);
+                console.log(index);
+                eventCheckBox += `<div key=${index} className="form-check">
+                    <input className="form-check-input" type="checkbox" value=${eventName} id=${index} onChange="onclickEventHandler(event)"></input>
+                    <label className="form-check-label">
+                        ${eventName}
+                    </label>
+                </div>`
+            });
+            eventsDropdown.innerHTML = eventCheckBox;
+            console.log(eventCheckBox);
+
+        }
+
+        addEventOptions();
+
         // Apply full flight phase
         function applyNgafidStyleEntire() {
 
@@ -724,7 +793,10 @@
         Cesium.knockout.track(viewModel);
         // Model bind to the DOM elements
         var toolbar = document.getElementById('toolbar');
+        var eventsDropdown = document.getElementById('events-dropdown');
         Cesium.knockout.applyBindings(viewModel, toolbar);
+        // Cesium.knockout.applyBindings(viewModel, eventsDropdown);
+
 
         // Make globe view to 3D skyAtmosphere with HSB parameters.
         // This can be use in ngafid flight on different altitutes

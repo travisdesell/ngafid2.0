@@ -47,8 +47,6 @@ public class Event {
 
     private RateOfClosure rateOfClosure;
 
-    private String eventDefinitionName;
-
     private List<EventMetaData> metaDataList;
     /**
      * This fixes a date time string to be in the format MYSQL expects.
@@ -115,7 +113,7 @@ public class Event {
      */
     public Event(ResultSet resultSet) throws SQLException {
         this.id = resultSet.getInt(1);
-        this.fleetId = resultSet.getInt(1);
+        this.fleetId = resultSet.getInt(2);
         this.flightId = resultSet.getInt(3);
         this.eventDefinitionId = resultSet.getInt(4);
         this.startLine = resultSet.getInt(5);
