@@ -324,6 +324,8 @@ public class ProcessUpload {
 
                             flight.updateDatabase(connection, uploadId, uploaderId, fleetId);
 
+			    flightInfo.add(new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+
                             if (flight.getStatus().equals("WARNING")) warningFlights++;
 
                             validFlights++;
