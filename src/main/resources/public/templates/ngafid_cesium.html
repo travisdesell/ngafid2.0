@@ -313,6 +313,8 @@
             const model = airframeModels[airframe];
             console.log("position property : ");
             console.log(positionProperty);
+            console.log("model");
+            console.log(model);
             const airframeEntity = viewer.entities.add({
                 availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: startTime, stop: endTime})]),
                 position: positionProperty,
@@ -803,6 +805,8 @@
         function subscribeParameter(name, globeName) {
             Cesium.knockout.getObservable(viewModel, name).subscribe(
                 function (newValue) {
+                    console.log("Regarding 3D");
+                    console.log(newValue);
                     skyAtmosphere[name] = newValue;
                     globe[globeName] = newValue;
                 }
