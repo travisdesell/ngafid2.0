@@ -214,7 +214,13 @@ public class Filter {
                 } else {
                     return "flights.fleet_id = ? AND flights.system_id != ?";
                 }
-
+            
+            case "Flight ID":
+                condition = checkOperator(inputs.get(1));
+                parameters.add(fleetId);
+                parameters.add(inputs.get(2));
+                return "flights.fleet_id = ? AND flights.id " + condition + " ?" ;
+                
 
             case "Tail Number":
                 parameters.add(fleetId);

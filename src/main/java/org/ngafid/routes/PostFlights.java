@@ -108,6 +108,7 @@ public class PostFlights implements Route {
              * Tail Number
              * Airframe
              * Number Takeoffs/Landings
+             * Flight ID
              **/
 
             flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
