@@ -290,7 +290,6 @@ public class ProcessUpload {
                 pool.submit(() ->
                     pipeline
                         .stream()
-                        .parallel()
                         .map(pipeline::parse)
                         .forEach(s ->
                             flights.addAll(

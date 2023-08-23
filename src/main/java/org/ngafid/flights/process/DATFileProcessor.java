@@ -84,7 +84,6 @@ public class DATFileProcessor extends FlightFileProcessor {
             }
 
             dropBlankCols(doubleTimeSeriesMap, stringTimeSeriesMap);
-            doubleTimeSeriesMap.put("AltAGL", new DoubleTimeSeries("AltAGL", "ft")); // TODO: Should this be done in proc?
 
             FlightMeta meta = new FlightMeta();
             meta.setFilename(filename);
@@ -93,7 +92,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             meta.setSystemId(attributeMap.get("mcID(SN)"));
 
 
-            return Stream.of(new FlightBuilder[]{new FlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)});
+            return Stream.of(new FlightBuilder[]{new DATFlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap)});
         } catch (NotDatFile | FileEnd | IOException e) {
             throw new FlightProcessingException(e);
         }
@@ -256,6 +255,7 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @throws ParseException
      */
     private static void calculateDateTime(Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap, String dateTimeStr) throws ParseException {
+        LOG.info("Calculating date time for DAT file");
         StringTimeSeries localDateSeries = new StringTimeSeries("Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries("Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries("UTCOfst", "hh:mm"); // Always 0

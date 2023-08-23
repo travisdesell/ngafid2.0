@@ -51,7 +51,7 @@ public class ProcessAirportProximity extends ProcessStep {
         DoubleTimeSeries runwayDistanceTS = new DoubleTimeSeries("RunwayDistance", "ft", sizeHint);
         doubleTS.put("RunwayDistance", runwayDistanceTS);
 
-
+        System.out.println("AAAA ZZZZ " + latitudeTS.size() + " " + longitudeTS.size() + " " + altitudeAGLTS.size()); 
         for (int i = 0; i < latitudeTS.size(); i++) {
             double latitude = latitudeTS.get(i);
             double longitude = longitudeTS.get(i);

@@ -1350,7 +1350,7 @@ public class Flight {
         return paths;
     }
 
-    public Flight(Connection connection, FlightMeta meta, Map<String, DoubleTimeSeries> doubletimeSeries, Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary, List<MalformedFlightFileException> exceptions) throws SQLException {
+    public Flight(Connection connection, FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries, List<Itinerary> itinerary, List<MalformedFlightFileException> exceptions) throws SQLException {
         fleetId = meta.fleetId;
         uploaderId = meta.uploaderId;
         uploadId = meta.uploadId;
@@ -1376,6 +1376,7 @@ public class Flight {
         checkExceptions();
 
         this.stringTimeSeries = Collections.unmodifiableMap(new HashMap<>(stringTimeSeries));
+        this.doubleTimeSeries = Collections.unmodifiableMap(new HashMap<>(doubleTimeSeries));
     }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
@@ -3441,6 +3442,10 @@ public class Flight {
         preparedStatement.setBoolean(14, hasAGL);
         preparedStatement.setBoolean(15, false); //insert not yet completed
         preparedStatement.setLong(16, processingStatus);
+
+        System.out.println(startDateTime);
+        System.out.println(endDateTime);
+        
         preparedStatement.setString(17, startDateTime);
         preparedStatement.setString(18, endDateTime);
         preparedStatement.addBatch();

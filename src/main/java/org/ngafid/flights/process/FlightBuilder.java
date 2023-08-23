@@ -61,7 +61,6 @@ public class FlightBuilder {
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        required(ProcessAltAGL::new),
         required(ProcessAirportProximity::new),
         required(ProcessStartEndTime::new),
         ProcessLaggedAltMSL::new,
@@ -69,7 +68,7 @@ public class FlightBuilder {
         ProcessTotalFuel::new,
         ProcessDivergence::new,
         ProcessLOCI::new,
-        ProcessItinerary::new
+        required(ProcessItinerary::new)
     );
 
     // This can be overridden.
@@ -81,7 +80,7 @@ public class FlightBuilder {
           .filter(step -> 
               step.getOutputColumns()
               .stream()
-              .anyMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x))
+              .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x))
           ).collect(Collectors.toList());
     }
 

@@ -123,6 +123,10 @@ public abstract class FlightFileProcessor {
             String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
             Factory f = factories.get(extension);
             if (f != null) {
+                InputStream zipEntryInputStream = zipFile.getInputStream(entry);
+
+                InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
+
                 try {
                     return f.create(connection, zipFile.getInputStream(entry), filename);
                 } catch (IOException e) {

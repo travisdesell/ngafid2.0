@@ -63,13 +63,11 @@ public class DependencyGraph {
 
         void compute() {
             try {
-                
                 if (step.applicable()) {
                     step.compute();
                 } else {
                     disableChildren();
                 }
-
             } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
                 LOG.warning("Encountered exception when calculating process step " + step.toString() + ": " + e.toString());
                 exceptions.add(e);
@@ -127,6 +125,7 @@ public class DependencyGraph {
         public Set<String> getOutputColumns() { return outputColumns; }
 
         public boolean airframeIsValid(String airframe) { return true; }
+
 
         // Left blank intentionally
         public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
@@ -205,6 +204,8 @@ public class DependencyGraph {
                 tasks.put(node, task);
             }
         }
+        
+        scrutinize();
 
         var handles = initialTasks
             .stream()
@@ -251,7 +252,7 @@ public class DependencyGraph {
 
             for (var parent : node.requiredBy) {
                 if (!parent.step.isRequired()) {
-                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent + "' has a required dependent step '" + node + "'.");
+                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a required dependent step '" + node.step + "'.");
                     System.exit(1);
                 }
             }

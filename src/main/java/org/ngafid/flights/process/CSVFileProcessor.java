@@ -15,6 +15,10 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import javax.xml.bind.DatatypeConverter;
+
 /**
  * Handles parsing of CSV files
  *
@@ -33,7 +37,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         super(connection, stream, filename);
         this.upload = upload;
 
-
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 
@@ -43,6 +46,20 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            byte[] hash = md.digest(super.stream.readAllBytes());
+            meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
+            
+            super.stream.reset();
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+            System.exit(1);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
         Map<String, DoubleTimeSeries> doubleTimeSeries = new ConcurrentHashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new ConcurrentHashMap<>();
 
@@ -98,7 +115,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throw new FlightProcessingException(e);
         }
 
-        FlightBuilder builder = new FlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
+        FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
 
         return Stream.of(builder);
     }

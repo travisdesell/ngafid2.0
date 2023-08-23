@@ -117,9 +117,8 @@ public class DoubleTimeSeries {
         }
 
         if (emptyValues > 0) {
-            //System.err.println("WARNING: double column '" + name + "' had " + emptyValues + " empty values.");
             if (emptyValues == stringTimeSeries.size()) {
-                System.err.println("WARNING: double column '" + name + "' only had empty values.");
+                LOG.warning("double column '" + name + "' only had empty values.");
                 min = Double.NaN;
                 avg = Double.NaN;
                 max = Double.NaN;
@@ -293,6 +292,7 @@ public class DoubleTimeSeries {
 
             min = min > data[i] ? data[i] : min;
             max = max < data[i] ? data[i] : max;
+            validCount++;
         }
 
         avg = sum / validCount;
@@ -403,10 +403,8 @@ public class DoubleTimeSeries {
     }
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException, IOException {
-        if (typeId == -1)
-            setTypeId(connection);
-        if (nameId == -1)
-            setNameId(connection);
+        setTypeId(connection);
+        setNameId(connection);
 
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, nameId);
@@ -443,14 +441,11 @@ public class DoubleTimeSeries {
     }
 
     public void updateDatabase(Connection connection, int flightId) {
-        //System.out.println("Updating database for " + this);
         if (this.temporary)
             return;
         try {
-            if (typeId == -1)
-                setTypeId(connection);
-            if (nameId == -1)
-                setNameId(connection);
+            setTypeId(connection);
+            setNameId(connection);
 
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
             this.addBatch(connection, preparedStatement, flightId);

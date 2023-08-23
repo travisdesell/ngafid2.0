@@ -17,12 +17,9 @@ import java.util.logging.Logger;
 
 public class Database {
     private static Connection connection;
-    private static boolean connectionInitiated;
-    private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+    public static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
-
-    private static final long HOUR = 3600000;
 
     public static Connection getConnection() { 
         try {
@@ -52,6 +49,31 @@ public class Database {
         return connection;
     }
 
+    public static Connection createConnection(String dbUser, String dbName, String dbHost, String dbPassword) {
+        String db_impl = "mysql";
+        if (System.getenv("NGAFID_USE_MARIA_DB") != null)
+            db_impl = "mariadb";
+
+        try {
+            java.util.Properties connProperties = new java.util.Properties();
+            connProperties.put("user", dbUser);
+            connProperties.put("password", dbPassword);
+
+            // set additional connection properties:
+            // if connection stales, then make automatically
+            // reconnect; make it alive again;
+            // if connection stales, then try for reconnection;
+            connProperties.put("autoReconnect", "true");
+            connProperties.put("maxReconnects", "5");
+            return DriverManager.getConnection("jdbc:" + db_impl + "://" + dbHost + "/" + dbName, connProperties);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+            return null;
+        }
+    }
+    
     private static void setConnection() {
         if (System.getenv("NGAFID_DB_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
@@ -98,54 +120,7 @@ public class Database {
             System.exit(1);
         }
 
-        try {
-            // This will load the MySQL driver, each DB has its own driver
-            Class.forName("com.mysql.cj.jdbc.Driver");
-
-            java.util.Properties connProperties = new java.util.Properties();
-            connProperties.put("user", dbUser);
-            connProperties.put("password", dbPassword);
-
-            // set additional connection properties:
-            // if connection stales, then make automatically
-            // reconnect; make it alive again;
-            // if connection stales, then try for reconnection;
-            connProperties.put("autoReconnect", "true");
-            connProperties.put("maxReconnects", "5");
-            connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties);
-
-            // Setup the connection with the DB
-            //connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        /*
-        if (!connectionInitiated) {
-            connectionInitiated = true; 
-
-            LOG.info("Log for SQL server poker, starting at: " + LocalDateTime.now().toString());
-
-            new Thread(() -> {
-                while (true) {
-                    try {
-                        Thread.sleep(HOUR); 
-
-                        String dummyQuery = "SELECT id FROM event_definitions WHERE id <= 1";
-                        PreparedStatement preparedStatement = getConnection().prepareStatement(dummyQuery);
-
-                        ResultSet rs = preparedStatement.executeQuery();
-                        rs.close();
-
-                        LOG.info("Performed dummy query: " + dummyQuery + " at " + LocalDateTime.now().toString());
-                    } catch (Throwable t) {
-                        t.printStackTrace();
-                    }
-                }
-            }).start();
-        }
-        */
+        connection = createConnection(dbUser, dbName, dbHost, dbPassword);
     }
 
     static {

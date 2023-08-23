@@ -32,6 +32,7 @@ public class ProcessStartEndTime extends ProcessStep {
     public boolean airframeIsValid(String airframe) { return true; }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
+        System.out.println("AAAA WHAT");
         StringTimeSeries dates = builder.stringTimeSeries.get(LCL_DATE);
         StringTimeSeries times = builder.stringTimeSeries.get(LCL_TIME);
         StringTimeSeries offsets = builder.stringTimeSeries.get(UTC_OFFSET);
@@ -105,6 +106,8 @@ public class ProcessStartEndTime extends ProcessStep {
             builder.setEndDateTime(null);
             throw new MalformedFlightFileException("Corrupt time data in flight file, start time was after the end time");
         }
+
+        System.out.println("end dt " + endODT);
 
         builder.setStartDateTime(startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         builder.setEndDateTime(endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
