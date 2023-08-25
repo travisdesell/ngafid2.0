@@ -19,6 +19,7 @@ import { FlightsCard } from "./flights_card_component.js";
 import Plotly from "plotly.js";
 
 import { timeZones } from "./time_zones.js";
+import CesiumPage from "./ngafid_cesium.js";
 
 function invalidString(str) {
   return str == null || str.length < 0 || /^\s*$/.test(str);
@@ -389,6 +390,7 @@ class FlightsPage extends React.Component {
       plotVisible: false,
       plotSelected: false,
       mapVisible: false,
+      cesiumVisible: false,
       mapSelected: false,
       mapStyle: "Road",
       flightsRef: React.createRef(),
@@ -478,13 +480,73 @@ class FlightsPage extends React.Component {
     return this.state.sortingOrder;
   }
 
-  showMap() {
-    if (this.state.mapVisible) return;
-
-    if (!$("#map-toggle-button").hasClass("active")) {
-      $("#map-toggle-button").addClass("active");
-      $("#map-toggle-button").attr("aria-pressed", true);
+    addCesiumFlightPhase(phase, flightId) {
+        this.cesiumRef.current.addPhaseEntity(phase, flightId);
     }
+
+    addCesiumEventEntity(event, flightId) {
+        this.cesiumRef.current.addEventEntity(event, flightId);
+    }
+
+    zoomToEventEntity(eventId, flightId) {
+        this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
+    }
+
+    removeCesiumEntity(flightId) {
+        this.cesiumRef.current.removeEntity(flightId);
+    }
+
+    removeCesiumFlight(flightId) {
+        this.cesiumRef.current.removeFlightEntities(flightId);
+    }
+    addCesiumFlight(flightId, color) {
+
+        console.log("add cesium flight");
+
+        if (this.state.plotVisible) {
+            this.hidePlot();
+        }
+        if (this.state.mapVisible) {
+            this.toggleMap();
+        }
+
+        console.log("in showCesium flight id from flight component " + flightId);
+
+        this.cesiumRef.current.addFlightEntity(flightId, color);
+        this.showCesiumMap();
+    }
+
+    showCesiumMap() {
+
+        if (!$("#cesium-toggle-button").hasClass("active")) {
+            $("#cesium-toggle-button").addClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", true);
+        }
+        this.state.cesiumVisible = true;
+        this.setState(this.state);
+        $("#cesium-div").css("height", "50%");
+        $("#cesium-div").show();
+
+    }
+
+    showMap() {
+
+        console.log("new show map implementation");
+
+        if (this.state.mapVisible) return;
+
+        if (this.state.cesiumVisible)
+            console.log("hiding cesium (toggle)");
+            this.hideCesiumMap();
+
+
+
+        console.log("in flight.js showmap");
+
+        if ( !$("#map-toggle-button").hasClass("active") ) {
+            $("#map-toggle-button").addClass("active");
+            $("#map-toggle-button").attr("aria-pressed", true);
+        }
 
     this.state.mapVisible = true;
     this.setState(this.state);
@@ -518,12 +580,31 @@ class FlightsPage extends React.Component {
 
     if (this.state.plotVisible) {
       $("#plot").css("width", "100%");
-      var update = { width: "100%" };
+      var update = {width: "100%"};
       Plotly.Plots.resize("plot");
     } else {
       $("#plot-map-div").css("height", "0%");
     }
   }
+
+    toggleCamera(flightId) {
+
+        this.cesiumRef.current.toggleCamera(flightId);
+    }
+    hideCesiumMap() {
+        if (!this.state.cesiumVisible) return;
+
+        if ( $("#cesium-toggle-button").hasClass("active") ) {
+            $("#cesium-toggle-button").removeClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", false);
+        }
+
+        this.state.cesiumVisible = false;
+        this.setState(this.state);
+
+        $("#cesium-div").hide();
+
+    }
 
   toggleMap() {
     if (this.state.mapVisible) {
@@ -533,8 +614,18 @@ class FlightsPage extends React.Component {
     }
   }
 
-  showPlot() {
-    if (this.state.plotVisible) return;
+    toggleCesiumMap() {
+        if (this.state.cesiumVisible) {
+            this.hideCesiumMap();
+        } else {
+
+            this.showCesiumMap();
+        }
+
+    }
+
+    showPlot() {
+        if (this.state.plotVisible) return;
 
     if (!$("#plot-toggle-button").hasClass("active")) {
       $("#plot-toggle-button").addClass("active");
@@ -1039,6 +1130,7 @@ class FlightsPage extends React.Component {
           mapStyle={this.state.mapStyle}
           togglePlot={() => this.togglePlot()}
           toggleFilter={() => this.toggleFilter()}
+          toggleCesiumMap={() => this.toggleCesiumMap()}
           toggleMap={() => this.toggleMap()}
           mapSelectChanged={(style) => this.mapSelectChanged(style)}
           mapLayerChanged={(style) => this.mapLayerChanged(style)}
@@ -1060,6 +1152,13 @@ class FlightsPage extends React.Component {
             style={{ width: "50%", display: "none" }}
           ></div>
           <div id="plot" style={{ width: "50%", display: "none" }}></div>
+        </div>
+        <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none"}}>
+          <CesiumPage
+              parent={this}
+              setRef={this.cesiumRef}
+              flights={this.state.flights}
+          />
         </div>
 
         <div style={style}>
@@ -1146,6 +1245,11 @@ class FlightsPage extends React.Component {
             }
             clearTags={(flightId) => this.clearTags(flightId)}
             editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
+            showCesiumPage={(flightId, color) => {this.addCesiumFlight(flightId, color);}}
+            addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
+            addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
+            removeCesiumFlight={(flightId) => {this.removeCesiumFlight(flightId);}}
+
           />
 
           <Paginator

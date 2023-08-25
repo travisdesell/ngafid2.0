@@ -180,6 +180,11 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
+                                <div className="input-group-prepend">
+                                    <button id="cesium-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the cesium." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()}>
+                                        <i className="fa fa-globe p-1"></i>
+                                    </button>
+                                </div>
                                 <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{backgroundColor:selectBgColor}} 
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
