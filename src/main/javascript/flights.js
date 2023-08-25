@@ -376,6 +376,7 @@ class FlightsPage extends React.Component {
             plotVisible : false,
             plotSelected : false,
             mapVisible : false,
+            cesiumVisible: false,
             mapSelected : false,
             mapStyle : "Road",
             flightsRef : React.createRef(),
@@ -464,6 +465,19 @@ class FlightsPage extends React.Component {
 
     getSortingOrder() {
         return this.state.sortingOrder;
+    }
+
+    showCesiumPage() {
+        if (this.state.cesiumData) return;
+
+        if (!$("#cesium-toggle-button").hasClass("active")) {
+            $("#cesium-toggle-button").addClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", true);
+        }
+        this.state.cesiumVisible = true;
+        this.setState(this.state);
+
+
     }
 
     showMap() {

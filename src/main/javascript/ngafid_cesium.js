@@ -3,72 +3,91 @@ import React from "react";
 import {
     Cartesian3,
     Ion, Math, IonResource,
-    ModelGraphics, JulianDate,
+     JulianDate,
     SampledPositionProperty,
     TimeIntervalCollection,
     TimeInterval,
     PathGraphics, Color,
     PolylineOutlineMaterialProperty, PolylineGraphics, CornerType
 } from "cesium";
-import {Viewer, Entity, Scene, Globe, Clock, SkyAtmosphere} from "resium";
+import {Viewer, Entity, Scene, Globe, Clock, SkyAtmosphere, ModelGraphics, Model} from "resium";
+import * as Cesium from "cesium";
 
 
 class CesiumPage extends React.Component {
+
+
     constructor(props) {
         super(props);
+        Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNzg1ZDIwNy0wNmRlLTQ0OWUtOTUwZS0zZTI4OGM0NTFlODIiLCJpZCI6MTYyNDM4LCJpYXQiOjE2OTI5MDc0MzF9.ZtqAnFch5mkZWLZdmNY2Zh-pNH_-XhUPhMrBZSsxyjw";
+        Math.setRandomNumberSeed(9);
+        console.log("in constructor");
         const urlParams = new URLSearchParams(window.location.search);
         let flightId = urlParams.get("flight_id");
+        var cesiumData = this.getCesiumData(flightId);
+    //    var url = this.loadModel(cesiumData[flightId]["airframeType"])
+    //    console.log(url);
         this.state = {
+            cesiumData: cesiumData,
+            modelURL: null,
+            positionProperty: null,
             flightId : flightId,
             airFrameModels : {},
-            modelLoaded : false,
+            modelLoaded : null,
             phaseChecked : {}
         };
+         
+        console.log(this.state.modelURL);
 
-        Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA";
-        Math.setRandomNumberSeed(9);
-        this.getModel();
+
         // this.setState(this.state);
 
     }
 
-     async getModel() {
+    async loadModel(airplaneType) {
+        var url = null;
+        if (airplaneType == "Fixed Wing" || airplaneType == "UAS Fixed Wing") {
+            await IonResource.fromAssetId(1084423).then().then(function (value) {
+                console.log(value._ionEndpointResource);
+                url = value._ionEndpointResource;
+            });
+        }
+        else if (airplaneType == "UAS Rotorcraft") {
+            await IonResource.fromAssetId(1117220).then().then(function (value) {
+                console.log(value._ionEndpointResource);
+                url = value._ionEndpointResource;
+            });
+        }
 
-        var airplaneModel = new ModelGraphics({
-            uri: await IonResource.fromAssetId(1084423),
-            minimumPixelSize : 128,
-            maximumScale : 20000,
-            scale : 1
-        });
+        return url;
+    }
+    getPositionProperty(flightId) {
+        var positionProperty = new Cesium.SampledPositionProperty();
+        var infoAglDemo = this.state.cesiumData[flightId]["flightGeoInfoAgl"];
+        var infAglDemoTimes = this.state.cesiumData[flightId]["flightAglTimes"];
+        var positions = Cartesian3.fromDegreesArrayHeights(infoAglDemo);
+        for (let i = 0; i < positions.length; i++ ) {
+            positionProperty.addSample(Cesium.JulianDate.fromIso8601(infAglDemoTimes[i]), positions[i]);
+        }
+        return positionProperty;
+    }
 
-        var droneModel = new ModelGraphics({
-            uri: await IonResource.fromAssetId(1117220),
-            minimumPixelSize : 128,
-            maximumScale : 20000,
-            scale : 1
-        });
-
-        var scanEagleModel = new ModelGraphics({
-            uri: await IonResource.fromAssetId(1196119),
-            minimumPixelSize : 128,
-            maximumScale : 20000,
-            scale : 1
-        });
-
-        this.state.airFrameModels["Airplane"] = airplaneModel;
-        this.state.airFrameModels["Drone"] = droneModel;
-        this.state.airFrameModels["ScanEagle"] = scanEagleModel;
-        console.log("got all models");
-        this.state.modelLoaded = true;
+    componentDidMount() {
+        console.log("in will mount");
+        var flightId = this.state.flightId;
+        // this.state.modelURL = this.loadModel(this.state.cesiumData[flightId]["airframeType"]);
         // this.setState(this.state);
-        console.log(airplaneModel);
+        this.state.positionProperty = this.getPositionProperty(flightId);
+        console.log(this.state.modelURL);
+
+        this.setState(this.state);
     }
 
 
-    getCesiumData() {
+    getCesiumData(flightId) {
         var cesiumData = null;
         var submissionData = {
-            "flight_id" : this.state.flightId
+            "flight_id" : flightId
         };
         $.ajax({
             type : 'POST',
@@ -76,13 +95,15 @@ class CesiumPage extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                cesiumData =  response;
+                console.log(response)
+                cesiumData = response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 console.log(errorThrown);
             },
             async: false
         });
+
         return cesiumData;
 
     }
@@ -220,49 +241,29 @@ class CesiumPage extends React.Component {
 
     render() {
 
-        var cesiumData = this.getCesiumData();
-        console.log(cesiumData);
+        // var cesiumData = this.getCesiumData();
+        // console.log(cesiumData);
         console.log("in render");
+        console.log("model");
+        console.log(this.state.model);
+        console.log("Position Property");
+        console.log(this.state.positionProperty);
 
 
         var flightPhases = ["Select Flight Phase", "Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
         var togglePathColors = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet", "Black", "White"]
 
-        var positions = cesiumData[this.state.flightId].flightGeoInfoAgl;
+        var cesiumData = this.state.cesiumData;
         var startTime = cesiumData[this.state.flightId].startTime;
         var endTime = cesiumData[this.state.flightId].endTime;
 
-
-        var positionProperty = new SampledPositionProperty();
         var infoAglDemo = cesiumData[this.state.flightId].flightGeoInfoAgl;
         var pathColor = Color.fromRandom();
 
         let model = this.state.airFrameModels["Airplane"];
-        console.log("model")
-        console.log(model);
-        // this.state.model = model;
-        // this.setState(this.state);
-        let airframeEntity = (
-            <Entity
-                position={positionProperty}
-                model={model}
-                orientation={positionProperty}
-                point={{ pixelSize: 10 , color: Color.RED}}
-                availability={new TimeIntervalCollection([new TimeInterval({start: startTime, stop: endTime})])}
-                path={new PathGraphics({
-                        width : 5,
-                        material : new PolylineOutlineMaterialProperty({
-                            color : pathColor,
-                            outlineColor: pathColor,
-                            outlineWidth: 5
-                        })
-                    }
-                )}
-                tracked={true}
-            >
-            </Entity>
-        );
-
+        this.state.modelLoaded = model;
+        console.log("model");
+        console.log(this.state.modelURL);
         let taxiing = cesiumData[this.state.flightId].flightGeoAglTaxiing;
         let takeOff = cesiumData[this.state.flightId].flightGeoAglTakeOff;
         let climb = cesiumData[this.state.flightId].flightGeoAglClimb;
@@ -289,6 +290,7 @@ class CesiumPage extends React.Component {
             return (
                 <div>
                     <div id="cesiumContainer">
+
                         <Viewer full
                                 ref={e => {
                                     this.viewer = e ? e.cesiumElement : undefined;
@@ -311,18 +313,6 @@ class CesiumPage extends React.Component {
                                 ref={e => {
                                     this.scene = e ? e.cesiumElement : undefined;
                                 }}
-                                // onPreRender={() => {
-                                //     // console.log("in pre render");
-                                //
-                                //     // this.getModel();
-                                //
-                                // }}
-                                // onPostRender={() => {
-                                //     if (this.viewer) {
-                                //         this.viewer.zoomTo(this.viewer.entities);
-                                //     }
-                                //     // console.log("in scene");
-                                // }}
                             >
                             </Scene>
                             <SkyAtmosphere
@@ -337,7 +327,33 @@ class CesiumPage extends React.Component {
                                 atmosphereBrightnessShift={0.0}
                             >
                             </Globe>
-                            {airframeEntity}
+
+                            {
+                                <Entity
+                                    availability={new TimeIntervalCollection([new TimeInterval({start: JulianDate.fromIso8601(startTime), stop: JulianDate.fromIso8601(endTime)})])}
+                                    position={this.state.positionProperty}
+                                    orientation={new Cesium.VelocityOrientationProperty(this.state.positionProperty)}
+                                    path={new PathGraphics({
+                                            width : 5,
+                                            material : new PolylineOutlineMaterialProperty({
+                                                color : pathColor,
+                                                outlineColor: pathColor,
+                                                outlineWidth: 5
+                                            })
+                                        }
+                                    )}
+                                    point={{ pixelSize: 10 , color: Color.RED}}
+                                    tracked={true}
+                                >
+                                    <ModelGraphics
+                                    uri={"./images/model.glb"}
+                                    scale={1}
+                                    minimumPixelSize={128}
+                                    maximumScale={2000}
+                                    >
+                                    </ModelGraphics>
+                                </Entity>
+                            }
                             {geoFlightLoadAGLEntireDemoEntity}
                             {geoFlightKeepGroundEntireEntity}
                             {geoFlightKeepGroundTaxiEntity}
