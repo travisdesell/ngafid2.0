@@ -138,7 +138,7 @@ public class Flight {
     private ArrayList<String> headers;
 
     //the tags associated with this flight
-    private List<FlightTag> tags = null;
+    private List<FlightTag> tags = null;Flight.java
 
     private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
