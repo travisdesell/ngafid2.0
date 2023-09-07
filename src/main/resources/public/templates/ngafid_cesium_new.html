@@ -120,6 +120,13 @@
             left: 215px;
         }
 
+        #toggle-camera {
+            z-index: 0;
+            position: absolute;
+            top: 8px;
+            left: 900px;
+        }
+
         #events-dropdown {
             z-index: 0;
             position: absolute;
@@ -133,7 +140,16 @@
     <link href="https://cesium.com/downloads/cesiumjs/releases/1.73/Build/Cesium/Widgets/widgets.css" rel="stylesheet">
 </head>
 <body>
-<div id = "cesium_page"></div>
-<script src="/js/ngafid_cesium-bundle.js"></script>
+    <div id="error-modal" class='modal' tabIndex='-1' role='dialog'>
+        <div class='modal-dialog modal-lg' role='document'>
+            <div id='error-modal-content'>
+            </div>
+        </div>
+    </div>
+
+
+    <div id = "cesium_page"></div>
+    <button id="toggle-camera"></button>
+    <script src="/js/ngafid_cesium-bundle.js"></script>
 </body>
 </html>

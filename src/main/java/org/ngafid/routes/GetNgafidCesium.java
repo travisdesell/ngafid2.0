@@ -63,7 +63,7 @@ public class GetNgafidCesium implements Route {
                               ArrayList<Double> flightGeoInfoAgl, ArrayList<String> flightTaxiingTimes,
                               ArrayList<String> flightTakeOffTimes, ArrayList<String> flightClimbTimes,
                               ArrayList<String> flightCruiseTimes, ArrayList<String> flightAglTimes,
-                              String airframeType, ArrayList<Event> events) {
+                              String airframeType) {
 
             this.flightGeoAglTaxiing = flightGeoAglTaxiing;
             this.flightGeoAglTakeOff = flightGeoAglTakeOff;
@@ -80,7 +80,7 @@ public class GetNgafidCesium implements Route {
             this.startTime = flightAglTimes.get(0);
             this.endTime = flightAglTimes.get(flightAglTimes.size() - 1);
             this.airframeType = airframeType;
-            this.events = events;
+            // this.events = events;
         }
     }
 
@@ -263,11 +263,11 @@ public class GetNgafidCesium implements Route {
                     LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
                     Spark.halt(401, "User did not have access to this flight.");
                 }
-                ArrayList<Event> events = Event.getAllWithEventNames(connection, flightId);
+                /* ArrayList<Event> events = Event.getAllWithEventNames(connection, flightId);
                 for (Event event : events) {
                     System.out.println(event);
-                }
-                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType, events);
+                } */
+                CesiumResponse cr = new CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
                 cesiumData = "var cesium_data_new = " + gson.toJson(cr) + ";\n";
                 flights.put(flightIdNew, cr);
             }

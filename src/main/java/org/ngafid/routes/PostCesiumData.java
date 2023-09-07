@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 
 public class PostCesiumData implements Route {
 
-    private static final Logger LOG = Logger.getLogger(GetNgafidCesium.class.getName());
+    private static final Logger LOG = Logger.getLogger(PostCesiumData.class.getName());
     private Gson gson;
 
     public PostCesiumData(Gson gson) {
@@ -79,14 +79,14 @@ public class PostCesiumData implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
 
-        String flightIdStr = request.queryParams("flight_id");
+        /* String flightIdStr = request.queryParams("flight_id");
         LOG.info("getting information for flight id: " + flightIdStr);
         int flightId = Integer.parseInt(flightIdStr);
 
         String otherFlightId = request.queryParams("other_flight_id");
         LOG.info("URL flight id is: " + flightId);
         LOG.info("URL other flight id is: " + otherFlightId);
-
+ */
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
@@ -101,12 +101,12 @@ public class PostCesiumData implements Route {
         try {
 
             Connection connection = Database.getConnection();
-            Flight flight = Flight.getFlight(connection, flightId);
+            // Flight flight = Flight.getFlight(connection, flightId);
 
-            String[] flightIdsAll = request.queryParamsValues("flight_id");
+            String[] flightIdsAll = request.queryParamsValues("allFlightIds");
             LOG.info("Flight id(s) are: " + Arrays.toString(flightIdsAll));
 
-            Flight otherFlight = null;
+            /* Flight otherFlight = null;
             if (otherFlightId != null) {
                 otherFlight = flight.getFlight(Database.getConnection(), Integer.parseInt(otherFlightId));
 
@@ -116,7 +116,7 @@ public class PostCesiumData implements Route {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
                 return null;
-            }
+            } */
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
             Map<String, Object> flights = new HashMap<String, Object>();
@@ -244,15 +244,15 @@ public class PostCesiumData implements Route {
                     }
                 }
 
-                if (incomingFlight.getFleetId() != fleetId) {
+                /* if (incomingFlight.getFleetId() != fleetId) {
                     LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
                     Spark.halt(401, "User did not have access to this flight.");
-                }
-                ArrayList<Event> events = Event.getAllWithEventNames(connection, flightId);
-                for (Event event : events) {
+                } */
+                // ArrayList<Event> events = Event.getAllWithEventNames(connection, flightId);
+                /* for (Event event : events) {
                     System.out.println(event);
-                }
-                GetNgafidCesium.CesiumResponse cr = new GetNgafidCesium.CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType, events);
+                } */
+                GetNgafidCesium.CesiumResponse cr = new GetNgafidCesium.CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
                 flights.put(flightIdNew, cr);
             }
 
