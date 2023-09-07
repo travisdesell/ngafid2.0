@@ -4,7 +4,6 @@ import {
     Cartesian3,
     Ion, Math, IonResource,
      JulianDate,
-    SampledPositionProperty,
     TimeIntervalCollection,
     TimeInterval,
     PathGraphics, Color,
@@ -12,36 +11,36 @@ import {
 } from "cesium";
 import {Viewer, Entity, Scene, Globe, Clock, SkyAtmosphere, ModelGraphics, Model} from "resium";
 import * as Cesium from "cesium";
+import { watch } from "fs";
+// import { Flight } from './flight_component.js';
 
 
 class CesiumPage extends React.Component {
-
-
+    //TODO Load in flight_component page
+    //TODO Fix zoom issues
+    //TODO Get plane and dji model
+    //TODO add and remove entities
+    //
     constructor(props) {
         super(props);
         Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNzg1ZDIwNy0wNmRlLTQ0OWUtOTUwZS0zZTI4OGM0NTFlODIiLCJpZCI6MTYyNDM4LCJpYXQiOjE2OTI5MDc0MzF9.ZtqAnFch5mkZWLZdmNY2Zh-pNH_-XhUPhMrBZSsxyjw";
         Math.setRandomNumberSeed(9);
         console.log("in constructor");
         const urlParams = new URLSearchParams(window.location.search);
-        let flightId = urlParams.get("flight_id");
-        var cesiumData = this.getCesiumData(flightId);
-    //    var url = this.loadModel(cesiumData[flightId]["airframeType"])
-    //    console.log(url);
+        let allFlightIds = urlParams.getAll("flight_id");
+        console.log(allFlightIds);
+        var cesiumData = this.getCesiumData(allFlightIds);
         this.state = {
             cesiumData: cesiumData,
             modelURL: null,
-            positionProperty: null,
-            flightId : flightId,
+            positionProperty: {},
+            allFlightIds : allFlightIds,
             airFrameModels : {},
             modelLoaded : null,
-            phaseChecked : {}
+            phaseChecked : {},
+            currentEntities : {}
         };
-         
         console.log(this.state.modelURL);
-
-
-        // this.setState(this.state);
-
     }
 
     async loadModel(airplaneType) {
@@ -74,24 +73,29 @@ class CesiumPage extends React.Component {
 
     componentDidMount() {
         console.log("in will mount");
-        var flightId = this.state.flightId;
-        // this.state.modelURL = this.loadModel(this.state.cesiumData[flightId]["airframeType"]);
-        // this.setState(this.state);
-        this.state.positionProperty = this.getPositionProperty(flightId);
-        console.log(this.state.modelURL);
-
+        // var flightId = this.state.flightId;
+        this.state.allFlightIds.map((flightId) => {
+            this.state.positionProperty[flightId] = this.getPositionProperty(flightId);   
+        });
         this.setState(this.state);
+        console.log(this.state.positionProperty);
+        console.log(this.viewer);
+        if (this.viewer) {
+            this.viewer.zoomTo = this.viewer.entities;
+        }
+
     }
 
 
-    getCesiumData(flightId) {
+    getCesiumData(allFlightIds) {
         var cesiumData = null;
         var submissionData = {
-            "flight_id" : flightId
+            "allFlightIds" : allFlightIds
         };
         $.ajax({
             type : 'POST',
             url : '/protected/cesium_data',
+            traditional : true,
             data : submissionData,
             dataType : 'json',
             success : function(response) {
@@ -107,24 +111,23 @@ class CesiumPage extends React.Component {
         return cesiumData;
 
     }
-    getFlightKeepGroundEntity(type, data) {
+    getFlightKeepGroundEntity(type, data, flightId) {
         let positionsArr = Cartesian3.fromDegreesArrayHeights(data);
         let colorMap = {
             "default": {
                 color: Color.LEMONCHIFFON,
-                outlineColor: Color.BLACK
             },
             "Taxiing": {
                 color: Color.BLUE,
-                outlineColor: Color.BLACK
             },
             "Takeoff": {
                 color: Color.PURPLE,
-                outlineColor: Color.BLACK
             },
             "Climb": {
                 color: Color.SADDLEBROWN,
-                outlineColor: Color.BLACK
+            },
+            "Cruise": {
+                color: Color.MEDIUMSEAGREEN,
             }
         }
 
@@ -135,7 +138,7 @@ class CesiumPage extends React.Component {
                     width: 3,
                     material: new PolylineOutlineMaterialProperty({
                         color: colorMap[type]["color"],
-                        outlineColor: colorMap[type]["outlineColor"],
+                        outlineColor: Color.BLACK,
                         outlineWidth: 2
                     }),
                     clampToGround: true
@@ -148,37 +151,43 @@ class CesiumPage extends React.Component {
         return entity;
     }
 
-    getLoadAGLEntity(type, data) {
+    getLoadAGLEntity(type, data,flightId) {
 
         let detailsMap = {
             "default" : {
                 positions : Cartesian3.fromDegreesArrayHeights(data),
                 material: Color.WHITESMOKE.withAlpha(0),
-                cornerType: CornerType.BEVELED,
             },
             "Taxiing" : {
                 positions: Cartesian3.fromDegreesArrayHeights(data),
                 material: Color.BLUE.withAlpha(0.8),
-                cornerType: CornerType.BEVELED,
             },
             "Takeoff" : {
                 positions: Cartesian3.fromDegreesArrayHeights(data),
                 material: Color.BLUE.withAlpha(0.8),
-                cornerType: CornerType.BEVELED,
             },
             "Climb" : {
                 positions: Cartesian3.fromDegreesArrayHeights(data),
                 material: Color.SADDLEBROWN.withAlpha(0.8),
-                cornerType: CornerType.BEVELED,
+            },
+            "Cruise" : {
+                positions: Cartesian3.fromDegreesArrayHeights(data),
+                material: Color.LIGHTCYAN.withAlpha(0.8),
             }
         }
         let today = new Date();
         let entity = (
             <Entity
-                name={"NGAFID CESIUM : " + type + " " + this.state.flightId}
-                description={"<a><h3> NGAFID Flight ID: " + this.state.flightId + "</h3> </a>" + " <hr> <p> Reanimation of Flight - " + type +
+                name={"NGAFID CESIUM : " + type + " " + flightId}
+                description={"<a><h3> NGAFID Flight ID: " + flightId + "</h3> </a>" + " <hr> <p> Reanimation of Flight - " + type +
                     "</p>" + "<hr> <p> Displaying Time: " + today + "</p>"}
-                wall={ detailsMap[type]}
+                wall={
+                    {
+                        positions : detailsMap[type],
+                        material : detailsMap[type],
+                        cornerType : CornerType.BEVELED
+                    }
+                }
             >
             </Entity>
         );
@@ -192,19 +201,18 @@ class CesiumPage extends React.Component {
         let colorMap = {
             default : {
                 color: Color.BLUE,
-                outlineColor: Color.BLACK
             },
             Taxiing : {
                 color: Color.BLUE,
-                outlineColor: Color.BLACK
             },
             Takeoff : {
                 color: Color.PURPLE,
-                outlineColor: Color.BLACK
             },
             Climb: {
                 color: Color.SADDLEBROWN,
-                outlineColor: Color.BLACK
+            },
+            Cruise: {
+                color: Color.MEDIUMSEAGREEN,
             }
         };
         console.log(colorMap[type].color)
@@ -219,7 +227,7 @@ class CesiumPage extends React.Component {
                     width: 3,
                     material: new PolylineOutlineMaterialProperty({
                         color: colorMap[type].color,
-                        outlineColor: colorMap[type].outlineColor,
+                        outlineColor: Color.BLACK,
                         outlineWidth:2
                     })
                 })}
@@ -229,65 +237,107 @@ class CesiumPage extends React.Component {
 
         return entity;
     }
-    // componentDidMount() {
-    //     this.getModel()
-    //     console.log("In component did mount");
-    //     console.log(this.state.airFrameModels["Airplane"])
-    //     if (this.viewer && this.scene) {
-    //         console.log("got viewer object");
-    //         viewer.zoomTo(viewer.trackedEntity);
-    //     }
-    // }
+
+    toggleCamera() {
+        console.log(this.viewer);
+        console.log(this.mainEntity);
+        this.viewer.trackedEntity = null;
+
+        console.log("Toggle Camera");
+    }
 
     render() {
 
-        // var cesiumData = this.getCesiumData();
-        // console.log(cesiumData);
-        console.log("in render");
-        console.log("model");
-        console.log(this.state.model);
-        console.log("Position Property");
-        console.log(this.state.positionProperty);
-
-
         var flightPhases = ["Select Flight Phase", "Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
         var togglePathColors = ["Red", "Orange", "Yellow", "Green", "Blue", "Indigo", "Violet", "Black", "White"]
-
+        var entities = [];
         var cesiumData = this.state.cesiumData;
-        var startTime = cesiumData[this.state.flightId].startTime;
-        var endTime = cesiumData[this.state.flightId].endTime;
+        var clockStartTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
+        var clockEndTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
-        var infoAglDemo = cesiumData[this.state.flightId].flightGeoInfoAgl;
-        var pathColor = Color.fromRandom();
+        this.state.allFlightIds.map((flightId) => {
+            var flightStartTime = JulianDate.fromIso8601(cesiumData[flightId].startTime);
+            var flightEndTime = JulianDate.fromIso8601(cesiumData[flightId].endTime);
+            console.log("Flight start time : ");
+            console.log(flightStartTime);
+            if (JulianDate.compare(flightStartTime, clockStartTime) < 0) {
+                // console.log("Earlier time detected. Setting start time to " + startTime)
+                clockStartTime = flightStartTime.clone();
+            }
 
-        let model = this.state.airFrameModels["Airplane"];
-        this.state.modelLoaded = model;
-        console.log("model");
-        console.log(this.state.modelURL);
-        let taxiing = cesiumData[this.state.flightId].flightGeoAglTaxiing;
-        let takeOff = cesiumData[this.state.flightId].flightGeoAglTakeOff;
-        let climb = cesiumData[this.state.flightId].flightGeoAglClimb;
+            if (JulianDate.compare(clockEndTime, flightEndTime) > 0) {
+                // console.log("Later time detected. Setting end time to " + endTime);
+                clockEndTime = flightEndTime.clone();
+            }
+            var infoAglDemo = cesiumData[flightId].flightGeoInfoAgl;
+            var pathColor = Color.fromRandom();
+            console.log(this.state.positionProperty[flightId]);
+            var defaultEntity = (
+                <Entity
+                    availability={new TimeIntervalCollection([new TimeInterval({start: flightStartTime, stop: flightEndTime})])}
+                    position={this.state.positionProperty[flightId]}
+                    orientation={new Cesium.VelocityOrientationProperty(this.state.positionProperty[flightId])}
+                    path={new PathGraphics({
+                            width : 5,
+                            material : new PolylineOutlineMaterialProperty({
+                                color : pathColor,
+                                outlineColor: pathColor,
+                                outlineWidth: 5
+                            })
+                        }
+                    )}
+                    point={{ pixelSize: 10 , color: Color.RED}}
+                    tracked={true}
+                >
+                    <ModelGraphics
+                        uri={"Cesium_Air"}
+                        scale={1}
+                        minimumPixelSize={128}
+                        maximumScale={2000}
+                    >
+                    </ModelGraphics>
+                </Entity>
+            );
+            this.state.currentEntities[flightId] = {};
+            this.state.currentEntities[flightId]["defaultEntity"] = defaultEntity;
+            entities.push(defaultEntity);
+            let model = this.state.airFrameModels["Airplane"];
+            let taxiing = cesiumData[flightId].flightGeoAglTaxiing;
+            let takeOff = cesiumData[flightId].flightGeoAglTakeOff;
+            let climb = cesiumData[flightId].flightGeoAglClimb;
+            let cruise = cesiumData[flightId].flightGeoAglCruise;
 
-        //default entities
-        let geoFlightLoadAGLEntireDemoEntity = this.getLoadAGLEntity("default", infoAglDemo);
-        let geoFlightKeepGroundEntireEntity = this.getFlightKeepGroundEntity("default", infoAglDemo)
+            //default entities
+            let geoFlightLoadAGLEntireDemoEntity = this.getLoadAGLEntity("default", infoAglDemo, flightId);
+            this.state.currentEntities[flightId]["demoEntity"] = geoFlightLoadAGLEntireDemoEntity;
+            entities.push(geoFlightLoadAGLEntireDemoEntity);
+            let groundEnity = this.getFlightKeepGroundEntity("default", infoAglDemo, flightId);
+            this.state.currentEntities[flightId]["groundEntity"] = groundEnity; 
+            entities.push(groundEnity);
 
-        //taxiing entitites
-        let geoFlightLoadAGLTaxiEntity = this.getLoadAGLEntity("Taxiing", taxiing);
-        let geoFlightlineTaxiEntity = this.getFlightLineEntity("Taxiing", taxiing);
-        let geoFlightKeepGroundTaxiEntity = this.getFlightKeepGroundEntity("Taxiing", taxiing);
+            console.log("Entities : ");
+            console.log(entities);
+            //taxiing entitites
+            let geoFlightLoadAGLTaxiEntity = this.getLoadAGLEntity("Taxiing", taxiing, flightId);
+            let geoFlightlineTaxiEntity = this.getFlightLineEntity("Taxiing", taxiing);
+            let geoFlightKeepGroundTaxiEntity = this.getFlightKeepGroundEntity("Taxiing", taxiing);
 
-        //takeoff entities
-        let geoFlightLoadAGLTakeOffEntity = this.getLoadAGLEntity("Takeoff", takeOff);
-        let geoFlightlineTakeOffEntity = this.getFlightLineEntity("Takeoff", takeOff);
-        let geoFlightKeepGroundTakeOffEntity = this.getFlightKeepGroundEntity("Takeoff", takeOff);
+            //takeoff entities
+            let geoFlightLoadAGLTakeOffEntity = this.getLoadAGLEntity("Takeoff", takeOff, flightId);
+            let geoFlightlineTakeOffEntity = this.getFlightLineEntity("Takeoff", takeOff);
+            let geoFlightKeepGroundTakeOffEntity = this.getFlightKeepGroundEntity("Takeoff", takeOff);
 
-        // climb entities
-        let geoFlightLoadAGLClimbfEntity = this.getLoadAGLEntity("Climb", climb);
-        let geoFlightlineClimbEntity = this.getFlightLineEntity("Climb", climb);
-        let geoFlightKeepGroundClimbEntity = this.getFlightKeepGroundEntity("Climb", climb);
+            // climb entities
+            let geoFlightLoadAGLClimbfEntity = this.getLoadAGLEntity("Climb", climb, flightId);
+            let geoFlightlineClimbEntity = this.getFlightLineEntity("Climb", climb);
+            let geoFlightKeepGroundClimbEntity = this.getFlightKeepGroundEntity("Climb", climb);
 
-            return (
+            let geoFlightLoadAGLCruisefEntity = this.getLoadAGLEntity("Cruise", cruise, flightId);
+            let geoFlightlineCruiseEntity = this.getFlightLineEntity("Cruise", cruise);
+            let geoFlightKeepGroundCruiseEntity = this.getFlightKeepGroundEntity("Cruise", cruise);
+        })
+
+        return (
                 <div>
                     <div id="cesiumContainer">
 
@@ -302,9 +352,9 @@ class CesiumPage extends React.Component {
 
                         >
                             <Clock
-                                startTime={JulianDate.fromIso8601(startTime)}
-                                stopTime={JulianDate.fromIso8601(endTime)}
-                                currentTime={JulianDate.fromIso8601(startTime)}
+                                startTime={clockStartTime}
+                                stopTime={clockEndTime}
+                                currentTime={clockStartTime}
                                 shouldAnimate={true}
                                 multiplier={25}
                             >
@@ -327,86 +377,41 @@ class CesiumPage extends React.Component {
                                 atmosphereBrightnessShift={0.0}
                             >
                             </Globe>
-
                             {
-                                <Entity
-                                    availability={new TimeIntervalCollection([new TimeInterval({start: JulianDate.fromIso8601(startTime), stop: JulianDate.fromIso8601(endTime)})])}
-                                    position={this.state.positionProperty}
-                                    orientation={new Cesium.VelocityOrientationProperty(this.state.positionProperty)}
-                                    path={new PathGraphics({
-                                            width : 5,
-                                            material : new PolylineOutlineMaterialProperty({
-                                                color : pathColor,
-                                                outlineColor: pathColor,
-                                                outlineWidth: 5
-                                            })
-                                        }
-                                    )}
-                                    point={{ pixelSize: 10 , color: Color.RED}}
-                                    tracked={true}
-                                >
-                                    <ModelGraphics
-                                    uri={"./images/model.glb"}
-                                    scale={1}
-                                    minimumPixelSize={128}
-                                    maximumScale={2000}
-                                    >
-                                    </ModelGraphics>
-                                </Entity>
+                                entities.map((entity) => {
+                                    return entity;
+                                })
                             }
-                            {geoFlightLoadAGLEntireDemoEntity}
-                            {geoFlightKeepGroundEntireEntity}
-                            {geoFlightKeepGroundTaxiEntity}
-                            {geoFlightLoadAGLTaxiEntity}
-                            {geoFlightlineTaxiEntity}
-                            {geoFlightLoadAGLClimbfEntity}
-                            {geoFlightKeepGroundClimbEntity}
-                            {geoFlightlineClimbEntity}
-                        </Viewer>
+                            </Viewer>
                     </div>
-                    <div className="dropdown">
-                        <button className="dropdown-toggle" type="button" data-toggle="dropdown">Select Flight Phase</button>
-                        <div className="dropdown-menu">
-                            {flightPhases.map((phase, index) => (
-                                <div
-                                    key={index}
-                                    // className={`dropdown-item ${selectedOptions.includes(option.value) ? 'active' : ''}`}
-                                    // onClick={() => handleOptionClick(option.value)}
-                                >
-                                    {phase}
-                                </div>
-                            ))}
-                        </div>
+            </div>
+                   /*  <div className="dropdown">
+                        <select className="dropdown-select" id="dropdown">
+                            {
+                                flightPhases.map((phase, index) => (
+                                    <option key={index}>{phase}</option>
+                                ))
+                            }
+                                 
+                        </select>
                     </div>
-                    {/*    <div id="toolbar">*/}
-                    {/*        <select className="cesium-button" id="dropdown">*/}
-                    {/*            {*/}
-                    {/*                flightPhases.map((phase, index) => {*/}
-                    {/*                    return (*/}
-                    {/*                        <div key={index} className="form-check">*/}
-                    {/*                            <input className="form-check-input" type="checkbox" value="" id={"phase-check-" + index} checked={this.state.phaseChecked[phase]}></input>*/}
-                    {/*                            <label className="form-check-label">{phase}</label>*/}
-                    {/*                        </div>*/}
-                    {/*                    )*/}
-                    {/*                    }*/}
-                    {/*                )*/}
-                    {/*            }*/}
-                    {/*        </select>*/}
-                    {/*</div>*/}
                     <div id="toggle-path-color">
                         <select className="cesium-button" id="color-options">
-                            <option value="0">Select Current Flight Path Color</option>
+                            <option key={0}>Select Current Flight Path Color</option>
                             {
-                                togglePathColors.map((color, index) => (<option key={index}>{color}</option>))
+                                togglePathColors.map((color, index) => (<option key={index+1}>{color}</option>))
                             }
                         </select>
                     </div>
-                </div>
-            )
-
-
-
-    }
+                    <div id="toggle-camera">
+                        <button id="toggle-camera-btn" onClick={() => this.toggleCamera()}>Toggle Camera</button>
+                    </div>
+                    <div>
+                        <button id="remove-entity"
+                    </div> */
+            // </div>
+        );
+    };
 }
 
 var cesiumPage = ReactDOM.render(
