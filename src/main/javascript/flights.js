@@ -15,11 +15,9 @@ import { confirmModal } from "./confirm_modal.js";
 import { Filter } from './filter.js';
 import { Paginator } from './paginator_component.js';
 import { FlightsCard } from './flights_card_component.js';
-
 import Plotly from 'plotly.js';
-
 import { timeZones } from "./time_zones.js";
-
+import CesiumPage from "./ngafid_cesium.js";
 
 function invalidString(str){
     return (str == null || str.length < 0 || /^\s*$/.test(str));
@@ -468,7 +466,9 @@ class FlightsPage extends React.Component {
     }
 
     showCesiumPage() {
-        if (this.state.cesiumData) return;
+
+        console.log("in showCesium");
+        // if (this.state.cesiumVisible) return;
 
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
@@ -476,12 +476,14 @@ class FlightsPage extends React.Component {
         }
         this.state.cesiumVisible = true;
         this.setState(this.state);
-
+        $("#cesium-div").css("height", "50%");
+        $("#cesium-div").show();
 
     }
 
     showMap() {
-        if (this.state.mapVisible) return;
+
+        console.log("in flight.js showmap");
 
         if ( !$("#map-toggle-button").hasClass("active") ) { 
             $("#map-toggle-button").addClass("active");
@@ -1036,7 +1038,11 @@ class FlightsPage extends React.Component {
                     <div id="map" className="map" style={{width:"50%", display:"none"}}></div> 
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
-
+                <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none"}}>
+                    <CesiumPage 
+                        flights={this.state.flights}
+                    />
+                </div>
                 <div style={style}>
                     <Filter
                         filterVisible={this.state.filterVisible}
@@ -1084,6 +1090,7 @@ class FlightsPage extends React.Component {
                         navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
+                        showCesiumPage={() => {this.showCesiumPage();}}
                         showPlot={() => {this.showPlot();}}
                         setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {

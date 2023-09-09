@@ -1,6 +1,6 @@
 
 const webpack = require('webpack');
-// const HtmlWebPackPlugin = require("html-webpack-plugin");
+const HtmlWebPackPlugin = require("html-webpack-plugin");
 var path = require('path');
 const HtmlPlugin = require("html-webpack-plugin");
 const HtmlTagsPlugin = require("html-webpack-tags-plugin");
@@ -54,7 +54,6 @@ module.exports = {
         system_ids: __dirname + "/src/main/javascript/system_ids.js",
         welcome: __dirname + "/src/main/javascript/welcome.js",
         aggregate: __dirname + "/src/main/javascript/aggregate.js",
-        // trends: __dirname + "/src/main/javascript/trends.js",
         severities: __dirname + "/src/main/javascript/severities.js",
         create_event: __dirname + "/src/main/javascript/create_event.js",
         update_event: __dirname + "/src/main/javascript/update_event.js",
@@ -131,7 +130,7 @@ module.exports = {
             ],
         }),
         new HtmlPlugin({
-            template: "src/main/resources/public/templates/ngafid_cesium_new.html",
+            template: "src/main/resources/public/templates/flights.html",
         }),
         new HtmlTagsPlugin({
             append: false,
@@ -141,11 +140,11 @@ module.exports = {
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
 
-        /*
+        
         new HtmlWebPackPlugin({
-            template: "./src/main/resources/public/js3/src/index.html",
-            filename: "./index.html"
+            template: "/src/main/resources/public/templates/flights.html",
+            filename: "./flights.html"
         })
-        */
+        
     ]
 };

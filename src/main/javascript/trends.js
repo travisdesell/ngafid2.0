@@ -683,7 +683,4 @@ class TrendsPage extends React.Component {
     }
 }
 
-
-
-
 export default TrendsPage
