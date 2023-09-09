@@ -11,7 +11,6 @@ import {
 } from "cesium";
 import {Viewer, Entity, Scene, Globe, Clock, SkyAtmosphere, ModelGraphics, Model} from "resium";
 import * as Cesium from "cesium";
-import { watch } from "fs";
 // import { Flight } from './flight_component.js';
 
 
@@ -22,19 +21,16 @@ class CesiumPage extends React.Component {
     //TODO add and remove entities
     //
     constructor(props) {
+
+        console.log("in cesium page");
+        console.log(props);
         super(props);
         Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNzg1ZDIwNy0wNmRlLTQ0OWUtOTUwZS0zZTI4OGM0NTFlODIiLCJpZCI6MTYyNDM4LCJpYXQiOjE2OTI5MDc0MzF9.ZtqAnFch5mkZWLZdmNY2Zh-pNH_-XhUPhMrBZSsxyjw";
         Math.setRandomNumberSeed(9);
-        console.log("in constructor");
-        const urlParams = new URLSearchParams(window.location.search);
-        let allFlightIds = urlParams.getAll("flight_id");
-        console.log(allFlightIds);
-        var cesiumData = this.getCesiumData(allFlightIds);
+        // var cesiumData = this.getCesiumData(allFlightIds);
         this.state = {
-            cesiumData: cesiumData,
             modelURL: null,
             positionProperty: {},
-            allFlightIds : allFlightIds,
             airFrameModels : {},
             modelLoaded : null,
             phaseChecked : {},
@@ -74,7 +70,7 @@ class CesiumPage extends React.Component {
     componentDidMount() {
         console.log("in will mount");
         // var flightId = this.state.flightId;
-        this.state.allFlightIds.map((flightId) => {
+       /*  this.state.allFlightIds.map((flightId) => {
             this.state.positionProperty[flightId] = this.getPositionProperty(flightId);   
         });
         this.setState(this.state);
@@ -82,7 +78,7 @@ class CesiumPage extends React.Component {
         console.log(this.viewer);
         if (this.viewer) {
             this.viewer.zoomTo = this.viewer.entities;
-        }
+        } */
 
     }
 
@@ -255,7 +251,7 @@ class CesiumPage extends React.Component {
         var clockStartTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
         var clockEndTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
 
-        this.state.allFlightIds.map((flightId) => {
+        /* this.state.allFlightIds.map((flightId) => {
             var flightStartTime = JulianDate.fromIso8601(cesiumData[flightId].startTime);
             var flightEndTime = JulianDate.fromIso8601(cesiumData[flightId].endTime);
             console.log("Flight start time : ");
@@ -335,7 +331,7 @@ class CesiumPage extends React.Component {
             let geoFlightLoadAGLCruisefEntity = this.getLoadAGLEntity("Cruise", cruise, flightId);
             let geoFlightlineCruiseEntity = this.getFlightLineEntity("Cruise", cruise);
             let geoFlightKeepGroundCruiseEntity = this.getFlightKeepGroundEntity("Cruise", cruise);
-        })
+        }) */
 
         return (
                 <div>
@@ -414,9 +410,9 @@ class CesiumPage extends React.Component {
     };
 }
 
-var cesiumPage = ReactDOM.render(
+/* var cesiumPage = ReactDOM.render(
     <CesiumPage></CesiumPage>,
     document.querySelector("#cesium_page")
-)
-
+) 
+ */
 export default CesiumPage

@@ -472,7 +472,11 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
+
+        this.props.showCesiumPage();
+
+        
+        /* let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
 
         if (flightStoreIndex === -1) {
             cesiumFlightsSelected.push(this.props.flightInfo.id)
@@ -482,13 +486,15 @@ class Flight extends React.Component {
 
         updateCesiumButtonState();
 
-        console.log(cesiumFlightsSelected);
+        console.log(cesiumFlightsSelected); */
     }
 
     replayClicked() {
+        
+
         let URL = "/protected/ngafid_cesium?flight_id=" + (this.props.flightInfo.id).toString();
 
-        window.open(URL);
+        window.open(URL); 
     }
 
     closeParamDisplay() {

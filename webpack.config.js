@@ -1,4 +1,3 @@
-
 const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 var path = require('path');
@@ -111,8 +110,7 @@ module.exports = {
                 test: /\.mjs$/,
                 include: /node_modules/,
                 type: "javascript/auto",
-            },
-
+            }
         ]
     },
 
@@ -132,7 +130,7 @@ module.exports = {
             ],
         }),
         new HtmlPlugin({
-            template: "src/main/resources/public/templates/ngafid_cesium_new.html",
+            template: "src/main/resources/public/templates/flights.html",
         }),
         new HtmlTagsPlugin({
             append: false,
@@ -142,11 +140,9 @@ module.exports = {
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
 
-        /*
         new HtmlWebPackPlugin({
             template: "./src/main/resources/public/js3/src/index.html",
             filename: "./index.html"
         })
-        */
     ]
 };

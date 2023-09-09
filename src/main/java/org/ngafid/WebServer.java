@@ -324,7 +324,7 @@ public final class WebServer {
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
 
         Spark.post("/protected/cesium_data", new PostCesiumData(gson));
-        Spark.get("/protected/ngafid_cesium_old", new GetNgafidCesiumOld(gson));
+
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
         Spark.get("/protected/update_event", new GetUpdateEvent(gson));
