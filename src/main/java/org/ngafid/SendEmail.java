@@ -69,13 +69,13 @@ public class SendEmail {
                 bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
 
                 username = bufferedReader.readLine();
-                System.out.println("read username: '" + username + "'");
+                //System.out.println("read username: '" + username + "'");
 
                 if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
                 } else {
                     password = bufferedReader.readLine();
-                    System.out.println("read password: '" + password + "'");
+                    //System.out.println("read password: '" + password + "'");
                     LOG.info("Using email address to send emails: " + username);
                 }
 
