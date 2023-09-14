@@ -20,7 +20,7 @@ if (index !== -1) airframes.splice(index, 1);
 
 eventNames.sort();
 
-console.log(eventNames);
+console.log(eventNames, "a");
 
 /*
 var trace1 = {
@@ -150,7 +150,7 @@ class SeveritiesPage extends React.Component {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
 
-                    let hovertext = "Flight #" + counts[i].flightId + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
                     severityTrace.hovertext.push(hovertext);
