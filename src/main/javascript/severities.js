@@ -20,7 +20,7 @@ if (index !== -1) airframes.splice(index, 1);
 
 eventNames.sort();
 
-console.log(eventNames, "a");
+console.log(eventNames);
 
 /*
 var trace1 = {
