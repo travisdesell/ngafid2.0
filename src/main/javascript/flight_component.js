@@ -492,7 +492,7 @@ class Flight extends React.Component {
     replayClicked() {
         
 
-        let URL = "/protected/ngafid_cesium?flight_id=" + (this.props.flightInfo.id).toString();
+        let URL = "/protected/ngafid_cesium_old?flight_id=" + (this.props.flightInfo.id).toString();
 
         window.open(URL); 
     }

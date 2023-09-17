@@ -395,7 +395,7 @@ class FlightsPage extends React.Component {
             numberPages : 1,
             pageSize : 10
         };
-
+        this.cesiumRef = React.createRef();
         this.navRef = React.createRef();
     }
 
@@ -469,7 +469,8 @@ class FlightsPage extends React.Component {
 
         console.log("in showCesium");
         // if (this.state.cesiumVisible) return;
-
+        console.log(this.cesiumRef);
+        this.cesiumRef.current.testClick();
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
             $("#cesium-toggle-button").attr("aria-pressed", true);
@@ -478,7 +479,13 @@ class FlightsPage extends React.Component {
         this.setState(this.state);
         $("#cesium-div").css("height", "50%");
         $("#cesium-div").show();
-
+        
+        if (this.state.plotVisible) {
+            this.hidePlot();
+        }
+        if (this.state.mapVisible) {
+            this.hideMap();
+        }
     }
 
     showMap() {
@@ -530,12 +537,45 @@ class FlightsPage extends React.Component {
         }
     }
 
+    hideCesiumMap() {
+        if (!this.state.cesiumVisible) return;
+
+        if ( $("#cesium-toggle-button").hasClass("active") ) { 
+            $("#cesium-toggle-button").removeClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", false);
+        }   
+
+        this.state.cesiumVisible = false;
+        this.setState(this.state);
+
+        $("#cesium-div").hide();
+
+        /* if (this.state.plotVisible) {
+            $("#plot").css("width", "100%");
+            var update = { width : "100%" };
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#plot-map-div").css("height", "0%");
+        } */
+
+
+    }
+
     toggleMap() {
         if (this.state.mapVisible) {
             this.hideMap();
         } else {
             this.showMap();
         }
+    }
+
+    toggleCesiumMap() {
+        if (this.state.cesiumVisible) {
+            this.hideCesiumMap();   
+        } else {
+            this.showCesiumPage();
+        }
+
     }
 
     showPlot() {
@@ -1025,6 +1065,7 @@ class FlightsPage extends React.Component {
                     togglePlot={() => this.togglePlot()}
                     toggleFilter={() => this.toggleFilter()}
                     toggleMap={() => this.toggleMap()}
+                    toggleCesiumMap={() => this.toggleCesiumMap()}
                     mapSelectChanged={(style) => this.mapSelectChanged(style)}
                     mapLayerChanged={(style) => this.mapLayerChanged(style)}
                     waitingUserCount={waitingUserCount}
@@ -1038,8 +1079,9 @@ class FlightsPage extends React.Component {
                     <div id="map" className="map" style={{width:"50%", display:"none"}}></div> 
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
-                <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none"}}>
-                    <CesiumPage 
+                <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none", overflow:'hidden'}}>
+                    <CesiumPage
+                        setRef={this.cesiumRef}
                         flights={this.state.flights}
                     />
                 </div>
