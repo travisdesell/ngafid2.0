@@ -244,14 +244,6 @@ public class PostCesiumData implements Route {
                     }
                 }
 
-                /* if (incomingFlight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
-                    Spark.halt(401, "User did not have access to this flight.");
-                } */
-                // ArrayList<Event> events = Event.getAllWithEventNames(connection, flightId);
-                /* for (Event event : events) {
-                    System.out.println(event);
-                } */
                 GetNgafidCesium.CesiumResponse cr = new GetNgafidCesium.CesiumResponse(flightGeoAglTaxiing, flightGeoAglTakeOff, flightGeoAglClimb, flightGeoAglCruise, flightGeoInfoAgl, flightTaxiingTimes, flightTakeOffTimes, flightClimbTimes, flightCruiseTimes, flightAglTimes, airframeType);
                 flights.put(flightIdNew, cr);
             }

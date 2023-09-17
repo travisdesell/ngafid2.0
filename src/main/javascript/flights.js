@@ -514,6 +514,38 @@ class FlightsPage extends React.Component {
         this.showCesiumMap();
     }
 
+
+    setMapStyle(style) {
+         this.setState({
+            mapStyle : style
+        });
+    }
+
+    setSortingColumn(column) {
+        console.log("sorting by: " + column);
+        this.state.sortColumn = column;
+        this.setState(this.state);
+
+        this.submitFilter(true);
+    }
+
+    getSortingColumn() {
+        return this.state.sortColumn;
+    }
+
+    setSortingOrder(order) {
+        if (order != this.state.sortingOrder) {
+            console.log("sorting in " + order + " order");
+            this.state.sortingOrder = order;
+            this.setState(this.state);
+            this.submitFilter(true);
+        }
+    }
+
+    getSortingOrder() {
+        return this.state.sortingOrder;
+    }
+
     showCesiumMap() {
 
         if (!$("#cesium-toggle-button").hasClass("active")) {
@@ -576,17 +608,14 @@ class FlightsPage extends React.Component {
 
     $("#map").hide();
 
-      if (this.state.plotVisible) {
-        $("#plot").css("width", "100%");
-        var update = {width: "100%"};
-        Plotly.Plots.resize("plot");
-      } else {
-        errorModal.show(
-            "Error creating tag",
-            "A tag with that name already exists! Use the dropdown menu to associate it with this flight or give this tag another name"
-        );
-      }
+    if (this.state.plotVisible) {
+      $("#plot").css("width", "100%");
+      var update = {width: "100%"};
+      Plotly.Plots.resize("plot");
+    } else {
+      $("#plot-map-div").css("height", "0%");
     }
+  }
 
     toggleCamera(flightId) {
 

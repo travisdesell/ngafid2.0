@@ -11,7 +11,6 @@ import {
 } from "cesium";
 import {Viewer, Entity, Scene, Globe, Clock, SkyAtmosphere, ModelGraphics, Model} from "resium";
 import * as Cesium from "cesium";
-// import { Flight } from './flight_component.js';
 
 
 class CesiumPage extends React.Component {
@@ -19,7 +18,7 @@ class CesiumPage extends React.Component {
     //TODO Fix zoom issues
     //TODO Get plane and dji model
     //TODO add and remove entities
-    //
+    //TODO skip to event time
     constructor(props) {
 
         console.log("in cesium page");
@@ -27,18 +26,43 @@ class CesiumPage extends React.Component {
         super(props);
         Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNzg1ZDIwNy0wNmRlLTQ0OWUtOTUwZS0zZTI4OGM0NTFlODIiLCJpZCI6MTYyNDM4LCJpYXQiOjE2OTI5MDc0MzF9.ZtqAnFch5mkZWLZdmNY2Zh-pNH_-XhUPhMrBZSsxyjw";
         Math.setRandomNumberSeed(9);
-        // var cesiumData = this.getCesiumData(allFlightIds);
         this.state = {
             modelURL: null,
             positionProperty: {},
             airFrameModels : {},
             modelLoaded : null,
             phaseChecked : {},
-            currentEntities : {}
+            activeEntities : {}
         };
         console.log(this.state.modelURL);
     }
 
+
+    addEntity(entityData) {
+         
+        let entity = (
+                <Entity
+                    // name={"NGAFID CESIUM :  " + flightId + " Event Name : " + entityData.eventName}
+                    polyline={ new PolylineGraphics({
+                        positions: entityData.data,
+                        width: 3,
+                        material: new PolylineOutlineMaterialProperty({
+                            color: Color.fromRgba(entityData.color),
+                            outlineColor: Color.BLACK,
+                            outlineWidth: 2
+                        }),
+                    }
+                   )}
+                >
+                </Entity>
+            );
+        
+        if (entityData.isEvent) {
+            // this.state.activeEntities[][]
+        }
+
+        
+    }
     async loadModel(airplaneType) {
         var url = null;
         if (airplaneType == "Fixed Wing" || airplaneType == "UAS Fixed Wing") {
@@ -56,7 +80,9 @@ class CesiumPage extends React.Component {
 
         return url;
     }
+
     getPositionProperty(flightId) {
+        
         var positionProperty = new Cesium.SampledPositionProperty();
         var infoAglDemo = this.state.cesiumData[flightId]["flightGeoInfoAgl"];
         var infAglDemoTimes = this.state.cesiumData[flightId]["flightAglTimes"];
@@ -67,27 +93,13 @@ class CesiumPage extends React.Component {
         return positionProperty;
     }
 
-    componentDidMount() {
-        console.log("in will mount");
-        // var flightId = this.state.flightId;
-       /*  this.state.allFlightIds.map((flightId) => {
-            this.state.positionProperty[flightId] = this.getPositionProperty(flightId);   
-        });
-        this.setState(this.state);
-        console.log(this.state.positionProperty);
-        console.log(this.viewer);
-        if (this.viewer) {
-            this.viewer.zoomTo = this.viewer.entities;
-        } */
-
-    }
-
-
     getCesiumData(allFlightIds) {
+
         var cesiumData = null;
         var submissionData = {
             "allFlightIds" : allFlightIds
         };
+
         $.ajax({
             type : 'POST',
             url : '/protected/cesium_data',
@@ -105,9 +117,10 @@ class CesiumPage extends React.Component {
         });
 
         return cesiumData;
-
     }
+
     getFlightKeepGroundEntity(type, data, flightId) {
+        
         let positionsArr = Cartesian3.fromDegreesArrayHeights(data);
         let colorMap = {
             "default": {
@@ -234,6 +247,10 @@ class CesiumPage extends React.Component {
         return entity;
     }
 
+    testClick() {
+        console.log("test click from parent component");
+    }
+
     toggleCamera() {
         console.log(this.viewer);
         console.log(this.mainEntity);
@@ -249,7 +266,7 @@ class CesiumPage extends React.Component {
         var entities = [];
         var cesiumData = this.state.cesiumData;
         var clockStartTime = Cesium.JulianDate.fromIso8601("9999-12-31T00:00:00");
-        var clockEndTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00")
+        var clockEndTime = Cesium.JulianDate.fromIso8601("0000-01-01T00:00:00");
 
         /* this.state.allFlightIds.map((flightId) => {
             var flightStartTime = JulianDate.fromIso8601(cesiumData[flightId].startTime);
@@ -381,38 +398,8 @@ class CesiumPage extends React.Component {
                             </Viewer>
                     </div>
             </div>
-                   /*  <div className="dropdown">
-                        <select className="dropdown-select" id="dropdown">
-                            {
-                                flightPhases.map((phase, index) => (
-                                    <option key={index}>{phase}</option>
-                                ))
-                            }
-                                 
-                        </select>
-                    </div>
-                    <div id="toggle-path-color">
-                        <select className="cesium-button" id="color-options">
-                            <option key={0}>Select Current Flight Path Color</option>
-                            {
-                                togglePathColors.map((color, index) => (<option key={index+1}>{color}</option>))
-                            }
-                        </select>
-                    </div>
-                    <div id="toggle-camera">
-                        <button id="toggle-camera-btn" onClick={() => this.toggleCamera()}>Toggle Camera</button>
-                    </div>
-                    <div>
-                        <button id="remove-entity"
-                    </div> */
-            // </div>
         );
     };
 }
 
-/* var cesiumPage = ReactDOM.render(
-    <CesiumPage></CesiumPage>,
-    document.querySelector("#cesium_page")
-) 
- */
-export default CesiumPage
+export default (props => <CesiumPage ref={props.setRef} />)
