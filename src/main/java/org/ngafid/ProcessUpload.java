@@ -74,7 +74,8 @@ public class ProcessUpload {
             Instant start = Instant.now();
 
             try {
-                PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
+                //PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
+                PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
@@ -281,7 +282,7 @@ public class ProcessUpload {
 
                     String entryName = entry.getName();
 
-                    if (entryName.contains(".csv")) {
+                    if (entryName.contains(".csv") || entryName.contains(".CSV")) {
                         try {
                             InputStream stream = zipFile.getInputStream(entry);
                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);
