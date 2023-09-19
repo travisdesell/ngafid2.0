@@ -30,7 +30,7 @@ public class CachedCSVWriter extends CSVWriter {
      * @param directoryRoot the root directory of the zipped files
      * @param flight the {@link Flight} to write data for
      */
-    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile) throws SQLException {
+    public CachedCSVWriter(String directoryRoot, Flight flight, Optional<File> outputCSVFile, boolean isAirSync) throws SQLException {
         super(flight, outputCSVFile);
 
         System.out.println("creating file from: '" + directoryRoot + "'");
@@ -44,7 +44,13 @@ public class CachedCSVWriter extends CSVWriter {
 
         System.out.println("got an upload with filename: '" + upload.getFilename() + "'");
 
-        String archiveFilename = directoryRoot + uploadId + "__" + upload. getFilename();
+        String archiveFilename;
+        if (isAirSync) {
+            archiveFilename = directoryRoot + upload.getFilename();
+        } else {
+            archiveFilename = directoryRoot + uploadId + "__" + upload.getFilename();
+        }
+
         System.out.println("archive filename will be: '" + archiveFilename + "'");
 
         this.zipFile = new File(archiveFilename);
