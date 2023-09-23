@@ -465,12 +465,13 @@ class FlightsPage extends React.Component {
         return this.state.sortingOrder;
     }
 
-    showCesiumPage() {
+    showCesiumPage(flightId) {
 
-        console.log("in showCesium");
+        console.log("in showCesium flight id from flight component " + flightId);
         // if (this.state.cesiumVisible) return;
         console.log(this.cesiumRef);
         this.cesiumRef.current.testClick();
+        this.cesiumRef.current.addFlightEntity(flightId);  
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
             $("#cesium-toggle-button").attr("aria-pressed", true);
@@ -1081,6 +1082,7 @@ class FlightsPage extends React.Component {
                 </div>
                 <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none", overflow:'hidden'}}>
                     <CesiumPage
+                        parent={this}
                         setRef={this.cesiumRef}
                         flights={this.state.flights}
                     />
@@ -1132,7 +1134,7 @@ class FlightsPage extends React.Component {
                         navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
-                        showCesiumPage={() => {this.showCesiumPage();}}
+                        showCesiumPage={(flightId) => {this.showCesiumPage(flightId);}}
                         showPlot={() => {this.showPlot();}}
                         setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {

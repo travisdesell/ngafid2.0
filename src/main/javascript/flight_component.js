@@ -470,24 +470,43 @@ class Flight extends React.Component {
         console.log(this.props);
         window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=" + type + "&acft_path=" + path + "&use_msl=" + useMSL);
     }
+    
+    getCesiumData(flightId) {
+
+        var cesiumData = null;
+        var submissionData = {
+            "flightId" : flightId
+        };
+
+        $.ajax({
+            type : 'POST',
+            url : '/protected/cesium_data',
+            traditional : true,
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log(response)
+                cesiumData = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            },
+            async: false
+        });
+
+        return cesiumData;
+    }
 
     cesiumClicked() {
 
-        this.props.showCesiumPage();
+        // this.props.showCesiumPage();
+        var flightId = this.props.flightInfo.id;
+        this.props.showCesiumPage(flightId);
+        var cesiumData = this.getCesiumData(flightId);
+        this.fetchEvents();
+        console.log(cesiumData);
 
-        
-        /* let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
-
-        if (flightStoreIndex === -1) {
-            cesiumFlightsSelected.push(this.props.flightInfo.id)
-        } else {
-            cesiumFlightsSelected.splice(flightStoreIndex, 1);
-        }
-
-        updateCesiumButtonState();
-
-        console.log(cesiumFlightsSelected); */
-    }
+   }
 
     replayClicked() {
         
