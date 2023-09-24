@@ -35,6 +35,10 @@ public class Event {
 
     private Integer otherFlightId = null;
 
+    private String systemId;
+
+    private String tail;
+
     private RateOfClosure rateOfClosure;
 
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
@@ -102,6 +106,21 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail) {
+        this.id = id;
+        this.fleetId = fleetId;
+        this.flightId = flightId;
+        this.eventDefinitionId = eventDefinitionId;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.severity = severity;
+        this.otherFlightId = otherFlightId;
+        this.systemId = systemId;
+        this.tail = tail;
+    }
+
     public void updateEnd(String newEndTime, int newEndLine) {
         endTime = newEndTime;
         endLine = newEndLine;
@@ -161,6 +180,14 @@ public class Event {
 
     public int getDuration() {
         return (endLine - startLine) + 1;
+    }
+
+    public String getSystemID() {
+        return systemId;
+    }
+
+    public String getTail() {
+        return tail;
     }
 
     public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId) throws SQLException {
@@ -303,7 +330,7 @@ public class Event {
             //doing it the longer way below is quicker
             //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
-            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id FROM events, flights WHERE events.flight_id = flights.id AND events.event_definition_id = ? AND events.fleet_id = ?";
+            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail FROM events, flights, tails WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.event_definition_id = ? AND events.fleet_id = ?";
 
             if (startTime != null) {
                 eventsQuery += " AND events.end_time >= ?";
@@ -347,11 +374,13 @@ public class Event {
                 String eventEndTime = eventSet.getString(6);
                 double severity = eventSet.getDouble(7);
                 Integer otherFlightId = eventSet.getInt(8);
+                String systemId = eventSet.getString(10);
+                String tail = eventSet.getString(11);
                 if (eventSet.wasNull()) {
                     otherFlightId = null;
                 }
 
-                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId);
+                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail);
                 System.out.println("event: " + event.toString());
 
                 int airframeId = eventSet.getInt(9);
@@ -359,7 +388,7 @@ public class Event {
 
                 //add the airframe to 
                 eventsByAirframe.get(airframe).add(event);
-            }
+                }
 
             eventSet.close();
             eventsStatement.close();
