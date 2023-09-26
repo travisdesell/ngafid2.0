@@ -1,5 +1,6 @@
 package org.ngafid.flights.process;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -28,7 +29,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.ngafid.filters.Pair;
 import org.ngafid.UploadException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
@@ -123,9 +123,13 @@ public abstract class FlightFileProcessor {
             String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
             Factory f = factories.get(extension);
             if (f != null) {
-                InputStream zipEntryInputStream = zipFile.getInputStream(entry);
-
-                InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
+//                try {
+//                    InputStream zipEntryInputStream = zipFile.getInputStream(entry);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//                InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
 
                 try {
                     return f.create(connection, zipFile.getInputStream(entry), filename);
