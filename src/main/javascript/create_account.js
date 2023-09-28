@@ -1,10 +1,8 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
-import { loginModal } from "./login.js";
-import { navbar } from "./home_navbar.js";
+import {errorModal} from "./error_modal.js";
 
 class CreateAccountCard extends React.Component {
     constructor(props) {
@@ -29,9 +27,26 @@ class CreateAccountCard extends React.Component {
                 city : true,
                 address : true,
                 phone : true,
-                zip : true
+                zip : true,
+                selectedFleet: null,
             },
-            checkedRadio : null
+            checkedRadio : null,
+        }
+    }
+
+
+    componentDidMount() {
+        const queryString = window.location.search;
+        const params = new URLSearchParams(queryString);
+        const myQueryParam = params.get('fleet_name');
+        if (myQueryParam){
+            let checkBox = $("input[name=accountTypeRadios]");
+            checkBox.prop('checked', true);
+            checkBox.val("existingFleet")
+            this.setState({
+                checkedRadio: checkBox.val(),
+            });
+            $("#fleetSelect").val(myQueryParam.trim())
         }
     }
 

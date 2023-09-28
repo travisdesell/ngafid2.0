@@ -178,6 +178,21 @@ class ManageFleetPage extends React.Component {
         });
     }
 
+    sendEmail = (email) => {
+        alert(`Sending email to ${email}`);
+    };
+
+    handleSubmit = (event) => {
+        event.preventDefault();
+        const email = event.target.email.value;
+        const emailPattern = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i;
+        if (!emailPattern.test(email)) {
+            alert('Please enter a valid email address.');
+            return;
+        }
+        this.sendEmail(email);
+    };
+
 
     render() {
         const hidden = this.props.hidden;
@@ -208,6 +223,22 @@ class ManageFleetPage extends React.Component {
                 />
 
                 <div className="card-body" hidden={hidden}>
+                    <div className="row ml-1 mb-2 invite" style={bgStyle}>
+                        <p style={fgStyle}>
+                            Invite user to {fleetName}:
+                        </p>
+                        <form onSubmit={this.handleSubmit}>
+                            <input
+                                type="email"
+                                placeholder="Enter user email:"
+                                name="email"
+                                pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                title="Please enter a valid email address"
+                                required
+                            />
+                            <button className="btn btn-primary ml-1" type="submit">Invite</button>
+                        </form>
+                    </div>
                     <div className="card mb-1" style={bgStyle}>
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
@@ -243,6 +274,30 @@ class ManageFleetPage extends React.Component {
 
                     </div>
                 </div>
+                <style jsx>
+                    {`
+                        .invite p {
+                          margin-right: 10px;
+                          margin-bottom: auto;
+                          margin-top: auto;
+                        }
+                        .input form {
+                          margin-bottom: auto !important;
+                          margin-top: auto;
+                        }
+                        .invite input {
+                          border: 1px solid grey;
+                          border-radius: 5px;
+                          padding: 5px;
+                          background-color: transparent;
+                          outline: none;
+                          transition: border-color 0.2s ease;
+                        } 
+                        .invite input:focus {
+                          border-color: #007bff;
+                        }
+                   `}
+                </style>
             </div>
         );
     }
