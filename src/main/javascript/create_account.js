@@ -27,8 +27,7 @@ class CreateAccountCard extends React.Component {
                 city : true,
                 address : true,
                 phone : true,
-                zip : true,
-                selectedFleet: null,
+                zip : true
             },
             checkedRadio : null,
         }
@@ -38,15 +37,34 @@ class CreateAccountCard extends React.Component {
     componentDidMount() {
         const queryString = window.location.search;
         const params = new URLSearchParams(queryString);
-        const myQueryParam = params.get('fleet_name');
-        if (myQueryParam){
+        const fleet_name = params.get('fleet_name');
+        const email = params.get('email');
+        if (fleet_name){
             let checkBox = $("input[name=accountTypeRadios]");
+            let fleetSelect = $("#fleetSelect")
+            let emailInput = $("#createEmail")
+            let confirmEmailInput = $("#confirmEmail")
             checkBox.prop('checked', true);
-            checkBox.val("existingFleet")
+            checkBox.val("existingFleet");
             this.setState({
                 checkedRadio: checkBox.val(),
+                valid : {
+                    fleetSelect: true,
+                    emailEmpty : false,
+                    email : true,
+                    confirmEmailEmpty : false,
+                    confirmEmail : true,
+                    emailMatch : true,
+                    passwordEmpty: true
+                }
             });
-            $("#fleetSelect").val(myQueryParam.trim())
+            fleetSelect.val(fleet_name.trim());
+            fleetSelect.prop("disabled", true);
+
+            emailInput.val(email.trim());
+            confirmEmailInput.val(email.trim());
+            emailInput.prop("disabled", true);
+            confirmEmailInput.prop("disabled", true);
         }
     }
 
