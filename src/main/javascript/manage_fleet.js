@@ -179,7 +179,33 @@ class ManageFleetPage extends React.Component {
     }
 
     sendEmail = (email) => {
-        alert(`Sending email to ${email}`);
+        const {user} = this.state;
+        var submissionData = {
+            email : email,
+            fleetName: user.fleet.name,
+            fleetId: user.fleet.id
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/send_user_invite',
+            data: submissionData,
+            dataType: 'json',
+            success: (response) => {
+                console.log('Email Invite sent successfully:', response);
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+            },
+            error: (jqXHR, textStatus, errorThrown) => {
+                console.error('Failed to send email invite:');
+                errorModal.show("Error Sending Invite");
+            },
+            async: true
+        });
     };
 
     handleSubmit = (event) => {
@@ -230,7 +256,7 @@ class ManageFleetPage extends React.Component {
                         <form onSubmit={this.handleSubmit}>
                             <input
                                 type="email"
-                                placeholder="Enter user email:"
+                                placeholder="Enter user email"
                                 name="email"
                                 pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
                                 title="Please enter a valid email address"
@@ -274,7 +300,7 @@ class ManageFleetPage extends React.Component {
 
                     </div>
                 </div>
-                <style jsx>
+                <style jsx="true">
                     {`
                         .invite p {
                           margin-right: 10px;
