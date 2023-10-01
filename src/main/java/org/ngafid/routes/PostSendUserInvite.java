@@ -14,7 +14,7 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 
 public class PostSendUserInvite implements Route {
-    private static final Logger LOG = Logger.getLogger(PostUpdateUserAccess.class.getName());
+    private static final Logger LOG = Logger.getLogger(PostSendUserInvite.class.getName());
     private Gson gson;
 
     public PostSendUserInvite(Gson gson) {
