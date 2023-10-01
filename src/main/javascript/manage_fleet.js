@@ -307,9 +307,9 @@ class ManageFleetPage extends React.Component {
                           margin-bottom: auto;
                           margin-top: auto;
                         }
-                        .input form {
+                        .invite form {
                           margin-bottom: auto !important;
-                          margin-top: auto;
+                          margin-top: auto !important;
                         }
                         .invite input {
                           border: 1px solid grey;
