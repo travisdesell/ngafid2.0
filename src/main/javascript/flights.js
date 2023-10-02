@@ -465,6 +465,9 @@ class FlightsPage extends React.Component {
         return this.state.sortingOrder;
     }
 
+    addCesiumFlightPhase(phase) {
+        this.cesiumRef.current.addPhaseEntity(phase);
+    }
     showCesiumPage(flightId) {
 
         console.log("in showCesium flight id from flight component " + flightId);
@@ -1135,6 +1138,7 @@ class FlightsPage extends React.Component {
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showCesiumPage={(flightId) => {this.showCesiumPage(flightId);}}
+                        addCesiumFlightPhase={(phase) => {this.addCesiumFlightPhase(phase);}}
                         showPlot={() => {this.showPlot();}}
                         setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {

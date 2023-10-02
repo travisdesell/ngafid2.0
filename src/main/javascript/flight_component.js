@@ -65,6 +65,7 @@ class Flight extends React.Component {
             eventOutlines : [],
             eventOutlineLayer : null,
             replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
+            cesiumMapVisible: false,
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -498,6 +499,8 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
+        this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+        this.setState(this.state);
 
         // this.props.showCesiumPage();
         var flightId = this.props.flightInfo.id;
@@ -998,6 +1001,10 @@ class Flight extends React.Component {
           }
     }
 
+    addCesiumFlightPhase(phase) {
+        this.props.addCesiumFlightPhase(phase);
+    }
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1054,6 +1061,27 @@ class Flight extends React.Component {
                     <Tags flight={this.props.flightInfo} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} addTag={this.props.addTag} removeTag={this.props.removeTag} 
                         deleteTag={this.props.deleteTag} getUnassociatedTags={this.props.getUnassociatedTags} associateTag={this.props.associateTag} clearTags={this.props.clearTags} editTag={this.props.editTag}/>
             );
+        }
+        var flightPhases = ["Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
+        let flightPhasesCheckBox = "";
+        if (this.state.cesiumMapVisible) {
+            flightPhasesCheckBox = (
+                <div>
+                    <b className={"p-1"} style={{marginBottom: "0"}}>Flight Phase : </b>
+                    <div className="phases">
+                        {   
+                        flightPhases.map((phase, index) => {
+                            return (
+                                <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index} onClick={(phase) => this.addCesiumFlightPhase(phase)}>
+                                        {phase}
+                                </button>
+                            )
+                        }
+                    )
+                        }
+                </div>
+                </div>
+        );
         }
 
         let tracesRow = "";
@@ -1192,6 +1220,8 @@ class Flight extends React.Component {
                     {eventsRow}
 
                     {tracesRow}
+
+                    {flightPhasesCheckBox}
                 </div>
             </div>
         );
