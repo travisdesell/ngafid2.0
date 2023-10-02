@@ -10,6 +10,9 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 
@@ -55,15 +58,17 @@ public class PostSendUserInvite implements Route {
         }
     }
 
-    private static StringBuilder getEmailStringBuilder(String fleetName, String inviteEmail) {
-        String formattedInviteLink = "https://ngafid.org/create_account?fleet_name=" + fleetName + "&email=" + inviteEmail;
+    private static StringBuilder getEmailStringBuilder(String fleetName, String inviteEmail) throws UnsupportedEncodingException {
+        String encodedFleetName = URLEncoder.encode(fleetName, StandardCharsets.UTF_8);
+
+        String formattedInviteLink = "https://ngafid.org/create_account?fleet_name=" + encodedFleetName + "&email=" + inviteEmail;
 
         StringBuilder body = new StringBuilder();
         body.append("<html><body>");
         body.append("<p>Hi,<p><br>");
         body.append("<p>A account creation invitation was sent to your account for fleet: ").append(fleetName).append("<p>");
-        body.append("<p>Please click the below link create an account.<p>");
-        body.append("<p> <a href=" + formattedInviteLink + ">Create Account</a></p><br>");
+        body.append("<p>Please click the link below to create an account.<p>");
+        body.append("<p> <a href=").append(formattedInviteLink).append(">Create Account</a></p><br>");
         body.append("</body></html>");
         return body;
     }

@@ -199,6 +199,9 @@ class ManageFleetPage extends React.Component {
                     errorModal.show(response.errorTitle, response.errorMessage);
                     return false;
                 }
+                alert('Email invite sent to ' + email + '.');
+                $('#inviteEmail').val(' ');
+
             },
             error: (jqXHR, textStatus, errorThrown) => {
                 console.error('Failed to send email invite:');
@@ -255,6 +258,7 @@ class ManageFleetPage extends React.Component {
                         </p>
                         <form onSubmit={this.handleSubmit}>
                             <input
+                                id="inviteEmail"
                                 type="email"
                                 placeholder="Enter user email"
                                 name="email"

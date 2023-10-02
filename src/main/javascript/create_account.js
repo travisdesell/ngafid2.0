@@ -37,9 +37,9 @@ class CreateAccountCard extends React.Component {
     componentDidMount() {
         const queryString = window.location.search;
         const params = new URLSearchParams(queryString);
-        const fleet_name = params.get('fleet_name');
+        const fleetName = params.get('fleet_name');
         const email = params.get('email');
-        if (fleet_name){
+        if (fleetName){
             let checkBox = $("input[name=accountTypeRadios]");
             let fleetSelect = $("#fleetSelect")
             let emailInput = $("#createEmail")
@@ -49,22 +49,23 @@ class CreateAccountCard extends React.Component {
             this.setState({
                 checkedRadio: checkBox.val(),
                 valid : {
-                    fleetSelect: true,
+                    fleetSelect: fleetName,
                     emailEmpty : false,
                     email : true,
                     confirmEmailEmpty : false,
                     confirmEmail : true,
                     emailMatch : true,
-                    passwordEmpty: true
+                    passwordEmpty: true,
                 }
+            }, () =>  {
+                fleetSelect.val(fleetName.trim());
+                fleetSelect.prop("disabled", true);
+                emailInput.val(email.trim());
+                confirmEmailInput.val(email.trim());
+                emailInput.prop("disabled", true);
+                confirmEmailInput.prop("disabled", true);
             });
-            fleetSelect.val(fleet_name.trim());
-            fleetSelect.prop("disabled", true);
 
-            emailInput.val(email.trim());
-            confirmEmailInput.val(email.trim());
-            emailInput.prop("disabled", true);
-            confirmEmailInput.prop("disabled", true);
         }
     }
 
@@ -895,7 +896,7 @@ class CreateAccountCard extends React.Component {
                                     <div className="p-2 flex-fill">
 
                                         <input type="text" className="form-control" id="newFleetName" aria-describedby="newFleetNameHelp" placeholder="Enter the name of your fleet (required)" hidden={fleetNameHidden} onChange={() => this.validateFleetName()}/>
-                                        <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} onChange={() => this.validateFleetSelect()}>
+                                        <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} value={this.state.valid.fleetSelect}  onChange={() => this.validateFleetSelect()}>
                                             {
                                                 fleets.map((fleetInfo, index) => {
                                                     return (
