@@ -3,26 +3,28 @@ import React from "react";
 import {
     Cartesian3,
     Entity,
+    VelocityOrientationProperty,
     Ion, Math, IonResource,
-     JulianDate,
+    JulianDate,
     TimeIntervalCollection,
     TimeInterval,
+    SampledPositionProperty,
     PathGraphics, Color,
+    ModelGraphics,
     PolylineOutlineMaterialProperty, PolylineGraphics, CornerType
 } from "cesium";
-import {Viewer, Scene, Globe, Clock, SkyAtmosphere, ModelGraphics, Model} from "resium";
+import {Viewer, Scene, Globe, Clock, SkyAtmosphere} from "resium";
 
 
 class CesiumPage extends React.Component {
     //TODO Load in flight_component page
     //TODO Fix zoom issues
-    //TODO Get plane and dji model
     //TODO add and remove entities
     //TODO skip to event time
     constructor(props) {
 
         super(props);
-        Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiJiNzg1ZDIwNy0wNmRlLTQ0OWUtOTUwZS0zZTI4OGM0NTFlODIiLCJpZCI6MTYyNDM4LCJpYXQiOjE2OTI5MDc0MzF9.ZtqAnFch5mkZWLZdmNY2Zh-pNH_-XhUPhMrBZSsxyjw";
+        Ion.defaultAccessToken = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJqdGkiOiI3OTU3MDVjYS04ZGRiLTRkZmYtOWE5ZC1lNTEzMTZlNjE5NWEiLCJpZCI6OTYyNjMsImlhdCI6MTY1NDMxNTk2N30.c_n2k_FWWisRoXnAFVGs6Nbxk0NVFmrIpqL12kjE7sA";
         Math.setRandomNumberSeed(9);
         this.state = {
             modelURL: null,
@@ -33,37 +35,46 @@ class CesiumPage extends React.Component {
             activeEntities : {},
             flightData : {}
         };
+        this.loadModel();
     }
 
-    async loadModel(airplaneType) {
-        var url = null;
-        if (airplaneType == "Fixed Wing" || airplaneType == "UAS Fixed Wing") {
-            await IonResource.fromAssetId(1084423).then().then(function (value) {
-                console.log(value._ionEndpointResource);
-                url = value._ionEndpointResource;
-            });
-        }
-        else if (airplaneType == "UAS Rotorcraft") {
-            await IonResource.fromAssetId(1117220).then().then(function (value) {
-                console.log(value._ionEndpointResource);
-                url = value._ionEndpointResource;
-            });
-        }
+    removeEntity(entity) {
+        this.viewer.entities.remove(entity);
+    }
+    async loadModel() {
 
-        return url;
+        var airplaneURI = await IonResource.fromAssetId(1084423);
+        this.state.airFrameModels["Airplane"] = new ModelGraphics({
+            uri: airplaneURI,
+            minimumPixelSize: 64,
+            maximumScale: 20000,
+            scale: 0.5,
+        });
+
+        var droneURI = await IonResource.fromAssetId(1117220);
+        this.state.airFrameModels["Drone"] = new ModelGraphics({
+            uri: droneURI,
+            minimumPixelSize: 64,
+            maximumScale: 20000,
+            scale: 0.5,
+        });
+
+        this.setState(this.state);
     }
 
     getPositionProperty(flightId, flightData) {
         
-        var positionProperty = new Cesium.SampledPositionProperty();
+        var positionProperty = new SampledPositionProperty();
         var infoAglDemo = flightData[flightId]["flightGeoInfoAgl"];
         console.log("infoagldemo");
         console.log(infoAglDemo);
         var infAglDemoTimes = flightData[flightId]["flightAglTimes"];
         var positions = Cartesian3.fromDegreesArrayHeights(infoAglDemo);
+
         for (let i = 0; i < positions.length; i++ ) {
-            positionProperty.addSample(Cesium.JulianDate.fromIso8601(infAglDemoTimes[i]), positions[i]);
+            positionProperty.addSample(JulianDate.fromIso8601(infAglDemoTimes[i]), positions[i]);
         }
+
         return positionProperty;
     }
 
@@ -247,6 +258,16 @@ class CesiumPage extends React.Component {
         console.log("test click from parent component");
     }
 
+    addPhaseEntity( phase) {
+        console.log("Adding phase " + phase );
+
+        
+    }
+
+    addEventEntity(data, event) {
+        
+
+    }
     addFlightEntity(flightId) {
         
         var flightData = this.getCesiumData(flightId);
@@ -269,37 +290,50 @@ class CesiumPage extends React.Component {
             // console.log("Later time detected. Setting end time to " + endTime);
             clockEndTime = flightEndTime.clone();
         }
-        this.viewer.clock.startTime = clockStartTime;
-        this.viewer.clock.stopTime = clockEndTime;
-        this.viewer.clock.currentTime = clockStartTime;
+
+        this.viewer.clock.startTime = flightStartTime.clone();
+        this.viewer.clock.stopTime = flightEndTime.clone();
+        this.viewer.clock.currentTime = flightStartTime.clone();
+        this.viewer.clock.multiplier = 25;
+        this.viewer.clock.shouldAnimate = true;
         var infoAglDemo = flightData[flightId].flightGeoInfoAgl;
         var pathColor = Color.fromRandom();
         var positionProperty = this.getPositionProperty(flightId, flightData);
-        /* var defaultEntity = new Entity({
-                availability: new Cesium.TimeIntervalCollection([new Cesium.TimeInterval({start: clockStartTime, stop: clockEndTime})]),
-                position: positionProperty,
-                orientation: new Cesium.VelocityOrientationProperty(positionProperty),
-                path: new Cesium.PathGraphics({
-                        width: 5,
-                        material: new Cesium.PolylineOutlineMaterialProperty({
-                            color: pathColor,
-                            outlineColor: pathColor,
-                            outlineWidth: 5
-                        })
-                    }),
-                point: {
-                    pixelSize: 10,
-                    color: Color.RED
-                    },
-        }); */
 
+        var model = null;
+        if ( flightData[flightId]["airframeType"] == "Fixed Wing" || flightData[flightId]["airframeType"] == "UAS Fixed Wing") {
+            model = this.state.airFrameModels["Airplane"].clone();
+        }
+        else if ( flightData[flightId]["airframeType"] == "UAS Rotorcraft" ) {
+            model = this.state.airFrameModels["Drone"].clone();
+        }
+
+        var defaultEntity = new Entity({
+            availability: new TimeIntervalCollection([new TimeInterval({start: flightStartTime, stop: flightEndTime})]),
+            position: positionProperty,
+            orientation: new VelocityOrientationProperty(positionProperty),
+            model: model,
+            path: new PathGraphics({
+                    width: 5,
+                    material: new PolylineOutlineMaterialProperty({
+                        color: pathColor,
+                        outlineColor: pathColor,
+                        outlineWidth: 5
+                })
+            }),
+        });
+
+        // this.viewer.trackedEntity = defaultEntity;
         var geoFlightAGL = this.getLoadAGLEntity("default", infoAglDemo, flightId);
         var geoGroundEntity = this.getFlightKeepGroundEntity("default", infoAglDemo, flightId);
         var geoFlightLineEntity = this.getFlightLineEntity("default", infoAglDemo, flightId);
 
-        this.viewer.entities.add(geoGroundEntity);
-        this.viewer.entities.add(geoFlightAGL);
+        // this.viewer.entities.add(geoGroundEntity);
+        //this.viewer.entities.add(defaultEntity);
         this.viewer.entities.add(geoFlightLineEntity);
+        this.viewer.zoomTo(geoFlightLineEntity);
+        // this.viewer.entities.add(geoFlightAGL);
+        // this.viewer.entities.add(geoFlightLineEntity);
         this.setState(this.state);
     }
 
@@ -412,15 +446,8 @@ class CesiumPage extends React.Component {
                                 baseLayerPicker={false}
 
                         >
-                            <Clock
-                                startTime={clockStartTime}
-                                stopTime={clockEndTime}
-                                currentTime={clockStartTime}
-                                shouldAnimate={true}
-                                multiplier={25}
-                            >
-                            </Clock>
-                            <Scene
+                        <Clock/>
+                           <Scene
                                 ref={e => {
                                     this.scene = e ? e.cesiumElement : undefined;
                                 }}

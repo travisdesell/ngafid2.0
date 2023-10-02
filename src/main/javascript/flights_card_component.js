@@ -68,7 +68,7 @@ class FlightsCard extends React.Component {
                         flights.map((flightInfo, index) => {
                             if(flightInfo != null) {
                                 return (
-                                    <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} showCesiumPage={(flightId)=>{this.props.showCesiumPage(flightId);}} flightInfo={flightInfo} navBar={this.props.navBar} pageIndex={index}
+                                    <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} showCesiumPage={(flightId)=>{this.props.showCesiumPage(flightId);}} flightInfo={flightInfo} navBar={this.props.navBar} pageIndex={index} addCesiumFlightPhase={(phase) => {this.props.addCesiumFLightPhase(phase);}}
                                         updateParentState={(newFlights) => this.props.setFlights(newFlights)} setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
                                         parent={this} layers={this.props.layers} key={flightInfo.id}
                                         addTag={this.props.addTag}

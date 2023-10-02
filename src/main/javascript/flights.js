@@ -546,7 +546,10 @@ class FlightsPage extends React.Component {
         return this.state.sortingOrder;
     }
 
-    showCesiumMap() {
+    addCesiumFlightPhase(phase) {
+        this.cesiumRef.current.addPhaseEntity(phase);
+    }
+    showCesiumPage(flightId) {
 
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
