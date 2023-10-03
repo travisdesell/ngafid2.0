@@ -8,6 +8,7 @@ import java.io.StringWriter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
@@ -65,13 +66,13 @@ public class GetWelcome implements Route {
     public GetWelcome(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetWelcome(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages = new ArrayList<Message>();
         messages.add(new Message(messageType, messageText));
@@ -106,9 +107,8 @@ public class GetWelcome implements Route {
             LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
 
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-
-
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
+            System.out.println(eventCountsMap);
 
             long startTime = System.currentTimeMillis();
             String fleetInfo =
