@@ -870,6 +870,7 @@ public class EventStatistics {
             totalFlights.add(resultSet.getInt(6));
             totalEvents.add(resultSet.getInt(7));
             fleetIDs.add(resultSet.getInt(8));
+
         }
 
         resultSet.close();
@@ -879,9 +880,16 @@ public class EventStatistics {
 
 
         for (int i = 0; i < airframeNameIds.size(); i++) {
-            LOG.info("Event Names: " + eventNames.get(i) + " Airframe Names: " + airframeNames.get(i) + " Flights with Event: " + flightsWithEvent.get(i) + " Total Flights: " + totalFlights.get(i) + " Total Events: " + totalEvents.get(i) + " Fleet ID: " + fleetIDs.get(i));
             EventCounts eventCount = new EventCounts(airframeNames.get(i));
+            eventCount.initializeEvent(eventNames.get(i));
+
             eventCounts.put(airframeNames.get(i), eventCount);
+
+            LOG.info("Event Name: " + eventNames.get(i));
+            LOG.info("Flights With Events: " + flightsWithEvent.get(i));
+            LOG.info("Total Flights: " + totalFlights.get(i));
+            LOG.info("Total Events: " + totalEvents.get(i));
+
 
             if (fleetIDs.get(i) == fleetId) {
                 eventCount.update(eventNames.get(i), flightsWithEvent.get(i), totalFlights.get(i), totalEvents.get(i));
