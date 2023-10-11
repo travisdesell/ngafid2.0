@@ -674,7 +674,7 @@ public class EventStatistics {
 
 
         public void assignLists() {
-            ArrayList<String> sortedKeys = new ArrayList<String>(flightsWithEventMap.keySet());
+            ArrayList<String> sortedKeys = new ArrayList<>(flightsWithEventMap.keySet());
             Collections.sort(sortedKeys, Collections.reverseOrder());
 
             for (String eventName : sortedKeys) {
@@ -858,7 +858,6 @@ public class EventStatistics {
 
             //get the event statistics for each airframe
             while (resultSet.next()) {
-                int airframeNameID = resultSet.getInt(1);
                 String airframeName = resultSet.getString(3);
                 String eventName = resultSet.getString(4);
                 int flightsWithEvent = resultSet.getInt(5);
@@ -866,8 +865,13 @@ public class EventStatistics {
                 int totalEvents = resultSet.getInt(7);
                 int resultFleetID = resultSet.getInt(8);
 
-                EventCounts eventCount = new EventCounts(airframeName);
-                eventCounts.put(airframeName, eventCount);
+                EventCounts eventCount;
+                if (eventCounts.containsKey(airframeName)) {
+                    eventCount = eventCounts.get(airframeName);
+                } else {
+                    eventCount = new EventCounts(airframeName);
+                    eventCounts.put(airframeName, eventCount);
+                }
 
                 eventCount.initializeEvent(eventName);
 
@@ -882,12 +886,13 @@ public class EventStatistics {
                 } else {
                     eventCount.updateAggregate(eventName, flightsWithEvent, flightsTotal, totalEvents);
                 }
-
-                eventCount.assignLists();
-
             }
 
             resultSet.close();
+        }
+
+        for (EventCounts eventCount : eventCounts.values()) {
+            eventCount.assignLists();
         }
 
 
@@ -1010,8 +1015,6 @@ public class EventStatistics {
             eventCount.flightsWithEventCounts = null;
             eventCount.totalFlightsCounts = null;
             eventCount.totalEventsCounts = null;
-
-
         }
 
         return eventCounts;
