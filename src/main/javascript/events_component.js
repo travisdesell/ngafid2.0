@@ -62,9 +62,16 @@ class Events extends React.Component {
     updateEventDisplay(index, toggle) {
             // Draw rectangles on plot
         var event = this.state.events[index];
+        console.log(event);
+        if (this.props.parent.state.cesiumMapVisible) {
+            this.props.parent.addCesiumEventEntity(event);    
+        }
+        // this.props.parent.addCesiumEventEntity(event);
         console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
         let shapes = global.plotlyLayout.shapes;
-
+        console.log("Shapes in event : ");
+        console.log(shapes);
+        console.log(event.color);
         let update = {
             id: event.id,
             type: 'rect',
@@ -193,11 +200,12 @@ class Events extends React.Component {
                             <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
+
                                                 let flight = this.props.parent;
                                                 let eventsMapped = flight.state.eventsMapped;
                                                 let displayStatus = false;
                                                 let displayStatusSet = false;
-
+                                                
                                                 // update eventDisplay for every event concerned
                                                 for (let e = 0; e < this.state.events.length; e++) {
                                                     if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {

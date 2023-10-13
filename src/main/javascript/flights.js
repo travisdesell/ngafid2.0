@@ -465,8 +465,16 @@ class FlightsPage extends React.Component {
         return this.state.sortingOrder;
     }
 
-    addCesiumFlightPhase(phase) {
-        this.cesiumRef.current.addPhaseEntity(phase);
+    addCesiumFlightPhase(phase, flightId) {
+        this.cesiumRef.current.addPhaseEntity(phase, flightId);
+    }
+
+    addCesiumEventEntity(event, flightId) {
+        this.cesiumRef.current.addEventEntity(event, flightId);
+    }
+
+    removeCesiumEntity(flightId) {
+        this.cesiumRef.current.removeEntity(flightId);
     }
     showCesiumPage(flightId) {
 
@@ -474,7 +482,7 @@ class FlightsPage extends React.Component {
         // if (this.state.cesiumVisible) return;
         console.log(this.cesiumRef);
         this.cesiumRef.current.testClick();
-        this.cesiumRef.current.addFlightEntity(flightId);  
+        this.cesiumRef.current.addFlightEntity(flightId, "default");  
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
             $("#cesium-toggle-button").attr("aria-pressed", true);
@@ -1138,7 +1146,9 @@ class FlightsPage extends React.Component {
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
                         showCesiumPage={(flightId) => {this.showCesiumPage(flightId);}}
-                        addCesiumFlightPhase={(phase) => {this.addCesiumFlightPhase(phase);}}
+                        removeCesiumEntity={(flightId) => {this.removeCesiumEntity(flightId);}}
+                        addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
+                        addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
                         showPlot={() => {this.showPlot();}}
                         setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
                         setFlights={(flights) => {

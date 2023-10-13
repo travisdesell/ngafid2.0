@@ -14,6 +14,8 @@ import {
     PolylineOutlineMaterialProperty, PolylineGraphics, CornerType
 } from "cesium";
 import {Viewer, Scene, Globe, Clock, SkyAtmosphere} from "resium";
+import { watch } from "fs";
+import { Col } from "react-bootstrap";
 
 
 class CesiumPage extends React.Component {
@@ -32,7 +34,8 @@ class CesiumPage extends React.Component {
             airFrameModels : {},
             modelLoaded : null,
             phaseChecked : {},
-            activeEntities : {},
+            activePhaseEntities : {},
+            activeEventEntites : {},
             flightData : {}
         };
         this.loadModel();
@@ -63,12 +66,13 @@ class CesiumPage extends React.Component {
     }
 
     getPositionProperty(flightId, flightData) {
-        
+       
+        console.log(flightData);
         var positionProperty = new SampledPositionProperty();
-        var infoAglDemo = flightData[flightId]["flightGeoInfoAgl"];
+        var infoAglDemo = flightData["flightGeoInfoAgl"];
         console.log("infoagldemo");
         console.log(infoAglDemo);
-        var infAglDemoTimes = flightData[flightId]["flightAglTimes"];
+        var infAglDemoTimes = flightData["flightAglTimes"];
         var positions = Cartesian3.fromDegreesArrayHeights(infoAglDemo);
 
         for (let i = 0; i < positions.length; i++ ) {
@@ -177,22 +181,6 @@ class CesiumPage extends React.Component {
                     cornerType: CornerType.BEVELED,
                 }
         });
-        /* let entity = (
-            <Entity
-                name={"NGAFID CESIUM : " + type + " " + flightId}
-                description={"<a><h3> NGAFID Flight ID: " + flightId + "</h3> </a>" + " <hr> <p> Reanimation of Flight - " + type +
-                    "</p>" + "<hr> <p> Displaying Time: " + today + "</p>"}
-                wall={
-                    {
-                        positions : detailsMap[type],
-                        material : detailsMap[type],
-                        cornerType : CornerType.BEVELED
-                    }
-                }
-            >
-            </Entity>
-        );
- */
         return entity;
     }
 
@@ -234,23 +222,6 @@ class CesiumPage extends React.Component {
             },
         });
 
-       /*  let entity = (
-            <Entity
-                name={"NGAFID CESIUM FLIGHT  " + type}
-                description={"<a><h3> NGAFID Flight ID: " + this.state.flightId + "</h3> </a>" + " <hr> <p> Reanimation of Flight -" + type  + "</p>" + "<hr> <p> Displaying Time: " + today + "</p>"}
-                polyline={new PolylineGraphics({
-                    positions: positionsArr,
-                    width: 3,
-                    material: new PolylineOutlineMaterialProperty({
-                        color: colorMap[type].color,
-                        outlineColor: Color.BLACK,
-                        outlineWidth:2
-                    })
-                })}
-            >
-            </Entity>
-        ); */
-
         return entity;
     }
  
@@ -258,25 +229,85 @@ class CesiumPage extends React.Component {
         console.log("test click from parent component");
     }
 
-    addPhaseEntity( phase) {
-        console.log("Adding phase " + phase );
+    addPhaseEntity( phase, flightId) {
+        console.log("Adding phase " + phase + " flight id : " + flightId);
+        console.log(this.state.flightData[flightId]);
+        var positionArr = null;
+        if (phase == "Show Taxiing") {
+            phase = "Taxiing";
+            positionArr = this.state.flightData[flightId].flightGeoAglTaxiing;
+        } else if (phase == "Show Takeoff") {
+            phase = "Takeoff"
+            positionArr = this.state.flightData[flightId].flightGeoAglTakeOff;
+        } else if (phase == "Show Climb") {
+            phase = "Climb"
+            positionArr = this.state.flightData[flightId].flightGeoAglClimb;
+        } else if (phase == "Show Cruise to Final") {
+            phase = "Cruise"
+            positionArr = this.state.flightData[flightId].flightGeoAglCruise;
+        } else if (phase == "Show Full Flight") {
+            phase = "FullFlight"
+            positionArr = this.state.flightData[flightId].flightGeoInfoAgl;
+        }
 
+        var geoFlightLoadAgl = this.getLoadAGLEntity(phase, positionArr, flightId);
+        var geoFlightLineTaxi = this.getFlightLineEntity(phase, positionArr);
+        var geoFlightKeepGround = this.getFlightKeepGroundEntity(phase, positionArr, flightId);
+        
+        this.viewer.entities.add(geoFlightLoadAgl);
+        this.viewer.entities.add(geoFlightLineTaxi);
+        this.viewer.entities.add(geoFlightKeepGround);
+
+        this.state.activePhaseEntities[phase] = [geoFlightLoadAgl, geoFlightKeepGround, geoFlightLineTaxi];
+        this.setState(this.state);
         
     }
 
-    addEventEntity(data, event) {
-        
+    addEventEntity(event, flightId) {
+        console.log("In cesium : ");
+        console.log(event);
+        console.log(flightId);
+        console.log(this.state.flightData[flightId]);
+        var infoAgl = this.state.flightData[flightId].flightGeoInfoAgl;
+        var startLine = event.startLine*3  ;
+        var endLine = event.endLine*3;
+        console.log("Start line : " + startLine + " End Line : " + endLine);
+        var eventCoordinates = infoAgl.slice(startLine, endLine);
+        console.log(eventCoordinates);
+        var positionArr = Cartesian3.fromDegreesArrayHeights(eventCoordinates);
 
-    }
-    addFlightEntity(flightId) {
+        console.log(Color.fromRgba(event.color));
+        var entity = new Entity({
+
+            /* name: "NGAFID CESIUM FLIGHT " + type,
+            description: "<a><h3> NGAFID Flight ID: " +  + "</h3> </a>" + " <hr> <p> Reanimation of Flight - Climb</p>" + "<hr> <p> Displaying Time: " + today + "</p>",
+            */
+            polyline: {
+            positions: positionArr,
+            width: 5,
+            material: new Cesium.PolylineOutlineMaterialProperty({
+                color: Color.fromCssColorString(event.color),
+                outlineWidth: 10,
+                outlineColor: Color.fromCssColorString(event.color),
+                }),
+            },
+        });
         
-        var flightData = this.getCesiumData(flightId);
-        this.state.flightData[flightId] = {"data" : flightData};
-        console.log(flightData.startTime);
+        this.viewer.entities.add(entity);
+        var eventTime = JulianDate.fromIso8601(event.startTime);
+        this.viewer.clock.currentTime = eventTime;
+        
+        // this.viewer.zoomTo(entity);
+    }
+
+    getFlightReplayEntity(flightId) {
+        var flightData = this.state.flightData[flightId];
+        console.log("flightdata");
+        console.log(flightData);
         var clockStartTime = JulianDate.fromIso8601("9999-12-31T00:00:00");
         var clockEndTime = JulianDate.fromIso8601("0000-01-01T00:00:00");
-        var flightStartTime = JulianDate.fromIso8601(flightData[flightId].startTime);
-        var flightEndTime = JulianDate.fromIso8601(flightData[flightId].endTime);
+        var flightStartTime = JulianDate.fromIso8601(flightData.startTime);
+        var flightEndTime = JulianDate.fromIso8601(flightData.endTime);
         console.log("Flight start time : ");
         console.log("Before entities");
         console.log(this.viewer.entities);
@@ -296,19 +327,18 @@ class CesiumPage extends React.Component {
         this.viewer.clock.currentTime = flightStartTime.clone();
         this.viewer.clock.multiplier = 25;
         this.viewer.clock.shouldAnimate = true;
-        var infoAglDemo = flightData[flightId].flightGeoInfoAgl;
         var pathColor = Color.fromRandom();
         var positionProperty = this.getPositionProperty(flightId, flightData);
 
         var model = null;
-        if ( flightData[flightId]["airframeType"] == "Fixed Wing" || flightData[flightId]["airframeType"] == "UAS Fixed Wing") {
-            model = this.state.airFrameModels["Airplane"].clone();
+        if (flightData["airframeType"] == "Fixed Wing" || flightData["airframeType"] == "UAS Fixed Wing") {
+            model = this.state.airFrameModels["Airplane"];
         }
-        else if ( flightData[flightId]["airframeType"] == "UAS Rotorcraft" ) {
-            model = this.state.airFrameModels["Drone"].clone();
+        else if (flightData["airframeType"] == "UAS Rotorcraft") {
+            model = this.state.airFrameModels["Drone"];
         }
 
-        var defaultEntity = new Entity({
+        var replayEntity = new Entity({
             availability: new TimeIntervalCollection([new TimeInterval({start: flightStartTime, stop: flightEndTime})]),
             position: positionProperty,
             orientation: new VelocityOrientationProperty(positionProperty),
@@ -321,20 +351,46 @@ class CesiumPage extends React.Component {
                         outlineWidth: 5
                 })
             }),
+            
         });
+        this.state.activePhaseEntities[flightId] = { "replayEntity" : replayEntity };
+        var infoAglDemo = this.state.flightData[flightId]["flightGeoInfoAgl"]; 
+        
+        var geoFlightLoadAglEntity = this.getLoadAGLEntity("default", infoAglDemo);
+        var geoFlightGroundEntity = this.getFlightKeepGroundEntity("default", infoAglDemo);
+        this.state.activePhaseEntities[flightId]["groundEntity"] = geoFlightGroundEntity;
+        this.viewer.entities.add(geoFlightGroundEntity);
 
-        // this.viewer.trackedEntity = defaultEntity;
-        var geoFlightAGL = this.getLoadAGLEntity("default", infoAglDemo, flightId);
-        var geoGroundEntity = this.getFlightKeepGroundEntity("default", infoAglDemo, flightId);
-        var geoFlightLineEntity = this.getFlightLineEntity("default", infoAglDemo, flightId);
+        this.viewer.zoomTo(geoFlightLoadAglEntity);
+        return replayEntity;
+    }
 
-        // this.viewer.entities.add(geoGroundEntity);
-        //this.viewer.entities.add(defaultEntity);
-        this.viewer.entities.add(geoFlightLineEntity);
-        this.viewer.zoomTo(geoFlightLineEntity);
-        // this.viewer.entities.add(geoFlightAGL);
-        // this.viewer.entities.add(geoFlightLineEntity);
-        this.setState(this.state);
+    removeAllEntities(flightId) {
+    
+        for (const [phase, entity] of Object.entries(this.state.activePhaseEntities[flightId])) {
+            this.viewer.entities.remove(entity);
+        }
+
+        for (const [event, entity] of Object.entries(this.state.activeEventEntites[flightId])) {
+            this.viewer.entities.remove(entity);
+        }
+        console.log("flight id : " + flightId + " removed from cesium");
+    }
+
+    addFlightEntity(flightId, entityType) {
+        
+        var entity = null;
+        if (!(flightId in this.state.flightData)) {
+            this.state.flightData[flightId] = this.getCesiumData(flightId)[flightId];
+            this.setState(this.state);
+        }
+        if (entityType == "default") {
+            entity = this.getFlightReplayEntity(flightId);
+        } 
+       
+        this.viewer.entities.add(entity);
+        this.viewer.trackedEntity = null;
+        this.viewer.zoomTo(entity); 
     }
 
     toggleCamera() {

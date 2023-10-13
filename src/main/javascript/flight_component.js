@@ -88,7 +88,7 @@ class Flight extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ");
+                console.log("received response events data :");
                 console.log(response);
 
                 if (!global.eventDefinitionsLoaded) {
@@ -207,7 +207,7 @@ class Flight extends React.Component {
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
-                    console.log("received response: ");
+                    console.log("received response double series name : ");
                     console.log(response);
 
                     var names = response.names;
@@ -499,23 +499,24 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
-        this.setState(this.state);
-
-        // this.props.showCesiumPage();
+        
         var flightId = this.props.flightInfo.id;
-        this.props.showCesiumPage(flightId);
-        var cesiumData = this.getCesiumData(flightId);
-        this.fetchEvents();
-        console.log(cesiumData);
-
+        if (!this.state.cesiumMapVisible) {
+            this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+            this.setState(this.state);
+            this.props.showCesiumPage(flightId);
+            var cesiumData = this.getCesiumData(flightId);
+            this.fetchEvents();
+            console.log(cesiumData);
+        } else {
+            this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+            this.props.removeCesiumEntity(flightId);
+        }
    }
 
     replayClicked() {
-        
 
         let URL = "/protected/ngafid_cesium_old?flight_id=" + (this.props.flightInfo.id).toString();
-
         window.open(URL); 
     }
 
@@ -707,6 +708,7 @@ class Flight extends React.Component {
                     dataType : 'json',
                     success : function(response) {
                         console.log("got double_series response");
+                        console.log(response);
                         console.log(thisFlight.state.seriesData);
                         thisFlight.state.seriesData.set(name, response.y);
                     },
@@ -1005,6 +1007,11 @@ class Flight extends React.Component {
         this.props.addCesiumFlightPhase(phase);
     }
 
+    addCesiumEventEntity(event) {
+        console.log("Adding event to Cesium");
+        console.log(event);
+        this.props.addCesiumEventEntity(event, this.props.flightInfo.id);
+    }
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1064,6 +1071,8 @@ class Flight extends React.Component {
         }
         var flightPhases = ["Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
         let flightPhasesCheckBox = "";
+        var flightId = flightInfo.id;
+        console.log("flight id : " + flightId);
         if (this.state.cesiumMapVisible) {
             flightPhasesCheckBox = (
                 <div>
@@ -1072,7 +1081,7 @@ class Flight extends React.Component {
                         {   
                         flightPhases.map((phase, index) => {
                             return (
-                                <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index} onClick={(phase) => this.addCesiumFlightPhase(phase)}>
+                                <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index} onClick={() => this.props.addCesiumFlightPhase(phase, flightId)}>
                                         {phase}
                                 </button>
                             )
