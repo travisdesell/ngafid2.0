@@ -409,7 +409,7 @@ class FlightsPage extends React.Component {
       numberPages: 1,
       pageSize: 10,
     };
-
+    this.cesiumRef = React.createRef();
     this.navRef = React.createRef();
   }
 
@@ -546,8 +546,16 @@ class FlightsPage extends React.Component {
         return this.state.sortingOrder;
     }
 
-    addCesiumFlightPhase(phase) {
-        this.cesiumRef.current.addPhaseEntity(phase);
+    addCesiumFlightPhase(phase, flightId) {
+        this.cesiumRef.current.addPhaseEntity(phase, flightId);
+    }
+
+    addCesiumEventEntity(event, flightId) {
+        this.cesiumRef.current.addEventEntity(event, flightId);
+    }
+
+    removeCesiumEntity(flightId) {
+        this.cesiumRef.current.removeEntity(flightId);
     }
     showCesiumPage(flightId) {
 

@@ -225,11 +225,12 @@ class Events extends React.Component {
                             <button className={buttonClasses} style={{flex : "0 0 10em", "backgroundColor": eventColorScheme[event.eventDefinitionId], "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index}
                                         onClick={() =>
                                             {
+
                                                 let flight = this.props.parent;
                                                 let eventsMapped = flight.state.eventsMapped;
                                                 let displayStatus = false;
                                                 let displayStatusSet = false;
-
+                                                
                                                 // update eventDisplay for every event concerned
                                                 for (let e = 0; e < this.state.events.length; e++) {
                                                     if (this.state.events[e].eventDefinitionId == event.eventDefinitionId) {
