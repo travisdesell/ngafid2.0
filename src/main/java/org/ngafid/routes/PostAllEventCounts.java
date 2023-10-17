@@ -58,7 +58,7 @@ public class PostAllEventCounts implements Route {
         try {
             Connection connection = Database.getConnection();
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {

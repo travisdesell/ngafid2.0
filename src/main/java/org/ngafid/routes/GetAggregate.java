@@ -118,7 +118,7 @@ public class GetAggregate implements Route {
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
             LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null, null);
 
             //create a filter to grab things 
             String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
