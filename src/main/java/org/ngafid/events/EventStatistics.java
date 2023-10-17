@@ -616,6 +616,10 @@ public class EventStatistics {
             this.airframeName = airframeName;
         }
 
+        /**
+         * Zero out values in Maps for a given event name
+         * @param eventName
+         */
         public void initializeEvent(String eventName) {
             if (flightsWithEventMap.containsKey(eventName)) return;
 
@@ -628,12 +632,26 @@ public class EventStatistics {
             aggregateTotalEventsMap.put(eventName, 0);
         }
 
+        /**
+         * Add to the values in the Maps for a given event name
+         * @param eventName
+         * @param flightsWithEvent
+         * @param totalFlights
+         * @param totalEvents
+         */
         public void update(String eventName, Integer flightsWithEvent, Integer totalFlights, Integer totalEvents) {
             flightsWithEventMap.put(eventName, flightsWithEventMap.get(eventName) + flightsWithEvent);
             totalFlightsMap.put(eventName, totalFlightsMap.get(eventName) + totalFlights);
             totalEventsMap.put(eventName, totalEventsMap.get(eventName) + totalEvents);
         }
 
+        /**
+         * Add to the values in the aggregate Maps for a given event name
+         * @param eventName
+         * @param flightsWithEvent
+         * @param totalFlights
+         * @param totalEvents
+         */
         public void updateAggregate(String eventName, Integer flightsWithEvent, Integer totalFlights, Integer totalEvents) {
             Integer aggregateFlightsWithEventCount = aggregateFlightsWithEventMap.get(eventName);
             Integer aggregateTotalFlightsCount = aggregateTotalFlightsMap.get(eventName);
@@ -648,7 +666,9 @@ public class EventStatistics {
             aggregateTotalEventsMap.put(eventName, aggregateTotalEventsCount);
         }
 
-
+        /**
+         * Place Map values into lists and dead store eliminate maps
+         */
         public void assignLists() {
             ArrayList<String> sortedKeys = new ArrayList<>(flightsWithEventMap.keySet());
             Collections.sort(sortedKeys, Collections.reverseOrder());
@@ -886,11 +906,11 @@ public class EventStatistics {
         }
 
         for (String airframeName : nullDataAirframes) { // Add empty event counts for airframes with no events
-            EventCounts eventStatistics = new EventCounts(airframeName);
-            eventCounts.put(airframeName, eventStatistics);
+            EventCounts eventCount = new EventCounts(airframeName);
+            eventCounts.put(airframeName, eventCount);
 
             for (String eventName : eventNames) {
-                eventStatistics.initializeEvent(eventName);
+                eventCount.initializeEvent(eventName);
             }
         }
 
