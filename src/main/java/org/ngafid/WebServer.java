@@ -211,6 +211,7 @@ public final class WebServer {
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
         Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
+        Spark.put("/protected/event_definitions", new PutEventDefinitions(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
         Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
