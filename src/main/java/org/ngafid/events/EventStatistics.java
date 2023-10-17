@@ -835,16 +835,16 @@ public class EventStatistics {
         String query = "SELECT event_statistics.airframe_id, event_definition_id, airframe, " +
                         "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
                         "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
-                        "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id ";
+                        "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
+                        "WHERE (month_first_day >= ? OR month_first_day IS NULL) AND (month_first_day <= ? OR month_first_day IS NULL)";
 
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-//            preparedStatement.setInt(1, fleetId);
-//            preparedStatement.setString(2, startTime.toString());
-//            preparedStatement.setString(3, endTime.toString());
+            preparedStatement.setString(1, startTime.toString());
+            preparedStatement.setString(2, endTime.toString());
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
