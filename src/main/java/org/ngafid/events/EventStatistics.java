@@ -637,8 +637,11 @@ public class EventStatistics {
             Integer aggregateTotalEventsCount = aggregateTotalEventsMap.get(eventName);
             */
 
+            LOG.info("Adding flights with event count: " + flightsWithEvent + " to " + eventName + " for airframe: " + airframeName);
             flightsWithEventCount += flightsWithEvent;
+            LOG.info("Adding total flights count: " + totalFlights + " to " + eventName + " for airframe: " + airframeName);
             totalFlightsCount += totalFlights;
+            LOG.info("Adding total events count: " + totalEvents + " to " + eventName + " for airframe: " + airframeName);
             totalEventsCount += totalEvents;
 
             /*
@@ -846,17 +849,20 @@ public class EventStatistics {
                         "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
                         "FROM event_statistics INNER JOIN event_definitions ON event_definition_id=event_definitions.id " +
                         "INNER JOIN airframes ON event_statistics.airframe_id=airframes.id " +
-                        "WHERE month_first_day >= ? AND month_first_day <= ? ORDER BY airframe, event_definition_id";
+                        "WHERE (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?)" +
+                        "AND month_first_day >= ? AND month_first_day <= ? ORDER BY airframe, event_definition_id";
 
         Map<String, EventCounts> eventCounts = new HashMap<>();
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, startTime.toString());
-            preparedStatement.setString(2, endTime.toString());
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, startTime.toString());
+            preparedStatement.setString(3, endTime.toString());
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
             //get the event statistics for each airframe
+            LOG.info("airframeName, eventName, flightsWithEvent, flightsTotal, totalEvents, fleetId");
             while (resultSet.next()) {
                 String airframeName = resultSet.getString(3);
                 String eventName = resultSet.getString(4);
@@ -875,11 +881,7 @@ public class EventStatistics {
 
                 eventCount.initializeEvent(eventName);
 
-                LOG.info("Fleet ID: " + resultFleetID);
-                LOG.info("Event Name: " + eventName);
-                LOG.info("Flights With Events: " + flightsWithEvent);
-                LOG.info("Total Flights: " + flightsTotal);
-                LOG.info("Total Events: " + totalEvents);
+                LOG.info(resultSet.getString(1) +", "+ resultSet.getString(2) +", "+ resultSet.getString(3) +", "+ resultSet.getString(4) +", "+ resultSet.getString(5) +", "+ resultSet.getString(6) +", "+ resultSet.getString(7) +", "+ resultSet.getString(8));
 
                 if (resultFleetID == fleetId) {
                     eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
