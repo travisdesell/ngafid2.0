@@ -476,17 +476,15 @@ class FlightsPage extends React.Component {
     removeCesiumEntity(flightId) {
         this.cesiumRef.current.removeEntity(flightId);
     }
-    showCesiumPage(flightId) {
+    showCesiumPage(flightId, color) {
 
         console.log("in showCesium flight id from flight component " + flightId);
-        // if (this.state.cesiumVisible) return;
-        console.log(this.cesiumRef);
-        this.cesiumRef.current.testClick();
-        this.cesiumRef.current.addFlightEntity(flightId, "default");  
+        
         if (!$("#cesium-toggle-button").hasClass("active")) {
             $("#cesium-toggle-button").addClass("active");
             $("#cesium-toggle-button").attr("aria-pressed", true);
         }
+        this.cesiumRef.current.addFlightEntity(flightId, "default", color);  
         this.state.cesiumVisible = true;
         this.setState(this.state);
         $("#cesium-div").css("height", "50%");
@@ -503,6 +501,10 @@ class FlightsPage extends React.Component {
     showMap() {
 
         console.log("in flight.js showmap");
+
+        if (this.state.cesiumVisible) {
+            this.hideCesiumMap();
+        }
 
         if ( !$("#map-toggle-button").hasClass("active") ) { 
             $("#map-toggle-button").addClass("active");
@@ -559,17 +561,9 @@ class FlightsPage extends React.Component {
 
         this.state.cesiumVisible = false;
         this.setState(this.state);
+        this.setState(this.state);
 
         $("#cesium-div").hide();
-
-        /* if (this.state.plotVisible) {
-            $("#plot").css("width", "100%");
-            var update = { width : "100%" };
-            Plotly.Plots.resize("plot");
-        } else {
-            $("#plot-map-div").css("height", "0%");
-        } */
-
 
     }
 
@@ -1145,7 +1139,7 @@ class FlightsPage extends React.Component {
                         navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
-                        showCesiumPage={(flightId) => {this.showCesiumPage(flightId);}}
+                        showCesiumPage={(flightId, color) => {this.showCesiumPage(flightId, color);}}
                         removeCesiumEntity={(flightId) => {this.removeCesiumEntity(flightId);}}
                         addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
                         addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
