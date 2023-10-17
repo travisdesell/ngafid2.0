@@ -847,12 +847,13 @@ public class EventStatistics {
 
         String query = "SELECT event_statistics.airframe_id, event_definition_id, airframe, " +
                         "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
-                        "FROM event_statistics INNER JOIN event_definitions ON event_definition_id=event_definitions.id " +
-                        "INNER JOIN airframes ON event_statistics.airframe_id=airframes.id " +
-                        "WHERE (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?)" +
-                        "AND month_first_day >= ? AND month_first_day <= ? ORDER BY airframe, event_definition_id";
+                        "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
+                        "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
+                        "WHERE (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?) AND month_first_day >= ? AND month_first_day <= ?";
 
         Map<String, EventCounts> eventCounts = new HashMap<>();
+        Set<String> eventNames = new HashSet<>();
+        Set<String> nullDataAirframes = new HashSet<>();
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, fleetId);
@@ -866,6 +867,13 @@ public class EventStatistics {
             while (resultSet.next()) {
                 String airframeName = resultSet.getString(3);
                 String eventName = resultSet.getString(4);
+                if (eventName == null) { // No events for this airframe, skip
+                    nullDataAirframes.add(airframeName);
+                    continue;
+                } else {
+                    eventNames.add(eventName);
+                }
+
                 int flightsWithEvent = resultSet.getInt(5);
                 int flightsTotal = resultSet.getInt(6);
                 int totalEvents = resultSet.getInt(7);
@@ -891,6 +899,15 @@ public class EventStatistics {
             }
 
             resultSet.close();
+        }
+
+        for (String airframeName : nullDataAirframes) { // Add empty event counts for airframes with no events
+            EventCounts eventStatistics = new EventCounts(airframeName);
+            eventCounts.put(airframeName, eventStatistics);
+
+            for (String eventName : eventNames) {
+                eventStatistics.initializeEvent(eventName);
+            }
         }
 
         for (EventCounts eventCount : eventCounts.values()) {
