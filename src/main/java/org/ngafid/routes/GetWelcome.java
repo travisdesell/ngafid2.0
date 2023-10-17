@@ -108,9 +108,8 @@ public class GetWelcome implements Route {
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
 
             Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-            for (String eventName : eventCountsMap.keySet()) {
-                System.out.println("eventName: '" + eventName + "'");
-                System.out.println("eventCounts: '" + eventCountsMap.get(eventName) + "'");
+            for (EventStatistics.EventCounts eventCounts : eventCountsMap.values()) {
+                LOG.info(eventCounts.toString());
             }
 
             long startTime = System.currentTimeMillis();

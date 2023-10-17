@@ -711,6 +711,20 @@ public class EventStatistics {
             aggregateTotalEventsMap = null;
 
         }
+
+        @Override
+        public String toString() {
+            StringBuilder builder = new StringBuilder();
+            builder.append("airframeName: ").append(airframeName).append("\n");
+            for (String name : names) {
+                builder.append("\t").append(name).append("\n");
+                builder.append("\t\tTotal Flights Count").append(totalFlightsCounts).append("\n");
+                builder.append("\t\tTotal Events Count").append(totalEventsCounts).append("\n");
+                builder.append("\t\tFlights With Event Count").append(flightsWithEventCounts).append("\n");
+            }
+
+            return builder.toString();
+        }
     }
 
     /**
@@ -848,37 +862,40 @@ public class EventStatistics {
         String query = "SELECT event_statistics.airframe_id, event_definition_id, airframe, " +
                         "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
                         "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
-                        "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
-                        "WHERE (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?) AND month_first_day >= ? AND month_first_day <= ?";
+                        "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id ";
 
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
+        int rowCount = 0;
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setInt(1, fleetId);
-            preparedStatement.setString(2, startTime.toString());
-            preparedStatement.setString(3, endTime.toString());
+//            preparedStatement.setInt(1, fleetId);
+//            preparedStatement.setString(2, startTime.toString());
+//            preparedStatement.setString(3, endTime.toString());
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
             //get the event statistics for each airframe
             LOG.info("airframeName, eventName, flightsWithEvent, flightsTotal, totalEvents, fleetId");
             while (resultSet.next()) {
+                rowCount++;
                 String airframeName = resultSet.getString(3);
                 String eventName = resultSet.getString(4);
-                if (eventName == null) { // No events for this airframe, skip
-                    nullDataAirframes.add(airframeName);
-                    continue;
-                } else {
-                    eventNames.add(eventName);
-                }
 
                 int flightsWithEvent = resultSet.getInt(5);
                 int flightsTotal = resultSet.getInt(6);
                 int totalEvents = resultSet.getInt(7);
                 int resultFleetID = resultSet.getInt(8);
+                LOG.info(resultSet.getString(1) +", "+ resultSet.getString(2) +", "+ resultSet.getString(3) +", "+ resultSet.getString(4) +", "+ resultSet.getString(5) +", "+ resultSet.getString(6) +", "+ resultSet.getString(7) +", "+ resultSet.getString(8));
 
+                if (eventName == null) { // No events for this airframe, skip
+                    nullDataAirframes.add(airframeName);
+
+                    continue;
+                } else {
+                    eventNames.add(eventName);
+                }
                 EventCounts eventCount;
                 if (eventCounts.containsKey(airframeName)) {
                     eventCount = eventCounts.get(airframeName);
@@ -914,6 +931,7 @@ public class EventStatistics {
             eventCount.assignLists();
         }
 
+        LOG.info("Total rows: " + rowCount);
 
         return eventCounts;
     }
