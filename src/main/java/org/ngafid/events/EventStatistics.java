@@ -617,6 +617,8 @@ public class EventStatistics {
         }
 
         public void initializeEvent(String eventName) {
+            if (flightsWithEventMap.containsKey(eventName)) return;
+
             flightsWithEventMap.put(eventName, 0);
             totalFlightsMap.put(eventName, 0);
             totalEventsMap.put(eventName, 0);
@@ -631,12 +633,6 @@ public class EventStatistics {
             Integer totalFlightsCount = totalFlightsMap.get(eventName);
             Integer totalEventsCount = totalEventsMap.get(eventName);
 
-            /*
-            Integer aggregateFlightsWithEventCount = aggregateFlightsWithEventMap.get(eventName);
-            Integer aggregateTotalFlightsCount = aggregateTotalFlightsMap.get(eventName);
-            Integer aggregateTotalEventsCount = aggregateTotalEventsMap.get(eventName);
-            */
-
             LOG.info("Adding flights with event count: " + flightsWithEvent + " to " + eventName + " for airframe: " + airframeName);
             LOG.info("\tOriginal flightsWithEventCount: " + flightsWithEventCount);
             flightsWithEventMap.put(eventName, flightsWithEventCount + flightsWithEvent);
@@ -649,22 +645,6 @@ public class EventStatistics {
             LOG.info("\tOriginal totalEventsCount: " + totalEventsCount);
             totalEventsMap.put(eventName, totalEventsCount + totalEvents);
             LOG.info("\tNew totalEventsCount: " + totalEventsMap.get(eventName));
-
-            /*
-            aggregateFlightsWithEventCount += flightsWithEvent;
-            aggregateTotalFlightsCount += totalFlights;
-            aggregateTotalEventsCount += totalEvents;
-            */
-
-            flightsWithEventMap.put(eventName, flightsWithEventCount);
-            totalFlightsMap.put(eventName, totalFlightsCount);
-            totalEventsMap.put(eventName, totalEventsCount);
-
-            /*
-            aggregateFlightsWithEventMap.put(eventName, aggregateFlightsWithEventCount);
-            aggregateTotalFlightsMap.put(eventName, aggregateTotalFlightsCount);
-            aggregateTotalEventsMap.put(eventName, aggregateTotalEventsCount);
-            */
         }
 
         public void updateAggregate(String eventName, Integer flightsWithEvent, Integer totalFlights, Integer totalEvents) {
