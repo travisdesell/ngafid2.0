@@ -504,7 +504,7 @@ class Flight extends React.Component {
         if (!this.state.cesiumMapVisible) {
             this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
             this.setState(this.state);
-            this.props.showCesiumPage(flightId);
+            this.props.showCesiumPage(flightId, this.state.color);
             var cesiumData = this.getCesiumData(flightId);
             this.fetchEvents();
             console.log(cesiumData);
@@ -1076,8 +1076,8 @@ class Flight extends React.Component {
         if (this.state.cesiumMapVisible) {
             flightPhasesCheckBox = (
                 <div>
-                    <b className={"p-1"} style={{marginBottom: "0"}}>Flight Phase : </b>
-                    <div className="phases">
+                    <b className={"m-0 p-1"} style={{marginBottom: "0", overflowY:"auto"}}>Flight Phase : </b>
+                    <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
                         {   
                         flightPhases.map((phase, index) => {
                             return (
@@ -1088,7 +1088,7 @@ class Flight extends React.Component {
                         }
                     )
                         }
-                </div>
+                    </div>
                 </div>
         );
         }
