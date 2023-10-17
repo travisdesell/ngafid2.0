@@ -107,12 +107,11 @@ public class GetWelcome implements Route {
             LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
-//            for (EventStatistics.EventCounts eventCounts : eventCountsMap.values()) {
-//                LOG.info(eventCounts.toString());
-//            }
-
             long startTime = System.currentTimeMillis();
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
+            LOG.info("getting event counts took " + (System.currentTimeMillis() - startTime) + "ms.");
+
+            startTime = System.currentTimeMillis();
             String fleetInfo =
                 "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
                 "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +

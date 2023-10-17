@@ -629,22 +629,9 @@ public class EventStatistics {
         }
 
         public void update(String eventName, Integer flightsWithEvent, Integer totalFlights, Integer totalEvents) {
-            Integer flightsWithEventCount = flightsWithEventMap.get(eventName);
-            Integer totalFlightsCount = totalFlightsMap.get(eventName);
-            Integer totalEventsCount = totalEventsMap.get(eventName);
-
-            LOG.info("Adding flights with event count: " + flightsWithEvent + " to " + eventName + " for airframe: " + airframeName);
-            LOG.info("\tOriginal flightsWithEventCount: " + flightsWithEventCount);
-            flightsWithEventMap.put(eventName, flightsWithEventCount + flightsWithEvent);
-            LOG.info("\tNew flightsWithEventCount: " + flightsWithEventMap.get(eventName));
-            LOG.info("Adding total flights count: " + totalFlights + " to " + eventName + " for airframe: " + airframeName);
-            LOG.info("\tOriginal totalFlightsCount: " + totalFlightsCount);
-            totalFlightsMap.put(eventName, totalFlightsCount + totalFlights);
-            LOG.info("\tNew totalFlightsCount: " + totalFlightsMap.get(eventName));
-            LOG.info("Adding total events count: " + totalEvents + " to " + eventName + " for airframe: " + airframeName);
-            LOG.info("\tOriginal totalEventsCount: " + totalEventsCount);
-            totalEventsMap.put(eventName, totalEventsCount + totalEvents);
-            LOG.info("\tNew totalEventsCount: " + totalEventsMap.get(eventName));
+            flightsWithEventMap.put(eventName, flightsWithEventMap.get(eventName) + flightsWithEvent);
+            totalFlightsMap.put(eventName, totalFlightsMap.get(eventName) + totalFlights);
+            totalEventsMap.put(eventName, totalEventsMap.get(eventName) + totalEvents);
         }
 
         public void updateAggregate(String eventName, Integer flightsWithEvent, Integer totalFlights, Integer totalEvents) {
@@ -853,7 +840,6 @@ public class EventStatistics {
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
-        int rowCount = 0;
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
 //            preparedStatement.setInt(1, fleetId);
@@ -863,9 +849,7 @@ public class EventStatistics {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             //get the event statistics for each airframe
-            LOG.info("airframeName, eventName, flightsWithEvent, flightsTotal, totalEvents, fleetId");
             while (resultSet.next()) {
-                rowCount++;
                 String airframeName = resultSet.getString(3);
                 String eventName = resultSet.getString(4);
 
@@ -873,7 +857,6 @@ public class EventStatistics {
                 int flightsTotal = resultSet.getInt(6);
                 int totalEvents = resultSet.getInt(7);
                 int resultFleetID = resultSet.getInt(8);
-                LOG.info(resultSet.getString(1) +", "+ resultSet.getString(2) +", "+ resultSet.getString(3) +", "+ resultSet.getString(4) +", "+ resultSet.getString(5) +", "+ resultSet.getString(6) +", "+ resultSet.getString(7) +", "+ resultSet.getString(8));
 
                 if (eventName == null) { // No events for this airframe, skip
                     nullDataAirframes.add(airframeName);
@@ -891,8 +874,6 @@ public class EventStatistics {
                 }
 
                 eventCount.initializeEvent(eventName);
-
-                LOG.info(resultSet.getString(1) +", "+ resultSet.getString(2) +", "+ resultSet.getString(3) +", "+ resultSet.getString(4) +", "+ resultSet.getString(5) +", "+ resultSet.getString(6) +", "+ resultSet.getString(7) +", "+ resultSet.getString(8));
 
                 if (resultFleetID == fleetId) {
                     eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
@@ -916,8 +897,6 @@ public class EventStatistics {
         for (EventCounts eventCount : eventCounts.values()) {
             eventCount.assignLists();
         }
-
-        LOG.info("Total rows: " + rowCount);
 
         return eventCounts;
     }
