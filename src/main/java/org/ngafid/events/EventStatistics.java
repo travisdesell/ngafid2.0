@@ -638,11 +638,17 @@ public class EventStatistics {
             */
 
             LOG.info("Adding flights with event count: " + flightsWithEvent + " to " + eventName + " for airframe: " + airframeName);
-            flightsWithEventCount += flightsWithEvent;
+            LOG.info("\tOriginal flightsWithEventCount: " + flightsWithEventCount);
+            flightsWithEventMap.put(eventName, flightsWithEventCount + flightsWithEvent);
+            LOG.info("\tNew flightsWithEventCount: " + flightsWithEventMap.get(eventName));
             LOG.info("Adding total flights count: " + totalFlights + " to " + eventName + " for airframe: " + airframeName);
-            totalFlightsCount += totalFlights;
+            LOG.info("\tOriginal totalFlightsCount: " + totalFlightsCount);
+            totalFlightsMap.put(eventName, totalFlightsCount + totalFlights);
+            LOG.info("\tNew totalFlightsCount: " + totalFlightsMap.get(eventName));
             LOG.info("Adding total events count: " + totalEvents + " to " + eventName + " for airframe: " + airframeName);
-            totalEventsCount += totalEvents;
+            LOG.info("\tOriginal totalEventsCount: " + totalEventsCount);
+            totalEventsMap.put(eventName, totalEventsCount + totalEvents);
+            LOG.info("\tNew totalEventsCount: " + totalEventsMap.get(eventName));
 
             /*
             aggregateFlightsWithEventCount += flightsWithEvent;
