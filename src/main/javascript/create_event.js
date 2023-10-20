@@ -37,6 +37,117 @@ for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     });
 }
 
+class EventManagerDisplay extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            eventDefinitions: [],
+            editDisplayed: false,
+            deleteModalDisplayed: false,
+            selectedEventDefinition: undefined,
+        }
+    }
+
+    openSelectedModal(modal, eventDefinition) {
+        this.setSelectedEvent(eventDefinition);
+
+        if (modal === "edit") {
+            this.setEditModal(true);
+        } else if (modal === "delete") {
+            this.setDeleteModal(true);
+        }
+    }
+
+    setSelectedEvent(event) {
+        this.setState({
+            selectedEvent: event,
+        })
+    }
+
+
+    setEditModal(displayed) {
+        this.setState({
+            editModalDisplayed: displayed,
+        })
+    }
+
+    setDeleteModal(displayed) {
+        this.setState({
+            deleteModalDisplayed: displayed,
+        })
+    }
+
+    componentDidMount() {
+        this.getEventDefinitions();
+    }
+
+    getEventDefinitions() {
+        $.ajax({
+            type: 'GET',
+            url: '/protected/event_definitions',
+            data : selectedEventDefinition,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+
+                //createEventCard.setEvents(response);
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Event Definitions", errorThrown);
+            },
+            async: true
+        });
+    }
+
+    updateEventDefinition() {
+        $.ajax({
+            type: 'PUT',
+            url: '/protected/event_definitions',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                $("#loading").hide();
+
+                if (response.errorTitle) {
+                    console.log("displaying error modal!");
+                    errorModal.show(response.errorTitle, response.errorMessage);
+                    return false;
+                }
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Updating Event Definitions", errorThrown);
+            },
+            async: true
+        });
+    }
+
+
+    render() {
+        return (
+            <Row>
+                <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} openModal={(modal, eventDef) => this.openSelectedModal(modal, eventDef)}/>
+            </Row>
+        );
+    }
+}
+
+class EventDefinitiosnTable extends React.Component {
+
+}
+
 class CreateEventCard extends React.Component {
     constructor(props) {
         super(props);
