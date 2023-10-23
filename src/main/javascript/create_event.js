@@ -1,15 +1,18 @@
 import 'bootstrap';
-import React, { Component } from "react";
+import React, {Component} from "react";
 import ReactDOM from "react-dom";
 
-import { errorModal } from "./error_modal.js";
+import {errorModal} from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
-import { EventDefinitionCard } from './event_definition.js';
+import {EventDefinitionCard} from './event_definition.js';
+import Row from "react-bootstrap/Row";
 
 
 var navbar = ReactDOM.render(
-    <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>,
+    <SignedInNavbar activePage="create event" waitingUserCount={waitingUserCount} fleetManager={fleetManager}
+                    unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess}
+                    plotMapHidden={plotMapHidden}/>,
     document.querySelector('#navbar')
 );
 
@@ -22,19 +25,60 @@ var rules = [];
 
 for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
-        name : doubleTimeSeriesNames[i],
-        conditions : [
-            { 
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", ">", ">=" ]
+        name: doubleTimeSeriesNames[i],
+        conditions: [
+            {
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", ">", ">="]
             },
-            { 
-                type : "number",
-                name : "number",
+            {
+                type: "number",
+                name: "number",
             }
         ]
     });
+}
+
+function EventDefinitionsTable({eventDefinitions, openModal}) {
+    return (
+        <table className="table">
+            <thead>
+            <tr>
+                {/*TODO ADD MORE COLS*/}
+                <th>ID</th>
+                <th>Name</th>
+                <th>Start Buffer</th>
+                <th>Stop Buffer</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            {eventDefinitions.map(event => (
+                <tr key={event.id}>
+                    <td>{event.id}</td>
+                    <td>{event.name}</td>
+                    <td>{event.start_buffer}</td>
+                    <td>{event.stop_buffer}</td>
+                    <td>
+                        <button
+                            onClick={() => openModal("edit", event)}
+                            className="btn btn-primary"
+                        >
+                            Edit
+                        </button>
+                        <button
+                            onClick={() => openModal("delete", event)}
+                            className="btn btn-danger"
+                        >
+                            Delete
+                        </button>
+                    </td>
+                </tr>
+            ))}
+            </tbody>
+        </table>
+    );
 }
 
 class EventManagerDisplay extends React.Component {
@@ -86,9 +130,9 @@ class EventManagerDisplay extends React.Component {
         $.ajax({
             type: 'GET',
             url: '/protected/event_definitions',
-            data : selectedEventDefinition,
-            dataType : 'json',
-            success : function(response) {
+            data: selectedEventDefinition,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -102,7 +146,7 @@ class EventManagerDisplay extends React.Component {
 
                 //createEventCard.setEvents(response);
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Event Definitions", errorThrown);
             },
             async: true
@@ -113,9 +157,9 @@ class EventManagerDisplay extends React.Component {
         $.ajax({
             type: 'PUT',
             url: '/protected/event_definitions',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -127,7 +171,7 @@ class EventManagerDisplay extends React.Component {
                     return false;
                 }
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating Event Definitions", errorThrown);
             },
             async: true
@@ -138,14 +182,19 @@ class EventManagerDisplay extends React.Component {
     render() {
         return (
             <Row>
-                <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} openModal={(modal, eventDef) => this.openSelectedModal(modal, eventDef)}/>
+                <EventDefinitionsTable
+                    eventDefinitions={this.state.eventDefinitions}
+                    openModal={(modal, eventDef) => this.openSelectedModal(modal, eventDef)}
+                />
+                <button
+                    onClick={() => this.openSelectedModal("add", null)}
+                    className="btn btn-success"
+                >
+                    Add Event Definition
+                </button>
             </Row>
         );
     }
-}
-
-class EventDefinitiosnTable extends React.Component {
-
 }
 
 class CreateEventCard extends React.Component {
@@ -153,18 +202,18 @@ class CreateEventCard extends React.Component {
         super(props);
 
         this.state = {
-            filterVisible : true,
-            eventName : "",
-            airframe : airframeMap[0],
-            airframeNameId : 0,
-            startBuffer : "",
-            stopBuffer : "",
-            severityType : "min",
-            severityColumnNames : [],
-            filters : {
-                type : "GROUP",
-                condition : "AND",
-                filters : []
+            filterVisible: true,
+            eventName: "",
+            airframe: airframeMap[0],
+            airframeNameId: 0,
+            startBuffer: "",
+            stopBuffer: "",
+            severityType: "min",
+            severityColumnNames: [],
+            filters: {
+                type: "GROUP",
+                condition: "AND",
+                filters: []
             }
         }
     }
@@ -173,7 +222,7 @@ class CreateEventCard extends React.Component {
         let eventName = event.target.value;
         console.log("new event name: " + eventName);
         this.setState({
-            eventName : eventName
+            eventName: eventName
         });
     }
 
@@ -181,7 +230,7 @@ class CreateEventCard extends React.Component {
         let airframe = event.target.value;
         console.log("new airframe: " + airframe);
         this.setState({
-            airframe : airframe
+            airframe: airframe
         });
     }
 
@@ -189,7 +238,7 @@ class CreateEventCard extends React.Component {
         let severityType = event.target.value;
         console.log("new severity type: " + severityType);
         this.setState({
-            severityType : severityType
+            severityType: severityType
         });
     }
 
@@ -197,7 +246,7 @@ class CreateEventCard extends React.Component {
         let severityColumn = event.target.value;
         console.log("new severity column: " + severityColumn);
         this.setState({
-            severityColumn : severityColumn
+            severityColumn: severityColumn
         });
     }
 
@@ -212,7 +261,7 @@ class CreateEventCard extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -225,7 +274,7 @@ class CreateEventCard extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -233,7 +282,7 @@ class CreateEventCard extends React.Component {
         let startBuffer = event.target.value;
         console.log("new startBuffer: " + startBuffer);
         this.setState({
-            startBuffer : startBuffer
+            startBuffer: startBuffer
         });
     }
 
@@ -241,19 +290,19 @@ class CreateEventCard extends React.Component {
         let stopBuffer = event.target.value;
         console.log("new stopBuffer: " + stopBuffer);
         this.setState({
-            stopBuffer : stopBuffer
+            stopBuffer: stopBuffer
         });
     }
 
     setFilter(filter) {
         this.setState({
-            filters : filter
+            filters: filter
         });
     }
 
     submitFilter() {
         console.log("Submitting filters:");
-        console.log( this.state.filters );
+        console.log(this.state.filters);
         console.log("airframe: " + this.state.airframe);
         console.log("airframeNameId: " + this.state.airframeNameId);
         console.log(airframeMap);
@@ -261,22 +310,22 @@ class CreateEventCard extends React.Component {
         $("#loading").show();
 
         var submissionData = {
-            filterQuery : JSON.stringify(this.state.filters),
-            eventName : this.state.eventName,
-            startBuffer : this.state.startBuffer,
-            stopBuffer : this.state.stopBuffer,
-            severityColumnNames : JSON.stringify(this.state.severityColumnNames),
-            severityType : this.state.severityType,
-            airframe : this.state.airframe
-        };   
+            filterQuery: JSON.stringify(this.state.filters),
+            eventName: this.state.eventName,
+            startBuffer: this.state.startBuffer,
+            stopBuffer: this.state.stopBuffer,
+            severityColumnNames: JSON.stringify(this.state.severityColumnNames),
+            severityType: this.state.severityType,
+            airframe: this.state.airframe
+        };
         console.log(submissionData);
 
         $.ajax({
             type: 'POST',
             url: '/protected/create_event',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
+            data: submissionData,
+            dataType: 'json',
+            success: function (response) {
                 console.log("received response: ");
                 console.log(response);
 
@@ -289,23 +338,23 @@ class CreateEventCard extends React.Component {
                 }
 
                 //createEventCard.setEvents(response);
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
 
     }
 
     render() {
         let style = {
-            padding : 5
+            padding: 5
         };
 
         let bgStyle = {
-            background : "rgba(248,259,250,0.8)",
-            margin:0
+            background: "rgba(248,259,250,0.8)",
+            margin: 0
         };
 
         return (
@@ -330,7 +379,9 @@ class CreateEventCard extends React.Component {
                         severityColumnNames={this.state.severityColumnNames}
                         filters={this.state.filters}
 
-                        getFilter={() => {return this.state.filters}}
+                        getFilter={() => {
+                            return this.state.filters
+                        }}
                         setFilter={(filter) => this.setFilter(filter)}
 
                         submitFilter={() => this.submitFilter()}
@@ -350,7 +401,12 @@ class CreateEventCard extends React.Component {
     }
 }
 
-let createEventCard = ReactDOM.render(
-    <CreateEventCard />,
+// let createEventCard = ReactDOM.render(
+//     <CreateEventCard/>,
+//     document.querySelector('#create-event-card')
+// );
+
+let eventDefinitionManager = ReactDOM.render(
+    <EventManagerDisplay/>,
     document.querySelector('#create-event-card')
-);
+)
