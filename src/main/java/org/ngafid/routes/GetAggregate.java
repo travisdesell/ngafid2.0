@@ -8,6 +8,7 @@ import java.io.StringWriter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
@@ -117,7 +118,7 @@ public class GetAggregate implements Route {
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
             LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null, null);
 
             //create a filter to grab things 
             String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
