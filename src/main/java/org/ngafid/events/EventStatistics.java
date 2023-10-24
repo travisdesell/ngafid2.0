@@ -846,7 +846,7 @@ public class EventStatistics {
 
 
         if (fleetId != null) {
-            query = "AND (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?) ";
+            query += "AND (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?)";
         }
 
         query += "GROUP BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day " +
