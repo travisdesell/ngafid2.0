@@ -43,6 +43,8 @@ public class PostMonthlyEventCounts implements Route {
             Connection connection = Database.getConnection();
             Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
             if (aggregateTrendsPage) {
+                LOG.warning("ACCESSING AGGREGATE PAGE");
+
                 if (!user.hasAggregateView()) {
                     LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
                     Spark.halt(401, "User did not have aggregate access to view aggregate trends page.");
@@ -58,6 +60,7 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
+                LOG.warning("NOT ACCESSING AGGREGATE PAGE");
                 eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
