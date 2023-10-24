@@ -865,7 +865,7 @@ public class EventStatistics {
 
                 LOG.info(airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
 
-                if (fleetId == null) {
+                if (fleetId != null && resultSet.getInt("fleet_id") == fleetId) {
                     eventCount.update(date, flightsWithEvent, totalFlights, totalEvents);
                 } else {
                     eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
@@ -875,11 +875,11 @@ public class EventStatistics {
             for (MonthlyEventCounts eventCount : eventCounts.values()) {
                 eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
 
-                if (fleetId == null) {
-                    eventCount.assignAggregateLists();
+                if (fleetId != null) {
+                    eventCount.assignLists();
                 }
 
-                eventCount.assignLists();
+                eventCount.assignAggregateLists();
             }
 
 
