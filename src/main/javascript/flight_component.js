@@ -501,17 +501,13 @@ class Flight extends React.Component {
     cesiumClicked() {
         
         var flightId = this.props.flightInfo.id;
-        if (!this.state.cesiumMapVisible) {
-            this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
-            this.setState(this.state);
-            this.props.showCesiumPage(flightId, this.state.color);
-            var cesiumData = this.getCesiumData(flightId);
-            this.fetchEvents();
-            console.log(cesiumData);
-        } else {
-            this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
-            this.props.removeCesiumEntity(flightId);
-        }
+        this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+        this.setState(this.state);
+        this.props.showCesiumPage(flightId, this.state.color);
+        // var cesiumData = this.getCesiumData(flightId);
+        // this.fetchEvents();
+        // console.log(cesiumData);
+
    }
 
     replayClicked() {
@@ -1071,6 +1067,7 @@ class Flight extends React.Component {
         }
         var flightPhases = ["Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
         let flightPhasesCheckBox = "";
+        let toggleCameraButton = "";
         var flightId = flightInfo.id;
         console.log("flight id : " + flightId);
         if (this.state.cesiumMapVisible) {
@@ -1091,6 +1088,16 @@ class Flight extends React.Component {
                     </div>
                 </div>
         );
+            toggleCameraButton = (
+                <div>
+                    <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
+                        <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" onClick={() => this.props.toggleCamera(flightId)}>
+                            Toggle Camera
+                        </button>
+                    </div>
+                </div>
+
+            )
         }
 
         let tracesRow = "";
@@ -1231,6 +1238,8 @@ class Flight extends React.Component {
                     {tracesRow}
 
                     {flightPhasesCheckBox}
+
+                    {toggleCameraButton}
                 </div>
             </div>
         );

@@ -68,8 +68,18 @@ class FlightsCard extends React.Component {
                         flights.map((flightInfo, index) => {
                             if(flightInfo != null) {
                                 return (
-                                    <Flight showPlot={() => {this.props.showPlot();}} showMap={() => {this.props.showMap();}} showCesiumPage={(flightId, color)=>{this.props.showCesiumPage(flightId, color);}} flightInfo={flightInfo} navBar={this.props.navBar} pageIndex={index} addCesiumFlightPhase={(phase, flightId) => {this.props.addCesiumFlightPhase(phase, flightId);}} addCesiumEventEntity={(event, flightId) => {this.props.addCesiumEventEntity(event, flightId);}} removeCesiumEntity={(flightId)=>{this.props.removeCesiumEntity(flightId)}}
-                                        updateParentState={(newFlights) => this.props.setFlights(newFlights)} setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
+                                    <Flight 
+                                        showPlot={() => {this.props.showPlot();}} 
+                                        showMap={() => {this.props.showMap();}} 
+                                        showCesiumPage={(flightId, color)=>{this.props.showCesiumPage(flightId, color);}} 
+                                        flightInfo={flightInfo} 
+                                        navBar={this.props.navBar} 
+                                        pageIndex={index} 
+                                        addCesiumFlightPhase={(phase, flightId) => {this.props.addCesiumFlightPhase(phase, flightId);}}
+                                        addCesiumEventEntity={(event, flightId) => {this.props.addCesiumEventEntity(event, flightId);}}
+                                        toggleCamera={(flightId) => {this.props.toggleCamera(flightId);}}
+                                        updateParentState={(newFlights) => this.props.setFlights(newFlights)} 
+                                        setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}
                                         parent={this} layers={this.props.layers} key={flightInfo.id}
                                         addTag={this.props.addTag}
                                         removeTag={this.props.removeTag}

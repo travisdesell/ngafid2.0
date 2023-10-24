@@ -564,7 +564,7 @@ class FlightsPage extends React.Component {
             $("#cesium-toggle-button").addClass("active");
             $("#cesium-toggle-button").attr("aria-pressed", true);
         }
-        this.cesiumRef.current.addFlightEntity(flightId, "default", color);  
+        this.cesiumRef.current.addFlightEntity(flightId, color);  
         this.state.cesiumVisible = true;
         this.setState(this.state);
         $("#cesium-div").css("height", "50%");
