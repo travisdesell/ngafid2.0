@@ -41,6 +41,39 @@ public class Event {
 
     private RateOfClosure rateOfClosure;
 
+    /**
+     * This fixes a date time string to be in the format MYSQL expects.
+     *
+     * @param dateTime is a string of a date time
+     */
+    public String fixTime(String dateTime) {
+        if (dateTime.contains("/")) {
+            String[] parts = dateTime.split(" ");
+            String date = parts[0];
+            String time = parts[1];
+
+            String[] dateParts = date.split("/");
+            String month = dateParts[0];
+            String day = dateParts[1];
+            String year = dateParts[2];
+
+            if (month.length() == 1) {
+                month = "0" + month;
+            }
+
+            if (day.length() == 1) {
+                day = "0" + day;
+            }
+
+            String fixedDateTime = year + "-" + month + "-" + day + " " + time;
+            System.out.println("Fixed '" + time + "' to '" + fixedDateTime + "'");
+
+            return fixedDateTime;
+        }
+
+        return dateTime;
+    }
+
     public Event(String startTime, String endTime, int startLine, int endLine, double severity) {
         this.startTime = startTime;
         this.endTime = endTime;
@@ -48,6 +81,9 @@ public class Event {
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = null;
+
+        this.startTime = fixTime(startTime);
+        this.endTime = fixTime(endTime);
     }
 
     public Event(String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId) {
@@ -57,6 +93,9 @@ public class Event {
         this.endLine = endLine;
         this.severity = severity;
         this.otherFlightId = otherFlightId;
+
+        this.startTime = fixTime(startTime);
+        this.endTime = fixTime(endTime);
     }
 
     /**
