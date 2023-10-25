@@ -2152,7 +2152,6 @@ public class Flight {
                 //get better lat/lon info
                 hasCoords = true;
             } else if (airframeName.equals("N709EA")) {
-                calculateEaLatLon(connection, "Latitude(DD)", "Longitude(DD)", "Latitude", "Longitude");
                 calculateEaAltMSL(connection, "AltMSL", "Altitude(decameters)");
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
