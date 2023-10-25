@@ -1598,16 +1598,6 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
-    public void calculateEaLatLon(Connection connection, String inLatColumnName, String inLonColumnName, String outLatColumnName, String outLonColumnName) throws SQLException {
-        DoubleTimeSeries inLatitudes = doubleTimeSeries.get(inLatColumnName);
-        DoubleTimeSeries inLongitudes = doubleTimeSeries.get(inLonColumnName);
-        DoubleTimeSeries latitude = new DoubleTimeSeries(connection, outLatColumnName, "degrees");
-        DoubleTimeSeries longitude = new DoubleTimeSeries(connection, outLonColumnName, "degrees");
-
-        doubleTimeSeries.put(outLatColumnName, latitude);
-        doubleTimeSeries.put(outLonColumnName, longitude);
-    }
-
     public void calculateEaAltMSL(Connection connection, String outAltMSLColumnName, String inAltMSLColumnName) throws SQLException {
         DoubleTimeSeries inAltMSL = doubleTimeSeries.get(inAltMSLColumnName);
         DoubleTimeSeries outAltMSL = new DoubleTimeSeries(connection, outAltMSLColumnName, "feet");
