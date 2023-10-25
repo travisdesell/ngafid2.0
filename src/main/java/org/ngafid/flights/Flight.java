@@ -1598,6 +1598,26 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
+    public void calculateEaLatLon(Connection connection, String inLatColumnName, String inLonColumnName, String outLatColumnName, String outLonColumnName) throws SQLException {
+        DoubleTimeSeries inLatitudes = doubleTimeSeries.get(inLatColumnName);
+        DoubleTimeSeries inLongitudes = doubleTimeSeries.get(inLonColumnName);
+        DoubleTimeSeries latitude = new DoubleTimeSeries(connection, outLatColumnName, "degrees");
+        DoubleTimeSeries longitude = new DoubleTimeSeries(connection, outLonColumnName, "degrees");
+
+        doubleTimeSeries.put(outLatColumnName, latitude);
+        doubleTimeSeries.put(outLonColumnName, longitude);
+    }
+
+    public void calculateEaAltMSL(Connection connection, String outAltMSLColumnName, String inAltMSLColumnName) throws SQLException {
+        DoubleTimeSeries inAltMSL = doubleTimeSeries.get(inAltMSLColumnName);
+        DoubleTimeSeries outAltMSL = new DoubleTimeSeries(connection, outAltMSLColumnName, "feet");
+
+        for (int i = 0; i < inAltMSL.size(); i++) {
+            outAltMSL.add(inAltMSL.get(i) * 32.8084); //convert decameters to feet
+        }
+        doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
+    }
+
     public void calculateScanEagleStartEndTime(String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
@@ -1796,12 +1816,16 @@ public class Flight {
 
                 airframeName = "ScanEagle";
                 airframeType = "UAS Fixed Wing";
+            } else if(fileInformation.startsWith("Aircraft ID")) {
+                airframeName = "N709EA";
+                airframeType = "Fixed Wing";
+
             } else {
                 throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
             }
         }
 
-        if (airframeName != null && airframeName.equals("ScanEagle")) {
+        if (airframeName != null && (airframeName.equals("ScanEagle") || airframeName.equals("N709EA"))) {
             //need a custom method to process ScanEagle data because the column
             //names are different and there is no header info
 
@@ -1920,7 +1944,7 @@ public class Flight {
             throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'system_id' key/value pair.");
         System.err.println("detected airframe type: '" + systemId + "'");
 
-        if (airframeName.equals("ScanEagle")) {
+        if (airframeName.equals("ScanEagle") || airframeName.equals("N709EA")) {
             //for the ScanEagle, the first line is the headers of the columns
             String headersLine = fileInformation;
             //System.out.println("Headers line is: " + headersLine);
@@ -2137,8 +2161,9 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-            } else if (airframeName.equals("")) {
-
+            } else if (airframeName.equals("N709EA")) {
+                calculateEaLatLon(connection, "Latitude(DD)", "Longitude(DD)", "Latitude", "Longitude");
+                calculateEaAltMSL(connection, "AltMSL", "Altitude(decameters)");
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
