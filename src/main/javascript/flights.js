@@ -494,7 +494,7 @@ class FlightsPage extends React.Component {
             this.hidePlot();
         }
         if (this.state.mapVisible) {
-            this.hideMap();
+            this.toggleMap();
         }
     }
 
@@ -564,7 +564,6 @@ class FlightsPage extends React.Component {
         }   
 
         this.state.cesiumVisible = false;
-        this.setState(this.state);
         this.setState(this.state);
 
         $("#cesium-div").hide();
