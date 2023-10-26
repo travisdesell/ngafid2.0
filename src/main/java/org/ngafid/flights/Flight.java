@@ -1851,6 +1851,7 @@ public class Flight {
             //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
             if (airframeName.equals("Beechcraft C90A King Air")){
                 systemId = "N709EA";
+                tailNumber = "N709EA";
             } else {
                 suggestedTailNumber = "N" + filenameParts[1] + "ND";
                 systemId = suggestedTailNumber;
