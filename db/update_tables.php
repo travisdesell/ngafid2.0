@@ -25,6 +25,7 @@ query_ngafid_db("update flights set start_timestamp = UNIX_TIMESTAMP(start_time)
 query_ngafid_db("alter table flights add index `start_timestamp_index` (`start_timestamp`) using btree");
 query_ngafid_db("alter table flights add index `end_timestamp_index` (`end_timestamp`) using btree");
 
+
 //new double_series_names table and user preferences update
 
 $update_series_names = false;
@@ -206,6 +207,7 @@ if ($update_for_airsync) {
 
 $update_system_id_length = true;
 if ($update_system_id_length) {
-    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24);
+    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24)");
 }
 ?>
+

@@ -2602,15 +2602,142 @@ public class Flight {
         ArrayList<ArrayList<T>> lines = (ArrayList<ArrayList<T>>) jsonMap.get("details_data");
         int len = headers.size();
 
+        Map<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
+        Map<String, StringTimeSeries> stringSeries = new HashMap<>();
+
+        String dataType = ""; 
+
+        for(String column: headers) {
+            switch (column) {
+
+                case "altitude":
+                case "product_gps_latitude":
+                case "product_gps_longitude":
+                case "speed":
+                    break;
+
+                case "time":
+                    dataType = "milliseconds";
+                    break;
+                
+                case "battery_level":
+                    dataType = "percentage";
+                    break;   
+                
+                case "controller_gps_latitude":
+                    dataType = "degrees";
+                    break;
+                
+                case "controller_gps_longitude":
+                    dataType = "degrees";
+                    break; 
+                
+                case "flying_state":
+                    dataType = "flying_state";
+                    break;
+                
+                case "alert_state":
+                    dataType = "alert_state";
+                    break;   
+                
+                case "wifi_signal":
+                    dataType = "dBm";
+                    break;
+                
+                case "Latitude":
+                    dataType = "degrees";
+                    break; 
+
+                case "Longitude":
+                    dataType = "degrees";
+                    break;
+                
+                case "speed_vx":
+                    dataType = "kt";
+                    break;   
+                
+                case "speed_vy":
+                    dataType = "kt";
+                    break;
+                
+                case "speed_vz":
+                    dataType = "kt";
+                    break; 
+                
+                case "angle_phi":
+                    dataType = "degrees";
+                    break;
+                
+                case "angle_theta":
+                    dataType = "degrees";
+                    break;   
+                
+                case "angle_psi":
+                    dataType = "degrees";
+                    break;
+                
+                case "AltAGL":
+                    dataType = "ft";
+                    break;
+
+                case "GndSpd":
+                    dataType = "kt";
+                    break;
+
+                case "product_gps_available":
+                    dataType = "boolean";
+                    break;
+                
+                default:
+                    dataType = "unknown" ;
+                    break;       
+                
+            }
+        }
+
+        for (String column : headers) {
+            
+            if (column.equals("altitude") || column.equals("product_gps_latitude") || column.equals("product_gps_longitude") || column.equals("speed")) {
+                continue;   
+            }
+            else {
+        
+                int dataIndex = headers.indexOf(column);
+                Object data = lines.get(0).get(dataIndex);
+
+                if (data instanceof Double) {
+
+                    DoubleTimeSeries series = new DoubleTimeSeries(connection, column, dataType, len);
+                    doubleSeries.put(column, series);
+
+                } else {
+            
+                    StringTimeSeries series = new StringTimeSeries(connection, column, dataType);
+                    stringSeries.put(column, series);
+
+                }
+            }
+
+        }
+
         DoubleTimeSeries lat = new DoubleTimeSeries(connection, "Latitude", "degrees", len);
         DoubleTimeSeries lon = new DoubleTimeSeries(connection, "Longitude", "degrees", len);
         DoubleTimeSeries agl = new DoubleTimeSeries(connection, "AltAGL", "ft", len);
         DoubleTimeSeries spd = new DoubleTimeSeries(connection, "GndSpd", "kt", len);
 
+        doubleSeries.put("Latitude", lat);
+        doubleSeries.put("Longitude", lon);
+        doubleSeries.put("AltAGL", agl);
+        doubleSeries.put("GndSpd", spd);
+
         ArrayList<Timestamp> timestamps = new ArrayList<>(len);
         StringTimeSeries localDateSeries = new StringTimeSeries(connection, "Lcl Date", "yyyy-mm-dd");
         StringTimeSeries localTimeSeries = new StringTimeSeries(connection, "Lcl Time", "hh:mm:ss");
         StringTimeSeries utcOfstSeries = new StringTimeSeries(connection, "UTCOfst", "hh:mm");
+
+        stringSeries.put("Lcl Date", localDateSeries);
+        stringSeries.put("Lcl Time", localTimeSeries);
+        stringSeries.put("UTCOfst", utcOfstSeries);
 
         SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
@@ -2628,59 +2755,95 @@ public class Flight {
         double metersToFeet = 3.28084;
 
         for (ArrayList<T> line : lines) {
+
             double milliseconds = (double) line.get(timeIndex) - prevSeconds;
             prevSeconds = (double) line.get(timeIndex);
             parsedDate = TimeUtils.addMilliseconds(parsedDate, (int) milliseconds);
 
-            if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
-                LOG.severe("Invalid latitude: " + line.get(latIndex));
-                status = "WARNING";
-                lat.add(Double.NaN);
-            } else {
-                lat.add((Double) line.get(latIndex));
-            }
+            for (int i = 0; i < headers.size(); i++) {
 
-            if((double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
-                LOG.severe("Invalid longitude: " + line.get(lonIndex));
-                status = "WARNING";
-                lon.add(Double.NaN);
-            } else {
-                lon.add((Double) line.get(lonIndex));
-            }
+                String column = headers.get(i);
+                
+                switch (column) {
 
-            agl.add((Double) line.get(altIndex) * metersToFeet);
-            spd.add((Double) line.get(spdIndex));
+                    case "product_gps_latitude":
 
-            localDateSeries.add(lclDateFormat.format(parsedDate));
-            localTimeSeries.add(lclTimeFormat.format(parsedDate));
-            utcOfstSeries.add(timezoneOffsetString);
-            timestamps.add(new Timestamp(parsedDate.getTime()));
+                        if ((double) line.get(latIndex) > 90 || (double) line.get(latIndex) < -90) {
+
+                            LOG.severe("Invalid latitude: " + line.get(latIndex));
+                            status = "WARNING";
+                            doubleSeries.get("Latitude").add(Double.NaN);
+
+                        } else {
+
+                        doubleSeries.get("Latitude").add((Double) line.get(latIndex));
+
+                        }
+                        break;
+
+                    case "product_gps_longitude":
+
+                        if ((double) line.get(lonIndex) > 180 || (double) line.get(lonIndex) < -180) {
+
+                            LOG.severe("Invalid longitude: " + line.get(lonIndex));
+                            status = "WARNING";
+                            doubleSeries.get("Longitude").add(Double.NaN);
+
+                        } else {
+
+                            doubleSeries.get("Longitude").add((Double) line.get(lonIndex));
+
+                        }
+                        break;
+
+                    case "altitude":
+
+                        doubleSeries.get("AltAGL").add((Double) line.get(altIndex) * metersToFeet);
+                        break;
+                    
+                    case "speed":
+
+                        doubleSeries.get("GndSpd").add((Double) line.get(spdIndex));                          
+                        break;
+
+                    default: 
+                       
+                        if ((line.get(i) instanceof Double) || doubleSeries.containsKey(column)) {
+                            DoubleTimeSeries dseries = doubleSeries.get(column);
+                           
+                            if (dseries == null) {
+                              
+                               dseries = new DoubleTimeSeries(connection, column, dataType, len);
+                               doubleSeries.put(column, dseries);
+
+                            } 
+
+                            dseries.add((Double) line.get(i));
+
+                        } else {
+
+                            StringTimeSeries strSeries = stringSeries.get(column);
+
+                            if (strSeries == null) {
+
+                               strSeries = new StringTimeSeries(connection, column, dataType);
+                               stringSeries.put(column, strSeries);
+
+                            }
+
+                            strSeries.add(line.get(i).toString());
+                        }
+
+                        break;
+                }
+            }                
+                stringSeries.get("Lcl Date").add(lclDateFormat.format(parsedDate));
+                stringSeries.get("Lcl Time").add(lclTimeFormat.format(parsedDate));
+                stringSeries.get("UTCOfst").add(timezoneOffsetString);
+                timestamps.add(new Timestamp(parsedDate.getTime()));
         }
 
-        int start = 0;
-        int end = timestamps.size() - 1;
-
-        DoubleTimeSeries nspd = spd.subSeries(connection, start, end);
-        DoubleTimeSeries nlon = lon.subSeries(connection, start, end);
-        DoubleTimeSeries nlat = lat.subSeries(connection, start, end);
-        DoubleTimeSeries nagl = agl.subSeries(connection, start, end);
-
-        HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
-        doubleSeries.put("GndSpd", nspd);
-        doubleSeries.put("Longitude", nlon);
-        doubleSeries.put("Latitude", nlat);
-        doubleSeries.put("AltAGL", nagl); // Parrot data is stored as AGL and most likely in meters
-
-        StringTimeSeries localDate = localDateSeries.subSeries(connection, start, end);
-        StringTimeSeries localTime = localTimeSeries.subSeries(connection, start, end);
-        StringTimeSeries offset = utcOfstSeries.subSeries(connection, start, end);
-
-        HashMap<String, StringTimeSeries> stringSeries = new HashMap<>();
-        stringSeries.put("Lcl Date", localDate);
-        stringSeries.put("Lcl Time", localTime);
-        stringSeries.put("UTCOfst", offset);
-
-        Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries, stringSeries, connection);
+        Flight flight = new Flight(fleetId, filename, (String) jsonMap.get("serial_number"), (String) jsonMap.get("controller_model"), doubleSeries , stringSeries , connection);
         flight.status = status;
         flight.airframeType = "UAS Rotorcraft";
         flight.airframeTypeId = 4;
@@ -2691,8 +2854,9 @@ public class Flight {
 //            flight.exceptions.add(e);
 //        }
 
-        return flight;
+       return flight;
     }
+
 
     /**
      * Runs the Loss of Control/Stall Index calculations
