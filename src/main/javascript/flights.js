@@ -1089,11 +1089,11 @@ class FlightsPage extends React.Component {
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
                 <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none", overflow:'hidden'}}>
-                    <CesiumPage
+                        <CesiumPage
                         parent={this}
                         setRef={this.cesiumRef}
                         flights={this.state.flights}
-                    />
+                        />
                 </div>
                 <div style={style}>
                     <Filter
