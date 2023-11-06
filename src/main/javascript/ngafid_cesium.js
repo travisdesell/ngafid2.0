@@ -482,7 +482,7 @@ class CesiumPage extends React.Component {
 
            return (
                 <div>
-                    <div id="cesiumContainer">
+                    <div id="cesiumContainer" style={{width:"100%", height:"50%", overflow:'hidden'}}> 
 
                         <Viewer full
                                 ref={e => {
