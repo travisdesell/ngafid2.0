@@ -738,7 +738,6 @@ public class EventStatistics {
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int flightsTotal = resultSet.getInt("total_flights");
                 int totalEvents = resultSet.getInt("total_events");
-                int resultFleetID = resultSet.getInt("fleet_id");
 
                 if (eventName == null) { // No events for this airframe, skip
                     nullDataAirframes.add(airframeName);
@@ -756,7 +755,7 @@ public class EventStatistics {
                 }
 
                 eventCount.initializeEvent(eventName);
-                eventCount.updateAggregate(eventName, flightsWithEvent, flightsTotal, totalEvents);
+                eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
             }
 
             resultSet.close();
@@ -787,7 +786,7 @@ public class EventStatistics {
      * @param startTime  is the earliest time to start counting events (it will count from the beginning of time if it is null)
      * @param endTime    is the latest time to count events (it will count until the current date if it is null)
      */
-    public static Map<String, EventCounts> getEventCounts(Connection connection, Integer fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
+    public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
         if (startTime == null) {
             startTime = LocalDate.of(0, 1, 1);
         }
@@ -800,8 +799,7 @@ public class EventStatistics {
                 "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
                 "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
                 "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
-                "WHERE (month_first_day >= ? OR month_first_day IS NULL) AND (month_first_day <= ? OR month_first_day IS NULL) " +
-                "AND (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ? OR event_statistics.fleet_id IS NULL)";
+                "WHERE (month_first_day >= ? OR month_first_day IS NULL) AND (month_first_day <= ? OR month_first_day IS NULL)";
 
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
@@ -810,7 +808,6 @@ public class EventStatistics {
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, startTime.toString());
             preparedStatement.setString(2, endTime.toString());
-            preparedStatement.setInt(3, fleetId);
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
