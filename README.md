@@ -150,7 +150,13 @@ source ~/ngafid2.0/init_env.sh
 For java 14:
 http://download.opensuse.org/repositories/Java:/Factory/openSUSE_Factory/x86_64/
 
-First we need maven to fetch all of the java dependencies:
+First, we need to install a JAR file dependency to where Maven fetches your dependencies from.
+Running the next step will not be possible without running this script.
+```
+sh setup_dat_importing.sh
+```
+
+Afterwards, we need maven to fetch all of the java dependencies:
 ```
 ~/ngafid2.0 $ mvn install
 ```
@@ -174,12 +180,6 @@ and automatically recompile whenever you change one of the files:
 ```
 
 Run:
-```
-sh setup_dat_importing.sh
-```
-This will install a JAR file dependency to where Maven installs your dependencies to.
-Running the next two steps will not be possible without running this script.
-
 You should then be able to compile and run the webserver by running `run_webserver.sh`
 ```
 ~/ngafid2.0 $ sh run_webserver.sh
