@@ -1848,7 +1848,7 @@ public class Flight {
                 if (filenameParts.length== 1){
                     filenameParts = filenameParts[0].split("_");
                 } else {
-                    filenameParts = filenameParts[1].split("_");
+                    filenameParts = filenameParts[filenameParts.length-1].split("_");
                 }
                 systemId = "N709EA";
                 tailNumber = "N709EA";
