@@ -899,7 +899,7 @@ public class EventStatistics {
                 "GROUP BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day " +
                 "ORDER BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day";
 
-        LOG.info("Query: " + query);
+//        LOG.info("Query: " + query);
 
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -909,8 +909,8 @@ public class EventStatistics {
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
-            LOG.info("Executed query: " + preparedStatement.toString());
-            LOG.info("ResultSet: " + resultSet.toString());
+//            LOG.info("Executed query: " + preparedStatement.toString());
+//            LOG.info("ResultSet: " + resultSet.toString());
 
 
             while (resultSet.next()) {
@@ -928,7 +928,7 @@ public class EventStatistics {
                 int totalFlights = resultSet.getInt("totalFlights");
                 int totalEvents = resultSet.getInt("totalEvents");
 
-                LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
+//                LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
 
                 if (statFleetId == fleetId) {
                     eventCount.update(date, flightsWithEvent, totalFlights, totalEvents);
@@ -941,7 +941,6 @@ public class EventStatistics {
                 eventCount.setDates(eventCount.flightsWithEventMap);
                 eventCount.assignLists();
                 eventCount.assignAggregateLists();
-
             }
 
             resultSet.close();
