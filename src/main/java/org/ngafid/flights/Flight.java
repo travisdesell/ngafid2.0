@@ -1841,21 +1841,22 @@ public class Flight {
         if (airframeName != null && (airframeName.equals("ScanEagle") || airframeName.equals("Beechcraft C90A King Air"))) {
             //need a custom method to process ScanEagle data because the column
             //names are different and there is no header info
+            //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
+            String[] filenameParts;
+            if (airframeName.equals("Beechcraft C90A King Air")){
+                filenameParts = filename.split("/")[1].split("_");
+                systemId = "N709EA";
+                tailNumber = "N709EA";
+            } else {
+                filenameParts = filename.split("_");
+                suggestedTailNumber = "N" + filenameParts[1] + "ND";
+                systemId = suggestedTailNumber;
+            }
 
-            String[] filenameParts = filename.split("_");
             startDateTime = filenameParts[0];
             endDateTime = startDateTime;
             System.out.println("start date: '" + startDateTime + "'");
             System.out.println("end date: '" + startDateTime + "'");
-
-            //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
-            if (airframeName.equals("Beechcraft C90A King Air")){
-                systemId = "N709EA";
-                tailNumber = "N709EA";
-            } else {
-                suggestedTailNumber = "N" + filenameParts[1] + "ND";
-                systemId = suggestedTailNumber;
-            }
 
             System.out.println("suggested tail number: '" + suggestedTailNumber + "'");
             System.out.println("system id: '" + systemId + "'");
