@@ -61,8 +61,12 @@ public class PostMonthlyEventCounts implements Route {
                 eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
+            LOG.severe("\n\n" + gson.toJson(eventCountsMap) + "\n\n");
+
             return gson.toJson(eventCountsMap);
         } catch (SQLException e) {
+            System.out.println("\n\n" + gson.toJson(new ErrorResponse(e)) + "\n\n");
+
             return gson.toJson(new ErrorResponse(e));
         }
     }

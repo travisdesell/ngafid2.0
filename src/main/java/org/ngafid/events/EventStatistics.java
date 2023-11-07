@@ -846,11 +846,14 @@ public class EventStatistics {
 
 
         if (fleetId != null) {
-            query = "AND (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?) ";
+            query += "AND (event_statistics.fleet_id = 0 OR event_statistics.fleet_id = ?) ";
         }
 
         query += "GROUP BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day " +
                  "ORDER BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day";
+
+        LOG.severe("event name is '" + eventName + "'");
+        LOG.severe(query);
 
         Map<String, MonthlyEventCounts> eventCounts;
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
@@ -885,9 +888,9 @@ public class EventStatistics {
             for (MonthlyEventCounts eventCount : eventCounts.values()) {
                 eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
                 eventCount.assignAggregateLists();
-                eventCount.flightsWithEventCounts = null;
-                eventCount.totalFlightsCounts = null;
-                eventCount.totalEventsCounts = null;
+                //eventCount.flightsWithEventCounts = null;
+                //eventCount.totalFlightsCounts = null;
+                //eventCount.totalEventsCounts = null;
             }
 
             resultSet.close();
