@@ -1850,9 +1850,8 @@ public class Flight {
                 } else {
                     filenameParts = filenameParts[1].split("_");
                 }
-                String fileData = bufferedReader.readLine(); // print second line to get the aircraft system id data
-                if (fileData == null ) throw new FatalFlightFileException("Flight file was empty, ignoring.");
-                tailNumber = systemId;
+                systemId = "N709EA";
+                tailNumber = "N709EA";
             } else {
                 filenameParts = filename.split("_");
                 suggestedTailNumber = "N" + filenameParts[1] + "ND";
