@@ -1844,9 +1844,15 @@ public class Flight {
             //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
             String[] filenameParts;
             if (airframeName.equals("Beechcraft C90A King Air")){
-                filenameParts = filename.split("/")[1].split("_");
-                systemId = "N709EA";
-                tailNumber = "N709EA";
+                filenameParts = filename.split("/");
+                if (filenameParts.length== 1){
+                    filenameParts = filenameParts[0].split("_");
+                } else {
+                    filenameParts = filenameParts[1].split("_");
+                }
+                String fileData = bufferedReader.readLine(); // print second line to get the aircraft system id data
+                if (fileData == null ) throw new FatalFlightFileException("Flight file was empty, ignoring.");
+                tailNumber = systemId;
             } else {
                 filenameParts = filename.split("_");
                 suggestedTailNumber = "N" + filenameParts[1] + "ND";
