@@ -1850,8 +1850,10 @@ public class Flight {
                 } else {
                     filenameParts = filenameParts[filenameParts.length-1].split("_");
                 }
-                systemId = "N709EA";
-                tailNumber = "N709EA";
+                String fileData = bufferedReader.readLine(); // print second line to get the aircraft system id data
+                if (fileData == null ) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+                systemId = fileData.split(",")[0].trim();
+                tailNumber = systemId;
             } else {
                 filenameParts = filename.split("_");
                 suggestedTailNumber = "N" + filenameParts[1] + "ND";
