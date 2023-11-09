@@ -133,7 +133,7 @@ public final class WebServer {
             // Make sure we redirect all HTTP traffic to HTTPS now
             Service http = Service.ignite().port(8080);
             http.before(((request, response) -> {
-                final String url = request.url();
+                final String ugl = request.url();
                 if (url.startsWith("http://")) {
                     final String[] toHttps = url.split("http://");
                     response.redirect("https://" + toHttps[1]);
