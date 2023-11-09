@@ -77,6 +77,7 @@ class FlightsCard extends React.Component {
                                         pageIndex={index} 
                                         addCesiumFlightPhase={(phase, flightId) => {this.props.addCesiumFlightPhase(phase, flightId);}}
                                         addCesiumEventEntity={(event, flightId) => {this.props.addCesiumEventEntity(event, flightId);}}
+                                        zoomToEventEntity={(eventId, flightId) => {this.props.zoomToEventEntity(eventId, flightId)}}
                                         toggleCamera={(flightId) => {this.props.toggleCamera(flightId);}}
                                         updateParentState={(newFlights) => this.props.setFlights(newFlights)} 
                                         setAvailableLayers={(plotLayers) => this.props.setAvailableLayers(plotLayers)}

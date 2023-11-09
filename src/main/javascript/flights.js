@@ -473,6 +473,10 @@ class FlightsPage extends React.Component {
         this.cesiumRef.current.addEventEntity(event, flightId);
     }
 
+    zoomToEventEntity(eventId, flightId) {
+        this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
+    }
+
     removeCesiumEntity(flightId) {
         this.cesiumRef.current.removeEntity(flightId);
     }
@@ -1088,11 +1092,11 @@ class FlightsPage extends React.Component {
                     <div id="map" className="map" style={{width:"50%", display:"none"}}></div> 
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
-                <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none", overflow:'hidden'}}>
+                <div id="cesium-div" className='row m-0' style={{width:"100%", height:"0%", display:"none"}}>
                         <CesiumPage
-                        parent={this}
-                        setRef={this.cesiumRef}
-                        flights={this.state.flights}
+                            parent={this}
+                            setRef={this.cesiumRef}
+                            flights={this.state.flights}
                         />
                 </div>
                 <div style={style}>
@@ -1145,6 +1149,7 @@ class FlightsPage extends React.Component {
                         showCesiumPage={(flightId, color) => {this.showCesiumPage(flightId, color);}}
                         addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
                         addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
+                        zoomToEventEntity={(eventId, flightId) => {this.zoomToEventEntity(eventId, flightId)}}
                         toggleCamera={(flightId) => {this.toggleCamera(flightId);}}
                         showPlot={() => {this.showPlot();}}
                         setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}

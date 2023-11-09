@@ -18,10 +18,11 @@ import { watch } from "fs";
 
 
 class CesiumPage extends React.Component {
-    //TODO Load in flight_component page
-    //TODO Fix zoom issues
-    //TODO add and remove entities
     //TODO skip to event time
+    //TODO add a button to zoom to the event -- DONE
+    //TODO check the issue model disappearing after adding flight entity
+    //TODO remove event entities when cesium button is clicked -- DONE 
+    //TODO make event entities thicker
     constructor(props) {
 
         super(props);
@@ -37,6 +38,7 @@ class CesiumPage extends React.Component {
             activePhaseEntities : {},
             activeEventEntites : {},
             flightData : {},
+            currentZoomedEntity : null
         };
         this.loadModel();
     }
@@ -275,7 +277,7 @@ class CesiumPage extends React.Component {
         });
 
         var positionArr = Cartesian3.fromDegreesArrayHeights(data);
-        var pathColor = Color.fromCssColorString(color).withAlpha(0.9);
+        var pathColor = Color.fromCssColorString(color).withAlpha(1);
         var entity = new Entity({
             
             /* name: "NGAFID CESIUM FLIGHT " + type,
@@ -286,7 +288,7 @@ class CesiumPage extends React.Component {
                 width: 8,
                 material: new Cesium.PolylineOutlineMaterialProperty({
                     color: pathColor,
-                    outlineWidth: 5,
+                    outlineWidth: 7,
                     outlineColor: pathColor,
                 }),
                 // clampToGround: true,
@@ -365,9 +367,8 @@ class CesiumPage extends React.Component {
             }
         }
 
-        for (let eventEntity in this.state.activeEventEntites[flightId]) {
-            this.viewer.entities.remove(eventEntity);
-
+        for (const eventId in this.state.activeEventEntites) {
+            this.viewer.entities.remove(this.state.activeEventEntites[eventId]);
         }
 
         delete this.state.activePhaseEntities[flightId];
@@ -396,6 +397,23 @@ class CesiumPage extends React.Component {
             
         }
     }
+    
+    zoomToEventEntity(eventId, flightId) {
+
+        var eventEntity = this.state.activeEventEntites[eventId];
+        if (this.state.currentZoomedEntity == eventEntity) {
+            console.log("zoom to flight");
+            var flightEntity = this.state.activePhaseEntities[flightId]["default"][1];
+            this.viewer.zoomTo(flightEntity);
+            this.state.currentZoomedEntity = flightEntity;
+        } else {
+            this.viewer.zoomTo(eventEntity);
+            this.state.currentZoomedEntity = eventEntity;     
+        }
+       
+        this.setState(this.state);
+    }
+
     addDefaultEntities(flightId, color) {
 
         var flightData = this.state.flightData[flightId];
@@ -422,7 +440,7 @@ class CesiumPage extends React.Component {
         this.viewer.clock.currentTime = flightStartTime.clone();
         this.viewer.clock.multiplier = 25;
         this.viewer.clock.shouldAnimate = true;
-        var pathColor = Color.fromCssColorString(color).withAlpha(0.5);
+        var pathColor = Color.fromCssColorString(color).withAlpha(0.2);
         var positionProperty = this.getPositionProperty(flightData);
 
         var model = null;
@@ -459,6 +477,7 @@ class CesiumPage extends React.Component {
         this.viewer.entities.add(replayEntity);
         this.setState(this.state);
         this.viewer.zoomTo(geoFlightGroundEntity);
+        this.state.currentZoomedEntity = geoFlightGroundEntity;
         // return replayEntity;
     }
 
@@ -482,7 +501,7 @@ class CesiumPage extends React.Component {
 
            return (
                 <div>
-                    <div id="cesiumContainer" style={{width:"100%", height:"50%", overflow:'hidden'}}> 
+                    <div id="cesiumContainer"> 
 
                         <Viewer full
                                 ref={e => {

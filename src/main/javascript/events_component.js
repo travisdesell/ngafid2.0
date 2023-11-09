@@ -256,6 +256,7 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
+                        let zoomToCesiumEntityBtn = "";
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
                             otherFlightText = ", other flight id: ";
@@ -268,6 +269,14 @@ class Events extends React.Component {
                                 }
                             }
                         }
+                        console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
+                        console.log("Flight id " + event.flightId);
+                        if (this.props.parent.state.cesiumMapVisible) {
+                            zoomToCesiumEntityBtn = (
+                                <button id="zoomCesium" data-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
+                                    <i className="fa fa-search-plus" ></i>
+                                </button>)
+                        }
 
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
@@ -277,9 +286,12 @@ class Events extends React.Component {
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
-                                    {rocPlot}
+                                    {rocPlot} 
                                 </button>
 
+                                <div>
+                                    {zoomToCesiumEntityBtn}
+                                </div>
                             </div>
 
                         );
