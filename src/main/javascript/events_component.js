@@ -284,6 +284,7 @@ class Events extends React.Component {
                         let zoomToCesiumEntityBtn = "";
                         let eventMetaDataText = "";
                         var eventMetaData = this.getEventMetaData(event.id);
+
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
 
@@ -297,6 +298,7 @@ class Events extends React.Component {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
                                 }
                             }
+
                         }
                         console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
                         console.log("Flight id " + event.flightId);
@@ -313,7 +315,7 @@ class Events extends React.Component {
                                 eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
                             })
                             eventMetaDataText = eventMetaDataText.substring(0, eventMetaDataText.length - 2);
-                        } 
+                        }
 
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
@@ -323,7 +325,7 @@ class Events extends React.Component {
 
                                 <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
                                     <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
-                                    {rocPlot}
+                                    {rocPlot} 
                                 </button>
 
                                 <div>

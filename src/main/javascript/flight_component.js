@@ -1008,6 +1008,11 @@ class Flight extends React.Component {
         console.log(event);
         this.props.addCesiumEventEntity(event, this.props.flightInfo.id);
     }
+
+    zoomToEventEntity(eventId, flightId) {
+        this.props.zoomToEventEntity(eventId, flightId);
+    }
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";

@@ -525,12 +525,6 @@ class FlightPage extends React.Component {
                     <div id="plot" style={{width:"50%", display:"none"}}></div>
                 </div>
 
-                <div id="plot-cesium-div" className='row m-0' style={{width:"100%", height:"0%"}}>
-                    <div id="cesium_map" className="map" style={{width:"50%", display:"none"}}></div>
-                    <div id="cesium_plot" style={{width:"50%", display:"none"}}></div>
-                </div>
-
-
                 <div style={style}>
                     <div className="card mb-1 border-secondary">
                         <div className="row m-0 p-2">

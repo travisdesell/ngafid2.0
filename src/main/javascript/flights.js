@@ -554,6 +554,10 @@ class FlightsPage extends React.Component {
         this.cesiumRef.current.addEventEntity(event, flightId);
     }
 
+    zoomToEventEntity(eventId, flightId) {
+        this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
+    }
+
     removeCesiumEntity(flightId) {
         this.cesiumRef.current.removeEntity(flightId);
     }
