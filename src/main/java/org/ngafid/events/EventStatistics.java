@@ -981,8 +981,8 @@ public class EventStatistics {
 
             ResultSet resultSet = preparedStatement.executeQuery();
 
-//            LOG.info("Executed query: " + preparedStatement.toString());
-//            LOG.info("ResultSet: " + resultSet.toString());
+            LOG.info("Executed query: " + preparedStatement.toString());
+            LOG.info("ResultSet: " + resultSet.toString());
 
 
             while (resultSet.next()) {
