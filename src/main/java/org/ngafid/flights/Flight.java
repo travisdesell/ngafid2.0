@@ -1598,6 +1598,40 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
+    public void calculateBeechcraftAltMSL(Connection connection, String outAltMSLColumnName, String inAltMSLColumnName) throws SQLException {
+        DoubleTimeSeries inAltMSL = doubleTimeSeries.get(inAltMSLColumnName);
+        DoubleTimeSeries outAltMSL = new DoubleTimeSeries(connection, outAltMSLColumnName, "feet");
+
+        for (int i = 0; i < inAltMSL.size(); i++) {
+            outAltMSL.add(inAltMSL.get(i) * 32.8084); //convert decameters to feet
+        }
+        doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
+    }
+
+    public void calculateBeechcraftLatLon(Connection connection, String inLatColumnName, String inLonColumnName, String outLatColumnName, String outLonColumnName) throws SQLException {
+        DoubleTimeSeries inLatitudes = doubleTimeSeries.get(inLatColumnName);
+        DoubleTimeSeries inLongitudes = doubleTimeSeries.get(inLonColumnName);
+
+        DoubleTimeSeries latitude = new DoubleTimeSeries(connection, outLatColumnName, "degrees");
+        DoubleTimeSeries longitude = new DoubleTimeSeries(connection, outLonColumnName, "degrees");
+
+        for (int i = 0; i < inLatitudes.size(); i++) {
+            double inLat = inLatitudes.get(i);
+            double inLon = inLongitudes.get(i);
+            double outLat = inLat;
+            double outLon = inLon;
+
+            if (inLat == 0) outLat = Double.NaN;
+            if (inLon == 0) outLon = Double.NaN;
+
+            latitude.add(outLat);
+            longitude.add(outLon);
+        }
+
+        doubleTimeSeries.put(outLatColumnName, latitude);
+        doubleTimeSeries.put(outLonColumnName, longitude);
+    }
+
     public void calculateScanEagleStartEndTime(String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
@@ -1796,24 +1830,40 @@ public class Flight {
 
                 airframeName = "ScanEagle";
                 airframeType = "UAS Fixed Wing";
+            } else if(fileInformation.startsWith("Aircraft ID")) {
+                airframeName = "Beechcraft C90A King Air";
+                airframeType = "Fixed Wing";
             } else {
                 throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
             }
         }
 
-        if (airframeName != null && airframeName.equals("ScanEagle")) {
+        if (airframeName != null && (airframeName.equals("ScanEagle") || airframeName.equals("Beechcraft C90A King Air"))) {
             //need a custom method to process ScanEagle data because the column
             //names are different and there is no header info
+            //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
+            String[] filenameParts;
+            if (airframeName.equals("Beechcraft C90A King Air")){
+                filenameParts = filename.split("/");
+                if (filenameParts.length== 1){
+                    filenameParts = filenameParts[0].split("_");
+                } else {
+                    filenameParts = filenameParts[filenameParts.length-1].split("_");
+                }
+                String fileData = bufferedReader.readLine(); // print second line to get the aircraft system id data
+                if (fileData == null ) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+                systemId = fileData.split(",")[0].trim();
+                tailNumber = systemId;
+            } else {
+                filenameParts = filename.split("_");
+                suggestedTailNumber = "N" + filenameParts[1] + "ND";
+                systemId = suggestedTailNumber;
+            }
 
-            String[] filenameParts = filename.split("_");
             startDateTime = filenameParts[0];
             endDateTime = startDateTime;
             System.out.println("start date: '" + startDateTime + "'");
             System.out.println("end date: '" + startDateTime + "'");
-
-            //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
-            suggestedTailNumber = "N" + filenameParts[1] + "ND";
-            systemId = suggestedTailNumber;
 
             System.out.println("suggested tail number: '" + suggestedTailNumber + "'");
             System.out.println("system id: '" + systemId + "'");
@@ -1890,7 +1940,8 @@ public class Flight {
                                 airframeName.equals("Quest Kodiak 100") ||
                                 airframeName.equals("Cessna 400") ||
                                 airframeName.equals("Beechcraft A36/G36") ||
-                                airframeName.equals("Beechcraft G58")) {
+                                airframeName.equals("Beechcraft G58") ||
+                                airframeName.equals("Beechcraft C90A King Air")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
                             airframeName = "R44";
@@ -1920,7 +1971,7 @@ public class Flight {
             throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'system_id' key/value pair.");
         System.err.println("detected airframe type: '" + systemId + "'");
 
-        if (airframeName.equals("ScanEagle")) {
+        if (airframeName.equals("ScanEagle") || airframeName.equals("Beechcraft C90A King Air")) {
             //for the ScanEagle, the first line is the headers of the columns
             String headersLine = fileInformation;
             //System.out.println("Headers line is: " + headersLine);
@@ -2137,8 +2188,9 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-            } else if (airframeName.equals("")) {
-
+            } else if (airframeName.equals("Beechcraft C90A King Air")) {
+                calculateBeechcraftAltMSL(connection, "AltMSL", "Altitude(decameters)");
+                calculateBeechcraftLatLon(connection, "Latitude(DD)", "Longitude(DD)", "Latitude", "Longitude");
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }
