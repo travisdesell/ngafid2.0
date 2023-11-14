@@ -587,6 +587,26 @@ public class EventStatistics {
             aggregateTotalEventsMap.put(date, aggregateTotalEventsCount);
         }
 
+        public void zeroMissingMonths(LocalDate startDate, LocalDate endDate) {
+            LocalDate current = startDate;
+            while (current.isBefore(endDate)) {
+                String date = current.toString();
+                if (!flightsWithEventMap.containsKey(date)) {
+                    flightsWithEventMap.put(date, 0);
+                    totalFlightsMap.put(date, 0);
+                    totalEventsMap.put(date, 0);
+                }
+
+                if (!aggregateFlightsWithEventMap.containsKey(date)) {
+                    aggregateFlightsWithEventMap.put(date, 0);
+                    aggregateTotalFlightsMap.put(date, 0);
+                    aggregateTotalEventsMap.put(date, 0);
+                }
+
+                current = current.plusMonths(1);
+            }
+        }
+
 
         public void setDates(HashMap<String, Integer> eventMap) {
             ArrayList<String> sortedKeys = new ArrayList<String>(eventMap.keySet());
@@ -1000,8 +1020,8 @@ public class EventStatistics {
             }
 
             resultSet.close();
-
             for (MonthlyEventCounts eventCount : eventCounts.values()) {
+                eventCount.zeroMissingMonths(startTime, endTime);
                 eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
                 eventCount.assignAggregateLists();
             }
@@ -1062,6 +1082,7 @@ public class EventStatistics {
         }
 
         for (MonthlyEventCounts eventCount : eventCounts.values()) {
+            eventCount.zeroMissingMonths(startTime, endTime);
             eventCount.setDates(eventCount.flightsWithEventMap);
             eventCount.assignLists();
             eventCount.assignAggregateLists();
