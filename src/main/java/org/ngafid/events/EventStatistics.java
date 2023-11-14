@@ -10,6 +10,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
