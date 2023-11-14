@@ -31,7 +31,7 @@ public class EventStatistics {
     }
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
-        String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m') " +
+        String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m-01') " +
                         "AS month, COUNT(*) AS total_flights FROM flights " +
                         "JOIN airframes ON flights.airframe_id = airframes.id WHERE flights.fleet_id = ? " +
                         "GROUP BY airframes.airframe, month, flights.fleet_id ORDER BY month, airframes.airframe, flights.fleet_id";
@@ -65,6 +65,17 @@ public class EventStatistics {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private static int calculateTotalMonthAirframeFleetFlights(String airframe, String date) {
+
+        int result = 0;
+
+        for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
+            result += monthlyTotalFlightsMap.get(fleetID).get(airframe).get(date);
+        }
+
+        return result;
     }
 
 
@@ -945,7 +956,7 @@ public class EventStatistics {
             ps.setString(3, startTime.toString());
             ps.setString(4, endTime.toString());
 
-            LOG.info("Query: " + query);
+            LOG.info("Query: " + ps);
             return ps.executeQuery();
         } catch (SQLException e) {
             LOG.severe("Querying monthly events failed");
@@ -969,6 +980,7 @@ public class EventStatistics {
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
         ResultSet resultSet = queryMonthlyEventCounts(connection, eventName, startTime, endTime);
         if (resultSet == null) {
+            LOG.warning("Querying monthly events returned null");
             return eventCounts;
         }
 
@@ -983,8 +995,8 @@ public class EventStatistics {
 
             String date = resultSet.getString("month_first_day");
             int flightsWithEvent = resultSet.getInt("flightsWithEvent");
-            int totalFlights = resultSet.getInt("totalFlights");
             int totalEvents = resultSet.getInt("totalEvents");
+            int totalFlights = calculateTotalMonthAirframeFleetFlights(airframeName, date);
 
             LOG.info(airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
             eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
@@ -1014,9 +1026,11 @@ public class EventStatistics {
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
         ResultSet resultSet = queryMonthlyEventCounts(connection, eventName, startTime, endTime);
         if (resultSet == null) {
+            LOG.warning("Querying monthly events returned null");
             return eventCounts;
         }
 
+        LOG.info("Getting monthly event counts for fleet: " + fleetId);
         while (resultSet.next()) {
             String airframeName = resultSet.getString("airframe");
             MonthlyEventCounts eventCount = eventCounts.get(airframeName);
@@ -1029,10 +1043,10 @@ public class EventStatistics {
             String date = resultSet.getString("month_first_day");
             int statFleetId = resultSet.getInt("fleet_id");
             int flightsWithEvent = resultSet.getInt("flightsWithEvent");
-            int totalFlights = resultSet.getInt("totalFlights");
+            int totalFlights = monthlyTotalFlightsMap.get(fleetId).get(airframeName).get(date);
             int totalEvents = resultSet.getInt("totalEvents");
 
-//                LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
+            LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
 
             if (statFleetId == fleetId) {
                 eventCount.update(date, flightsWithEvent, totalFlights, totalEvents);
