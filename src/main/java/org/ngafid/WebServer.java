@@ -318,8 +318,6 @@ public final class WebServer {
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
-
-        printMonthlyTotalFlights();
     }
 }
 

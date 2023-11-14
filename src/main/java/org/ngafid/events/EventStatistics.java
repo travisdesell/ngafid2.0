@@ -67,24 +67,6 @@ public class EventStatistics {
         }
     }
 
-    public static void printMonthlyTotalFlights() {
-        for (Map.Entry<Integer, Map<String, Map<String, Integer>>> fleetEntry : monthlyTotalFlightsMap.entrySet()) {
-            int fleetId = fleetEntry.getKey();
-            Map<String, Map<String, Integer>> fleetMap = fleetEntry.getValue();
-
-            for (Map.Entry<String, Map<String, Integer>> airframeEntry : fleetMap.entrySet()) {
-                String airframe = airframeEntry.getKey();
-                Map<String, Integer> airframeMap = airframeEntry.getValue();
-
-                for (Map.Entry<String, Integer> monthEntry : airframeMap.entrySet()) {
-                    String month = monthEntry.getKey();
-                    int flights = monthEntry.getValue();
-
-                    LOG.info(fleetId + " " + airframe + " " + month + " " + flights);
-                }
-            }
-        }
-    }
 
     public static String getFirstOfMonth(String dateTime) {
         return dateTime.substring(0, 8) + "01";
