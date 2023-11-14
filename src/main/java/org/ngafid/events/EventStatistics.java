@@ -947,7 +947,7 @@ public class EventStatistics {
                 "THEN 1 ELSE 0 END) AS event_count FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events " +
                 "ON events.flight_id = flights.id LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id " +
                 "WHERE (event_definitions.name = ? OR event_definitions.name IS NULL) AND (events.start_time >= ? " +
-                "AND events.start_time < ?) GROUP BY airframes.airframe, events.fleet_id, month_first_day";
+                "AND events.start_time <= ?) GROUP BY airframes.airframe, events.fleet_id, month_first_day";
 
         PreparedStatement ps = connection.prepareStatement(query);
         ps.setString(1, eventName);
