@@ -12,28 +12,39 @@ import java.util.logging.Logger;
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
 
-    private static Map<String, Map<String, Integer>> monthlyTotalFlightsMap = new HashMap<>();
+    // Fleet ID - Airframe - Month - Total Flights
+    private static Map<Integer, Map<String, Map<String, Integer>>> monthlyTotalFlightsMap = new HashMap<>();
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
-        String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m') AS month, " +
-                "COUNT(*) AS total_flights FROM flights JOIN airframes ON flights.airframe_id = airframes.id " +
-                "GROUP BY airframes.airframe, month ORDER BY month, airframes.airframe";
+        String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m') " +
+                        "AS month, COUNT(*) AS total_flights FROM flights" +
+                        "JOIN airframes ON flights.airframe_id = airframes.id WHERE flights.fleet_id = ? " +
+                        "GROUP BY airframes.airframe, month, flights.fleet_id ORDER BY month, airframes.airframe, flights.fleet_id";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ResultSet result = ps.executeQuery();
+            ps.setInt(1, fleetId);
+            LOG.info("Executing query: " + ps);
 
+            ResultSet result = ps.executeQuery();
             Map<String, Map<String, Integer>> newMonthlyTotalFlightsMap = new HashMap<>();
 
             while (result.next()) {
+                int flights = result.getInt("total_flights");
                 String airframe = result.getString("airframe");
                 String month = result.getString("month");
-                int flights = result.getInt("total_flights");
+                LOG.info(flights + " flights for " + airframe + " during " + month);
 
                 if (!newMonthlyTotalFlightsMap.containsKey(airframe)) {
                     newMonthlyTotalFlightsMap.put(airframe, new HashMap<>());
                 }
 
                 newMonthlyTotalFlightsMap.get(airframe).put(month, flights);
+            }
+
+            if (!monthlyTotalFlightsMap.containsKey(fleetId)) {
+                monthlyTotalFlightsMap.put(fleetId, newMonthlyTotalFlightsMap);
+            } else {
+                monthlyTotalFlightsMap.get(fleetId).putAll(newMonthlyTotalFlightsMap);
             }
 
         } catch (SQLException e) {

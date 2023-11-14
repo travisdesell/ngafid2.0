@@ -42,6 +42,7 @@ import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 
+import static org.ngafid.events.EventStatistics.updateMonthlyTotalFlights;
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
 public class ProcessUpload {
@@ -95,6 +96,8 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
+                    updateMonthlyTotalFlights(connection, targetFleetId);
+
 
                     //TURN OFF FOR REGULAR USE
                     //System.exit(1);
@@ -102,7 +105,6 @@ public class ProcessUpload {
 
                 fleetSet.close();
                 fleetPreparedStatement.close();
-
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -140,6 +142,8 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
+            updateMonthlyTotalFlights(connection, fleetId);
+
         } catch (SQLException e) {
             System.err.println("Encountered error");
             e.printStackTrace();
@@ -210,6 +214,7 @@ public class ProcessUpload {
                 uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
             }
 
+            updateMonthlyTotalFlights(connection, fleetId);
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {
