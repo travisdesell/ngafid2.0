@@ -12,9 +12,41 @@ import java.util.logging.Logger;
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
 
+    private static Map<String, Map<String, Integer>> monthlyTotalFlightsMap = new HashMap<>();
+
+    public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
+        String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m') AS month, " +
+                "COUNT(*) AS total_flights FROM flights JOIN airframes ON flights.airframe_id = airframes.id " +
+                "GROUP BY airframes.airframe, month ORDER BY month, airframes.airframe";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ResultSet result = ps.executeQuery();
+
+            Map<String, Map<String, Integer>> newMonthlyTotalFlightsMap = new HashMap<>();
+
+            while (result.next()) {
+                String airframe = result.getString("airframe");
+                String month = result.getString("month");
+                int flights = result.getInt("total_flights");
+
+                if (!newMonthlyTotalFlightsMap.containsKey(airframe)) {
+                    newMonthlyTotalFlightsMap.put(airframe, new HashMap<>());
+                }
+
+                newMonthlyTotalFlightsMap.get(airframe).put(month, flights);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
     public static String getFirstOfMonth(String dateTime) {
         return dateTime.substring(0, 8) + "01";
     }
+
+
 
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime, double severity, double duration) throws SQLException {
         String firstOfMonth = getFirstOfMonth(startDateTime);
