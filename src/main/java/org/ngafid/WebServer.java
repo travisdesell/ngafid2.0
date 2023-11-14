@@ -19,6 +19,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
+import static org.ngafid.events.EventStatistics.printMonthlyTotalFlights;
 
 /**
  * The entry point for the NGAFID web server.
@@ -317,6 +318,8 @@ public final class WebServer {
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
+
+        printMonthlyTotalFlights();
     }
 }
 

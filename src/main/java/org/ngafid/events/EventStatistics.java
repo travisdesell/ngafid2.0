@@ -1,5 +1,7 @@
 package org.ngafid.events;
 
+import org.ngafid.Database;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -15,9 +17,22 @@ public class EventStatistics {
     // Fleet ID - Airframe - Month - Total Flights
     private static Map<Integer, Map<String, Map<String, Integer>>> monthlyTotalFlightsMap = new HashMap<>();
 
+    static {
+        Connection connection = Database.getConnection();
+        try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM fleet")) {
+            ResultSet result = ps.executeQuery();
+            while (result.next()) {
+                int fleetId = result.getInt("id");
+                updateMonthlyTotalFlights(connection, fleetId);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
         String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m') " +
-                        "AS month, COUNT(*) AS total_flights FROM flights" +
+                        "AS month, COUNT(*) AS total_flights FROM flights " +
                         "JOIN airframes ON flights.airframe_id = airframes.id WHERE flights.fleet_id = ? " +
                         "GROUP BY airframes.airframe, month, flights.fleet_id ORDER BY month, airframes.airframe, flights.fleet_id";
 
@@ -50,7 +65,25 @@ public class EventStatistics {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+    }
 
+    public static void printMonthlyTotalFlights() {
+        for (Map.Entry<Integer, Map<String, Map<String, Integer>>> fleetEntry : monthlyTotalFlightsMap.entrySet()) {
+            int fleetId = fleetEntry.getKey();
+            Map<String, Map<String, Integer>> fleetMap = fleetEntry.getValue();
+
+            for (Map.Entry<String, Map<String, Integer>> airframeEntry : fleetMap.entrySet()) {
+                String airframe = airframeEntry.getKey();
+                Map<String, Integer> airframeMap = airframeEntry.getValue();
+
+                for (Map.Entry<String, Integer> monthEntry : airframeMap.entrySet()) {
+                    String month = monthEntry.getKey();
+                    int flights = monthEntry.getValue();
+
+                    LOG.info(fleetId + " " + airframe + " " + month + " " + flights);
+                }
+            }
+        }
     }
 
     public static String getFirstOfMonth(String dateTime) {
