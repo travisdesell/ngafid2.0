@@ -922,6 +922,37 @@ public class EventStatistics {
         return eventCounts;
     }
 
+    private static ResultSet queryMonthlyEvents(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) {
+        if (startTime == null) {
+            startTime = LocalDate.of(0, 1, 1);
+        }
+
+        if (endTime == null) {
+            endTime = LocalDate.now();
+        }
+
+
+        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, DATE_FORMAT(events.start_time, '%Y-%m-01') " +
+                "AS month_first_day, COUNT(DISTINCT flights.id) AS flightsWithEvent, SUM(CASE WHEN event_definitions.name = ? " +
+                "THEN 1 ELSE 0 END) AS event_count FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events " +
+                "ON events.flight_id = flights.id LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id " +
+                "WHERE (event_definitions.name = ? OR event_definitions.name IS NULL) AND (events.start_time >= ? " +
+                "AND events.start_time < ?) GROUP BY airframes.airframe, events.fleet_id, month_first_day";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ps.setString(1, eventName);
+            ps.setString(2, eventName);
+            ps.setString(3, startTime.toString());
+            ps.setString(4, endTime.toString());
+
+            LOG.info("Query: " + query);
+            return ps.executeQuery();
+        } catch (SQLException e) {
+            LOG.severe("Querying monthly events failed");
+            return null;
+        }
+    }
+
 
     /**
      * Gets the number of exceedences for each type and airframe for a fleet, ordered by months, for a given event name. It will be organized into a data structure
@@ -933,13 +964,7 @@ public class EventStatistics {
      * @param endTime    is the latest time to getting events (it will get events until the current date if it is null)
      */
     public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
-        if (startTime == null) {
-            startTime = LocalDate.of(0, 1, 1);
-        }
 
-        if (endTime == null) {
-            endTime = LocalDate.now();
-        }
 
         String query = "SELECT airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day, " +
                 "SUM(event_statistics.flights_with_event) AS flightsWithEvent, " +
@@ -954,7 +979,6 @@ public class EventStatistics {
                 "GROUP BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day " +
                 "ORDER BY airframes.airframe, event_statistics.fleet_id, event_statistics.month_first_day";
 
-        LOG.info("Query: " + query);
 
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
