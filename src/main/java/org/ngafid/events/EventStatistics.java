@@ -1021,7 +1021,7 @@ public class EventStatistics {
 
             resultSet.close();
             for (MonthlyEventCounts eventCount : eventCounts.values()) {
-                eventCount.zeroMissingMonths(startTime, endTime);
+                // eventCount.zeroMissingMonths(startTime, endTime);
                 eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
                 eventCount.assignAggregateLists();
             }
@@ -1085,7 +1085,7 @@ public class EventStatistics {
         }
 
         for (MonthlyEventCounts eventCount : eventCounts.values()) {
-            eventCount.zeroMissingMonths(startTime, endTime);
+            // eventCount.zeroMissingMonths(startTime, endTime);
             eventCount.setDates(eventCount.flightsWithEventMap);
             eventCount.assignLists();
             eventCount.assignAggregateLists();
