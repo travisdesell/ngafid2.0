@@ -1065,7 +1065,10 @@ public class EventStatistics {
                 String date = resultSet.getString("month_first_day");
                 int statFleetId = resultSet.getInt("fleet_id");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
-                int totalFlights = monthlyTotalFlightsMap.get(fleetId).get(airframeName).get(date);
+                Integer totalFlights = monthlyTotalFlightsMap.get(fleetId).get(airframeName).get(date);
+                if (totalFlights == null) {
+                    totalFlights = 0;
+                }
                 int totalEvents = resultSet.getInt("event_count");
 
                 LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
