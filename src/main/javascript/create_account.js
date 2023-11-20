@@ -27,7 +27,8 @@ class CreateAccountCard extends React.Component {
                 city : true,
                 address : true,
                 phone : true,
-                zip : true
+                zip : true,
+                fleetSelectName: ""
             },
             checkedRadio : null,
         }
@@ -49,17 +50,17 @@ class CreateAccountCard extends React.Component {
             this.setState({
                 checkedRadio: checkBox.val(),
                 valid : {
-                    fleetSelect: fleetName,
+                    fleetSelect: true,
                     emailEmpty : false,
                     email : true,
                     confirmEmailEmpty : false,
                     confirmEmail : true,
                     emailMatch : true,
                     passwordEmpty: true,
+                    fleetSelectName: fleetName
                 }
             }, () =>  {
                 fleetSelect.val(fleetName.trim());
-                fleetSelect.prop("disabled", true);
                 emailInput.val(email.trim());
                 confirmEmailInput.val(email.trim());
                 emailInput.prop("disabled", true);
@@ -186,6 +187,7 @@ class CreateAccountCard extends React.Component {
         console.log("selected: " + fleetSelect);
 
         this.state.valid.fleetSelect = fleetSelect != "NONE";
+        this.state.valid.fleetSelectName = fleetSelect;
         this.setState(this.state);
     }
 
@@ -896,7 +898,7 @@ class CreateAccountCard extends React.Component {
                                     <div className="p-2 flex-fill">
 
                                         <input type="text" className="form-control" id="newFleetName" aria-describedby="newFleetNameHelp" placeholder="Enter the name of your fleet (required)" hidden={fleetNameHidden} onChange={() => this.validateFleetName()}/>
-                                        <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} value={this.state.valid.fleetSelect}  onChange={() => this.validateFleetSelect()}>
+                                        <select id="fleetSelect" className="form-control" hidden={fleetSelectHidden} value={this.state.valid.fleetSelectName}  onChange={() => this.validateFleetSelect()}>
                                             {
                                                 fleets.map((fleetInfo, index) => {
                                                     return (
