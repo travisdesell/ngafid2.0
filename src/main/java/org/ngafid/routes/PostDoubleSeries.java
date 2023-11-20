@@ -42,6 +42,8 @@ public class PostDoubleSeries implements Route {
         public DoubleSeries(int flightId, String name) throws SQLException, IOException {
             Connection connection = Database.getConnection();
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
+            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name + "'");
+
             /*
             StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
             StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
