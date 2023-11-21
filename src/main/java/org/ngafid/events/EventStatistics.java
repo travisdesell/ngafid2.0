@@ -67,6 +67,19 @@ public class EventStatistics {
         }
     }
 
+    private static int calculateAirframeFleetFlights(String airframe) {
+        int result = 0;
+
+        for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
+            try {
+                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).values().stream().mapToInt(Integer::intValue).sum();
+            } catch (NullPointerException e) {
+            }
+        }
+
+        return result;
+    }
+
     private static int calculateTotalMonthAirframeFleetFlights(String airframe, String date) {
 
         int result = 0;
@@ -799,7 +812,7 @@ public class EventStatistics {
         }
 
         String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name," +
-                "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS total_events, COUNT(*) AS total_flights " +
+                "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS total_events " +
                 "FROM flights JOIN airframes ON flights.airframe_id = airframes.id " +
                 "LEFT JOIN events ON events.flight_id = flights.id " +
                 "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id " +
@@ -826,6 +839,7 @@ public class EventStatistics {
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
+        Map<String, Integer> totalFlightsMap = new HashMap<>();
 
         try (PreparedStatement ps = buildEventCountsQuery(connection, startTime, endTime)) {
             ResultSet resultSet = ps.executeQuery();
@@ -836,7 +850,7 @@ public class EventStatistics {
                 String eventName = resultSet.getString("event_name");
 
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
-                int flightsTotal = resultSet.getInt("total_flights");
+                int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k -> calculateAirframeFleetFlights(airframeName));
                 int totalEvents = resultSet.getInt("total_events");
 
                 if (eventName == null) { // No events for this airframe, skip
@@ -888,6 +902,7 @@ public class EventStatistics {
      */
     public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
         Map<String, EventCounts> eventCounts = new HashMap<>();
+        Map<String, Integer> totalFlightsMap = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
 
@@ -900,7 +915,7 @@ public class EventStatistics {
                 String eventName = resultSet.getString("event_name");
 
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
-                int flightsTotal = resultSet.getInt("total_flights");
+                int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k -> calculateAirframeFleetFlights(airframeName));
                 int totalEvents = resultSet.getInt("total_events");
                 int resultFleetID = resultSet.getInt("fleet_id");
 
