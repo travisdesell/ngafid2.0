@@ -53,7 +53,8 @@ public class ProcessUpload {
 
     private static void sendMonthlyFlightsUpdate(int fleetID) {
         try {
-            final URL url = new URL("http://localhost:4567/updateMonthlyFlightsCache?fleetId=" + fleetID);
+            // TODO: get env for port
+            final URL url = new URL("http://localhost:8181/updateMonthlyFlightsCache?fleetId=" + fleetID);
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("PUT");
