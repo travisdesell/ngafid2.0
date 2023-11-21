@@ -311,6 +311,7 @@ public final class WebServer {
 
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
+        Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
 
         Spark.exception(Exception.class, (exception, request, response) -> {
             LOG.severe("Exception: " + exception);

@@ -10,7 +10,6 @@ import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class EventStatistics {
     private static final Logger LOG = Logger.getLogger(EventStatistics.class.getName());
@@ -73,7 +72,10 @@ public class EventStatistics {
         int result = 0;
 
         for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
-            result += monthlyTotalFlightsMap.get(fleetID).get(airframe).get(date);
+            try {
+                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).get(date);
+            } catch (NullPointerException e) {
+            }
         }
 
         return result;
@@ -1021,7 +1023,7 @@ public class EventStatistics {
 
             resultSet.close();
             for (MonthlyEventCounts eventCount : eventCounts.values()) {
-                // eventCount.zeroMissingMonths(startTime, endTime);
+                eventCount.zeroMissingMonths(startTime, endTime);
                 eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
                 eventCount.assignAggregateLists();
             }
