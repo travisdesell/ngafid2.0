@@ -51,10 +51,10 @@ public class ProcessUpload {
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
 
-    private static void sendMonthlyFlightsUpdate(int fleetID) {
+    public static void sendMonthlyFlightsUpdate(int fleetID) {
         try {
             // TODO: get env for port
-            final URL url = new URL("http://localhost:8181/updateMonthlyFlightsCache?fleetId=" + fleetID);
+            final URL url = new URL("http://localhost:8181/update_monthly_flights?fleetId=" + fleetID);
 
             HttpURLConnection connection = (HttpURLConnection) url.openConnection();
             connection.setRequestMethod("PUT");
