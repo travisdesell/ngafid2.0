@@ -789,6 +789,31 @@ public class EventStatistics {
         }
     }
 
+    private static PreparedStatement buildEventCountsQuery(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
+        if (startTime == null) {
+            startTime = LocalDate.of(0, 1, 1);
+        }
+
+        if (endTime == null) {
+            endTime = LocalDate.now();
+        }
+
+        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name," +
+                "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS total_events, COUNT(*) AS total_flights " +
+                "FROM flights JOIN airframes ON flights.airframe_id = airframes.id " +
+                "LEFT JOIN events ON events.flight_id = flights.id " +
+                "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id " +
+                "WHERE events.start_time BETWEEN ? AND ? " +
+                "GROUP BY airframes.airframe, events.fleet_id, event_definitions.name";
+
+        PreparedStatement ps = connection.prepareStatement(query);
+        ps.setString(1, startTime.toString());
+        ps.setString(2, endTime.toString());
+
+        LOG.info("Query: " + ps);
+        return ps;
+    }
+
     /**
      * Gets the number of exceedences for each type and airframe. It will be organized into a data structure
      * so plotly can display it on the webpage. Fleet can be specified or left null for all fleets
@@ -798,34 +823,17 @@ public class EventStatistics {
      * @param endTime    is the latest time to count events (it will count until the current date if it is null)
      */
     public static Map<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
-        if (startTime == null) {
-            startTime = LocalDate.of(0, 1, 1);
-        }
-
-        if (endTime == null) {
-            endTime = LocalDate.now();
-        }
-
-        String query = "SELECT event_statistics.airframe_id, event_definition_id, airframe, " +
-                "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
-                "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
-                "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
-                "WHERE (month_first_day >= ? OR month_first_day IS NULL) AND (month_first_day <= ? OR month_first_day IS NULL) ";
-
-
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, startTime.toString());
-            preparedStatement.setString(2, endTime.toString());
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement ps = buildEventCountsQuery(connection, startTime, endTime)) {
+            ResultSet resultSet = ps.executeQuery();
 
             //get the event statistics for each airframe
             while (resultSet.next()) {
                 String airframeName = resultSet.getString("airframe");
-                String eventName = resultSet.getString("event_definition_name");
+                String eventName = resultSet.getString("event_name");
 
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int flightsTotal = resultSet.getInt("total_flights");
@@ -879,34 +887,17 @@ public class EventStatistics {
      * @param endTime    is the latest time to count events (it will count until the current date if it is null)
      */
     public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
-        if (startTime == null) {
-            startTime = LocalDate.of(0, 1, 1);
-        }
-
-        if (endTime == null) {
-            endTime = LocalDate.now();
-        }
-
-        String query = "SELECT event_statistics.airframe_id, event_definition_id, airframe, " +
-                "event_definitions.name as event_definition_name, flights_with_event, total_flights, total_events, event_statistics.fleet_id " +
-                "FROM airframes LEFT JOIN event_statistics ON airframes.id = event_statistics.airframe_id " +
-                "LEFT JOIN event_definitions ON event_statistics.event_definition_id = event_definitions.id " +
-                "WHERE (month_first_day >= ? OR month_first_day IS NULL) AND (month_first_day <= ? OR month_first_day IS NULL)";
-
         Map<String, EventCounts> eventCounts = new HashMap<>();
         Set<String> eventNames = new HashSet<>();
         Set<String> nullDataAirframes = new HashSet<>();
 
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            preparedStatement.setString(1, startTime.toString());
-            preparedStatement.setString(2, endTime.toString());
-
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement ps = buildEventCountsQuery(connection, startTime, endTime)) {
+            ResultSet resultSet = ps.executeQuery();
 
             //get the event statistics for each airframe
             while (resultSet.next()) {
                 String airframeName = resultSet.getString("airframe");
-                String eventName = resultSet.getString("event_definition_name");
+                String eventName = resultSet.getString("event_name");
 
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int flightsTotal = resultSet.getInt("total_flights");
@@ -995,8 +986,7 @@ public class EventStatistics {
     public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
 
-        try {
-            PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime);
+        try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
             ResultSet resultSet = ps.executeQuery();
             if (resultSet == null) {
                 LOG.warning("Querying monthly events returned null");
@@ -1050,8 +1040,7 @@ public class EventStatistics {
     public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, int fleetId, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
         LOG.info("Getting monthly event counts for fleet: " + fleetId);
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
-        try {
-            PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime);
+        try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
             ResultSet resultSet = ps.executeQuery();
 
             while (resultSet.next()) {
