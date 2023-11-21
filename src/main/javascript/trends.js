@@ -299,7 +299,7 @@ class TrendsPage extends React.Component {
                     y : [],
                     x : [],
                     flightsWithEventCounts : {},
-                    totalFlightsCounts : {}
+                    totalFlightsCounts : {},
                 }
                 let ngafidPercentsName = eventName + " - ";
                 if (this.state.aggregatePage) {
@@ -316,7 +316,7 @@ class TrendsPage extends React.Component {
                     y : [],
                     x : [],
                     flightsWithEventCounts : {},
-                    totalFlightsCounts :{}
+                    totalFlightsCounts :{},
                 }
 
                 eventFleetPercents[eventName] = fleetPercents;
@@ -409,7 +409,6 @@ class TrendsPage extends React.Component {
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
             let ngafidValue = eventNGAFIDPercents[eventName];
-
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
                 fleetValue.x = [];
@@ -418,10 +417,11 @@ class TrendsPage extends React.Component {
                 for (let date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
                     fleetValue.x.push(date);
 
-                    let v = 100.0 * parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]);
+                    let v = 100.0 * (parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]));
+                    if (isNaN(v)) v = 0.0;
                     fleetValue.y.push(v);
 
-                    //console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
+                    // console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
 
                     //this will give 2 significant figures (and leading 0s if it is quite small)
                     var fixedText = "";
