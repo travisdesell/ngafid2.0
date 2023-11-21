@@ -441,6 +441,8 @@ class TrendsPage extends React.Component {
                 ngafidValue.x.push(date);
 
                 let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
+                if (isNaN(v)) v = 0.0;
+
                 ngafidValue.y.push(v);
 
                 //console.log(date + " :: " + ngafidValue.flightsWithEventCounts[date]  + " / " + ngafidValue.totalFlightsCounts[date] + " : " + v);
