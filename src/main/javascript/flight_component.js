@@ -499,7 +499,10 @@ class Flight extends React.Component {
     }
 
     cesiumClicked() {
-        
+
+        if (this.state.cesiumMapVisible && this.state.mapLoaded) {
+            this.state.mapLoaded = false;
+        }
         var flightId = this.props.flightInfo.id;
         this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
         this.setState(this.state);

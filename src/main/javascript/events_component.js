@@ -274,7 +274,7 @@ class Events extends React.Component {
                         if (this.props.parent.state.cesiumMapVisible) {
                             zoomToCesiumEntityBtn = (
                                 <button id="zoomCesium" data-toggle="button" className={buttonClasses} onClick={() =>  this.props.parent.zoomToEventEntity(event.id, event.flightId)}>
-                                    <i className="fa fa-search-plus" ></i>
+                                    <i className="fa fa-search-plus"></i>
                                 </button>)
                         }
 

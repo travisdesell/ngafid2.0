@@ -237,7 +237,7 @@ class CesiumPage extends React.Component {
     getEventEntity(event, flightId ,data, color) {
 
         for(let i = 2; i < data.length; i+=3) {
-            data[i] += 10;
+            data[i] += 5;
         }
         var flightData = this.state.flightData[flightId];
         var positionProperty = new SampledPositionProperty();
@@ -257,25 +257,6 @@ class CesiumPage extends React.Component {
         console.log(model);
         console.log(eventStartTime);
         console.log(flightEndTime);
-        this.viewer.clock.startTime = eventStartTime.clone();
-        this.viewer.clock.currentTime = eventStartTime.clone();
-        // this.viewer.entities.remove(this.state.activePhaseEntities[flightId]["default"][0])
-        var replayEntity = new Entity({
-            availability: new TimeIntervalCollection([new TimeInterval({start: eventStartTime, stop: flightEndTime})]),
-            position: positionProperty,
-            orientation: new VelocityOrientationProperty(positionProperty),
-            model: model,
-            path: new PathGraphics({
-                width: 5,
-                material: new PolylineOutlineMaterialProperty({
-                    color: pathColor,
-                    outlineColor: pathColor,
-                    outlineWidth: 5
-                })
-            }), 
-            
-        });
-
         var positionArr = Cartesian3.fromDegreesArrayHeights(data);
         var pathColor = Color.fromCssColorString(color).withAlpha(1);
         var entity = new Entity({
@@ -341,16 +322,8 @@ class CesiumPage extends React.Component {
             var eventCoordinates = infoAgl.slice(eventStartLine, eventEndLine);
             var entity = this.getEventEntity(event, flightId, eventCoordinates, event.color); 
             this.viewer.entities.add(entity);
-            var eventTime = JulianDate.fromIso8601(event.startTime);
-            this.viewer.clock.currentTime = eventTime;
-            // this.viewer.zoomTo(entity);
             this.state.activeEventEntites[event.id] = entity;  
             console.log(event);
-            // var replayEntity = this.state.activePhaseEntities[flightId][0];
-            // var startIndex = event.startLine;
-            // console.log(replayEntity.availability);
-            // 
-
         }
 
         this.setState(this.state);
@@ -440,7 +413,7 @@ class CesiumPage extends React.Component {
         this.viewer.clock.currentTime = flightStartTime.clone();
         this.viewer.clock.multiplier = 25;
         this.viewer.clock.shouldAnimate = true;
-        var pathColor = Color.fromCssColorString(color).withAlpha(0.2);
+        var pathColor = Color.fromCssColorString(color).withAlpha(0.8);
         var positionProperty = this.getPositionProperty(flightData);
 
         var model = null;
