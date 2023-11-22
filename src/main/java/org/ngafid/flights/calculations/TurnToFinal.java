@@ -259,7 +259,7 @@ public class TurnToFinal implements Serializable {
             return ttfs;
         } catch (ClassNotFoundException ce) {
             LOG.info("TTF object is outdated - recalculating.");
-            query = connection.prepareStatement("DELETE * FROM turn_to_final WHERE flight_id = ?");
+            query = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
             query.setInt(1, flight.getId());
             LOG.info(query.toString());
             query.execute();

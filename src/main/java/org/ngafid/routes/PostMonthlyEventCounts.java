@@ -1,6 +1,7 @@
 package org.ngafid.routes;
 
 import java.time.LocalDate;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 import java.sql.Connection;
@@ -22,7 +23,7 @@ public class PostMonthlyEventCounts implements Route {
     public PostMonthlyEventCounts(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
 
@@ -40,7 +41,7 @@ public class PostMonthlyEventCounts implements Route {
 
         try {
             Connection connection = Database.getConnection();
-            HashMap<String, EventStatistics.MonthlyEventCounts> eventCountsMap = null;
+            Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
             if (aggregateTrendsPage) {
                 if (!user.hasAggregateView()) {
                     LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
@@ -59,8 +60,13 @@ public class PostMonthlyEventCounts implements Route {
                 }
                 eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
+
+            LOG.severe("\n\n" + gson.toJson(eventCountsMap) + "\n\n");
+
             return gson.toJson(eventCountsMap);
         } catch (SQLException e) {
+            System.out.println("\n\n" + gson.toJson(new ErrorResponse(e)) + "\n\n");
+
             return gson.toJson(new ErrorResponse(e));
         }
     }

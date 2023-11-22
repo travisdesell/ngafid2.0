@@ -8,6 +8,9 @@ import spark.Spark;
 import spark.Service;
 
 import java.io.InputStream;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -139,7 +142,7 @@ public final class WebServer {
                 //save the previous uri so we can redirect there after the user logs in
                 LOG.info("request uri: '" + request.uri());
                 LOG.info("request url: '" + request.url());
-                LOG.info("request queryString: '" + request.queryString());
+                LOG.info("request queryString: '" + request.queryString() + "'");
 
                 if (request.queryString() != null) {
                     request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
@@ -149,9 +152,13 @@ public final class WebServer {
 
                 LOG.info("redirecting to access_denied");
                 response.redirect("/access_denied");
+                Spark.halt(401, "Go Away!");
+
             } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
                 LOG.info("user waiting status, redirecting to waiting page!");
                 response.redirect("/protected/waiting");
+                Spark.halt(401, "Go Away!");
+
             } else if (previousURI != null) {
                 response.redirect(previousURI);
                 request.session().attribute("previous_uri", null);
@@ -213,6 +220,7 @@ public final class WebServer {
         Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
+        Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
         Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 
         Spark.get("/protected/update_profile", new GetUpdateProfile(gson));
@@ -305,12 +313,23 @@ public final class WebServer {
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
         Spark.exception(Exception.class, (exception, request, response) -> {
+            LOG.severe("Exception: " + exception);
+            LOG.severe("Exception message: " + exception.getMessage());
+
+            StringWriter sw = new StringWriter();
+            PrintWriter pw = new PrintWriter(sw);
+            exception.printStackTrace(pw);
+            String sStackTrace = sw.toString(); // stack trace as a string
+            LOG.severe("stack trace:\n" + sStackTrace);
+
             String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID WebServer at ")
                                                 .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
-                                                .append(".\n The exception was: ").append(exception.getMessage()).append("\n")
+                                                .append(".\n The exception was: ").append(exception).append("\n")
+                                                .append(".\n The exception message was: ").append(exception.getMessage()).append("\n")
+                                                .append(".\n The exception (to string): ").append(exception.toString()).append("\n")
+                                                .append("\n The non-pretty stack trace is:\n").append(sStackTrace).append("\n")
                                                 .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
 
-            LOG.severe("Exception occurred: " + exception.getMessage());
             sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
         });
 
