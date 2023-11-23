@@ -168,6 +168,31 @@ class Events extends React.Component {
         this.updateEventDisplay(index, true);
     }
 
+    getEventMetaData(eventId) {
+
+        var eventMetaData = null;
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/event_metadata',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                eventMetaData =  response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Event Metadata ", errorThrown);
+            },
+            async: false
+        })
+        console.log("Event MetaData : ");
+        console.log(eventMetaData);
+
+        return eventMetaData;
+
+    }
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -250,6 +275,7 @@ class Events extends React.Component {
                         let rocPlot = "";
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
+                            var eventMetaData = this.getEventMetaData(event.id);
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
                             if (rocPlotData != null) {
@@ -258,6 +284,10 @@ class Events extends React.Component {
                                 if (!event.rocPlotVisible) {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
                                 }
+                            }
+
+                            if (eventMetaData != null) {
+                                
                             }
                         }
 

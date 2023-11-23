@@ -26,6 +26,7 @@ import java.util.ArrayList;
 //import java.util.logging.Logger;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventMetaData;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.filters.Conditional;
 import org.ngafid.filters.Filter;
@@ -55,6 +56,19 @@ public class CalculateProximity {
         double altDiff = Math.abs(flightAltitude - otherFlightAltitude);
         distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
         return distanceFt;
+    }
+
+    public static double calculateLateralDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
+                                           double otherFlightLongitude) {
+       
+        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
+        return lateralDistance;
+    }
+    
+    public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
+        
+        double verticalDistance = Math.abs(flightAltitude - otherFlightAltitude);
+        return verticalDistance;
     }
 
     public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
@@ -199,6 +213,8 @@ public class CalculateProximity {
             int startCount = 0;
             int stopCount = 0;
             double severity = 0;
+            double lateralDistance = 0;
+            double verticalDistance = 0;
 
             //TODO: should probably grab these from the database event definition instead of hard
             //coding them; but we don't need to pull the event definition so this is a tad bit faster.
@@ -272,6 +288,9 @@ public class CalculateProximity {
 
                         double distanceFt = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j],
                                 otherInfo.longitude[j], flightInfo.altitudeMSL[i] , otherInfo.altitudeMSL[j]);
+                        double lateralDistanceFt = calculateLateralDistance(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j],
+                                otherInfo.longitude[j]);
+                        double verticalDistanceFt = calculateVerticalDistance(flightInfo.altitudeMSL[i] , otherInfo.altitudeMSL[j]);
 
                         if (distanceFt < 1000.0 && flightInfo.altitudeAGL[i] >= 50 && otherInfo.altitudeAGL[j] >= 50 && flightInfo.indicatedAirspeed[i] > 20 && otherInfo.indicatedAirspeed[j] > 20) {
                             /*
@@ -292,6 +311,8 @@ public class CalculateProximity {
                                 startLine = i;
                                 otherStartLine = j;
                                 severity = distanceFt;
+                                lateralDistance = lateralDistanceFt;
+                                verticalDistance = verticalDistanceFt;
 
                                 //System.out.println("start date time: " + startTime + ", start line number: " + startLine);
                             }
@@ -305,7 +326,8 @@ public class CalculateProximity {
                                 //for this event, update the severity
                                 severity = distanceFt;
                             }
-
+                            lateralDistance = lateralDistanceFt < lateralDistance ? lateralDistanceFt : lateralDistance; 
+                            verticalDistance = verticalDistanceFt < verticalDistance ? verticalDistanceFt : verticalDistance; 
                             //increment the startCount, reset the endCount
                             startCount++;
                             stopCount = 0;
@@ -329,6 +351,13 @@ public class CalculateProximity {
                                         System.out.println("Creating event for flight : " + flightId );
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                                        event.addMetaData(lateralDistanceMetaData);
+                                        event.addMetaData(verticalDistanceMetaData);
+
+                                        otherEvent.addMetaData(lateralDistanceMetaData);
+                                        otherEvent.addMetaData(verticalDistanceMetaData);
                                         if ( severity > 0) {
                                             double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine, otherEndLine);
                                             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
@@ -370,13 +399,21 @@ public class CalculateProximity {
                         Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
                         Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
 
+                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                        event.addMetaData(lateralDistanceMetaData);
+                        event.addMetaData(verticalDistanceMetaData);
+
+                        otherEvent.addMetaData(lateralDistanceMetaData);
+                        otherEvent.addMetaData(verticalDistanceMetaData);
+
                         if ( severity > 0 ) {
                             double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
                             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
                             event.setRateOfClosure(rateOfClosure);
                             otherEvent.setRateOfClosure(rateOfClosure);
                         }
-                        eventList.add( event );
+                        eventList.add(event);
                         //add in an event for the other flight as well so we don't need to recalculate this
                         otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                     }

@@ -208,4 +208,14 @@ $update_system_id_length = true;
 if ($update_system_id_length) {
     query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24);
 }
+
+$update_event_meta_data = true;
+if ($update_event_meta_data) {
+    query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('lateral_distance');");
+    query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('vertical_distance');");
+
+}
+
 ?>
+
+
