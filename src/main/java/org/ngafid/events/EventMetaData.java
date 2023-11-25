@@ -68,6 +68,7 @@ public class EventMetaData {
             if (resultSet.next()) {
                 result = resultSet.getInt(1);
             }
+            resultSet.close();
             statement.close();
         } catch (SQLException e) {
             System.err.println("Error getting event key id for name : " + this.name);
@@ -87,6 +88,8 @@ public class EventMetaData {
             while (resultSet.next()) {
                metaDataList.add(new EventMetaData(resultSet, eventId)); 
             }
+            resultSet.close();
+            preparedStatement.close();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

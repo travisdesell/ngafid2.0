@@ -11,9 +11,9 @@ $update_2022_02_17 = true;
 $update_turn_to_final = true;
 $update_visited_airports = true;
 $update_uploads_for_raise = true;
-$update_rate_of_closure = false;
+$update_rate_of_closure = true;
 $create_airsync = false;
-$create_event_metadata = true;
+$create_event_metadata = false;
 //need to drop and reload these tables for 2020_05_16 changes
 
 /*

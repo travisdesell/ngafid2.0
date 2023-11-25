@@ -290,7 +290,7 @@ public class Event {
                     this.rateOfClosure.updateDatabase(connection, eventId);
                 }
 
-                if (this.metaDataList.size() > 0 ) {
+                if (this.metaDataList != null && this.metaDataList.size() > 0 ) {
                     for (EventMetaData metaData : this.metaDataList) {
                         metaData.updateDatabase(connection, eventId);
                     }

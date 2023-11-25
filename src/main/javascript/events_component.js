@@ -7,7 +7,8 @@ import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
 import {errorModal} from "./error_modal";
-
+import { OverlayTrigger } from 'react-bootstrap';
+import { Tooltip } from "react-bootstrap";
 
 // establish set of RGB values to combine //
 let BG_values = ["00", "55", "AA", "FF"];
@@ -193,6 +194,31 @@ class Events extends React.Component {
         return eventMetaData;
 
     }
+
+    getEventMetaDataToolTip(eventId) {
+        
+        var eventMetaData = this.getEventMetaData(eventId);
+
+        if (eventMetaData != null) {
+            console.log(eventMetaData);
+            var toolTip = (
+                <Tooltip>
+                    {
+                        eventMetaData.map((metaData) => {
+                            var str = metaData.name + ": " + (Math.round(metaData.value * 100) / 100).toFixed(2);
+                            return (<p>{str}</p>);
+                        })
+                    }
+                </Tooltip>
+            )
+
+            return toolTip;
+        } 
+
+        return <Tooltip>No extra details available</Tooltip>
+
+    }
+   
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -273,11 +299,14 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
+                        let eventMetaDataStr = ", ";
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
                             var eventMetaData = this.getEventMetaData(event.id);
+
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+
                             if (rocPlotData != null) {
                                 rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
                                     <i className="fa fa-area-chart p-1" ></i></button>   );
@@ -297,11 +326,12 @@ class Events extends React.Component {
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                    <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
-                                    {rocPlot}
-                                </button>
-
+                                <OverlayTrigger placement='top' overlay={this.getEventMetaDataToolTip(event.id)}>
+                                    <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
+                                        <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
+                                        {rocPlot}
+                                    </button>
+                                </OverlayTrigger>
                             </div>
 
                         );
