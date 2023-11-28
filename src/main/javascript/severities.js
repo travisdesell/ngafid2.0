@@ -113,6 +113,31 @@ class SeveritiesPage extends React.Component {
         document.body.removeChild(element);
 
     }
+    getEventMetaData(eventId) {
+
+        var eventMetaData = null;
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/event_metadata',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                eventMetaData =  response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Event Metadata ", errorThrown);
+            },
+            async: false
+        })
+        console.log("Event MetaData : ");
+        console.log(eventMetaData);
+
+        return eventMetaData;
+
+    }
 
     displayPlot(selectedAirframe) {
         console.log("displaying plots with airframe: '" + selectedAirframe + "'");
@@ -124,6 +149,7 @@ class SeveritiesPage extends React.Component {
             if (!this.state.eventChecked[eventName]) continue;
 
             for (let [airframe, counts] of Object.entries(countsMap)) {
+
                 if (airframe === "Garmin Flight Display") continue;
                 if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
 
@@ -140,7 +166,13 @@ class SeveritiesPage extends React.Component {
 
                 //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
-                    console.log(counts[i]);
+                    var eventMetaData = this.getEventMetaData(counts[i].id);
+                    var eventMetaDataStr = "";
+                    if (eventMetaData != null) {
+                        eventMetaData.map((item) => {
+                            eventMetaDataStr += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+                        })
+                    }
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
 
@@ -150,8 +182,10 @@ class SeveritiesPage extends React.Component {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
 
-                    let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + counts[i].severity + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
+
+                    if (eventMetaDataStr != "") hovertext += ", " + eventMetaDataStr;
 
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
