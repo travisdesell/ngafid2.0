@@ -63,11 +63,18 @@ class SeveritiesPage extends React.Component {
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,
             datesChanged : false,
-
+            eventMetaData : {},
             eventChecked : eventChecked
         };
     }
 
+    getEventMetaDataText(eventMetaData) {
+
+        var eventMetaDataText = "";
+        eventMetaData.map((item) => {
+            eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+        });
+    }
     exportCSV() {
         let selectedAirframe = this.state.airframe;
 
@@ -76,8 +83,12 @@ class SeveritiesPage extends React.Component {
         console.log(eventSeverities);
 
 
-        let filetext = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity\n";
+        // let filetext = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity\n";
+        
+        let fileHeaders = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
 
+        let fileContent = [fileHeaders];
+        let uniqueMetaDataNames = [];
         let needsComma = false;
 
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
@@ -87,22 +98,40 @@ class SeveritiesPage extends React.Component {
             for (let [airframe, counts] of Object.entries(countsMap)) {
                 if (airframe === "Garmin Flight Display") continue;
                 if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
-
+                console.log("Counts severities");
+                console.log(counts);
 
                 for (let i = 0; i < counts.length; i++) {
+                    let line = "";
+                    var eventMetaData = this.state.eventMetaData[counts[i].id];
+                    console.log(eventMetaData);
+                    var eventMetaDataText = "";
+                    if (eventMetaData != null) {
+                        eventMetaData.map((item) => {
+                            if (!uniqueMetaDataNames.includes(item.name)) {
+                                uniqueMetaDataNames.push(item.name);
+                            }
+                            eventMetaDataText += item.value + ",";
+                        })
+                    }
                     let count = counts[i];
-                    filetext += eventName + "," + airframe + "," + count.flightId + "," + count.startTime +  "," + count.endTime + "," + count.startLine + "," + count.endLine + "," + count.severity + "\n";
+                    line = eventName + "," + airframe + "," + count.flightId + "," + count.startTime +  "," + count.endTime + "," + count.startLine + "," + count.endLine + "," + count.severity;
+                    if (eventMetaDataText != "") {
+                        line += "," + eventMetaDataText;
+                    }
+                    fileContent.push(line);
                 }
             }
         }
 
-
+        var eventMetaData
+        if (uniqueMetaDataNames.length != 0)
+            fileContent[0] = fileHeaders + "," +uniqueMetaDataNames.join(","); 
         let filename = "event_severities.csv";
-
         console.log("exporting csv!");
 
         var element = document.createElement('a');
-        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(filetext));
+        element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(fileContent.join("\n")));
         element.setAttribute('download', filename);
 
         element.style.display = 'none';
@@ -167,11 +196,12 @@ class SeveritiesPage extends React.Component {
                 //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
                     var eventMetaData = this.getEventMetaData(counts[i].id);
-                    var eventMetaDataStr = "";
+                    var eventMetaDataText = "";
                     if (eventMetaData != null) {
                         eventMetaData.map((item) => {
-                            eventMetaDataStr += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+                            eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
                         })
+                        this.state.eventMetaData[counts[i].id] = eventMetaData;
                     }
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
@@ -185,11 +215,12 @@ class SeveritiesPage extends React.Component {
                     let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
-                    if (eventMetaDataStr != "") hovertext += ", " + eventMetaDataStr;
+                    if (eventMetaDataText != "") hovertext += ", " + eventMetaDataText;
 
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
                 }
+                this.setState(this.state);
 
                 severityTraces.push(severityTrace);
             }

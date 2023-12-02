@@ -299,11 +299,12 @@ class Events extends React.Component {
                         let otherFlightURL = "";
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
-                        let eventMetaDataStr = ", ";
+                        let eventMetaDataText = "";
+                        var eventMetaData = this.getEventMetaData(event.id);
+
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
-                            var eventMetaData = this.getEventMetaData(event.id);
-
+                            
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
 
@@ -315,10 +316,15 @@ class Events extends React.Component {
                                 }
                             }
 
-                            if (eventMetaData != null) {
-                                
-                            }
                         }
+
+                        if (eventMetaData != null) {
+                            eventMetaDataText = " , ";
+                            eventMetaData.map((item) => {
+                                eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+                            })
+                            eventMetaDataText = eventMetaDataText.substring(0, eventMetaDataText.length - 2);
+                        } 
 
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
@@ -326,12 +332,10 @@ class Events extends React.Component {
                                     <input type="color" name="eventColor" value={event.color} onChange={(e) => {this.changeColor(e, index); }} style={{padding:"3 2 3 2", border:"1", margin:"5 4 4 0", height:"36px", width:"36px"}}/>
                                 </div>
 
-                                <OverlayTrigger placement='top' overlay={this.getEventMetaDataToolTip(event.id)}>
                                     <button id={buttonID} className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.eventClicked(index)}>
-                                        <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
+                                        <b>{event.eventDefinition.name}</b> {" -- " + event.startTime + " to " + event.endTime + ", severity: " + (Math.round(event.severity * 100) / 100).toFixed(2)} {eventMetaDataText} { otherFlightText } { otherFlightURL } { rateOfClosureBtn }
                                         {rocPlot}
                                     </button>
-                                </OverlayTrigger>
                             </div>
 
                         );
