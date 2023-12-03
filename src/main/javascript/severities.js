@@ -79,17 +79,11 @@ class SeveritiesPage extends React.Component {
         let selectedAirframe = this.state.airframe;
 
         console.log("selected airframe: '" + selectedAirframe + "'");
-
         console.log(eventSeverities);
-
-
-        // let filetext = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity\n";
-        
         let fileHeaders = "Event Name,Airframe,Flight ID,Start Time,End Time,Start Line,End Line,Severity";
 
         let fileContent = [fileHeaders];
         let uniqueMetaDataNames = [];
-        let needsComma = false;
 
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
@@ -105,26 +99,24 @@ class SeveritiesPage extends React.Component {
                     let line = "";
                     var eventMetaData = this.state.eventMetaData[counts[i].id];
                     console.log(eventMetaData);
-                    var eventMetaDataText = "";
+                    var eventMetaDataText = [];
                     if (eventMetaData != null) {
                         eventMetaData.map((item) => {
                             if (!uniqueMetaDataNames.includes(item.name)) {
                                 uniqueMetaDataNames.push(item.name);
                             }
-                            eventMetaDataText += item.value + ",";
+                            eventMetaDataText.push(item.value);
                         })
                     }
                     let count = counts[i];
                     line = eventName + "," + airframe + "," + count.flightId + "," + count.startTime +  "," + count.endTime + "," + count.startLine + "," + count.endLine + "," + count.severity;
-                    if (eventMetaDataText != "") {
-                        line += "," + eventMetaDataText;
-                    }
+                    if (eventMetaDataText != "")
+                        line += "," + eventMetaDataText.join(",");
                     fileContent.push(line);
                 }
             }
         }
 
-        var eventMetaData
         if (uniqueMetaDataNames.length != 0)
             fileContent[0] = fileHeaders + "," +uniqueMetaDataNames.join(","); 
         let filename = "event_severities.csv";
@@ -196,11 +188,11 @@ class SeveritiesPage extends React.Component {
                 //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
                     var eventMetaData = this.getEventMetaData(counts[i].id);
-                    var eventMetaDataText = "";
+                    var eventMetaDataText = [];
                     if (eventMetaData != null) {
                         eventMetaData.map((item) => {
-                            eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
-                        })
+                            eventMetaDataText.push(item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2));                        
+                        });
                         this.state.eventMetaData[counts[i].id] = eventMetaData;
                     }
                     severityTrace.y.push( counts[i].severity );
@@ -215,7 +207,7 @@ class SeveritiesPage extends React.Component {
                     let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
-                    if (eventMetaDataText != "") hovertext += ", " + eventMetaDataText;
+                    if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
 
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
