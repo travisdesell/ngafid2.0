@@ -68,13 +68,6 @@ class SeveritiesPage extends React.Component {
         };
     }
 
-    getEventMetaDataText(eventMetaData) {
-
-        var eventMetaDataText = "";
-        eventMetaData.map((item) => {
-            eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
-        });
-    }
     exportCSV() {
         let selectedAirframe = this.state.airframe;
 
