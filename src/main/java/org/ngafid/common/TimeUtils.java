@@ -180,8 +180,13 @@ public class TimeUtils {
             try {
                 start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
                 end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
-            } catch (DateTimeParseException e2) {
-                throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss).");
+            } catch (DateTimeParseException er2) {
+                try {
+                    start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
+                    end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
+                } catch (DateTimeParseException e3) {
+                    throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss or MM/dd/yyyy HH:mm:ss).");
+                }
             }
         }
 

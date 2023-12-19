@@ -55,6 +55,8 @@ public class ProcessUpload {
 
         connection = Database.getConnection();
 
+        removeNoUploadFlights(connection);
+
         if (arguments.length >= 1) {
             if (arguments[0].equals("--fleet")) {
                 processFleetUploads(Integer.parseInt(arguments[1]));
@@ -66,6 +68,30 @@ public class ProcessUpload {
             operateAsDaemon();
         }
     }
+
+    /**
+     * Sometimes in the process of removing an upload (probably via the webpage) this operation
+     * does not complete and this results in flights being in the database with a non-existant
+     * upload. This can cause the upload process to crash.
+     *
+     * @param connection is the connection to the database
+     */
+    public static void removeNoUploadFlights(Connection connection) {
+        try {
+            ArrayList<Flight> noUploadFlights = Flight.getFlights(connection, "NOT EXISTS (SELECT * FROM uploads WHERE uploads.id = flights.upload_id)");
+
+            for (Flight flight : noUploadFlights) {
+                System.out.println("flight had no related upload. flight id: " + flight.getId() + ", uplaod id: " + flight.getUploadId());
+                flight.remove(connection);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error removing flights without an upload:" + e);
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
 
     public static void operateAsDaemon() {
         while (true) {
