@@ -24,12 +24,12 @@ for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
         name : doubleTimeSeriesNames[i],
         conditions : [
-            { 
+            {
                 type : "select",
                 name : "condition",
                 options : [ "<=", "<", ">", ">=" ]
             },
-            { 
+            {
                 type : "number",
                 name : "number",
             }
@@ -157,7 +157,7 @@ class CreateEventCard extends React.Component {
             severityColumnNames : JSON.stringify(this.state.severityColumnNames),
             severityType : this.state.severityType,
             airframe : this.state.airframe
-        };   
+        };
         console.log(submissionData);
 
         $.ajax({
@@ -178,12 +178,12 @@ class CreateEventCard extends React.Component {
                 }
 
                 //createEventCard.setEvents(response);
-            },   
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
-            },   
-            async: true 
-        });  
+            },
+            async: true
+        });
 
     }
 
