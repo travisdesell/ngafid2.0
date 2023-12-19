@@ -195,29 +195,6 @@ class Events extends React.Component {
 
     }
 
-    getEventMetaDataToolTip(eventId) {
-        
-        var eventMetaData = this.getEventMetaData(eventId);
-
-        if (eventMetaData != null) {
-            console.log(eventMetaData);
-            var toolTip = (
-                <Tooltip>
-                    {
-                        eventMetaData.map((metaData) => {
-                            var str = metaData.name + ": " + (Math.round(metaData.value * 100) / 100).toFixed(2);
-                            return (<p>{str}</p>);
-                        })
-                    }
-                </Tooltip>
-            )
-
-            return toolTip;
-        } 
-
-        return <Tooltip>No extra details available</Tooltip>
-
-    }
    
     render() {
         let cellClasses = "d-flex flex-row p-1";

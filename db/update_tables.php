@@ -209,7 +209,7 @@ if ($update_for_airsync) {
 
 $update_system_id_length = false;
 if ($update_system_id_length) {
-    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24);
+    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24)");
 }
 
 $update_event_meta_data = true;

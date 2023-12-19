@@ -3,6 +3,8 @@ package org.ngafid.proximity;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
+
 import org.ngafid.Database;
 import org.ngafid.events.EventMetaData;
 import org.ngafid.flights.DoubleTimeSeries;
@@ -36,6 +38,13 @@ public class CalculateProximityEventMetaData {
                 int eventId = resultSet.getInt(5);
                 double severity = resultSet.getDouble(6);
 
+                
+                DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
+                DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
+                DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
+                DoubleTimeSeries altAglSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
+                DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
+
                 String otherEventQueryString = "select e.id as id, e.start_line as otherStartLine, e.end_line as otherEndLine from events as e where e.severity = ? and e.event_definition_id = -1 and e.flight_id = ? and e.other_flight_id = ?"; 
                 PreparedStatement otherStatement = connection.prepareStatement(otherEventQueryString);
 
@@ -50,17 +59,11 @@ public class CalculateProximityEventMetaData {
                     int otherStartLine = otherResultSet.getInt(2);
                     int otherEndLine = otherResultSet.getInt(3);
 
-                    DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
-                    DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
-                    DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
-                    DoubleTimeSeries altAglSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
-                    DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
-
-
+                    
                     DoubleTimeSeries otherLatitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, otherFlightId, "Latitude");
                     DoubleTimeSeries otherLongitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, otherFlightId, "Longitude");
                     DoubleTimeSeries otherAltMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, otherFlightId, "AltMSL");
-                    DoubleTimeSeries otherAltAglSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
+                    DoubleTimeSeries otherAltAglSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, otherFlightId, "AltAGL");
                     DoubleTimeSeries otherIndicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, otherFlightId, "IAS");
 
                     double latitude[] = latitudeSeries.innerArray();
@@ -75,8 +78,11 @@ public class CalculateProximityEventMetaData {
                     double otherAltAgl[] = otherAltAglSeries.innerArray();
                     double otherIndicatedAirSpeed[] = otherIndicatedAirspeedSeries.innerArray();
 
-                    double lateralDistance = Double.MAX_VALUE;
-                    double verticalDistance = Double.MAX_VALUE;
+                    double lateralDistance = CalculateProximity.calculateLateralDistance(latitude[startLine], longitude[startLine], otherLatitude[otherStartLine], otherLongitude[otherEndLine]);
+                    double verticalDistance = CalculateProximity.calculateVerticalDistance(altMSL[startLine], otherAltMSL[otherStartLine]);
+
+                    startLine++;
+                    otherStartLine++;
 
                     while ( startLine < endLine && otherStartLine < otherEndLine ) {
 
@@ -86,9 +92,19 @@ public class CalculateProximityEventMetaData {
 
                             double lateralDistanceFt = CalculateProximity.calculateLateralDistance(latitude[startLine], longitude[startLine], otherLatitude[otherStartLine], otherLongitude[otherStartLine]);
                             double verticalDistanceFt = CalculateProximity.calculateVerticalDistance(altMSL[startLine], otherAltMSL[otherStartLine]);
+                            System.out.println("-------------------------------------------------------------");
+                            System.out.println(" Event Id : " + eventId +" Flight Id : " + flightId + " otherflightid : " + otherFlightId +
+                                            " Lateral Distance : " + lateralDistanceFt + " Vertical Distance : " + verticalDistanceFt + " Severity : " + severity);
+                            System.out.println("Flight Altitude : " + altMSL[startLine] + " Other Flight Altitude : " + otherAltMSL[otherStartLine]);
+                            System.out.println("-------------------------------------------------------------");
                              
+
+                            /* if (verticalDistanceFt > 0.0) {
+                                verticalDistance = Math.min(verticalDistance, verticalDistanceFt);
+                            } */
                             lateralDistance = Math.min(lateralDistance, lateralDistanceFt);
                             verticalDistance = Math.min(verticalDistance, verticalDistanceFt);
+
                         }
                         startLine++;
                         otherStartLine++;
@@ -97,7 +113,7 @@ public class CalculateProximityEventMetaData {
                     
                     EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance);
                     EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
-
+                    
                     lateralDistanceMetaData.updateDatabase(connection, eventId);
                     verticalDistanceMetaData.updateDatabase(connection, eventId);
                 }
