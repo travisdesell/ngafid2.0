@@ -32,6 +32,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.Tails;
+import org.ngafid.events.EventDefinition;
+
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
@@ -83,9 +85,7 @@ public class GetEventManager implements Route {
             Connection connection = Database.getConnection();
 
             scopes.put("event_manager_js",
-                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n"
                     );
 
             StringWriter stringOut = new StringWriter();
