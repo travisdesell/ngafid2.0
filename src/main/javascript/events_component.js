@@ -7,9 +7,6 @@ import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
 import {errorModal} from "./error_modal";
-import { OverlayTrigger } from 'react-bootstrap';
-import { Tooltip } from "react-bootstrap";
-
 // establish set of RGB values to combine //
 let BG_values = ["00", "55", "AA", "FF"];
 let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors

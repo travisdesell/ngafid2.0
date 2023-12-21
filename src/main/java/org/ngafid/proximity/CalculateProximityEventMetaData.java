@@ -92,16 +92,13 @@ public class CalculateProximityEventMetaData {
 
                             double lateralDistanceFt = CalculateProximity.calculateLateralDistance(latitude[startLine], longitude[startLine], otherLatitude[otherStartLine], otherLongitude[otherStartLine]);
                             double verticalDistanceFt = CalculateProximity.calculateVerticalDistance(altMSL[startLine], otherAltMSL[otherStartLine]);
-                            System.out.println("-------------------------------------------------------------");
+                            /* System.out.println("-------------------------------------------------------------");
                             System.out.println(" Event Id : " + eventId +" Flight Id : " + flightId + " otherflightid : " + otherFlightId +
                                             " Lateral Distance : " + lateralDistanceFt + " Vertical Distance : " + verticalDistanceFt + " Severity : " + severity);
                             System.out.println("Flight Altitude : " + altMSL[startLine] + " Other Flight Altitude : " + otherAltMSL[otherStartLine]);
-                            System.out.println("-------------------------------------------------------------");
+                            System.out.println("-------------------------------------------------------------"); */
                              
 
-                            /* if (verticalDistanceFt > 0.0) {
-                                verticalDistance = Math.min(verticalDistance, verticalDistanceFt);
-                            } */
                             lateralDistance = Math.min(lateralDistance, lateralDistanceFt);
                             verticalDistance = Math.min(verticalDistance, verticalDistanceFt);
 
