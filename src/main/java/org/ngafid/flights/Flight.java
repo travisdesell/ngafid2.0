@@ -182,7 +182,6 @@ public class Flight {
             PreparedStatement eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
-            System.exit(1);
             eventStatement.executeUpdate();
             eventStatement.close();
         }
