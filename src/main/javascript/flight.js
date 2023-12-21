@@ -47,7 +47,7 @@ class FlightPage extends React.Component {
 
     }
 
-    mapSelectChanged(style) {
+   mapSelectChanged(style) {
         for (var i = 0, ii = layers.length; i < ii; ++i) {
             console.log("setting layer " + i + " to:" + (styles[i] === style));
             layers[i].setVisible(styles[i] === style);

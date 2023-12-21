@@ -182,7 +182,14 @@ public class Flight {
             PreparedStatement eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
-            System.exit(1);
+            // System.exit(1);
+            eventStatement.executeUpdate();
+            eventStatement.close();
+
+            query = "DELETE FROM event_metadata WHERE event_id = ?";
+            eventStatement = connection.prepareStatement(query);
+            eventStatement.setInt(1, eventId);
+            LOG.info(preparedStatement.toString());
             eventStatement.executeUpdate();
             eventStatement.close();
         }
@@ -252,6 +259,8 @@ public class Flight {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
+        
+        
     }
 
     /**
