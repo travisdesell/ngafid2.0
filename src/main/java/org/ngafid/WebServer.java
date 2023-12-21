@@ -297,6 +297,7 @@ public final class WebServer {
         Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+        Spark.post("/protected/event_metadata", new PostEventMetaData(gson));
         Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
