@@ -1,9 +1,8 @@
-package org.ngafid.routes.EventDefManagement;
+package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
 import org.ngafid.Database;
 import org.ngafid.routes.ErrorResponse;
-import org.ngafid.routes.EventDefManagement.PutEventDefinitions;
 import spark.Request;
 import spark.Response;
 import spark.Route;

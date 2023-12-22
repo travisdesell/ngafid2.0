@@ -1,23 +1,22 @@
-package org.ngafid.routes.EventDefManagement;
+package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
-
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.SQLException;
-import java.util.logging.Logger;
-
 import org.ngafid.Database;
 import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;
 
-public class PutEventDefinitions implements Route {
-    private static final Logger LOG = Logger.getLogger(PutEventDefinitions.class.getName());
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.util.logging.Logger;
+
+public class PostEventDefinitions implements Route {
+    private static final Logger LOG = Logger.getLogger(PostEventDefinitions.class.getName());
     private Gson gson;
 
-    public PutEventDefinitions(Gson gson) {
+    public PostEventDefinitions(Gson gson) {
         this.gson = gson;
     }
 
@@ -27,8 +26,7 @@ public class PutEventDefinitions implements Route {
 
         Connection connection = Database.getConnection();
 
-        String query = "UPDATE event_definitions SET fleet_id = ?, airframe_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, " +
-                "column_names = ?, condition_json = ?, severity_column_names = ?, severity_type = ?, color = ?, WHERE id=?";
+        String query = "INSERT INTO event_definitions (fleet_id, airframe_id, name, start_buffer, stop_buffer, column_names, condition_json, severity_column_names, severity_type, color) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
         try (PreparedStatement statement = connection.prepareStatement(query)) {
             statement.setInt(1, Integer.parseInt(request.queryParams("fleetId")));

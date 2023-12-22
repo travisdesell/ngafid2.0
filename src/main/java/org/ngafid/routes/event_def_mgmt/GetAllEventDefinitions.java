@@ -1,4 +1,4 @@
-package org.ngafid.routes.EventDefManagement;
+package org.ngafid.routes.event_def_mgmt;
 
 import com.google.gson.Gson;
 import org.ngafid.Database;

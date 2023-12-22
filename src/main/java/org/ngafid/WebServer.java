@@ -4,7 +4,7 @@ import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
-import org.ngafid.routes.EventDefManagement.*;
+import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
 import spark.Service;
 
