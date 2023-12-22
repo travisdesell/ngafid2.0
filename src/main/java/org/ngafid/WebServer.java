@@ -4,6 +4,7 @@ import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
+import org.ngafid.routes.EventDefManagement.*;
 import spark.Spark;
 import spark.Service;
 
@@ -218,7 +219,6 @@ public final class WebServer {
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
         Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
-        Spark.put("/protected/event_definitions", new PutEventDefinitions(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
         Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
@@ -314,6 +314,14 @@ public final class WebServer {
 
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
+
+
+        // Event Definition Management
+        Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
+        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
+        Spark.post("/protected/manage_event_definitions", new PostEventDefinitions(gson));
+        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
+
 
         Spark.exception(Exception.class, (exception, request, response) -> {
             LOG.severe("Exception: " + exception);

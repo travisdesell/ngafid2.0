@@ -2,6 +2,8 @@ import React, {Component} from "react";
 import ReactDOM from "react-dom";
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
+import SignedInNavbar from "./signed_in_navbar";
+
 
 class EventManager extends React.Component {
     constructor(props) {
@@ -49,6 +51,9 @@ class EventManager extends React.Component {
     render() {
         return (
             <div>
+                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
+                                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
+                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
                 <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions}/>
             </div>
         );
@@ -105,7 +110,9 @@ class EventDefinitionsTable extends React.Component {
         const { eventDefinitions } = this.props;
         const { showModal, deleteItemId } = this.state;
 
-        return (<div className="container-fluid" style={{backgroundColor: "white"}}>
+        return (
+            <div className="container-fluid" style={{backgroundColor: "white"}}>
+
                 <div className="row">
                     <div className="col-md-12">
                         <Col>
@@ -128,16 +135,16 @@ class EventDefinitionsTable extends React.Component {
                                 <tbody>
                                 {eventDefinitions.map((eventDefinition, index) => (
                                     <tr key={index}>
+                                        <td>{eventDefinition.id}</td>
+                                        <td>{eventDefinition.fleet_id}</td>
+                                        <td>{eventDefinition.airframe_id}</td>
                                         <td>{eventDefinition.name}</td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td></td>
+                                        <td>{eventDefinition.start_buffer}</td>
+                                        <td>{eventDefinition.stop_buffer}</td>
+                                        <td>{eventDefinition.column_names}</td>
+                                        <td>{eventDefinition.condition_json}</td>
+                                        <td>{eventDefinition.severity_column_names}</td>
+                                        <td>{eventDefinition.severity_type}</td>
                                         <td>
                                             <button onClick={() => this.handleUpdate(eventDefinition)}>
                                                 Update

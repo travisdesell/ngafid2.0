@@ -1,4 +1,4 @@
-package org.ngafid.routes;
+package org.ngafid.routes.EventDefManagement;
 
 import com.google.gson.Gson;
 
@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import org.ngafid.Database;
+import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;
