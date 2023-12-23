@@ -18,6 +18,9 @@ public class PostEventDefinitions implements Route {
 
     public PostEventDefinitions(Gson gson) {
         this.gson = gson;
+
+        LOG.info("post " + this.getClass().getName() + " initialized");
+
     }
 
     @Override

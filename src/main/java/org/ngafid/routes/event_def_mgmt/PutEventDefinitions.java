@@ -19,6 +19,9 @@ public class PutEventDefinitions implements Route {
 
     public PutEventDefinitions(Gson gson) {
         this.gson = gson;
+
+        LOG.info("put " + this.getClass().getName() + " initialized");
+
     }
 
     @Override

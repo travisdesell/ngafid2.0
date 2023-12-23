@@ -18,6 +18,8 @@ public class DeleteEventDefinitions implements Route {
 
     public DeleteEventDefinitions(Gson gson) {
         this.gson = gson;
+
+        LOG.info("delete " + this.getClass().getName() + " initialized");
     }
 
     @Override

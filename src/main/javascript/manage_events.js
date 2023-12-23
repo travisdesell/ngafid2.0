@@ -12,43 +12,30 @@ class EventManager extends React.Component {
         this.state = {
             eventDefinitions: []
         };
+
+
     }
 
     componentDidMount() {
-        // TODO: Need a route for getting all event definitions
-        // fetch('/protected/event_definitions')
-        //     .then(response => response.json())
-        //     .then(data => {
-        //         this.setState({ eventDefinitions: data });
-        //     })
-        //     .catch(error => {
-        //         console.error('Error fetching event definitions:', error);
-        //         // Handle error
-        //     });
+        fetch('/protected/manage_event_definitions')
+            .then(response => response.json())
+            .then(data => {
+                this.setState({ eventDefinitions: data });
+            })
+            .catch(error => {
+                console.error('Error fetching event definitions:', error);
+                // Handle error
+            });
 
-        this.setState({
-            eventDefinitions: [
-                {
-                    id: 1,
-                    name: "Event 1",
-                    description: "This is event 1"
-                },
-                {
-                    id: 2,
-                    name: "Event 2",
-                    description: "This is event 2"
-                },
-                {
-                    id: 3,
-                    name: "Event 3",
-                    description: "This is event 3"
-                }
-            ]
-        });
+
     }
 
 
     render() {
+        for (let eventDefinition of this.state.eventDefinitions) {
+            console.log(eventDefinition);
+        }
+
         return (
             <div>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
@@ -136,15 +123,15 @@ class EventDefinitionsTable extends React.Component {
                                 {eventDefinitions.map((eventDefinition, index) => (
                                     <tr key={index}>
                                         <td>{eventDefinition.id}</td>
-                                        <td>{eventDefinition.fleet_id}</td>
-                                        <td>{eventDefinition.airframe_id}</td>
+                                        <td>{eventDefinition.fleetId}</td>
+                                        <td>{eventDefinition.airframeId}</td>
                                         <td>{eventDefinition.name}</td>
-                                        <td>{eventDefinition.start_buffer}</td>
-                                        <td>{eventDefinition.stop_buffer}</td>
-                                        <td>{eventDefinition.column_names}</td>
-                                        <td>{eventDefinition.condition_json}</td>
+                                        <td>{eventDefinition.startBuffer}</td>
+                                        <td>{eventDefinition.stopBuffer}</td>
+                                        <td>{"[" + eventDefinition.columnNames.join(', ') + "]"}</td>
+                                        <td>{eventDefinition.conditionJson}</td>
                                         <td>{eventDefinition.severity_column_names}</td>
-                                        <td>{eventDefinition.severity_type}</td>
+                                        <td>{eventDefinition.severityTypeZ}</td>
                                         <td>
                                             <button onClick={() => this.handleUpdate(eventDefinition)}>
                                                 Update
