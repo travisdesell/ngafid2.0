@@ -93,9 +93,16 @@ class EventDefinitionsTable extends React.Component {
     }
 
 
+
     render() {
         const { eventDefinitions } = this.props;
         const { showModal, deleteItemId } = this.state;
+
+        function arrayToString(arr) {
+
+        return "[" + arr.join(', ') + "]";
+    }
+
 
         return (
             <div className="container-fluid" style={{backgroundColor: "white"}}>
@@ -113,7 +120,6 @@ class EventDefinitionsTable extends React.Component {
                                     <th>start_buffer</th>
                                     <th>stop_buffer</th>
                                     <th>column_names</th>
-                                    <th>condition_json</th>
                                     <th>severity_column_names</th>
                                     <th>severity_type</th>
                                     <th>actions</th>
@@ -128,10 +134,9 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{eventDefinition.name}</td>
                                         <td>{eventDefinition.startBuffer}</td>
                                         <td>{eventDefinition.stopBuffer}</td>
-                                        <td>{"[" + eventDefinition.columnNames.join(', ') + "]"}</td>
-                                        <td>{eventDefinition.conditionJson}</td>
-                                        <td>{eventDefinition.severity_column_names}</td>
-                                        <td>{eventDefinition.severityTypeZ}</td>
+                                        <td>{arrayToString(eventDefinition.columnNames)}</td>
+                                        <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
+                                        <td>{eventDefinition.severityType}</td>
                                         <td>
                                             <button onClick={() => this.handleUpdate(eventDefinition)}>
                                                 Update

@@ -243,3 +243,4 @@ let createEventCard = ReactDOM.render(
     <CreateEventCard />,
     document.querySelector('#create-event-card')
 );
+
