@@ -491,7 +491,6 @@ public class EventDefinition {
         }
     }
 
-
     /**
      * Inserts this event definition into the database.
      *

@@ -3,6 +3,7 @@ import ReactDOM from "react-dom";
 import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
 import SignedInNavbar from "./signed_in_navbar";
+import {confirmModal} from "./confirm_modal";
 
 
 class EventManager extends React.Component {
@@ -16,19 +17,30 @@ class EventManager extends React.Component {
 
     }
 
-    componentDidMount() {
+    loadEventDefs() {
         fetch('/protected/manage_event_definitions')
             .then(response => response.json())
             .then(data => {
-                this.setState({ eventDefinitions: data });
+                this.setState({eventDefinitions: data});
             })
             .catch(error => {
                 console.error('Error fetching event definitions:', error);
                 // Handle error
             });
-
-
     }
+
+    componentDidMount() {
+        this.loadEventDefs();
+    }
+
+    handleUpdate(eventDefinition) {
+        console.log("Update event definition:", eventDefinition);
+    }
+
+    confirmUpload(eventDefinition) {
+    }
+
+
 
 
     render() {
@@ -41,7 +53,8 @@ class EventManager extends React.Component {
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                 modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions}/>
+                <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} confirmDelete={this.confirmDelete}
+                                       confirmUpload={this.confirmUpload}/>
             </div>
         );
     }
@@ -56,52 +69,57 @@ class EventDefinitionsTable extends React.Component {
             showModal: false,
             deleteItemId: null,
         };
-
-        this.toggleModal = this.toggleModal.bind(this);
-        this.confirmDelete = this.confirmDelete.bind(this);
     }
 
-    toggleModal(eventDefinitionId = null) {
-        console.log("Toggling modal");
+    confirmDelete(eventDefinition) {
+        confirmModal.show("Confirm Delete: " + eventDefinition.name + " (" + eventDefinition.id + ")",
+            "Are you sure you wish to delete this event definition?\n\n" +
+            "This will not delete if there are any events associated with it.\n",
+            () => {
+                console.log(`Deleting event definition with ID ${eventDefinition.id}.`)
 
-        this.setState(prevState => ({
-            showModal: !prevState.showModal,
-            deleteItemId: eventDefinitionId,
-        }));
+                const params = {
+                    eventDefinitionID: eventDefinition.id,
+                };
+
+
+                fetch(`/protected/manage_event_definitions?${new URLSearchParams(params)}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+
+                })
+                    .then(response => {
+                        if (response.ok) {
+                            console.log(`Event definition with ID ${eventDefinition.id} deleted successfully.`);
+                            for (let i = 0; i < this.props.eventDefinitions.length; i++) {
+                                if (this.props.eventDefinitions[i].id === eventDefinition.id) {
+                                    this.props.eventDefinitions.splice(i, 1);
+                                    this.forceUpdate();
+                                    break;
+                                }
+                            }
+                        } else {
+                            console.error(`Error deleting event definition with ID ${eventDefinition.id}.`);
+                            console.error(response);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error during deletion:', error);
+                    });
+            }
+        );
     }
-
-    confirmDelete() {
-        const { deleteItemId } = this.state;
-        console.log(`Deleting event definition with ID ${deleteItemId}.`)
-
-        // TODO: Test this call
-        // fetch(`/protected/event_definitions/${deleteItemId}`, {
-        //     method: 'DELETE',
-        // })
-        //     .then(response => {
-        //         if (response.ok) {
-        //             console.log(`Event definition with ID ${deleteItemId} deleted successfully.`);
-        //         } else {
-        //             console.error(`Error deleting event definition with ID ${deleteItemId}.`);
-        //         }
-        //         this.toggleModal();
-        //     })
-        //     .catch(error => {
-        //         console.error('Error during deletion:', error);
-        //         this.toggleModal();
-        //     });
-    }
-
-
 
     render() {
-        const { eventDefinitions } = this.props;
-        const { showModal, deleteItemId } = this.state;
+        const {eventDefinitions} = this.props;
+        const {showModal: showDeleteModal, deleteItemId} = this.state;
 
         function arrayToString(arr) {
 
-        return "[" + arr.join(', ') + "]";
-    }
+            return "[" + arr.join(', ') + "]";
+        }
 
 
         return (
@@ -130,7 +148,7 @@ class EventDefinitionsTable extends React.Component {
                                     <tr key={index}>
                                         <td>{eventDefinition.id}</td>
                                         <td>{eventDefinition.fleetId}</td>
-                                        <td>{eventDefinition.airframeId}</td>
+                                        <td>{eventDefinition.airframeNameId}</td>
                                         <td>{eventDefinition.name}</td>
                                         <td>{eventDefinition.startBuffer}</td>
                                         <td>{eventDefinition.stopBuffer}</td>
@@ -138,10 +156,10 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
                                         <td>{eventDefinition.severityType}</td>
                                         <td>
-                                            <button onClick={() => this.handleUpdate(eventDefinition)}>
+                                            <button onClick={() => this.props.confirmUpload(eventDefinition)}>
                                                 Update
                                             </button>
-                                            <button onClick={() => this.toggleModal(eventDefinition.id)}>
+                                            <button onClick={() => this.confirmDelete(eventDefinition)}>
                                                 Delete
                                             </button>
                                         </td>
@@ -152,40 +170,11 @@ class EventDefinitionsTable extends React.Component {
                         </Col>
                     </div>
                 </div>
-                <DeleteModal
-                    showModal={showModal}
-                    toggleModal={this.toggleModal}
-                    confirmDelete={this.confirmDelete}
-                />
             </div>
         );
     }
 
-    handleUpdate(eventDefinition) {
-        console.log("Update event definition:", eventDefinition);
-    }
 
-    handleDelete(eventDefinitionId) {
-        console.log("Delete event definition with ID:", eventDefinitionId);
-    }
-}
-
-class DeleteModal extends React.Component {
-    render() {
-        const { showModal, toggleModal, confirmDelete } = this.props;
-
-        return (
-            showModal && (
-                <div className="modal">
-                    <div className="modal-content">
-                        <p>Are you sure you want to delete this item?</p>
-                        <button onClick={confirmDelete}>Yes</button>
-                        <button onClick={toggleModal}>No</button>
-                    </div>
-                </div>
-            )
-        );
-    }
 }
 
 

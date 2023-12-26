@@ -8,6 +8,7 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 
 import org.ngafid.Database;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
@@ -30,29 +31,19 @@ public class PutEventDefinitions implements Route {
 
         Connection connection = Database.getConnection();
 
-        String query = "UPDATE event_definitions SET fleet_id = ?, airframe_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, " +
-                "column_names = ?, condition_json = ?, severity_column_names = ?, severity_type = ?, color = ?, WHERE id=?";
+        int eventId = Integer.parseInt(request.queryParams("id"));
+        int fleetId = Integer.parseInt(request.queryParams("fleetId"));
+        int startBuffer = Integer.parseInt(request.queryParams("startBuffer"));
+        int stopBuffer = Integer.parseInt(request.queryParams("stopBuffer"));
 
-        try (PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, Integer.parseInt(request.queryParams("fleetId")));
-            statement.setInt(2, Integer.parseInt(request.queryParams("airframeId")));
-            statement.setString(3, request.queryParams("name"));
-            statement.setInt(4, Integer.parseInt(request.queryParams("startBuffer")));
-            statement.setInt(5, Integer.parseInt(request.queryParams("stopBuffer")));
-            statement.setString(6, request.queryParams("columnNames"));
-            statement.setString(7, request.queryParams("conditionJson"));
-            statement.setString(8, request.queryParams("severityColumnNames"));
-            statement.setString(9, request.queryParams("severityType"));
-            statement.setString(10, request.queryParams("color"));
+        String name = request.queryParams("name");
+        String airframeName = request.queryParams("airframeName");
+        String columnNamesJson = request.queryParams("columnNamesJson");
+        String filterJson = request.queryParams("filterJson");
+        String severityType = request.queryParams("severityType");
 
+        EventDefinition.update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeName, filterJson, columnNamesJson, severityType);
 
-            LOG.info(statement.toString());
-
-            statement.executeUpdate();
-            return gson.toJson("Successfully updated event definition.");
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return gson.toJson(new ErrorResponse(e));
-        }
+        return gson.toJson("Successfully updated event definition.");
     }
 }

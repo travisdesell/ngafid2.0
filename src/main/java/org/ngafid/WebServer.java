@@ -314,9 +314,8 @@ public final class WebServer {
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
-//        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
-//        Spark.post("/protected/manage_event_definitions", new PostEventDefinitions(gson));
-//        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
+        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
+        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
 
         // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
