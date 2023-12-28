@@ -4,6 +4,7 @@ import Table from "react-bootstrap/Table";
 import Col from "react-bootstrap/Col";
 import SignedInNavbar from "./signed_in_navbar";
 import {confirmModal} from "./confirm_modal";
+import $ from "jquery";
 
 
 class EventManager extends React.Component {
@@ -33,16 +34,6 @@ class EventManager extends React.Component {
         this.loadEventDefs();
     }
 
-    handleUpdate(eventDefinition) {
-        console.log("Update event definition:", eventDefinition);
-    }
-
-    confirmUpload(eventDefinition) {
-    }
-
-
-
-
     render() {
         for (let eventDefinition of this.state.eventDefinitions) {
             console.log(eventDefinition);
@@ -60,6 +51,150 @@ class EventManager extends React.Component {
     }
 }
 
+class UpdateEventDefinitionModal extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            title: "",
+            message: "",
+            eventData: {
+                // Initialize with empty values for fields
+                id: "",
+                fleetId: "",
+                airframeNameId: "",
+                name: "",
+                startBuffer: "",
+                stopBuffer: "",
+                columnNames: [],
+                severityColumnNames: [],
+                severityType: "",
+            },
+        };
+    }
+
+    show(eventDefinition) {
+        console.log(eventDefinition);
+        this.setState({
+            title: "Update Event Definition: " + eventDefinition.name + " (" + eventDefinition.id + ")",
+            eventData: { ...eventDefinition },
+        });
+
+        $("#update-event-definition-modal").modal("show");
+    }
+
+    handleInputChange = (e) => {
+        const { name, value } = e.target;
+        this.setState((prevState) => ({
+            eventData: {
+                ...prevState.eventData,
+                [name]: value,
+            },
+        }));
+    };
+
+    modalClicked = () => {
+        console.log("Update Submitted: " + this.state.eventData.id);
+    };
+
+    render() {
+        const {eventData} = this.state;
+        // <th>airframe_id</th>
+        // <th>column_names</th>
+        // <th>severity_column_names</th>
+        // <th>severity_type</th>
+        return (
+            <div className="modal-content">
+                <div className="modal-header">
+                    <h5 id="update-event-definition-modal-title" className="modal-title">
+                        {this.state.title}
+                    </h5>
+                    <button type="button" className="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+
+                <form>
+                    <div id="update-event-definition-modal-body" className="modal-body">
+                        <div className="form-group">
+                            <label htmlFor="eventID">Event ID</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                id="eventID"
+                                name="eventID"
+                                value={eventData.id}
+                                onChange={this.handleInputChange}
+                            />
+                            <br/>
+
+                            <label htmlFor="fleetID">Fleet ID</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                id="fleetID"
+                                name="fleetID"
+                                value={eventData.fleetId}
+                                onChange={this.handleInputChange}
+                            />
+                            <br/>
+
+                            <label htmlFor="eventName">Event Name</label>
+                            <input
+                                type="text"
+                                className="form-control"
+                                id="eventName"
+                                name="eventName"
+                                value={eventData.name}
+                                onChange={this.handleInputChange}
+                            />
+                            <br/>
+
+                            <label htmlFor="startBuffer">Start Buffer</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                id="startBuffer"
+                                name="startBuffer"
+                                value={eventData.startBuffer}
+                                onChange={this.handleInputChange}
+                            />
+                            <br/>
+
+                            <label htmlFor="stopBuffer">Stop Buffer</label>
+                            <input
+                                type="number"
+                                className="form-control"
+                                id="stopBuffer"
+                                name="stopBuffer"
+                                value={eventData.stopBuffer}
+                                onChange={this.handleInputChange}
+                            />
+                            <br/>
+
+                        </div>
+                    </div>
+
+                    <div className="modal-footer">
+                        <button
+                            type="button"
+                            className="btn btn-primary"
+                            data-dismiss="modal"
+                            onClick={this.modalClicked}
+                        >
+                            Confirm
+                        </button>
+                        <button type="button" className="btn btn-secondary" data-dismiss="modal">
+                            Close
+                        </button>
+                    </div>
+                </form>
+            </div>
+        );
+    }
+}
+
+
 class EventDefinitionsTable extends React.Component {
 
     constructor(props) {
@@ -70,6 +205,7 @@ class EventDefinitionsTable extends React.Component {
             deleteItemId: null,
         };
     }
+
 
     confirmDelete(eventDefinition) {
         confirmModal.show("Confirm Delete: " + eventDefinition.name + " (" + eventDefinition.id + ")",
@@ -156,7 +292,7 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
                                         <td>{eventDefinition.severityType}</td>
                                         <td>
-                                            <button onClick={() => this.props.confirmUpload(eventDefinition)}>
+                                            <button onClick={() => updateModal.show(eventDefinition)}>
                                                 Update
                                             </button>
                                             <button onClick={() => this.confirmDelete(eventDefinition)}>
@@ -173,10 +309,12 @@ class EventDefinitionsTable extends React.Component {
             </div>
         );
     }
-
-
 }
 
+let updateModal = ReactDOM.render(
+    <UpdateEventDefinitionModal />,
+    document.querySelector("#update-event-definition-modal-content")
+);
 
 let event_manager = ReactDOM.render(
     <EventManager/>,
