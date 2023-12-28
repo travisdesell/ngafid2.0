@@ -88,6 +88,8 @@ class UpdateEventDefinitionModal extends React.Component {
             startBuffer: eventDefinition.startBuffer,
             stopBuffer: eventDefinition.stopBuffer,
             severityType: eventDefinition.severityType,
+            severityColumnNames: eventDefinition.severityColumnNames,
+
             eventData: eventDefinition
         });
 
@@ -201,6 +203,7 @@ class UpdateEventDefinitionModal extends React.Component {
             background : "rgba(248,259,250,0.8)",
             margin:0
         };
+
 
         return (
             <div className="modal-content">
