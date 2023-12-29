@@ -209,6 +209,48 @@ class UpdateEventDefinitionModal extends React.Component {
         });
     }
 
+    submit() {
+        console.log("submitting event definition update");
+        console.log("Result: " + this.state.eventData);
+
+        let eventDefinition = this.state.eventData;
+        eventDefinition.name = this.state.eventName;
+        for (let i = 0; i < airframeMap.length; i++) {
+            if (airframeMap[i] === this.state.airframe) {
+                eventDefinition.airframeNameId = i;
+                break;
+            }
+        }
+        eventDefinition.startBuffer = this.state.startBuffer;
+        eventDefinition.stopBuffer = this.state.stopBuffer;
+        eventDefinition.severityType = this.state.severityType;
+        eventDefinition.severityColumnNames = this.state.severityColumnNames;
+        eventDefinition.filter = this.state.filters;
+
+        console.log("event definition:");
+        console.log(eventDefinition);
+
+        fetch('/protected/manage_event_definitions', {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(eventDefinition),
+        })
+            .then(response => {
+                if (response.ok) {
+                    console.log(`Event definition with ID ${eventDefinition.id} updated successfully.`);
+                    this.loadEventDefs();
+                } else {
+                    console.error(`Error updating event definition with ID ${eventDefinition.id}.`);
+                    console.error(response);
+                }
+            })
+            .catch(error => {
+                console.error('Error during update:', error);
+            });
+    }
+
     render() {
         const {eventData} = this.state;
 
@@ -260,7 +302,7 @@ class UpdateEventDefinitionModal extends React.Component {
 
                                 setFilter={(filter) => this.setFilter(filter)}
 
-                                submitFilter={() => this.submitFilter()}
+                                submitFilter={() => this.submit()}
                                 validateEventName={(event) => this.validateEventName(event)}
                                 validateAirframe={(event) => this.validateAirframe(event)}
                                 validateSeverityType={(event) => this.validateSeverityType(event)}

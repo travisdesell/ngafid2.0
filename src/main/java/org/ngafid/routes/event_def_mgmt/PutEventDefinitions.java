@@ -7,8 +7,10 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.logging.Logger;
 
+import com.google.gson.JsonObject;
 import org.ngafid.Database;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.flights.Airframes;
 import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
@@ -18,6 +20,7 @@ public class PutEventDefinitions implements Route {
     private static final Logger LOG = Logger.getLogger(PutEventDefinitions.class.getName());
     private Gson gson;
 
+
     public PutEventDefinitions(Gson gson) {
         this.gson = gson;
 
@@ -26,23 +29,23 @@ public class PutEventDefinitions implements Route {
     }
 
     @Override
-    public Object handle(Request request, Response response) throws Exception {
+    public Object handle(Request request, Response response) {
         LOG.info("Handling " + this.getClass().getName() + " route");
 
         Connection connection = Database.getConnection();
 
-        int eventId = Integer.parseInt(request.queryParams("id"));
-        int fleetId = Integer.parseInt(request.queryParams("fleetId"));
-        int startBuffer = Integer.parseInt(request.queryParams("startBuffer"));
-        int stopBuffer = Integer.parseInt(request.queryParams("stopBuffer"));
+        // JSON parse
+        EventDefinition updatedEvent = gson.fromJson(request.body(), EventDefinition.class);
+        LOG.info("request.body(): " + request.body());
+        LOG.info(updatedEvent.toString());
 
-        String name = request.queryParams("name");
-        String airframeName = request.queryParams("airframeName");
-        String columnNamesJson = request.queryParams("columnNamesJson");
-        String filterJson = request.queryParams("filterJson");
-        String severityType = request.queryParams("severityType");
 
-        EventDefinition.update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeName, filterJson, columnNamesJson, severityType);
+        try {
+            updatedEvent.updateSelf(connection);
+        } catch (SQLException e) {
+            response.status(500);
+            return gson.toJson(new ErrorResponse(e));
+        }
 
         return gson.toJson("Successfully updated event definition.");
     }
