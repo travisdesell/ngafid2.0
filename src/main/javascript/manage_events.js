@@ -361,6 +361,7 @@ class EventDefinitionsTable extends React.Component {
                                     <th>id</th>
                                     <th>fleet_id</th>
                                     <th>airframe_id</th>
+                                    <th>airframe_name</th>
                                     <th>name</th>
                                     <th>start_buffer</th>
                                     <th>stop_buffer</th>
@@ -376,6 +377,7 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{eventDefinition.id}</td>
                                         <td>{eventDefinition.fleetId}</td>
                                         <td>{eventDefinition.airframeNameId}</td>
+                                        <td>{airframeMap[eventDefinition.airframeNameId]}</td>
                                         <td>{eventDefinition.name}</td>
                                         <td>{eventDefinition.startBuffer}</td>
                                         <td>{eventDefinition.stopBuffer}</td>
