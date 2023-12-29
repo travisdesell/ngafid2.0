@@ -13,6 +13,23 @@ airframeMap[0] = "All Airframes";
 
 let rules = [];
 
+for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
+    rules.push({
+        name : doubleTimeSeriesNames[i],
+        conditions : [
+            {
+                type : "select",
+                name : "condition",
+                options : [ "<=", "<", ">", ">=" ]
+            },
+            {
+                type : "number",
+                name : "number",
+            }
+        ]
+    });
+}
+
 class EventManager extends React.Component {
     constructor(props) {
         super(props);
@@ -89,7 +106,7 @@ class UpdateEventDefinitionModal extends React.Component {
             stopBuffer: eventDefinition.stopBuffer,
             severityType: eventDefinition.severityType,
             severityColumnNames: eventDefinition.severityColumnNames,
-
+            filters: eventDefinition.filter,
             eventData: eventDefinition
         });
 
@@ -204,6 +221,8 @@ class UpdateEventDefinitionModal extends React.Component {
             margin:0
         };
 
+        console.log("Filter: " + JSON.stringify(this.state.filters));
+
 
         return (
             <div className="modal-content">
@@ -226,6 +245,7 @@ class UpdateEventDefinitionModal extends React.Component {
 
                                 submitName={"Update Event"}
                                 eventName={this.state.eventName}
+                                eventID={this.state.eventDefinitionID}
                                 airframe={this.state.airframe}
                                 startBuffer={this.state.startBuffer}
                                 stopBuffer={this.state.stopBuffer}

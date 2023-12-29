@@ -63,7 +63,7 @@ class EventDefinitionCard extends React.Component {
             validationMessage = "Stop buffer time must be greater than 1 second.";
 
             //first time rendering this component exceedenceFilter will not be defined
-        } else if ( !isValidFilter(this.props.filters, this.props.rules)) {
+        } else if (this.props.eventDefinitionID > 0 && !isValidFilter(this.props.filters, this.props.rules)) {
             validationMessage = "Correct the incomplete filter.";
         }
 
@@ -179,8 +179,7 @@ class EventDefinitionCard extends React.Component {
                     </div>
                 </div>
 
-
-                <div className="form-group" style={formGroupStyle}>
+                <div className="form-group" style={formGroupStyle} hidden={this.props.eventDefinitionID < 0}>
                     <div className="d-flex">
                         <div className="p-2" style={formHeaderStyle}>
                             <label style={labelStyle}>Exceedence Definition</label>
