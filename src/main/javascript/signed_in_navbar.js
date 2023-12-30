@@ -240,10 +240,6 @@ class SignedInNavbar extends React.Component {
                                     : ""
                                 }
                                 {admin
-                                    ? <DropdownLink name={"Update Event"} hidden={false} href="/protected/update_event"/>
-                                    : ""
-                                }
-                                {admin
                                     ? <DropdownLink name={"Manage Events"} hidden={false} href="/protected/manage_events"/>
                                     : ""
                                 }
