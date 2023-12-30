@@ -489,6 +489,11 @@ public class EventDefinition {
     }
 
 
+    /**
+     * Have an event definition update itself in the database.
+     * @param connection
+     * @throws SQLException
+     */
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
         update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, gson.toJson(filter), gson.toJson(severityColumnNames), severityType);
