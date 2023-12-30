@@ -24,12 +24,12 @@ for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
         name : doubleTimeSeriesNames[i],
         conditions : [
-            {
+            { 
                 type : "select",
                 name : "condition",
                 options : [ "<=", "<", ">", ">=" ]
             },
-            {
+            { 
                 type : "number",
                 name : "number",
             }
@@ -157,7 +157,7 @@ class CreateEventCard extends React.Component {
             severityColumnNames : JSON.stringify(this.state.severityColumnNames),
             severityType : this.state.severityType,
             airframe : this.state.airframe
-        };
+        };   
         console.log(submissionData);
 
         $.ajax({
@@ -178,12 +178,12 @@ class CreateEventCard extends React.Component {
                 }
 
                 //createEventCard.setEvents(response);
-            },
+            },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
-            },
-            async: true
-        });
+            },   
+            async: true 
+        });  
 
     }
 
@@ -209,8 +209,6 @@ class CreateEventCard extends React.Component {
                         rules={rules}
                         airframes={airframes}
                         doubleTimeSeriesNames={doubleTimeSeriesNames}
-
-                        eventID={0} // 0 is a placeholder for a new event. Can't be negative because that's used for custom events
 
                         submitName={"Create Event"}
                         eventName={this.state.eventName}
@@ -245,4 +243,3 @@ let createEventCard = ReactDOM.render(
     <CreateEventCard />,
     document.querySelector('#create-event-card')
 );
-
