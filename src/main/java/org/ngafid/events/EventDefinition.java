@@ -137,8 +137,6 @@ public class EventDefinition {
                 e.printStackTrace();
                 System.exit(1);
             }
-            this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
-            this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
             try {
                 if (id <= -1) {
@@ -147,11 +145,10 @@ public class EventDefinition {
             } catch (NullPointerException e) {
                 this.filter = null;
             }
-
-            this.columnNames = new TreeSet<String>();
-            this.severityColumnNames = new TreeSet<String>();
         }
 
+        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
+        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
@@ -464,7 +461,13 @@ public class EventDefinition {
      */
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
         Filter filter = gson.fromJson(filterJson, Filter.class);
-        TreeSet<String> columnNames = filter.getColumnNames();
+        String columnNamesJson;
+
+        if (eventId > 0) {
+            columnNamesJson = gson.toJson(filter.getColumnNames());
+        } else {
+            columnNamesJson = severityColumnNamesJson;
+        }
 
         String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
 
@@ -475,7 +478,7 @@ public class EventDefinition {
         preparedStatement.setInt(4, stopBuffer);
         preparedStatement.setInt(5, airframeNameID);
         preparedStatement.setString(6, filterJson);
-        preparedStatement.setString(7, gson.toJson(columnNames));
+        preparedStatement.setString(7, columnNamesJson);
         preparedStatement.setString(8, severityColumnNamesJson);
         preparedStatement.setString(9, severityType);
         preparedStatement.setInt(10, eventId);
@@ -484,6 +487,7 @@ public class EventDefinition {
         preparedStatement.executeUpdate();
         preparedStatement.close();
     }
+
 
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);

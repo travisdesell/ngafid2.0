@@ -210,6 +210,8 @@ class CreateEventCard extends React.Component {
                         airframes={airframes}
                         doubleTimeSeriesNames={doubleTimeSeriesNames}
 
+                        eventID={0} // 0 is a placeholder for a new event. Can't be negative because that's used for custom events
+
                         submitName={"Create Event"}
                         eventName={this.state.eventName}
                         airframe={this.state.airframe}

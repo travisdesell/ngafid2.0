@@ -279,7 +279,6 @@ class UpdateEventDefinitionModal extends React.Component {
 
                 <form>
                     <div className="card-body" style={style}>
-                        {this.state.eventDefinitionID > 0 ? (
                             <div className="card mb-1" style={bgStyle}>
                                 <div className="card mb-1" style={bgStyle}>
                                     <EventDefinitionCard
@@ -316,19 +315,7 @@ class UpdateEventDefinitionModal extends React.Component {
                                     />
                                 </div>
                             </div>
-                        ) : (
-                            <div className="form-group">
-                                <label htmlFor="conditionJsonInput">Condition JSON</label>
-                                <input
-                                    type="text"
-                                    className="form-control"
-                                    id="conditionJsonInput"
-                                    placeholder="Enter condition_json"
-                                    value={this.state.conditionJson} // bind this to state
-                                    onChange={(e) => this.setState({conditionJson: e.target.value})}
-                                />
-                            </div>
-                        )}
+
                     </div>
 
                     <div className="modal-footer">
