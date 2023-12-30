@@ -240,7 +240,6 @@ class UpdateEventDefinitionModal extends React.Component {
             .then(response => {
                 if (response.ok) {
                     console.log(`Event definition with ID ${eventDefinition.id} updated successfully.`);
-                    this.loadEventDefs();
                 } else {
                     console.error(`Error updating event definition with ID ${eventDefinition.id}.`);
                     console.error(response);

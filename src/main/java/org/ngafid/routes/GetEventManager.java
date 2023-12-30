@@ -95,12 +95,10 @@ public class GetEventManager implements Route {
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();
-        } catch (SQLException e) {
+        } catch (Exception e) {
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
 
-        } catch (IOException e) {
-            LOG.severe(e.toString());
         }
 
         return resultString;
