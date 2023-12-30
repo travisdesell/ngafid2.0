@@ -38,8 +38,6 @@ class EventManager extends React.Component {
         this.state = {
             eventDefinitions: []
         };
-
-
     }
 
     loadEventDefs() {
@@ -68,7 +66,7 @@ class EventManager extends React.Component {
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
                                 modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <CreateEventCard />
+                <CreateEventCard/>
                 <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} confirmDelete={this.confirmDelete}
                                        confirmUpload={this.confirmUpload}/>
             </div>
@@ -216,7 +214,8 @@ class CreateEventCard extends React.Component {
                     return false;
                 }
 
-                //createEventCard.setEvents(response);
+                // Passing loadEventDefs in as prop doesn't seem to work, so doing a hard reload instead
+                window.location.reload();
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Flights", errorThrown);
