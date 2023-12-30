@@ -15,16 +15,16 @@ let rules = [];
 
 for (let i = 0; i < doubleTimeSeriesNames.length; i++) {
     rules.push({
-        name : doubleTimeSeriesNames[i],
-        conditions : [
+        name: doubleTimeSeriesNames[i],
+        conditions: [
             {
-                type : "select",
-                name : "condition",
-                options : [ "<=", "<", ">", ">=" ]
+                type: "select",
+                name: "condition",
+                options: ["<=", "<", ">", ">="]
             },
             {
-                type : "number",
-                name : "number",
+                type: "number",
+                name: "number",
             }
         ]
     });
@@ -79,18 +79,18 @@ class UpdateEventDefinitionModal extends React.Component {
         super(props);
 
         this.state = {
-            filterVisible : true,
-            eventName : "",
-            airframe : airframeMap[0],
-            airframeNameId : 0,
-            startBuffer : "",
-            stopBuffer : "",
-            severityType : "min",
-            severityColumnNames : [],
-            filters : {
-                type : "GROUP",
-                condition : "AND",
-                filters : []
+            filterVisible: true,
+            eventName: "",
+            airframe: airframeMap[0],
+            airframeNameId: 0,
+            startBuffer: "",
+            stopBuffer: "",
+            severityType: "min",
+            severityColumnNames: [],
+            filters: {
+                type: "GROUP",
+                condition: "AND",
+                filters: []
             }
         }
     }
@@ -99,6 +99,7 @@ class UpdateEventDefinitionModal extends React.Component {
         console.log(eventDefinition);
         this.setState({
             title: "Update Event Definition: " + eventDefinition.name + " (" + eventDefinition.id + ")",
+            eventDefinitionID: eventDefinition.id,
             eventName: eventDefinition.name,
             airframe: airframeMap[eventDefinition.airframeNameId],
             airframeNameId: eventDefinition.airframeNameId,
@@ -114,7 +115,7 @@ class UpdateEventDefinitionModal extends React.Component {
     }
 
     handleInputChange = (e) => {
-        const { name, value } = e.target;
+        const {name, value} = e.target;
         this.setState((prevState) => ({
             eventData: {
                 ...prevState.eventData,
@@ -131,7 +132,7 @@ class UpdateEventDefinitionModal extends React.Component {
         let eventName = event.target.value;
         console.log("new event name: " + eventName);
         this.setState({
-            eventName : eventName
+            eventName: eventName
         });
     }
 
@@ -139,7 +140,7 @@ class UpdateEventDefinitionModal extends React.Component {
         let airframe = event.target.value;
         console.log("new airframe: " + airframe);
         this.setState({
-            airframe : airframe
+            airframe: airframe
         });
     }
 
@@ -147,7 +148,7 @@ class UpdateEventDefinitionModal extends React.Component {
         let severityType = event.target.value;
         console.log("new severity type: " + severityType);
         this.setState({
-            severityType : severityType
+            severityType: severityType
         });
     }
 
@@ -155,7 +156,7 @@ class UpdateEventDefinitionModal extends React.Component {
         let severityColumn = event.target.value;
         console.log("new severity column: " + severityColumn);
         this.setState({
-            severityColumn : severityColumn
+            severityColumn: severityColumn
         });
     }
 
@@ -170,7 +171,7 @@ class UpdateEventDefinitionModal extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -183,7 +184,7 @@ class UpdateEventDefinitionModal extends React.Component {
         console.log("new severity columns array:");
         console.log(newSeverityColumns);
         this.setState({
-            severityColumnNames : newSeverityColumns
+            severityColumnNames: newSeverityColumns
         });
     }
 
@@ -191,7 +192,7 @@ class UpdateEventDefinitionModal extends React.Component {
         let startBuffer = event.target.value;
         console.log("new startBuffer: " + startBuffer);
         this.setState({
-            startBuffer : startBuffer
+            startBuffer: startBuffer
         });
     }
 
@@ -199,13 +200,13 @@ class UpdateEventDefinitionModal extends React.Component {
         let stopBuffer = event.target.value;
         console.log("new stopBuffer: " + stopBuffer);
         this.setState({
-            stopBuffer : stopBuffer
+            stopBuffer: stopBuffer
         });
     }
 
     setFilter(filter) {
         this.setState({
-            filters : filter
+            filters: filter
         });
     }
 
@@ -254,12 +255,12 @@ class UpdateEventDefinitionModal extends React.Component {
         const {eventData} = this.state;
 
         let style = {
-            padding : 5
+            padding: 5
         };
 
         let bgStyle = {
-            background : "rgba(248,259,250,0.8)",
-            margin:0
+            background: "rgba(248,259,250,0.8)",
+            margin: 0
         };
 
         console.log("Filter: " + JSON.stringify(this.state.filters));
@@ -278,41 +279,56 @@ class UpdateEventDefinitionModal extends React.Component {
 
                 <form>
                     <div className="card-body" style={style}>
-                        <div className="card mb-1" style={bgStyle}>
-                                <EventDefinitionCard
-                                rules={rules}
-                                airframes={airframes}
-                                doubleTimeSeriesNames={doubleTimeSeriesNames}
+                        {this.state.eventDefinitionID > 0 ? (
+                            <div className="card mb-1" style={bgStyle}>
+                                <div className="card mb-1" style={bgStyle}>
+                                    <EventDefinitionCard
+                                        rules={rules}
+                                        airframes={airframes}
+                                        doubleTimeSeriesNames={doubleTimeSeriesNames}
 
-                                submitName={"Update Event"}
-                                eventName={this.state.eventName}
-                                eventID={this.state.eventDefinitionID}
-                                airframe={this.state.airframe}
-                                startBuffer={this.state.startBuffer}
-                                stopBuffer={this.state.stopBuffer}
-                                severityType={this.state.severityType}
-                                severityColumn={this.state.severityColumn}
-                                severityColumnNames={this.state.severityColumnNames}
-                                filters={this.state.filters}
+                                        submitName={"Update Event"}
+                                        eventName={this.state.eventName}
+                                        eventID={this.state.eventDefinitionID}
+                                        airframe={this.state.airframe}
+                                        startBuffer={this.state.startBuffer}
+                                        stopBuffer={this.state.stopBuffer}
+                                        severityType={this.state.severityType}
+                                        severityColumn={this.state.severityColumn}
+                                        severityColumnNames={this.state.severityColumnNames}
+                                        filters={this.state.filters}
 
-                                getFilter={() => {
-                                    return this.state.filters
-                                }}
+                                        getFilter={() => {
+                                            return this.state.filters
+                                        }}
 
-                                setFilter={(filter) => this.setFilter(filter)}
+                                        setFilter={(filter) => this.setFilter(filter)}
 
-                                submitFilter={() => this.submit()}
-                                validateEventName={(event) => this.validateEventName(event)}
-                                validateAirframe={(event) => this.validateAirframe(event)}
-                                validateSeverityType={(event) => this.validateSeverityType(event)}
-                                changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
-                                addSeverityColumn={() => this.addSeverityColumn()}
-                                removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
-                                validateStartBuffer={(event) => this.validateStartBuffer(event)}
-                                validateStopBuffer={(event) => this.validateStopBuffer(event)}
-                            />
-
-                        </div>
+                                        submitFilter={() => this.submit()}
+                                        validateEventName={(event) => this.validateEventName(event)}
+                                        validateAirframe={(event) => this.validateAirframe(event)}
+                                        validateSeverityType={(event) => this.validateSeverityType(event)}
+                                        changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
+                                        addSeverityColumn={() => this.addSeverityColumn()}
+                                        removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
+                                        validateStartBuffer={(event) => this.validateStartBuffer(event)}
+                                        validateStopBuffer={(event) => this.validateStopBuffer(event)}
+                                    />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="form-group">
+                                <label htmlFor="conditionJsonInput">Condition JSON</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    id="conditionJsonInput"
+                                    placeholder="Enter condition_json"
+                                    value={this.state.conditionJson} // bind this to state
+                                    onChange={(e) => this.setState({conditionJson: e.target.value})}
+                                />
+                            </div>
+                        )}
                     </div>
 
                     <div className="modal-footer">
@@ -446,7 +462,7 @@ class EventDefinitionsTable extends React.Component {
 }
 
 let updateModal = ReactDOM.render(
-    <UpdateEventDefinitionModal />,
+    <UpdateEventDefinitionModal/>,
     document.querySelector("#update-event-definition-modal-content")
 );
 
