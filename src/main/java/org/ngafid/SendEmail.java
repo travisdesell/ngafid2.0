@@ -25,9 +25,9 @@ public class SendEmail {
 
 
     static {
-        String enabled = System.getenv("NGAFID_EMAIL_ENABLED").toLowerCase();
+        String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
 
-        if (enabled.equals("false")) {
+        if (enabled != null && enabled.toLowerCase().equals("false")) {
             LOG.info("Emailing has been disabled");
             emailEnabled = false;
         }
