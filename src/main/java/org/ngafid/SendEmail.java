@@ -23,7 +23,15 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
+
     static {
+        String enabled = System.getenv("NGAFID_EMAIL_ENABLED").toLowerCase();
+
+        if (enabled.equals("false")) {
+            LOG.info("Emailing has been disabled");
+            emailEnabled = false;
+        }
+
         if (System.getenv("NGAFID_EMAIL_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_EMAIL_INFO' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
