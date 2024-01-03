@@ -802,6 +802,19 @@ public class EventStatistics {
         }
     }
 
+    private static List<Integer> getAllAirframesEvents(Connection connection) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT id FROM event_definitions WHERE airframe_id = 0")) {
+            ResultSet resultSet = preparedStatement.executeQuery();
+            List<Integer> eventIds = new ArrayList<>();
+            while (resultSet.next()) {
+                eventIds.add(resultSet.getInt(1));
+            }
+            return eventIds;
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private static PreparedStatement buildEventCountsQuery(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
         if (startTime == null) {
             startTime = LocalDate.of(0, 1, 1);
@@ -971,20 +984,18 @@ public class EventStatistics {
             endTime = LocalDate.now();
         }
 
-        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, DATE_FORMAT(events.start_time, '%Y-%m-01') " +
-                "AS month_first_day, COUNT(DISTINCT flights.id) AS flights_with_event, SUM(CASE WHEN event_definitions.name = ? " +
-                "THEN 1 ELSE 0 END) AS event_count FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events " +
-                "ON events.flight_id = flights.id LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id " +
-                "WHERE (event_definitions.name = ? OR event_definitions.name IS NULL) AND (events.start_time >= ? " +
-                "AND events.start_time <= ?) GROUP BY airframes.airframe, events.fleet_id, month_first_day";
+        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name, " +
+                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m') AS month_first_day " +
+                        "FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events ON events.flight_id = flights.id " +
+                        "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id WHERE events.start_time BETWEEN ? AND ? " +
+                        "AND event_definitions.name = ? GROUP BY airframes.airframe, events.fleet_id, month_first_day";
 
         PreparedStatement ps = connection.prepareStatement(query);
-        ps.setString(1, eventName);
-        ps.setString(2, eventName);
-        ps.setString(3, startTime.toString());
-        ps.setString(4, endTime.toString());
+        ps.setString(1, startTime.toString());
+        ps.setString(2, endTime.toString());
+        ps.setString(3, eventName);
 
-        LOG.info("Query: " + ps);
+        LOG.info("Query: %s" + ps);
         return ps;
     }
 
