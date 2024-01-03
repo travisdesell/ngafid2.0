@@ -1,14 +1,8 @@
 package org.ngafid.proximity;
 
 import org.ngafid.Database;
-import org.ngafid.airports.Airports;
-import org.ngafid.common.TimeUtils;
 import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
-import org.ngafid.proximity.FlightTimeLocation;
-
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

@@ -17,6 +17,8 @@ import java.util.HashMap;
 
 import org.ngafid.flights.Airframes;
 
+import java.util.List;
+
 public class Event {
     private static final Logger LOG = Logger.getLogger(Event.class.getName());
 
@@ -41,6 +43,7 @@ public class Event {
 
     private RateOfClosure rateOfClosure;
 
+    private List<EventMetaData> metaDataList;
     /**
      * This fixes a date time string to be in the format MYSQL expects.
      *
@@ -96,6 +99,7 @@ public class Event {
 
         this.startTime = fixTime(startTime);
         this.endTime = fixTime(endTime);
+        this.metaDataList = new ArrayList<>();
     }
 
     /**
@@ -229,6 +233,10 @@ public class Event {
         return tail;
     }
 
+    public void addMetaData(EventMetaData metaData) {
+        this.metaDataList.add(metaData);
+    }
+
     public void updateStatistics(Connection connection, int fleetId, int airframeNameId, int eventDefinitionId) throws SQLException {
         if (this.getStartTime() != null) {
             EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, eventDefinitionId, this.getStartTime(), this.getSeverity(), this.getDuration());
@@ -280,7 +288,12 @@ public class Event {
                 int eventId = resultSet.getInt(1);
                 if (this.rateOfClosure != null) {
                     this.rateOfClosure.updateDatabase(connection, eventId);
+                }
 
+                if (this.metaDataList != null && this.metaDataList.size() > 0 ) {
+                    for (EventMetaData metaData : this.metaDataList) {
+                        metaData.updateDatabase(connection, eventId);
+                    }
                 }
             }
             preparedStatement.close();
