@@ -82,18 +82,38 @@ public class EventStatistics {
         return result;
     }
 
-    private static int calculateTotalMonthAirframeFleetFlights(String airframe, String date) {
-
+    private static int calculateTotalMonthAirframeFlights(String airframe, String date) {
         int result = 0;
 
-        LOG.info("calculateTotalMonthAirframeFleetFlights: Checking " + airframe + " for " + date);
+        LOG.info("calculateTotalMonthAirframeFlights: Checking " + airframe + " during " + date);
 
+        String firstOfTheMonth = date.substring(0, 8) + "01";
         for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
             try {
-                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).get(date);
+                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).getOrDefault(firstOfTheMonth, 0);
             } catch (NullPointerException e) {
             }
         }
+
+        return result;
+    }
+
+    private static int calculateTotalMonthAirframeFleetFlights(int fleetID, String airframe, String date) {
+        LOG.info("calculateTotalMonthAirframeFleetFlights: Checking " + airframe + " during " + date);
+
+        String firstOfTheMonth = date.substring(0, 8) + "01";
+        Map<String, Map<String, Integer>> fleetAirframeMap = monthlyTotalFlightsMap.get(fleetID);
+        if (fleetAirframeMap == null) {
+            return 0;
+        }
+
+        Map<String, Integer> monthlyFlightsMap = fleetAirframeMap.get(airframe);
+        if (monthlyFlightsMap == null) {
+            return 0;
+        }
+
+        int result = monthlyFlightsMap.getOrDefault(firstOfTheMonth, 0);
+        LOG.info("calculateTotalMonthAirframeFleetFlights: " + result + " flights for " + airframe + " during " + date);
 
         return result;
     }
@@ -1076,7 +1096,7 @@ public class EventStatistics {
                 String date = resultSet.getString("month_first_day");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int totalEvents = resultSet.getInt("event_count");
-                int totalFlights = calculateTotalMonthAirframeFleetFlights(airframeName, date);
+                int totalFlights = calculateTotalMonthAirframeFlights(airframeName, date);
 
                 LOG.info(airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
                 eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
@@ -1127,7 +1147,7 @@ public class EventStatistics {
                 String date = resultSet.getString("month_first_day");
                 int statFleetId = resultSet.getInt("fleet_id");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
-                Integer totalFlights = monthlyTotalFlightsMap.get(fleetId).get(airframeName).get(date);
+                Integer totalFlights = calculateTotalMonthAirframeFleetFlights(fleetId, airframeName, date);
                 if (totalFlights == null) {
                     totalFlights = 0;
                 }
