@@ -70,6 +70,8 @@ public class EventStatistics {
     private static int calculateAirframeFleetFlights(String airframe) {
         int result = 0;
 
+        LOG.info("calculateAirframeFleetFlights: Checking " + airframe);
+
         for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
             try {
                 result += monthlyTotalFlightsMap.get(fleetID).get(airframe).values().stream().mapToInt(Integer::intValue).sum();
@@ -83,6 +85,8 @@ public class EventStatistics {
     private static int calculateTotalMonthAirframeFleetFlights(String airframe, String date) {
 
         int result = 0;
+
+        LOG.info("calculateTotalMonthAirframeFleetFlights: Checking " + airframe + " for " + date);
 
         for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
             try {
@@ -985,7 +989,7 @@ public class EventStatistics {
         }
 
         String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name, " +
-                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m') AS month_first_day " +
+                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m-%d') AS month_first_day " +
                         "FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events ON events.flight_id = flights.id " +
                         "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id WHERE events.start_time BETWEEN ? AND ? " +
                         "AND event_definitions.name = ? GROUP BY airframes.airframe, events.fleet_id, month_first_day";
@@ -997,6 +1001,46 @@ public class EventStatistics {
 
         LOG.info("Query: %s" + ps);
         return ps;
+    }
+
+    private static Map<String, Map<String, Integer>> getTotalFlightsMonthly(Connection connection, LocalDate startTime, LocalDate endTime) {
+        if (startTime == null) {
+            startTime = LocalDate.of(0, 1, 1);
+        }
+
+        if (endTime == null) {
+            endTime = LocalDate.now();
+        }
+
+        Map<String, Map<String, Integer>> totalFlightsMap = new HashMap<>();
+        String query = "SELECT airframes.airframe, DATE_FORMAT(flights.start_time, '%Y-%m') AS flight_month, COUNT(*) AS flights_count " +
+                "FROM flights JOIN airframes ON airframes.id = flights.airframe_id WHERE flights.start_time BETWEEN '2017-09-01' AND '2018-01-01' " +
+                "GROUP BY airframes.airframe, flight_month ORDER BY airframes.airframe, flight_month";
+
+        try (PreparedStatement ps = connection.prepareStatement(query)) {
+            ResultSet resultSet = ps.executeQuery();
+
+            while (resultSet.next()) {
+                String airframeName = resultSet.getString("airframe");
+                String flightMonth = resultSet.getString("flight_month");
+                int flightsCount = resultSet.getInt("flights_count");
+
+                Map<String, Integer> airframeMap = totalFlightsMap.get(airframeName);
+                if (airframeMap == null) {
+                    airframeMap = new HashMap<>();
+                    totalFlightsMap.put(airframeName, airframeMap);
+                }
+
+                airframeMap.put(flightMonth, flightsCount);
+            }
+
+            resultSet.close();
+        } catch (SQLException e) {
+            LOG.severe(e.getMessage());
+        }
+
+
+        return totalFlightsMap;
     }
 
 
@@ -1011,6 +1055,7 @@ public class EventStatistics {
      */
     public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
+        Map<String, Map<String, Integer>> totalFlightsMap = getTotalFlightsMonthly(connection, startTime, endTime);
 
         try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
             ResultSet resultSet = ps.executeQuery();
