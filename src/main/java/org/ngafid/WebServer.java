@@ -4,6 +4,7 @@ import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
 
+import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
 import spark.Service;
 
@@ -31,7 +32,7 @@ import static org.ngafid.SendEmail.sendAdminEmails;
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-	
+
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
@@ -68,7 +69,7 @@ public final class WebServer {
         }));
     }
 
-    /** 
+    /**
      * Entry point for the NGAFID web server.
      *
      * @param args
@@ -94,7 +95,7 @@ public final class WebServer {
         // Get the port for the NGAFID webserver to listen on
         int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
         Spark.port(port);
-        
+
         //----- FOR HTTPS ONLY -----
         if (port == 8443 || port == 443) {
             LOG.info("HTTPS Detected, using a keyfile");
@@ -111,7 +112,7 @@ public final class WebServer {
             }));
         }
         //--------------------------
-        
+
         Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
 
         int maxThreads = 32;
@@ -266,7 +267,7 @@ public final class WebServer {
         Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
         Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
         Spark.post("/protected/edit_tag", new PostEditTag(gson));
-        
+
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
         // Saving filters routes
@@ -277,11 +278,13 @@ public final class WebServer {
 
         // Cesium related routes
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
-        
+
         Spark.get("/protected/create_event", new GetCreateEvent(gson));
         Spark.post("/protected/create_event", new PostCreateEvent(gson));
         Spark.get("/protected/update_event", new GetUpdateEvent(gson));
         Spark.post("/protected/update_event", new PostUpdateEvent(gson));
+
+         Spark.get("/protected/manage_events", new GetEventManager(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
@@ -297,6 +300,7 @@ public final class WebServer {
         Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
 
         Spark.post("/protected/events", new PostEvents(gson));
+        Spark.post("/protected/event_metadata", new PostEventMetaData(gson));
         Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
@@ -309,6 +313,12 @@ public final class WebServer {
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 
+        // Event Definition Management
+        Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
+        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
+        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
+
+        // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
 
