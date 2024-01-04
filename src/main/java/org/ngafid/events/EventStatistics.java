@@ -1023,47 +1023,6 @@ public class EventStatistics {
         return ps;
     }
 
-    private static Map<String, Map<String, Integer>> getTotalFlightsMonthly(Connection connection, LocalDate startTime, LocalDate endTime) {
-        if (startTime == null) {
-            startTime = LocalDate.of(0, 1, 1);
-        }
-
-        if (endTime == null) {
-            endTime = LocalDate.now();
-        }
-
-        Map<String, Map<String, Integer>> totalFlightsMap = new HashMap<>();
-        String query = "SELECT airframes.airframe, DATE_FORMAT(flights.start_time, '%Y-%m') AS flight_month, COUNT(*) AS flights_count " +
-                "FROM flights JOIN airframes ON airframes.id = flights.airframe_id WHERE flights.start_time BETWEEN '2017-09-01' AND '2018-01-01' " +
-                "GROUP BY airframes.airframe, flight_month ORDER BY airframes.airframe, flight_month";
-
-        try (PreparedStatement ps = connection.prepareStatement(query)) {
-            ResultSet resultSet = ps.executeQuery();
-
-            while (resultSet.next()) {
-                String airframeName = resultSet.getString("airframe");
-                String flightMonth = resultSet.getString("flight_month");
-                int flightsCount = resultSet.getInt("flights_count");
-
-                Map<String, Integer> airframeMap = totalFlightsMap.get(airframeName);
-                if (airframeMap == null) {
-                    airframeMap = new HashMap<>();
-                    totalFlightsMap.put(airframeName, airframeMap);
-                }
-
-                airframeMap.put(flightMonth, flightsCount);
-            }
-
-            resultSet.close();
-        } catch (SQLException e) {
-            LOG.severe(e.getMessage());
-        }
-
-
-        return totalFlightsMap;
-    }
-
-
     /**
      * Gets the number of exceedences for each type and airframe for a fleet, ordered by months, for a given event name. It will be organized into a data structure
      * so plotly can display it on the webpage
@@ -1075,7 +1034,6 @@ public class EventStatistics {
      */
     public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
         Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
-        Map<String, Map<String, Integer>> totalFlightsMap = getTotalFlightsMonthly(connection, startTime, endTime);
 
         try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
             ResultSet resultSet = ps.executeQuery();
@@ -1093,7 +1051,7 @@ public class EventStatistics {
                     eventCounts.put(airframeName, eventCount);
                 }
 
-                String date = resultSet.getString("month_first_day");
+                String date = resultSet.getString("month_first_day").substring(0, 8) + "01";
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int totalEvents = resultSet.getInt("event_count");
                 int totalFlights = calculateTotalMonthAirframeFlights(airframeName, date);
@@ -1144,7 +1102,7 @@ public class EventStatistics {
                     eventCounts.put(airframeName, eventCount);
                 }
 
-                String date = resultSet.getString("month_first_day");
+                String date = resultSet.getString("month_first_day").substring(0, 8) + "01";
                 int statFleetId = resultSet.getInt("fleet_id");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 Integer totalFlights = calculateTotalMonthAirframeFleetFlights(fleetId, airframeName, date);
