@@ -1009,7 +1009,7 @@ public class EventStatistics {
         }
 
         String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name, " +
-                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m-%d') AS month_first_day " +
+                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m-01') AS month_first_day " +
                         "FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events ON events.flight_id = flights.id " +
                         "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id WHERE events.start_time BETWEEN ? AND ? " +
                         "AND event_definitions.name = ? GROUP BY airframes.airframe, events.fleet_id, month_first_day";
@@ -1051,7 +1051,7 @@ public class EventStatistics {
                     eventCounts.put(airframeName, eventCount);
                 }
 
-                String date = resultSet.getString("month_first_day").substring(0, 8) + "01";
+                String date = resultSet.getString("month_first_day");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 int totalEvents = resultSet.getInt("event_count");
                 int totalFlights = calculateTotalMonthAirframeFlights(airframeName, date);
@@ -1102,7 +1102,7 @@ public class EventStatistics {
                     eventCounts.put(airframeName, eventCount);
                 }
 
-                String date = resultSet.getString("month_first_day").substring(0, 8) + "01";
+                String date = resultSet.getString("month_first_day");
                 int statFleetId = resultSet.getInt("fleet_id");
                 int flightsWithEvent = resultSet.getInt("flights_with_event");
                 Integer totalFlights = calculateTotalMonthAirframeFleetFlights(fleetId, airframeName, date);
