@@ -2,7 +2,9 @@ package org.ngafid;
 
 import java.io.*;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -48,6 +50,26 @@ public class ProcessUpload {
     private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
+
+    public static void sendMonthlyFlightsUpdate(int fleetID) {
+        try {
+            // TODO: get env for port
+            final URL url = new URL("http://localhost:8181/update_monthly_flights?fleetId=" + fleetID);
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("charset", "utf-8");
+            connection.connect();
+            final int responseCode = connection.getResponseCode();
+            if (responseCode != 200) {
+                LOG.info("Error updating monthly flights cache for fleet " + fleetID + ": " + responseCode);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
     
     public static void main(String[] arguments) {
         System.out.println("arguments are:");
@@ -121,6 +143,8 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
+                    sendMonthlyFlightsUpdate(targetFleetId);
+
 
                     //TURN OFF FOR REGULAR USE
                     //System.exit(1);
@@ -128,7 +152,6 @@ public class ProcessUpload {
 
                 fleetSet.close();
                 fleetPreparedStatement.close();
-
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -166,6 +189,8 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
+            sendMonthlyFlightsUpdate(fleetId);
+
         } catch (SQLException e) {
             System.err.println("Encountered error");
             e.printStackTrace();
@@ -236,6 +261,7 @@ public class ProcessUpload {
                 uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
             }
 
+            sendMonthlyFlightsUpdate(fleetId);
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {
