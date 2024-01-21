@@ -562,17 +562,12 @@ class FlightsPage extends React.Component {
         this.cesiumRef.current.removeEntity(flightId);
     }
 
-    showCesiumMap() {
-
-        if (!$("#cesium-toggle-button").hasClass("active")) {
-            $("#cesium-toggle-button").addClass("active");
-            $("#cesium-toggle-button").attr("aria-pressed", true);
-        }
-        this.cesiumRef.current.addFlightEntity(flightId, color);  
-        this.state.cesiumVisible = true;
-        this.setState(this.state);
-        $("#cesium-div").css("height", "50%");
-        $("#cesium-div").show();
+    removeCesiumFlight(flightId) {
+        this.cesiumRef.current.removeFlightEntities(flightId);
+    }
+    addCesiumFlight(flightId, color) {
+        
+        console.log("add cesium flight");
 
         if (this.state.plotVisible) {
             this.hidePlot();
@@ -580,15 +575,39 @@ class FlightsPage extends React.Component {
         if (this.state.mapVisible) {
             this.toggleMap();
         }
+
+        console.log("in showCesium flight id from flight component " + flightId);
+        
+        this.cesiumRef.current.addFlightEntity(flightId, color);  
+        this.showCesiumMap();       
+    }
+
+    showCesiumMap() {
+        
+        if (!$("#cesium-toggle-button").hasClass("active")) {
+            $("#cesium-toggle-button").addClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", true);
+        }
+        this.state.cesiumVisible = true;
+        this.setState(this.state);
+        $("#cesium-div").css("height", "50%");
+        $("#cesium-div").show();
+
     }
 
     showMap() {
+
+        console.log("new show map implementation");
 
         if (this.state.mapVisible) return;
 
         if (this.state.cesiumVisible)
             console.log("hiding cesium (toggle)");
             this.hideCesiumMap();
+
+        
+
+        console.log("in flight.js showmap");
 
         if ( !$("#map-toggle-button").hasClass("active") ) {
             $("#map-toggle-button").addClass("active");
@@ -601,16 +620,17 @@ class FlightsPage extends React.Component {
     $("#plot-map-div").css("height", "50%");
     $("#map").show();
 
-    if (this.state.plotVisible) {
-      $("#map").css("width", "50%");
-      map.updateSize();
-      $("#plot").css("width", "50%");
-      Plotly.Plots.resize("plot");
-    } else {
-      $("#map").css("width", "100%");
-      map.updateSize();
+        if (this.state.plotVisible) {
+            $("#map").css("width", "50%");
+            map.updateSize();
+            $("#plot").css("width", "50%");
+            Plotly.Plots.resize("plot");
+        } else {
+            $("#map").css("width", "100%");
+            map.updateSize();
+        } 
+
     }
-  }
 
   hideMap() {
     if (!this.state.mapVisible) return;

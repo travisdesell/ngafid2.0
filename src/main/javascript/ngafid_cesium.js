@@ -18,11 +18,7 @@ import { watch } from "fs";
 
 
 class CesiumPage extends React.Component {
-    //TODO skip to event time
-    //TODO add a button to zoom to the event -- DONE
-    //TODO check the issue model disappearing after adding flight entity
-    //TODO remove event entities when cesium button is clicked -- DONE 
-    //TODO make event entities thicker
+    
     constructor(props) {
 
         super(props);
@@ -145,7 +141,8 @@ class CesiumPage extends React.Component {
             "Taxiing" : Color.BLUE.withAlpha(0.8),
             "Takeoff" : Color.BLUE.withAlpha(0.8),
             "Climb" : Color.SADDLEBROWN.withAlpha(0.8),
-            "Cruise" : Color.LIGHTCYAN.withAlpha(0.8)
+            "Cruise" : Color.LIGHTCYAN.withAlpha(0.8),
+            "FullFlight" : Color.LIGHTCYAN.withAlpha(0.8)
         }
         let today = new Date();
         console.log(colorMap[type]);
@@ -174,9 +171,6 @@ class CesiumPage extends React.Component {
             "Climb": Color.SADDLEBROWN,
             "Cruise": Color.MEDIUMSEAGREEN,
         };
-        console.log(colorMap[type].color)
-        var today = new Date();
-
         var entity = new Entity({
 
             /* name: "NGAFID CESIUM FLIGHT " + type,
@@ -211,6 +205,7 @@ class CesiumPage extends React.Component {
             phase = "Cruise"
             positionArr = this.state.flightData[flightId].flightGeoAglCruise;
         } else if (phase == "Show Full Flight") {
+            console.log("adding full flight");
             phase = "FullFlight"
             positionArr = this.state.flightData[flightId].flightGeoInfoAgl;
         }
@@ -236,6 +231,9 @@ class CesiumPage extends React.Component {
 
     getEventEntity(event, flightId ,data, color) {
 
+
+
+        //adding altitude to event entity so color is visible
         for(let i = 2; i < data.length; i+=3) {
             data[i] += 5;
         }
@@ -329,7 +327,7 @@ class CesiumPage extends React.Component {
         this.setState(this.state);
     }
 
-    removeFlightEntites(flightId) {
+    removeFlightEntities(flightId) {
         console.log(this.state.activePhaseEntities[flightId]); 
         for (const phase in this.state.activePhaseEntities[flightId]) {
             console.log(phase);
@@ -459,7 +457,7 @@ class CesiumPage extends React.Component {
         console.log("Cesium flight color : " + color);
         if (flightId in this.state.activePhaseEntities) {
             console.log("Removing flight from cesium");
-            this.removeFlightEntites(flightId);
+            this.removeFlightEntities(flightId);
         } else {
             console.log("Adding flight to cesium");
             this.state.flightData[flightId] = this.getCesiumData(flightId)[flightId];
@@ -469,7 +467,6 @@ class CesiumPage extends React.Component {
                
     }
 
-    
     render() {
 
            return (

@@ -71,7 +71,9 @@ class FlightsCard extends React.Component {
                                     <Flight 
                                         showPlot={() => {this.props.showPlot();}} 
                                         showMap={() => {this.props.showMap();}} 
+                                        hideMap={() => {this.props.hideMap();}}
                                         showCesiumPage={(flightId, color)=>{this.props.showCesiumPage(flightId, color);}} 
+                                        removeCesiumFlight={(flightId) => {this.props.removeCesiumFlight(flightId);}}
                                         flightInfo={flightInfo} 
                                         navBar={this.props.navBar} 
                                         pageIndex={index} 
