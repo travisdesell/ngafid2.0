@@ -500,11 +500,13 @@ class Flight extends React.Component {
 
     cesiumClicked() {
 
-        if (this.state.cesiumMapVisible && this.state.mapLoaded) {
-            this.state.mapLoaded = false;
+
+        if (this.state.mapLoaded) {
+            this.state.mapLoaded = !this.state.mapLoaded;
         }
         var flightId = this.props.flightInfo.id;
         this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+        this.state.replayToggled = !this.state.replayToggled;
         this.setState(this.state);
         this.props.showCesiumPage(flightId, this.state.color);
         // var cesiumData = this.getCesiumData(flightId);
@@ -512,6 +514,45 @@ class Flight extends React.Component {
         // console.log(cesiumData);
 
    }
+
+    addCesiumFlight() {
+
+        console.log("Adding flight to cesium");
+
+        if (this.state.mapLoaded) {
+
+            this.state.mapLoaded = false;
+            var mapToggleId = "#mapToggle-" + this.props.flightInfo.id;
+
+            if ( $(mapToggleId).hasClass("active")) {
+                $(mapToggleId).removeClass("active");
+                $(mapToggleId).attr("aria-pressed", false);
+            }
+            this.props.hideMap();
+        }
+        this.state.cesiumMapVisible = true;
+
+        this.setState(this.state);
+        this.props.showCesiumPage(this.props.flightInfo.id, this.state.color);
+
+    }
+    removeCesiumFlight() {
+
+        console.log("Removing Cesium flights");
+        this.state.cesiumMapVisible = false;
+        this.props.removeCesiumFlight(this.props.flightInfo.id);
+        this.setState(this.state);
+
+    }
+
+    toggleCesiumFlight() {
+
+        if (!this.state.cesiumMapVisible) {
+            this.addCesiumFlight();
+        } else {
+            this.removeCesiumFlight();
+        }
+    }
 
     replayClicked() {
 
@@ -667,6 +708,22 @@ class Flight extends React.Component {
     mapClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
+        console.log("cesium map visible : " + this.state.cesiumMapVisible);
+        if (this.state.cesiumMapVisible) {
+            this.state.cesiumMapVisible = false;
+            var cesiumToggleId = "#cesiumToggle-" + this.props.flightInfo.id;
+
+            if ( $(cesiumToggleId).hasClass("active")) {
+                $(cesiumToggleId).removeClass("active");
+                $(cesiumToggleId).attr("aria-pressed", false);
+            }
+
+            this.removeCesiumFlight(this.props.flightInfo.id);
+
+        }
+        
+
+        
         if (!this.state.mapLoaded) {
             this.props.showMap();
             this.state.mapLoaded = true;
@@ -1200,7 +1257,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"mapToggle-" + this.props.flightInfo.id} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1208,7 +1265,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"cesiumToggle-" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 

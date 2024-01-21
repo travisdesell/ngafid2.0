@@ -162,10 +162,7 @@ class Paginator extends React.Component {
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
                         </div>
 
-                        {(window.location.pathname === "/protected/flights") &&
-                            <CesiumButtons location={this.props.location}></CesiumButtons>
-                        }
-
+                       
 
                         {sorter}
 

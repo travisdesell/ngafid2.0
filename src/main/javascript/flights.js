@@ -480,35 +480,53 @@ class FlightsPage extends React.Component {
     removeCesiumEntity(flightId) {
         this.cesiumRef.current.removeEntity(flightId);
     }
-    showCesiumPage(flightId, color) {
 
-        console.log("in showCesium flight id from flight component " + flightId);
+    removeCesiumFlight(flightId) {
+        this.cesiumRef.current.removeFlightEntities(flightId);
+    }
+    addCesiumFlight(flightId, color) {
         
-        if (!$("#cesium-toggle-button").hasClass("active")) {
-            $("#cesium-toggle-button").addClass("active");
-            $("#cesium-toggle-button").attr("aria-pressed", true);
-        }
-        this.cesiumRef.current.addFlightEntity(flightId, color);  
-        this.state.cesiumVisible = true;
-        this.setState(this.state);
-        $("#cesium-div").css("height", "50%");
-        $("#cesium-div").show();
-        
+        console.log("add cesium flight");
+
         if (this.state.plotVisible) {
             this.hidePlot();
         }
         if (this.state.mapVisible) {
             this.toggleMap();
         }
+
+        console.log("in showCesium flight id from flight component " + flightId);
+        
+        this.cesiumRef.current.addFlightEntity(flightId, color);  
+        this.showCesiumMap();       
+    }
+
+    showCesiumMap() {
+        
+        if (!$("#cesium-toggle-button").hasClass("active")) {
+            $("#cesium-toggle-button").addClass("active");
+            $("#cesium-toggle-button").attr("aria-pressed", true);
+        }
+        this.state.cesiumVisible = true;
+        this.setState(this.state);
+        $("#cesium-div").css("height", "50%");
+        $("#cesium-div").show();
+
     }
 
     showMap() {
 
-        console.log("in flight.js showmap");
+        console.log("new show map implementation");
 
-        if (this.state.cesiumVisible) {
+        if (this.state.mapVisible) return;
+
+        if (this.state.cesiumVisible)
+            console.log("hiding cesium (toggle)");
             this.hideCesiumMap();
-        }
+
+        
+
+        console.log("in flight.js showmap");
 
         if ( !$("#map-toggle-button").hasClass("active") ) { 
             $("#map-toggle-button").addClass("active");
@@ -529,7 +547,7 @@ class FlightsPage extends React.Component {
         } else {
             $("#map").css("width", "100%");
             map.updateSize();
-        }
+        } 
 
     }
 
@@ -586,7 +604,8 @@ class FlightsPage extends React.Component {
         if (this.state.cesiumVisible) {
             this.hideCesiumMap();   
         } else {
-            this.showCesiumPage();
+            
+            this.showCesiumMap();
         }
 
     }
@@ -1146,9 +1165,11 @@ class FlightsPage extends React.Component {
                         navBar={this.navRef}
                         ref={elem => this.flightsRef = elem}
                         showMap={() => {this.showMap();}}
-                        showCesiumPage={(flightId, color) => {this.showCesiumPage(flightId, color);}}
+                        hideMap={() => {this.hideMap();}}
+                        showCesiumPage={(flightId, color) => {this.addCesiumFlight(flightId, color);}}
                         addCesiumFlightPhase={(phase, flightId) => {this.addCesiumFlightPhase(phase, flightId);}}
                         addCesiumEventEntity={(event, flightId) => {this.addCesiumEventEntity(event, flightId);}}
+                        removeCesiumFlight={(flightId) => {this.removeCesiumFlight(flightId);}}
                         zoomToEventEntity={(eventId, flightId) => {this.zoomToEventEntity(eventId, flightId)}}
                         toggleCamera={(flightId) => {this.toggleCamera(flightId);}}
                         showPlot={() => {this.showPlot();}}
