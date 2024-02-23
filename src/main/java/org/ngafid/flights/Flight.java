@@ -1878,7 +1878,7 @@ public class Flight {
 
                         }
 
-                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                        if (airframeName.equals("Cirrus SR22 (3600 GW)") || airframeName.equals("Cirrus SR22 Turbo (3600 GW)")) {
                             airframeName = "Cirrus SR22";
                         }
 
