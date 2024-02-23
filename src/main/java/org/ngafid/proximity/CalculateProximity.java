@@ -347,6 +347,7 @@ public class CalculateProximity {
                                             otherEvent.setRateOfClosure(rateOfClosure);
                                         }
                                         eventList.add(event);
+                                        eventList.add(otherEvent);
                                         //add in an event for the other flight as well so we don't need to recalculate this
                                         otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                                     }
@@ -396,6 +397,7 @@ public class CalculateProximity {
                             otherEvent.setRateOfClosure(rateOfClosure);
                         }
                         eventList.add(event);
+                        eventList.add(otherEvent);
                         //add in an event for the other flight as well so we don't need to recalculate this
                         otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                     }
