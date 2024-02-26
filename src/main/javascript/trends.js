@@ -17,6 +17,11 @@ airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
 if (index !== -1) airframes.splice(index, 1);
 
+tagNames.unshift("All Tags");
+var tagIndex = tagNames.indexOf("Garmin Flight Display");
+if (tagIndex !== -1) tagNames.splice(tagIndex, 1);
+
+
 eventNames.sort();
 
 console.log(eventNames);
@@ -56,6 +61,7 @@ class TrendsPage extends React.Component {
         var date = new Date();
         this.state = {
             airframe : "All Airframes",
+            tagName: "All Tags",
             startYear : 2020,
             startMonth : 1,
             endYear : date.getFullYear(),
@@ -609,6 +615,11 @@ class TrendsPage extends React.Component {
         this.displayPlots(airframe);
     }
 
+    tagNameChange(tagName) {
+        this.setState({tagName});
+        this.displayPlots(tagName);
+    }
+
 
     render() {
         //console.log(systemIds);
@@ -643,6 +654,10 @@ class TrendsPage extends React.Component {
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
+                                    tagNames={tagNames}
+                                    tagName={this.state.tagName}
+                                    tagNameChange={(tagName) => this.tagNameChange(tagName)}
+
                                 />
 
                             <div className="card-body" style={{padding:"0"}}>

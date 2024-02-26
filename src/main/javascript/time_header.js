@@ -61,11 +61,36 @@ export default class TimeHeader extends React.Component {
             );
         }
 
+        let tags = null;
+        if ('tagName' in this.props) {
+            tags = (
+                <div className="col-auto">
+                    <div className="dropdown">
+                        <button className="btn btn-secondary-outline dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            {this.props.tagName}
+                        </button>
+                        <div className="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            {
+                                this.props.tagNames.map((tagName, index) => {
+                                    return (
+                                        <a key={index} className="dropdown-item" onClick={event => this.props.tagNameChange(tagName)}>{tagName}</a>
+                                    );
+                                })
+                            }
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
+
+                <div className="col-auto">
+                    { tags }
+                </div>
                 <div className="col-auto">
                     { airframe } 
-
                 </div>
                 <div className="col-auto">
                     <div className="input-group">
