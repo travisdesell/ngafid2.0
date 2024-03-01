@@ -663,7 +663,7 @@ if (!$update_turn_to_final) {
     query_ngafid_db($query);
 }
 
-if ($update_rate_of_closure) {
+if (!$update_rate_of_closure) {
     $query = "CREATE TABLE `rate_of_closure` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `event_id` INT(11) NOT NULL,
