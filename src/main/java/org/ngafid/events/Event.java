@@ -387,8 +387,7 @@ public class Event {
             //doing it the longer way below is quicker
             //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
-            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name as tagName FROM events, flights, tails, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.fleet_id = flight_tags.fleet_id AND events.event_definition_id = ? AND events.fleet_id = ?";
-
+            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name FROM events, flights, tails, flight_tag_map, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND flights.id = flight_tag_map.flight_id AND events.fleet_id = flight_tags.fleet_id AND flight_tag_map.tag_id = flight_tags.id AND events.event_definition_id = ? AND events.fleet_id = ?";
             if (startTime != null) {
                 eventsQuery += " AND events.end_time >= ?";
             }
@@ -398,7 +397,7 @@ public class Event {
             }
 
             if(!Objects.equals(tagName, "All Tags")){
-                eventsQuery += " AND flight_tags.name == ?";
+                eventsQuery += " AND flight_tags.name = ?";
             }
 
             eventsQuery += " ORDER BY events.start_time";
@@ -430,7 +429,6 @@ public class Event {
 
             LOG.info(eventsStatement.toString());
             ResultSet eventSet = eventsStatement.executeQuery();
-
             while (eventSet.next()) {
                 int eventId = eventSet.getInt(1);
                 int flightId = eventSet.getInt(2);
@@ -470,4 +468,8 @@ public class Event {
         this.rateOfClosure = rateOfClosure;
     }
 }
+
+
+
+
 
