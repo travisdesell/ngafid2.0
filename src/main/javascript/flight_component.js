@@ -693,7 +693,7 @@ class Flight extends React.Component {
                 request : "GET_COORDINATES",
                 id_token : "TEST_ID_TOKEN",
                 //id_token : id_token,
-                //user_id : user_id
+                //user_id : user_id,
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
             };

@@ -182,6 +182,7 @@ public class Flight {
             PreparedStatement eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
+
             // System.exit(1);
             eventStatement.executeUpdate();
             eventStatement.close();
@@ -190,6 +191,7 @@ public class Flight {
             eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
+
             eventStatement.executeUpdate();
             eventStatement.close();
         }
@@ -203,6 +205,14 @@ public class Flight {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
+
+        query = "DELETE FROM events WHERE other_flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
 
         query = "DELETE FROM flight_warnings WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
@@ -1876,7 +1886,7 @@ public class Flight {
 
                         }
 
-                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                        if (airframeName.equals("Cirrus SR22 (3600 GW)") || airframeName.equals("Cirrus SR22 Turbo (3600 GW)")) {
                             airframeName = "Cirrus SR22";
                         }
 

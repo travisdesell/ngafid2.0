@@ -11,8 +11,8 @@ $update_2022_02_17 = false;
 $update_turn_to_final = true;
 $update_visited_airports = true;
 $update_uploads_for_raise = true;
-$update_rate_of_closure = false;
-$create_airsync = false;
+$update_rate_of_closure = true;
+$create_airsync = true;
 $create_event_metadata = true;
 //need to drop and reload these tables for 2020_05_16 changes
 
@@ -34,6 +34,12 @@ query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
+    
+    query_ngafid_db("DROP TABLE event_metadata");
+    query_ngafid_db("DROP TABLE rate_of_closure");
+    query_ngafid_db("DROP TABLE airsync_imports");
+    query_ngafid_db("DROP TABLE airsync_fleet_info");
+
     query_ngafid_db("DROP TABLE events");
     query_ngafid_db("DROP TABLE flight_processed");
     query_ngafid_db("DROP TABLE event_statistics");

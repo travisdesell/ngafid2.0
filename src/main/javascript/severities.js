@@ -146,8 +146,8 @@ class SeveritiesPage extends React.Component {
             },
             async: false
         })
-        console.log("Event MetaData : ");
-        console.log(eventMetaData);
+        //console.log("Event MetaData : ");
+        //console.log(eventMetaData);
 
         return eventMetaData;
 

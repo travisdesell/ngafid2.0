@@ -1,0 +1,204 @@
+[[1;34mINFO[m] Scanning for projects...
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m-------------------------< [0;36morg.ngafid:ngafid[0;1m >--------------------------[m
+[[1;34mINFO[m] [1mBuilding ngafid 1.0-SNAPSHOT[m
+[[1;34mINFO[m] [1m--------------------------------[ jar ]---------------------------------[m
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-resources-plugin:2.6:resources[m [1m(default-resources)[m @ [36mngafid[0;1m ---[m
+[[1;33mWARNING[m] Using platform encoding (UTF-8 actually) to copy filtered resources, i.e. build is platform dependent!
+[[1;34mINFO[m] Copying 112 resources
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mmaven-compiler-plugin:3.8.1:compile[m [1m(default-compile)[m @ [36mngafid[0;1m ---[m
+[[1;34mINFO[m] Nothing to compile - all classes are up to date
+[[1;34mINFO[m] 
+[[1;34mINFO[m] [1m--- [0;32mexec-maven-plugin:3.1.1:java[m [1m(default-cli)[m @ [36mngafid[0;1m ---[m
+arguments are:
+[]
+dbHost: 'localhost'
+dbName: 'ngafid'
+dbUser: 'epm9587'
+dbPassword: 'password'
+processing upload with id: 2
+import emails will always also be sent to the following admin emails:
+	'ritchie@rit.edu'
+Created authenticator with username: '# E-mail not configured for the NGAFID' and password: 'null'
+Emailing has been disabled, not sending email
+upload was reset!
+
+
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,    AltB, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 4520 lines.
+	date size: 4519, time size: 4519, offset size: 4519
+	first date time and offset not null at index: 4
+			first not null  4 -- 2024-02-18 10:00:28 -06:00
+			last not null   2024-02-18 11:15:42 -06:00
+tiles[43][82] not initialized, loading!
+iLatitude: 11, iLongitude: 14
+loading terrain from: 'L14/N47W098.hgt'
+lat and lon for SW corner -- latitude_s: 47, longitude_w: -98
+read 2884802 bytes.
+final offset: 2884802
+max: 1568
+min: 780
+tiles[43][83] not initialized, loading!
+iLatitude: 11, iLongitude: 14
+loading terrain from: 'L14/N47W097.hgt'
+lat and lon for SW corner -- latitude_s: 47, longitude_w: -97
+read 2884802 bytes.
+final offset: 2884802
+max: 1341
+min: 793
+tiles[42][83] not initialized, loading!
+iLatitude: 12, iLongitude: 14
+loading terrain from: 'M14/N48W097.hgt'
+lat and lon for SW corner -- latitude_s: 48, longitude_w: -97
+read 2884802 bytes.
+final offset: 2884802
+max: 1233
+min: 784
+AIRPORTS_FILE: '/home/epm9587/ngafid2.0/data/airports/airports_parsed.csv'
+Creating buffered reader for '/home/epm9587/ngafid2.0/data/runways/runways_parsed.csv'
+buffered reader is ready? true
+Read 19460 airports.
+airports HashMap size: 19189
+max airport ArrayList: 6
+Performing VSpd Calculated calculation
+Performing DensityRatio calculation
+Performing True Airspeed(ft/min) calculation
+Performing AOASimple calculation
+Performing Stall Index calculation
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '257BD143E', '2024-02-18 16:00:28', '2024-02-18 17:15:42', 'flight_1862204.csv', '062a8e0225600b4d537c5595c9d04ae6', 4519, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-18 16:00:28'), UNIX_TIMESTAMP('2024-02-18 17:15:42'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,    AltB, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 6241 lines.
+	date size: 6240, time size: 6240, offset size: 6240
+	first date time and offset not null at index: 3
+			first not null  3 -- 2024-02-14 08:29:26 -06:00
+			last not null   2024-02-14 10:13:22 -06:00
+Performing VSpd Calculated calculation
+Performing DensityRatio calculation
+Performing True Airspeed(ft/min) calculation
+Performing AOASimple calculation
+Performing Stall Index calculation
+checking to see if airport 'CKN' has runway info
+checking to see if airport 'CKN' has runway info
+checking to see if airport 'CKN' has runway info
+checking to see if airport 'CKN' has runway info
+checking to see if airport 'CKN' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '257BD143E', '2024-02-14 14:29:26', '2024-02-14 16:13:22', 'flight_1862182.csv', '34137b05a4b18d5c486e4c313ce400ae', 6240, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-14 14:29:26'), UNIX_TIMESTAMP('2024-02-14 16:13:22'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,    AltB, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4, E1 Torq,   E1 NP,   E1 NG,  E1 ITT,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 4907 lines.
+	date size: 4906, time size: 4906, offset size: 4906
+	first date time and offset not null at index: 3
+			first not null  3 -- 2024-02-14 08:52:14 -06:00
+			last not null   2024-02-14 10:13:55 -06:00
+Performing VSpd Calculated calculation
+Performing DensityRatio calculation
+Performing True Airspeed(ft/min) calculation
+Performing AOASimple calculation
+Performing Stall Index calculation
+checking to see if airport '2L1' has runway info
+checking to see if airport '2L1' has runway info
+checking to see if airport '2L1' has runway info
+checking to see if airport '2L1' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '257AAC1E7', '2024-02-14 14:52:14', '2024-02-14 16:13:55', 'flight_1862170.csv', '4379e79986e59efaaba95934335b0721', 4906, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-14 14:52:14'), UNIX_TIMESTAMP('2024-02-14 16:13:55'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 5794 lines.
+	date size: 5793, time size: 5793, offset size: 5793
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-18 11:18:12 -06:00
+			last not null   2024-02-18 12:54:41 -06:00
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '25D2E6001', '2024-02-18 17:18:12', '2024-02-18 18:54:41', 'flight_1862344.csv', '1f9aff8f25dfa261eb04ddc808195f09', 5793, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-18 17:18:12'), UNIX_TIMESTAMP('2024-02-18 18:54:41'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 5588 lines.
+	date size: 5587, time size: 5587, offset size: 5587
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-18 10:56:15 -06:00
+			last not null   2024-02-18 12:29:19 -06:00
+checking to see if airport '4ND1' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '2630787A3', '2024-02-18 16:56:15', '2024-02-18 18:29:19', 'flight_1861245.csv', '9e4354322f4adac4b72f4f8930a3d9bb', 5587, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-18 16:56:15'), UNIX_TIMESTAMP('2024-02-18 18:29:19'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 MAP, E1 RPM, E1 CHT1, E1 CHT4, E1 CHT5, E1 CHT6, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4, E2 FFlow, E2 OilT,   E2 OilP, E2 MAP, E2 RPM, E2 CHT1, E2 EGT1, E2 EGT2, E2 EGT3, E2 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 5612 lines.
+	date size: 5611, time size: 5611, offset size: 5611
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-17 18:01:29 -06:00
+			last not null   2024-02-17 19:34:56 -06:00
+tiles[42][82] not initialized, loading!
+iLatitude: 12, iLongitude: 14
+loading terrain from: 'M14/N48W098.hgt'
+lat and lon for SW corner -- latitude_s: 48, longitude_w: -98
+read 2884802 bytes.
+final offset: 2884802
+max: 1591
+min: 754
+checking to see if airport '7MN8' has runway info
+checking to see if airport 'TVF' has runway info
+checking to see if airport 'TVF' has runway info
+checking to see if airport 'MN81' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 3, 1, '25C077E16', '2024-02-18 00:01:29', '2024-02-18 01:34:56', 'flight_1862539.csv', '7f04c395e80e85b35f4e66fc49395f0c', 5611, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-18 00:01:29'), UNIX_TIMESTAMP('2024-02-18 01:34:56'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 9867 lines.
+	date size: 9866, time size: 9866, offset size: 9866
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-17 17:57:03 -06:00
+			last not null   2024-02-17 20:41:25 -06:00
+tiles[43][84] not initialized, loading!
+iLatitude: 11, iLongitude: 15
+loading terrain from: 'L15/N47W096.hgt'
+lat and lon for SW corner -- latitude_s: 47, longitude_w: -96
+read 2884802 bytes.
+final offset: 2884802
+max: 2004
+min: 1099
+checking to see if airport 'NA81' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '25A5979B4', '2024-02-17 23:57:03', '2024-02-18 02:41:25', 'flight_1862279.csv', 'eabcf5e80dc4bd8d61eefc66674345bd', 9866, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-17 23:57:03'), UNIX_TIMESTAMP('2024-02-18 02:41:25'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,    AltB, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 6564 lines.
+	date size: 6563, time size: 6563, offset size: 6563
+	first date time and offset not null at index: 4
+			first not null  4 -- 2024-02-16 12:00:17 -06:00
+			last not null   2024-02-16 13:49:35 -06:00
+Performing VSpd Calculated calculation
+Performing DensityRatio calculation
+Performing True Airspeed(ft/min) calculation
+Performing AOASimple calculation
+Performing Stall Index calculation
+checking to see if airport '7ND2' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '257F3BF6B', '2024-02-16 18:00:17', '2024-02-16 19:49:35', 'flight_1861769.csv', 'f72f586801362e9915f546e604492f55', 6563, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-16 18:00:17'), UNIX_TIMESTAMP('2024-02-16 19:49:35'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 6015 lines.
+	date size: 6014, time size: 6014, offset size: 6014
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-16 11:35:10 -06:00
+			last not null   2024-02-16 13:15:20 -06:00
+checking to see if airport 'GFK' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '25C408A60', '2024-02-16 17:35:10', '2024-02-16 19:15:20', 'flight_1861582.csv', '86811ccf6abaa327379f82bdf2ba1cd5', 6014, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-16 17:35:10'), UNIX_TIMESTAMP('2024-02-16 19:15:20'))
+suggestedTailNumber: null
+Headers line is:   Lcl Date, Lcl Time, UTCOfst, AtvWpt,     Latitude,    Longitude,  AltInd, BaroA,  AltMSL,   OAT,    IAS, GndSpd,    VSpd,  Pitch,   Roll,  LatAc, NormAc,   HDG,   TRK, volt1,  amp1,  FQtyL,  FQtyR, E1 FFlow, E1 OilT, E1 OilP, E1 RPM, E1 EGT1, E1 EGT2, E1 EGT3, E1 EGT4,  AltGPS, TAS, HSIS,    CRS,   NAV1,   NAV2,    COM1,    COM2,   HCDI,   VCDI, WndSpd, WndDr, WptDst, WptBrg, MagVar, AfcsOn, RollM, PitchM, RollC, PichC, VSpdG, GPSfix,  HAL,   VAL, HPLwas, HPLfd, VPLwas
+parsed 4142 lines.
+	date size: 4141, time size: 4141, offset size: 4141
+	first date time and offset not null at index: 2
+			first not null  2 -- 2024-02-18 09:52:00 -06:00
+			last not null   2024-02-18 11:00:58 -06:00
+checking to see if airport 'NA81' has runway info
+checking to see if airport 'NA81' has runway info
+checking to see if airport 'NA81' has runway info
+com.mysql.cj.jdbc.ClientPreparedStatement: INSERT INTO flights (fleet_id, uploader_id, upload_id, airframe_id, airframe_type_id, system_id, start_time, end_time, filename, md5_hash, number_rows, status, has_coords, has_agl, insert_completed, processing_status, start_timestamp, end_timestamp) VALUES (1, 1, 2, 1, 1, '260FB4CE1', '2024-02-18 15:52:00', '2024-02-18 17:00:58', 'flight_1861893.csv', 'a7120c20bf70b14d5eb80b0d69788d49', 4141, 'SUCCESS', 1, 1, 0, 0, UNIX_TIMESTAMP('2024-02-18 15:52:00'), UNIX_TIMESTAMP('2024-02-18 17:00:58'))
+valid flights: 10
+warning flights: 0
+error flights: 0
+com.mysql.cj.jdbc.ClientPreparedStatement: SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = 'High Altitude Spin'
+com.mysql.cj.jdbc.ClientPreparedStatement: SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = 'Low Altitude Spin'
+com.mysql.cj.jdbc.ClientPreparedStatement: SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = 'Low Ending Fuel' AND airframe_id = 1
+com.mysql.cj.jdbc.ClientPreparedStatement: SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = 'Low Ending Fuel' AND airframe_id = 2
+com.mysql.cj.jdbc.ClientPreparedStatement: SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE name = 'Low Ending Fuel' AND airframe_id = 3
+Created authenticator with username: '# E-mail not configured for the NGAFID' and password: 'null'
+Emailing has been disabled, not sending email
