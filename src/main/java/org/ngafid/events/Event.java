@@ -378,7 +378,6 @@ public class Event {
         LOG.info(preparedStatement.toString());
         ResultSet resultSet = preparedStatement.executeQuery();
 
-        System.out.println("Random" + tagName);
 
         while (resultSet.next()) {
             int definitionId = resultSet.getInt(1);
