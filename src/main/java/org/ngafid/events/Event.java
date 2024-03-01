@@ -152,7 +152,7 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail, String tailName) {
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
