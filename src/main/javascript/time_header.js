@@ -60,7 +60,7 @@ export default class TimeHeader extends React.Component {
                </div>
             );
         }
-
+        console.log(this.props.tagNames)
         let tags = null;
         if ('tagName' in this.props) {
             tags = (

@@ -109,7 +109,7 @@ public class GetSeverities implements Route {
             String fleetInfo =
                     "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
                         "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + ";\n" +
-                        "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+                        "var tagNames = " + gson.toJson(Flight.getAllFleetTagNames(connection, fleetId)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

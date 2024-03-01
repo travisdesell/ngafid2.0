@@ -18,6 +18,10 @@ airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
 if (index !== -1) airframes.splice(index, 1);
 
+tagNames.unshift("All Tags");
+var tagIndex = tagNames.indexOf("Garmin Flight Display");
+if (tagIndex !== -1) tagNames.splice(tagIndex, 1);
+
 eventNames.sort();
 
 console.log(eventNames);
@@ -58,6 +62,7 @@ class SeveritiesPage extends React.Component {
         var date = new Date();
         this.state = {
             airframe : "All Airframes",
+            tagName: "All Tags",
             startYear : 2020,
             startMonth : 1,
             endYear : date.getFullYear(),
@@ -197,7 +202,7 @@ class SeveritiesPage extends React.Component {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
 
-                    let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", Tag: " + count[i].tag + " severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
                     if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
@@ -278,7 +283,8 @@ class SeveritiesPage extends React.Component {
         var submission_data = {
             startDate : startDate + "-01",
             endDate : endDate + "-28",
-            eventName : eventName
+            eventName : eventName,
+            tagName: this.state.tagName
         };
 
         if (eventName in eventSeverities) {
@@ -360,6 +366,11 @@ class SeveritiesPage extends React.Component {
         this.displayPlot(airframe);
     }
 
+    tagNameChange(tagName) {
+        this.setState({tagName});
+        this.displayPlot(this.state.airframe);
+    }
+
     render() {
         //console.log(systemIds);
 
@@ -393,6 +404,9 @@ class SeveritiesPage extends React.Component {
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
+                                    tagNames={tagNames}
+                                    tagName={this.state.tagName}
+                                    tagNameChange={(tagName) => this.tagNameChange(tagName)}
                                 />
 
                             <div className="card-body" style={{padding:"0"}}>
