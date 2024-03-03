@@ -60,7 +60,6 @@ export default class TimeHeader extends React.Component {
                </div>
             );
         }
-        console.log(this.props.tagNames)
         let tags = null;
         if ('tagName' in this.props) {
             tags = (
@@ -73,7 +72,7 @@ export default class TimeHeader extends React.Component {
                             {
                                 this.props.tagNames.map((tagName, index) => {
                                     return (
-                                        <a key={index} className="dropdown-item" onClick={event => this.props.tagNameChange(tagName)}>{tagName}</a>
+                                        <a key={index} className="dropdown-item" onClick={event => this.props.tagNameChange(tagName)} onChange={event => this.props.updateTags(event.target.value)}>{tagName}</a>
                                     );
                                 })
                             }

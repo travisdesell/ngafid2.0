@@ -387,7 +387,12 @@ public class Event {
             //doing it the longer way below is quicker
             //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
-            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name FROM events, flights, tails, flight_tag_map, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND flights.id = flight_tag_map.flight_id AND events.fleet_id = flight_tags.fleet_id AND flight_tag_map.tag_id = flight_tags.id AND events.event_definition_id = ? AND events.fleet_id = ?";
+            String eventsQuery = "";
+            if(Objects.equals(tagName, "All Tags")) {
+                eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail FROM events, flights, tails WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.event_definition_id = ? AND events.fleet_id = ?";
+            } else if (!Objects.equals(tagName, "All Tags")) {
+                eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name FROM events, flights, tails, flight_tag_map, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND flights.id = flight_tag_map.flight_id AND events.fleet_id = flight_tags.fleet_id AND flight_tag_map.tag_id = flight_tags.id AND events.event_definition_id = ? AND events.fleet_id = ?";
+            }
             if (startTime != null) {
                 eventsQuery += " AND events.end_time >= ?";
             }
@@ -440,7 +445,11 @@ public class Event {
                 Integer otherFlightId = eventSet.getInt(8);
                 String systemId = eventSet.getString(10);
                 String tail = eventSet.getString(11);
-                String tag = eventSet.getString(12);
+                String tag = "";
+                if(!Objects.equals(tagName, "All Tags")){
+                    tag = eventSet.getString(12);
+                }
+
                 if (eventSet.wasNull()) {
                     otherFlightId = null;
                 }
