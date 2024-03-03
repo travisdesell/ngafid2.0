@@ -109,7 +109,7 @@ public class GetFlights implements Route {
 
             sb.append("var tagNames = JSON.parse('");
             startTime = System.currentTimeMillis();
-            sb.append(gson.toJson(Flight.getAllTagNames(connection)));
+            sb.append(gson.toJson(Flight.getAllFleetTagNames(connection, fleetId)));
             endTime = System.currentTimeMillis();
             LOG.info("get all tag names took: " + ((endTime - startTime) / 1000.0) + " seconds");
             sb.append("');\n");
