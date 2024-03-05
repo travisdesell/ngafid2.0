@@ -64,7 +64,8 @@ class SeveritiesPage extends React.Component {
             endMonth : date.getMonth() + 1,
             datesChanged : false,
             eventMetaData : {},
-            eventChecked : eventChecked
+            eventChecked : eventChecked,
+            metaDataChecked: false,
         };
     }
 
@@ -128,7 +129,6 @@ class SeveritiesPage extends React.Component {
 
     }
     getEventMetaData(eventId) {
-
         var eventMetaData = null;
         var submissionData = {
             eventId : eventId
@@ -177,30 +177,39 @@ class SeveritiesPage extends React.Component {
                     x : [],
                     flightIds : [],
                 };
-
                 //console.log("events:");
+
+                var eventMetaDataText = [];
                 for (let i = 0; i < counts.length; i++) {
-                    var eventMetaData = this.getEventMetaData(counts[i].id);
-                    var eventMetaDataText = [];
-                    if (eventMetaData != null) {
-                        eventMetaData.map((item) => {
-                            eventMetaDataText.push(item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2));                        
-                        });
-                        this.state.eventMetaData[counts[i].id] = eventMetaData;
+                    if (!this.state.eventMetaData[counts[i].id]) {
+                        var eventMetaData = this.getEventMetaData(counts[i].id);
+                        if (eventMetaData != null) {
+                            eventMetaData.map((item) => {
+                                eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                            });
+                            this.state.eventMetaData[counts[i].id] = eventMetaData;
+                        }
                     }
+                }
+                Object.values(this.state.eventMetaData).forEach((metadataArray) => {
+                    metadataArray.forEach((item) => {
+                        eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                    });
+                });
+                for (let i = 0; i < counts.length; i++) {
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
 
-                    if (counts[i].eventDefinitionId == -1) {
+                    if (counts[i].eventDefinitionId === -1) {
                         severityTrace.flightIds.push( counts[i].flightId + " " + counts[i].otherFlightId);
                     } else {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
 
                     let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
-                    if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
+                    if (counts[i].eventDefinitionId === -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
-                    if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
+                    if (eventMetaDataText.length !== 0) hovertext += ", " + eventMetaDataText.join(", ");
 
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
@@ -356,8 +365,7 @@ class SeveritiesPage extends React.Component {
     }
 
     airframeChange(airframe) {
-        this.setState({airframe});
-        this.displayPlot(airframe);
+        this.setState({airframe}, () => this.displayPlot(airframe));
     }
 
     render() {
