@@ -250,29 +250,25 @@ public class TurnToFinal implements Serializable {
         }
 
         try {
-            Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
+            Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
             assert o instanceof ArrayList;
 
             @SuppressWarnings("unchecked")
             ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
-            
             return ttfs;
         } catch (ClassNotFoundException ce) {
-            LOG.info("TTF object is outdated - recalculating.");
+            LOG.info("Serialization error: ");
+            ce.printStackTrace();
+            
+            LOG.info("Deleting problematic ttf row.");
+
             query = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
             query.setInt(1, flight.getId());
             LOG.info(query.toString());
             query.execute();
             query.close();
 
-            Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
-            assert o instanceof ArrayList;
-
-            @SuppressWarnings("unchecked")
-            ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
-            cacheTurnToFinal(connection, flight.getId(), ttfs);
-
-            return ttfs;
+            return null;
         }
 
     }
@@ -390,7 +386,7 @@ public class TurnToFinal implements Serializable {
      */
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
         ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
-
+        
         if (turnToFinals == null) {
             turnToFinals = calculateFlightTurnToFinals(connection, flight);
         }

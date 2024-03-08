@@ -213,7 +213,6 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
-
         query = "DELETE FROM flight_warnings WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);

@@ -70,7 +70,7 @@ class TTFMapPopup extends React.Component {
                             <Col sm="auto"></Col>
                             <Col>
                             <ButtonGroup>
-                                <Button variant="outline-info" href={"/protected/flight?flight_id=" + this.props.flight_id} target="_blank">
+                                <Button variant="outline-info" href={"/protected/flights?flight_id=" + this.props.flight_id} target="_blank">
                                     <i className="fa fa-plane p-1"></i>
                                 </Button>
                                 <Button onClick={ () => this.close() } data-toggle="button" variant="outline-danger">
