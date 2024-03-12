@@ -102,6 +102,21 @@ public class Event {
         this.metaDataList = new ArrayList<>();
     }
 
+    public Event(int fleetId, int flightId, String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId) {
+        this.fleetId = fleetId;
+        this.flightId = flightId;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.severity = severity;
+        this.otherFlightId = otherFlightId;
+
+        this.startTime = fixTime(startTime);
+        this.endTime = fixTime(endTime);
+        this.metaDataList = new ArrayList<>();
+    }
+
     /**
      * Creates an event from a mysql query result
      *
