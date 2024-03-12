@@ -170,6 +170,8 @@ public class Event {
     }
 
     public int getFlightId() {
+        System.out.print("FLIGHT ID IS BEING PRINTED FROM EVENT AS: ");
+        System.out.println(flightId);
         return flightId;
     }
 
@@ -178,6 +180,8 @@ public class Event {
     }
 
     public int getOtherFlightId() {
+        System.out.print("FLIGHT ID OF THE OTHER FLIGHT IS BEING PRINTED FROM EVENT AS: ");
+        System.out.println(otherFlightId);
         return otherFlightId;
     }
 
@@ -251,7 +255,11 @@ public class Event {
     public void updateDatabase(Connection connection, int fleetId, int flightId, int eventDefinitionId) {
         this.flightId = flightId;
         this.eventDefinitionId = eventDefinitionId;
+        this.fleetId = fleetId;
+        updateDatabase(connection, eventDefinitionId);
+    }
 
+    public void updateDatabase(Connection connection, int eventDefinitionId){
         try {
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);
             preparedStatement.setInt(1, fleetId);
