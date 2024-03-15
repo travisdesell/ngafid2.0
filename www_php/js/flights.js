@@ -66,6 +66,7 @@ class TraceButtons extends React.Component {
     }
 
     traceClicked(seriesName) {
+        console.log("GPGGPGPGPGPPGPGPGPGGPPGPGPGPGPGPGPGPGPGGP");
         main_content.showPlot();
 
         let parentFlight = this.state.parentFlight;
@@ -74,8 +75,10 @@ class TraceButtons extends React.Component {
         if (!(seriesName in parentFlight.state.traceIndex)) {
             var thisTrace = this;
 
+            console.log("CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC");
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
+            console.log("BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB");
 
             var submission_data = {
                 request : "GET_DOUBLE_SERIES",

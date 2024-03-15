@@ -141,7 +141,7 @@ public class AirSync {
                 for (AirSyncFleet fleet : airSyncFleets) {
                     String logMessage = "Fleet " + fleet.getName() + ": %s";
 
-                    if (fleet.isQueryOutdated(connection)) {
+                    //if (fleet.isQueryOutdated(connection)) {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
 
                         if (fleet.lock(connection)) {
@@ -152,9 +152,9 @@ public class AirSync {
                         } else {
                             LOG.info("Unable to lock fleet " + fleet.toString() + ", will skip for now. This usually means a user has requested to manually update the fleet.");
                         }
-                    } else {
-                        LOG.info(String.format(logMessage, "does not need to be updated, will skip."));
-                    }
+                    //} else {
+                        //LOG.info(String.format(logMessage, "does not need to be updated, will skip."));
+                    //}
                 }
 
                 long waitTime = getWaitTime(connection);

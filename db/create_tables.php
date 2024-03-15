@@ -8,11 +8,11 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
 $update_2022_02_17 = false;
-$update_turn_to_final = false;
-$update_visited_airports = false;
-$update_uploads_for_raise = false;
-$update_rate_of_closure = false;
-$create_airsync = false;
+$update_turn_to_final = true;
+$update_visited_airports = true;
+$update_uploads_for_raise = true;
+$update_rate_of_closure = true;
+$create_airsync = true;
 $create_event_metadata = true;
 //need to drop and reload these tables for 2020_05_16 changes
 
@@ -34,6 +34,12 @@ query_ngafid_db("DROP TABLE tails");
 
 
 if ($drop_tables) {
+    
+    query_ngafid_db("DROP TABLE event_metadata");
+    query_ngafid_db("DROP TABLE rate_of_closure");
+    query_ngafid_db("DROP TABLE airsync_imports");
+    query_ngafid_db("DROP TABLE airsync_fleet_info");
+
     query_ngafid_db("DROP TABLE events");
     query_ngafid_db("DROP TABLE flight_processed");
     query_ngafid_db("DROP TABLE event_statistics");
@@ -663,7 +669,7 @@ if (!$update_turn_to_final) {
     query_ngafid_db($query);
 }
 
-if ($update_rate_of_closure) {
+if (!$update_rate_of_closure) {
     $query = "CREATE TABLE `rate_of_closure` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `event_id` INT(11) NOT NULL,

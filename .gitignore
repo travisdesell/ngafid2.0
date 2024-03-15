@@ -9,3 +9,4 @@ node_modules
 target/*
 src/main/resources/public/js/*
 .cache-loader/*
+data/*
