@@ -12,7 +12,6 @@ import GetDescription from "./get_description.js";
 import Plotly from 'plotly.js';
 import {OverlayTrigger} from "react-bootstrap";
 import Tooltip from "react-bootstrap/Tooltip";
-import {hoverInfo} from "plotly.js/src/components/errorbars";
 
 
 airframes.unshift("All Airframes");
