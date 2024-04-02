@@ -134,8 +134,8 @@ class SeveritiesPage extends React.Component {
         document.body.removeChild(element);
 
     }
-    getEventMetaData(eventId) {
 
+    getEventMetaData(eventId) {
         var eventMetaData = null;
         var submissionData = {
             eventId : eventId
@@ -191,7 +191,6 @@ class SeveritiesPage extends React.Component {
                     tagName: []
                 };
 
-                //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
                     severityTrace.id.push( counts[i].id );
                     severityTrace.y.push( counts[i].severity );
@@ -207,6 +206,18 @@ class SeveritiesPage extends React.Component {
                     } else {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
+
+                  let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                    if(counts[i].tagName !== ""){
+                        hovertext += ", Tag: " + counts[i].tagName;
+                    }
+
+                    if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
+
+                    if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
+
+                    severityTrace.hovertext.push(hovertext);
+                    //+ ", severity: " + counts[i].severity);
                 }
                 severityTraces.push(severityTrace);
                 this.setState(this.state);
@@ -295,9 +306,11 @@ class SeveritiesPage extends React.Component {
             }
 
             let hovertext = "Flight #" + flightId +  ", System ID: " + systemId +  ", Tail: " + tail + ", severity: " + (Math.round(severity * 100) / 100).toFixed(2) + ", event start time: " + startTime + ", event end time: " + endTime;
+
             if(tagName !== ""){
                 hovertext += ", Tag: " + tagName;
             }
+          
             if (eventDefinitionId === -1) hovertext += ", Proximity Flight #" + otherFlightId;
 
             if (eventMetaDataText.length !== 0) hovertext += ", " + eventMetaDataText.join(", ");
@@ -406,8 +419,16 @@ class SeveritiesPage extends React.Component {
     }
 
     airframeChange(airframe) {
-        this.setState({airframe});
-        this.displayPlot(airframe);
+        this.setState({airframe}, () => this.displayPlot(airframe));
+    }
+
+    updateTags(tagName){
+        this.setState({tagName, datesChanged : true});
+
+    }
+    tagNameChange(tagName) {
+        this.setState({tagName}, ()=> this.displayPlot(this.state.airframe));
+
     }
 
     updateTags(tagName){
