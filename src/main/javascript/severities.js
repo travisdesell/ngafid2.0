@@ -69,7 +69,9 @@ class SeveritiesPage extends React.Component {
             endMonth : date.getMonth() + 1,
             datesChanged : false,
             eventMetaData : {},
-            eventChecked : eventChecked
+            eventChecked : eventChecked,
+            metaDataChecked: false,
+            // severityTraces: [],
         };
     }
 
@@ -132,8 +134,8 @@ class SeveritiesPage extends React.Component {
         document.body.removeChild(element);
 
     }
-    getEventMetaData(eventId) {
 
+    getEventMetaData(eventId) {
         var eventMetaData = null;
         var submissionData = {
             eventId : eventId
@@ -180,23 +182,24 @@ class SeveritiesPage extends React.Component {
                     hovertext : [], 
                     y : [], 
                     x : [],
+                    z: [],
                     flightIds : [],
+                    id: [],
+                    systemId: [],
+                    tail: [],
+                    eventDefinitionId: [],
                 };
 
-                //console.log("events:");
                 for (let i = 0; i < counts.length; i++) {
-                    var eventMetaData = this.getEventMetaData(counts[i].id);
-                    var eventMetaDataText = [];
-                    if (eventMetaData != null) {
-                        eventMetaData.map((item) => {
-                            eventMetaDataText.push(item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2));                        
-                        });
-                        this.state.eventMetaData[counts[i].id] = eventMetaData;
-                    }
+                    severityTrace.id.push( counts[i].id );
                     severityTrace.y.push( counts[i].severity );
                     severityTrace.x.push( counts[i].startTime );
+                    severityTrace.z.push( counts[i].endTime );
+                    severityTrace.systemId.push( counts[i].systemId );
+                    severityTrace.tail.push( counts[i].tail );
+                    severityTrace.eventDefinitionId.push( counts[i].eventDefinitionId );
 
-                    if (counts[i].eventDefinitionId == -1) {
+                    if (counts[i].eventDefinitionId === -1) {
                         severityTrace.flightIds.push( counts[i].flightId + " " + counts[i].otherFlightId);
                     } else {
                         severityTrace.flightIds.push( counts[i].flightId);
@@ -213,9 +216,8 @@ class SeveritiesPage extends React.Component {
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
                 }
-                this.setState(this.state);
-
                 severityTraces.push(severityTrace);
+                this.setState(this.state);
             }
         }
 
@@ -239,7 +241,6 @@ class SeveritiesPage extends React.Component {
         Plotly.newPlot('severities-plot', severityTraces, severityLayout, config);
 
         let severitiesPlot = document.getElementById('severities-plot');
-
         severitiesPlot.on('plotly_click', function(data) {
             console.log("clicked on plot near point!");
             console.log(data);
@@ -264,6 +265,51 @@ class SeveritiesPage extends React.Component {
                 //might want to only open one tab if for some reason multiple points overlap (which shouldn't but might happen)
                 //break;
             }
+        });
+
+        severitiesPlot.on('plotly_hover', (data) => {
+            var point = data.points[0];
+            var idIndex = point.pointIndex;
+            var severityData =  point.data;
+            var id = severityData.id[idIndex];
+            var severity = severityData.y[idIndex];
+            var startTime = severityData.x[idIndex];
+            var tail = severityData.tail[idIndex];
+            var eventDefinitionId = severityData.eventDefinitionId[idIndex];
+            var endTime = severityData.z[idIndex];
+            var systemId = severityData.systemId[idIndex];
+
+            let flightId = severityData.flightIds[idIndex];
+            let otherFlightId = null;
+            if (typeof flightId === 'string' && flightId.indexOf(' ') >= 0) {
+                let parts = flightId.split(' ');
+                flightId = parts[0];
+                otherFlightId = parts[1];
+            }
+            var eventMetaDataText = [];
+            if (!this.state.eventMetaData[id]) {
+                var eventMetaData = this.getEventMetaData(id);
+                if (eventMetaData != null) {
+                    eventMetaData.map((item) => {
+                        eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                    });
+                    this.state.eventMetaData[id] = eventMetaData;
+
+                    eventMetaData.forEach((item) => {
+                        eventMetaDataText.push(item.name + ": " + (Math.round(item.value * 100) / 100).toFixed(2));
+                    });
+                }
+            }
+
+            let hovertext = "Flight #" + flightId +  ", System ID: " + systemId +  ", Tail: " + tail + ", severity: " + (Math.round(severity * 100) / 100).toFixed(2) + ", event start time: " + startTime + ", event end time: " + endTime;
+
+            if (eventDefinitionId === -1) hovertext += ", Proximity Flight #" + otherFlightId;
+
+            if (eventMetaDataText.length !== 0) hovertext += ", " + eventMetaDataText.join(", ");
+            severityData.hovertext = hovertext;
+            this.setState(this.state);
+            let index = severityTraces.findIndex(hash => hash.name === severityData.name);
+            Plotly.restyle(severitiesPlot, {"hovertext": hovertext}, [index])
         });
 
     }
@@ -365,8 +411,7 @@ class SeveritiesPage extends React.Component {
     }
 
     airframeChange(airframe) {
-        this.setState({airframe});
-        this.displayPlot(airframe);
+        this.setState({airframe}, () => this.displayPlot(airframe));
     }
 
     updateTags(tagName){
