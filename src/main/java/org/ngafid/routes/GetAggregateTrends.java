@@ -18,6 +18,7 @@ import org.ngafid.flights.Airframes;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import org.ngafid.flights.Flight;
 import spark.Request;
 import spark.Response;
 import spark.Route;
@@ -89,7 +90,9 @@ public class GetAggregateTrends implements Route {
             long startTime = System.currentTimeMillis();
             String fleetInfo =
                     "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                            "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n";
+                            "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" +
+                            "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
             LOG.info("getting aggreagte data info took " + (endTime-startTime) + "ms.");
