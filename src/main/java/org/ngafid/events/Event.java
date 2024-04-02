@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
+import java.util.Objects;
 import java.util.logging.Logger;
 
 import java.util.ArrayList;
@@ -40,6 +41,8 @@ public class Event {
     private String systemId;
 
     private String tail;
+
+    private String tagName;
 
     private RateOfClosure rateOfClosure;
 
@@ -149,7 +152,7 @@ public class Event {
         this.otherFlightId = otherFlightId;
     }
 
-    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail) {
+    public Event(int id, int fleetId, int flightId, int eventDefinitionId, int startLine, int endLine, String startTime, String endTime, double severity, Integer otherFlightId, String systemId, String tail, String tagName) {
         this.id = id;
         this.fleetId = fleetId;
         this.flightId = flightId;
@@ -162,6 +165,7 @@ public class Event {
         this.otherFlightId = otherFlightId;
         this.systemId = systemId;
         this.tail = tail;
+        this.tagName = tagName;
     }
 
     public void updateEnd(String newEndTime, int newEndLine) {
@@ -350,7 +354,7 @@ public class Event {
      *
      * @return a hashmap where every entry relates to an airframe name for this fleet, containing a vector of all specified events for that airframe between the specified start and end dates (if provided)
      */
-    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetId, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
+    public static HashMap<String, ArrayList<Event>> getEvents(Connection connection, int fleetId, String eventName, LocalDate startTime, LocalDate endTime, String tagName) throws SQLException {
         //get list of airframes for this fleet so we can set up the hashmap of arraylists for events by airframe
         ArrayList<String> fleetAirframes = Airframes.getAll(connection, fleetId);
         HashMap<Integer, String> airframeIds = new HashMap<Integer, String>();
@@ -374,6 +378,7 @@ public class Event {
         LOG.info(preparedStatement.toString());
         ResultSet resultSet = preparedStatement.executeQuery();
 
+
         while (resultSet.next()) {
             int definitionId = resultSet.getInt(1);
             LOG.info("getting events for definition id: " + definitionId);
@@ -382,14 +387,22 @@ public class Event {
             //doing it the longer way below is quicker
             //ArrayList<Event> eventList = getAll(connection, fleetId, definitionId, startTime, endTime);
 
-            String eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail FROM events, flights, tails WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.event_definition_id = ? AND events.fleet_id = ?";
-
+            String eventsQuery = "";
+            if(Objects.equals(tagName, "All Tags")) {
+                eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail FROM events, flights, tails WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND events.event_definition_id = ? AND events.fleet_id = ?";
+            } else if (!Objects.equals(tagName, "All Tags")) {
+                eventsQuery = "SELECT events.id, events.flight_id, events.start_line, events.end_line, events.start_time, events.end_time, events.severity, events.other_flight_id, flights.airframe_id, flights.system_id, tails.tail, flight_tags.name FROM events, flights, tails, flight_tag_map, flight_tags WHERE events.flight_id = flights.id AND flights.system_id = tails.system_id  AND flights.id = flight_tag_map.flight_id AND events.fleet_id = flight_tags.fleet_id AND flight_tag_map.tag_id = flight_tags.id AND events.event_definition_id = ? AND events.fleet_id = ?";
+            }
             if (startTime != null) {
                 eventsQuery += " AND events.end_time >= ?";
             }
 
             if (endTime != null) {
                 eventsQuery += " AND events.end_time <= ?";
+            }
+
+            if(!Objects.equals(tagName, "All Tags")){
+                eventsQuery += " AND flight_tags.name = ?";
             }
 
             eventsQuery += " ORDER BY events.start_time";
@@ -414,9 +427,13 @@ public class Event {
                 current++;
             }
 
+            if (!Objects.equals(tagName, "All Tags")) {
+                eventsStatement.setString(current, tagName);
+                current++;
+            }
+
             LOG.info(eventsStatement.toString());
             ResultSet eventSet = eventsStatement.executeQuery();
-
             while (eventSet.next()) {
                 int eventId = eventSet.getInt(1);
                 int flightId = eventSet.getInt(2);
@@ -428,11 +445,16 @@ public class Event {
                 Integer otherFlightId = eventSet.getInt(8);
                 String systemId = eventSet.getString(10);
                 String tail = eventSet.getString(11);
+                String tag = "";
+                if(!Objects.equals(tagName, "All Tags")){
+                    tag = eventSet.getString(12);
+                }
+
                 if (eventSet.wasNull()) {
                     otherFlightId = null;
                 }
 
-                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail);
+                Event event = new Event(eventId, fleetId, flightId, definitionId, startLine, endLine, eventStartTime, eventEndTime, severity, otherFlightId, systemId, tail, tag);
                 System.out.println("event: " + event.toString());
 
                 int airframeId = eventSet.getInt(9);
@@ -455,4 +477,8 @@ public class Event {
         this.rateOfClosure = rateOfClosure;
     }
 }
+
+
+
+
 
