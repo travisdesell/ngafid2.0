@@ -609,7 +609,6 @@ class TrendsPage extends React.Component {
         this.displayPlots(airframe);
     }
 
-
     render() {
         //console.log(systemIds);
 
@@ -643,6 +642,8 @@ class TrendsPage extends React.Component {
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
+
+
                                 />
 
                             <div className="card-body" style={{padding:"0"}}>
