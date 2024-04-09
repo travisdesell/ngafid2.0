@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
 import java.util.LinkedHashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -31,7 +32,7 @@ public class CalculateTTF {
         int total = 0;
 
         // Grab flights that have not been inserted at all, or flights that have an old version of TTF
-        String condition = "upload_id = " + uploadId + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM turn_to_final where flight_id = id)";
+        String condition = "upload_id = " + uploadId + " AND insert_completed = 1 AND NOT EXISTS (SELECT flight_id, version FROM turn_to_final where flight_id = id and version = " + TurnToFinal.serialVersionUID + ")";
         ArrayList<Flight> flights = Flight.getFlights(connection, condition);
         while (flights.size() > 0) {
             Flight flight = flights.remove(flights.size() - 1);
@@ -54,6 +55,19 @@ public class CalculateTTF {
         uploadProcessedEmail.setTTFElapsedTime(elapsed_seconds);
     }
 
+    private static void dropOldTTF(Connection connection, ArrayList<Flight> flights) throws SQLException {
+        String query = String.format("DELETE FROM turn_to_final WHERE flight_id IN (%s)",
+                                    flights.stream()
+                                    .map(f -> "?")
+                                    .collect(Collectors.joining(", ")));
+
+        PreparedStatement stmt = connection.prepareStatement(query);
+
+        for (int i = 0; i < flights.size(); i++)
+            stmt.setInt(i + 1, flights.get(i).getId());
+        System.out.println(stmt);
+        stmt.executeUpdate();
+    }
 
     public static void main(String[] arguments) {
         while (true) {
@@ -61,25 +75,30 @@ public class CalculateTTF {
 
             Instant start = Instant.now();
             int total = 0;
-            int flights_processed = 1;
-            while (flights_processed > 0) {
-                flights_processed = 0;
+
+            int flightsProcessed = 1;
+            while (flightsProcessed > 0) {
+                flightsProcessed = 0;
                 try {
                     // Grab flights that have not been inserted at all, or flights that have an old version of TTF
                     String condition =
-                            "insert_completed = 1 AND NOT EXISTS (SELECT flight_id FROM turn_to_final where flight_id = id)";
+                            "insert_completed = 1 AND NOT EXISTS (SELECT flight_id, version FROM turn_to_final where flight_id = id and version = " + TurnToFinal.serialVersionUID + ")";
                     ArrayList<Flight> flights = Flight.getFlights(connection, condition, 100);
-                    while (flights.size() > 0) {
-                        Flight flight = flights.remove(flights.size() - 1);
-                        // This function automatically saves the calculated TTF object to the database
-                        TurnToFinal.calculateFlightTurnToFinals(connection, flight);
-                        flights_processed += 1;
-                    }
+                    if (flights.size() == 0)
+                        continue;
+
+                    dropOldTTF(connection, flights);
+                    
+                    for (Flight f : flights)
+                        TurnToFinal.calculateFlightTurnToFinals(connection, f);
+
+                    flightsProcessed += flights.size();
+
                 } catch (SQLException | IOException e) {
                     e.printStackTrace();
                     System.exit(1);
                 }
-                total += flights_processed;
+                total += flightsProcessed;
             }
 
             Instant end = Instant.now();
