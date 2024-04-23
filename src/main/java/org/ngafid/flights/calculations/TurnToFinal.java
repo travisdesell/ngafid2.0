@@ -22,7 +22,7 @@ import static org.ngafid.flights.calculations.Parameters.*; //eliminates the nee
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
-    public static final long serialVersionUID = 0x46AF1D77F0000L;
+    public static final long serialVersionUID = 0x46AF1D77F0001L;
 
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -387,9 +387,10 @@ public class TurnToFinal implements Serializable {
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
         ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
         
-        if (turnToFinals == null) {
-            turnToFinals = calculateFlightTurnToFinals(connection, flight);
-        }
+        // This is commented out to disable on-demand calculation since it is wayyy to slow.
+        // if (turnToFinals == null) {
+        //     turnToFinals = calculateFlightTurnToFinals(connection, flight);
+        // }
 
         return turnToFinals.stream()
                 .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
