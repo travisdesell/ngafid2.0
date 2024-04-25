@@ -1,2 +1,0 @@
-# E-mail not configured for the NGAFID
-# To change this, replace these lines with the email login info
