@@ -35,20 +35,16 @@ class TraceButtons extends React.Component {
 
     traceClicked(seriesName) {
         this.props.showPlot();
-        console.log("WIWIWIWIWIWIWWIWIWIWIIWWIIWWIIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWIWI");
         let parentFlight = this.state.parentFlight;
 
         //check to see if we've already loaded this time series
         if (!(seriesName in parentFlight.state.traceIndex)) {
             var thisTrace = this;
 
-            console.log("DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD");
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
-            console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
             var date = this.getStartDate();
-            console.log("START DATE: " + date);
-
+            
             var submissionData = {
                 flightId : this.props.flightId,
                 seriesName : seriesName
