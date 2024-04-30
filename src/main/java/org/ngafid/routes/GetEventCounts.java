@@ -26,11 +26,11 @@ import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.Database;
 
-public class GetEventCount implements Route {
+public class GetEventCounts implements Route {
     private static final Logger LOG = Logger.getLogger(GetEventStatistics.class.getName());
     private Gson gson;
 
-    public GetEventCount(Gson gson) {
+    public GetEventCounts(Gson gson) {
         this.gson = gson;
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
