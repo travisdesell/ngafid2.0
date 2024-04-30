@@ -182,6 +182,7 @@ public class Flight {
             PreparedStatement eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
+
             // System.exit(1);
             eventStatement.executeUpdate();
             eventStatement.close();
@@ -190,6 +191,7 @@ public class Flight {
             eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
+
             eventStatement.executeUpdate();
             eventStatement.close();
         }
@@ -1086,6 +1088,30 @@ public class Flight {
     }
 
     /**
+     * Returns a list of all the tag names in the database for a fleet
+     *
+     * @param connection the connection to the database
+     * @return a List with strings containing the tag names
+     *
+     * @throws SQLException if there is an error with the database query
+     */
+    public static List<String> getAllFleetTagNames(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT name FROM flight_tags WHERE fleet_id =" + fleetId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<String> tagNames = new ArrayList<>();
+
+        while (resultSet.next()) {
+            tagNames.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tagNames;
+    }
+
+    /**
      * Gets the tag id associated with a name
      *
      * @param connection the database connection
@@ -1918,7 +1944,7 @@ public class Flight {
 
                         }
 
-                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                        if (airframeName.equals("Cirrus SR22 (3600 GW)") || airframeName.equals("Cirrus SR22 Turbo (3600 GW)")) {
                             airframeName = "Cirrus SR22";
                         }
 
