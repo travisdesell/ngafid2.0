@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
 public class EventStatistics {
@@ -19,15 +20,59 @@ public class EventStatistics {
 
     static {
         Connection connection = Database.getConnection();
-        try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM fleet")) {
-            ResultSet result = ps.executeQuery();
-            while (result.next()) {
-                int fleetId = result.getInt("id");
-                updateMonthlyTotalFlights(connection, fleetId);
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
+        // try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM fleet")) {
+        //     ResultSet result = ps.executeQuery();
+        //     while (result.next()) {
+        //         int fleetId = result.getInt("id");
+        //         updateMonthlyTotalFlights(connection, fleetId);
+        //     }
+        // } catch (SQLException e) {
+        //     throw new RuntimeException(e);
+        // }
+    }
+
+    public static class EventCount {
+        public final EventDefinition eventDefinition;
+        public final int count;
+
+        public EventCount(EventDefinition eventDefinition, int count) {
+            this.eventDefinition = eventDefinition;
+            this.count = count;
         }
+    }
+
+    public static Map<Integer, EventCount> getEventCountsFast(Connection connection, int fleetId, String startDate, String endDate) throws SQLException {
+        if (startDate == null)
+            startDate = LocalDate.of(0, 1, 1).toString();
+
+        if (endDate == null)
+            endDate = LocalDate.now().toString();
+
+        String dateClause = "start_time BETWEEN ? AND ? ";
+        String fleetClause = fleetId == -1 ? "" : "AND e.fleet_id = " + fleetId; 
+        
+        String query =  "SELECT COUNT(DISTINCT id) AS event_count, event_definition_id FROM events AS e" 
+                      + " WHERE e.start_time BETWEEN ? AND ? " + fleetClause + " GROUP BY event_definition_id";
+
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, startDate);
+        statement.setString(2, endDate);
+
+        ResultSet result = statement.executeQuery();
+
+        Map<Integer, EventCount> out = new HashMap<>();
+
+        while (result.next()) {
+            int count = result.getInt("event_count");
+            int eventDefinitionId = result.getInt("event_definition_id");
+            EventDefinition ed = EventDefinition.getEventDefinition(connection, eventDefinitionId);
+            out.put(eventDefinitionId, new EventCount(ed, count));
+        }
+
+        result.close();
+        statement.close();
+
+        return out;
     }
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
