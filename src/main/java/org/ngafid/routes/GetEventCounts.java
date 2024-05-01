@@ -5,7 +5,7 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
+import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -38,27 +38,36 @@ public class GetEventCounts implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
+        return null;
+        // try  {
+        //     Connection connection = Database.getConnection();
 
-        //try  {
-            Connection connection = Database.getConnection();
+        //     final Session session = request.session();
+        //     User user = session.attribute("user");
+        //     int fleetId = user.getFleetId();
 
-            final Session session = request.session();
-            User user = session.attribute("user");
-            int fleetId = user.getFleetId();
+        //     String airframe = request.queryParams("airframe_id");
+        //     int airframeId = airframe == null ? -1 : Integer.parseInt(airframe);
 
-            String airframe = request.queryParams("airframe_id");
-            int airframeId = airframe == null ? -1 : Integer.parseInt(airframe);
+        //     boolean aggregate = Boolean.parseBoolean(request.queryParams("aggregate"));
 
-            boolean aggregate = Boolean.parseBoolean(request.queryParams("aggregate"));
+        //     String startDate = request.queryParams("start_date");
+        //     String endDate = request.queryParams("end_date");
 
-            String startDate = request.queryParams("start_date");
-            String endDate = request.queryParams("end_date");
+        //     // Map<Integer, EventStatistics.EventCount> eventCounts = EventStatistics.getEventCountsFast(connection, aggregate ? -1 : fleetId, airframeId, startDate, endDate);
+        //     // Map<String, Integer> aggregatedCounts = new HashMap<>();
 
-            return null;
+        //     // for (EventStatistics.EventCount ec : eventCounts.values()) {
+        //     //     if (airframeId != -1 && airframeId == ec.eventDefinition.getAirframeNameId())
+        //     //         aggregatedCounts.compute(ec.eventDefinition.getName(), (k, v) -> v == null ? ec.count : v + ec.count);
+        //     // }
 
-        /*} catch (SQLException e) {
-            LOG.severe(e.toString());
-            return gson.toJson(new ErrorResponse(e));
-        }*/
+        //     // return gson.toJson(aggregatedCounts);
+        //     return null;
+
+        // } catch (SQLException e) {
+        //     LOG.severe(e.toString());
+        //     return gson.toJson(new ErrorResponse(e));
+        // }
     }
 }

@@ -41,7 +41,29 @@ public class EventStatistics {
         }
     }
 
-    public static Map<Integer, EventCount> getEventCountsFast(Connection connection, int fleetId, String startDate, String endDate) throws SQLException {
+    public static class AirframeEventCount {
+        public final int eventId, airframeId;
+
+        public AirframeEventCount(int eventId, int airframeId) {
+            this.eventId = eventId;
+            this.airframeId = airframeId;
+        }
+
+        public int hashCode() {
+            return eventId ^ airframeId;
+        }
+
+        public boolean equals(Object obj) {
+            if (obj instanceof AirframeEventCount) {
+                AirframeEventCount other = (AirframeEventCount) obj;
+                return eventId == other.eventId && airframeId == other.airframeId;
+            } else {
+                return false;
+            }
+        }
+    }
+
+    public static Map<AirframeEventCount, EventCount> getEventCountsFast(Connection connection, int fleetId, String startDate, String endDate) throws SQLException {
         if (startDate == null)
             startDate = LocalDate.of(0, 1, 1).toString();
 
@@ -50,9 +72,10 @@ public class EventStatistics {
 
         String dateClause = "start_time BETWEEN ? AND ? ";
         String fleetClause = fleetId == -1 ? "" : "AND e.fleet_id = " + fleetId; 
-        
-        String query =  "SELECT COUNT(DISTINCT id) AS event_count, event_definition_id FROM events AS e" 
-                      + " WHERE e.start_time BETWEEN ? AND ? " + fleetClause + " GROUP BY event_definition_id";
+
+        String query =  "SELECT COUNT(DISTINCT e.id) AS event_count, event_definition_id, flights.airframe_id as airframe_id FROM events AS e" 
+                        + " INNER JOIN flights ON flights.id = e.flight_id"
+                        + " WHERE e.start_time BETWEEN ? AND ? " + fleetClause + " GROUP BY event_definition_id, flights.airframe_id";
 
         PreparedStatement statement = connection.prepareStatement(query);
         statement.setString(1, startDate);
@@ -60,13 +83,14 @@ public class EventStatistics {
 
         ResultSet result = statement.executeQuery();
 
-        Map<Integer, EventCount> out = new HashMap<>();
+        Map<AirframeEventCount, EventCount> out = new HashMap<>();
 
         while (result.next()) {
             int count = result.getInt("event_count");
             int eventDefinitionId = result.getInt("event_definition_id");
+            int airframeId = result.getInt("airframe_id");
             EventDefinition ed = EventDefinition.getEventDefinition(connection, eventDefinitionId);
-            out.put(eventDefinitionId, new EventCount(ed, count));
+            out.put(new AirframeEventCount(eventDefinitionId, airframeId), new EventCount(ed, count));
         }
 
         result.close();

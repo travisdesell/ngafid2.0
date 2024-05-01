@@ -28,8 +28,8 @@ public class TestEventCounts {
 
     public static void main(String[] arguments) {
         try {
-            Map<Integer, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, 1, null, null);
-            for (Map.Entry<Integer, EventStatistics.EventCount> entry : counts.entrySet()) {
+            Map<EventStatistics.AirframeEventCount, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, 1, null, null);
+            for (Map.Entry<EventStatistics.AirframeEventCount, EventStatistics.EventCount> entry : counts.entrySet()) {
                 System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().count);
             }
         } catch (SQLException e) {
