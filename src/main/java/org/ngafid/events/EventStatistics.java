@@ -63,7 +63,7 @@ public class EventStatistics {
         }
 
         public String toString() {
-            return "AirframeEventCount(eventId=" + eventId + ", airframeId=" + airframeId + ")"
+            return "AirframeEventCount(eventId=" + eventId + ", airframeId=" + airframeId + ")";
         }
     }
 
