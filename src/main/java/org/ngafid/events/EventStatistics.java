@@ -48,15 +48,16 @@ public class EventStatistics {
     }
 
     public static class AirframeEventCount {
-        public final int eventId, airframeId;
+        public final int fleetId, eventId, airframeId;
 
-        public AirframeEventCount(int eventId, int airframeId) {
+        public AirframeEventCount(int fleetId, int eventId, int airframeId) {
+            this.fleetId = fleetId;
             this.eventId = eventId;
             this.airframeId = airframeId;
         }
 
         public int hashCode() {
-            return eventId ^ airframeId;
+            return eventId ^ airframeId ^ fleetId;
         }
 
         public boolean equals(Object obj) {
@@ -69,11 +70,11 @@ public class EventStatistics {
         }
 
         public String toString() {
-            return "AirframeEventCount(eventId=" + eventId + ", airframeId=" + airframeId + ")";
+            return "AirframeEventCount(fleetId=" + fleetId + ", eventId=" + eventId + ", airframeId=" + airframeId + ")";
         }
     }
 
-    public static Map<AirframeEventCount, EventCount> getEventCountsFast(Connection connection, int fleetId, String startDate, String endDate) throws SQLException {
+    public static Map<AirframeEventCount, EventCount> getEventCountsFast(Connection connection, String startDate, String endDate) throws SQLException {
         if (startDate == null)
             startDate = LocalDate.of(0, 1, 1).toString();
 
@@ -81,11 +82,11 @@ public class EventStatistics {
             endDate = LocalDate.now().toString();
 
         String dateClause = "start_time BETWEEN ? AND ? ";
-        String fleetClause = fleetId == -1 ? "" : "AND e.fleet_id = " + fleetId; 
+        // String fleetClause = fleetId == -1 ? "" : "AND e.fleet_id = " + fleetId; 
 
-        String query =  "SELECT COUNT(DISTINCT e.id) AS event_count, COUNT(DISTINCT flights.id) as flight_count, event_definition_id, flights.airframe_id as airframe_id FROM events AS e" 
+        String query =  "SELECT COUNT(DISTINCT e.id) AS event_count, COUNT(DISTINCT flights.id) as flight_count, event_definition_id, flights.fleet_id as fleet_id, flights.airframe_id as airframe_id FROM events AS e" 
                         + " INNER JOIN flights ON flights.id = e.flight_id"
-                        + " WHERE e.start_time BETWEEN ? AND ? " + fleetClause + " GROUP BY event_definition_id, flights.airframe_id";
+                        + " WHERE e.start_time BETWEEN ? AND ? " + " GROUP BY event_definition_id, flights.airframe_id, flights.fleet_id";
 
         PreparedStatement statement = connection.prepareStatement(query);
         statement.setString(1, startDate);
@@ -96,12 +97,13 @@ public class EventStatistics {
         Map<AirframeEventCount, EventCount> out = new HashMap<>();
 
         while (result.next()) {
+            int fleet = result.getInt("fleet_id");
             int count = result.getInt("event_count");
             int flightCount = result.getInt("flight_count");
             int eventDefinitionId = result.getInt("event_definition_id");
             int airframeId = result.getInt("airframe_id");
             EventDefinition ed = EventDefinition.getEventDefinition(connection, eventDefinitionId);
-            out.put(new AirframeEventCount(eventDefinitionId, airframeId), new EventCount(ed, count, flightCount));
+            out.put(new AirframeEventCount(fleet, eventDefinitionId, airframeId), new EventCount(ed, count, flightCount));
         }
 
         result.close();
@@ -109,6 +111,13 @@ public class EventStatistics {
 
         return out;
     }
+
+    // /**
+    //  * Returns a map of airframe id to the total number of flights with that id.
+    //  **/
+    // public static Map<Integer, Integer> getTotalFlights(Connection connection, int fleetId) {
+
+    // }
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
         String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m-01') " +

@@ -28,7 +28,7 @@ public class TestEventCounts {
 
     public static void main(String[] arguments) {
         try {
-            Map<EventStatistics.AirframeEventCount, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, 1, null, null);
+            Map<EventStatistics.AirframeEventCount, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, null, null);
             for (Map.Entry<EventStatistics.AirframeEventCount, EventStatistics.EventCount> entry : counts.entrySet()) {
                 System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().toString());
             }
