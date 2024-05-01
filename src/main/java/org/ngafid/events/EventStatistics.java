@@ -33,11 +33,17 @@ public class EventStatistics {
 
     public static class EventCount {
         public final EventDefinition eventDefinition;
-        public final int count;
+        public final int eventCount;
+        public final int flightCount;
 
-        public EventCount(EventDefinition eventDefinition, int count) {
+        public EventCount(EventDefinition eventDefinition, int eventCount, int flightCount) {
             this.eventDefinition = eventDefinition;
-            this.count = count;
+            this.eventCount = eventCount;
+            this.flightCount = flightCount;
+        }
+
+        public String toString() {
+            return "EventCount(eventCount=" + eventCount + ", flightCount=" + flightCount + ")";
         }
     }
 
@@ -77,7 +83,7 @@ public class EventStatistics {
         String dateClause = "start_time BETWEEN ? AND ? ";
         String fleetClause = fleetId == -1 ? "" : "AND e.fleet_id = " + fleetId; 
 
-        String query =  "SELECT COUNT(DISTINCT e.id) AS event_count, event_definition_id, flights.airframe_id as airframe_id FROM events AS e" 
+        String query =  "SELECT COUNT(DISTINCT e.id) AS event_count, COUNT(DISTINCT flights.id) as flight_count, event_definition_id, flights.airframe_id as airframe_id FROM events AS e" 
                         + " INNER JOIN flights ON flights.id = e.flight_id"
                         + " WHERE e.start_time BETWEEN ? AND ? " + fleetClause + " GROUP BY event_definition_id, flights.airframe_id";
 
@@ -91,10 +97,11 @@ public class EventStatistics {
 
         while (result.next()) {
             int count = result.getInt("event_count");
+            int flightCount = result.getInt("flight_count");
             int eventDefinitionId = result.getInt("event_definition_id");
             int airframeId = result.getInt("airframe_id");
             EventDefinition ed = EventDefinition.getEventDefinition(connection, eventDefinitionId);
-            out.put(new AirframeEventCount(eventDefinitionId, airframeId), new EventCount(ed, count));
+            out.put(new AirframeEventCount(eventDefinitionId, airframeId), new EventCount(ed, count, flightCount));
         }
 
         result.close();

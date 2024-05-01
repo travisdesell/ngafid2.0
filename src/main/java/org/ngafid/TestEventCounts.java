@@ -30,7 +30,7 @@ public class TestEventCounts {
         try {
             Map<EventStatistics.AirframeEventCount, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, 1, null, null);
             for (Map.Entry<EventStatistics.AirframeEventCount, EventStatistics.EventCount> entry : counts.entrySet()) {
-                System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().count);
+                System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().toString());
             }
         } catch (SQLException e) {
             e.printStackTrace();
