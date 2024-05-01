@@ -61,6 +61,10 @@ public class EventStatistics {
                 return false;
             }
         }
+
+        public String toString() {
+            return "AirframeEventCount(eventId=" + eventId + ", airframeId=" + airframeId + ")"
+        }
     }
 
     public static Map<AirframeEventCount, EventCount> getEventCountsFast(Connection connection, int fleetId, String startDate, String endDate) throws SQLException {
