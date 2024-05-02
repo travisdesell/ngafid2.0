@@ -14,6 +14,25 @@ class TraceButtons extends React.Component {
         };
     }
 
+    getStartDate(){
+
+        var submissionData = {
+            flightId : this.props.flightId,
+            seriesName : "start_time"
+        };
+        var date;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/double_series',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response FOR TIME: ");
+                console.log(response);
+            }
+        });
+    }
+
     traceClicked(seriesName) {
         this.props.showPlot();
 
@@ -25,6 +44,7 @@ class TraceButtons extends React.Component {
 
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
+            var date = this.getStartDate();
 
             var submissionData = {
                 flightId : this.props.flightId,

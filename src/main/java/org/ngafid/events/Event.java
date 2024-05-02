@@ -102,6 +102,21 @@ public class Event {
         this.metaDataList = new ArrayList<>();
     }
 
+    public Event(int fleetId, int flightId, String startTime, String endTime, int startLine, int endLine, double severity, Integer otherFlightId) {
+        this.fleetId = fleetId;
+        this.flightId = flightId;
+        this.startTime = startTime;
+        this.endTime = endTime;
+        this.startLine = startLine;
+        this.endLine = endLine;
+        this.severity = severity;
+        this.otherFlightId = otherFlightId;
+
+        this.startTime = fixTime(startTime);
+        this.endTime = fixTime(endTime);
+        this.metaDataList = new ArrayList<>();
+    }
+
     /**
      * Creates an event from a mysql query result
      *
@@ -251,6 +266,11 @@ public class Event {
     public void updateDatabase(Connection connection, int fleetId, int flightId, int eventDefinitionId) {
         this.flightId = flightId;
         this.eventDefinitionId = eventDefinitionId;
+        this.fleetId = fleetId;
+        updateDatabase(connection, eventDefinitionId);
+    }
+
+    public void updateDatabase(Connection connection, int eventDefinitionId){
 
         try {
             PreparedStatement preparedStatement = connection.prepareStatement("INSERT INTO events (fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", Statement.RETURN_GENERATED_KEYS);

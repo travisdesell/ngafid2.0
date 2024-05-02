@@ -204,6 +204,13 @@ public class Flight {
         preparedStatement.executeUpdate();
         preparedStatement.close();
 
+        query = "DELETE FROM events WHERE other_flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
         query = "DELETE FROM flight_warnings WHERE flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
