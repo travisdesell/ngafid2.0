@@ -112,12 +112,76 @@ public class EventStatistics {
         return out;
     }
 
-    // /**
-    //  * Returns a map of airframe id to the total number of flights with that id.
-    //  **/
-    // public static Map<Integer, Integer> getTotalFlights(Connection connection, int fleetId) {
+    public static class FlightCounts {
+        
+        // Maps airframeId to another map, which maps fleetId to the number of flights in that fleet.
+        private Map<Integer, Map<Integer, Integer>> airframeToFleetCounts = new HashMap<>();
 
-    // }
+        // Maps fleetId to another map, which maps airframeId to the number of flights of that airframe type in the specified fleet.
+        private Map<Integer, Map<Integer, Integer>> fleetToAirframeCounts = new HashMap<>();
+
+        // Total flight counts for all fleets. Maps airframe to the number of flights with that airframe.
+        private Map<Integer, Integer> aggregateCounts = new HashMap<>();
+
+        public FlightCounts(ResultSet results) throws SQLException {
+            while (results.next()) {
+                int airframeId = results.getInt("airframe_id");
+                int fleetId = results.getInt("fleet_id");
+                int flightCount = results.getInt("flight_count");
+
+                this.addRow(airframeId, fleetId, flightCount);
+            }
+        }
+
+        private void addRow(int airframeId, int fleetId, int flightCount) {
+            airframeToFleetCounts
+                .computeIfAbsent(airframeId, k -> new HashMap<>())
+                .compute(fleetId, (k, v) -> (v == null ? 0 : v) + flightCount);
+
+            fleetToAirframeCounts
+                .computeIfAbsent(fleetId, k -> new HashMap<>())
+                .compute(airframeId, (k, v) -> (v == null ? 0 : v) + flightCount);
+
+            aggregateCounts
+                .compute(airframeId, (k, v) -> (v == null ? 0 : v) + flightCount);
+        }
+
+        public Map<Integer, Integer> getAggregateCounts() {
+            return aggregateCounts;
+        }
+
+        public Map<Integer, Integer> getFleetCounts(int fleetId) {
+            return fleetToAirframeCounts.get(fleetId);
+        }
+    }
+
+    /**
+     * Returns a map of airframe id to the total number of flights with that id, one map per fleet id.
+     **/
+    public static FlightCounts getFlightCounts(Connection connection, String startDate, String endDate) throws SQLException {
+        if (startDate == null)
+            startDate = LocalDate.of(0, 1, 1).toString();
+
+        if (endDate == null)
+            endDate = LocalDate.now().toString();
+
+
+        Map<Integer, Map<Integer, Integer>> out = new HashMap<>();
+
+        String query = "SELECT COUNT(DISTINCT id) as flight_count, airframe_id, fleet_id FROM flights WHERE start_time BETWEEN ? AND ? GROUP BY flights.airframe_id, flights.fleet_id ";
+        PreparedStatement ps = connection.prepareStatement(query);
+        ps.setString(1, startDate);
+        ps.setString(2, endDate);
+
+        ResultSet results = ps.executeQuery();
+        
+        FlightCounts counts = new FlightCounts(results);
+
+        results.close();
+        ps.close();
+
+        return counts;
+    }
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
         String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m-01') " +

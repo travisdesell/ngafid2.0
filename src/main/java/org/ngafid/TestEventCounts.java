@@ -32,6 +32,11 @@ public class TestEventCounts {
             for (Map.Entry<EventStatistics.AirframeEventCount, EventStatistics.EventCount> entry : counts.entrySet()) {
                 System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().toString());
             }
+
+            EventStatistics.FlightCounts flightCounts = EventStatistics.getFlightCounts(TestEventCounts.connection, null, null);
+            for (Map.Entry<Integer, Integer> entry : flightCounts.getAggregateCounts().entrySet()) {
+                System.out.println("airframe " + entry.getKey() + " has " + entry.getValue() + " flights total");
+            }
         } catch (SQLException e) {
             e.printStackTrace();
         }
