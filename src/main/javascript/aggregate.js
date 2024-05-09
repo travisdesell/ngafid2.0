@@ -31,8 +31,8 @@ function displayPlots(selectedAirframe) {
         hovertext : [],
         y : [],
         x : [],
-        flightsWithEventCounts : [],
-        totalFlightsCounts : []
+        aggregateFlightsWithEventCounts : [],
+        aggregateTotalFlightsCounts : []
     }
 
 
@@ -51,20 +51,20 @@ function displayPlots(selectedAirframe) {
 
         //don't add airframes to the count plot that the fleet doesn't have
         if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
-        value.x = value.totalEventsCounts;
+        value.x = value.aggregateTotalEventsCounts;
 
         for (let i = 0; i < value.names.length; i++) {
             //don't add airframes to the fleet percentage plot that the fleet doesn't have
             if (airframes.indexOf(value.airframeName) >= 0) {
                 var index = fleetPercents.y.indexOf(value.names[i]);
                 if (index !== -1) {
-                    fleetPercents.flightsWithEventCounts[index] += value.flightsWithEventCounts[i];
-                    fleetPercents.totalFlightsCounts[index] += value.totalFlightsCounts[i];
+                    fleetPercents.aggregateFlightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
+                    fleetPercents.aggregateTotalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
                 } else {
                     let pos = fleetPercents.y.length;
                     fleetPercents.y.push(value.names[i]);
-                    fleetPercents.flightsWithEventCounts[pos] = value.flightsWithEventCounts[i];
-                    fleetPercents.totalFlightsCounts[pos] = value.totalFlightsCounts[i];
+                    fleetPercents.aggregateFlightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
+                    fleetPercents.aggregateTotalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
                 }
             }
         }
@@ -78,8 +78,8 @@ function displayPlots(selectedAirframe) {
         let value = percentData[j];
         value.x = [];
 
-        for (let i = 0; i < value.totalFlightsCounts.length; i++) {
-            value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
+        for (let i = 0; i < value.aggregateTotalFlightsCounts.length; i++) {
+            value.x.push( 100.0 * parseFloat(value.aggregateFlightsWithEventCounts[i]) / parseFloat(value.aggregateTotalFlightsCounts[i]) );
 
             //console.log(value.x[i]);
             var fixedText = "";

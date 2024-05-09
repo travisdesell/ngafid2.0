@@ -225,6 +225,28 @@ public class EventDefinition {
         return definitions;
     }
 
+    
+    private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+
+    public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
+        if (EVENT_DEFINITION_ID_TO_NAME == null) {
+            String query = "SELECT id, name FROM event_definitions";
+            PreparedStatement ps = connection.prepareStatement(query);
+            
+            ResultSet resultSet = ps.executeQuery();
+
+            EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+            }
+        }
+
+        return EVENT_DEFINITION_ID_TO_NAME;
+    }
+
     /**
      * Helper method for retrieving the EventDefinition from server
      *
