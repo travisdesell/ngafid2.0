@@ -11,12 +11,8 @@ import java.sql.SQLException;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
-import java.util.LinkedHashSet;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -27,18 +23,22 @@ public class TestEventCounts {
     private static Connection connection = Database.getConnection();
 
     public static void main(String[] arguments) {
-        // try {
-        //     Map<EventStatistics.AirframeEventCount, EventStatistics.EventCount> counts = EventStatistics.getEventCountsFast(TestEventCounts.connection, null, null);
-        //     for (Map.Entry<EventStatistics.AirframeEventCount, EventStatistics.EventCount> entry : counts.entrySet()) {
-        //         System.out.println("" + entry.getKey() + " : " + entry.getValue().eventDefinition.getName() + " : " + entry.getValue().toString());
-        //     }
+        try {
+            Map<String, EventStatistics.EventCounts> counts = EventStatistics.getEventCounts(TestEventCounts.connection, null, null);
+            for (Map.Entry<String, EventStatistics.EventCounts> entry : counts.entrySet()) {
+                List<String> names = entry.getValue().names;
 
-        //     EventStatistics.FlightCounts flightCounts = EventStatistics.getFlightCounts(TestEventCounts.connection, null, null);
-        //     for (Map.Entry<Integer, Integer> entry : flightCounts.getAggregateCounts().entrySet()) {
-        //         System.out.println("airframe " + entry.getKey() + " has " + entry.getValue() + " flights total");
-        //     }
-        // } catch (SQLException e) {
-        //     e.printStackTrace();
-        // }
+                for (int i = 0; i < names.size(); i++) {
+                    System.out.println("" + entry.getKey() + " : " + names.get(i) + " : " + entry.getValue().aggregateFlightsWithEventCounts[i]);
+                }
+            }
+
+            EventStatistics.FlightCounts flightCounts = EventStatistics.getFlightCounts(TestEventCounts.connection, null, null);
+            for (Map.Entry<Integer, Integer> entry : flightCounts.getAggregateCounts().entrySet()) {
+                System.out.println("airframe " + entry.getKey() + " has " + entry.getValue() + " flights total");
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
     }
 }

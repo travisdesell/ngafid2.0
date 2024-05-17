@@ -226,14 +226,14 @@ public class EventStatistics {
         private void addRow(int airframeId, int fleetId, int flightCount) {
             airframeToFleetCounts
                 .computeIfAbsent(airframeId, k -> new HashMap<>())
-                .compute(fleetId, (k, v) -> (v == null ? 0 : v) + flightCount);
+                .merge(fleetId, flightCount, Integer::sum);
 
             fleetToAirframeCounts
                 .computeIfAbsent(fleetId, k -> new HashMap<>())
-                .compute(airframeId, (k, v) -> (v == null ? 0 : v) + flightCount);
+                .merge(airframeId, flightCount, Integer::sum);
 
             aggregateCounts
-                .compute(airframeId, (k, v) -> (v == null ? 0 : v) + flightCount);
+                .merge(airframeId, flightCount, Integer::sum);
         }
 
         public Map<Integer, Integer> getAggregateCounts() {
@@ -249,6 +249,12 @@ public class EventStatistics {
      * Returns a map of airframe id to the total number of flights with that id, one map per fleet id.
      **/
     public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate) throws SQLException {
+        if (startDate == null)
+            startDate = LocalDate.of(0, 1, 1);
+
+        if (endDate == null)
+            endDate = LocalDate.now();
+
         Map<Integer, Map<Integer, Integer>> out = new HashMap<>();
 
         String query = "SELECT COUNT(DISTINCT id) as flight_count, airframe_id, fleet_id FROM flights WHERE start_time BETWEEN ? AND ? GROUP BY flights.airframe_id, flights.fleet_id ";
@@ -822,17 +828,19 @@ public class EventStatistics {
         public void update(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
-            flightsWithEventMap.compute(key, (k, v) -> flightsWithEvent + (v == null ? 0 : v));
-            totalFlightsMap.compute(key, (k, v) -> totalFlights + (v == null ? 0 : v));
-            totalEventsMap.compute(key, (k, v) -> totalEvents + (v == null ? 0 : v));
+            flightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
+            totalFlightsMap.merge(key, totalFlights, Integer::sum);
+            totalEventsMap.merge(key, totalEvents, Integer::sum);
+
+            System.out.println("" + flightsWithEvent + " : " + totalFlights + " : " + totalFlights);
         }
 
         public void updateAggregate(String key, int flightsWithEvent, int totalFlights, int totalEvents) {
             keys.add(key);
 
-            aggregateFlightsWithEventMap.compute(key, (k, v) -> flightsWithEvent + (v == null ? 0 : v));
-            aggregateTotalFlightsMap.compute(key, (k, v) -> totalFlights + (v == null ? 0 : v));
-            aggregateTotalEventsMap.compute(key, (k, v) -> totalEvents + (v == null ? 0 : v));
+            aggregateFlightsWithEventMap.merge(key, flightsWithEvent, Integer::sum);
+            aggregateTotalFlightsMap.merge(key, totalFlights, Integer::sum);
+            aggregateTotalEventsMap.merge(key, totalEvents, Integer::sum);
         }
     }
 
