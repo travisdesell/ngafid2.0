@@ -114,9 +114,9 @@ public class PostSummaryStatistics implements Route {
             var monthNumberFlights =    Flight.getNumFlights(connection, lastThirtyDaysQuery, fleetId);
             var monthFlightTime =       Flight.getTotalFlightTime(connection, lastThirtyDaysQuery, fleetId);
             
-            var totalEvents =           EventStatistics.getEventCount(connection, null, null);
-            var yearEvents =            EventStatistics.getEventCount(connection, firstOfYear, null);
-            var monthEvents =           EventStatistics.getEventCount(connection, firstOfMonth, null);
+            var totalEvents =           EventStatistics.getEventCount(connection, fleetId, null, null);
+            var yearEvents =            EventStatistics.getEventCount(connection, fleetId, firstOfYear, null);
+            var monthEvents =           EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null);
 
             var numberFleets =          aggregate ? Fleet.getNumberFleets(connection) : null;
             
