@@ -292,10 +292,16 @@ export default class SummaryPage extends React.Component {
     }
 
     FlightSummary() {
+        let title;
+        if (this.props.aggregate)
+            title = "All Fleets";
+        else
+            title = "Your Fleet";
+
         return (
-            <div className="col-lg-6" style={{paddingRight:"0"}}>
+            <div className="col-lg-6">
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>All Fleets</h4>
+                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>{title}</h4>
                     <div className="card-body">
                         <div className="row">
                             <div className = "col-sm-4">
@@ -340,22 +346,24 @@ export default class SummaryPage extends React.Component {
 
     EventSummary() {
         return (
-            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Events</h4>
-                <div className="card-body">
-                    <div className="row">
-                        <div className = "col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.totalEvents, integerOptions)}</h3> Total Events<br></br>
-                        </div>
+            <div className="col-lg-6">
+                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Events</h4>
+                    <div className="card-body">
+                        <div className="row">
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.totalEvents, integerOptions)}</h3> Total Events<br></br>
+                            </div>
 
-                        <div className = "col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.yearEvents, integerOptions)}</h3> Events This Year<br></br>
-                        </div>
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.yearEvents, integerOptions)}</h3> Events This Year<br></br>
+                            </div>
 
-                        <div className = "col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.monthEvents, integerOptions)}</h3> Events This Month<br></br>
-                        </div>
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.monthEvents, integerOptions)}</h3> Events This Month<br></br>
+                            </div>
 
+                        </div>
                     </div>
                 </div>
             </div>
@@ -364,16 +372,58 @@ export default class SummaryPage extends React.Component {
 
     ParticipationSummary() {
         return (
-            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
-                <div className="card-body">
-                    <div className="row">
-                        <div className = "col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.numberFleets, integerOptions)}</h3> Fleets <br></br>
+            <div className="col-lg-6">
+                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
+                    <div className="card-body">
+                        <div className="row">
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.numberFleets, integerOptions)}</h3> Fleets <br></br>
+                            </div>
+                
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.numberUsers, integerOptions)}</h3> Users<br></br>
+                            </div>
                         </div>
-            
-                        <div className = "col-sm-4">
-                            <h3>{formatNumberAsync(this.state.statistics.numberUsers, integerOptions)}</h3> Users<br></br>
+                    </div>
+                </div>
+            </div>
+        );
+    }
+
+    UploadsSummary() {
+        return (
+            <div className="col-lg-6">
+                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Uploads</h4>
+                    <div className="card-body">
+                        <div className="row">
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.uploads, integerOptions)}</h3> Uploads <br></br>
+                            </div>
+
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}</h3> Pending Uploads <br></br>
+                            </div>
+
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}</h3> Uploads with Errors <br></br>
+                            </div>
+                        </div>
+
+                        <hr></hr>
+                        <div className="row">
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</h3> Flights <br></br>
+                            </div>
+
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}</h3> Flights with Warning(s) <br></br>
+                            </div>
+
+                            <div className = "col-sm-4">
+                                <h3>{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}</h3> Flights with Error(s) <br></br>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -389,10 +439,9 @@ export default class SummaryPage extends React.Component {
                 <div className="container-fluid">
                     <div className="row">
                         {this.FlightSummary()}
-                        <div className="col-lg-6" style={{paddingLeft:"0"}}>
-                            {this.EventSummary()}
-                            {this.props.aggregate && this.ParticipationSummary()}
-                        </div>
+                        {this.UploadsSummary()}
+                        {this.EventSummary()}
+                        {this.props.aggregate && this.ParticipationSummary()}
                     </div>
 
                     <div className="row">

@@ -53,6 +53,7 @@ public class PostSummaryStatistics implements Route {
         Integer numberFleets,
 
         // Null if aggregate is true
+        Integer uploads,
         Integer uploadsNotImported,
         Integer uploadsWithError,
         Integer flightsWithWarning,
@@ -120,10 +121,11 @@ public class PostSummaryStatistics implements Route {
             var numberFleets =          aggregate ? Fleet.getNumberFleets(connection) : null;
             
             var numberUsers =           User.getNumberUsers(connection, fleetId);
-            var uploadsNotImported =    !aggregate ? Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") : null;
-            var uploadsWithError =      !aggregate ? Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") : null;
-            var flightsWithWarning =    !aggregate ? FlightWarning.getCount(connection, fleetId) : null;
-            var flightsWithError =      !aggregate ? FlightError.getCount(connection, fleetId) : null;
+            var uploads =               Upload.getNumUploads(connection, fleetId, "");
+            var uploadsNotImported =    Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'");
+            var uploadsWithError =      Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'");
+            var flightsWithWarning =    FlightWarning.getCount(connection, fleetId);
+            var flightsWithError =      FlightError.getCount(connection, fleetId);
  
             return gson.toJson(new SummaryStatistics(
                 this.aggregate,
@@ -136,6 +138,7 @@ public class PostSummaryStatistics implements Route {
                 monthEvents,
                 numberUsers,
                 numberFleets,
+                uploads,
                 uploadsNotImported,
                 uploadsWithError,
                 flightsWithWarning,
