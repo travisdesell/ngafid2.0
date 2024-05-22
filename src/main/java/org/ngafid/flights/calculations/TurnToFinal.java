@@ -22,7 +22,7 @@ import static org.ngafid.flights.calculations.Parameters.*; //eliminates the nee
 
 public class TurnToFinal implements Serializable {
     //                                             NGAFIDTTF0000L
-    public static final long serialVersionUID = 0x46AF1D77F0000L;
+    public static final long serialVersionUID = 0x46AF1D77F0001L;
 
     private static final Logger LOG = Logger.getLogger(TurnToFinal.class.getName());
 
@@ -249,30 +249,28 @@ public class TurnToFinal implements Serializable {
             return null;
         }
 
-        Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
-        assert o instanceof ArrayList;
+        try {
+            Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
+            assert o instanceof ArrayList;
 
-        LOG.info("FOUND IN TTF CACHE: " + o.toString());
-        
-        return (ArrayList<TurnToFinal>) o;
+            @SuppressWarnings("unchecked")
+            ArrayList<TurnToFinal> ttfs = (ArrayList<TurnToFinal>) o;
+            return ttfs;
+        } catch (ClassNotFoundException ce) {
+            LOG.info("Serialization error: ");
+            ce.printStackTrace();
+            
+            LOG.info("Deleting problematic ttf row.");
 
-        // If you want to get rid of the unchecked caste
-        // if (o instanceof ArrayList<?>) {
-        //     ArrayList<?> a = (ArrayList<?>) o;
-        //     ArrayList<TurnToFinal> ttfs = new ArrayList<TurnToFinal>(a.size());
-        //     for (Object i : a) {
-        //         if (i instanceof TurnToFinal) {
-        //             ttfs.add((TurnToFinal) i);
-        //         } else {
-        //             LOG.severe("Found incorrect element object in TurnToFinal cache.");
-        //             return null;
-        //         }
-        //     }
-        //     return ttfs;
-        // } else {
-        //     LOG.severe("Found incorrect object in TurnToFinal cache.");
-        //     return null;
-        // }
+            query = connection.prepareStatement("DELETE FROM turn_to_final WHERE flight_id = ?");
+            query.setInt(1, flight.getId());
+            LOG.info(query.toString());
+            query.execute();
+            query.close();
+
+            return null;
+        }
+
     }
 
     public static ArrayList<TurnToFinal> calculateFlightTurnToFinals(Connection connection, Flight flight) throws SQLException, IOException {
@@ -388,10 +386,11 @@ public class TurnToFinal implements Serializable {
      */
     public static ArrayList<TurnToFinal> getTurnToFinal(Connection connection, Flight flight, String airportIataCode) throws SQLException, IOException, ClassNotFoundException {
         ArrayList<TurnToFinal> turnToFinals = getTurnToFinalFromCache(connection, flight);
-
-        if (turnToFinals == null) {
-            turnToFinals = calculateFlightTurnToFinals(connection, flight);
-        }
+        
+        // This is commented out to disable on-demand calculation since it is wayyy to slow.
+        // if (turnToFinals == null) {
+        //     turnToFinals = calculateFlightTurnToFinals(connection, flight);
+        // }
 
         return turnToFinals.stream()
                 .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))

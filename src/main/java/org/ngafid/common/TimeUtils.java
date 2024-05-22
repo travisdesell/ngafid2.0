@@ -6,9 +6,14 @@ import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.List;
+
+import org.ngafid.flights.FatalFlightFileException;
 
 
 public class TimeUtils {
@@ -167,16 +172,65 @@ public class TimeUtils {
     }
 
 
-    public static double calculateDurationInSeconds(String startDateTime, String endDateTime) {
-        LocalDateTime start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-        LocalDateTime end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime) throws FatalFlightFileException {
+        LocalDateTime start= null;
+        LocalDateTime end = null;
+        try {
+            start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+            end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
+        } catch (DateTimeParseException e) {
+            try {
+                start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
+                end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
+            } catch (DateTimeParseException er2) {
+                try {
+                    start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
+                    end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
+                } catch (DateTimeParseException e3) {
+                    try {
+                        start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+                        end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+                    } catch (DateTimeParseException e4) {
+                        throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss or MM/dd/yyyy HH:mm:ss).");
+                    }
+                    throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss or MM/dd/yyyy HH:mm:ss).");
+                }
+            }
+        }
 
         return ChronoUnit.SECONDS.between(start, end);
     }
 
-    public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern) {
-        LocalDateTime start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern(pattern));
-        LocalDateTime end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern(pattern));
+    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern) throws FatalFlightFileException {
+        List<String> formatStrings = Arrays.asList(pattern, "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy/MM/dd'T'HH:mm:ss'Z'", "MM/dd/yyyy'T'HH:mm:ss'Z'", "MM/dd/yyyy'T'HH:mm:ss");
+
+        LocalDateTime dateTime = null;
+        String patterns = "";
+        boolean first = true;
+        for (String format : formatStrings) {
+            try {
+                dateTime = LocalDateTime.parse(dateTimeString, DateTimeFormatter.ofPattern(format));
+                break;
+            }
+            catch (DateTimeParseException e) {}
+            if (!first) {
+                patterns +=  ", '" + format + "'";
+            } else {
+                patterns +=  "'" + format + "'";
+            }
+            first = false;
+        }
+
+        if (dateTime == null) {
+            throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be one of " + patterns + ")");
+        }
+
+        return dateTime;
+    }
+
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern) throws FatalFlightFileException {
+        LocalDateTime start = parseLocalDateTime(startDateTime, pattern);
+        LocalDateTime end = parseLocalDateTime(endDateTime, pattern);
 
         return ChronoUnit.SECONDS.between(start, end);
     }

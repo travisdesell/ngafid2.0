@@ -20,4 +20,8 @@ public class Tail {
         tail = resultSet.getString(3);
         confirmed = resultSet.getBoolean(4);
     }
+
+    public String toString() {
+        return "Tail " + tail + ", sys. id: " + systemId;
+    }
 }

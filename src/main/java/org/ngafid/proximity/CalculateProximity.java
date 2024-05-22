@@ -1,46 +1,20 @@
-package org.ngafid;
+package org.ngafid.proximity;
 
 import org.ngafid.Database;
+import org.ngafid.UploadProcessedEmail;
 import org.ngafid.events.Event;
-import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.Flight;
-import org.ngafid.flights.StringTimeSeries;
-
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
-
 import java.time.Duration;
 import java.time.Instant;
-
-import java.time.LocalDateTime;
-import java.time.OffsetDateTime;
-import java.time.ZonedDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-
-
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.LinkedHashSet;
-//import java.util.logging.Level;
-//import java.util.logging.Logger;
-import java.util.TreeSet;
-
-import org.ngafid.common.TimeUtils;
-
-import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventMetaData;
 import org.ngafid.events.EventStatistics;
-
-import org.ngafid.filters.Conditional;
-import org.ngafid.filters.Filter;
-import org.ngafid.filters.Pair;
-
 import org.ngafid.airports.Airports;
+
 
 public class CalculateProximity {
 
@@ -54,244 +28,124 @@ public class CalculateProximity {
     public static long locMatchFlights = 0;
     public static long eventsFound = 0;
 
-    protected static class FlightTimeLocation {
-        //set to true if the flight has the required time series values and a start and 
-        //end date time
-        boolean valid = false;
-
-        //set to true when the double and string time series data has been
-        //read from the database, and the epochTime array has been calculated
-        boolean hasSeriesData = false;
-
-        int fleetId;
-        int flightId;
-        int airframeNameId;
-
-        String startDateTime;
-        String endDateTime;
-
-        double minLatitude;
-        double maxLatitude;
-        double minLongitude;
-        double maxLongitude;
-
-        double minAltMSL;
-        double maxAltMSL;
-
-        long[] epochTime;
-        double[] altitudeMSL;
-        double[] altitudeAGL;
-        double[] latitude;
-        double[] longitude;
-        double[] indicatedAirspeed;
-
-        StringTimeSeries dateSeries;
-        StringTimeSeries timeSeries;
-
-        public FlightTimeLocation(Connection connection, int fleetId, int flightId, int airframeNameId, String startDateTime, String endDateTime) throws SQLException {
-            this.fleetId = fleetId;
-            this.flightId = flightId;
-            this.airframeNameId = airframeNameId;
-            this.startDateTime = startDateTime;
-            this.endDateTime = endDateTime;
-
-            //first check and see if the flight had a start and end time, if not we cannot process it
-            //System.out.println("Getting info for flight with start date time: " + startDateTime + " and end date time: " + endDateTime);
-
-            if (startDateTime == null || endDateTime == null) {
-                //flight didnt have a start or end time
-                valid = false;
-                return;
-            }
-
-            //then check and see if this was actually a flight (RPM > 800)
-            Pair<Double,Double> minMaxRPM1 = DoubleTimeSeries.getMinMax(connection, flightId, "E1 RPM");
-            Pair<Double,Double> minMaxRPM2 = DoubleTimeSeries.getMinMax(connection, flightId, "E2 RPM");
-
-            System.out.println("minMaxRPM1: " + minMaxRPM1);
-            System.out.println("minMaxRPM2: " + minMaxRPM2);
-
-            if (minMaxRPM1 != null) System.out.println("min max E1 RPM: " + minMaxRPM1.first() + ", " + minMaxRPM1.second());
-            if (minMaxRPM2 != null) System.out.println("min max E2 RPM: " + minMaxRPM2.first() + ", " + minMaxRPM2.second());
-            
-            if ((minMaxRPM1 == null && minMaxRPM2 == null)  //both RPM values are null, can't calculate exceedence
-                    || (minMaxRPM2 == null && minMaxRPM1.second() < 800) //RPM2 is null, RPM1 is < 800 (RPM1 would not be null as well)
-                    || (minMaxRPM1 == null && minMaxRPM2.second() < 800) //RPM1 is null, RPM2 is < 800 (RPM2 would not be null as well)
-                    || ((minMaxRPM1 != null && minMaxRPM2 != null && minMaxRPM1.second() < 800 && minMaxRPM2.second() < 800))) { //RPM1 and RPM2 < 800
-                //couldn't calculate exceedences for this flight because the engines never kicked on (it didn't fly)
-                valid = false;
-                return;
-            }
-
-            //then check and see if this flight had a latitude and longitude, if not we cannot calculate adjacency
-            Pair<Double,Double> minMaxLatitude = DoubleTimeSeries.getMinMax(connection, flightId, "Latitude");
-            Pair<Double,Double> minMaxLongitude = DoubleTimeSeries.getMinMax(connection, flightId, "Longitude");
-
-            //if (minMaxLatitude != null) System.out.println("min max latitude: " + minMaxLatitude.first() + ", " + minMaxLatitude.second());
-            //if (minMaxLongitude != null) System.out.println("min max longitude: " + minMaxLongitude.first() + ", " + minMaxLongitude.second());
-
-            if (minMaxLatitude == null || minMaxLongitude == null) {
-                //flight didn't have latitude or longitude
-                valid = false;
-                return;
-            }
-
-            minLatitude = minMaxLatitude.first();
-            maxLatitude = minMaxLatitude.second();
-            minLongitude = minMaxLongitude.first();
-            maxLongitude = minMaxLongitude.second();
-
-            //then check and see if this flight had alt MSL, if not we cannot calculate adjacency
-            Pair<Double,Double> minMaxAltMSL = DoubleTimeSeries.getMinMax(connection, flightId, "AltMSL");
-
-            //if (minMaxAltMSL != null) System.out.println("min max alt MSL: " + minMaxAltMSL.first() + ", " + minMaxAltMSL.second());
-
-            if (minMaxAltMSL == null) {
-                //flight didn't have alt MSL
-                valid = false;
-                return;
-            }
-
-            minAltMSL = minMaxAltMSL.first();
-            maxAltMSL = minMaxAltMSL.second();
-
-            //this flight had the necessary values and time series to calculate adjacency
-            valid = true;
-        }
-
-        public boolean getSeriesData(Connection connection) throws SQLException {
-            //get the time series data for altitude, latitude and longitude
-            DoubleTimeSeries altMSLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltMSL");
-            DoubleTimeSeries altAGLSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "AltAGL");
-            DoubleTimeSeries latitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
-            DoubleTimeSeries longitudeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
-            DoubleTimeSeries indicatedAirspeedSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "IAS");
-
-            //check to see if we could get these columns
-            if (altMSLSeries == null || altAGLSeries == null || latitudeSeries == null || longitudeSeries == null || indicatedAirspeedSeries == null) return false;
-
-            altitudeMSL = altMSLSeries.innerArray();
-            altitudeAGL = altAGLSeries.innerArray();
-            latitude = latitudeSeries.innerArray();
-            longitude = longitudeSeries.innerArray();
-            indicatedAirspeed = indicatedAirspeedSeries.innerArray();
-
-            //calculate the epoch time for each row as longs so they can most be quickly compared
-            //we need to keep track of the date and time series for inserting in the event info
-            dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
-            timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
-            StringTimeSeries utcOffsetSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
-
-            //check to see if we could get these columns
-            if (dateSeries == null || timeSeries == null || utcOffsetSeries == null) return false;
-
-            //System.out.println("date length: " + dateSeries.size() + ", time length: " + timeSeries.size() + ", utc length: " + utcOffsetSeries.size());
-            int length = dateSeries.size();
-
-            epochTime = new long[length];
-            for (int i = 0; i < length; i++) {
-                if (dateSeries.get(i) == null || dateSeries.get(i).equals("")
-                        || timeSeries.get(i) == null || timeSeries.get(i).equals("")
-                        || utcOffsetSeries.get(i) == null || utcOffsetSeries.get(i).equals("")) {
-                    epochTime[i] = 0;
-                    continue;
-                }
-
-                epochTime[i] = TimeUtils.toEpochSecond(dateSeries.get(i), timeSeries.get(i), utcOffsetSeries.get(i));
-            }
-
-            hasSeriesData = true;
-
-            return true;
-        }
-
-        public boolean hasRegionOverlap(FlightTimeLocation other) {
-            return other.maxLatitude >= this.minLatitude && other.minLatitude <= this.maxLatitude 
-                        && other.maxLongitude >= this.minLongitude && other.minLongitude <= this.maxLongitude;
-        }
-
-        public boolean isValid() {
-            return valid;
-        }
-
-        public boolean hasSeriesData() {
-            return hasSeriesData;
-        }
-
-        public boolean alreadyProcessed(Connection connection) throws SQLException {
-            PreparedStatement stmt = connection.prepareStatement("SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?");
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, flightId);
-            stmt.setInt(3, adjacencyEventDefinitionId);
-
-            System.out.println(stmt.toString());
-
-            //if there was a flight processed entry for this flight it was already processed
-            ResultSet resultSet = stmt.executeQuery();
-            if (resultSet.next()) {
-                System.out.println("already processed!");
-                resultSet.close();
-                stmt.close();
-                return true;
-            } else {
-                System.out.println("not already processed!");
-                resultSet.close();
-                stmt.close();
-                return false;
-            }
-        }
-
-        public static boolean proximityAlreadyCalculated(Connection connection, FlightTimeLocation first, FlightTimeLocation second) throws SQLException {
-            PreparedStatement stmt = connection.prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? AND other_flight_id = ?");
-            stmt.setInt(1, first.flightId);
-            stmt.setInt(2, second.flightId);
-
-            System.out.println(stmt.toString());
-
-            //if there was a flight processed entry for this flight it was already processed
-            ResultSet resultSet = stmt.executeQuery();
-            if (resultSet.next()) {
-                System.out.println("proximity event already exists!");
-                resultSet.close();
-                stmt.close();
-                return true;
-            } else {
-                System.out.println("proximity does not already exist!");
-                resultSet.close();
-                stmt.close();
-                return false;
-            }
-        }
-
-        public void updateWithEvent(Connection connection, Event event, String startDateTime) throws SQLException {
-
-            event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
-            event.updateStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId);
-
-            double severity = event.getSeverity();
-            double duration = event.getDuration();
-
-            PreparedStatement stmt = connection.prepareStatement("UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), max_severity = GREATEST(max_severity, ?) WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?");
-            stmt.setInt(1, fleetId);
-            stmt.setInt(2, flightId);
-            stmt.setInt(3, adjacencyEventDefinitionId);
-            stmt.setDouble(4, duration);
-            stmt.setDouble(5, duration);
-            stmt.setDouble(6, duration);
-            stmt.setDouble(7, severity);
-            stmt.setDouble(8, severity);
-            stmt.setDouble(9, severity);
-            System.out.println(stmt.toString());
-            stmt.executeUpdate();
-            stmt.close();
-
-            EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, startDateTime);
-
-        }
-    }
-
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
+
+    public static double calculateDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
+                                           double otherFlightLongitude, double flightAltitude, double otherFlightAltitude){
+
+        double distanceFt = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
+        double altDiff = Math.abs(flightAltitude - otherFlightAltitude);
+        distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
+        return distanceFt;
+    }
+
+    public static double calculateLateralDistance(double flightLatitude, double flightLongitude, double otherFlightLatitude,
+                                           double otherFlightLongitude) {
+       
+        double lateralDistance = Airports.calculateDistanceInFeet(flightLatitude, flightLongitude, otherFlightLatitude, otherFlightLongitude);
+        return lateralDistance;
+    }
+    
+    public static double calculateVerticalDistance(double flightAltitude, double otherFlightAltitude) {
+        
+        double verticalDistance = Math.abs(flightAltitude - otherFlightAltitude);
+        return verticalDistance;
+    }
+
+    public static double[] calculateRateOfClosure(FlightTimeLocation flightInfo, FlightTimeLocation otherInfo, int startLine,
+                                                        int endLine, int otherStartLine,int otherEndLine ) {
+
+        int shift = 5;
+
+        int newStart1 = (startLine - shift) >= 0 ? (startLine - shift) : 0;
+        int newStart2 = (otherStartLine - shift) >= 0 ? (otherStartLine - shift) : 0;
+
+        int startShift1 = startLine - newStart1;
+        int startShift2 = otherStartLine - newStart2;
+
+        int startShift = Math.min(startShift1, startShift2);
+
+        System.out.println("original start shift: " + shift + ", new start shift: " + startShift);
+
+        newStart1 = startLine - startShift;
+        newStart2 = otherStartLine - startShift;
+
+        System.out.println("start line: " + startLine + ", otherStartLine: " + otherStartLine);
+        System.out.println("shifted start line: " + newStart1 + ", otherStartLine: " + newStart2);
+
+        int newEnd1 = (endLine + shift) <= flightInfo.epochTime.length ? (endLine + shift) : flightInfo.epochTime.length;
+        int newEnd2 = (otherEndLine + shift) <= otherInfo.epochTime.length ? (otherEndLine + shift) : otherInfo.epochTime.length;
+
+        int endShift1 = newEnd1 - endLine;
+        int endShift2 = newEnd2 - otherEndLine;
+
+        int endShift = Math.min(endShift1, endShift2);
+
+        System.out.println("original end shift: " + shift + ", new end shift: " + endShift);
+
+        newEnd1 = endLine + endShift;
+        newEnd2 = otherEndLine + endShift;
+
+        System.out.println("end line: " + endLine + ", otherEndLine: " + otherEndLine);
+        System.out.println("shifted end line: " + newEnd1 + ", otherEndLine: " + newEnd2);
+
+        startLine = newStart1;
+        otherStartLine = newStart2;
+        endLine = newEnd1;
+        otherEndLine = newEnd2;
+
+        double previousDistance = calculateDistance(flightInfo.latitude[startLine], flightInfo.longitude[startLine],
+                    otherInfo.latitude[otherStartLine], otherInfo.longitude[otherStartLine],
+                    flightInfo.altitudeMSL[startLine], otherInfo.altitudeMSL[otherStartLine]);
+
+        ArrayList<Double> rateOfClosure = new ArrayList<Double>();
+        int i = startLine + 1, j = otherStartLine + 1, index = 0;
+        while (i < endLine && j < otherEndLine) {
+            // System.out.println("flight1.epochTime[" + i + "]: " + flightInfo.epochTime[i] + ", flight2.epochTime[" + j + "]: " + otherInfo.epochTime[j] + ", previousDistance: " + previousDistance);
+            if (flightInfo.epochTime[i] == 0) {
+                i++;
+                continue;
+            }
+            if (otherInfo.epochTime[j] == 0) {
+                j++;
+                continue;
+            }
+            //make sure both iterators are for the same time
+            if (flightInfo.epochTime[i] < otherInfo.epochTime[j]) {
+                i++;
+                continue;
+            }
+            if (otherInfo.epochTime[j] < flightInfo.epochTime[i]) {
+                j++;
+                continue;
+            }
+            double currentDistance = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i],
+                    otherInfo.latitude[j], otherInfo.longitude[j], flightInfo.altitudeMSL[i], otherInfo.altitudeMSL[j]);
+
+            rateOfClosure.add(previousDistance - currentDistance);
+            previousDistance = currentDistance;
+            i++;
+            j++;
+            index++;
+        }
+
+        //convert the arraylist to a primitive array
+        double[] roc = new double[rateOfClosure.size()];
+
+        System.out.println("rate of closure, length:" + roc.length);
+        for (int k = 0; k < roc.length; k++) {
+            roc[k] = rateOfClosure.get(k);
+            System.out.println("\t" + roc[k]);
+        }
+
+        //leave in to verify how things work in these edge cases
+        if (startShift < 5 || endShift < 5) {
+            System.exit(1);
+        }
+
+        return roc;
+    }
     
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
@@ -305,7 +159,6 @@ public class CalculateProximity {
 
     public static void processFlight(Connection connection, Flight flight, UploadProcessedEmail uploadProcessedEmail) {
         System.out.println("Processing flight: " + flight.getId() + ", " + flight.getFilename());
-
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
@@ -342,6 +195,8 @@ public class CalculateProximity {
             int startCount = 0;
             int stopCount = 0;
             double severity = 0;
+            double lateralDistance = 0;
+            double verticalDistance = 0;
 
             //TODO: should probably grab these from the database event definition instead of hard
             //coding them; but we don't need to pull the event definition so this is a tad bit faster.
@@ -413,10 +268,11 @@ public class CalculateProximity {
                             continue;
                         }
 
-
-                        double distanceFt = Airports.calculateDistanceInFeet(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j], otherInfo.longitude[j]);
-                        double altDiff = Math.abs(flightInfo.altitudeMSL[i] - otherInfo.altitudeMSL[j]);
-                        distanceFt = Math.sqrt((distanceFt * distanceFt) + (altDiff * altDiff));
+                        double distanceFt = calculateDistance(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j],
+                                otherInfo.longitude[j], flightInfo.altitudeMSL[i] , otherInfo.altitudeMSL[j]);
+                        double lateralDistanceFt = calculateLateralDistance(flightInfo.latitude[i], flightInfo.longitude[i], otherInfo.latitude[j],
+                                otherInfo.longitude[j]);
+                        double verticalDistanceFt = calculateVerticalDistance(flightInfo.altitudeMSL[i] , otherInfo.altitudeMSL[j]);
 
                         if (distanceFt < 1000.0 && flightInfo.altitudeAGL[i] >= 50 && otherInfo.altitudeAGL[j] >= 50 && flightInfo.indicatedAirspeed[i] > 20 && otherInfo.indicatedAirspeed[j] > 20) {
                             /*
@@ -437,6 +293,8 @@ public class CalculateProximity {
                                 startLine = i;
                                 otherStartLine = j;
                                 severity = distanceFt;
+                                lateralDistance = lateralDistanceFt;
+                                verticalDistance = verticalDistanceFt;
 
                                 //System.out.println("start date time: " + startTime + ", start line number: " + startLine);
                             }
@@ -450,7 +308,8 @@ public class CalculateProximity {
                                 //for this event, update the severity
                                 severity = distanceFt;
                             }
-
+                            lateralDistance = lateralDistanceFt < lateralDistance ? lateralDistanceFt : lateralDistance; 
+                            verticalDistance = verticalDistanceFt < verticalDistance ? verticalDistanceFt : verticalDistance; 
                             //increment the startCount, reset the endCount
                             startCount++;
                             stopCount = 0;
@@ -471,11 +330,26 @@ public class CalculateProximity {
                                         //the event
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
+                                        System.out.println("Creating event for flight : " + flightId );
                                         Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
-                                        eventList.add(event);
+                                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                                        event.addMetaData(lateralDistanceMetaData);
+                                        event.addMetaData(verticalDistanceMetaData);
 
+                                        otherEvent.addMetaData(lateralDistanceMetaData);
+                                        otherEvent.addMetaData(verticalDistanceMetaData);
+                                        if ( severity > 0) {
+                                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine, otherEndLine);
+                                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                                            event.setRateOfClosure(rateOfClosure);
+                                            otherEvent.setRateOfClosure(rateOfClosure);
+                                        }
+                                        eventList.add(event);
+                                        eventList.add(otherEvent);
                                         //add in an event for the other flight as well so we don't need to recalculate this
-                                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId), otherFlight.getStartDateTime());
+                                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                                     }
 
                                     //reset the event values
@@ -502,14 +376,30 @@ public class CalculateProximity {
                     }
                     //System.out.println("\t\tseries matched time on " + totalMatches + " rows");
 
-
                     //if there was an event still going when one flight ended, create it and add it to the list
                     if (startTime != null) {
-                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
-                        eventList.add( event );
 
+                        Event event = new Event(startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+
+                        EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
+                        EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
+                        event.addMetaData(lateralDistanceMetaData);
+                        event.addMetaData(verticalDistanceMetaData);
+
+                        otherEvent.addMetaData(lateralDistanceMetaData);
+                        otherEvent.addMetaData(verticalDistanceMetaData);
+
+                        if ( severity > 0 ) {
+                            double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine,otherEndLine);
+                            RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
+                            event.setRateOfClosure(rateOfClosure);
+                            otherEvent.setRateOfClosure(rateOfClosure);
+                        }
+                        eventList.add(event);
+                        eventList.add(otherEvent);
                         //add in an event for the other flight as well so we don't need to recalculate this
-                        otherInfo.updateWithEvent(connection, new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId), otherFlight.getStartDateTime());
+                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                     }
                 }
                 //end the loop processing a particular flight
