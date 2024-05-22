@@ -29,9 +29,11 @@ import org.ngafid.common.*;
 public class PostEventCounts implements Route {
     private static final Logger LOG = Logger.getLogger(PostEventCounts.class.getName());
     private Gson gson;
+    private final boolean aggregate;
 
-    public PostEventCounts(Gson gson) {
+    public PostEventCounts(Gson gson, boolean aggregate) {
         this.gson = gson;
+        this.aggregate = aggregate;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
@@ -55,8 +57,17 @@ public class PostEventCounts implements Route {
             return null;
         }
 
+        if (this.aggregate && !user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
+            Spark.halt(401, "User did not have aggregate access to view all event counts.");
+            return null;
+        }
+
         try {
             Connection connection = Database.getConnection();
+            
+            if (aggregate)
+                fleetId = -1;
 
             Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);

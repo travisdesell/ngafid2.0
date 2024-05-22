@@ -206,8 +206,8 @@ public final class WebServer {
 
         Spark.get("/protected/welcome", new GetWelcome(gson));
         Spark.get("/protected/aggregate", new GetAggregate(gson));
-        Spark.post("/protected/event_counts", new PostEventCounts(gson));
-        Spark.post("/protected/all_event_counts", new PostAllEventCounts(gson));
+        Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
+        Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
 
         Spark.get("/protected/trends", new GetTrends(gson));
         Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
@@ -251,6 +251,11 @@ public final class WebServer {
 
         Spark.get("/protected/ttf", new GetTurnToFinal());
         Spark.post("/protected/ttf", new PostTurnToFinal(gson));
+
+        Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
+        Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
+        Spark.post("/protected/statistics/summary", new PostSummaryStatistics(gson, false));
+        Spark.post("/protected/statistics/event_counts", new PostEventCounts(gson, false));
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
