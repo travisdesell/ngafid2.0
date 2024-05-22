@@ -1,3 +1,0 @@
-VSPD (ft/min)
-IAS 
-Heading
