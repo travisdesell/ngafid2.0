@@ -58,13 +58,7 @@ function formatNumberAsync(value, formattingOptions) {
 
 function formatDurationAsync(seconds) {
     if (seconds || typeof seconds == "number") {
-        new Date(seconds * 1000).toLocaleTimeString("en-GB", {
-            timeZone:"Etc/UTC",
-            hour12: false,
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit"
-        });
+        return Number(seconds / (60 * 60)).toLocaleString("en", floatOptions);
     } else {
         return LOADING_STRING;
     }
