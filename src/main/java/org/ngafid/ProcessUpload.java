@@ -2,7 +2,9 @@ package org.ngafid;
 
 import java.io.*;
 
+import java.net.HttpURLConnection;
 import java.net.URI;
+import java.net.URL;
 import java.nio.file.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -21,6 +23,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -30,6 +33,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
 
+import org.ngafid.proximity.CalculateProximity;
+import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
@@ -48,6 +53,26 @@ public class ProcessUpload {
     static int poolSize = 1;
     static boolean batchedDB = false;
 
+    public static void sendMonthlyFlightsUpdate(int fleetID) {
+        try {
+            // TODO: get env for port
+            final URL url = new URL("http://localhost:8181/update_monthly_flights?fleetId=" + fleetID);
+
+            HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+            connection.setRequestMethod("PUT");
+            connection.setRequestProperty("Content-Type", "application/json");
+            connection.setRequestProperty("charset", "utf-8");
+            connection.connect();
+            final int responseCode = connection.getResponseCode();
+            if (responseCode != 200) {
+                LOG.info("Error updating monthly flights cache for fleet " + fleetID + ": " + responseCode);
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+    
     public static void main(String[] arguments) {
         LOG.info("arguments are:");
         LOG.info(Arrays.toString(arguments));
@@ -60,6 +85,8 @@ public class ProcessUpload {
         if (batchedDBS != null) batchedDB = Boolean.parseBoolean(batchedDBS);
 
         connection = Database.getConnection();
+
+        removeNoUploadFlights(connection);
 
         if (arguments.length >= 1) {
             if (arguments[0].equals("--fleet")) {
@@ -75,6 +102,30 @@ public class ProcessUpload {
         System.out.println("batchedDB = " + batchedDB);
     }
 
+    /**
+     * Sometimes in the process of removing an upload (probably via the webpage) this operation
+     * does not complete and this results in flights being in the database with a non-existant
+     * upload. This can cause the upload process to crash.
+     *
+     * @param connection is the connection to the database
+     */
+    public static void removeNoUploadFlights(Connection connection) {
+        try {
+            ArrayList<Flight> noUploadFlights = Flight.getFlights(connection, "NOT EXISTS (SELECT * FROM uploads WHERE uploads.id = flights.upload_id)");
+
+            for (Flight flight : noUploadFlights) {
+                System.out.println("flight had no related upload. flight id: " + flight.getId() + ", uplaod id: " + flight.getUploadId());
+                flight.remove(connection);
+            }
+
+        } catch (SQLException e) {
+            System.err.println("Error removing flights without an upload:" + e);
+            e.printStackTrace();
+            System.exit(1);
+        }
+    }
+
+
     public static void operateAsDaemon() {
         while (true) {
             connection = Database.resetConnection();
@@ -82,9 +133,9 @@ public class ProcessUpload {
             Instant start = Instant.now();
 
             try {
-                PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
+                //PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE id != 107 AND EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
+                PreparedStatement fleetPreparedStatement = connection.prepareStatement("SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
-
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
@@ -103,6 +154,8 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
+                    sendMonthlyFlightsUpdate(targetFleetId);
+
 
                     //TURN OFF FOR REGULAR USE
                     //System.exit(1);
@@ -110,7 +163,6 @@ public class ProcessUpload {
 
                 fleetSet.close();
                 fleetPreparedStatement.close();
-
             } catch (SQLException e) {
                 e.printStackTrace();
                 System.exit(1);
@@ -135,7 +187,7 @@ public class ProcessUpload {
         try {
             Fleet fleet = Fleet.get(connection, fleetId);
             String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
-            ArrayList<Upload> uploads = Upload.getUploads(connection, fleetId);
+            List<Upload> uploads = Upload.getUploads(connection, fleetId);
             System.out.print("Found " + uploads.size() + " uploads from fleet " + f + ". Would you like to reimport them? [Y/n] ");
             Console con = System.console();
             String s = con.readLine("");
@@ -148,6 +200,8 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
+            sendMonthlyFlightsUpdate(fleetId);
+
         } catch (SQLException e) {
             System.err.println("Encountered error");
             e.printStackTrace();
@@ -204,7 +258,9 @@ public class ProcessUpload {
             double asSeconds = ((double) diff) * 1.0e-9;
             System.out.println("Took " + asSeconds + "s to ingest upload " + upload.getFilename());
             if (1==1)return;
-            //only progress if the upload ingestion was successful
+            boolean success = ingestFlights(connection, uploadId, fleetId, uploaderId, filename, uploadProcessedEmail);
+
+            // only progress if the upload ingestion was successful
             if (success) {
                 FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
@@ -224,6 +280,7 @@ public class ProcessUpload {
                 uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
             }
 
+            sendMonthlyFlightsUpdate(fleetId);
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {
@@ -313,8 +370,10 @@ public class ProcessUpload {
 
                 startNanos = System.nanoTime();
                 
-                if (batchedDB) Flight.batchUpdateDatabase(connection, upload, flights);
-                else flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
+                if (batchedDB)
+                    Flight.batchUpdateDatabase(connection, upload, flights);
+                else
+                    flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
                 
                 endNanos = System.nanoTime();
                 s = 1e-9 * (double) (endNanos - startNanos); 

@@ -7,6 +7,7 @@ import java.sql.SQLException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.logging.Logger;
 
 public class Tails {
@@ -237,6 +238,35 @@ public class Tails {
             //tail existed in the database, return the id
             tails.add(new Tail(resultSet));
         }
+        resultSet.close();
+        query.close();
+
+        return tails;
+    }
+
+    /**
+     * Gets a List of all the tail numbers that are AirSync equipped in the database for the given fleet, as Strings
+     *
+     * @param connection is a connection to the database
+     * @param fleetId is the fleet for the tails
+     *
+     * @return an array list of tail numbers for each tail in this fleet
+     */
+    public static List<Tail> getAirSyncTails(Connection connection, int fleetId) throws SQLException {
+        List<Tail> tails = new ArrayList<>();
+
+        String queryString = "SELECT * FROM tails WHERE fleet_id = ? AND airsync_equipped = ?";
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        query.setInt(1, fleetId);
+        query.setBoolean(2, true);
+
+        ResultSet resultSet = query.executeQuery();
+
+        while (resultSet.next()) {
+            tails.add(new Tail(resultSet));
+        }
+
         resultSet.close();
         query.close();
 

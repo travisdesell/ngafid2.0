@@ -23,7 +23,15 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
+
     static {
+        String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
+
+        if (enabled != null && enabled.toLowerCase().equals("false")) {
+            LOG.info("Emailing has been disabled");
+            emailEnabled = false;
+        }
+
         if (System.getenv("NGAFID_EMAIL_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_EMAIL_INFO' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -68,12 +76,14 @@ public class SendEmail {
             } else {
                 bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
 
-                String username = bufferedReader.readLine();
+                username = bufferedReader.readLine();
+                //System.out.println("read username: '" + username + "'");
 
                 if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
                 } else {
                     password = bufferedReader.readLine();
+                    //System.out.println("read password: '" + password + "'");
                     LOG.info("Using email address to send emails: " + username);
                 }
 
@@ -92,12 +102,23 @@ public class SendEmail {
     }
 
     private static class SMTPAuthenticator extends javax.mail.Authenticator {
+        String username;
+        String password;
+
+        public SMTPAuthenticator(String username, String password) {
+            this.username = username;
+            this.password = password;
+            System.out.println("Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
+        }
+
         public PasswordAuthentication getPasswordAuthentication() {
-            return new PasswordAuthentication(username, password);
+            System.out.println("Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
+            return new PasswordAuthentication(this.username, this.password);
         }
 
         public boolean isValid() {
-            return !(username == null || password == null);
+            System.out.println("Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
+            return !(this.username == null || this.password == null);
         }
     }
 
@@ -111,12 +132,14 @@ public class SendEmail {
     }
 
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body) {
-        SMTPAuthenticator auth = new SMTPAuthenticator();
+        SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
         if (!emailEnabled) {
             System.out.println("Emailing has been disabled, not sending email");
             return;
         }
+
+        //System.out.println(String.format("Username: %s, PW: %s", username, password));
 
         if (auth.isValid()) {
             System.out.println("emailing to " + String.join(", ", toRecipients));
@@ -156,6 +179,8 @@ public class SendEmail {
                 for (String toRecipient : toRecipients) {
                     //list of users who do not want emails: TODO: make this a user setting
                     if (toRecipient.equals("nievesn2@erau.edu")) continue;
+                    System.out.println("EMAILING TO: " + toRecipient);
+
                     message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
                 }
 
@@ -186,8 +211,8 @@ public class SendEmail {
         // Recipient's email ID needs to be mentioned.
 
         ArrayList<String> recipients = new ArrayList<String>();
-        recipients.add("tjdvse@rit.edu");
-        recipients.add("travis.desell@gmail.com");
+        recipients.add("apl1341@rit.edu");
+        recipients.add("aidan@labellahome.org");
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
 

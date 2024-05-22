@@ -36,8 +36,13 @@ public class FindLowEndingFuelEvents {
             for (Flight flight : flights) {
                 try {
                     findLowEndFuel(connection, flight);
+                } catch (FatalFlightFileException e) {
+                    System.out.println("Could not process flight " + flight.getId());
+                    e.printStackTrace();
                 } catch (MalformedFlightFileException e) {
                     LOG.info("Could not process flight " + flight.getId());
+                    System.out.println("Could not process flight " + flight.getId());
+                    e.printStackTrace();
                 } catch (ParseException e) {
                     LOG.info("Error parsing date");
                     e.printStackTrace();
@@ -53,7 +58,7 @@ public class FindLowEndingFuelEvents {
         }
     }
 
-    public static void findLowEndFuel(Connection connection, Flight flight) throws SQLException, MalformedFlightFileException, ParseException {
+    public static void findLowEndFuel(Connection connection, Flight flight) throws SQLException, FatalFlightFileException, MalformedFlightFileException, ParseException {
         int airframeNameID = flight.getAirframeNameId();
 
         if (!eventDefs.containsKey(airframeNameID)) {
@@ -167,7 +172,14 @@ public class FindLowEndingFuelEvents {
                 uploadSize = uploads.size();
 
                 for (Upload upload : uploads) {
-                    findLowEndFuelEventsInUpload(connection, upload);
+                    try {
+                        findLowEndFuelEventsInUpload(connection, upload);
+                    } catch (Exception e) {
+                        System.err.println(e);
+                        e.printStackTrace();
+                        System.exit(1);
+                    }
+                    
                 }
             } catch (SQLException e) {
                 System.exit(1);

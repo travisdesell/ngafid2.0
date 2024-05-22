@@ -8,7 +8,28 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.zip.*;
 
+import org.ngafid.flights.calculations.TurnToFinal;
+
 public class Compression {
+
+    private static class TTFFixObjectInputStream extends ObjectInputStream {
+        public TTFFixObjectInputStream() throws IOException {
+            super();
+        }
+
+        public TTFFixObjectInputStream(InputStream in) throws IOException {
+            super(in);
+        }
+
+        protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
+            ObjectStreamClass read = super.readClassDescriptor();
+            if (read.getName().equals("org.ngafid.flights.TurnToFinal")) {
+                return ObjectStreamClass.lookup(TurnToFinal.class);
+            } else {
+                return read;
+            }
+        }
+    }
 
     private static Logger LOG = Logger.getLogger(Compression.class.getName());
 
@@ -63,6 +84,19 @@ public class Compression {
         bytes.asDoubleBuffer().put(data);
         return compress(bytes.array());
     }
+
+    public static Object inflateTTFObject(byte[] bytes) throws IOException, ClassNotFoundException {
+        byte[] inflated = inflate(bytes);
+
+        // Deserialize
+        // Use the custom TTFFixObjectInputStream which will properly recognize the outdated reference to the turn to final class
+        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
+        Object o = inputStream.readObject();
+        inputStream.close();
+
+        return o;
+    }
+
 
     public static Object inflateObject(byte[] bytes) throws IOException, ClassNotFoundException {
         byte[] inflated = inflate(bytes);

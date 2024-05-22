@@ -366,8 +366,10 @@ public class CalculateExceedences {
             while (true) {
                 connection = Database.resetConnection();
                 Instant start = Instant.now();
+                
                 ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 LOG.info("n events = " + allEvents.size());
+
                 for (int i = 0; i < allEvents.size(); i++) {
                     //process events for this event type
                     EventDefinition currentDefinition = allEvents.get(i);

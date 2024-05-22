@@ -463,7 +463,6 @@ class ImportsPage extends React.Component {
     }
 }
 
-
 var importsPage = ReactDOM.render(
     <ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage} />,
     document.querySelector('#imports-page')
