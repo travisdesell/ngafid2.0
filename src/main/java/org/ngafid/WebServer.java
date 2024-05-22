@@ -254,8 +254,11 @@ public final class WebServer {
 
         Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
         Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
+        Spark.post("/protected/statistics/aggregate/*", new PostStatistic(gson, true));
+
         Spark.post("/protected/statistics/summary", new PostSummaryStatistics(gson, false));
         Spark.post("/protected/statistics/event_counts", new PostEventCounts(gson, false));
+        Spark.post("/protected/statistics/*", new PostStatistic(gson, false));
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));

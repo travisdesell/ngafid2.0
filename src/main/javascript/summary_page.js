@@ -18,26 +18,26 @@ if (index !== -1) airframes.splice(index, 1);
 
 
 
-let STATISTICS_ROUTE = "/protected/statistics/aggregate";
-let statisticNameMap = {
-    "summaryStatistics": "summary",
-    "eventCounts": "event_counts"
-};
-
-let statisticsDefault = {
-    numberFlights: "",
-    flightTime: "",
-    numberAircraft: "",
-    yearNumberFlights: "",
-    monthNumberFlights: "",
-    monthFlightTime: "",
-    totalEvents: "",
-    yearEvents: "",
-    monthEvents: "",
-    airframes: "",
-    numberFleets: "",
-    numberUsers: "",
-};
+let targetValues = [
+    "flightTime",
+    "yearFlightTime",
+    "monthFlightTime",
+                           
+    "numberFlights",
+    "numberAircraft",
+    "yearNumberFlights",
+    "monthNumberFlights",
+    "totalEvents",
+    "yearEvents",
+    "monthEvents",
+    "numberFleets",
+    "numberUsers",
+    "uploads",
+    "uploadsNotImported",
+    "uploadsWithError",
+    "flightsWithWarning",
+    "flightsWithError"
+];
 
 const LOADING_STRING = "...";
 
@@ -76,7 +76,7 @@ export default class SummaryPage extends React.Component {
             endYear : date.getFullYear(),
             endMonth : date.getMonth() + 1,
             datesChanged : false,
-            statistics: statisticsDefault,
+            statistics: targetValues.reduce((o, key) => ({...o, [key]: ""}), {}),
             eventCounts: {}
         };
         
@@ -259,25 +259,28 @@ export default class SummaryPage extends React.Component {
 
         let route;
         if (this.props.aggregate)
-            route = "/protected/statistics/aggregate/summary";
+            route = "/protected/statistics/aggregate";
         else
-            route = "/protected/statistics/summary";
+            route = "/protected/statistics";
+        
+        for (var stat of targetValues) {
 
-        $.ajax({
-            type: "POST",
-            url: route,
-            dataType: "json",
-            success: function(response) {
-                if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
-                    return;
-                }   
+            $.ajax({
+                type: "POST",
+                url: `${route}/${stat}`,
+                dataType: "json",
+                success: function(response) {
+                    if (response.err_msg) {
+                        errorModal.show(response.err_title, response.err_msg);
+                        return;
+                    }   
 
-                console.log("Got response");
-                console.log(response);
-                page.setState({statistics: response});
-            }
-        });
+                    console.log("Got response");
+                    console.log(response);
+                    page.setState({statistics: {...page.state.statistics, ...response}});
+                }
+            });
+        }
     }
 
     airframeChange(airframe) {
