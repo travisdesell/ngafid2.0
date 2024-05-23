@@ -295,6 +295,7 @@ public final class WebServer {
 
         Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
+        Spark.post("/protected/string_series", new PostStringSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
         Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
         Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
