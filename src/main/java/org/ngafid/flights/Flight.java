@@ -135,7 +135,7 @@ public class Flight {
     private long processingStatus = 0;
 
     private String status;
-    private List<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+    private transient List<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
@@ -2339,8 +2339,6 @@ public class Flight {
     private void checkExceptions() {
         if (exceptions.size() > 0) {
             status = "WARNING";
-            System.err.println("Flight produced " + exceptions.size() + " exceptions.");
-
             /*
                for (MalformedFlightFileException e : exceptions) {
                e.printStackTrace();
@@ -3441,7 +3439,6 @@ public class Flight {
             ResultSet results = preparedStatement.getGeneratedKeys();
             int count = 0;
 
-
             for (Flight flight : flights) {
                 if (!results.next()) {
                     LOG.severe("ERROR: insertion of flight to the database did not result in an id.  This should never happen.");
@@ -3489,11 +3486,21 @@ public class Flight {
             PreparedStatement warningPreparedStatement = FlightWarning.createPreparedStatement(connection);
 
             for (Flight flight : flights)
-                for (var e : flight.exceptions)
-                    new FlightWarning(e.getMessage()).addBatch(connection, preparedStatement, flight.id);
+                for (var e : flight.exceptions) 
+                    new FlightWarning(e.getMessage()).addBatch(connection, warningPreparedStatement, flight.id);
 
             warningPreparedStatement.executeBatch();
             warningPreparedStatement.close();
+
+            PreparedStatement processingStatusStatement = connection.prepareStatement("UPDATE flights SET insert_completed = 1 WHERE id = ?");
+
+            for (Flight flight : flights) {
+                processingStatusStatement.setInt(1, flight.id);
+                processingStatusStatement.addBatch();
+            }
+
+            processingStatusStatement.executeBatch();
+            processingStatusStatement.close();
 
         } catch (SQLException | IOException e) {
             LOG.severe("Encountered the following exception while inserting batch of flights: \n" + e.getMessage());
@@ -3524,9 +3531,6 @@ public class Flight {
         preparedStatement.setBoolean(15, false); //insert not yet completed
         preparedStatement.setLong(16, processingStatus);
 
-        System.out.println(startDateTime);
-        System.out.println(endDateTime);
-        
         preparedStatement.setString(17, startDateTime);
         preparedStatement.setString(18, endDateTime);
         preparedStatement.addBatch();

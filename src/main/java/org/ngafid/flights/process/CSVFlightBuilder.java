@@ -15,7 +15,7 @@ public class CSVFlightBuilder extends FlightBuilder {
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        required(ProcessAltAGL::new)
+        ProcessAltAGL::new
     );
 
     // This can be overridden.

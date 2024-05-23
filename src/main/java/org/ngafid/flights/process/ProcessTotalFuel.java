@@ -36,7 +36,6 @@ public class ProcessTotalFuel extends ProcessStep {
     }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        LOG.info("Computing total fuel...");
         double[] totalFuel = null;
 
         for (var columnName : REQUIRED_DOUBLE_COLUMNS) {

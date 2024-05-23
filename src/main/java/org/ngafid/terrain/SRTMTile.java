@@ -32,8 +32,8 @@ public class SRTMTile {
         directory = TerrainCache.getDirectoryFromLatLon(latitudeS, longitudeW);
         filename = TerrainCache.getFilenameFromLatLon(latitudeS, longitudeW);
 
-        LOG.info("loading terrain from: '" + directory + "/" + filename + "'");
-        LOG.info("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
+        // LOG.info("loading terrain from: '" + directory + "/" + filename + "'");
+        // LOG.info("lat and lon for SW corner -- latitude_s: " + latitudeS + ", longitude_w: " + longitudeW);
 
         Path path = Paths.get(TerrainCache.TERRAIN_DIRECTORY + "/" + directory + "/" + filename);
         //Path path = Paths.get(TerrainCache.getTerrainDirectory() + "/" + filename);
@@ -82,11 +82,11 @@ public class SRTMTile {
             }
         }
 
-        LOG.info("read " + bytes.length + " bytes.");
-        LOG.info("final offset: " + offset);
+        // LOG.info("read " + bytes.length + " bytes.");
+        // LOG.info("final offset: " + offset);
 
-        LOG.info("max: " + max);
-        LOG.info("min: " + min);
+        // LOG.info("max: " + max);
+        // LOG.info("min: " + min);
     }
 
     public double getAltitudeFt(double latitude, double longitude) {

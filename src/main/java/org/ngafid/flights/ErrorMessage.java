@@ -27,7 +27,6 @@ public class ErrorMessage {
             PreparedStatement query = connection.prepareStatement(queryString);
             query.setString(1, message);
 
-            // LOG.info(query.toString());
             ResultSet resultSet = query.executeQuery();
 
             if (resultSet.next()) {
@@ -44,7 +43,6 @@ public class ErrorMessage {
                 query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
                 query.setString(1, message);
 
-                LOG.info(query.toString());
                 query.executeUpdate();
                 resultSet.close();
 
@@ -73,7 +71,6 @@ public class ErrorMessage {
             PreparedStatement query = connection.prepareStatement(queryString);
             query.setInt(1, messageId);
 
-            LOG.info(query.toString());
             ResultSet resultSet = query.executeQuery();
 
             if (resultSet.next()) {

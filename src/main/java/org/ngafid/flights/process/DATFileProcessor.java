@@ -111,7 +111,6 @@ public class DATFileProcessor extends FlightFileProcessor {
         String parentFolder = zipFile.getName().substring(0, zipFile.getName().lastIndexOf("/"));
         File tempExtractedFile = new File(parentFolder, zipName);
 
-        System.out.println("Extracting to " + tempExtractedFile.getAbsolutePath());
         try (InputStream inputStream = zipFile.getInputStream(zipFile.getEntry(filename)); FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
             int len;
             byte[] buffer = new byte[1024];

@@ -369,7 +369,8 @@ public class CalculateExceedences {
                 
                 ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 LOG.info("n events = " + allEvents.size());
-
+                
+                int flightsProcessed = 0;
                 for (int i = 0; i < allEvents.size(); i++) {
                     //process events for this event type
                     EventDefinition currentDefinition = allEvents.get(i);
@@ -391,7 +392,7 @@ public class CalculateExceedences {
                             //the database by ProcessFlights
                             continue;
                         }
-
+                        flightsProcessed += 1;
                         currentCalculator.processFlight(connection, flights.get(j), currentDefinition, null);
                     }
                 }
@@ -399,10 +400,11 @@ public class CalculateExceedences {
                 Instant end = Instant.now();
                 long elapsed_millis = Duration.between(start, end).toMillis();
                 double elapsed_seconds = ((double) elapsed_millis) / 1000;
-                LOG.info("finished in " + elapsed_seconds);
+                LOG.info("finished in " + elapsed_seconds + ", processed " + flightsProcessed);
 
                 try {
-                    Thread.sleep(3000);
+                    if (flightsProcessed == 0)
+                        Thread.sleep(3000);
                 } catch (Exception e) {
                     System.err.println(e);
                     e.printStackTrace();

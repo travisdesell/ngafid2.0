@@ -33,8 +33,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     private final Upload upload;
 
-    public CSVFileProcessor(Connection connection, InputStream stream, String filename, Upload upload) {
-        super(connection, stream, filename);
+    private final byte[] bytes;
+
+    public CSVFileProcessor(Connection connection, InputStream stream, String filename, Upload upload) throws IOException {
+        this(connection, stream.readAllBytes(), filename, upload);
+    }
+
+    private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Upload upload) throws IOException {
+        super(connection, new ByteArrayInputStream(bytes), filename);
+
+        this.bytes = bytes;
         this.upload = upload;
 
         headers = new ArrayList<>();
@@ -166,13 +174,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 //process everything else (G1000 data)
                 if (infoParts[i].trim().length() == 0) continue;
 
-                //System.err.println("splitting key/value: '" + infoParts[i] + "'");
                 String subParts[] = infoParts[i].trim().split("=");
                 String key = subParts[0];
                 String value = subParts[1];
-
-                //System.err.println("key: '" + key + "'");
-                //System.err.println("value: '" + value + "'");
 
                 // TODO: Create some sort of automatic mapping for synonomous airframe names.
                 if (key.equals("airframe_name")) {

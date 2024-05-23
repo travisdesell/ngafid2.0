@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 
 import org.ngafid.flights.*;
@@ -61,14 +62,14 @@ public class FlightBuilder {
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        required(ProcessAirportProximity::new),
         required(ProcessStartEndTime::new),
+        ProcessAirportProximity::new,
         ProcessLaggedAltMSL::new,
         ProcessStallIndex::new,
         ProcessTotalFuel::new,
         ProcessDivergence::new,
         ProcessLOCI::new,
-        required(ProcessItinerary::new)
+        ProcessItinerary::new
     );
 
     // This can be overridden.
@@ -87,8 +88,20 @@ public class FlightBuilder {
     // throws a flight processing exception if an unrecoverable error occurred.
     public Flight build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
+        Executor executor = Runnable::run;
+        FlightProcessingException[] exception = new FlightProcessingException[] {null};
 
-        dg.compute();
+        executor.execute(() -> {
+            try {
+                dg.compute();
+            } catch (FlightProcessingException e) {
+                exception[0] = e;
+            }
+        });
+
+        if (exception[0] != null) {
+            throw exception[0];
+        }
 
         // TODO: Make sure headers are calculated appropriately.
         // TODO: Make sure hasAGL and hasCoords get set correctly

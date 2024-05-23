@@ -236,7 +236,7 @@ public class AirSyncImport {
                 this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
-			} catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+			} catch (IOException e) {
                 UploadException ue = new UploadException(e.getMessage(), e, csvName);
                 try {
                     FlightError.insertError(connection, uploadId, ue.getFilename(), ue.getMessage());

@@ -382,7 +382,7 @@ if (!$update_2022_02_17) {
 
     $query = "CREATE TABLE `flight_messages` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
-        `message` VARCHAR(8192),
+        `message` TEXT,
 
         PRIMARY KEY(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";

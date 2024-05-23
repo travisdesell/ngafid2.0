@@ -32,7 +32,7 @@ public class ProcessItinerary extends ProcessStep {
     public Set<String> getRequiredStringColumns() { return REQUIRED_STRING_COLUMNS; }
     public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
     public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
-    
+   
     public boolean airframeIsValid(String airframe) { return true; }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {

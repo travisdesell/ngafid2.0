@@ -26,6 +26,7 @@ public class FlightWarning {
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException {
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, ErrorMessage.getMessageId(connection, message));
+        preparedStatement.addBatch();
     }
     
     public static void insertWarning(Connection connection, int flightId, String message) throws SQLException {

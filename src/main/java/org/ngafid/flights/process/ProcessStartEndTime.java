@@ -31,8 +31,11 @@ public class ProcessStartEndTime extends ProcessStep {
 
     public boolean airframeIsValid(String airframe) { return true; }
 
+    public boolean entryIsEmpty(String date) {
+        return date == null || date == "";
+    }
+
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        System.out.println("AAAA WHAT");
         StringTimeSeries dates = builder.stringTimeSeries.get(LCL_DATE);
         StringTimeSeries times = builder.stringTimeSeries.get(LCL_TIME);
         StringTimeSeries offsets = builder.stringTimeSeries.get(UTC_OFFSET);
@@ -40,8 +43,6 @@ public class ProcessStartEndTime extends ProcessStep {
         int dateSize = dates.size();
         int timeSize = times.size();
         int offsetSize = offsets.size();
-
-        LOG.info("\tdate size: " + dateSize + ", time size: " + timeSize + ", offset size: " + offsetSize);
 
         //get the minimum sized length of each of these series, they should all be the same but 
         //if the last column was cut off it might not be the case
@@ -59,20 +60,18 @@ public class ProcessStartEndTime extends ProcessStep {
             start++;
         }
 
-        LOG.info("\tfirst date time and offset not null at index: " + start);
-
         if (start >= minSize)
             throw new MalformedFlightFileException("Date, Time or Offset columns were all null! Cannot set start/end times.");
 
         //find the last full date time offset entry row
-        int end = minSize - 1;
-        while (end >= 0 &&
-                (dates.get(end) == null || dates.get(end).equals("") ||
-                        times.get(end) == null || times.get(end).equals("") ||
-                        offsets.get(end) == null || offsets.get(end).equals(""))) {
-
-            end--;
-        }
+        int end = minSize;
+        do { 
+            end--; 
+        } while (end >= 0 && (
+               entryIsEmpty(dates.get(end)) 
+            || entryIsEmpty(times.get(end)) 
+            || entryIsEmpty(offsets.get(end)) 
+        ));
 
         String startDate = dates.get(start);
         String startTime = times.get(start);
@@ -81,9 +80,6 @@ public class ProcessStartEndTime extends ProcessStep {
         String endDate = dates.get(end);
         String endTime = times.get(end);
         String endOffset = offsets.get(end);
-
-        LOG.info("\t\t\tfirst not null  " + start + " -- " + startDate + " " + startTime + " " + startOffset);
-        LOG.info("\t\t\tlast not null   " + endDate + " " + endTime + " " + endOffset);
 
         OffsetDateTime startODT = null;
         try {
@@ -106,8 +102,6 @@ public class ProcessStartEndTime extends ProcessStep {
             builder.setEndDateTime(null);
             throw new MalformedFlightFileException("Corrupt time data in flight file, start time was after the end time");
         }
-
-        System.out.println("end dt " + endODT);
 
         builder.setStartDateTime(startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));
         builder.setEndDateTime(endODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));

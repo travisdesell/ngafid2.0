@@ -36,7 +36,7 @@ import org.ngafid.flights.Upload;
 public abstract class FlightFileProcessor {
     
     interface Factory {
-        FlightFileProcessor create(Connection connection, InputStream is, String filename);
+        FlightFileProcessor create(Connection connection, InputStream is, String filename) throws IOException;
     }
     
     // Right now this is only for zip files but this could easily be extended to handle other types of archives.
@@ -73,7 +73,7 @@ public abstract class FlightFileProcessor {
             return new DATFileProcessor(connection, is, filename, zipFile);
         }
 
-        private FlightFileProcessor createCSVFileProcessor(Connection connection, InputStream is, String filename) {
+        private FlightFileProcessor createCSVFileProcessor(Connection connection, InputStream is, String filename) throws IOException {
             return new CSVFileProcessor(connection, is, filename, upload);
         }
 
@@ -107,6 +107,7 @@ public abstract class FlightFileProcessor {
             try {
                 return fb.build(connection);
             } catch (FlightProcessingException e) {
+                e.printStackTrace();
                 flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
                 return null;
             }
@@ -123,14 +124,6 @@ public abstract class FlightFileProcessor {
             String extension = index >= 0 ? filename.substring(index + 1).toLowerCase() : "";
             Factory f = factories.get(extension);
             if (f != null) {
-//                try {
-//                    InputStream zipEntryInputStream = zipFile.getInputStream(entry);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//
-//                InputStream reusableInputStream = new ByteArrayInputStream(inputStream.readAllBytes());
-
                 try {
                     return f.create(connection, zipFile.getInputStream(entry), filename);
                 } catch (IOException e) {

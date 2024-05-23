@@ -38,10 +38,13 @@ public class DependencyGraph {
         void disableChildren() {
             if (enabled.get()) {
                 enabled.set(false);
+                
+                String reason = step.explainApplicability();
                 if (step.isRequired()) {
-                    String reason = step.explainApplicability();
                     LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
+                 } else {
+                    exceptions.add(new MalformedFlightFileException(reason));
                 }
                 for (var child : requiredBy) child.disable();
             }
@@ -129,7 +132,6 @@ public class DependencyGraph {
 
         // Left blank intentionally
         public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-            LOG.info("Computed dummy step!");
         }
     }
 
@@ -206,7 +208,7 @@ public class DependencyGraph {
         }
         
         scrutinize();
-
+        
         var handles = initialTasks
             .stream()
             .map(x -> x.fork())
