@@ -21,6 +21,8 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 /**
  * This class is responsible for parsing GPX files.
  *
@@ -130,20 +132,20 @@ public class GPXFileProcessor extends FlightFileProcessor {
 
                 Node spdNode = spdnodes.item(i);
                 // Convert m / s to knots
-                spd.add(Double.parseDouble(spdNode.getTextContent()) * 1.94384);
+                spd.add(JavaDoubleParser.parseDouble(spdNode.getTextContent()) * 1.94384);
 
                 Node eleNode = elenodes.item(i);
                 // Convert meters to feet.
-                msl.add(Double.parseDouble(eleNode.getTextContent()) * 3.28084);
+                msl.add(JavaDoubleParser.parseDouble(eleNode.getTextContent()) * 3.28084);
 
                 Node d = datanodes.item(i);
                 NamedNodeMap attrs = d.getAttributes();
 
                 Node latNode = attrs.getNamedItem("lat");
-                lat.add(Double.parseDouble(latNode.getTextContent()));
+                lat.add(JavaDoubleParser.parseDouble(latNode.getTextContent()));
 
                 Node lonNode = attrs.getNamedItem("lon");
-                lon.add(Double.parseDouble(lonNode.getTextContent()));
+                lon.add(JavaDoubleParser.parseDouble(lonNode.getTextContent()));
             }
 
             int start = 0;

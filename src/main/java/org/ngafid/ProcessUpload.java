@@ -375,21 +375,21 @@ public class ProcessUpload {
                 startNanos = System.nanoTime();
                 int n = 64;
 
-                if (batchedDB) {
-                    var flightsList = new ArrayList<Flight>();
-                    flights.iterator().forEachRemaining(flightsList::add);
-                    List<List<Flight>> partitions = IntStream.range(0, flightsList.size() / n)
-                        .mapToObj(i -> flightsList.subList(i * n, Math.min(i * n + n, flightsList.size())))
-                        .collect(Collectors.toList());
-                    pool.submit(() ->
-                        partitions.parallelStream()
-                            .forEach(partitionedFlights ->
-                                Flight.batchUpdateDatabase(connection, upload, partitionedFlights)
-                            )
-                    ).join();
-                } else {
-                    flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
-                }
+                // if (batchedDB) {
+                //     var flightsList = new ArrayList<Flight>();
+                //     flights.iterator().forEachRemaining(flightsList::add);
+                //     List<List<Flight>> partitions = IntStream.range(0, flightsList.size() / n)
+                //         .mapToObj(i -> flightsList.subList(i * n, Math.min(i * n + n, flightsList.size())))
+                //         .collect(Collectors.toList());
+                //     pool.submit(() ->
+                //         partitions.parallelStream()
+                //             .forEach(partitionedFlights ->
+                //                 Flight.batchUpdateDatabase(connection, upload, partitionedFlights)
+                //             )
+                //     ).join();
+                // } else {
+                //     flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
+                // }
 
                 endNanos = System.nanoTime();
                 s = 1e-9 * (double) (endNanos - startNanos); 

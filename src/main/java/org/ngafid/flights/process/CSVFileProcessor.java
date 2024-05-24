@@ -68,8 +68,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             System.exit(1);
         }
 
-        Map<String, DoubleTimeSeries> doubleTimeSeries = new ConcurrentHashMap<>();
-        Map<String, StringTimeSeries> stringTimeSeries = new ConcurrentHashMap<>();
+        Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
+        Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
         List<String[]> csvValues = null;
 
@@ -96,29 +96,29 @@ public class CSVFileProcessor extends FlightFileProcessor {
             for (int i = 0; i < firstRow.length; i++)
                 columns.add(new ArrayList<>());
 
-            String[] row = null;
-            while ((row = csvReader.readNext()) != null && row.length == firstRow.length)
+            // Documentation of CSVReader claims this is a linked list,
+            // so it is important to iterate over it rather than using indexing
+            List<String[]> rows = csvReader.readAll();
+            for (String[] row : rows) {
+                if (row.length < firstRow.length)
+                    break;
                 for (int i = 0; i < row.length; i++)
-                    columns.get(i).add(row[i].trim());
+                    columns.get(i).add(row[i]);
+            }
 
-            final int granulatiry = 16; 
-            IntStream.range(0, columns.size() / granulatiry)
-                .forEachOrdered(g -> {
-                    var max = Math.max(g * granulatiry + granulatiry, columns.size());
-                    for (int i = g * granulatiry; i < max; i++) {
-                        var column = columns.get(i);
-                        var name = headers.get(i);
-                        var dataType = dataTypes.get(i);
-                        
-                        try {
-                            Double.parseDouble(column.get(0));
-                            doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
-                        } catch (NumberFormatException e) {
-                            stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
-                        }
+            for (int i = 0; i < columns.size(); i++) {
+                var column = columns.get(i);
+                var name = headers.get(i);
+                var dataType = dataTypes.get(i);
+                
+                try {
+                    Double.parseDouble(column.get(0));
+                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                } catch (NumberFormatException e) {
+                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                }
+            }
 
-                    }
-                });
         } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         }

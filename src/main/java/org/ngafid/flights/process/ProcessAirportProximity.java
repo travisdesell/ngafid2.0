@@ -56,7 +56,6 @@ public class ProcessAirportProximity extends ProcessStep {
             double longitude = longitudeTS.get(i);
             double altitudeAGL = altitudeAGLTS.get(i);
 
-            // TODO: Move this outside of the loop. To avoid re-allocation ?
             MutableDouble airportDistance = new MutableDouble();
 
             Airport airport = null;

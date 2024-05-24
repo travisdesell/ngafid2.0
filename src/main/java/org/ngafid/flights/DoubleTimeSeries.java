@@ -16,6 +16,8 @@ import java.util.logging.Logger;
 import java.util.stream.DoubleStream;
 import java.util.zip.Deflater;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 import org.ngafid.Database;
 import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
@@ -104,7 +106,7 @@ public class DoubleTimeSeries {
                 emptyValues++;
                 continue;
             }
-            double currentDouble = Double.parseDouble(stringTimeSeries.get(i));
+            double currentDouble = JavaDoubleParser.parseDouble(stringTimeSeries.get(i));
 
             this.add(currentDouble);
 

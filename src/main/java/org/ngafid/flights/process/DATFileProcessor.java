@@ -20,6 +20,8 @@ import java.util.zip.ZipFile;
 
 import static org.ngafid.common.TimeUtils.addMilliseconds;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 import Files.*;
 
 
@@ -195,7 +197,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                 try {
                     if (doubleTimeSeriesMap.containsKey(column)) {
                         DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
-                        double value = !line[i].equals("") ? Double.parseDouble(line[i]) : Double.NaN;
+                        double value = !line[i].equals("") ? JavaDoubleParser.parseDouble(line[i]) : Double.NaN;
                         colTimeSeries.add(value);
                     } else {
                         StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);

@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.logging.*;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 import org.ngafid.common.MutableDouble;
 
 
@@ -70,8 +73,8 @@ public class Airports {
                 String iataCode = values[1];
                 String siteNumber = values[2];
                 String type = values[3];
-                double latitude = Double.parseDouble(values[4]);
-                double longitude = Double.parseDouble(values[5]);
+                double latitude = JavaDoubleParser.parseDouble(values[4]);
+                double longitude = JavaDoubleParser.parseDouble(values[5]);
 
                 Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
                 String geoHash = airport.geoHash;
@@ -116,10 +119,10 @@ public class Airports {
                 if (values.length == 3) {
                     runway = new Runway(siteNumber, name);
                 } else if (values.length == 7) {
-                    double lat1 = Double.parseDouble(values[3]);
-                    double lon1 = Double.parseDouble(values[4]);
-                    double lat2 = Double.parseDouble(values[5]);
-                    double lon2 = Double.parseDouble(values[6]);
+                    double lat1 = JavaDoubleParser.parseDouble(values[3]);
+                    double lon1 = JavaDoubleParser.parseDouble(values[4]);
+                    double lat2 = JavaDoubleParser.parseDouble(values[5]);
+                    double lon2 = JavaDoubleParser.parseDouble(values[6]);
 
                     runway = new Runway(siteNumber, name, lat1, lon1, lat2, lon2);
                 } else {

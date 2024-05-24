@@ -4,7 +4,7 @@ package org.ngafid.flights.process;
  * Utility class used by FlightBuilder to call the Flight constructor.
  **/
 public final class FlightMeta {
-    // TODO: Should be made private
+
     public int  fleetId = -1,
                 uploaderId = -1,
                 uploadId = -1,
@@ -19,6 +19,7 @@ public final class FlightMeta {
                   airframeName,
                   calculated,
                   suggestedTailNumber;
+
     public int getFleetId() {
         return fleetId;
     }
