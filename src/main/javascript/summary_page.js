@@ -64,6 +64,85 @@ function formatDurationAsync(seconds) {
     }
 }
 
+function fetchStatistic(stat, aggregate, success) {
+    let route;
+    if (aggregate)
+        route = "/protected/statistics/aggregate";
+    else
+        route = "/protected/statistics";
+
+    $.ajax({
+        type: "POST",
+        url: `${route}/${stat}`,
+        dataType: "json",
+        success: success
+    });
+}
+
+class Notifications extends React.Component {
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            notifications: [
+                {   count: waitingUserCount,
+                    message: "users waiting for access", 
+                    badgeType: "badge-info" 
+                },
+                {   count: unconfirmedTailsCount, 
+                    message: "tail numbers need to be confirmed",
+                    badgeType: "badge-info"
+                }
+            ]
+        };
+    
+        this.fetchStatistics();
+    }
+
+    fetchStatistics() {
+        let notifications = this;
+        for (let [i, notif] of this.state.notifications.entries()) {
+            if (Object.hasOwn(notif, "name")) {
+                fetchStatistic(notif.name, false, 
+                    function (response) {
+                        if (response.err_msg) {
+                            errorModal.show(response.err_title, response.err_msg);
+                            return;
+                        }
+
+                        notifications.state.notifications[i].count = response[notif.name];
+
+                        notifications.setState(notifications.state);
+                    }
+                );
+            }
+        }
+    }
+
+    render() {
+        return (
+                <table>
+                    <tbody>
+                        {
+                            this.state.notifications.map((info, index) => {
+                                if (info.count == 0) {
+                                    return;
+                                } else {
+                                    return (
+                                        <tr key={index}>
+                                            <td style={{textAlign:"right", paddingBottom:"6"}}><span className={'badge ' + info.badgeType}>{Number(info.count).toLocaleString('en')}</span></td>
+                                            <td style={{paddingBottom:"6"}}>&nbsp;{info.message}</td>
+                                        </tr>
+                                    );
+                                }
+                            })
+                        }
+                   </tbody>
+                </table>
+        );
+    }
+}
+
 export default class SummaryPage extends React.Component {
     constructor(props) {
         super(props);
@@ -77,7 +156,8 @@ export default class SummaryPage extends React.Component {
             endMonth : date.getMonth() + 1,
             datesChanged : false,
             statistics: targetValues.reduce((o, key) => ({...o, [key]: ""}), {}),
-            eventCounts: {}
+            eventCounts: {},
+            notifications: <Notifications />
         };
         
         this.dateChange();
@@ -256,20 +336,10 @@ export default class SummaryPage extends React.Component {
     
     fetchStatistics() {
         let page = this;
-
-        let route;
-        if (this.props.aggregate)
-            route = "/protected/statistics/aggregate";
-        else
-            route = "/protected/statistics";
         
         for (var stat of targetValues) {
-
-            $.ajax({
-                type: "POST",
-                url: `${route}/${stat}`,
-                dataType: "json",
-                success: function(response) {
+            fetchStatistic(stat, this.props.aggregate, 
+                function(response) {
                     if (response.err_msg) {
                         errorModal.show(response.err_title, response.err_msg);
                         return;
@@ -279,7 +349,7 @@ export default class SummaryPage extends React.Component {
                     console.log(response);
                     page.setState({statistics: {...page.state.statistics, ...response}});
                 }
-            });
+            );
         }
     }
 
@@ -296,10 +366,11 @@ export default class SummaryPage extends React.Component {
             title = "Your Fleet";
 
         return (
-            <div className="col-lg-6">
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                     <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>{title}</h4>
                     <div className="card-body">
+                        {!this.props.aggregate && this.state.notifications}
+                        {!this.props.aggregate && (<hr></hr>)}
                         <div className="row">
                             <div className = "col-sm-4">
                                 <h3>{formatDurationAsync(this.state.statistics.flightTime)}</h3> Flight Hours <br></br>
@@ -337,13 +408,11 @@ export default class SummaryPage extends React.Component {
                         </div>
                     </div>
                 </div>
-            </div>
         );
     }
 
     EventSummary() {
         return (
-            <div className="col-lg-6">
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                     <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Events</h4>
                     <div className="card-body">
@@ -363,13 +432,11 @@ export default class SummaryPage extends React.Component {
                         </div>
                     </div>
                 </div>
-            </div>
         );
     }
 
     ParticipationSummary() {
         return (
-            <div className="col-lg-6">
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                     <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
                     <div className="card-body">
@@ -384,47 +451,51 @@ export default class SummaryPage extends React.Component {
                         </div>
                     </div>
                 </div>
-            </div>
         );
     }
 
     UploadsSummary() {
         return (
-            <div className="col-lg-6">
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                     <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Uploads</h4>
                     <div className="card-body">
-                        <div className="row">
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.uploads, integerOptions)}</h3> Uploads <br></br>
-                            </div>
+                        <table className="row">
+                            <tbody className="col-sm-6">
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-info">{formatNumberAsync(this.state.statistics.uploads, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Uploads</td>
+                                </tr>
 
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}</h3> Pending Uploads <br></br>
-                            </div>
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-warning">{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Pending Upload(s)</td>
+                                </tr>
+ 
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-danger">{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Uploads with Error(s)</td>
+                                </tr>                               
+                            </tbody>
 
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}</h3> Uploads with Errors <br></br>
-                            </div>
-                        </div>
+                            <tbody className="col-sm-6">
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-info">{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights</td>
+                                </tr>
 
-                        <hr></hr>
-                        <div className="row">
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</h3> Flights <br></br>
-                            </div>
-
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}</h3> Flights with Warning(s) <br></br>
-                            </div>
-
-                            <div className = "col-sm-4">
-                                <h3>{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}</h3> Flights with Error(s) <br></br>
-                            </div>
-                        </div>
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-warning">{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights with Warning(s)</td>
+                                </tr>
+ 
+                                <tr>
+                                    <td style={{textAlign: "right"}}><span className="badge badge-danger">{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}</span></td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights with Error(s)</td>
+                                </tr>                               
+                            </tbody>
+                        </table>
                     </div>
                 </div>
-            </div>
         );
     }
 
@@ -435,10 +506,12 @@ export default class SummaryPage extends React.Component {
 
                 <div className="container-fluid">
                     <div className="row">
-                        {this.FlightSummary()}
-                        {this.UploadsSummary()}
-                        {this.EventSummary()}
-                        {this.props.aggregate && this.ParticipationSummary()}
+                        <div className="col-6">{this.FlightSummary()}</div>
+                        <div className="col-6">
+                            {this.EventSummary()}
+                            {!this.props.aggregate && this.UploadsSummary()}
+                            {this.props.aggregate && this.ParticipationSummary()}
+                        </div>
                     </div>
 
                     <div className="row">
