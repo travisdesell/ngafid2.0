@@ -1088,6 +1088,30 @@ public class Flight {
     }
 
     /**
+     * Returns a list of all the tag names in the database for a fleet
+     *
+     * @param connection the connection to the database
+     * @return a List with strings containing the tag names
+     *
+     * @throws SQLException if there is an error with the database query
+     */
+    public static List<String> getAllFleetTagNames(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT name FROM flight_tags WHERE fleet_id =" + fleetId;
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<String> tagNames = new ArrayList<>();
+
+        while (resultSet.next()) {
+            tagNames.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tagNames;
+    }
+
+    /**
      * Gets the tag id associated with a name
      *
      * @param connection the database connection

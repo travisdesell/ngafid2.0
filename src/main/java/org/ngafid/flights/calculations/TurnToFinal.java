@@ -389,7 +389,7 @@ public class TurnToFinal implements Serializable {
 
         if (turnToFinals == null)
             return new ArrayList<>();
-
+        
         return turnToFinals.stream()
                 .filter(ttf -> airportIataCode == null || ttf.airportIataCode.equals(airportIataCode))
                 .collect(Collectors.toCollection(ArrayList::new));
