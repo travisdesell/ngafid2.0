@@ -260,7 +260,7 @@ public class Airports {
     public static boolean hasRunwayInfo(String iataCode) {
         System.out.println("checking to see if airport '" + iataCode + "' has runway info");
         Airport ap = iataToAirport.get(iataCode);
-        return ap == null ? null : ap.hasRunways();
+        return ap == null ? false : ap.hasRunways();
     }
 
 }
