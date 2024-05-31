@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 
 
 public class Database {
-    private static Connection connection;
+    private static ThreadLocal<Connection> connection = new ThreadLocal<>();
     private static boolean connectionInitiated;
     private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
 
@@ -26,7 +26,8 @@ public class Database {
 
     public static Connection getConnection() { 
         try {
-            if (connection.isClosed()) { //investigate further here 
+            Connection c = connection.get();
+            if (c == null || c.isClosed()) { //investigate further here 
                 setConnection();
             } 
         } catch (SQLException e) {
@@ -34,7 +35,7 @@ public class Database {
             System.exit(1);
         }
 
-        return connection;
+        return connection.get();
     }
 
     public static boolean dbInfoExists() {
@@ -43,13 +44,14 @@ public class Database {
 
     public static Connection resetConnection() {
         try {
-            if (connection != null) connection.close();
+            Connection c = connection.get();
+            if (c != null) c.close();
             setConnection();
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        return connection;
+        return connection.get();
     }
 
     private static void setConnection() {
@@ -112,10 +114,7 @@ public class Database {
             // if connection stales, then try for reconnection;
             connProperties.put("autoReconnect", "true");
             connProperties.put("maxReconnects", "5");
-            connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties);
-
-            // Setup the connection with the DB
-            //connection = DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, dbUser, dbPassword);
+            connection.set(DriverManager.getConnection("jdbc:mysql://" + dbHost + "/" + dbName, connProperties));
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -146,9 +145,5 @@ public class Database {
             }).start();
         }
         */
-    }
-
-    static {
-        setConnection();
     }
 }

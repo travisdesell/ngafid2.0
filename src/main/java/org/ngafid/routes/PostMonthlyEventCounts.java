@@ -48,7 +48,9 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have aggregate access to view aggregate trends page.");
                     return null;
                 }
-                eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
+
+                var map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
+                eventCountsMap = map.get(eventName);
             }
             else {
                 int fleetId = user.getFleetId();
@@ -58,7 +60,9 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
-                eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
+
+                var map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+                eventCountsMap = map.get(eventName);
             }
 
 //            LOG.severe("\n\n" + gson.toJson(eventCountsMap) + "\n\n");
