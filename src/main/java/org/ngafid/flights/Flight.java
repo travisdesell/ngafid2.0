@@ -382,6 +382,9 @@ public class Flight {
         return getNumFlights(connection, 0, null);
     }
 
+    public static int getNumFlights(Connection connection, int flightId) throws SQLException {
+        return getNumFlights(connection, flightId, null);
+    }
 
     /**
      * Gets the total number of flights for the entire NGAFID with a given filter. If the filter is null it returns
@@ -452,6 +455,15 @@ public class Flight {
         return count;
     }
 
+
+    public static int getNumFlights(Connection connection, String queryString, int fleetId) throws SQLException {
+        if (fleetId > 0) {
+            queryString += " AND fleet_id = " + fleetId;
+        }
+
+        return getNumFlights(connection, queryString);
+    }
+
     /**
      * Gets the total number of flights for a given fleet and queryString.
      *
@@ -491,25 +503,24 @@ public class Flight {
     }
 
     /**
-     * Gets the total number of flight hours in the NGAFID.
+     * Gets the total number flight seconds NGAFID. 
      *
      * @param connection is the database connection
      * @return the number of flight hours for the entire NGAFID.
      */
-    public static long getTotalFlightHours(Connection connection) throws SQLException {
-        return getTotalFlightHours(connection, 0, null);
+    public static long getTotalFlightTime(Connection connection) throws SQLException {
+        return getTotalFlightTime(connection, 0, null);
     }
 
     /**
-     * Gets the total number of flight hours for a given filter. If the filter is null it returns the number of flight hours
-     * for the entire NGAFID.
+     * Gets the total number flight seconds NGAFID. 
      *
      * @param connection is the database connection
      * @param is         the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
-    public static long getTotalFlightHours(Connection connection, Filter filter) throws SQLException {
-        return getTotalFlightHours(connection, 0, filter);
+    public static long getTotalFlightTime(Connection connection, Filter filter) throws SQLException {
+        return getTotalFlightTime(connection, 0, filter);
     }
 
 
@@ -522,7 +533,7 @@ public class Flight {
      * @param is         the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
-    public static long getTotalFlightHours(Connection connection, int fleetId, Filter filter) throws SQLException {
+    public static long getTotalFlightTime(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString;
@@ -571,6 +582,10 @@ public class Flight {
     }
 
 
+    public static long getTotalFlightTime(Connection connection, String queryString) throws SQLException {
+        return getTotalFlightTime(connection, queryString, 0);
+    }
+
     /**
      * Gets the total number of flight hours for a given fleet and WHERE clause query string
      * for the fleet.
@@ -579,9 +594,12 @@ public class Flight {
      * @param queryString is the string to put into the query's WHERE clause
      * @return the number of flight hours for the fleet, given the specified queryString
      */
-    public static long getTotalFlightHours(Connection connection, String queryString) throws SQLException {
+    public static long getTotalFlightTime(Connection connection, String queryString, int flightId) throws SQLException {
         String fullQueryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
         LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
+
+        if (flightId > 0)
+            fullQueryString += " AND flights.id = " + flightId;
 
         PreparedStatement query = connection.prepareStatement(fullQueryString);
         LOG.info(query.toString());

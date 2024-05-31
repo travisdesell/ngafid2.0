@@ -5,10 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -23,6 +21,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    
+    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type";
 
     public static final int MIN_SEVERITY = 1;
     public static final int MAX_SEVERITY = 2;
@@ -163,7 +163,7 @@ public class EventDefinition {
      */
     public static EventDefinition getEventDefinition(Connection connection, String eventName) {
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+        String query = "SELECT" + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
 
         return getEventDefinitionFromDB(connection, query);
     }
@@ -181,7 +181,7 @@ public class EventDefinition {
         String airframeIDStr = "airframe_id = " + airframeID;
 
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
 
         return getEventDefinitionFromDB(connection, query);
     }
@@ -190,9 +190,61 @@ public class EventDefinition {
         EventDefinition eventDef = null;
 
         String eventIDStr = "id = '" + eventID + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventIDStr;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventIDStr;
 
         return getEventDefinitionFromDB(connection, query);
+    }
+
+    /*
+     * Caches event definitions by name. Events are rarely added anyways...
+     */
+    private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
+
+    public static List<EventDefinition> getEventDefinitions(Connection connection, String eventName) throws SQLException {
+        if (NAME_TO_EVENT_DEFINITIONS.containsKey(eventName))
+            return NAME_TO_EVENT_DEFINITIONS.get(eventName);
+
+        List<EventDefinition> definitions = new ArrayList<>();
+
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE name = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, eventName);
+
+        ResultSet resultSet = statement.executeQuery();
+
+        while (resultSet.next()) {
+            EventDefinition ed = new EventDefinition(resultSet);
+            definitions.add(ed);
+        }
+        
+        statement.close();
+        resultSet.close();
+
+        NAME_TO_EVENT_DEFINITIONS.put(eventName, definitions);
+
+        return definitions;
+    }
+
+    
+    private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+
+    public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
+        if (EVENT_DEFINITION_ID_TO_NAME == null) {
+            String query = "SELECT id, name FROM event_definitions";
+            PreparedStatement ps = connection.prepareStatement(query);
+            
+            ResultSet resultSet = ps.executeQuery();
+
+            EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+            }
+        }
+
+        return EVENT_DEFINITION_ID_TO_NAME;
     }
 
     /**
