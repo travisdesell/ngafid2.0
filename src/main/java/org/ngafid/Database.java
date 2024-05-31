@@ -65,8 +65,8 @@ public class Database {
             // if connection stales, then try for reconnection;
             connProperties.put("autoReconnect", "true");
             connProperties.put("maxReconnects", "5");
-            return DriverManager.getConnection("jdbc:" + db_impl + "://" + dbHost + "/" + dbName, connProperties);
-
+            var connection = DriverManager.getConnection("jdbc:" + db_impl + "://" + dbHost + "/" + dbName + "?useServerPrepStmts=false&rewriteBatchedStatements=true", connProperties);
+            return connection;
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);

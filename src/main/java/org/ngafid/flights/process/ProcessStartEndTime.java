@@ -32,7 +32,7 @@ public class ProcessStartEndTime extends ProcessStep {
     public boolean airframeIsValid(String airframe) { return true; }
 
     public boolean entryIsEmpty(String date) {
-        return date == null || date == "";
+        return date == null || date.trim() == "";
     }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
@@ -52,13 +52,11 @@ public class ProcessStartEndTime extends ProcessStep {
 
         //find the first non-null time entry
         int start = 0;
-        while (start < minSize &&
-                (dates.get(start) == null || dates.get(start).equals("") ||
-                        times.get(start) == null || times.get(start).equals("") ||
-                        offsets.get(start) == null || offsets.get(start).equals("") || offsets.get(start).equals("+19:00"))) {
-
-            start++;
-        }
+        while (start < minSize && (
+                entryIsEmpty(dates.get(start))
+            ||  entryIsEmpty(times.get(start))
+            ||  entryIsEmpty(offsets.get(start))
+        )) { start++; }
 
         if (start >= minSize)
             throw new MalformedFlightFileException("Date, Time or Offset columns were all null! Cannot set start/end times.");
@@ -73,13 +71,13 @@ public class ProcessStartEndTime extends ProcessStep {
             || entryIsEmpty(offsets.get(end)) 
         ));
 
-        String startDate = dates.get(start);
-        String startTime = times.get(start);
-        String startOffset = offsets.get(start);
+        String startDate = dates.get(start).trim();
+        String startTime = times.get(start).trim();
+        String startOffset = offsets.get(start).trim();
 
-        String endDate = dates.get(end);
-        String endTime = times.get(end);
-        String endOffset = offsets.get(end);
+        String endDate = dates.get(end).trim();
+        String endTime = times.get(end).trim();
+        String endOffset = offsets.get(end).trim();
 
         OffsetDateTime startODT = null;
         try {

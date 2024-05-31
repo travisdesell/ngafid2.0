@@ -32,7 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.IntStream;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -59,7 +59,7 @@ public class ProcessUpload {
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
 
-    static int poolSize = 8;
+    static int poolSize = 1;
     static boolean batchedDB = true;
 
     public static void sendMonthlyFlightsUpdate(int fleetID) {
@@ -261,15 +261,15 @@ public class ProcessUpload {
             // boolean success = ingestFlights(connection, uploadId, fleetId, uploaderId, filename, uploadProcessedEmail);
             // // only progress if the upload ingestion was successful
             // if (success) {
-            //     FindSpinEvents.findSpinEventsInUpload(connection, upload);
+            //     // FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
-            //     FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+            //     // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
 
-            //     CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
+            //     // CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
 
-            //     CalculateProximity.calculateProximity(connection, uploadId, uploadProcessedEmail);
+            //     // CalculateProximity.calculateProximity(connection, uploadId, uploadProcessedEmail);
 
-            //     CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
+            //     // CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
 
             //     String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
 
@@ -282,7 +282,7 @@ public class ProcessUpload {
             long end = System.nanoTime();
             long diff = end - start;
             double asSeconds = ((double) diff) * 1.0e-9;
-            System.out.println("Took " + asSeconds + "s to ingest upload " + upload.getFilename());
+            System.out.println("EXP_RESULT " + asSeconds + " " + upload.getFilename());
 
             // sendMonthlyFlightsUpdate(fleetId);
             // uploadProcessedEmail.sendEmail();
@@ -346,34 +346,38 @@ public class ProcessUpload {
                 FlightFileProcessor.Pipeline pipeline = new FlightFileProcessor.Pipeline(connection, upload, zipFile);
 
                 long startNanos = System.nanoTime();
-                var flights = new ConcurrentLinkedQueue<Flight>();
+                var flights = new LinkedBlockingQueue<Flight>();
+                int batchSize = 1;
 
-                pool.submit(() ->
+                var processHandle = pool.submit(() ->
                     pipeline
-                        .stream()
+                        .parallelStream()
                         .map(pipeline::parse)
-                        .forEach(s ->
+                        .forEach(s -> {
                             flights.addAll(
                                 s.sequential()
                                 .map(pipeline::build)
                                 .filter(Objects::nonNull)
                                 .map(pipeline::finalize)
                                 .collect(Collectors.toList())
-                            )
-                        )
-                ).join();
+                            );
 
-                zipFile.close();
+                            if (flights.size() >= batchSize) {
+                                var batch = new ArrayList<Flight>(128);
+                                flights.drainTo(batch);
+                                for (var fl : batch) {
+                                    fl.updateDatabase(Database.getConnection(), upload.id, upload.uploaderId, upload.fleetId);
+                                }
+                                // Flight.batchUpdateDatabase(Database.getConnection(), upload, batch);
+                            }
+                        })
+                );
+                
+                processHandle.join();
 
-                URI zipURI = URI.create("jar:" + Paths.get(filename).toUri());
-                pipeline.insertConvertedFiles(zipURI);
-
-                long endNanos = System.nanoTime();
-                double s = 1e-9 * (double) (endNanos - startNanos);
-                System.out.println("Took " + s + "s to process flights");
-
-                startNanos = System.nanoTime();
-                int n = 64;
+                if (flights.size() > 0) {
+                    Flight.batchUpdateDatabase(connection, upload, flights);
+                }
 
                 // if (batchedDB) {
                 //     var flightsList = new ArrayList<Flight>();
@@ -390,6 +394,17 @@ public class ProcessUpload {
                 // } else {
                 //     flights.forEach(f -> f.updateDatabase(connection, uploadId, uploaderId, fleetId));
                 // }
+                
+                zipFile.close();
+
+                URI zipURI = URI.create("jar:" + Paths.get(filename).toUri());
+                pipeline.insertConvertedFiles(zipURI);
+
+                long endNanos = System.nanoTime();
+                double s = 1e-9 * (double) (endNanos - startNanos);
+                System.out.println("Took " + s + "s to process flights");
+
+                startNanos = System.nanoTime();
 
                 endNanos = System.nanoTime();
                 s = 1e-9 * (double) (endNanos - startNanos); 

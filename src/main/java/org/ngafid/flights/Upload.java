@@ -24,23 +24,23 @@ public class Upload {
 
     protected static final String DEFAULT_COLUMNS = "id, fleet_id, uploader_id, filename, identifier, number_chunks, uploaded_chunks, chunk_status, md5_hash, size_bytes, bytes_uploaded, status, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights ";
 
-    protected int id;
-    protected int fleetId;
-    protected int uploaderId;
-    protected String filename;
-    protected String identifier;
-    protected int numberChunks;
-    protected int uploadedChunks;
-    protected String chunkStatus;
-    protected String md5Hash;
-    protected long sizeBytes;
-    protected long bytesUploaded;
-    protected String status;
-    protected String startTime;
-    protected String endTime;
-    protected int validFlights;
-    protected int warningFlights;
-    protected int errorFlights;
+    public int id;
+    public int fleetId;
+    public int uploaderId;
+    public String filename;
+    public String identifier;
+    public int numberChunks;
+    public int uploadedChunks;
+    public String chunkStatus;
+    public String md5Hash;
+    public long sizeBytes;
+    public long bytesUploaded;
+    public String status;
+    public String startTime;
+    public String endTime;
+    public int validFlights;
+    public int warningFlights;
+    public int errorFlights;
 
     // For AirSync uploads that are grouped by month.
     String groupString = null, tail = null;
@@ -110,7 +110,6 @@ public class Upload {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
-
 
         query = "DELETE FROM flight_errors WHERE upload_id = ?";
         preparedStatement = connection.prepareStatement(query);
