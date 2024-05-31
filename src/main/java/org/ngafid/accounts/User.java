@@ -170,8 +170,13 @@ public class User {
      *
      * @return the number of users in the NGAFID
      */
-    public static int getNumberUsers(Connection connection) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM user");
+    public static int getNumberUsers(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT count(id) FROM user";
+
+        if (fleetId > 0)
+            queryString = queryString + " INNER JOIN fleet_access ON user.id = fleet_access.user_id AND fleet_access.fleet_id = " + fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
 
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();

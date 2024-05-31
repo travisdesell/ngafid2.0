@@ -257,7 +257,7 @@ public class Airframes {
      * @return a HashMap of all airframe name ids to their names
      */
 
-    public static HashMap<Integer,String> getIdToNameMap(Connection connection) throws SQLException {
+    public static HashMap<Integer, String> getIdToNameMap(Connection connection) throws SQLException {
         HashMap<Integer,String> idToNameMap = new HashMap<Integer,String>();
 
         String queryString = "SELECT id, airframe FROM airframes ORDER BY id";
