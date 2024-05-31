@@ -214,7 +214,7 @@ class SeveritiesPage extends React.Component {
 
                     if (counts[i].eventDefinitionId == -1) hovertext += ", Proximity Flight #" + counts[i].otherFlightId;
 
-                    if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
+                    //if (eventMetaDataText.length != 0) hovertext += ", " + eventMetaDataText.join(", ");
 
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
