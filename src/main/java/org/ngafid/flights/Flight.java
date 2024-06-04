@@ -601,12 +601,12 @@ public class Flight {
      * @param queryString is the string to put into the query's WHERE clause
      * @return the number of flight hours for the fleet, given the specified queryString
      */
-    public static long getTotalFlightTime(Connection connection, String queryString, int flightId) throws SQLException {
+    public static long getTotalFlightTime(Connection connection, String queryString, int fleetId) throws SQLException {
         String fullQueryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
         LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
 
-        if (flightId > 0)
-            fullQueryString += " AND flights.id = " + flightId;
+        if (fleetId > 0)
+            fullQueryString += " AND fleet_id = " + fleetId;
 
         PreparedStatement query = connection.prepareStatement(fullQueryString);
         LOG.info(query.toString());
