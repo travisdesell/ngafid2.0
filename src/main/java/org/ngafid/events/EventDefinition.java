@@ -163,7 +163,8 @@ public class EventDefinition {
      */
     public static EventDefinition getEventDefinition(Connection connection, String eventName) {
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT" + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
+
 
         return getEventDefinitionFromDB(connection, query);
     }
