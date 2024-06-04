@@ -328,15 +328,17 @@ class TrendsPage extends React.Component {
                 if (value.airframeName === "Garmin Flight Display") continue;
                 if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
 
-                /*
-                console.log("airframes, airframeName, value:");
+                console.log("airframes:");
                 console.log(airframes);
+                console.log("airframe name:")
                 console.log(airframe);
+                console.log("value:")
                 console.log(value);
-                */
 
+                let new_value_name = value.eventName + " - " + value.airframeName;
+                console.log("setting value name: " + value.name + " to " + new_value_name);
 
-                value.name = value.eventName + " - " + value.airframeName;
+                value.name = new_value_name;
                 value.x = value.dates;
                 value.type = 'scatter';
                 value.hoverinfo = 'x+text';
