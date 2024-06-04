@@ -42,6 +42,8 @@ public class PostMonthlyEventCounts implements Route {
         try {
             Connection connection = Database.getConnection();
             Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
+            Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
+
             if (aggregateTrendsPage) {
                 if (!user.hasAggregateView()) {
                     LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
@@ -49,10 +51,8 @@ public class PostMonthlyEventCounts implements Route {
                     return null;
                 }
 
-                var map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
-                eventCountsMap = map.get(eventName);
-            }
-            else {
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            } else {
                 int fleetId = user.getFleetId();
                 //check to see if the user has upload access for this fleet.
                 if (!user.hasViewAccess(fleetId)) {
@@ -61,13 +61,14 @@ public class PostMonthlyEventCounts implements Route {
                     return null;
                 }
 
-                var map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
-                eventCountsMap = map.get(eventName);
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
-//            LOG.severe("\n\n" + gson.toJson(eventCountsMap) + "\n\n");
-
-            return gson.toJson(eventCountsMap);
+            if (eventName == null) {
+                return gson.toJson(map);
+            } else {
+                return gson.toJson(map.get(eventName));
+            }
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }

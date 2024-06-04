@@ -65,13 +65,13 @@ public class EventStatistics {
     """;
 
     private static final String MONTHLY_EVENT_COUNT_QUERY_PARAMS = EVENT_COUNT_BASE_QUERY_PARAMS + """
-                  , YEAR(event.start_time) as year,
-                    MONTH(event.start_time) as month
+                  , YEAR(e.start_time) as year,
+                    MONTH(e.start_time) as month
     """;
     
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
-                  , YEAR(event.start_time), 
-                    MONTH(event.start_time)
+                  , YEAR(e.start_time), 
+                    MONTH(e.start_time)
     """;
 
     // NOTES: You are going to have to mess with the js code that calls this, because it wont look in the aggregate fields for osme reason.

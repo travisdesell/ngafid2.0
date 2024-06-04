@@ -169,17 +169,28 @@ export default class SummaryPage extends React.Component {
         var percentData = [];
     
         var fleetPercents = {
-            name : "All Fleets",
+            name : this.props.aggregate ? "All Fleets" : "Your Fleet",
             type : "bar",
             orientation : "h",
             hoverinfo : "y+text",
             hovertext : [],
             y : [],
             x : [],
-            aggregateFlightsWithEventCounts : [],
-            aggregateTotalFlightsCounts : []
-        }
-    
+            flightsWithEventCounts : [],
+            totalFlightsCounts : []
+        };
+   
+        var ngafidPercents = {
+            name : this.props.aggregate ? "All Fleets" : 'All Other Fleets',
+            type : 'bar',
+            orientation : 'h',
+            hoverinfo : 'y+text',
+            hovertext : [],
+            y : [],
+            x : [],
+            flightsWithEventCounts : [],
+            totalFlightsCounts : []
+        };
     
         for (let [key, value] of Object.entries(this.state.eventCounts)) {
             if (value.airframeName === "Garmin Flight Display") continue;
@@ -194,32 +205,47 @@ export default class SummaryPage extends React.Component {
             //don"t add airframes to the count plot that the fleet doesn"t have
             if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
             value.x = value.aggregateTotalEventsCounts;
-    
+            
+            let percents = this.props.aggregate ? fleetPercents : ngafidPercents;
+
             for (let i = 0; i < value.names.length; i++) {
-                //don"t add airframes to the fleet percentage plot that the fleet doesn"t have
+                //don't add airframes to the fleet percentage plot that the fleet doesn't have
                 if (airframes.indexOf(value.airframeName) >= 0) {
                     var index = fleetPercents.y.indexOf(value.names[i]);
                     if (index !== -1) {
-                        fleetPercents.aggregateFlightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
-                        fleetPercents.aggregateTotalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
+                        fleetPercents.flightsWithEventCounts[index] += value.flightsWithEventCounts[i];
+                        fleetPercents.totalFlightsCounts[index] += value.totalFlightsCounts[i];
                     } else {
                         let pos = fleetPercents.y.length;
                         fleetPercents.y.push(value.names[i]);
-                        fleetPercents.aggregateFlightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
-                        fleetPercents.aggregateTotalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
+                        fleetPercents.flightsWithEventCounts[pos] = value.flightsWithEventCounts[i];
+                        fleetPercents.totalFlightsCounts[pos] = value.totalFlightsCounts[i];
                     }
                 }
+
+                var index = ngafidPercents.y.indexOf(value.names[i]);
+                if (index !== -1) {
+                    ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
+                    ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
+                } else {
+                    let pos = ngafidPercents.y.length;
+                    ngafidPercents.y.push(value.names[i]);
+                    ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
+                    ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
+                }
             }
+
         }
-    
-        percentData.push(fleetPercents);
+   
+        percentData.push(ngafidPercents);
+        if (!this.props.aggregate) percentData.push(fleetPercents);
     
         for (let j = 0; j < percentData.length; j++) {
             let value = percentData[j];
             value.x = [];
     
-            for (let i = 0; i < value.aggregateTotalFlightsCounts.length; i++) {
-                value.x.push( 100.0 * parseFloat(value.aggregateFlightsWithEventCounts[i]) / parseFloat(value.aggregateTotalFlightsCounts[i]) );
+            for (let i = 0; i < value.flightsWithEventCounts.length; i++) {
+                value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
     
                 var fixedText = "";
                 if (value.x[i] > 0 && value.x[i] < 1) {
@@ -322,8 +348,6 @@ export default class SummaryPage extends React.Component {
                 }   
 
                 page.state.eventCounts = response;
-                console.log("Got response:")
-                console.log(response);
                 page.displayPlots(page.state.airframe);
                 page.setState({datesChanged : false});
             },   
@@ -345,8 +369,6 @@ export default class SummaryPage extends React.Component {
                         return;
                     }   
 
-                    console.log("Got response");
-                    console.log(response);
                     page.setState({statistics: {...page.state.statistics, ...response}});
                 }
             );
