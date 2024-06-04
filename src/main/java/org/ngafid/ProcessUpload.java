@@ -128,6 +128,10 @@ public class ProcessUpload {
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
+                    if (targetFleetId == 164 || targetFleetId == 105) {
+                        System.err.println("SKIPPING 164 because we do not support this fleet type yet.");
+                        continue;
+                    }
 
                     PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ? LIMIT 1");
 

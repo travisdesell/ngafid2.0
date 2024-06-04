@@ -165,6 +165,7 @@ public class EventDefinition {
         eventName = "name = '" + eventName + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
 
+
         return getEventDefinitionFromDB(connection, query);
     }
 

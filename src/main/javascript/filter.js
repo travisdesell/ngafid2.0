@@ -160,6 +160,7 @@ function andClicked(filter, treeIndex) {
     if (targetFilter.type === "GROUP") {
         targetFilter.condition = "AND";
     }
+    return filter;
 }
 
 function orClicked(filter, treeIndex) {

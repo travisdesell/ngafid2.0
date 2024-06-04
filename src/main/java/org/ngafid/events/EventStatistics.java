@@ -72,6 +72,7 @@ public class EventStatistics {
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
                   , YEAR(e.start_time), 
                     MONTH(e.start_time)
+
     """;
 
     // NOTES: You are going to have to mess with the js code that calls this, because it wont look in the aggregate fields for osme reason.
@@ -368,6 +369,10 @@ public class EventStatistics {
 
 
     public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime, double severity, double duration) throws SQLException {
+        if (startDateTime.length() < 8) {
+            LOG.severe("could not update event statistics because startDateTime was improperly formatted!");
+            System.exit(1);
+        }
         String firstOfMonth = getFirstOfMonth(startDateTime);
 
         String query = "INSERT INTO event_statistics (fleet_id, airframe_id, event_definition_id, month_first_day, total_events, min_severity, sum_severity, max_severity, min_duration, sum_duration, max_duration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON DUPLICATE KEY UPDATE min_severity = LEAST(min_severity, ?), sum_severity = sum_severity + ?, max_severity = GREATEST(max_severity, ?), min_duration = LEAST(min_duration, ?), sum_duration = sum_duration + ?, max_duration = GREATEST(max_duration, ?), total_events = total_events + 1";

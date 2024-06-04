@@ -246,6 +246,7 @@ export default class SummaryPage extends React.Component {
     
             for (let i = 0; i < value.flightsWithEventCounts.length; i++) {
                 value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
+
     
                 var fixedText = "";
                 if (value.x[i] > 0 && value.x[i] < 1) {

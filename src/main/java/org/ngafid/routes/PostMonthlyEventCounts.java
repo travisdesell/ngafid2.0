@@ -53,6 +53,7 @@ public class PostMonthlyEventCounts implements Route {
 
                 map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
             } else {
+
                 int fleetId = user.getFleetId();
                 //check to see if the user has upload access for this fleet.
                 if (!user.hasViewAccess(fleetId)) {
@@ -60,7 +61,7 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
-
+              
                 map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
