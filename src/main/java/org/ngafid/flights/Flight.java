@@ -130,7 +130,7 @@ public class Flight {
     private long processingStatus = 0;
 
     private String status;
-    private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+    private transient ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
