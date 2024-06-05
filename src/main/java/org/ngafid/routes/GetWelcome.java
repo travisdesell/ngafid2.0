@@ -112,20 +112,7 @@ public class GetWelcome implements Route {
             LOG.info("getting event counts took " + (System.currentTimeMillis() - startTime) + "ms.");
 
             startTime = System.currentTimeMillis();
-            String fleetInfo =
-                "var numberFlights = " + Flight.getNumFlights(connection, fleetId, null) + ";\n" +
-                "var flightHours = " + Flight.getTotalFlightHours(connection, fleetId, null) + ";\n" +
-                "var numberAircraft = " + Tails.getNumberTails(connection, fleetId) + ";\n" +
-                "var totalEvents = " + EventStatistics.getEventCount(connection, fleetId, null, null) + ";\n" +
-                "var yearEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfYear, null) + ";\n" +
-                "var monthEvents = " + EventStatistics.getEventCount(connection, fleetId, firstOfMonth, null) + ";\n" +
-                "var uploadsNotImported = " + Upload.getNumUploads(connection, fleetId, " AND status = 'UPLOADED'") + ";\n" +
-                "var uploadsWithError = " + Upload.getNumUploads(connection, fleetId, " AND status = 'ERROR'") + ";\n" +
-                "var flightsWithWarning = " + FlightWarning.getCount(connection, fleetId) + ";\n" +
-                "var flightsWithError = " + FlightError.getCount(connection, fleetId) + ";\n" +
-                "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n" +
-                "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
-                //"var eventCounts = JSON.parse('" + gson.toJson(eventCountsMap) + "');";
+            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();

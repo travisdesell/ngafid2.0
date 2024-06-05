@@ -19,8 +19,6 @@ if (index !== -1) airframes.splice(index, 1);
 
 eventNames.sort();
 
-console.log(eventNames);
-
 /*
 var trace1 = {
     name: 'test1',
@@ -40,7 +38,7 @@ var trace2 = {
 var countData = [];
 var percentData = [];
 
-var eventCounts = {};
+var eventCounts = null;
 
 var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
@@ -64,14 +62,61 @@ class TrendsPage extends React.Component {
             aggregatePage : props.aggregate_page,
             eventChecked : eventChecked
         };
+        
+        this.fetchMonthlyEventCounts();
+    }
+    startDate() {
+        let startDate = this.state.startYear + "-";
+
+        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        else startDate += this.state.startMonth;
+
+        return startDate;
+    }
+
+    endDate() {
+        let endDate = this.state.endYear + "-";
+
+        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        else endDate += this.state.endMonth;
+
+        return endDate;
+    }
+
+    fetchMonthlyEventCounts() {
+        var submission_data = {
+            startDate : this.startDate() + "-01",
+            endDate : this.endDate() + "-28",
+            aggregatePage : this.props.aggregate_page
+        };
+
+        let trendsPage = this;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/monthly_event_counts',
+            data : submission_data,
+            dataType : 'json',
+            success : function(response) {
+                $('#loading').hide();
+
+                if (response.err_msg) {
+                    errorModal.show(response.err_title, response.err_msg);
+                    return;
+                }   
+
+                eventCounts = response;
+                trendsPage.displayPlots(trendsPage.state.airframe);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },   
+            async: true 
+        });
+
     }
 
     exportCSV() {
         let selectedAirframe = this.state.airframe;
-
-        console.log("selected airframe: '" + selectedAirframe + "'");
-
-        console.log(eventCounts);
 
         let eventNames = [];
         let airframeNames = [];
@@ -102,7 +147,6 @@ class TrendsPage extends React.Component {
                 }
 
 
-                console.log(eventName + " - " + value.airframeName + " has dates: ");
                 console.log(value.dates);
 
                 for (let i = 0; i < value.dates.length; i++) {
@@ -143,15 +187,7 @@ class TrendsPage extends React.Component {
         airframeNames.sort();
         dates.sort();
 
-        console.log("eventNames:");
-        console.log(eventNames);
-        console.log("airframeNames:");
-        console.log(airframeNames);
-        console.log("dates:");
-        console.log(dates);
-
         for (let eventName of eventNames) {
-            console.log(eventName + " has " + Object.keys(csvValues[eventName]).length + " entries!");
             console.log(csvValues[eventName]);
 
             for (let airframeName of airframeNames) {
@@ -275,7 +311,9 @@ class TrendsPage extends React.Component {
         countData = [];
         percentData = [];
 
-        for (let [eventName, countsObject] of Object.entries(eventCounts)) {
+        let counts = eventCounts == null ? {} : eventCounts;
+
+        for (let [eventName, countsObject] of Object.entries(counts)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
             if (!this.state.eventChecked[eventName]) continue;
 
@@ -532,38 +570,13 @@ class TrendsPage extends React.Component {
             eventName : eventName,
             aggregatePage : this.props.aggregate_page
         };
-        let trendsPage = this;
-        if (eventName in eventCounts) {
+        console.log(eventCounts);
+        if (eventCounts != null) {
             console.log("already loaded counts for event: '" + eventName + "'");
-            trendsPage.displayPlots(trendsPage.state.airframe);
-
+            this.displayPlots(this.state.airframe);
         } else {
             $('#loading').show();
             console.log("showing loading spinner!");
-            $.ajax({
-                type: 'POST',
-                url: '/protected/monthly_event_counts',
-                data : submission_data,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-
-                    $('#loading').hide();
-
-                    if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
-                        return;
-                    }   
-
-                    eventCounts[eventName] = response;
-                    trendsPage.displayPlots(trendsPage.state.airframe);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Uploads", errorThrown);
-                },   
-                async: true 
-            });
         }
     }
 
@@ -600,7 +613,8 @@ class TrendsPage extends React.Component {
         this.state.datesChanged = false;
         this.setState(this.state);
 
-        eventCounts = {};
+        eventCounts = null;
+        this.fetchMonthlyEventCounts();
         this.displayPlots(this.state.airframe);
     }
 
@@ -654,12 +668,17 @@ class TrendsPage extends React.Component {
                                             eventNames.map((eventName, index) => {
                                                 return (
                                                     <div key={index} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <input  className="form-check-input" 
+                                                                type="checkbox" 
+                                                                value="" 
+                                                                id={"event-check-" + index}
+                                                                checked={this.state.eventChecked[eventName]} 
+                                                                onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
                                                             <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
-                                                            <label className="form-check-label">
+                                                            <label className="form-check-label" onclick={() => this.checkEvent(eventName)}>
                                                                 {eventName}
                                                             </label>
                                                         </OverlayTrigger>

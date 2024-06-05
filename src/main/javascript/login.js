@@ -23,6 +23,13 @@ class LoginModal extends React.Component {
         };
     }
 
+    handleKeyDown(e) {
+        e.preventDefault();
+        if (e.keyCode == 13) {
+            $("#loginSubmitButton").click();
+        }
+    }
+
     show() {
         this.validateEmail();
         this.validatePassword();
@@ -203,7 +210,7 @@ class LoginModal extends React.Component {
                                 <label htmlFor="loginPassword" style={labelStyle}>Password</label>
                             </div>
                             <div className="p-2 flex-fill">
-                                <input type="password" className="form-control" id="loginPassword" placeholder="Password (required)" required={true} onChange={() => {this.validatePassword();}} />
+                                <input type="password" className="form-control" id="loginPassword" placeholder="Password (required)" required={true} onKeyUp={(e)=>{this.handleKeyDown(e);}} onChange={() => {this.validatePassword();}} />
                             </div>
                         </div>
                     </div>
