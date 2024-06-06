@@ -6,7 +6,7 @@
 
 &ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;2. Define/Configure Email Types in `EmailTypes.java`
 
-&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;3. Generate Email Types with` generate_email_types.sh`
+&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;&ensp;3. Generate Email Types with `generate_email_types.sh`
 
 - <span style="text - decoration: underline;">Front-End Usage</span>
 \
