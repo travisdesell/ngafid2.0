@@ -35,11 +35,12 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 			dataType: 'json',
 
 			success: function(response) {
-				console.log('Preferences updated successfully!', response);
+				// console.log('Email preferences updated successfully!', response);
+				console.log('Email preferences updated successfully!');
 				},
 
 			error: function(jqXHR, textStatus, errorThrown) {
-				console.log('Error updating preferences:', errorThrown);
+				console.log('Error updating email preferences:', errorThrown);
 				}
 		
 			});
@@ -58,7 +59,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 
 			success : function(response) {
 				console.log("got user pref response");
-				console.log(response);
+				// console.log(response);
 				resultsOut = response;
 				},
 
@@ -125,8 +126,6 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 				...prevSettings,
 				[type]: !prevSettings[type]
 				};
-
-			console.log("Updated settings: ", updatedSettings);
 
 			//Deliver updated preferences
 			updateUserPreferencesEmails(updatedSettings);
@@ -260,14 +259,8 @@ const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, us
 
 const EmailSettingsTableManager = ({ fleetUsers }) => {
 
-
-    console.log("Fleet users: ", fleetUsers);
-
-
     //Update user email preferences
     function updateUserPreferencesEmails(fleetUser, updatedSettings) {
-
-		console.log("Updating email preferences for User: ", fleetUser);
 
 		let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.userId === fleetUser.userId).emailTypesUser;
 
@@ -278,8 +271,6 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
 			...updatedEmailTypeSettingsTarget
 			}
 
-		console.log("Submission data: ", submissionData);
-
 		$.ajax({
 			type: 'POST',
 			url: '/protected/update_user_preference_emails',
@@ -287,7 +278,8 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
 			dataType: 'json',
 
 			success: function(response) {
-				console.log('Preferences updated successfully!', response);
+				// console.log('Preferences updated successfully!', response);
+				console.log('Preferences updated successfully!');
 				},
 
 			error: function(jqXHR, textStatus, errorThrown) {
@@ -373,8 +365,6 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
 					}
 				: setting
 				);
-
-			console.log(`User ID: ${userTarget.userId} | Type: ${type} | Updated settings: `, updatedSettings);
 
 			let userSettingsTarget = updatedSettings.find(setting => setting.userId === userTarget.userId).emailTypesUser;
 			
