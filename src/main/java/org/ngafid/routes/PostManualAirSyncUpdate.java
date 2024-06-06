@@ -17,6 +17,7 @@ import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
+import org.ngafid.EmailType;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;
@@ -73,7 +74,7 @@ public class PostManualAirSyncUpdate implements Route {
                 ArrayList<String> emailList = new ArrayList<>();
                 emailList.add(user.getEmail());
 
-                SendEmail.sendEmail(emailList, new ArrayList<String>(), "NGAFID AirSync Update Report", sb.toString());
+                SendEmail.sendEmail(emailList, new ArrayList<String>(), "NGAFID AirSync Update Report", sb.toString(), EmailType.AIRSYNC_UPDATE_REPORT);
                 String lastUpdateTime = fleet.getLastUpdateTime(connection);
 
                 return gson.toJson(lastUpdateTime);

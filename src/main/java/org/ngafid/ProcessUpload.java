@@ -43,6 +43,7 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+import org.ngafid.EmailType;
 
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
@@ -236,7 +237,7 @@ public class ProcessUpload {
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
 
             upload.reset(connection);
             System.out.println("upload was reset!\n\n");

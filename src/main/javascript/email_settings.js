@@ -1,0 +1,440 @@
+import 'bootstrap';
+import React, { useEffect, useState } from "react";
+import ReactDOM from "react-dom";
+
+
+import $ from 'jquery';
+window.jQuery = $;
+window.$ = $;
+
+
+export { EmailSettingsTableUser, EmailSettingsTableManager }
+
+
+
+/*
+------------------------------------
+   		 USER SETTINGS 		 
+------------------------------------
+*/
+
+const EmailSettingsTableUser = ({ isAdmin }) => {
+ 
+	//Update user email preferences
+	function updateUserPreferencesEmails(updatedSettings) {
+
+		var submissionData = {
+			handleUpdateType : "HANDLE_UPDATE_USER",
+			...updatedSettings
+			}
+
+		$.ajax({
+			type: 'POST',
+			url: '/protected/update_user_preference_emails',
+			data: submissionData,
+			dataType: 'json',
+
+			success: function(response) {
+				console.log('Preferences updated successfully!', response);
+				},
+
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log('Error updating preferences:', errorThrown);
+				}
+		
+			});
+
+		}
+
+    //Fetch user email preferences
+	function getUserPreferencesEmails() {
+
+		let resultsOut = "No results found.";
+		$.ajax({
+			type: 'GET',
+			url: '/protected/user_preference_emails',
+			dataType : 'json',
+			async: false,
+
+			success : function(response) {
+				console.log("got user pref response");
+				console.log(response);
+				resultsOut = response;
+				},
+
+			error : function(jqXHR, textStatus, errorThrown) {
+				console.log("Error getting upset data:");
+				console.log(errorThrown);
+				},
+
+			});
+			
+		return resultsOut;
+
+		}
+
+	let resultsIn = getUserPreferencesEmails();
+	let emailTypes = resultsIn.emailTypesKeys;
+
+	//Filter out email types marked as HIDDEN or FORCED
+	emailTypes = emailTypes.filter(
+		type => (
+			(type.includes("HIDDEN") !== true)
+			&& (type.includes("FORCED") !== true)
+			)
+		);
+
+	//For admins...
+	if (isAdmin) {
+
+		//...sort the ADMIN email types to the end of the list
+		let emailTypesAdmin = emailTypes.filter(
+			type => (type.includes("ADMIN") === true)
+			);
+
+		emailTypes = emailTypes.filter(
+			type => (type.includes("ADMIN") !== true)
+			);
+
+		emailTypes = emailTypes.concat(emailTypesAdmin);
+
+		}
+
+	//For non-admins
+	else {
+
+		//...filter out the ADMIN email types
+		emailTypes = emailTypes.filter(
+			type => (type.includes("ADMIN") !== true)
+			);
+
+		}
+
+
+
+    const [settings, setSettings] = useState(resultsIn.emailTypesUser);
+    
+    
+
+    const handleCheckboxChange = (type) => {
+
+		setSettings(prevSettings => {
+
+			//Map over the previous settings and make a new array
+			const updatedSettings = {
+				...prevSettings,
+				[type]: !prevSettings[type]
+				};
+
+			console.log("Updated settings: ", updatedSettings);
+
+			//Deliver updated preferences
+			updateUserPreferencesEmails(updatedSettings);
+
+			return updatedSettings;
+
+			});
+
+   		};
+
+	return (
+		<table style={{
+			minWidth: "85%",
+			maxWidth: "85%",
+			paddingLeft: "15%",
+			textAlign: "center",
+			borderCollapse: "separate",
+			borderSpacing: "16px 16px",
+		}}>
+
+			<thead>
+				<tr>
+				{
+					emailTypes.map((type, index) => (
+					<th key={index} style={{textAlign:"center"}}>
+						
+						{type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+
+					</th>
+					))
+				}
+				</tr>
+			</thead>
+
+			<tbody>
+				<tr>
+				{
+					emailTypes.map((type, typeIndex) => (
+						<td key={typeIndex} style={{ textAlign: "center" }}>
+							<input
+								type="checkbox"
+								checked={settings[type] || false}
+								onChange={() => handleCheckboxChange(type)}
+								style={{ scale: "2.00" }}
+							/>
+						</td>
+					))
+				}
+				</tr>
+			</tbody>
+
+		</table>
+		);
+
+    };
+
+
+
+
+/*
+----------------------------------------
+   		 MANAGER SETTINGS  		 
+----------------------------------------
+*/
+
+const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, usersList, emailTypes, emailTypeIndex}) => {
+
+    //Set default state
+    let doClear = true;
+    let emailTypeTarget = emailTypes[emailTypeIndex];
+
+    for(let i = 0 ; i < usersList.length ; i++) {
+
+		let userCurrent = usersList[i];
+		let emailDataList = userCurrent.emailTypesUser;
+
+		//Found unchecked, iterate count
+		if (emailDataList[emailTypeTarget] !== true) {
+			
+			doClear = false;
+			break;
+
+			}
+
+		}
+
+	//Ensure the checkboxes reflect their new states
+	let applyToggle = () => {
+
+   		const updatedSettings = usersList.map(
+			user =>
+			({
+				...user,
+				emailTypesUser: {
+					...user.emailTypesUser,
+					[emailTypeTarget]: !doClear
+					}
+			})
+			);
+
+		setSettings(updatedSettings);
+
+		updatedSettings.forEach(user => {
+			updateUserPreferencesEmails(user, updatedSettings);
+			});
+
+		};
+
+	//Clearing --> Render Unchecking Box
+	if (doClear) {
+		return (
+			<div>
+				<button onClick={applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
+					<i  className="fa fa-square-o fa-lg"></i>
+				</button>
+			</div>
+		);
+	}
+
+	//Not Clearing --> Render Checking Box
+	return (
+		<div>
+			<button onClick={applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
+				<i style={{color:"#2e7ce2"}} className="fa fa-check-square fa-lg"></i>
+			</button>
+		</div>
+	);
+
+    }
+
+
+const EmailSettingsTableManager = ({ fleetUsers }) => {
+
+
+    console.log("Fleet users: ", fleetUsers);
+
+
+    //Update user email preferences
+    function updateUserPreferencesEmails(fleetUser, updatedSettings) {
+
+		console.log("Updating email preferences for User: ", fleetUser);
+
+		let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.userId === fleetUser.userId).emailTypesUser;
+
+		var submissionData = {
+			handleUpdateType : "HANDLE_UPDATE_MANAGER",
+			fleetUserID : fleetUser.userId,
+			fleetID : fleetUser.fleetID,
+			...updatedEmailTypeSettingsTarget
+			}
+
+		console.log("Submission data: ", submissionData);
+
+		$.ajax({
+			type: 'POST',
+			url: '/protected/update_user_preference_emails',
+			data: submissionData,
+			dataType: 'json',
+
+			success: function(response) {
+				console.log('Preferences updated successfully!', response);
+				},
+
+			error: function(jqXHR, textStatus, errorThrown) {
+				console.log('Error updating preferences:', errorThrown);
+				}
+
+			});
+    
+		}
+
+    //For each user in the fleet, get their email preferences
+    let fleetUsersEmailSettings = [];
+    for (let i = 0; i < fleetUsers.length; i++) {
+
+		let userCurrent = fleetUsers[i];
+		let userID = userCurrent.id;
+		let userFleetID = userCurrent.fleetAccess.fleetId;
+		let userSettings = userCurrent.userPreferencesEmails;
+		let userEmail = userCurrent.email;
+
+		userSettings.email = userEmail;
+		userSettings.fleetID = userFleetID;
+
+		//Filter out email types marked as HIDDEN or FORCED
+		let emailTypesKeys = Object.keys(userSettings.emailTypesUser).filter(
+			type => (
+				(type.includes("HIDDEN") !== true)
+				&& (type.includes("FORCED") !== true)
+				)
+			);
+		
+
+		//For admins...
+		if (userCurrent.isAdmin) {
+
+			//...sort the ADMIN email types to the end of the list
+			let emailTypesKeysAdmin = emailTypesKeys.filter(
+				type => (type.includes("ADMIN") === true)
+				);
+
+			emailTypesKeys = emailTypesKeys.filter(
+				type => (type.includes("ADMIN") !== true)
+				);
+
+			emailTypesKeys = emailTypesKeys.concat(emailTypesKeysAdmin);
+
+			}
+
+		//For non-admins
+		else {
+
+			//...filter out the ADMIN email types
+			emailTypesKeys = emailTypesKeys.filter(
+				type => (type.includes("ADMIN") !== true)
+				);
+
+			}
+
+		userSettings.emailTypesKeys = emailTypesKeys;
+		
+		fleetUsersEmailSettings.push(userSettings);
+
+		}
+
+    //Take the first user's email settings to get the email types
+    const emailTypes = fleetUsersEmailSettings[0].emailTypesKeys;
+
+    const [usersList, setUserSettings] = useState(fleetUsersEmailSettings);
+    
+    const handleCheckboxChange = (userTarget, type) => {
+
+		setUserSettings(prevSettings => {
+
+			const updatedSettings = prevSettings.map(
+				setting =>
+				(setting.userId === userTarget.userId)
+				? {
+					...setting,
+					emailTypesUser: {
+						...setting.emailTypesUser,
+						[type]: !setting.emailTypesUser[type]
+						}
+					}
+				: setting
+				);
+
+			console.log(`User ID: ${userTarget.userId} | Type: ${type} | Updated settings: `, updatedSettings);
+
+			let userSettingsTarget = updatedSettings.find(setting => setting.userId === userTarget.userId).emailTypesUser;
+			
+			updateUserPreferencesEmails(userTarget, updatedSettings);
+
+			return updatedSettings;
+
+			});
+
+		};
+
+	return (
+		<table style={{
+		width:"100%",
+		tableLayout: "fixed",
+		borderCollapse: "separate",
+		borderSpacing: "0 0",
+		padding: "16px 16px"
+		}}>
+
+			<thead>
+				<tr>
+				<th>User Email</th>
+				{
+					emailTypes.map((type, index) => (
+						<th key={index}>
+							<div style={{display: 'flex', alignItems: 'center', margin:"-7px", gap:"8px", width:"95%"}}>
+								<ToggleButtonColumnManager updateUserPreferencesEmails={updateUserPreferencesEmails} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
+								
+								{type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+
+							</div>
+						</th>
+					))
+				}
+				</tr>
+			</thead>
+
+			<tbody>
+			{
+				usersList.map((userCurrent, settingIndex) => (
+					<tr key={settingIndex} style={{backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000011'}}>
+						<td style={{padding:"8px 4px"}}>{userCurrent.email}</td>
+						{
+							emailTypes.map((type, typeIndex) => (
+								<td key={typeIndex}>
+									<input
+										type="checkbox"
+										checked={userCurrent.emailTypesUser[type] || false}
+										onChange={() => handleCheckboxChange(userCurrent, type)}
+									/>
+								</td>
+							))
+						}
+					</tr>
+				))
+			}
+			</tbody>
+
+		</table>
+		);
+
+    };

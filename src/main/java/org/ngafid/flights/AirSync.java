@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 import org.codehaus.plexus.util.ExceptionUtils;
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
+import org.ngafid.EmailType;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAircraft;
 import org.ngafid.accounts.AirSyncAuth;
@@ -65,7 +66,7 @@ public class AirSync {
         ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
-        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message);
+        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message, EmailType.AIRSYNC_DAEMON_CRASH);
     }
 
     /**

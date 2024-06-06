@@ -4,6 +4,8 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.TreeMap;
 
+import org.ngafid.EmailType;
+
 public class UploadProcessedEmail {
 
     private static enum FlightStatus {
@@ -303,6 +305,6 @@ public class UploadProcessedEmail {
 
         body.append("</body></html>");
 
-        SendEmail.sendEmail(recipients, bccRecipients, subject, body.toString());
+        SendEmail.sendEmail(recipients, bccRecipients, subject, body.toString(), EmailType.IMPORT_PROCESSED_RECEIPT);
     }
 }
