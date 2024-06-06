@@ -26,7 +26,7 @@ public enum EmailType {
 
         USAGE:
 
-        1. Ensure that you have generated the 'user_preferences_emails' table with 'php db/create_tables.php'
+        1. Ensure that you have generated the 'email_preferences' table with 'php db/create_tables.php'
         2. Add email types here!    (Try to keep the constants and string values the same)
         3. Then generate your new types (or remove old ones, see below) with 'sh run/generate_email_types.sh'
 
@@ -130,7 +130,7 @@ public enum EmailType {
 
 
         StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO user_preferences_emails (user_id, email_type) ");
+        query.append("INSERT INTO email_preferences (user_id, email_type) ");
 
         //Generate "individual" email type queries
         for(EmailType emailType : EmailType.values()) {
@@ -165,8 +165,8 @@ public enum EmailType {
 
     private static void removeOldEmailTypesFromDatabase(Set<String> currentEmailTypes) {
 
-        String selectQuery = "SELECT DISTINCT email_type FROM user_preferences_emails";
-        String deleteQuery = "DELETE FROM user_preferences_emails WHERE email_type = ?";
+        String selectQuery = "SELECT DISTINCT email_type FROM email_preferences";
+        String deleteQuery = "DELETE FROM email_preferences WHERE email_type = ?";
 
         try (
             Connection connection = Database.getConnection();

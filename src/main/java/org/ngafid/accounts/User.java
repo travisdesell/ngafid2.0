@@ -382,7 +382,7 @@ public class User {
  	*/
 	public static UserPreferencesEmails getUserPreferencesEmails(Connection connection, int userId) throws SQLException {
    	 
-    	PreparedStatement query = connection.prepareStatement("SELECT email_type, enabled FROM user_preferences_emails WHERE user_id = ?");
+    	PreparedStatement query = connection.prepareStatement("SELECT email_type, enabled FROM email_preferences WHERE user_id = ?");
     	query.setInt(1, userId);
 
     	ResultSet resultSet = query.executeQuery();
@@ -412,7 +412,7 @@ public class User {
 	public static UserPreferencesEmails updateUserPreferencesEmails(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
 
 		String queryString =
-			"INSERT INTO user_preferences_emails (user_id, email_type, enabled) VALUES (?, ?, ?)"
+			"INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
 			+ " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)"
 			;
 

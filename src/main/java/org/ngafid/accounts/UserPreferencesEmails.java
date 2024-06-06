@@ -72,7 +72,7 @@ public class UserPreferencesEmails {
 
 	private static void populateEmailTypes(Connection connection) throws SQLException {
 
-    	String query = "SELECT email_type, enabled FROM user_preferences_emails";
+    	String query = "SELECT email_type, enabled FROM email_preferences";
     	PreparedStatement statement = connection.prepareStatement(query);
     	ResultSet resultSet = statement.executeQuery();
     	while (resultSet.next()) {

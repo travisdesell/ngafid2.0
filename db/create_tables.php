@@ -7,7 +7,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$drop_email_preferences = false;   	//(Also still dropped by '$drop_tables')
+$drop_email_preferences = true;   	//(Also still dropped by '$drop_tables')
 $update_2022_02_17 = false;
 $update_turn_to_final = false;
 $update_visited_airports = false;
@@ -60,7 +60,7 @@ if ($drop_tables) {
 	query_ngafid_db("DROP TABLE visited_runways");
 	query_ngafid_db("DROP TABLE user_preferences");
 	query_ngafid_db("DROP TABLE user_preferences_metrics");
-	query_ngafid_db("DROP TABLE user_preferences_emails");
+	query_ngafid_db("DROP TABLE email_preferences");
 	query_ngafid_db("DROP TABLE double_series_names");
 	query_ngafid_db("DROP TABLE string_series_names");
 	query_ngafid_db("DROP TABLE stored_filters");
@@ -572,9 +572,9 @@ if (!$update_2022_02_17) {
     */
 
 	if ($drop_email_preferences)
-    	query_ngafid_db("DROP TABLE user_preferences_emails");
+    	query_ngafid_db("DROP TABLE email_preferences");
 
-    $query = "CREATE TABLE `user_preferences_emails` (
+    $query = "CREATE TABLE `email_preferences` (
    	 `user_id` INT(11) NOT NULL,
    	 `email_type` VARCHAR(64) NOT NULL,
    	 `enabled` BOOLEAN NOT NULL DEFAULT 1,
