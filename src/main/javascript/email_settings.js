@@ -379,35 +379,34 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
 	return (
 		<table style={{
 		width:"100%",
-		tableLayout: "fixed",
-		borderCollapse: "separate",
-		borderSpacing: "0 0",
-		padding: "16px 16px"
+		borderCollapse: "collapse",
 		}}>
 
 			<thead>
 				<tr>
-				<th>User Email</th>
-				{
-					emailTypes.map((type, index) => (
-						<th key={index}>
-							<div style={{display: 'flex', alignItems: 'center', margin:"-7px", gap:"8px", width:"95%"}}>
-								<ToggleButtonColumnManager updateUserPreferencesEmails={updateUserPreferencesEmails} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
-								
-								{type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+					<th style={{padding:"0 12px"}}>Email</th>
+					{
+						emailTypes.map((type, index) => (
+							<th key={index}>
+								<div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
+									<ToggleButtonColumnManager updateUserPreferencesEmails={updateUserPreferencesEmails} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
+									
+									{type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
 
-							</div>
-						</th>
-					))
-				}
+								</div>
+							</th>
+						))
+					}
 				</tr>
 			</thead>
 
 			<tbody>
+			<tr style={{border:"solid", borderColor:"#00004411", borderWidth: "2px 0px"}}>
+			</tr>
 			{
 				usersList.map((userCurrent, settingIndex) => (
-					<tr key={settingIndex} style={{backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000011'}}>
-						<td style={{padding:"8px 4px"}}>{userCurrent.email}</td>
+					<tr key={settingIndex} style={{border:"solid", borderColor:"#00004411", borderWidth: "1px 0px", backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000009'}}>
+						<td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
 						{
 							emailTypes.map((type, typeIndex) => (
 								<td key={typeIndex}>

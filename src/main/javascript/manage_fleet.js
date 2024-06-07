@@ -301,22 +301,16 @@ class ManageFleetPage extends React.Component {
                                 	}
                             	</tbody>
                         	</table>
+							
 
-                        	<div className="card-body">
-                            	<div className="col" style={{padding:"0 0 0 0"}}>
-                                	<div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
-                                    	<h6 className="card-header">
-                                    	Fleet Email Preferences
-                                    	</h6>
-                                    	<div className="form-group">
-                                        	<div className="d-flex">
-                                            	<EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
-                                        	<hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
-                                        	</div>
-                                    	</div>
-                                	</div>
-                            	</div>
-                        	</div>
+							<h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+							Fleet Email Preferences
+							</h6>
+							<div className="form-group">
+								<div className="d-flex">
+									<EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
+								</div>
+							</div>
 
                     	</div>
 
