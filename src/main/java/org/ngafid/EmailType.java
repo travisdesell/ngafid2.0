@@ -67,7 +67,7 @@ public enum EmailType {
 
 
     //NOTE: To remove old email types from the database which aren't listed here anymore, set this flag to true
-    private static boolean removeOldEmailTypes = true;
+    private static boolean removeOldEmailTypes = false;
 
     //---------------------------------------------------------------------------------------------------------
 
@@ -79,19 +79,9 @@ public enum EmailType {
 
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
     static {
-        LOG.info("EmailType class loaded...");
         
-        //Send test email
-        ArrayList<String> recipient = new ArrayList<>();
-        ArrayList<String> bccRecipients = new ArrayList<>();
-        recipient.add("aidanqsack@gmail.com");
-        SendEmail.sendEmail(
-            recipient,
-            bccRecipients,
-            "Test Email",
-            "AUGHHHHHHHHH",
-            EmailType.TEST_EMAIL_TYPE
-            );
+        LOG.info("EmailType class loaded...");
+
         }
 
 

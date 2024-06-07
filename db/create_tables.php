@@ -7,7 +7,7 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$drop_email_preferences = true;   	//(Also still dropped by '$drop_tables')
+$drop_email_preferences = false;   	//(Also still dropped by '$drop_tables')
 $update_2022_02_17 = false;
 $update_turn_to_final = false;
 $update_visited_airports = false;
