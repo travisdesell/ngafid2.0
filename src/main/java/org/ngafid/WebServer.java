@@ -313,7 +313,7 @@ public final class WebServer {
 
     	Spark.get("/protected/system_ids", new GetSystemIds(gson));
     	Spark.get("/protected/user_preference", new GetUserPreferences(gson));
-    	Spark.get("/protected/user_preference_emails", new GetUserPreferencesEmails(gson));
+    	Spark.get("/protected/email_preferences", new GetUserPreferencesEmails(gson));
     	Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
     	Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
     	Spark.get("/protected/get_event_description", new GetEventDescription(gson));
@@ -321,7 +321,7 @@ public final class WebServer {
     	Spark.post("/protected/preferences", new PostUserPreferences(gson));
     	Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
     	Spark.post("/protected/update_tail", new PostUpdateTail(gson));
-    	Spark.post("/protected/update_user_preference_emails", new PostUpdateUserPreferencesEmails(gson));
+    	Spark.post("/protected/update_email_preferences", new PostUpdateUserPreferencesEmails(gson));
 
     	// Event Definition Management
     	Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));

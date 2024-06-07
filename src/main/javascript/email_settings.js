@@ -30,7 +30,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 
 		$.ajax({
 			type: 'POST',
-			url: '/protected/update_user_preference_emails',
+			url: '/protected/update_email_preferences',
 			data: submissionData,
 			dataType: 'json',
 
@@ -53,7 +53,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 		let resultsOut = "No results found.";
 		$.ajax({
 			type: 'GET',
-			url: '/protected/user_preference_emails',
+			url: '/protected/email_preferences',
 			dataType : 'json',
 			async: false,
 
@@ -273,7 +273,7 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
 
 		$.ajax({
 			type: 'POST',
-			url: '/protected/update_user_preference_emails',
+			url: '/protected/update_email_preferences',
 			data: submissionData,
 			dataType: 'json',
 
