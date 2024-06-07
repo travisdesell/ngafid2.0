@@ -55,9 +55,11 @@ public class FlightError {
      * @return the number of flight errors for a fleet
      */
     public static int getCount(Connection connection, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT sum(n_error_flights) FROM uploads WHERE fleet_id = ?");
-        query.setInt(1, fleetId);
-        LOG.info(query.toString());
+        String queryString = "SELECT sum(n_error_flights) FROM uploads";
+        if (fleetId > 0)
+            queryString += " WHERE fleet_id = " + fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
 
         ResultSet resultSet = query.executeQuery();
         resultSet.next();
@@ -66,6 +68,7 @@ public class FlightError {
 
         resultSet.close();
         query.close();
+
         return count ;
     }
 
