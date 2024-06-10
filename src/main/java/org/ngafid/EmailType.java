@@ -57,7 +57,7 @@ public enum EmailType {
         Types containing the string 'HIDDEN' (case-sensitive) will not be displayed in the user interface.
           [This might be redundant outside testing with the forced email types, but I'm keeping it for now.]
     */
-    TEST_EMAIL_TYPE("HIDDEN_test_email_type"),
+    //  TEST_EMAIL_TYPE("HIDDEN_test_email_type"),
 
     /*
         Forced email types, which cannot be changed inside the user interface.
@@ -75,37 +75,33 @@ public enum EmailType {
     //---------------------------------------------------------------------------------------------------------
 
 
-    
-
     private final String type;
-
 
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
     static {
-        
         LOG.info("EmailType class loaded...");
-
-        }
+    }
 
 
     //Constructor
     EmailType(String type) {
         this.type = type;
-        }
+    }
 
 
     //Getters
     public String getType() {
         return type;
-        }
+    }
 
     public static EmailType[] getAllTypes() {
         return values();
-        }
+    }
 
     public static boolean isForced(EmailType emailType) {
         return emailType.getType().contains("FORCED");
-        }
+    }
+
 
     //PHP Execution
     public static void insertEmailTypesIntoDatabase() {
@@ -118,13 +114,12 @@ public enum EmailType {
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
             currentEmailTypes.add(emailType.getType());
-            }
+        }
 
         //Remove old email types from the database
-        if (removeOldEmailTypes)
+        if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
-
-
+        }
 
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO email_preferences (user_id, email_type) ");
@@ -132,15 +127,12 @@ public enum EmailType {
         //Generate "individual" email type queries
         for(EmailType emailType : EmailType.values()) {
             query.append("SELECT id, '").append(emailType.getType()).append("' FROM user UNION ALL ");
-            }
+        }
 
         //Remove the last "UNION ALL" from the query
         int lastIndex = query.lastIndexOf("UNION ALL");
         query.delete(lastIndex, lastIndex + "UNION ALL".length());
-
         query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");
-
-
 
         try (
             Connection connection = Database.getConnection();
@@ -150,15 +142,12 @@ public enum EmailType {
             statement.executeUpdate();
             System.out.println("Email Type generation query executed successfully");
 
-            }
-        catch (SQLException e) {
-
+        } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Error executing Email Type generation query: " + e.getMessage());
-
-            }
-
         }
+
+    }
 
     public static void insertEmailTypesIntoDatabase(int userIDTarget) {
 
@@ -171,30 +160,27 @@ public enum EmailType {
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
             currentEmailTypes.add(emailType.getType());
-            }
+        }
 
         //Remove old email types from the database
-        if (removeOldEmailTypes)
+        if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
+        }
 
-        
 
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO email_preferences (user_id, email_type) ");
 
         //Generate "individual" email type queries
-        for(EmailType emailType : EmailType.values()) {
+        for (EmailType emailType : EmailType.values()) {
             query.append("SELECT ").append(userIDTarget).append(", '").append(emailType.getType()).append("' UNION ALL ");
-            }
+        }
 
         //Remove the last "UNION ALL" from the query
         int lastIndex = query.lastIndexOf("UNION ALL");
 
         query.delete(lastIndex, lastIndex + "UNION ALL".length());
-
         query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");
-
-
 
         try (
             Connection connection = Database.getConnection();
@@ -204,15 +190,12 @@ public enum EmailType {
             statement.executeUpdate();
             System.out.println("Email Type generation query executed successfully");
 
-            }
-        catch (SQLException e) {
-
+        } catch (SQLException e) {
             e.printStackTrace();
             System.out.println("Error executing Email Type generation query: " + e.getMessage());
-
-            }
-
         }
+
+    }
 
     private static void removeOldEmailTypesFromDatabase(Set<String> currentEmailTypes) {
 
@@ -229,32 +212,32 @@ public enum EmailType {
             while (queryResult.next()) {
 
                 String emailType = queryResult.getString("email_type");
-                if (currentEmailTypes.contains(emailType) == false) {
+                if (!currentEmailTypes.contains(emailType)) {
 
                     deleteStatement.setString(1, emailType);
                     deleteStatement.executeUpdate();
                     System.out.println("Removed old Email Type: " + emailType);
-                
-                    }
             
                 }
+        
+            }
 
             connection.close();
 
-            }
-
-        catch (SQLException e) {
+        } catch (SQLException e) {
 
             e.printStackTrace();
             System.out.println("Error removing old Email Types: " + e.getMessage());
         
-            }
         }
+
+    }
+
 
     //Main
     public static void main(String[] args) {
         insertEmailTypesIntoDatabase();
         System.exit(0);
-        }
-
     }
+
+}

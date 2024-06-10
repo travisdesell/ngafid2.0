@@ -14,19 +14,19 @@ export { EmailSettingsTableUser, EmailSettingsTableManager }
 
 /*
 ------------------------------------
-            USER SETTINGS          
+            USER SETTINGS           
 ------------------------------------
 */
 
 const EmailSettingsTableUser = ({ isAdmin }) => {
  
     //Update user email preferences
-    function updateUserPreferencesEmails(updatedSettings) {
+    function updateUserEmailPreferences(updatedSettings) {
 
         var submissionData = {
             handleUpdateType : "HANDLE_UPDATE_USER",
             ...updatedSettings
-            }
+        }
 
         $.ajax({
             type: 'POST',
@@ -37,18 +37,18 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
             success: function(response) {
                 // console.log('Email preferences updated successfully!', response);
                 console.log('Email preferences updated successfully!');
-                },
+            },
 
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log('Error updating email preferences:', errorThrown);
-                }
+            }
         
-            });
+        });
 
-        }
+    }
 
     //Fetch user email preferences
-    function getUserPreferencesEmails() {
+    function getUserEmailPreferences() {
 
         let resultsOut = "No results found.";
         $.ajax({
@@ -61,20 +61,19 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
                 console.log("got user pref response");
                 // console.log(response);
                 resultsOut = response;
-                },
-
+            },
             error : function(jqXHR, textStatus, errorThrown) {
                 console.log("Error getting upset data:");
                 console.log(errorThrown);
-                },
+            },
 
-            });
+        });
             
         return resultsOut;
 
-        }
+    }
 
-    let resultsIn = getUserPreferencesEmails();
+    let resultsIn = getUserEmailPreferences();
     let emailTypes = resultsIn.emailTypesKeys;
 
     //Filter out email types marked as HIDDEN or FORCED
@@ -82,8 +81,8 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
         type => (
             (type.includes("HIDDEN") !== true)
             && (type.includes("FORCED") !== true)
-            )
-        );
+        )
+    );
 
     //For admins...
     if (isAdmin) {
@@ -91,15 +90,15 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
         //...sort the ADMIN email types to the end of the list
         let emailTypesAdmin = emailTypes.filter(
             type => (type.includes("ADMIN") === true)
-            );
+        );
 
         emailTypes = emailTypes.filter(
             type => (type.includes("ADMIN") !== true)
-            );
+        );
 
         emailTypes = emailTypes.concat(emailTypesAdmin);
 
-        }
+    }
 
     //For non-admins
     else {
@@ -107,14 +106,12 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
         //...filter out the ADMIN email types
         emailTypes = emailTypes.filter(
             type => (type.includes("ADMIN") !== true)
-            );
+        );
 
-        }
-
+    }
 
 
     const [settings, setSettings] = useState(resultsIn.emailTypesUser);
-    
     
 
     const handleCheckboxChange = (type) => {
@@ -125,16 +122,16 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
             const updatedSettings = {
                 ...prevSettings,
                 [type]: !prevSettings[type]
-                };
+            };
 
             //Deliver updated preferences
-            updateUserPreferencesEmails(updatedSettings);
+            updateUserEmailPreferences(updatedSettings);
 
             return updatedSettings;
 
-            });
+        });
 
-           };
+    };
 
     return (
         <table style={{
@@ -150,11 +147,11 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
                 <tr>
                 {
                     emailTypes.map((type, index) => (
-                    <th key={index} style={{textAlign:"center"}}>
-                        
-                        {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-
-                    </th>
+                        <th key={index} style={{textAlign:"center"}}>
+                        {
+                            type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                        }
+                        </th>
                     ))
                 }
                 </tr>
@@ -178,20 +175,20 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
             </tbody>
 
         </table>
-        );
+    );
 
-    };
+};
 
 
 
 
 /*
 ----------------------------------------
-            MANAGER SETTINGS           
+            MANAGER SETTINGS            
 ----------------------------------------
 */
 
-const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, usersList, emailTypes, emailTypeIndex}) => {
+const ToggleButtonColumnManager = ({updateUserEmailPreferences, setSettings, usersList, emailTypes, emailTypeIndex}) => {
 
     //Set default state
     let doClear = true;
@@ -204,18 +201,16 @@ const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, us
 
         //Found unchecked, iterate count
         if (emailDataList[emailTypeTarget] !== true) {
-            
             doClear = false;
             break;
-
-            }
-
         }
+
+    }
 
     //Ensure the checkboxes reflect their new states
     let applyToggle = () => {
 
-           const updatedSettings = usersList.map(
+        const updatedSettings = usersList.map(
             user =>
             ({
                 ...user,
@@ -224,15 +219,15 @@ const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, us
                     [emailTypeTarget]: !doClear
                     }
             })
-            );
+        );
 
         setSettings(updatedSettings);
 
         updatedSettings.forEach(user => {
-            updateUserPreferencesEmails(user, updatedSettings);
-            });
+            updateUserEmailPreferences(user, updatedSettings);
+        });
 
-        };
+    };
 
     //Clearing --> Render Unchecking Box
     if (doClear) {
@@ -254,17 +249,18 @@ const ToggleButtonColumnManager = ({updateUserPreferencesEmails, setSettings, us
         </div>
     );
 
-    }
+}
 
 
 const EmailSettingsTableManager = ({ fleetUsers }) => {
 
     //No users in the fleet, return empty
-    if (fleetUsers.length == 0)
+    if (fleetUsers.length == 0) {
         return ( <div></div> );
+    }
 
     //Update user email preferences
-    function updateUserPreferencesEmails(fleetUser, updatedSettings) {
+    function updateUserEmailPreferences(fleetUser, updatedSettings) {
 
         let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.userId === fleetUser.userId).emailTypesUser;
 
@@ -273,7 +269,7 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             fleetUserID : fleetUser.userId,
             fleetID : fleetUser.fleetID,
             ...updatedEmailTypeSettingsTarget
-            }
+        }
 
         $.ajax({
             type: 'POST',
@@ -284,15 +280,14 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             success: function(response) {
                 // console.log('Preferences updated successfully!', response);
                 console.log('Preferences updated successfully!');
-                },
-
+            },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log('Error updating preferences:', errorThrown);
-                }
+            }
 
-            });
+        });
     
-        }
+    }
 
     //For each user in the fleet, get their email preferences
     let fleetUsersEmailSettings = [];
@@ -301,7 +296,7 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
         let userCurrent = fleetUsers[i];
         let userID = userCurrent.id;
         let userFleetID = userCurrent.fleetAccess.fleetId;
-        let userSettings = userCurrent.userPreferencesEmails;
+        let userSettings = userCurrent.userEmailPreferences;
         let userEmail = userCurrent.email;
 
         userSettings.email = userEmail;
@@ -312,8 +307,8 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             type => (
                 (type.includes("HIDDEN") !== true)
                 && (type.includes("FORCED") !== true)
-                )
-            );
+            )
+        );
 
         //For admins...
         if (userCurrent.isAdmin) {
@@ -327,17 +322,17 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             //...sort the ADMIN email types to the end of the list
             let emailTypesKeysAdmin = emailTypesKeys.filter(
                 type => (type.includes("ADMIN") === true)
-                );
+            );
 
             emailTypesKeys = emailTypesKeys.filter(
                 type => (type.includes("ADMIN") !== true)
-                );
+            );
 
             emailTypesKeys = emailTypesKeys.concat(emailTypesKeysAdmin);
 
             */
 
-            }
+        }
 
         //For non-admins
         else {
@@ -345,30 +340,34 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             //...filter out the ADMIN email types
             emailTypesKeys = emailTypesKeys.filter(
                 type => (type.includes("ADMIN") !== true)
-                );
+            );
 
-            }
+        }
 
         userSettings.emailTypesKeys = emailTypesKeys;
         
         fleetUsersEmailSettings.push(userSettings);
 
-        }
+    }
 
     //Get the email type keys
     var emailTypesSet = {};
     for(let i = 0 ; i < fleetUsersEmailSettings.length ; i++) {
+
         let userCurrent = fleetUsersEmailSettings[i];
         let emailTypesKeys = userCurrent.emailTypesKeys;
 
         for(let j = 0 ; j < emailTypesKeys.length ; j++) {
             let emailType = emailTypesKeys[j];
             emailTypesSet[emailType] = true;
-            }
         }
+
+    }
     const emailTypes = Object.keys(emailTypesSet);
 
+
     const [usersList, setUserSettings] = useState(fleetUsersEmailSettings);
+
     
     const handleCheckboxChange = (userTarget, type) => {
 
@@ -382,20 +381,20 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
                     emailTypesUser: {
                         ...setting.emailTypesUser,
                         [type]: !setting.emailTypesUser[type]
-                        }
                     }
+                }
                 : setting
-                );
+            );
 
             let userSettingsTarget = updatedSettings.find(setting => setting.userId === userTarget.userId).emailTypesUser;
 
-            updateUserPreferencesEmails(userTarget, updatedSettings);
+            updateUserEmailPreferences(userTarget, updatedSettings);
 
             return updatedSettings;
 
-            });
+        });
 
-        };
+    };
 
     return (
         <table style={{
@@ -410,10 +409,10 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
                         emailTypes.map((type, index) => (
                             <th key={index}>
                                 <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
-                                    <ToggleButtonColumnManager updateUserPreferencesEmails={updateUserPreferencesEmails} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
-                                    
-                                    {type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-
+                                    <ToggleButtonColumnManager updateUserEmailPreferences={updateUserEmailPreferences} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
+                                    {
+                                        type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                                    }
                                 </div>
                             </th>
                         ))
@@ -445,6 +444,6 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             </tbody>
 
         </table>
-        );
+    );
 
-    };
+};

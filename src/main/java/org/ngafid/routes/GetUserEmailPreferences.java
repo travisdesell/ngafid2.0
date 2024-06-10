@@ -25,22 +25,20 @@ import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
-import org.ngafid.accounts.UserPreferencesEmails;
+import org.ngafid.accounts.UserEmailPreferences;
 import org.ngafid.flights.Tail;
 import org.ngafid.flights.Tails;
 
-public class GetUserPreferencesEmails implements Route {
+public class GetUserEmailPreferences implements Route {
 
-    private static final Logger LOG = Logger.getLogger(GetUserPreferencesEmails.class.getName());
+    private static final Logger LOG = Logger.getLogger(GetUserEmailPreferences.class.getName());
     private static Connection connection = Database.getConnection();
     private Gson gson;
 
-    public GetUserPreferencesEmails(Gson gson) {
-
+    public GetUserEmailPreferences(Gson gson) {
         this.gson = gson;
-        LOG.info("get " + this.getClass().getName() + " initalized");
-        
-        }
+        LOG.info("get " + this.getClass().getName() + " initalized");   
+    }
 
     @Override
     public Object handle(Request request, Response response) {
@@ -59,38 +57,34 @@ public class GetUserPreferencesEmails implements Route {
             if (sessionUser == null) {
                 response.status(400);
                 return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Missing userID parameter + no session user available"));
-                }
+            }
 
             userID = sessionUser.getId();
 
-            }
+        }
         
         //userID was specified, try to parse it
         else {
 
             try {
                 userID = Integer.parseInt(userIDParam);
-                }
-
-            catch (NumberFormatException e) {
+            } catch (NumberFormatException e) {
                 response.status(400);
                 return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Specified an invalid userID parameter"));
-                }
-
             }
+
+        }
 
         try {
-            UserPreferencesEmails userPreferences = User.getUserPreferencesEmails(connection, userID);
+            UserEmailPreferences userPreferences = User.getUserEmailPreferences(connection, userID);
             return gson.toJson(userPreferences);
-            }
-
-        catch (Exception se) {
-            LOG.severe("Error in GetUserPreferencesEmails.java");
+        } catch (Exception se) {
+            LOG.severe("Error in GetUserEmailPreferences.java");
             se.printStackTrace();
             response.status(500);
             return gson.toJson(new ErrorResponse(se));
-            }
-    
         }
-
+    
     }
+
+}

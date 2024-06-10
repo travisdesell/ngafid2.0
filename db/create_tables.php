@@ -7,7 +7,6 @@ $cwd[__FILE__] = dirname($cwd[__FILE__]);
 require_once($cwd[__FILE__] . "/my_query.php");
 
 $drop_tables = false;
-$drop_email_preferences = false;       //(Also still dropped by '$drop_tables')
 $update_2022_02_17 = false;
 $update_turn_to_final = false;
 $update_visited_airports = false;
@@ -564,25 +563,15 @@ if (!$update_2022_02_17) {
     query_ngafid_db($query);
 
 
-    
-    /*
-        User Email Settings (5-31-24)
-       
-        ...
-    */
-
-    if ($drop_email_preferences)
-        query_ngafid_db("DROP TABLE email_preferences");
-
     $query = "CREATE TABLE `email_preferences` (
         `user_id` INT(11) NOT NULL,
         `email_type` VARCHAR(64) NOT NULL,
         `enabled` BOOLEAN NOT NULL DEFAULT 1,
+
         PRIMARY KEY (`user_id`, `email_type`),
         FOREIGN KEY (`user_id`) REFERENCES user(`id`)
-        )";
+    );";
     query_ngafid_db($query);
-
 
 
     $query = "CREATE TABLE `stored_filters` (

@@ -38,6 +38,7 @@ public final class WebServer {
     public static final String MUSTACHE_TEMPLATE_DIR;
 
     static {
+
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -313,7 +314,7 @@ public final class WebServer {
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
-        Spark.get("/protected/email_preferences", new GetUserPreferencesEmails(gson));
+        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.get("/protected/get_event_description", new GetEventDescription(gson));
@@ -321,7 +322,7 @@ public final class WebServer {
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
-        Spark.post("/protected/update_email_preferences", new PostUpdateUserPreferencesEmails(gson));
+        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));

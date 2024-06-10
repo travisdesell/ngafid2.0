@@ -39,7 +39,7 @@ public class User {
     private boolean admin;
     private boolean aggregateView;
 
-    private UserPreferencesEmails userPreferencesEmails;
+    private UserEmailPreferences userEmailPreferences;
 
     /**
      * The following are references to the fleet the user has access to (if it has approved access
@@ -87,8 +87,8 @@ public class User {
     /**
     * @return the user's email preferences
     */
-    public UserPreferencesEmails getUserPreferencesEmails() {
-        return userPreferencesEmails;
+    public UserEmailPreferences getUserEmailPreferences() {
+        return userEmailPreferences;
     }
 
     /**
@@ -240,8 +240,8 @@ public class User {
         user.fleet = Fleet.get(connection, fleetId);
 
         //Get the email preferences for this user
-        user.userPreferencesEmails = getUserPreferencesEmails(connection, userId);
-        UserPreferencesEmails.addUser(user);
+        user.userEmailPreferences = getUserEmailPreferences(connection, userId);
+        UserEmailPreferences.addUser(user);
 
         //do not need to get the fleet as this is called from populateUsers
 
@@ -380,7 +380,7 @@ public class User {
      *
      * @return an instane of {@link UserPreferences} with all the user's preferences and settings
      */
-    public static UserPreferencesEmails getUserPreferencesEmails(Connection connection, int userId) throws SQLException {
+    public static UserEmailPreferences getUserEmailPreferences(Connection connection, int userId) throws SQLException {
 
         //Check if the user has any email preferences first...
         PreparedStatement queryInitial = connection.prepareStatement("SELECT COUNT(*) FROM email_preferences WHERE user_id = ?");
@@ -389,18 +389,15 @@ public class User {
         ResultSet resultSetInitial = queryInitial.executeQuery();
         int emailPreferencesCount = 0;
 
-        if (resultSetInitial.next())
+        if (resultSetInitial.next()) {
             emailPreferencesCount = resultSetInitial.getInt(1);
+        }
 
         //The user has no email preferences, create the default ones
         if (emailPreferencesCount == 0) {
-
             LOG.info("User with ID (" + userId + ") has no email preferences in the database, generating defaults...");
             EmailType.insertEmailTypesIntoDatabase(userId);
-
-            }
-
-
+        }
 
         //Get the user's email preferences...
         PreparedStatement query = connection.prepareStatement("SELECT email_type, enabled FROM email_preferences WHERE user_id = ?");
@@ -411,27 +408,24 @@ public class User {
         HashMap<String, Boolean> emailPreferences = new HashMap<>();
 
         while (resultSet.next()) {
-
             String emailType = resultSet.getString(1);
             boolean enabled = resultSet.getBoolean(2);
 
             emailPreferences.put(emailType, enabled);
-
-            }
-
-        return new UserPreferencesEmails(userId, emailPreferences);
-
         }
+
+        return new UserEmailPreferences(userId, emailPreferences);
+
+    }
 
     /**
      * Updates the user email preferences in the database
      *
      * @param connection A connection to the mysql database
      * @param userId the userId to update for
-     * @param emailPreferences the {@link UserPreferencesEmails} instance to store
+     * @param emailPreferences the {@link UserEmailPreferences} instance to store
      */
-    public static UserPreferencesEmails updateUserPreferencesEmails(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
-
+    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
         String queryString =
             "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
             + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)"
@@ -440,29 +434,25 @@ public class User {
         PreparedStatement query = connection.prepareStatement(queryString);
 
         for (String emailType : emailPreferences.keySet()) {
-
             query.setInt(1, userId);
             query.setString(2, emailType);
             query.setBoolean(3, emailPreferences.get(emailType));
 
             query.executeUpdate();
-        
-            }
+        }
 
-        UserPreferencesEmails updatedEmailPreferences = User.getUserPreferencesEmails(connection, userId);
+        UserEmailPreferences updatedEmailPreferences = User.getUserEmailPreferences(connection, userId);
 
-        User userTarget = UserPreferencesEmails.getUser(userId);
+        User userTarget = UserEmailPreferences.getUser(userId);
         userTarget.setEmailPreferences(updatedEmailPreferences);
 
         return updatedEmailPreferences;
     
-        }
+    }
 
-    public void setEmailPreferences(UserPreferencesEmails updatedEmailPreferences) {
-
-        this.userPreferencesEmails = updatedEmailPreferences;
-
-        }
+    public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {
+        this.userEmailPreferences = updatedEmailPreferences;
+    }
 
 
 
@@ -569,8 +559,8 @@ public class User {
         }
 
         //Get the email preferences for this user
-        user.userPreferencesEmails = getUserPreferencesEmails(connection, user.getId());
-        UserPreferencesEmails.addUser(user);
+        user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
+        UserEmailPreferences.addUser(user);
 
         return user;
     }

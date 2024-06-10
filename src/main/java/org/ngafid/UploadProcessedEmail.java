@@ -264,8 +264,6 @@ public class UploadProcessedEmail {
 
     public void sendEmail() {
 
-        LOG.info(String.format("[EX] Preparing to deliver email of type: %s", EmailType.IMPORT_PROCESSED_RECEIPT));
-
         StringBuilder body = new StringBuilder();
 
         body.append("<body><html><br>");
