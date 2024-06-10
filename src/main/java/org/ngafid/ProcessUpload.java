@@ -148,7 +148,7 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
-                    sendMonthlyFlightsUpdate(targetFleetId);
+                    //  sendMonthlyFlightsUpdate(targetFleetId);    [EX] Disabling ALL monthly flight update calls for now!
 
 
                     //TURN OFF FOR REGULAR USE
@@ -194,7 +194,7 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
-            sendMonthlyFlightsUpdate(fleetId);
+            //  sendMonthlyFlightsUpdate(fleetId);  [EX] Disabling ALL monthly flight update calls for now!
 
         } catch (SQLException e) {
             System.err.println("Encountered error");
@@ -269,7 +269,8 @@ public class ProcessUpload {
                 uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
             }
 
-            sendMonthlyFlightsUpdate(fleetId);
+            //  sendMonthlyFlightsUpdate(fleetId);    [EX] Disabling ALL monthly flight update calls for now!
+
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {
