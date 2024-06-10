@@ -38,6 +38,9 @@ public enum EmailType {
     /*
         Admin email types, only visible to admins.
         Types containing the string 'ADMIN' (case-sensitive) will not be displayed to non-admin users.
+
+        Because the email types will default to true anyways, never try to use the values of these
+        to detect whether or not a user is an admin.
     */
     ADMIN_SHUTDOWN_NOTIFICATION("ADMIN_shutdown_notification"),
     ADMIN_EXCEPTION_NOTIFICATION("ADMIN_exception_notification"),
@@ -107,6 +110,10 @@ public enum EmailType {
     //PHP Execution
     public static void insertEmailTypesIntoDatabase() {
 
+        /*
+            Generate email types for all users in the database...
+        */
+
         //Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
@@ -129,6 +136,60 @@ public enum EmailType {
 
         //Remove the last "UNION ALL" from the query
         int lastIndex = query.lastIndexOf("UNION ALL");
+        query.delete(lastIndex, lastIndex + "UNION ALL".length());
+
+        query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");
+
+
+
+        try (
+            Connection connection = Database.getConnection();
+            PreparedStatement statement = connection.prepareStatement(query.toString())
+            ) {
+
+            statement.executeUpdate();
+            System.out.println("Email Type generation query executed successfully");
+
+            }
+        catch (SQLException e) {
+
+            e.printStackTrace();
+            System.out.println("Error executing Email Type generation query: " + e.getMessage());
+
+            }
+
+        }
+
+    public static void insertEmailTypesIntoDatabase(int userIDTarget) {
+
+        /*
+            Generate email types for a specific user ID...
+            (for new user registration)
+        */
+
+        //Record all email types currently in the database
+        Set<String> currentEmailTypes = new HashSet<>();
+        for (EmailType emailType : EmailType.values()) {
+            currentEmailTypes.add(emailType.getType());
+            }
+
+        //Remove old email types from the database
+        if (removeOldEmailTypes)
+            removeOldEmailTypesFromDatabase(currentEmailTypes);
+
+        
+
+        StringBuilder query = new StringBuilder();
+        query.append("INSERT INTO email_preferences (user_id, email_type) ");
+
+        //Generate "individual" email type queries
+        for(EmailType emailType : EmailType.values()) {
+            query.append("SELECT ").append(userIDTarget).append(", '").append(emailType.getType()).append("' UNION ALL ");
+            }
+
+        //Remove the last "UNION ALL" from the query
+        int lastIndex = query.lastIndexOf("UNION ALL");
+
         query.delete(lastIndex, lastIndex + "UNION ALL".length());
 
         query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");

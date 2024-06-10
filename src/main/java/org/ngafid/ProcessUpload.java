@@ -221,6 +221,9 @@ public class ProcessUpload {
 
     public static void processUpload(Upload upload) {
         try {
+
+            LOG.info(String.format("[EX] Preparing to deliver email of type: %s", EmailType.UPLOAD_PROCESS_START));
+
             int uploadId = upload.getId();
             int uploaderId = upload.getUploaderId();
             int fleetId = upload.getFleetId();

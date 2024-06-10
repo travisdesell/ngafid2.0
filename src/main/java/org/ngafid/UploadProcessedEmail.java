@@ -6,7 +6,11 @@ import java.util.TreeMap;
 
 import org.ngafid.EmailType;
 
+import java.util.logging.Logger;
+
 public class UploadProcessedEmail {
+
+    private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     private static enum FlightStatus {
         OK, ERROR, WARNING
@@ -259,6 +263,9 @@ public class UploadProcessedEmail {
 
 
     public void sendEmail() {
+
+        LOG.info(String.format("[EX] Preparing to deliver email of type: %s", EmailType.IMPORT_PROCESSED_RECEIPT));
+
         StringBuilder body = new StringBuilder();
 
         body.append("<body><html><br>");
