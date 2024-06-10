@@ -34,108 +34,108 @@ import static org.ngafid.flights.calculations.Parameters.*;
 
 public class PostUpdateUserPreferencesEmails implements Route {
 
-	private static final Logger LOG = Logger.getLogger(PostUpdateUserPreferencesEmails.class.getName());
-	private Gson gson;
-	private static Connection connection = Database.getConnection();
+    private static final Logger LOG = Logger.getLogger(PostUpdateUserPreferencesEmails.class.getName());
+    private Gson gson;
+    private static Connection connection = Database.getConnection();
 
-	public PostUpdateUserPreferencesEmails(Gson gson) {
-   	 
-    	this.gson = gson;
-    	LOG.info("post email prefs route initialized.");
+    public PostUpdateUserPreferencesEmails(Gson gson) {
+        
+        this.gson = gson;
+        LOG.info("post email prefs route initialized.");
     
-    	}
+        }
 
-	@Override
-	public Object handle(Request request, Response response) {
+    @Override
+    public Object handle(Request request, Response response) {
 
-    	final Session session = request.session();
-    	User sessionUser = session.attribute("user");
-
-
-		//Log the raw handleUpdateType value
-		String handleUpdateType = request.queryParams("handleUpdateType");
+        final Session session = request.session();
+        User sessionUser = session.attribute("user");
 
 
-		//User Update...
-		if (handleUpdateType.equals("HANDLE_UPDATE_USER"))
-			return handleUserUpdate(request, response, sessionUser);
+        //Log the raw handleUpdateType value
+        String handleUpdateType = request.queryParams("handleUpdateType");
 
-		//Manager Update...
-		else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER"))
-			return handleManagerUpdate(request, response, sessionUser);
 
-		//ERROR -- Unknown Update!
-		LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
-		Spark.halt(401, "handleUpdateType not specified.");
-		return null;
+        //User Update...
+        if (handleUpdateType.equals("HANDLE_UPDATE_USER"))
+            return handleUserUpdate(request, response, sessionUser);
+
+        //Manager Update...
+        else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER"))
+            return handleManagerUpdate(request, response, sessionUser);
+
+        //ERROR -- Unknown Update!
+        LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
+        Spark.halt(401, "handleUpdateType not specified.");
+        return null;
     
-    	}
+        }
 
 
-	//Handle User Update
-	public Object handleUserUpdate(Request request, Response response, User sessionUser) {
+    //Handle User Update
+    public Object handleUserUpdate(Request request, Response response, User sessionUser) {
 
-		//Unpack Submission Data
-		int userID = sessionUser.getId();
+        //Unpack Submission Data
+        int userID = sessionUser.getId();
 
-		HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-		for (String emailKey : request.queryParams()) {
+        HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
+        for (String emailKey : request.queryParams()) {
 
-			if (emailKey.equals("handleUpdateType"))
-				continue;
+            if (emailKey.equals("handleUpdateType"))
+                continue;
 
-			emailTypesUser.put(
-				emailKey,
-				Boolean.parseBoolean(request.queryParams(emailKey))
-				);
-		
-			}
+            emailTypesUser.put(
+                emailKey,
+                Boolean.parseBoolean(request.queryParams(emailKey))
+                );
+        
+            }
 
-		try {
-			return gson.toJson(User.updateUserPreferencesEmails(connection, userID, emailTypesUser));
-			}
-		catch (Exception e) {
-			e.printStackTrace();
-			return gson.toJson(new ErrorResponse(e));
-			}
+        try {
+            return gson.toJson(User.updateUserPreferencesEmails(connection, userID, emailTypesUser));
+            }
+        catch (Exception e) {
+            e.printStackTrace();
+            return gson.toJson(new ErrorResponse(e));
+            }
 
-		}
+        }
 
-	//Handle Manager Update
-	public Object handleManagerUpdate(Request request, Response response, User sessionUser) {
+    //Handle Manager Update
+    public Object handleManagerUpdate(Request request, Response response, User sessionUser) {
 
-		//Unpack Submission Data
+        //Unpack Submission Data
         int fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
         int fleetID = Integer.parseInt(request.queryParams("fleetID"));
 
-		HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
+        HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
         for (String emailKey : request.queryParams()) {
 
-			if(emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType"))
-				continue;
+            if(emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType"))
+                continue;
 
-			emailTypesUser.put(
-				emailKey,
-				Boolean.parseBoolean(request.queryParams(emailKey))
-				);
-		
-			}
+            emailTypesUser.put(
+                emailKey,
+                Boolean.parseBoolean(request.queryParams(emailKey))
+                );
+        
+            }
 
         //Check to see if the logged in user can update access to this fleet
         if (sessionUser.managesFleet(fleetID) == false) {
-			LOG.severe("INVALID ACCESS: user did not have access to modify user email preferences on this fleet.");
+            LOG.severe("INVALID ACCESS: user did not have access to modify user email preferences on this fleet.");
             Spark.halt(401, "User did not have access to modify user email preferences on this fleet.");
             return null;
-			}
+            }
 
-    	try {
-			return gson.toJson(User.updateUserPreferencesEmails(connection, fleetUserID, emailTypesUser));
-        	}
-    	catch (Exception e) {
-        	e.printStackTrace();
-        	return gson.toJson(new ErrorResponse(e));
-        	}
+        try {
+            return gson.toJson(User.updateUserPreferencesEmails(connection, fleetUserID, emailTypesUser));
+            }
+        catch (Exception e) {
+            e.printStackTrace();
+            return gson.toJson(new ErrorResponse(e));
+            }
 
-		}
+        }
 
-	}
+    }

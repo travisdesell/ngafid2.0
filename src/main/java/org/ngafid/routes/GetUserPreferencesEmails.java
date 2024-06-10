@@ -31,66 +31,66 @@ import org.ngafid.flights.Tails;
 
 public class GetUserPreferencesEmails implements Route {
 
-	private static final Logger LOG = Logger.getLogger(GetUserPreferencesEmails.class.getName());
-	private static Connection connection = Database.getConnection();
-	private Gson gson;
+    private static final Logger LOG = Logger.getLogger(GetUserPreferencesEmails.class.getName());
+    private static Connection connection = Database.getConnection();
+    private Gson gson;
 
-	public GetUserPreferencesEmails(Gson gson) {
+    public GetUserPreferencesEmails(Gson gson) {
 
-    	this.gson = gson;
-    	LOG.info("get " + this.getClass().getName() + " initalized");
-   	 
-    	}
+        this.gson = gson;
+        LOG.info("get " + this.getClass().getName() + " initalized");
+        
+        }
 
-	@Override
-	public Object handle(Request request, Response response) {
+    @Override
+    public Object handle(Request request, Response response) {
 
-    	LOG.info("handling " + this.getClass().getName() + " route");
+        LOG.info("handling " + this.getClass().getName() + " route");
 
-    	final Session session = request.session();
-    	User sessionUser = session.attribute("user");
+        final Session session = request.session();
+        User sessionUser = session.attribute("user");
 
-    	String userIDParam = request.queryParams("userID");
-    	int userID;
+        String userIDParam = request.queryParams("userID");
+        int userID;
 
-    	//No userID parameter specified, try using the session user
-    	if (userIDParam == null) {
+        //No userID parameter specified, try using the session user
+        if (userIDParam == null) {
 
-        	if (sessionUser == null) {
-            	response.status(400);
-            	return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Missing userID parameter + no session user available"));
-            	}
+            if (sessionUser == null) {
+                response.status(400);
+                return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Missing userID parameter + no session user available"));
+                }
 
-        	userID = sessionUser.getId();
+            userID = sessionUser.getId();
 
-        	}
-   	 
-    	//userID was specified, try to parse it
-    	else {
+            }
+        
+        //userID was specified, try to parse it
+        else {
 
-        	try {
-            	userID = Integer.parseInt(userIDParam);
-            	}
+            try {
+                userID = Integer.parseInt(userIDParam);
+                }
 
-        	catch (NumberFormatException e) {
-            	response.status(400);
-            	return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Specified an invalid userID parameter"));
-            	}
+            catch (NumberFormatException e) {
+                response.status(400);
+                return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Specified an invalid userID parameter"));
+                }
 
-        	}
+            }
 
-    	try {
-        	UserPreferencesEmails userPreferences = User.getUserPreferencesEmails(connection, userID);
-        	return gson.toJson(userPreferences);
-        	}
+        try {
+            UserPreferencesEmails userPreferences = User.getUserPreferencesEmails(connection, userID);
+            return gson.toJson(userPreferences);
+            }
 
-    	catch (Exception se) {
-        	LOG.severe("Error in GetUserPreferencesEmails.java");
-        	se.printStackTrace();
-        	response.status(500);
-        	return gson.toJson(new ErrorResponse(se));
-        	}
+        catch (Exception se) {
+            LOG.severe("Error in GetUserPreferencesEmails.java");
+            se.printStackTrace();
+            response.status(500);
+            return gson.toJson(new ErrorResponse(se));
+            }
     
-    	}
+        }
 
-	}
+    }

@@ -32,57 +32,57 @@ require_once($cwd[__FILE__] . "/my_query.php");
 
 $update_series_names = false;
 if ($update_series_names) {
-	query_ngafid_db("ALTER TABLE `double_series` ADD COLUMN `name_id` INT(11) AFTER `name`, algorithm=inplace, lock=none");
-	query_ngafid_db("ALTER TABLE `double_series` ADD COLUMN `data_type_id` INT(11), ALGORITHM=INPLACE, LOCK=NONE");
+    query_ngafid_db("ALTER TABLE `double_series` ADD COLUMN `name_id` INT(11) AFTER `name`, algorithm=inplace, lock=none");
+    query_ngafid_db("ALTER TABLE `double_series` ADD COLUMN `data_type_id` INT(11), ALGORITHM=INPLACE, LOCK=NONE");
 
-	$query = "CREATE TABLE `double_series_names` (
+    $query = "CREATE TABLE `double_series_names` (
 
-    	`id` INT(11) NOT NULL AUTO_INCREMENT,
-    	`name` VARCHAR(64) NOT NULL,
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `name` VARCHAR(64) NOT NULL,
 
-    	PRIMARY KEY(`id`),
-    	UNIQUE KEY(`name`)
-	) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+        PRIMARY KEY(`id`),
+        UNIQUE KEY(`name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-	query_ngafid_db($query);
+    query_ngafid_db($query);
 
-	query_ngafid_db("ALTER TABLE `string_series` ADD COLUMN `name_id` INT(11) AFTER `name`, algorithm=inplace, lock=none");
-	query_ngafid_db("ALTER TABLE `string_series` ADD COLUMN `data_type_id` INT(11), ALGORITHM=INPLACE, LOCK=NONE");
+    query_ngafid_db("ALTER TABLE `string_series` ADD COLUMN `name_id` INT(11) AFTER `name`, algorithm=inplace, lock=none");
+    query_ngafid_db("ALTER TABLE `string_series` ADD COLUMN `data_type_id` INT(11), ALGORITHM=INPLACE, LOCK=NONE");
 
-	$query = "CREATE TABLE `string_series_names` (
+    $query = "CREATE TABLE `string_series_names` (
 
-    	`id` INT(11) NOT NULL AUTO_INCREMENT,
-    	`name` VARCHAR(64) NOT NULL,
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `name` VARCHAR(64) NOT NULL,
 
-    	PRIMARY KEY(`id`),
-    	UNIQUE KEY(`name`)
-	) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+        PRIMARY KEY(`id`),
+        UNIQUE KEY(`name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-	query_ngafid_db($query);
+    query_ngafid_db($query);
 
-	$query = "CREATE TABLE `data_type_names` (
+    $query = "CREATE TABLE `data_type_names` (
 
-    	`id` INT(11) NOT NULL AUTO_INCREMENT,
-    	`name` VARCHAR(64) NOT NULL,
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `name` VARCHAR(64) NOT NULL,
 
-    	PRIMARY KEY(`id`),
-    	UNIQUE KEY(`name`)
-	) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+        PRIMARY KEY(`id`),
+        UNIQUE KEY(`name`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-	query_ngafid_db($query);
+    query_ngafid_db($query);
 
-	//AFTER THIS NEED TO RUN fix_series_names.php AND THEN DROP THE `name` and `data_type` columns from `double_series` and `string_series`
+    //AFTER THIS NEED TO RUN fix_series_names.php AND THEN DROP THE `name` and `data_type` columns from `double_series` and `string_series`
 }
 
 //for user preferences
 /*
 $query = "CREATE TABLE `user_preferences` (
-	`user_id` INT(11) NOT NULL,
-	`decimal_precision` INT(11) NOT NULL,
-	`metrics` VARCHAR(4096) NOT NULL,
+    `user_id` INT(11) NOT NULL,
+    `decimal_precision` INT(11) NOT NULL,
+    `metrics` VARCHAR(4096) NOT NULL,
 
-	PRIMARY KEY(`user_id`),
-	FOREIGN KEY(`user_id`) REFERENCES user(`id`)
+    PRIMARY KEY(`user_id`),
+    FOREIGN KEY(`user_id`) REFERENCES user(`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
 query_ngafid_db($query);
@@ -90,28 +90,28 @@ query_ngafid_db($query);
 
 $update_user_preferences_metrics = false;
 if ($update_user_preferences_metrics) {
-	query_ngafid_db("alter table user_preferences drop column metrics");
-	$query = "CREATE TABLE `user_preferences_metrics` (
-    	`user_id` INT(11) NOT NULL,
-    	`metric_id` INT(11) NOT NULL,
+    query_ngafid_db("alter table user_preferences drop column metrics");
+    $query = "CREATE TABLE `user_preferences_metrics` (
+        `user_id` INT(11) NOT NULL,
+        `metric_id` INT(11) NOT NULL,
 
-    	PRIMARY KEY(`user_id`,`metric_id`),
-    	FOREIGN KEY(`user_id`) REFERENCES user(`id`),
-    	FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
-	) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+        PRIMARY KEY(`user_id`,`metric_id`),
+        FOREIGN KEY(`user_id`) REFERENCES user(`id`),
+        FOREIGN KEY(`metric_id`) REFERENCES double_series_names(`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
-	query_ngafid_db($query);
+    query_ngafid_db($query);
 }
 
 
 //need to update this to be able to differentiate between flights by type (e.g., fixed wing, rotorcraft, uas)
 /*
 $query = "CREATE TABLE `airframe_types` (
-	`id` INT(11) NOT NULL AUTO_INCREMENT,
-	`name` VARCHAR(32) NOT NULL,
+    `id` INT(11) NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(32) NOT NULL,
 
-	PRIMARY KEY(`id`),
-	UNIQUE KEY `name_key` (`name`)
+    PRIMARY KEY(`id`),
+    UNIQUE KEY `name_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_ngafid_db($query);
 query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
@@ -127,25 +127,25 @@ query_ngafid_db("ALTER TABLE `flights` ADD INDEX `airframe_type_id_index` (`airf
 
 
 /*
-	+----+----------------------------+
-	| id | airframe               	|
-	+----+----------------------------+
-	| 10 | Cessna 172R            	|
-	|  2 | Cessna 172S            	|
-	|  8 | Cessna 182T            	|
-	|  4 | Cirrus SR20            	|
-	|  7 | Diamond DA 40          	|
-	| 11 | Diamond DA 40 F        	|
-	| 14 | Diamond DA40           	|
-	|  6 | Diamond DA40NG         	|
-	| 13 | Diamond DA42NG         	|
-	|  5 | Garmin Flight Display  	|
-	|  1 | PA-28-181              	|
-	|  3 | PA-44-180              	|
-	|  9 | Piper PA-46-500TP Meridian |
-	| 12 | Unknown Aircraft       	|
-	+----+----------------------------+
-	14 rows in set (0.01 sec)
+    +----+----------------------------+
+    | id | airframe                   |
+    +----+----------------------------+
+    | 10 | Cessna 172R                |
+    |  2 | Cessna 172S                |
+    |  8 | Cessna 182T                |
+    |  4 | Cirrus SR20                |
+    |  7 | Diamond DA 40              |
+    | 11 | Diamond DA 40 F            |
+    | 14 | Diamond DA40               |
+    |  6 | Diamond DA40NG             |
+    | 13 | Diamond DA42NG             |
+    |  5 | Garmin Flight Display      |
+    |  1 | PA-28-181                  |
+    |  3 | PA-44-180                  |
+    |  9 | Piper PA-46-500TP Meridian |
+    | 12 | Unknown Aircraft           |
+    +----+----------------------------+
+    14 rows in set (0.01 sec)
  */
 
 //1 - PA-28-181
@@ -155,62 +155,62 @@ query_ngafid_db("ALTER TABLE `flights` ADD INDEX `airframe_type_id_index` (`airf
 
 $set_airframes = false;
 if ($set_airframes) {
-	query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-28-181'");
-	query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
-	query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
-	query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-28-181'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'Cessna 172S'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'PA-44-180'");
+    query_ngafid_db("INSERT INTO airframes SET airframe = 'Cirrus SR20'");
 
-	query_ngafid_db("alter table event_definitions modify column severity_type VARCHAR(7)");            	 
-	query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
+    query_ngafid_db("alter table event_definitions modify column severity_type VARCHAR(7)");                 
+    query_ngafid_db("update event_definitions set severity_type = 'max abs' where severity_type = 'abs'");   
 }
 
 
 /*
  * +-----------------------+--------------+------+-----+---------+----------------+
- * | Field             	| Type     	| Null | Key | Default | Extra      	|
+ * | Field                 | Type         | Null | Key | Default | Extra          |
  * +-----------------------+--------------+------+-----+---------+----------------+
- * | id                	| int(11)  	| NO   | PRI | NULL	| auto_increment |
- * | fleet_id          	| int(11)  	| NO   | 	| NULL	|            	|
- * | airframe_id       	| int(11)  	| NO   | 	| NULL	|            	|
- * | name              	| varchar(64)  | NO   | 	| NULL	|            	|
- * | start_buffer      	| int(11)  	| YES  | 	| NULL	|            	|
- * | stop_buffer       	| int(11)  	| YES  | 	| NULL	|            	|
- * | column_names      	| varchar(128) | YES  | 	| NULL	|            	|
- * | condition_json    	| varchar(512) | YES  | 	| NULL	|            	|
- * | severity_column_names | varchar(128) | YES  | 	| NULL	|            	|
- * | severity_type     	| varchar(3)   | YES  | 	| NULL	|            	|
- * | color             	| varchar(6)   | YES  | 	| NULL	|            	|
+ * | id                    | int(11)      | NO   | PRI | NULL    | auto_increment |
+ * | fleet_id              | int(11)      | NO   |     | NULL    |                |
+ * | airframe_id           | int(11)      | NO   |     | NULL    |                |
+ * | name                  | varchar(64)  | NO   |     | NULL    |                |
+ * | start_buffer          | int(11)      | YES  |     | NULL    |                |
+ * | stop_buffer           | int(11)      | YES  |     | NULL    |                |
+ * | column_names          | varchar(128) | YES  |     | NULL    |                |
+ * | condition_json        | varchar(512) | YES  |     | NULL    |                |
+ * | severity_column_names | varchar(128) | YES  |     | NULL    |                |
+ * | severity_type         | varchar(3)   | YES  |     | NULL    |                |
+ * | color                 | varchar(6)   | YES  |     | NULL    |                |
  * +-----------------------+--------------+------+-----+---------+----------------+
  */
 
 $update_users_admin = false;
 if ($update_users_admin) {
-	query_ngafid_db("alter table user add column admin BOOLEAN default 0");
-	query_ngafid_db("alter table user add column aggregate_view BOOLEAN default 0");
+    query_ngafid_db("alter table user add column admin BOOLEAN default 0");
+    query_ngafid_db("alter table user add column aggregate_view BOOLEAN default 0");
 }
 
 
 //for checking to see if current updates have been done to inserted flights (e.g., did we fix calculating the CHT divergence)
 $update_flights_status = false;
 if ($update_flights_status) {
-	query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
+    query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
 }
 
 $update_for_airsync = false;
 if ($update_for_airsync) {
-	// this creates the default AirSync user
-	query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', 'A');");
+    // this creates the default AirSync user
+    query_ngafid_db("INSERT INTO user (first_name, last_name, email, address, password_token) VALUES ('airsync', 'user', 'info@airsync.com', '', 'A');");
 }
 
 $update_system_id_length = false;
 if ($update_system_id_length) {
-	query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24)");
+    query_ngafid_db("ALTER TABLE flights MODIFY COLUMN system_id VARCHAR(24)");
 }
 
 $update_event_meta_data = true;
 if ($update_event_meta_data) {
-	query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('lateral_distance');");
-	query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('vertical_distance');");
+    query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('lateral_distance');");
+    query_ngafid_db("INSERT INTO event_metadata_keys (name) VALUES ('vertical_distance');");
 
 }
 
