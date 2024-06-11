@@ -30,52 +30,19 @@ public class UserEmailPreferences {
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
 
-    //Store default email types in a HashMap
-    private static HashMap<String, String> defaultEmailTypes = new HashMap<String, String>();
-    private static String[] defaultEmailKeys;
-    static {
 
-        try {
-            Connection connection = Database.getConnection();
-            populateEmailTypes(connection);
-        } catch (SQLException e) {
-            System.err.println("Error initializing email types: " + e.getMessage());
-            e.printStackTrace();
-        }
-    
-    }
-
-    //Constructor
     public UserEmailPreferences(int userId, HashMap<String, Boolean> emailTypesUser) {
         this.userId = userId;
         this.emailTypesUser = emailTypesUser;
-        this.emailTypesKeys = defaultEmailKeys;
-    }
-
-
-    public static UserEmailPreferences defaultPreferences(int userId) {
-
-        HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-
-        for (String emailType : UserEmailPreferences.defaultEmailTypes.keySet()) {
-            emailTypesUser.put(emailType, false);
+        
+        String[] keysRecent = EmailType.getEmailTypeKeysRecent(true);
+        /*
+        LOG.info("[EX] Email Type Keys: ");
+        for (String key : keysRecent) {
+            LOG.info("- Key "+key);
         }
-
-        return new UserEmailPreferences(userId, emailTypesUser);
-
-    }
-
-    private static void populateEmailTypes(Connection connection) throws SQLException {
-
-        String query = "SELECT email_type, enabled FROM email_preferences";
-        PreparedStatement statement = connection.prepareStatement(query);
-        ResultSet resultSet = statement.executeQuery();
-        while (resultSet.next()) {
-            defaultEmailTypes.put(resultSet.getString(1), resultSet.getString(2));
-        }
-    
-        defaultEmailKeys = defaultEmailTypes.keySet().toArray( new String[defaultEmailTypes.size() ]);
-
+        */
+        this.emailTypesKeys = keysRecent;
     }
 
     public static void addUser(User user) {
@@ -89,10 +56,6 @@ public class UserEmailPreferences {
 
     public static User getUser(int userId) {
         return users.get(userId);
-    }
-
-    public static HashMap<String, String> getDefaultEmailTypes() {
-        return new HashMap<>(defaultEmailTypes);
     }
 
     public HashMap<String, Boolean> getEmailTypesUser() {

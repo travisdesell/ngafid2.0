@@ -77,6 +77,9 @@ public enum EmailType {
 
     private final String type;
 
+    //Track the most recent/up-to-date keys for the email types fetched from the database
+    private final static HashSet<String> emailTypeKeysRecent = new HashSet<>();
+
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
     static {
         LOG.info("EmailType class loaded...");
@@ -98,6 +101,16 @@ public enum EmailType {
         return values();
     }
 
+    public static String[] getEmailTypeKeysRecent(Boolean doRefresh) {
+
+        //Force a refresh of the keys
+        if (doRefresh)
+            refreshEmailTypeKeysRecent();
+
+        String[] keysOut = new String[emailTypeKeysRecent.size()];
+        return emailTypeKeysRecent.toArray(keysOut);
+    }
+
     public static boolean isForced(EmailType emailType) {
         return emailType.getType().contains("FORCED");
     }
@@ -109,6 +122,9 @@ public enum EmailType {
         /*
             Generate email types for all users in the database...
         */
+
+        //Clear the recent email type keys
+        emailTypeKeysRecent.clear();
 
         //Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
@@ -126,7 +142,9 @@ public enum EmailType {
 
         //Generate "individual" email type queries
         for(EmailType emailType : EmailType.values()) {
-            query.append("SELECT id, '").append(emailType.getType()).append("' FROM user UNION ALL ");
+            String emailTypeKey = emailType.getType();
+            emailTypeKeysRecent.add(emailTypeKey);
+            query.append("SELECT id, '").append(emailTypeKey).append("' FROM user UNION ALL ");
         }
 
         //Remove the last "UNION ALL" from the query
@@ -156,6 +174,9 @@ public enum EmailType {
             (for new user registration)
         */
 
+        //Clear the recent email type keys
+        emailTypeKeysRecent.clear();
+
         //Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
@@ -167,13 +188,14 @@ public enum EmailType {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
 
-
         StringBuilder query = new StringBuilder();
         query.append("INSERT INTO email_preferences (user_id, email_type) ");
 
         //Generate "individual" email type queries
         for (EmailType emailType : EmailType.values()) {
-            query.append("SELECT ").append(userIDTarget).append(", '").append(emailType.getType()).append("' UNION ALL ");
+            String emailTypeKey = emailType.getType();
+            emailTypeKeysRecent.add(emailTypeKey);
+            query.append("SELECT ").append(userIDTarget).append(", '").append(emailTypeKey).append("' UNION ALL ");
         }
 
         //Remove the last "UNION ALL" from the query
@@ -229,6 +251,29 @@ public enum EmailType {
             e.printStackTrace();
             System.out.println("Error removing old Email Types: " + e.getMessage());
         
+        }
+
+    }
+
+    private static void refreshEmailTypeKeysRecent() {
+
+        //Clear the recent email type keys
+        emailTypeKeysRecent.clear();
+
+        //Record all email types currently in the database
+        Set<String> currentEmailTypes = new HashSet<>();
+        for (EmailType emailType : EmailType.values()) {
+            currentEmailTypes.add(emailType.getType());
+        }
+
+        //Remove old email types from the database
+        if (removeOldEmailTypes) {
+            removeOldEmailTypesFromDatabase(currentEmailTypes);
+        }
+
+        //Record all email types currently in the database
+        for (EmailType emailType : EmailType.values()) {
+            emailTypeKeysRecent.add(emailType.getType());
         }
 
     }

@@ -75,7 +75,6 @@ public class GetUserEmailPreferences implements Route {
             fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
         }
 
-
         try {
             UserEmailPreferences userPreferences = User.getUserEmailPreferences(connection, fleetUserID);
             return gson.toJson(userPreferences);

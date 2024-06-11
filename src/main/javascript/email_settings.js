@@ -33,6 +33,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
             url: '/protected/update_email_preferences',
             data: submissionData,
             dataType: 'json',
+            async: false,
 
             success: function(response) {
                 // console.log('Email preferences updated successfully!', response);
@@ -65,7 +66,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 
             success : function(response) {
                 console.log("got user pref response");
-                // console.log(response);
+                 console.log(response);
                 resultsOut = response;
             },
             error : function(jqXHR, textStatus, errorThrown) {
@@ -282,6 +283,7 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
             url: '/protected/update_email_preferences',
             data: submissionData,
             dataType: 'json',
+            async: false,
 
             success: function(response) {
                 // console.log('Preferences updated successfully!', response);
