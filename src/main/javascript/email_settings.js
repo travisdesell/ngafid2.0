@@ -55,7 +55,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 
         let submissionData = {
             handleFetchType : "HANDLE_FETCH_USER"
-            } 
+        };
 
         $.ajax({
             type: 'GET',
@@ -305,7 +305,7 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
         let submissionData = {
             handleFetchType : "HANDLE_FETCH_MANAGER",
             fleetUserID : userTarget.id
-            } 
+        };
 
         $.ajax({
             type: 'GET',
