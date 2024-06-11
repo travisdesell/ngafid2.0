@@ -1,4 +1,4 @@
-package org.ngafid;
+package org.ngafid.accounts;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;

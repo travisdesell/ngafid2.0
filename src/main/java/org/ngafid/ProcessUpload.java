@@ -43,7 +43,7 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
-import org.ngafid.EmailType;
+import org.ngafid.accounts.EmailType;
 
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 

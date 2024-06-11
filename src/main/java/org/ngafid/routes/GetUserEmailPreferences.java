@@ -31,6 +31,17 @@ import org.ngafid.flights.Tails;
 
 public class GetUserEmailPreferences implements Route {
 
+
+    /*
+        This route's 'handle' method requires one or
+        two string keys supplied alongside the to
+        operate correctly!
+
+        Should either be...
+            1. "HANDLE_FETCH_USER" (for user data)
+            2. "HANDLE_FETCH_MANAGER" (for a user's data in a manager's fleet)
+    */
+
     private static final Logger LOG = Logger.getLogger(GetUserEmailPreferences.class.getName());
     private static Connection connection = Database.getConnection();
     private Gson gson;
@@ -45,38 +56,28 @@ public class GetUserEmailPreferences implements Route {
 
         LOG.info("handling " + this.getClass().getName() + " route");
 
+        //Unpack Fetching Data
+        String handleFetchType = request.queryParams("handleFetchType");
+
         final Session session = request.session();
         User sessionUser = session.attribute("user");
 
-        String userIDParam = request.queryParams("userID");
-        int userID;
 
-        //No userID parameter specified, try using the session user
-        if (userIDParam == null) {
-
-            if (sessionUser == null) {
-                response.status(400);
-                return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Missing userID parameter + no session user available"));
-            }
-
-            userID = sessionUser.getId();
-
-        }
+        int fleetUserID = -1;
         
-        //userID was specified, try to parse it
-        else {
-
-            try {
-                userID = Integer.parseInt(userIDParam);
-            } catch (NumberFormatException e) {
-                response.status(400);
-                return gson.toJson(new ErrorResponse("[GET Email Preference Error]", "Specified an invalid userID parameter"));
-            }
-
+        //Fetching Session User...
+        if (handleFetchType.equals("HANDLE_FETCH_USER")) {
+            fleetUserID = sessionUser.getId();
         }
+
+        //Fetching a Manager's Fleet User...
+        else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) {
+            fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
+        }
+
 
         try {
-            UserEmailPreferences userPreferences = User.getUserEmailPreferences(connection, userID);
+            UserEmailPreferences userPreferences = User.getUserEmailPreferences(connection, fleetUserID);
             return gson.toJson(userPreferences);
         } catch (Exception se) {
             LOG.severe("Error in GetUserEmailPreferences.java");

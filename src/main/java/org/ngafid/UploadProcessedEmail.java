@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.TreeMap;
 
-import org.ngafid.EmailType;
+import org.ngafid.accounts.EmailType;
 
 import java.util.logging.Logger;
 

@@ -3,6 +3,7 @@ package org.ngafid;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.EmailType;
 
 import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
@@ -23,6 +24,7 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
+
 
 /**
  * The entry point for the NGAFID web server.

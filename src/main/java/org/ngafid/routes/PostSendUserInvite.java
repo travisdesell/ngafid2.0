@@ -2,7 +2,7 @@ package org.ngafid.routes;
 
 import com.google.gson.Gson;
 import org.ngafid.SendEmail;
-import org.ngafid.EmailType;
+import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
 
 import spark.Route;

@@ -13,7 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import org.ngafid.Database;
-import org.ngafid.EmailType;
+import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.UserEmailPreferences;
 
 import java.util.*;

@@ -37,7 +37,7 @@ public class PostUpdateUserEmailPreferences implements Route {
     /*
         This route's 'handle' method requires one or
         two string keys supplied alongside the update
-        data to function correctly!
+        data to operate correctly!
 
         Should either be...
             1. "HANDLE_UPDATE_USER" (for user updates)

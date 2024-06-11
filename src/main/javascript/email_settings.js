@@ -51,10 +51,16 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
     function getUserEmailPreferences() {
 
         let resultsOut = "No results found.";
+
+        let submissionData = {
+            handleFetchType : "HANDLE_FETCH_USER"
+            } 
+
         $.ajax({
             type: 'GET',
             url: '/protected/email_preferences',
-            dataType : 'json',
+            data: submissionData,
+            dataType: 'json',
             async: false,
 
             success : function(response) {
@@ -289,15 +295,52 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
     
     }
 
+    //Fetch user email preferences
+    function getUserEmailPreferences(userTarget) {
+
+        let resultsOut = "No results found.";
+
+        let submissionData = {
+            handleFetchType : "HANDLE_FETCH_MANAGER",
+            fleetUserID : userTarget.id
+            } 
+
+        $.ajax({
+            type: 'GET',
+            url: '/protected/email_preferences',
+            data: submissionData,
+            dataType : 'json',
+            async: false,
+
+            success : function(response) {
+                console.log("got user pref response");
+                // console.log(response);
+                resultsOut = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log("Error getting upset data:");
+                console.log(errorThrown);
+            },
+
+        });
+            
+        return resultsOut;
+
+    }
+
     //For each user in the fleet, get their email preferences
     let fleetUsersEmailSettings = [];
     for (let i = 0; i < fleetUsers.length; i++) {
 
         let userCurrent = fleetUsers[i];
-        let userID = userCurrent.id;
+
+        console.log("User Current: ", userCurrent);
+
         let userFleetID = userCurrent.fleetAccess.fleetId;
-        let userSettings = userCurrent.userEmailPreferences;
+        let userSettings = getUserEmailPreferences(userCurrent);
         let userEmail = userCurrent.email;
+
+        console.log("User Settings: ", userSettings);
 
         userSettings.email = userEmail;
         userSettings.fleetID = userFleetID;

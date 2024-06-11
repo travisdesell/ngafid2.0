@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.ngafid.Database;
-import org.ngafid.EmailType;
+import org.ngafid.accounts.EmailType;
 
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -82,10 +82,8 @@ public class UserEmailPreferences {
 
         users.put(user.getId(), user);
 
-        emailTypesUsers.put(
-            user.getEmail(),
-            user.getUserEmailPreferences().getEmailTypesUser()
-            );
+        Connection connection = Database.getConnection();
+        emailTypesUsers.put( user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser() );
 
     }
 
