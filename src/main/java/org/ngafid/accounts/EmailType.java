@@ -101,7 +101,7 @@ public enum EmailType {
         return values();
     }
 
-    public static String[] getEmailTypeKeysRecent(Boolean doRefresh) {
+    public static String[] getEmailTypeKeysRecent(boolean doRefresh) {
 
         //Force a refresh of the keys
         if (doRefresh)
