@@ -86,7 +86,6 @@ public enum EmailType {
     }
 
 
-    //Constructor
     EmailType(String type) {
         this.type = type;
     }
@@ -137,20 +136,20 @@ public enum EmailType {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
 
-        StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO email_preferences (user_id, email_type) ");
-
         //Generate "individual" email type queries
+        List<String> emailTypeQueries = new ArrayList<>();
         for(EmailType emailType : EmailType.values()) {
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
-            query.append("SELECT id, '").append(emailTypeKey).append("' FROM user UNION ALL ");
+            emailTypeQueries.add("SELECT id, '" + emailTypeKey + "' FROM user");
         }
 
-        //Remove the last "UNION ALL" from the query
-        int lastIndex = query.lastIndexOf("UNION ALL");
-        query.delete(lastIndex, lastIndex + "UNION ALL".length());
-        query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");
+        //Merge individual email type queries
+        String query = 
+              "INSERT INTO email_preferences (user_id, email_type) "
+            + String.join(" UNION ALL ", emailTypeQueries)
+            + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)"
+            ;
 
         try (
             Connection connection = Database.getConnection();
@@ -188,21 +187,20 @@ public enum EmailType {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
 
-        StringBuilder query = new StringBuilder();
-        query.append("INSERT INTO email_preferences (user_id, email_type) ");
-
         //Generate "individual" email type queries
+        List<String> emailTypeQueries = new ArrayList<>();
         for (EmailType emailType : EmailType.values()) {
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
-            query.append("SELECT ").append(userIDTarget).append(", '").append(emailTypeKey).append("' UNION ALL ");
+            emailTypeQueries.add("SELECT '" + userIDTarget + ", '" + emailTypeKey + "' FROM user");
         }
 
-        //Remove the last "UNION ALL" from the query
-        int lastIndex = query.lastIndexOf("UNION ALL");
-
-        query.delete(lastIndex, lastIndex + "UNION ALL".length());
-        query.append(" ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)");
+        //Merge individual email type queries
+        String query = 
+              "INSERT INTO email_preferences (user_id, email_type) "
+            + String.join(" UNION ALL ", emailTypeQueries)
+            + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type)"
+            ;
 
         try (
             Connection connection = Database.getConnection();
