@@ -240,7 +240,7 @@ public class User {
         user.fleet = Fleet.get(connection, fleetId);
 
         //Record this user in the email preferences map
-        UserEmailPreferences.addUser(user);
+        UserEmailPreferences.addUser(connection, user);
 
         //do not need to get the fleet as this is called from populateUsers
 
@@ -559,7 +559,7 @@ public class User {
 
         //Get the email preferences for this user
         user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
-        UserEmailPreferences.addUser(user);
+        UserEmailPreferences.addUser(connection, user);
 
         return user;
     }

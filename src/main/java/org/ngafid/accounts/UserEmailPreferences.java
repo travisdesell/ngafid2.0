@@ -42,14 +42,14 @@ public class UserEmailPreferences {
             LOG.info("- Key "+key);
         }
         */
+
         this.emailTypesKeys = keysRecent;
     }
 
-    public static void addUser(User user) {
+    public static void addUser(Connection connection, User user) throws SQLException {
 
         users.put(user.getId(), user);
 
-        Connection connection = Database.getConnection();
         emailTypesUsers.put( user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser() );
 
     }
