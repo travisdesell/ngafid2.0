@@ -20,6 +20,7 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
+import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
@@ -69,10 +70,20 @@ public class GetUserEmailPreferences implements Route {
         if (handleFetchType.equals("HANDLE_FETCH_USER")) {
             fleetUserID = sessionUser.getId();
         }
-
+        
         //Fetching a Manager's Fleet User...
         else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) {
+
             fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
+            int fleetID = Integer.parseInt(request.queryParams("fleetID"));
+
+            //Check to see if the logged in user can update access to this fleet
+            if (!sessionUser.managesFleet(fleetID)) {
+                LOG.severe("INVALID ACCESS: user did not have access to fetch user email preferences on this fleet.");
+                Spark.halt(401, "User did not have access to fetch user email preferences on this fleet.");
+                return null;
+            }
+
         }
 
         try {

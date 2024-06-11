@@ -100,7 +100,7 @@ class MetricViewerSettings extends React.Component {
         let submissionData = {
             metricName : name,
             modificationType : type
-        }
+        };
 
         $.ajax({
             type: 'POST',
