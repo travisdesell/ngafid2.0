@@ -158,11 +158,11 @@ public enum EmailType {
             ) {
 
             statement.executeUpdate();
-            System.out.println("Email Type generation query executed successfully");
+            LOG.info("Email Type generation query executed successfully");
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Error executing Email Type generation query: " + e.getMessage());
+            LOG.severe("Error executing Email Type generation query: " + e.getMessage());
         }
 
     }
@@ -210,11 +210,11 @@ public enum EmailType {
             ) {
 
             statement.executeUpdate();
-            System.out.println("Email Type generation query executed successfully");
+            LOG.info("Email Type generation query executed successfully");
 
         } catch (SQLException e) {
             e.printStackTrace();
-            System.out.println("Error executing Email Type generation query: " + e.getMessage());
+            LOG.severe("Error executing Email Type generation query: " + e.getMessage());
         }
 
     }
@@ -238,7 +238,7 @@ public enum EmailType {
 
                     deleteStatement.setString(1, emailType);
                     deleteStatement.executeUpdate();
-                    System.out.println("Removed old Email Type: " + emailType);
+                    LOG.info("Removed old Email Type: " + emailType);
             
                 }
         
@@ -249,7 +249,7 @@ public enum EmailType {
         } catch (SQLException e) {
 
             e.printStackTrace();
-            System.out.println("Error removing old Email Types: " + e.getMessage());
+            LOG.severe("Error removing old Email Types: " + e.getMessage());
         
         }
 

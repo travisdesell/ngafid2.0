@@ -87,15 +87,8 @@ public class User {
     /**
     * @return the user's email preferences
     */
-    public UserEmailPreferences getUserEmailPreferences(Connection connection) {
-
-        try {
-            return User.getUserEmailPreferences(connection, id);
-        } catch (SQLException e) {
-            e.printStackTrace();
-            return null;
-        }
-        
+    public UserEmailPreferences getUserEmailPreferences(Connection connection) throws SQLException {
+        return User.getUserEmailPreferences(connection, id);
     }
 
     /**
@@ -246,8 +239,7 @@ public class User {
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
         user.fleet = Fleet.get(connection, fleetId);
 
-        //Get the email preferences for this user
-        //user.userEmailPreferences = getUserEmailPreferences(connection, userId);
+        //Record this user in the email preferences map
         UserEmailPreferences.addUser(user);
 
         //do not need to get the fleet as this is called from populateUsers
