@@ -1,5 +1,5 @@
 import 'bootstrap';
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from 'react';
 import ReactDOM from "react-dom";
 
 
@@ -18,30 +18,48 @@ export { EmailSettingsTableUser, EmailSettingsTableManager }
 ------------------------------------
 */
 
-const EmailSettingsTableUser = ({ isAdmin }) => {
- 
+class EmailSettingsTableUser extends React.Component {
+
+    constructor(props) {
+        super(props);
+        console.log("Generating User Email Settings Table...");
+        this.state = {
+            emailTypes: [],
+            settings: {},
+            disableFetching : false
+        };
+    }
+
+    componentDidMount() {
+        this.getUserEmailPreferences();
+    }
+
+
     //Update user email preferences
-    function updateUserEmailPreferences(updatedSettings) {
+    updateUserEmailPreferences = (updatedSettings) => {
 
         var submissionData = {
             handleUpdateType : "HANDLE_UPDATE_USER",
             ...updatedSettings
-        }
+        };
+
+        this.setState({ disableFetching: true });
 
         $.ajax({
             type: 'POST',
             url: '/protected/update_email_preferences',
             data: submissionData,
             dataType: 'json',
-            async: false,
+            async: true,
 
-            success: function(response) {
-                // console.log('Email preferences updated successfully!', response);
+            success: (response) => {
                 console.log('Email preferences updated successfully!');
+                this.setState({ disableFetching: false });
             },
 
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error updating email preferences:', errorThrown);
+                this.setState({ disableFetching: false });
             }
         
         });
@@ -49,9 +67,7 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
     }
 
     //Fetch user email preferences
-    function getUserEmailPreferences() {
-
-        let resultsOut = "No results found.";
+    getUserEmailPreferences = () => {
 
         let submissionData = {
             handleFetchType : "HANDLE_FETCH_USER"
@@ -62,127 +78,143 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
             url: '/protected/email_preferences',
             data: submissionData,
             dataType: 'json',
-            async: false,
+            async: true,
 
-            success : function(response) {
+            success: (response) => {
+
                 console.log("got user pref response");
-                 console.log(response);
-                resultsOut = response;
+                console.log(response);
+
+                let emailTypesIn = response.emailTypesKeys;
+                let emailTypesUserIn = response.emailTypesUser;
+    
+                //Filter out email types marked as HIDDEN or FORCED
+                emailTypesIn = emailTypesIn.filter(
+                    type => (
+                        (type.includes("HIDDEN") !== true)
+                        && (type.includes("FORCED") !== true)
+                    )
+                );
+            
+                //For admins...
+                if (this.props.isAdmin) {
+            
+                    //...sort the ADMIN email types to the end of the list
+                    let emailTypesAdmin = emailTypesIn.filter(
+                        type => (type.includes("ADMIN") === true)
+                    );
+            
+                    emailTypesIn = emailTypesIn.filter(
+                        type => (type.includes("ADMIN") !== true)
+                    );
+            
+                    emailTypesIn = emailTypesIn.concat(emailTypesAdmin);
+            
+                }
+            
+                //For non-admins
+                else {
+            
+                    //...filter out the ADMIN email types
+                    emailTypesIn = emailTypesIn.filter(
+                        type => (type.includes("ADMIN") !== true)
+                    );
+            
+                }
+
+                this.setState({
+                    emailTypes: emailTypesIn,
+                    settings: emailTypesUserIn
+                });
+
             },
-            error : function(jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 console.log("Error getting upset data:");
                 console.log(errorThrown);
             },
 
         });
-            
-        return resultsOut;
 
     }
 
-    let resultsIn = getUserEmailPreferences();
-    let emailTypes = resultsIn.emailTypesKeys;
-
-    //Filter out email types marked as HIDDEN or FORCED
-    emailTypes = emailTypes.filter(
-        type => (
-            (type.includes("HIDDEN") !== true)
-            && (type.includes("FORCED") !== true)
-        )
-    );
-
-    //For admins...
-    if (isAdmin) {
-
-        //...sort the ADMIN email types to the end of the list
-        let emailTypesAdmin = emailTypes.filter(
-            type => (type.includes("ADMIN") === true)
-        );
-
-        emailTypes = emailTypes.filter(
-            type => (type.includes("ADMIN") !== true)
-        );
-
-        emailTypes = emailTypes.concat(emailTypesAdmin);
-
-    }
-
-    //For non-admins
-    else {
-
-        //...filter out the ADMIN email types
-        emailTypes = emailTypes.filter(
-            type => (type.includes("ADMIN") !== true)
-        );
-
-    }
-
-
-    const [settings, setSettings] = useState(resultsIn.emailTypesUser);
+    handleCheckboxChange = (type) => {
     
+        this.setState(
+            prevState => {
 
-    const handleCheckboxChange = (type) => {
+                //Map over the previous settings and make a new array
+                let prevStateSettings = (prevState.settings || []);
+                const updatedSettings = {
+                    ...prevStateSettings,
+                    [type]: !prevStateSettings[type]
+                };
 
-        setSettings(prevSettings => {
+                return { settings: updatedSettings };
 
-            //Map over the previous settings and make a new array
-            const updatedSettings = {
-                ...prevSettings,
-                [type]: !prevSettings[type]
-            };
+            },
+            () => {
+                //Deliver updated preferences
+                this.updateUserEmailPreferences(this.state.settings);
+            }
 
-            //Deliver updated preferences
-            updateUserEmailPreferences(updatedSettings);
-
-            return updatedSettings;
-
-        });
+        );
 
     };
 
-    return (
-        <table style={{
-            minWidth: "85%",
-            maxWidth: "85%",
-            paddingLeft: "15%",
-            textAlign: "center",
-            borderCollapse: "separate",
-            borderSpacing: "16px 16px",
-        }}>
+    render() { 
 
-            <thead>
-                <tr>
-                {
-                    emailTypes.map((type, index) => (
-                        <th key={index} style={{textAlign:"center"}}>
-                        {
-                            type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                        }
-                        </th>
-                    ))
-                }
-                </tr>
-            </thead>
+        return (
+            <table style={{
+                minWidth: "85%",
+                maxWidth: "85%",
+                paddingLeft: "15%",
+                textAlign: "center",
+                borderCollapse: "separate",
+                borderSpacing: "16px 16px",
+            }}>
+                <thead>
+                    <tr>
+                    {
+                        this.state.emailTypes.map((type, index) => (
+                            <th key={index} style={{textAlign:"center"}}>
+                            {
+                                type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                            }
+                            </th>
+                        ))
+                    }
+                    </tr>
+                </thead>
 
-            <tbody>
-                <tr>
-                {
-                    emailTypes.map((type, typeIndex) => (
-                        <td key={typeIndex} style={{ textAlign: "center" }}>
-                            <input
-                                type="checkbox"
-                                checked={settings[type] || false}
-                                onChange={() => handleCheckboxChange(type)}
-                                style={{ scale: "2.00" }}
-                            />
-                        </td>
-                    ))
-                }
-                </tr>
-            </tbody>
+                <tbody>
+                    <tr>
+                    {
+                        this.state.emailTypes.map((type, typeIndex) => (
+                            <td key={typeIndex} style={{ textAlign: "center" }}>
+                                <input
+                                    type="checkbox"
+                                    checked={
+                                        (this.state.settings && this.state.settings[type])
+                                        ? this.state.settings[type]
+                                        : false
+                                    }
+                                    onChange={
+                                        this.state.disableFetching
+                                        ? () => undefined
+                                        : () => this.handleCheckboxChange(type)
+                                    }
+                                    style={{ scale: "2.00" }}
+                                />
+                            </td>
+                        ))
+                    }
+                    </tr>
+                </tbody>
 
-        </table>
-    );
+            </table>
+        );
+
+    }
 
 };
 
@@ -195,43 +227,56 @@ const EmailSettingsTableUser = ({ isAdmin }) => {
 ----------------------------------------
 */
 
-const ToggleButtonColumnManager = ({updateUserEmailPreferences, setSettings, usersList, emailTypes, emailTypeIndex}) => {
+const ToggleButtonColumnManager = ({disableFetching, updateUserEmailPreferences, fleetUsers, refreshFleetUsers, emailTypes, emailTypeIndex}) => {
 
     //Set default state
-    let doClear = true;
-    let emailTypeTarget = emailTypes[emailTypeIndex];
+    const [doClear, setDoClear] = useState(true);
+    const emailTypeTarget = emailTypes[emailTypeIndex];
 
-    for(let i = 0 ; i < usersList.length ; i++) {
+    useEffect(() => {
 
-        let userCurrent = usersList[i];
-        let emailDataList = userCurrent.emailTypesUser;
+        let clear = true;
+        for(let i = 0 ; i < fleetUsers.length ; i++) {
 
-        //Found unchecked, iterate count
-        if (emailDataList[emailTypeTarget] !== true) {
-            doClear = false;
-            break;
+            let userCurrent = fleetUsers[i];
+            let userEmailPreferenceCurrent = userCurrent.emailTypesUser;
+
+            //Preferences aren't defined, continue
+            if (!userEmailPreferenceCurrent) {
+                continue;
+            }
+
+            //Found unchecked, iterate count
+            if (userEmailPreferenceCurrent[emailTypeTarget] !== true) {
+                clear = false;
+                break;
+            }
+
         }
 
-    }
+        setDoClear( clear );
+
+    }, [fleetUsers, emailTypeTarget, emailTypeIndex]);
 
     //Ensure the checkboxes reflect their new states
-    let applyToggle = () => {
+    const applyToggle = () => {
 
-        const updatedSettings = usersList.map(
-            user =>
-            ({
+        const updatedUsers = fleetUsers.map(user => {
+
+            return {
                 ...user,
                 emailTypesUser: {
                     ...user.emailTypesUser,
                     [emailTypeTarget]: !doClear
-                    }
-            })
-        );
+                }
+            };
 
-        setSettings(updatedSettings);
+        });
 
-        updatedSettings.forEach(user => {
-            updateUserEmailPreferences(user, updatedSettings);
+        refreshFleetUsers(updatedUsers);
+
+        updatedUsers.forEach(user => {
+            updateUserEmailPreferences(user, updatedUsers);
         });
 
     };
@@ -240,7 +285,7 @@ const ToggleButtonColumnManager = ({updateUserEmailPreferences, setSettings, use
     if (doClear) {
         return (
             <div>
-                <button onClick={applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
+                <button onClick={disableFetching ? ()=>undefined : applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
                     <i  className="fa fa-square-o fa-lg"></i>
                 </button>
             </div>
@@ -250,7 +295,7 @@ const ToggleButtonColumnManager = ({updateUserEmailPreferences, setSettings, use
     //Not Clearing --> Render Checking Box
     return (
         <div>
-            <button onClick={applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
+            <button onClick={disableFetching ? ()=> undefined : applyToggle} style={{borderRadius:"4px", width:"28px", height:"28px", padding:"0"}}>
                 <i style={{color:"#2e7ce2"}} className="fa fa-check-square fa-lg"></i>
             </button>
         </div>
@@ -259,38 +304,50 @@ const ToggleButtonColumnManager = ({updateUserEmailPreferences, setSettings, use
 }
 
 
-const EmailSettingsTableManager = ({ fleetUsers }) => {
+class EmailSettingsTableManager extends React.Component {
 
-    //No users in the fleet, return empty
-    if (fleetUsers.length == 0) {
-        return ( <div></div> );
+    constructor(props) {
+        super(props);
+        console.log("Generating Manager Email Settings Table...");
+        this.state = {
+            emailTypes : [],
+            fleetUsers : props.fleetUsers,
+            disableFetching : false
+        };
+    }
+
+    componentDidMount() {
+        this.getUserEmailPreferences();
     }
 
     //Update user email preferences
-    function updateUserEmailPreferences(fleetUser, updatedSettings) {
+    updateUserEmailPreferences = (fleetUser, updatedSettings) => {
 
-        let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.userId === fleetUser.userId).emailTypesUser;
+        let updatedEmailTypeSettingsTarget = updatedSettings.find(setting => setting.id === fleetUser.id).emailTypesUser;
 
         var submissionData = {
             handleUpdateType : "HANDLE_UPDATE_MANAGER",
-            fleetUserID : fleetUser.userId,
-            fleetID : fleetUser.fleetID,
+            fleetUserID : fleetUser.id,
+            fleetID : fleetUser.fleet.id,
             ...updatedEmailTypeSettingsTarget
-        }
+        };
+
+        this.setState({ disableFetching: true });
 
         $.ajax({
             type: 'POST',
             url: '/protected/update_email_preferences',
             data: submissionData,
             dataType: 'json',
-            async: false,
+            async: true,
 
-            success: function(response) {
-                // console.log('Preferences updated successfully!', response);
-                console.log('Preferences updated successfully!');
+            success: (response) => {
+                console.log('Preferences updated successfully!'/*, response*/);
+                this.setState({ disableFetching: false });  
             },
-            error: function(jqXHR, textStatus, errorThrown) {
+            error: (jqXHR, textStatus, errorThrown) => {
                 console.log('Error updating preferences:', errorThrown);
+                this.setState({ disableFetching: false });  
             }
 
         });
@@ -298,198 +355,214 @@ const EmailSettingsTableManager = ({ fleetUsers }) => {
     }
 
     //Fetch user email preferences
-    function getUserEmailPreferences(userTarget) {
+    getUserEmailPreferences = () => {
 
-        let resultsOut = "No results found.";
+        let fleetUsers = this.state.fleetUsers;
+        let fleetUsersEmailSettings = [];
 
-        let submissionData = {
-            handleFetchType : "HANDLE_FETCH_MANAGER",
-            fleetUserID : userTarget.id,
-            fleetID : userTarget.fleet.id
-        };
+        fleetUsers.forEach(userTarget => {
 
-        $.ajax({
-            type: 'GET',
-            url: '/protected/email_preferences',
-            data: submissionData,
-            dataType : 'json',
-            async: false,
+            let submissionData = {
+                handleFetchType : "HANDLE_FETCH_MANAGER",
+                fleetUserID : userTarget.id
+            };
 
-            success : function(response) {
-                console.log("got user pref response");
-                // console.log(response);
-                resultsOut = response;
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-                console.log("Error getting upset data:");
-                console.log(errorThrown);
-            },
+            $.ajax({
+                type: 'GET',
+                url: '/protected/email_preferences',
+                data: submissionData,
+                dataType : 'json',
+                async: true,
 
-        });
-            
-        return resultsOut;
+                success : (response) => {
 
-    }
+                    console.log("got user pref response");
 
-    //For each user in the fleet, get their email preferences
-    let fleetUsersEmailSettings = [];
-    for (let i = 0; i < fleetUsers.length; i++) {
+                    let emailTypesUserIn = response.emailTypesUser;
+                    let emailTypesKeysIn = response.emailTypesKeys;
 
-        let userCurrent = fleetUsers[i];
+                    //Filter out email types marked as HIDDEN or FORCED
+                    emailTypesKeysIn = emailTypesKeysIn.filter(
+                        type => (
+                            (type.includes("HIDDEN") !== true)
+                            && (type.includes("FORCED") !== true)
+                        )
+                    );
 
-        console.log("User Current: ", userCurrent);
+                    //For admins...
+                    if (userTarget.isAdmin) {
 
-        let userFleetID = userCurrent.fleetAccess.fleetId;
-        let userSettings = getUserEmailPreferences(userCurrent);
-        let userEmail = userCurrent.email;
+                        /*
 
-        console.log("User Settings: ", userSettings);
+                        ----------------------------------------------------------
+                        Management for Admin email types will be disabled for now.
+                        ----------------------------------------------------------
 
-        userSettings.email = userEmail;
-        userSettings.fleetID = userFleetID;
+                        //...sort the ADMIN email types to the end of the list
+                        let emailTypesKeysAdmin = emailTypesKeys.filter(
+                            type => (type.includes("ADMIN") === true)
+                        );
 
-        //Filter out email types marked as HIDDEN or FORCED
-        let emailTypesKeys = Object.keys(userSettings.emailTypesUser).filter(
-            type => (
-                (type.includes("HIDDEN") !== true)
-                && (type.includes("FORCED") !== true)
-            )
-        );
+                        emailTypesIn = emailTypesIn.filter(
+                            type => (type.includes("ADMIN") !== true)
+                        );
 
-        //For admins...
-        if (userCurrent.isAdmin) {
+                        emailTypesIn = emailTypesIn.concat(emailTypesKeysAdmin);
 
-            /*
+                        */
 
-            ----------------------------------------------------------
-            Management for Admin email types will be disabled for now.
-            ----------------------------------------------------------
-
-            //...sort the ADMIN email types to the end of the list
-            let emailTypesKeysAdmin = emailTypesKeys.filter(
-                type => (type.includes("ADMIN") === true)
-            );
-
-            emailTypesKeys = emailTypesKeys.filter(
-                type => (type.includes("ADMIN") !== true)
-            );
-
-            emailTypesKeys = emailTypesKeys.concat(emailTypesKeysAdmin);
-
-            */
-
-        }
-
-        //For non-admins
-        else {
-
-            //...filter out the ADMIN email types
-            emailTypesKeys = emailTypesKeys.filter(
-                type => (type.includes("ADMIN") !== true)
-            );
-
-        }
-
-        userSettings.emailTypesKeys = emailTypesKeys;
-        
-        fleetUsersEmailSettings.push(userSettings);
-
-    }
-
-    //Get the email type keys
-    var emailTypesSet = {};
-    for(let i = 0 ; i < fleetUsersEmailSettings.length ; i++) {
-
-        let userCurrent = fleetUsersEmailSettings[i];
-        let emailTypesKeys = userCurrent.emailTypesKeys;
-
-        for(let j = 0 ; j < emailTypesKeys.length ; j++) {
-            let emailType = emailTypesKeys[j];
-            emailTypesSet[emailType] = true;
-        }
-
-    }
-    const emailTypes = Object.keys(emailTypesSet);
-
-
-    const [usersList, setUserSettings] = useState(fleetUsersEmailSettings);
-
-    
-    const handleCheckboxChange = (userTarget, type) => {
-
-        setUserSettings(prevSettings => {
-
-            const updatedSettings = prevSettings.map(
-                setting =>
-                (setting.userId === userTarget.userId)
-                ? {
-                    ...setting,
-                    emailTypesUser: {
-                        ...setting.emailTypesUser,
-                        [type]: !setting.emailTypesUser[type]
                     }
-                }
-                : setting
-            );
 
-            let userSettingsTarget = updatedSettings.find(setting => setting.userId === userTarget.userId).emailTypesUser;
+                    //For non-admins
+                    else {
 
-            updateUserEmailPreferences(userTarget, updatedSettings);
+                        //...filter out the ADMIN email types
+                        emailTypesKeysIn = emailTypesKeysIn.filter(
+                            type => (type.includes("ADMIN") !== true)
+                        );
 
-            return updatedSettings;
+                    }
+
+                    this.setState(prevState => {
+
+                        const fleetUsers = prevState.fleetUsers.map(userCurrent => {
+
+                            if (userCurrent.id === userTarget.id) {
+                                return {
+                                    ...userCurrent,
+                                    emailTypesUser : emailTypesUserIn,
+                                    emailTypesKeys : emailTypesKeysIn
+                                };
+                            }
+                            return userCurrent;
+
+                        });
+
+                        return {
+                            emailTypes : emailTypesKeysIn,
+                            fleetUsers
+                        };
+
+                    });
+
+                    fleetUsersEmailSettings.push({
+                        id: userTarget.id,
+                        emailTypesUser: emailTypesUserIn,
+                        emailTypesKeys: emailTypesKeysIn
+                    });
+
+                },
+                error: (jqXHR, textStatus, errorThrown) => {
+                    console.log("Error getting upset data:");
+                    console.log(errorThrown);
+                },
+
+            });
 
         });
+
+    }
+   
+    handleCheckboxChange = (userTarget, type) => {
+
+        this.setState(
+            prevState => {
+                const fleetUsers = prevState.fleetUsers.map(user => {
+
+                    if (user.id === userTarget.id) {
+                        return {
+                            ...user,
+                            emailTypesUser: {
+                                ...user.emailTypesUser,
+                                [type]: (user.emailTypesUser ? !user.emailTypesUser[type] : false)
+                            }
+                        };
+                    }
+
+                    return user;
+
+                });
+
+                return { fleetUsers };
+            },
+            () => {
+                //Deliver updated preferences
+                this.updateUserEmailPreferences(userTarget, this.state.fleetUsers);
+            }
+        
+        );
 
     };
 
-    return (
-        <table style={{
-        width:"100%",
-        borderCollapse: "collapse",
-        }}>
+    refreshFleetUsers = (updatedUsers) => {
+        this.setState({ fleetUsers: updatedUsers });
+    };
 
-            <thead>
-                <tr>
-                    <th style={{padding:"0 12px"}}>Email</th>
-                    {
-                        emailTypes.map((type, index) => (
-                            <th key={index}>
-                                <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
-                                    <ToggleButtonColumnManager updateUserEmailPreferences={updateUserEmailPreferences} setSettings={setUserSettings} usersList={usersList} emailTypes={emailTypes} emailTypeIndex={index}></ToggleButtonColumnManager>
-                                    {
-                                        type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
-                                    }
-                                </div>
-                            </th>
-                        ))
-                    }
-                </tr>
-            </thead>
+    render() {
 
-            <tbody>
-            <tr style={{border:"solid", borderColor:"#00004411", borderWidth: "2px 0px"}}>
-            </tr>
-            {
-                usersList.map((userCurrent, settingIndex) => (
-                    <tr key={settingIndex} style={{border:"solid", borderColor:"#00004411", borderWidth: "1px 0px", backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000009'}}>
-                        <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
+        return (
+            <table style={{
+            width:"100%",
+            borderCollapse: "collapse",
+            }}>
+                <thead>
+                    <tr>
+                        <th style={{padding:"0 12px"}}>Email</th>
                         {
-                            emailTypes.map((type, typeIndex) => (
-                                <td key={typeIndex}>
-                                    <input
-                                        type="checkbox"
-                                        checked={userCurrent.emailTypesUser[type] || false}
-                                        onChange={() => handleCheckboxChange(userCurrent, type)}
-                                    />
-                                </td>
+                            this.state.emailTypes.map((type, index) => (
+                                <th key={index}>
+                                    <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}>
+                                        <ToggleButtonColumnManager
+                                            disableFetching={this.state.disableFetching}
+                                            updateUserEmailPreferences={this.updateUserEmailPreferences}
+                                            fleetUsers={this.state.fleetUsers}
+                                            refreshFleetUsers = {this.refreshFleetUsers}
+                                            emailTypes={this.state.emailTypes}
+                                            emailTypeIndex={index}
+                                        />
+                                        {
+                                            type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+                                        }
+                                    </div>
+                                </th>
                             ))
                         }
                     </tr>
-                ))
-            }
-            </tbody>
+                </thead>
 
-        </table>
-    );
+                <tbody>
+                <tr style={{border:"solid", borderColor:"#00004411", borderWidth: "2px 0px"}}>
+                </tr>
+                {
+                    this.state.fleetUsers.map((userCurrent, settingIndex) => (
+                        <tr key={settingIndex} style={{border:"solid", borderColor:"#00004411", borderWidth: "1px 0px", backgroundColor: (settingIndex%2 === 0) ? '#FFFFFF00' : '#00000009'}}>
+                            <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
+                            {
+                                this.state.emailTypes.map((type, typeIndex) => (
+                                    <td key={typeIndex}>
+                                        <input
+                                            type="checkbox"
+                                            checked={
+                                                (userCurrent.emailTypesUser && userCurrent.emailTypesUser[type])
+                                                ? userCurrent.emailTypesUser[type]
+                                                : false
+                                            }
+                                            onChange={
+                                                this.state.disableFetching
+                                                ? () => undefined
+                                                : () => this.handleCheckboxChange(userCurrent, type)
+                                            }
+                                        />
+                                    </td>
+                                ))
+                            }
+                        </tr>
+                    ))
+                }
+                </tbody>
+
+            </table>
+        );
+    }
 
 };
