@@ -20,7 +20,7 @@ import java.sql.SQLException;
 
 public enum EmailType {
 
-    //---------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
 
     /*
 
@@ -28,7 +28,8 @@ public enum EmailType {
 
         1. Ensure that you have generated the 'email_preferences' table with 'php db/create_tables.php'
         2. Add email types here!    (Try to keep the constants and string values the same)
-        3. Then generate your new types (or remove old ones, see below) with 'sh run/generate_email_types.sh'
+        3. Then generate your new types with 'sh run/generate_email_types.sh'
+        4. [Optional] If you have outdated types to remove, instead use 'sh run/generate_email_types_and_remove.sh'
 
     */
     UPLOAD_PROCESS_START("upload_process_start"),
@@ -47,12 +48,6 @@ public enum EmailType {
     AIRSYNC_DAEMON_CRASH("ADMIN_airsync_daemon_crash"),
 
     /*
-        [NOT IMPLEMENTED, NOT SURE IF THIS WOULD BE USEFUL AT ALL]
-        Managed email types, only configurable by the user's fleet manager.
-    */
-        //...
-
-    /*
         Forced email types, which cannot be changed inside the user interface.
         These are not actually stored in the database, and exist for organizational purposes.
     */
@@ -60,11 +55,15 @@ public enum EmailType {
     PASSWORD_RESET("FORCED_password_reset"),
     ;
 
+    /*
+        Default value of the removal flag for old email types.
 
-    //NOTE: To remove old email types from the database which aren't listed here anymore, set this flag to true
+        Use 'sh run/generate_email_types_and_remove.sh' to temporarily override this value
+        rather than changing it here.
+    */
     private static boolean removeOldEmailTypes = false;
 
-    //---------------------------------------------------------------------------------------------------------
+    //-------------------------------------------------------------------------------------------------------------
 
 
     private final String type;
@@ -153,6 +152,8 @@ public enum EmailType {
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
             emailTypeQueries.add("SELECT id, '" + emailTypeKey + "' FROM user");
+
+            LOG.info("Email Type: " + emailTypeKey + " marked for database insertion...");
         }
 
         //Merge individual email type queries
@@ -219,6 +220,8 @@ public enum EmailType {
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
             emailTypeQueries.add("SELECT '" + userIDTarget + ", '" + emailTypeKey + "' FROM user");
+
+            LOG.info("Email Type: " + emailTypeKey + " marked for database insertion...");
         }
 
         //Merge individual email type queries
@@ -248,32 +251,38 @@ public enum EmailType {
         String selectQuery = "SELECT DISTINCT email_type FROM email_preferences";
         String deleteQuery = "DELETE FROM email_preferences WHERE email_type = ?";
 
+        List<String> emailTypesForDeletion = new ArrayList<>();
+
         try (
             Connection connection = Database.getConnection();
             PreparedStatement selectStatement = connection.prepareStatement(selectQuery);
-            PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)
+            ResultSet queryResult = selectStatement.executeQuery()
             ) {
 
-            ResultSet queryResult = selectStatement.executeQuery();
-            while (queryResult.next()) {
+            try (PreparedStatement deleteStatement = connection.prepareStatement(deleteQuery)) {
+                    
+                //Mark email types for deletion
+                while (queryResult.next()) {
+                    String emailType = queryResult.getString("email_type");
+                    if (!currentEmailTypes.contains(emailType)) {
+                        emailTypesForDeletion.add(emailType);
+                    }
+                }
 
-                String emailType = queryResult.getString("email_type");
-                if (!currentEmailTypes.contains(emailType)) {
-
+                //Perform deletion query on marked emails
+                for(String emailType : emailTypesForDeletion) {
                     deleteStatement.setString(1, emailType);
                     deleteStatement.executeUpdate();
                     LOG.info("Removed old Email Type: " + emailType);
-            
                 }
-        
+
             }
-
-            connection.close();
-
+    
         } catch (SQLException e) {
 
             e.printStackTrace();
             LOG.severe("Error removing old Email Types: " + e.getMessage());
+            return;
         
         }
 
@@ -310,7 +319,8 @@ public enum EmailType {
     public static void main(String[] args) {
 
         if (args.length > 0) {
-            logOldEmailTypeRemoval = Boolean.parseBoolean(args[0]);
+            removeOldEmailTypes = Boolean.parseBoolean(args[0]);
+            LOG.info("Removing old Email Types!!");
         }
 
         insertEmailTypesIntoDatabase();
