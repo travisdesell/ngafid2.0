@@ -53,16 +53,8 @@ public enum EmailType {
         //...
 
     /*
-        Hidden email types (not visible to the user), used for testing or other purposes.
-        Types containing the string 'HIDDEN' (case-sensitive) will not be displayed in the user interface.
-          [This might be redundant outside testing with the forced email types, but I'm keeping it for now.]
-    */
-    //  TEST_EMAIL_TYPE("HIDDEN_test_email_type"),
-
-    /*
         Forced email types, which cannot be changed inside the user interface.
-          [For now I'm assuming these should all also be hidden, don't see a point in making them visible.
-          These should also still get sent even if the database somehow stores a forced email type as false.]
+        These are not actually stored in the database, and exist for organizational purposes.
     */
     ACCOUNT_CREATION_INVITE("FORCED_account_creation_invite"),
     PASSWORD_RESET("FORCED_password_reset"),
@@ -77,8 +69,11 @@ public enum EmailType {
 
     private final String type;
 
+
     //Track the most recent/up-to-date keys for the email types fetched from the database
     private final static HashSet<String> emailTypeKeysRecent = new HashSet<>();
+
+    private static boolean logOldEmailTypeRemoval = false;
 
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
     static {
@@ -128,6 +123,13 @@ public enum EmailType {
         //Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
+
+            //Skip FORCED email types
+            if (isForced(emailType)) {
+                LOG.info("Skipping FORCED email type: " + emailType.getType());
+                continue;
+            }
+
             currentEmailTypes.add(emailType.getType());
         }
 
@@ -135,10 +137,19 @@ public enum EmailType {
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
+        else if (logOldEmailTypeRemoval) {
+            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
+        }
 
         //Generate "individual" email type queries
         List<String> emailTypeQueries = new ArrayList<>();
         for(EmailType emailType : EmailType.values()) {
+
+            //Skip FORCED email types
+            if (isForced(emailType)) {
+                continue;
+            }
+
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
             emailTypeQueries.add("SELECT id, '" + emailTypeKey + "' FROM user");
@@ -179,6 +190,12 @@ public enum EmailType {
         //Record all email types currently in the database
         Set<String> currentEmailTypes = new HashSet<>();
         for (EmailType emailType : EmailType.values()) {
+
+            //Skip FORCED email types
+            if (isForced(emailType)) {
+                continue;
+            }
+
             currentEmailTypes.add(emailType.getType());
         }
 
@@ -186,10 +203,19 @@ public enum EmailType {
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
+        else if (logOldEmailTypeRemoval) {
+            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
+        }
 
         //Generate "individual" email type queries
         List<String> emailTypeQueries = new ArrayList<>();
         for (EmailType emailType : EmailType.values()) {
+
+            //Skip FORCED email types
+            if (isForced(emailType)) {
+                continue;
+            }
+
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
             emailTypeQueries.add("SELECT '" + userIDTarget + ", '" + emailTypeKey + "' FROM user");
@@ -268,6 +294,9 @@ public enum EmailType {
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
         }
+        else if (logOldEmailTypeRemoval) {
+            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
+        }
 
         //Record all email types currently in the database
         for (EmailType emailType : EmailType.values()) {
@@ -279,6 +308,11 @@ public enum EmailType {
 
     //Main
     public static void main(String[] args) {
+
+        if (args.length > 0) {
+            logOldEmailTypeRemoval = Boolean.parseBoolean(args[0]);
+        }
+
         insertEmailTypesIntoDatabase();
         System.exit(0);
     }
