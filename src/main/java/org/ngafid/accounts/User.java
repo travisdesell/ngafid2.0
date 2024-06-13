@@ -392,10 +392,15 @@ public class User {
             emailPreferencesCount = resultSetInitial.getInt(1);
         }
 
-        //The user has no email preferences, create the default ones
-        if (emailPreferencesCount == 0) {
-            LOG.info("User with ID (" + userId + ") has no email preferences in the database, generating defaults...");
-            EmailType.insertEmailTypesIntoDatabase(userId);
+
+        int emailTypeCountExpected = EmailType.getEmailTypeCount();
+
+        LOG.info("Checking email preferences for user with ID (" + userId + ")... Expected: " + emailTypeCountExpected + " / Actual: " + emailPreferencesCount);
+
+        //The user mismatched email preference count, reinsert
+        if (emailPreferencesCount != emailTypeCountExpected) {
+            LOG.severe("User with ID (" + userId + ") has a mismatched number of email types, attempting reinsertion...");
+            EmailType.insertEmailTypesIntoDatabase(connection, userId);
         }
 
         //Get the user's email preferences...
@@ -746,6 +751,9 @@ public class User {
             LOG.severe("Database Error: Error happened getting id for new user on database insert.");
             throw new AccountException("Database Error", "Error happened getting id for new user on database insert.");
         }
+
+        //Record this user in the email preferences map and apply the default email preferences
+        UserEmailPreferences.addUser(connection, user);
 
         return user;
     }

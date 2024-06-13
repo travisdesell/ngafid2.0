@@ -69,12 +69,18 @@ public enum EmailType {
     private final String type;
 
 
+
     //Track the most recent/up-to-date keys for the email types fetched from the database
     private final static HashSet<String> emailTypeKeysRecent = new HashSet<>();
 
+    //Store number of email types
+    private final static int emailTypeCount = values().length;
+
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
+
     static {
         LOG.info("EmailType class loaded...");
+        LOG.info("Detected " + emailTypeCount + " email types");
     }
 
 
@@ -86,6 +92,10 @@ public enum EmailType {
     //Getters
     public String getType() {
         return type;
+    }
+
+    public static int getEmailTypeCount() {
+        return emailTypeCount;
     }
 
     public static EmailType[] getAllTypes() {
@@ -173,7 +183,7 @@ public enum EmailType {
 
     }
 
-    public static void insertEmailTypesIntoDatabase(int userIDTarget) {
+    public static void insertEmailTypesIntoDatabase(Connection connection, int userIDTarget) throws SQLException {
 
         /*
             Generate email types for a specific user ID...
@@ -211,7 +221,7 @@ public enum EmailType {
 
             String emailTypeKey = emailType.getType();
             emailTypeKeysRecent.add(emailTypeKey);
-            emailTypeQueries.add("SELECT '" + userIDTarget + ", '" + emailTypeKey + "' FROM user");
+            emailTypeQueries.add("SELECT '" + userIDTarget + "', '" + emailTypeKey + "' FROM user");
 
             LOG.info("Email Type: " + emailTypeKey + " marked for database insertion...");
         }
@@ -224,16 +234,12 @@ public enum EmailType {
             ;
 
         try (
-            Connection connection = Database.getConnection();
             PreparedStatement statement = connection.prepareStatement(query.toString())
             ) {
 
             statement.executeUpdate();
             LOG.info("Email Type generation query executed successfully");
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-            LOG.severe("Error executing Email Type generation query: " + e.getMessage());
         }
 
     }
