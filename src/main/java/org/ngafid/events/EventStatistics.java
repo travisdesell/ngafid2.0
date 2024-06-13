@@ -1001,33 +1001,6 @@ public class EventStatistics {
         return ps;
     }
 
-
-    private static PreparedStatement buildEventAnyQuery(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
-
-        if (startTime == null) {
-            startTime = LocalDate.of(0, 1, 1);
-        }
-        if (endTime == null) {
-            endTime = LocalDate.now();
-        }
-        
-
-        //Select flights with ANY kind of event
-
-        //String query = ...
-
-
-
-        PreparedStatement ps = connection.prepareStatement(query);
-        ps.setString(1, startTime.toString());
-        ps.setString(2, endTime.toString());
-
-        LOG.info("Query: " + ps);
-        return ps;
-
-        }
-
-
     // /**
     //  * Gets the number of exceedences for each type and airframe. It will be organized into a data structure
     //  * so plotly can display it on the webpage. Fleet can be specified or left null for all fleets
