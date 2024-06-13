@@ -364,7 +364,8 @@ class EmailSettingsTableManager extends React.Component {
 
             let submissionData = {
                 handleFetchType : "HANDLE_FETCH_MANAGER",
-                fleetUserID : userTarget.id
+                fleetUserID : userTarget.id,
+                fleetID: userTarget.fleet.id
             };
 
             $.ajax({
