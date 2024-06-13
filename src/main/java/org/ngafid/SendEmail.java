@@ -89,10 +89,7 @@ public class SendEmail {
                 
                 LOG.severe("Email not being with the NGAFID for uploads, to change this edit " + NGAFID_EMAIL_INFO + ".");
 
-            }
-
-            //Email info file does exist...
-            else {
+            } else {    //Email info file does exist...
 
                 //...Read the file
                 bufferedReader = new BufferedReader(new FileReader(NGAFID_EMAIL_INFO));
@@ -102,9 +99,7 @@ public class SendEmail {
 
                 if (username != null && username.startsWith("#")) {
                     LOG.severe("Email not being used with the NGAFID for uploads. To change this, add the email login information to " + NGAFID_EMAIL_INFO);
-                }
-                    
-                else {
+                } else {
                     password = bufferedReader.readLine();
                     //System.out.println("read password: '" + password + "'");
                     LOG.info("Using email address to send emails: " + username);
@@ -216,12 +211,13 @@ public class SendEmail {
 
                     //Check if the emailType is forced
                     if (EmailType.isForced(emailType)) {
-                        System.out.println("Delivering FORCED email type: " + emailType);
-                    }
 
-                    //Check whether or not the emailType is enabled for the user
-                    else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {
+                        System.out.println("Delivering FORCED email type: " + emailType);
+
+                    } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {   //Check whether or not the emailType is enabled for the user
+
                         continue;
+                        
                     }
 
                     System.out.println("EMAILING TO: " + toRecipient);
@@ -249,9 +245,7 @@ public class SendEmail {
                 mex.printStackTrace();
             }
 
-        }
-
-        else {
+        } else {
             LOG.severe("E-mail info not valid, continuing without sending.");
         }
     

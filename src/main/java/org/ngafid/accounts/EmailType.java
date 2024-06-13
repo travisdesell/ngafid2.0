@@ -72,8 +72,6 @@ public enum EmailType {
     //Track the most recent/up-to-date keys for the email types fetched from the database
     private final static HashSet<String> emailTypeKeysRecent = new HashSet<>();
 
-    private static boolean logOldEmailTypeRemoval = false;
-
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
     static {
         LOG.info("EmailType class loaded...");
@@ -135,9 +133,6 @@ public enum EmailType {
         //Remove old email types from the database
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
-        }
-        else if (logOldEmailTypeRemoval) {
-            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
         }
 
         //Generate "individual" email type queries
@@ -203,9 +198,6 @@ public enum EmailType {
         //Remove old email types from the database
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
-        }
-        else if (logOldEmailTypeRemoval) {
-            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
         }
 
         //Generate "individual" email type queries
@@ -302,9 +294,6 @@ public enum EmailType {
         //Remove old email types from the database
         if (removeOldEmailTypes) {
             removeOldEmailTypesFromDatabase(currentEmailTypes);
-        }
-        else if (logOldEmailTypeRemoval) {
-            LOG.info("NOTE: Old email types are NOT being removed from the database (if any exist)");
         }
 
         //Record all email types currently in the database

@@ -62,13 +62,9 @@ public class PostUpdateUserEmailPreferences implements Route {
         //Log the raw handleUpdateType value
         String handleUpdateType = request.queryParams("handleUpdateType");
 
-        //User Update...
-        if (handleUpdateType.equals("HANDLE_UPDATE_USER")) {
+        if (handleUpdateType.equals("HANDLE_UPDATE_USER")) {            //User Update...
             return handleUserUpdate(request, response, sessionUser);
-        }
-
-        //Manager Update...
-        else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) {
+        } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) {  //Manager Update...
             return handleManagerUpdate(request, response, sessionUser);
         }
 

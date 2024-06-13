@@ -66,13 +66,9 @@ public class GetUserEmailPreferences implements Route {
 
         int fleetUserID = -1;
         
-        //Fetching Session User...
-        if (handleFetchType.equals("HANDLE_FETCH_USER")) {
+        if (handleFetchType.equals("HANDLE_FETCH_USER")) {              //Fetching Session User...
             fleetUserID = sessionUser.getId();
-        }
-        
-        //Fetching a Manager's Fleet User...
-        else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) {
+        } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) {    //Fetching a Manager's Fleet User...
 
             fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
             int fleetID = Integer.parseInt(request.queryParams("fleetID"));

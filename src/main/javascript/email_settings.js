@@ -96,8 +96,7 @@ class EmailSettingsTableUser extends React.Component {
                     )
                 );
             
-                //For admins...
-                if (this.props.isAdmin) {
+                if (this.props.isAdmin) {   //For admins...
             
                     //...sort the ADMIN email types to the end of the list
                     let emailTypesAdmin = emailTypesIn.filter(
@@ -110,10 +109,7 @@ class EmailSettingsTableUser extends React.Component {
             
                     emailTypesIn = emailTypesIn.concat(emailTypesAdmin);
             
-                }
-            
-                //For non-admins
-                else {
+                } else {    //For non-admins
             
                     //...filter out the ADMIN email types
                     emailTypesIn = emailTypesIn.filter(
@@ -390,8 +386,7 @@ class EmailSettingsTableManager extends React.Component {
                         )
                     );
 
-                    //For admins...
-                    if (userTarget.isAdmin) {
+                    if (userTarget.isAdmin) {   //For admins...
 
                         /*
 
@@ -412,10 +407,7 @@ class EmailSettingsTableManager extends React.Component {
 
                         */
 
-                    }
-
-                    //For non-admins
-                    else {
+                    } else {    //For non-admins
 
                         //...filter out the ADMIN email types
                         emailTypesKeysIn = emailTypesKeysIn.filter(
