@@ -43,6 +43,7 @@ import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.EmailType;
 
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
@@ -147,7 +148,7 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
-                    sendMonthlyFlightsUpdate(targetFleetId);
+                    //  sendMonthlyFlightsUpdate(targetFleetId);    [EX] Disabling ALL monthly flight update calls for now!
 
 
                     //TURN OFF FOR REGULAR USE
@@ -193,7 +194,7 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
-            sendMonthlyFlightsUpdate(fleetId);
+            //  sendMonthlyFlightsUpdate(fleetId);  [EX] Disabling ALL monthly flight update calls for now!
 
         } catch (SQLException e) {
             System.err.println("Encountered error");
@@ -220,6 +221,7 @@ public class ProcessUpload {
 
     public static void processUpload(Upload upload) {
         try {
+
             int uploadId = upload.getId();
             int uploaderId = upload.getUploaderId();
             int fleetId = upload.getFleetId();
@@ -236,7 +238,7 @@ public class ProcessUpload {
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
 
             upload.reset(connection);
             System.out.println("upload was reset!\n\n");
@@ -265,7 +267,8 @@ public class ProcessUpload {
                 uploadProcessedEmail.setSubject("NGAFID upload '" + filename + "' ERROR on import");
             }
 
-            sendMonthlyFlightsUpdate(fleetId);
+            //  sendMonthlyFlightsUpdate(fleetId);    [EX] Disabling ALL monthly flight update calls for now!
+
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {

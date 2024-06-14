@@ -17,6 +17,8 @@ import { AirSyncSettings } from "./airsync_settings.js";
 
 import SignedInNavbar from "./signed_in_navbar.js";
 
+import { EmailSettingsTableUser } from "./email_settings.js";
+
 class PreferencesPage extends React.Component {
     constructor(props) {
         super(props);
@@ -78,6 +80,23 @@ class PreferencesPage extends React.Component {
                                             </MetricViewerSettings>
 
                                             {adminContent}
+
+                                            <div className="card-body">
+                                                <div className="col" style={{padding:"0 0 0 0"}}>
+                                                    <div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
+                                                        <h6 className="card-header">
+                                                          Your Email Preferences:
+                                                        </h6>
+                                                        <div className="form-group">
+                                                            <div className="d-flex">
+                                                                <EmailSettingsTableUser isAdmin={isAdmin}></EmailSettingsTableUser>
+                                                            <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+
                                     </div>
                                 </div>
                             </div>
@@ -94,4 +113,4 @@ console.log("setting preferences page with react!");
 var preferencesPage = ReactDOM.render(
     <PreferencesPage userPreferences={userPreferences} isAdmin={isAdmin} airsyncTimeout={airsync_timeout} waitingUserCount={waitingUserCount} unconfirmedTailsCount={unconfirmedTailsCount}/>,
    document.querySelector('#preferences-page')
-)
+);
