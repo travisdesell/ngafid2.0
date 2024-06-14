@@ -149,9 +149,9 @@ class UploadsCard extends React.Component {
                 console.log(file);
                 state.uploads[file.position].progressSize = currentChunk * chunkSize;
 
-                uploadsCard.setState(
+                uploadsCard.setState({
                     state: state
-                );
+                    });
 
                 //set_progressbar_percent(file.identifier, percent);
             }
@@ -173,9 +173,9 @@ class UploadsCard extends React.Component {
                 let state = uploadsCard.state;
                 state.uploads[file.position].progressSize = 0;
                 state.uploads[file.position].status = "UPLOADING";
-                uploadsCard.setState(
+                uploadsCard.setState({
                     state: state
-                );
+                    });
 
                 on_finish(spark.end());
             }
@@ -299,9 +299,9 @@ class UploadsCard extends React.Component {
 
         let state = this.state;
         state.uploads = uploads;
-        this.setState(
+        this.setState({
             state : state
-        );
+            });
 
         this.startUpload(file);
     }
@@ -316,9 +316,9 @@ class UploadsCard extends React.Component {
 
             let state = this.state;
             state.uploads = uploads;
-            this.setState(
+            this.setState({
                 state : state
-            );
+                });
         }
     }
 
@@ -343,7 +343,7 @@ class UploadsCard extends React.Component {
         let state = this.state;
         this.setState({
             state : state
-        });
+            });
 
         var uploadsCard = this;
 
@@ -394,7 +394,7 @@ class UploadsCard extends React.Component {
                     let state = uploadsCard.state;
                     uploadsCard.setState({
                         state : state
-                    });
+                        });
                 }
             }
         };

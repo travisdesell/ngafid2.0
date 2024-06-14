@@ -3,6 +3,7 @@ package org.ngafid;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.EmailType;
 
 import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
@@ -24,6 +25,7 @@ import com.google.gson.GsonBuilder;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
 
+
 /**
  * The entry point for the NGAFID web server.
  *
@@ -38,6 +40,7 @@ public final class WebServer {
     public static final String MUSTACHE_TEMPLATE_DIR;
 
     static {
+
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -65,7 +68,7 @@ public final class WebServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
             LOG.info(message);
-            sendAdminEmails(message, "");
+            sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
         }));
     }
 
@@ -313,6 +316,7 @@ public final class WebServer {
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.get("/protected/get_event_description", new GetEventDescription(gson));
@@ -320,6 +324,7 @@ public final class WebServer {
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
+        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
@@ -349,10 +354,13 @@ public final class WebServer {
                                                 .append("\n The non-pretty stack trace is:\n").append(sStackTrace).append("\n")
                                                 .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
 
-            sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
+            sendAdminEmails(
+                String.format( "Uncaught Exception in NGAFID: %s", exception.getMessage() ),
+                ConvertToHTML.convertString(message),
+                EmailType.ADMIN_EXCEPTION_NOTIFICATION
+                );
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
     }
 }
-

@@ -5,6 +5,8 @@ import ReactDOM from "react-dom";
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
 
+import { EmailSettingsTableManager } from "./email_settings.js";
+
 
 class AccessCheck extends React.Component {
     constructor(props) {
@@ -106,7 +108,7 @@ class FleetUserRow extends React.Component {
                 $("#loading").hide();
                 errorModal.show("Error Loading Uploads", errorThrown);
             },   
-            async: true 
+            async: true
         });  
 
     }
@@ -299,6 +301,16 @@ class ManageFleetPage extends React.Component {
                                     }
                                 </tbody>
                             </table>
+                            
+
+                            <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                                Fleet Email Preferences
+                            </h6>
+                            <div className="form-group">
+                                <div className="d-flex">
+                                    <EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
+                                </div>
+                            </div>
 
                         </div>
 
@@ -322,7 +334,7 @@ class ManageFleetPage extends React.Component {
                           background-color: transparent;
                           outline: none;
                           transition: border-color 0.2s ease;
-                        } 
+                        }
                         .invite input:focus {
                           border-color: #007bff;
                         }
