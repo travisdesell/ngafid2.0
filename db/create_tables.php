@@ -59,6 +59,7 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE visited_runways");
     query_ngafid_db("DROP TABLE user_preferences");
     query_ngafid_db("DROP TABLE user_preferences_metrics");
+    query_ngafid_db("DROP TABLE email_preferences");
     query_ngafid_db("DROP TABLE double_series_names");
     query_ngafid_db("DROP TABLE string_series_names");
     query_ngafid_db("DROP TABLE stored_filters");
@@ -219,7 +220,7 @@ if (!$update_2022_02_17) {
         `name` VARCHAR(32) NOT NULL,
 
         PRIMARY KEY(`id`),
-        UNIQUE KEY `name_key` (`name`) 
+        UNIQUE KEY `name_key` (`name`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
     query_ngafid_db($query);
     query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
@@ -560,6 +561,18 @@ if (!$update_2022_02_17) {
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
+
+
+    $query = "CREATE TABLE `email_preferences` (
+        `user_id` INT(11) NOT NULL,
+        `email_type` VARCHAR(64) NOT NULL,
+        `enabled` BOOLEAN NOT NULL DEFAULT 1,
+
+        PRIMARY KEY (`user_id`, `email_type`),
+        FOREIGN KEY (`user_id`) REFERENCES user(`id`)
+    );";
+    query_ngafid_db($query);
+
 
     $query = "CREATE TABLE `stored_filters` (
         `fleet_id` INT(11) NOT NULL,

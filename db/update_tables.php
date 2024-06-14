@@ -111,7 +111,7 @@ $query = "CREATE TABLE `airframe_types` (
     `name` VARCHAR(32) NOT NULL,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY `name_key` (`name`) 
+    UNIQUE KEY `name_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_ngafid_db($query);
 query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
@@ -196,11 +196,6 @@ if ($update_flights_status) {
     query_ngafid_db("ALTER TABLE flights ADD COLUMN processing_status BIGINT(20) default 0 AFTER insert_completed");
 }
 
-$update_email_settings = false;
-if ($update_email_settings) {
-    query_ngafid_db("alter table user add column email_settings varchar(64) default 'ALL' after last_login_time;");
-}
-
 $update_for_airsync = false;
 if ($update_for_airsync) {
     // this creates the default AirSync user
@@ -220,5 +215,3 @@ if ($update_event_meta_data) {
 }
 
 ?>
-
-
