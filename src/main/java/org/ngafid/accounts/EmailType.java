@@ -115,6 +115,9 @@ public enum EmailType {
     public static boolean isForced(EmailType emailType) {
         return emailType.getType().contains("FORCED");
     }
+    public static boolean isForced(String emailTypeName) {
+        return emailTypeName.contains("FORCED");
+    }
 
 
     //PHP Execution
