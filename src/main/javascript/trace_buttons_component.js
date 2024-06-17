@@ -16,12 +16,27 @@ class TraceButtons extends React.Component {
 
     getStartDate(){
 
-        var submissionData = {
+        
+
+        var submissionData2 = {
             flightId : this.props.flightId,
-            seriesName : "start_time"
+            seriesName : "Lcl Date"
         };
-        var date;
+
         $.ajax({
+            type: 'POST',
+            url: '/protected/string_series',
+            data : submissionData2,
+            dataType : 'json',
+            success : function(response) {
+                dates = response;
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Start Time", errorThrown);
+            }
+        });
+
+        /*$.ajax({
             type: 'POST',
             url: '/protected/double_series',
             data : submissionData,
@@ -29,6 +44,78 @@ class TraceButtons extends React.Component {
             success : function(response) {
                 console.log("received response FOR TIME: ");
                 console.log(response);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Start Time", errorThrown);
+            }
+        });*/
+
+
+
+    }
+
+    combineDateTime(datesObj,timesObj){
+        var date_time_combo = [];
+        var dates = Object.values(datesObj)[1];
+        var times = Object.values(timesObj)[1];
+        console.log("dates: ");
+        console.log(dates);
+        console.log("times: ");
+        console.log(times);
+        var size = Object.keys(dates).length;
+        for (let i = 0; i < size; i++) {
+                date_time_combo[i] = new Date(dates[i] +" "+ times[i]);
+        }
+        console.log("Timestamps: ");
+        console.log(date_time_combo);
+
+    }
+
+    getFlightTimes(dates){
+        var submissionData = {
+            flightId : this.props.flightId,
+            seriesName : "Lcl Time"
+        };
+        console.log("getting start date...");
+
+        var self = this;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/string_series',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response FOR TIME: ");
+                console.log(response);
+                self.combineDateTime(dates,response);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Start Time", errorThrown);
+                return(none);
+            }
+        });
+    }
+
+    getFlightDates(){
+        var submissionData = {
+            flightId : this.props.flightId,
+            seriesName : "Lcl Date"
+        };
+        
+        var self = this;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/string_series',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response FOR DATE: ");
+                console.log(response);
+                self.getFlightTimes(response);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Start Date", errorThrown);
+                return(none);
             }
         });
     }
@@ -44,8 +131,9 @@ class TraceButtons extends React.Component {
 
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
-            var date = this.getStartDate();
-
+            var date = this.getFlightDates();
+            console.log("RETURNED DATE IS:");
+            console.log(date);
             var submissionData = {
                 flightId : this.props.flightId,
                 seriesName : seriesName
