@@ -70,7 +70,7 @@ class TTFMapPopup extends React.Component {
                             <Col sm="auto"></Col>
                             <Col>
                             <ButtonGroup>
-                                <Button variant="outline-info" href={"/protected/flight?flight_id=" + this.props.flight_id} target="_blank">
+                                <Button variant="outline-info" href={"/protected/flights?flight_id=" + this.props.flight_id} target="_blank">
                                     <i className="fa fa-plane p-1"></i>
                                 </Button>
                                 <Button onClick={ () => this.close() } data-toggle="button" variant="outline-danger">
@@ -563,12 +563,12 @@ class TTFCard extends React.Component {
         let curves = ttfs
             .map(ttf => {
                 ttfIndex += 1;
-                let glideAngle = ttf.thisDefinedGlideAngle;
+                let glideAngle = ttf.selfDefinedGlideAngle;
                 let alt = ttf.AltAGL;
 
                 // This is what applies the roll filter
                 if (this.shouldDisplay(ttf)) {
-                    return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.thisDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
+                    return { deviations: { name: ttf.flightId, x: ttf.distanceFromRunway, y: ttf.selfDefinedGlidePathDeviations, type: 'scatter', mode: 'lines' },
                              alt: { name: ttf.flightId, x: ttf.distanceFromRunway, y: alt, type: 'scatter', mode: 'lines' },
                              maxGlideAngle: glideAngle, _ttfIndex: ttfIndex };
                 } else
@@ -586,6 +586,7 @@ class TTFCard extends React.Component {
         console.log(devPlot);
 
         let maxGlideAngles = curves.map(x => x.maxGlideAngle);
+        console.log(maxGlideAngles);
         var glideAngleTrace = {
             type: 'histogram',
             y: maxGlideAngles,

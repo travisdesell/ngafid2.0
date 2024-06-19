@@ -53,6 +53,14 @@ public class Upload {
         return id;
     }
 
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
     /**
      * This is used for getting uploads for the GetUpload route. If an upload was incomplete it will
      * be stored as "UPLOADING" in the database, but this needs to be updated to "UPLOAD INCOMPLETE" for
@@ -296,13 +304,15 @@ public class Upload {
     }
 
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String query = "SELECT count(id) FROM uploads WHERE fleet_id = ? AND uploader_id != ?";
+        String query = "SELECT count(id) FROM uploads WHERE uploader_id != ?";
+        if (fleetId > 0)
+            query += " AND fleet_id = " + fleetId;
+
         if (condition != null) query += " " + condition;
 
         PreparedStatement uploadQuery = connection.prepareStatement(query);
 
-        uploadQuery.setInt(1, fleetId);
-        uploadQuery.setInt(2, AirSyncImport.getUploaderId());
+        uploadQuery.setInt(1, AirSyncImport.getUploaderId());
 
         ResultSet resultSet = uploadQuery.executeQuery();
 

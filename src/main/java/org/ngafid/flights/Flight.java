@@ -130,7 +130,7 @@ public class Flight {
     private long processingStatus = 0;
 
     private String status;
-    private ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
+    private transient ArrayList<MalformedFlightFileException> exceptions = new ArrayList<MalformedFlightFileException>();
 
     private int numberRows;
     private String fileInformation;
@@ -182,7 +182,16 @@ public class Flight {
             PreparedStatement eventStatement = connection.prepareStatement(query);
             eventStatement.setInt(1, eventId);
             LOG.info(preparedStatement.toString());
-            System.exit(1);
+
+            // System.exit(1);
+            eventStatement.executeUpdate();
+            eventStatement.close();
+
+            query = "DELETE FROM event_metadata WHERE event_id = ?";
+            eventStatement = connection.prepareStatement(query);
+            eventStatement.setInt(1, eventId);
+            LOG.info(preparedStatement.toString());
+
             eventStatement.executeUpdate();
             eventStatement.close();
         }
@@ -191,6 +200,13 @@ public class Flight {
         preparedStatement.close();
 
         query = "DELETE FROM events WHERE flight_id = ?";
+        preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, this.id);
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+
+        query = "DELETE FROM events WHERE other_flight_id = ?";
         preparedStatement = connection.prepareStatement(query);
         preparedStatement.setInt(1, this.id);
         LOG.info(preparedStatement.toString());
@@ -252,6 +268,8 @@ public class Flight {
         LOG.info(preparedStatement.toString());
         preparedStatement.executeUpdate();
         preparedStatement.close();
+        
+        
     }
 
     /**
@@ -371,6 +389,9 @@ public class Flight {
         return getNumFlights(connection, 0, null);
     }
 
+    public static int getNumFlights(Connection connection, int flightId) throws SQLException {
+        return getNumFlights(connection, flightId, null);
+    }
 
     /**
      * Gets the total number of flights for the entire NGAFID with a given filter. If the filter is null it returns
@@ -441,6 +462,15 @@ public class Flight {
         return count;
     }
 
+
+    public static int getNumFlights(Connection connection, String queryString, int fleetId) throws SQLException {
+        if (fleetId > 0) {
+            queryString += " AND fleet_id = " + fleetId;
+        }
+
+        return getNumFlights(connection, queryString);
+    }
+
     /**
      * Gets the total number of flights for a given fleet and queryString.
      *
@@ -480,25 +510,24 @@ public class Flight {
     }
 
     /**
-     * Gets the total number of flight hours in the NGAFID.
+     * Gets the total number flight seconds NGAFID. 
      *
      * @param connection is the database connection
      * @return the number of flight hours for the entire NGAFID.
      */
-    public static long getTotalFlightHours(Connection connection) throws SQLException {
-        return getTotalFlightHours(connection, 0, null);
+    public static long getTotalFlightTime(Connection connection) throws SQLException {
+        return getTotalFlightTime(connection, 0, null);
     }
 
     /**
-     * Gets the total number of flight hours for a given filter. If the filter is null it returns the number of flight hours
-     * for the entire NGAFID.
+     * Gets the total number flight seconds NGAFID. 
      *
      * @param connection is the database connection
      * @param is         the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
-    public static long getTotalFlightHours(Connection connection, Filter filter) throws SQLException {
-        return getTotalFlightHours(connection, 0, filter);
+    public static long getTotalFlightTime(Connection connection, Filter filter) throws SQLException {
+        return getTotalFlightTime(connection, 0, filter);
     }
 
 
@@ -511,7 +540,7 @@ public class Flight {
      * @param is         the filter to select the flights, can be null.
      * @return the number of flight hours for the fleet, given the specified filter (or no filter if the filter is null).
      */
-    public static long getTotalFlightHours(Connection connection, int fleetId, Filter filter) throws SQLException {
+    public static long getTotalFlightTime(Connection connection, int fleetId, Filter filter) throws SQLException {
         ArrayList<Object> parameters = new ArrayList<Object>();
 
         String queryString;
@@ -560,6 +589,10 @@ public class Flight {
     }
 
 
+    public static long getTotalFlightTime(Connection connection, String queryString) throws SQLException {
+        return getTotalFlightTime(connection, queryString, 0);
+    }
+
     /**
      * Gets the total number of flight hours for a given fleet and WHERE clause query string
      * for the fleet.
@@ -568,9 +601,12 @@ public class Flight {
      * @param queryString is the string to put into the query's WHERE clause
      * @return the number of flight hours for the fleet, given the specified queryString
      */
-    public static long getTotalFlightHours(Connection connection, String queryString) throws SQLException {
+    public static long getTotalFlightTime(Connection connection, String queryString, int fleetId) throws SQLException {
         String fullQueryString = "SELECT sum(TIMESTAMPDIFF(SECOND, start_time, end_time)) FROM flights WHERE (" + queryString + ")";
         LOG.info("getting total flight hours with query string: '" + fullQueryString + "'");
+
+        if (fleetId > 0)
+            fullQueryString += " AND fleet_id = " + fleetId;
 
         PreparedStatement query = connection.prepareStatement(fullQueryString);
         LOG.info(query.toString());
@@ -1062,6 +1098,30 @@ public class Flight {
      */
     public static List<String> getAllTagNames(Connection connection) throws SQLException {
         String queryString = "SELECT name FROM flight_tags ";
+        PreparedStatement query = connection.prepareStatement(queryString);
+        ResultSet resultSet = query.executeQuery();
+        List<String> tagNames = new ArrayList<>();
+
+        while (resultSet.next()) {
+            tagNames.add(resultSet.getString(1));
+        }
+
+        resultSet.close();
+        query.close();
+
+        return tagNames;
+    }
+
+    /**
+     * Returns a list of all the tag names in the database for a fleet
+     *
+     * @param connection the connection to the database
+     * @return a List with strings containing the tag names
+     *
+     * @throws SQLException if there is an error with the database query
+     */
+    public static List<String> getAllFleetTagNames(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT name FROM flight_tags WHERE fleet_id =" + fleetId;
         PreparedStatement query = connection.prepareStatement(queryString);
         ResultSet resultSet = query.executeQuery();
         List<String> tagNames = new ArrayList<>();
@@ -1598,6 +1658,40 @@ public class Flight {
         doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
     }
 
+    public void calculateBeechcraftAltMSL(Connection connection, String outAltMSLColumnName, String inAltMSLColumnName) throws SQLException {
+        DoubleTimeSeries inAltMSL = doubleTimeSeries.get(inAltMSLColumnName);
+        DoubleTimeSeries outAltMSL = new DoubleTimeSeries(connection, outAltMSLColumnName, "feet");
+
+        for (int i = 0; i < inAltMSL.size(); i++) {
+            outAltMSL.add(inAltMSL.get(i) * 32.8084); //convert decameters to feet
+        }
+        doubleTimeSeries.put(outAltMSLColumnName, outAltMSL);
+    }
+
+    public void calculateBeechcraftLatLon(Connection connection, String inLatColumnName, String inLonColumnName, String outLatColumnName, String outLonColumnName) throws SQLException {
+        DoubleTimeSeries inLatitudes = doubleTimeSeries.get(inLatColumnName);
+        DoubleTimeSeries inLongitudes = doubleTimeSeries.get(inLonColumnName);
+
+        DoubleTimeSeries latitude = new DoubleTimeSeries(connection, outLatColumnName, "degrees");
+        DoubleTimeSeries longitude = new DoubleTimeSeries(connection, outLonColumnName, "degrees");
+
+        for (int i = 0; i < inLatitudes.size(); i++) {
+            double inLat = inLatitudes.get(i);
+            double inLon = inLongitudes.get(i);
+            double outLat = inLat;
+            double outLon = inLon;
+
+            if (inLat == 0) outLat = Double.NaN;
+            if (inLon == 0) outLon = Double.NaN;
+
+            latitude.add(outLat);
+            longitude.add(outLon);
+        }
+
+        doubleTimeSeries.put(outLatColumnName, latitude);
+        doubleTimeSeries.put(outLonColumnName, longitude);
+    }
+
     public void calculateScanEagleStartEndTime(String timeColumnName, String latColumnName, String lonColumnName) throws MalformedFlightFileException {
         StringTimeSeries times = stringTimeSeries.get(timeColumnName);
         DoubleTimeSeries latitudes = doubleTimeSeries.get(latColumnName);
@@ -1796,12 +1890,15 @@ public class Flight {
 
                 airframeName = "ScanEagle";
                 airframeType = "UAS Fixed Wing";
+            } else if(fileInformation.startsWith("Aircraft ID")) {
+                airframeName = "Beechcraft C90A King Air";
+                airframeType = "Fixed Wing";
             } else {
                 throw new FatalFlightFileException("First line of the flight file should begin with a '#' and contain flight recorder information.");
             }
         }
 
-        if (airframeName != null && airframeName.equals("ScanEagle")) {
+        if (airframeName != null && (airframeName.equals("ScanEagle") || airframeName.equals("Beechcraft C90A King Air"))) {
             //need a custom method to process ScanEagle data because the column
             //names are different and there is no header info
 
@@ -1812,8 +1909,13 @@ public class Flight {
             System.out.println("end date: '" + startDateTime + "'");
 
             //UND doesn't have the systemId for UAS anywhere in the filename or file (sigh)
-            suggestedTailNumber = "N" + filenameParts[1] + "ND";
-            systemId = suggestedTailNumber;
+            if (airframeName.equals("Beechcraft C90A King Air")){
+                systemId = "N709EA";
+                tailNumber = "N709EA";
+            } else {
+                suggestedTailNumber = "N" + filenameParts[1] + "ND";
+                systemId = suggestedTailNumber;
+            }
 
             System.out.println("suggested tail number: '" + suggestedTailNumber + "'");
             System.out.println("system id: '" + systemId + "'");
@@ -1836,17 +1938,20 @@ public class Flight {
                 for (int i = 1; i < infoParts.length; i++) {
                     //process everything else (G1000 data)
                     if (infoParts[i].trim().length() == 0) continue;
+                    //get rid of extraneous " characters generated by MS excel
+                    System.err.println("fixing key/value: '" + infoParts[i] + "'");
+                    infoParts[i] = infoParts[i].trim().replace("\"", "").trim();
 
-                    //System.err.println("splitting key/value: '" + infoParts[i] + "'");
-                    String subParts[] = infoParts[i].trim().split("=");
+                    System.err.println("splitting key/value: '" + infoParts[i] + "'");
+                    String subParts[] = infoParts[i].split("=");
                     String key = subParts[0];
                     String value = subParts[1];
 
-                    //System.err.println("key: '" + key + "'");
-                    //System.err.println("value: '" + value + "'");
+                    System.err.println("key: '" + key + "'");
+                    System.err.println("value: '" + value + "'");
 
                     if (key.equals("airframe_name")) {
-                        airframeName = value.substring(1, value.length() - 1);
+                        airframeName = value;
 
                         //throw an error for 'Unknown Aircraft'
                         if (airframeName.equals("Unknown Aircraft")) {
@@ -1864,7 +1969,7 @@ public class Flight {
 
                         }
 
-                        if (airframeName.equals("Cirrus SR22 (3600 GW)")) {
+                        if (airframeName.equals("Cirrus SR22 (3600 GW)") || airframeName.equals("Cirrus SR22 Turbo (3600 GW)")) {
                             airframeName = "Cirrus SR22";
                         }
 
@@ -1887,7 +1992,8 @@ public class Flight {
                                 airframeName.equals("Quest Kodiak 100") ||
                                 airframeName.equals("Cessna 400") ||
                                 airframeName.equals("Beechcraft A36/G36") ||
-                                airframeName.equals("Beechcraft G58")) {
+                                airframeName.equals("Beechcraft G58") ||
+                                airframeName.equals("Beechcraft C90A King Air")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
                             airframeName = "R44";
@@ -1899,7 +2005,7 @@ public class Flight {
                         }
 
                     } else if (key.equals("system_id")) {
-                        systemId = value.substring(1, value.length() - 1);
+                        systemId = value;
                     }
                 }
             } catch (Exception e) {
@@ -1917,7 +2023,7 @@ public class Flight {
             throw new FatalFlightFileException("Flight information (first line of flight file) does not contain an 'system_id' key/value pair.");
         System.err.println("detected airframe type: '" + systemId + "'");
 
-        if (airframeName.equals("ScanEagle")) {
+        if (airframeName.equals("ScanEagle") || airframeName.equals("Beechcraft C90A King Air")) {
             //for the ScanEagle, the first line is the headers of the columns
             String headersLine = fileInformation;
             //System.out.println("Headers line is: " + headersLine);
@@ -2134,8 +2240,9 @@ public class Flight {
                 //this is all we can do with the scan eagle data until we
                 //get better lat/lon info
                 hasCoords = true;
-            } else if (airframeName.equals("")) {
-
+            } else if (airframeName.equals("Beechcraft C90A King Air")) {
+                calculateBeechcraftAltMSL(connection, "AltMSL", "Altitude(decameters)");
+                calculateBeechcraftLatLon(connection, "Latitude(DD)", "Longitude(DD)", "Latitude", "Longitude");
             } else {
                 calculateStartEndTime("Lcl Date", "Lcl Time", "UTCOfst");
             }

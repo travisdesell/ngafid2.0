@@ -17,6 +17,7 @@ import spark.Spark;
 
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
+import org.ngafid.accounts.EmailType;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncFleet;
 import org.ngafid.accounts.User;

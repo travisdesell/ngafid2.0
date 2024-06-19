@@ -7,13 +7,17 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.logging.Logger;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.apache.commons.lang.RandomStringUtils;
 import org.ngafid.SendEmail;
+import org.ngafid.accounts.EmailType;
 import org.ngafid.filters.Filter;
 import org.ngafid.flights.Tails;
 
 import com.google.gson.Gson;
+
 
 public class User {
     private static final Logger LOG = Logger.getLogger(User.class.getName());
@@ -34,6 +38,8 @@ public class User {
     private String zipCode;
     private boolean admin;
     private boolean aggregateView;
+
+    private UserEmailPreferences userEmailPreferences;
 
     /**
      * The following are references to the fleet the user has access to (if it has approved access
@@ -78,6 +84,12 @@ public class User {
         return aggregateView;
     }
 
+    /**
+    * @return the user's email preferences
+    */
+    public UserEmailPreferences getUserEmailPreferences(Connection connection) throws SQLException {
+        return User.getUserEmailPreferences(connection, id);
+    }
 
     /**
      * @return the user's fleet id
@@ -132,7 +144,7 @@ public class User {
      * Checks to see if the user is a manager of a particular fleet. Typically used to allow access to modify that fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     * 
+     *
      * @return true if the user has access to that fleet.
      */
     public boolean managesFleet(int fleetId) {
@@ -143,7 +155,7 @@ public class User {
      * Checks to see if the user can upload flights for a fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     * 
+     *
      * @return true if the user has access to that fleet.
      */
     public boolean hasUploadAccess(int fleetId) {
@@ -154,7 +166,7 @@ public class User {
      * Checks to see if the user can view flights for a fleet.
      *
      * @param fleetId the fleet the access check is being made on
-     * 
+     *
      * @return true if the user has access to that fleet.
      */
     public boolean hasViewAccess(int fleetId) {
@@ -170,8 +182,13 @@ public class User {
      *
      * @return the number of users in the NGAFID
      */
-    public static int getNumberUsers(Connection connection) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT count(id) FROM user");
+    public static int getNumberUsers(Connection connection, int fleetId) throws SQLException {
+        String queryString = "SELECT count(id) FROM user";
+
+        if (fleetId > 0)
+            queryString = queryString + " INNER JOIN fleet_access ON user.id = fleet_access.user_id AND fleet_access.fleet_id = " + fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
 
         LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
@@ -186,7 +203,7 @@ public class User {
 
 
     /**
-     * Get a user from the database based on the users id. 
+     * Get a user from the database based on the users id.
      *
      * @param connection A connection to the mysql database.
      * @param userId The user's id.
@@ -221,6 +238,9 @@ public class User {
         //get the access level of the user for this fleet
         user.fleetAccess = FleetAccess.get(connection, user.id, fleetId);
         user.fleet = Fleet.get(connection, fleetId);
+
+        //Record this user in the email preferences map
+        UserEmailPreferences.addUser(connection, user);
 
         //do not need to get the fleet as this is called from populateUsers
 
@@ -351,6 +371,96 @@ public class User {
     }
 
     /**
+     * Queries the user email preferences from the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to query for
+     * @param gson is a Gson object to convert to JSON
+     *
+     * @return an instane of {@link UserPreferences} with all the user's preferences and settings
+     */
+    public static UserEmailPreferences getUserEmailPreferences(Connection connection, int userId) throws SQLException {
+
+        //Check if the user has any email preferences first...
+        PreparedStatement queryInitial = connection.prepareStatement("SELECT COUNT(*) FROM email_preferences WHERE user_id = ?");
+        queryInitial.setInt(1, userId);
+
+        ResultSet resultSetInitial = queryInitial.executeQuery();
+        int emailPreferencesCount = 0;
+
+        if (resultSetInitial.next()) {
+            emailPreferencesCount = resultSetInitial.getInt(1);
+        }
+
+
+        int emailTypeCountExpected = EmailType.getEmailTypeCount();
+
+        LOG.info("Checking email preferences for user with ID (" + userId + ")... Expected: " + emailTypeCountExpected + " / Actual: " + emailPreferencesCount);
+
+        //The user mismatched email preference count, reinsert
+        if (emailPreferencesCount != emailTypeCountExpected) {
+            LOG.severe("User with ID (" + userId + ") has a mismatched number of email types, attempting reinsertion...");
+            EmailType.insertEmailTypesIntoDatabase(connection, userId);
+        }
+
+        //Get the user's email preferences...
+        PreparedStatement query = connection.prepareStatement("SELECT email_type, enabled FROM email_preferences WHERE user_id = ?");
+        query.setInt(1, userId);
+
+        ResultSet resultSet = query.executeQuery();
+
+        HashMap<String, Boolean> emailPreferences = new HashMap<>();
+
+        while (resultSet.next()) {
+            String emailType = resultSet.getString(1);
+            boolean enabled = resultSet.getBoolean(2);
+
+            emailPreferences.put(emailType, enabled);
+        }
+
+        return new UserEmailPreferences(userId, emailPreferences);
+
+    }
+
+    /**
+     * Updates the user email preferences in the database
+     *
+     * @param connection A connection to the mysql database
+     * @param userId the userId to update for
+     * @param emailPreferences the {@link UserEmailPreferences} instance to store
+     */
+    public static UserEmailPreferences updateUserEmailPreferences(Connection connection, int userId, Map<String, Boolean> emailPreferences) throws SQLException {
+        String queryString =
+            "INSERT INTO email_preferences (user_id, email_type, enabled) VALUES (?, ?, ?)"
+            + " ON DUPLICATE KEY UPDATE email_type = VALUES(email_type), enabled = VALUES(enabled)"
+            ;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
+
+        for (String emailType : emailPreferences.keySet()) {
+            query.setInt(1, userId);
+            query.setString(2, emailType);
+            query.setBoolean(3, emailPreferences.get(emailType));
+
+            query.executeUpdate();
+        }
+
+        UserEmailPreferences updatedEmailPreferences = User.getUserEmailPreferences(connection, userId);
+
+        User userTarget = UserEmailPreferences.getUser(userId);
+        userTarget.setEmailPreferences(updatedEmailPreferences);
+
+        return updatedEmailPreferences;
+    
+    }
+
+    public void setEmailPreferences(UserEmailPreferences updatedEmailPreferences) {
+        this.userEmailPreferences = updatedEmailPreferences;
+    }
+
+
+
+    /**
      * Checks to see if the passphrase provided matches the password reset passphrase for this user
      *
      * @param connection A connection to the mysql database.
@@ -434,7 +544,7 @@ public class User {
         }
 
         //for now it should be just one user per fleet
-        ArrayList<FleetAccess> allFleets = FleetAccess.get(connection, user.getId()); 
+        ArrayList<FleetAccess> allFleets = FleetAccess.get(connection, user.getId());
 
         if (allFleets.size() > 1) {
             LOG.severe("ERROR: user had access to multiple fleets (" + allFleets.size() + "), this should never happen (yet)!.");
@@ -451,6 +561,10 @@ public class User {
         if (user.fleetAccess.isManager()) {
             user.fleet.populateUsers(connection, user.getId());
         }
+
+        //Get the email preferences for this user
+        user.userEmailPreferences = getUserEmailPreferences(connection, user.getId());
+        UserEmailPreferences.addUser(connection, user);
 
         return user;
     }
@@ -638,6 +752,9 @@ public class User {
             throw new AccountException("Database Error", "Error happened getting id for new user on database insert.");
         }
 
+        //Record this user in the email preferences map and apply the default email preferences
+        UserEmailPreferences.addUser(connection, user);
+
         return user;
     }
 
@@ -758,7 +875,7 @@ public class User {
         body.append("<p> Password Reset Link : <a href=" + resetPassswordURL + ">Reset Password</a></p><br>");
         body.append("</body></html>");
         ArrayList<String> bccRecipients = new ArrayList<>();
-        SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString() );
+        SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString(), EmailType.PASSWORD_RESET);
     }
 
     public void updateLastLoginTimeStamp(Connection connection) throws SQLException {
@@ -774,4 +891,3 @@ public class User {
 
     }
 }
-

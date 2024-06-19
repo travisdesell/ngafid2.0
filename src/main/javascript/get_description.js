@@ -5,7 +5,6 @@ var descriptions = {};
 
 export default function GetDescription(eventName) {
     if (descriptions[eventName]) {
-        console.log("Description for " + eventName + " already stored.");
         return descriptions[eventName];
     }
 

@@ -11,9 +11,9 @@ $update_2022_02_17 = false;
 $update_turn_to_final = false;
 $update_visited_airports = false;
 $update_uploads_for_raise = false;
-$update_rate_of_closure = true;
-$create_airsync = true;
-
+$update_rate_of_closure = false;
+$create_airsync = false;
+$create_event_metadata = true;
 //need to drop and reload these tables for 2020_05_16 changes
 
 /*
@@ -59,6 +59,7 @@ if ($drop_tables) {
     query_ngafid_db("DROP TABLE visited_runways");
     query_ngafid_db("DROP TABLE user_preferences");
     query_ngafid_db("DROP TABLE user_preferences_metrics");
+    query_ngafid_db("DROP TABLE email_preferences");
     query_ngafid_db("DROP TABLE double_series_names");
     query_ngafid_db("DROP TABLE string_series_names");
     query_ngafid_db("DROP TABLE stored_filters");
@@ -219,7 +220,7 @@ if (!$update_2022_02_17) {
         `name` VARCHAR(32) NOT NULL,
 
         PRIMARY KEY(`id`),
-        UNIQUE KEY `name_key` (`name`) 
+        UNIQUE KEY `name_key` (`name`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
     query_ngafid_db($query);
     query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
@@ -561,6 +562,18 @@ if (!$update_2022_02_17) {
 
     query_ngafid_db($query);
 
+
+    $query = "CREATE TABLE `email_preferences` (
+        `user_id` INT(11) NOT NULL,
+        `email_type` VARCHAR(64) NOT NULL,
+        `enabled` BOOLEAN NOT NULL DEFAULT 1,
+
+        PRIMARY KEY (`user_id`, `email_type`),
+        FOREIGN KEY (`user_id`) REFERENCES user(`id`)
+    );";
+    query_ngafid_db($query);
+
+
     $query = "CREATE TABLE `stored_filters` (
         `fleet_id` INT(11) NOT NULL,
         `name` VARCHAR(512) NOT NULL,
@@ -665,7 +678,7 @@ if (!$update_turn_to_final) {
     query_ngafid_db($query);
 }
 
-if ($update_rate_of_closure) {
+if (!$update_rate_of_closure) {
     $query = "CREATE TABLE `rate_of_closure` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `event_id` INT(11) NOT NULL,
@@ -692,5 +705,26 @@ if (!$update_uploads_for_raise) {
     query_ngafid_db($query);
 }
 
+if ($create_event_metadata) {
+    
+    $query = "CREATE TABLE `event_metadata_keys` (
+        `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `name` VARCHAR(512) NOT NULL,
+        PRIMARY KEY(`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
+    query_ngafid_db($query);
+
+    $query = "CREATE TABLE `event_metadata` (
+        `event_id` INT(11) NOT NULL,
+        `key_id` INT(11) NOT NULL,
+        `value` DOUBLE NOT NULL,
+
+        FOREIGN KEY(`event_id`) REFERENCES events(`id`),
+        FOREIGN KEY(`key_id`) REFERENCES event_metadata_keys(`id`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
+
+    query_ngafid_db($query);
+
+}
 ?>
