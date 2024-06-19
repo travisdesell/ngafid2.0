@@ -2,6 +2,7 @@ package org.ngafid.routes;
 
 import com.google.gson.Gson;
 import org.ngafid.SendEmail;
+import org.ngafid.accounts.EmailType;
 import org.ngafid.accounts.User;
 
 import spark.Route;
@@ -53,7 +54,7 @@ public class PostSendUserInvite implements Route {
             StringBuilder body = getEmailStringBuilder(fleetName, inviteEmail);
 
             ArrayList<String> bccRecipients = new ArrayList<>();
-            SendEmail.sendEmail(recipient, bccRecipients, "NGAFID Account Creation Invite", body.toString());
+            SendEmail.sendEmail(recipient, bccRecipients, "NGAFID Account Creation Invite", body.toString(), EmailType.ACCOUNT_CREATION_INVITE);
             return gson.toJson(new InvitationSent());
         }
     }
