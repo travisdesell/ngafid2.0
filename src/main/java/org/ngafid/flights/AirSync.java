@@ -86,32 +86,10 @@ public class AirSync {
         String message = sb.toString();
 
         System.err.println(message);
-        sendAdminCrashNotification(message);
+        // sendAdminCrashNotification(message);
 
         System.exit(1);
     }
-
-    /**
-     * Gets the shortest wait time of all fleets so the daemon can sleep "smartly"
-     *
-     * @param connection the DBMS connection
-     *
-     * @throws SQLException if there is a DBMS issue
-     */
-    private static long getWaitTime(Connection connection) throws SQLException {
-        String sql = "SELECT MIN(timeout - TIMESTAMPDIFF(MINUTE, last_upload_time, CURRENT_TIMESTAMP)) AS remaining_time FROM airsync_fleet_info";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        ResultSet resultSet = query.executeQuery();
-
-        long waitTime = DEFAULT_WAIT_TIME;
-        if (resultSet.next()) {
-            waitTime = 1000 * 60 * resultSet.getLong(1);
-        }
-
-        return Math.max(waitTime, 0);
-    }
-
 
     /**
      * This daemon's entry point. 
@@ -121,7 +99,6 @@ public class AirSync {
      */
     public static void main(String [] args) {
         LOG.info("AirSync daemon started");
-
 
         try {
             LocalDateTime now = LocalDateTime.now();
@@ -140,27 +117,27 @@ public class AirSync {
 
                 for (AirSyncFleet fleet : airSyncFleets) {
                     String logMessage = "Fleet " + fleet.getName() + ": %s";
+                    LOG.info("Override = " + fleet.getOverride(connection));
 
-                    if (fleet.isQueryOutdated(connection)) {
+                    if (fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
+                        fleet.setOverride(connection, false);
 
-                        if (fleet.lock(connection)) {
-                            String status = fleet.update(connection);
-                            fleet.unlock(connection);
+                        String status = fleet.update(connection);
 
-                            LOG.info("Update status: " + status);
-                        } else {
-                            LOG.info("Unable to lock fleet " + fleet.toString() + ", will skip for now. This usually means a user has requested to manually update the fleet.");
-                        }
-                    } else {
-                        LOG.info(String.format(logMessage, "does not need to be updated, will skip."));
+                        LOG.info("Update status: " + status);
                     }
                 }
 
-                long waitTime = getWaitTime(connection);
-                LOG.info("Sleeping for " + waitTime + "ms.");
+                long waitTime = 30000;
+                LOG.info("Sleeping for " + waitTime / 1000 + "s.");
                 Thread.sleep(waitTime);
             }
+        } catch (IOException e) {
+            String message = e.getMessage();
+            LOG.info("Got exception: " + e.getMessage());
+            if (message.contains("HTTP response code: 40"))
+                LOG.info("HINT: Your bearer token is either expired, or you are rate limited");
         } catch (Exception e) {
             crashGracefully(e);
         }

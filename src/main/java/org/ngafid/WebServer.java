@@ -8,15 +8,23 @@ import spark.Spark;
 import spark.Service;
 
 import java.io.InputStream;
+<<<<<<< Updated upstream
+=======
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.io.IOException;
 
-import java.time.LocalDateTime;
+import java.time.*;
+>>>>>>> Stashed changes
+
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.*;
+import com.google.gson.TypeAdapter;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
 
@@ -33,6 +41,28 @@ public final class WebServer {
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
 
+    public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
+        @Override
+        public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
+            if (localDate == null) {
+                jsonWriter.nullValue();
+                return;
+            }
+            jsonWriter.value(localDate.toString());
+        }
+    
+        @Override
+        public LocalDateTime read(final JsonReader jsonReader) throws IOException {
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return null;
+            }
+            return ZonedDateTime.parse(jsonReader.nextString()).toLocalDateTime();
+        }
+    }
+
+    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
+    
     static {
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
@@ -317,4 +347,3 @@ public final class WebServer {
         LOG.info("NGAFID WebServer initialization complete.");
     }
 }
-
