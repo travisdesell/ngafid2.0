@@ -136,13 +136,9 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
-<<<<<<< HEAD
                         <source>20</source>
                         <target>20</target>
-=======
-                        <source>16</source>
-                        <target>16</target>
->>>>>>> main
+
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xmaxwarns</arg>
@@ -157,13 +153,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-<<<<<<< HEAD
                     <source>20</source>
                     <target>20</target>
-=======
-                    <source>16</source>
-                    <target>16</target>
->>>>>>> main
                 </configuration>
             </plugin>
         </plugins>
