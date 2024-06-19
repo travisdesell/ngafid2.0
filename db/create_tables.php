@@ -574,6 +574,15 @@ if (!$update_2022_02_17) {
     query_ngafid_db($query);
 
 
+    $query = "CREATE TABLE `email_unsubscribe_tokens` (
+        `token` VARCHAR(64) NOT NULL,
+        `user_id` INT(11) NOT NULL,
+        PRIMARY KEY (`token`),
+        FOREIGN KEY (`user_id`) REFERENCES user(`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+    query_ngafid_db($query);
+
+
     $query = "CREATE TABLE `stored_filters` (
         `fleet_id` INT(11) NOT NULL,
         `name` VARCHAR(512) NOT NULL,

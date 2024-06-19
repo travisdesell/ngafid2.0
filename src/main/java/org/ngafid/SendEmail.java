@@ -23,7 +23,6 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import javax.activation.*;
 
-
 public class SendEmail {
 
     private static String password;
@@ -32,6 +31,10 @@ public class SendEmail {
     private static boolean emailEnabled = true;
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
+
+    public static final String baseURL = "https://ngafid.org";
+    //public static final String baseURL = "https://ngafidbeta.rit.edu";
+    public static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
 
     static {
 
@@ -145,6 +148,29 @@ public class SendEmail {
     
     }
 
+
+    private static String generateUnsubscribeToken(String recipientEmail, int userID) {
+        
+        //Generate a random string
+        String token = UUID.randomUUID().toString().replace("-", "");        
+
+        try (Connection connection = Database.getConnection()) {
+
+            String query = "INSERT INTO email_unsubscribe_tokens (token, user_id) VALUES (?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, token);
+            preparedStatement.setInt(2, userID);
+            preparedStatement.execute();
+
+        } catch (Exception e) {
+            LOG.severe("Failed to generate token for email recipient: "+recipientEmail);
+        }
+        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token);
+
+        return token;
+
+    }
+
     /**
      * Wrapper for sending an email to NGAFID admins
      * @param subject - subject of the email
@@ -195,6 +221,8 @@ public class SendEmail {
 
             try {
 
+                /* SEND TO toRecipients */
+
                 // Create a default MimeMessage object.
                 MimeMessage message = new MimeMessage(session);
 
@@ -210,9 +238,11 @@ public class SendEmail {
                     }
 
                     //Check if the emailType is forced
+                    boolean embedUnsubscribeURL = true;
                     if (EmailType.isForced(emailType)) {
 
                         System.out.println("Delivering FORCED email type: " + emailType);
+                        embedUnsubscribeURL = false;
 
                     } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {   //Check whether or not the emailType is enabled for the user
 
@@ -220,26 +250,62 @@ public class SendEmail {
                         
                     }
 
-                    System.out.println("EMAILING TO: " + toRecipient);
+                    String bodyPersonalized = body;
+                    if (embedUnsubscribeURL) {
 
-                    message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
+                        try {
+                            int userID = UserEmailPreferences.getUserIDFromEmail(toRecipient);
+
+                            //Generate a token for the user to unsubscribe
+                            String token = generateUnsubscribeToken(toRecipient, userID);
+                            String unsubscribeURL = unsubscribeURLTemplate.replace("__ID__", Integer.toString(userID)).replace("__TOKEN__", token);
+
+                            //Embed the Unsubscribe URL at the top of the email body
+                            bodyPersonalized = ("<a href=\""+unsubscribeURL+"\">Unsubscribe from non-critical NGAFID emails</a><br><br>" + body);
+
+                        }
+                        catch(Exception e) {
+                            LOG.severe("Recipient email "+toRecipient+" is not mapped in UserEmailPreferences, skipping unsubscribe URL");
+                        }
 
                     }
 
-                for (String bccRecipient : bccRecipients) {
-                    message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccRecipient));
+                    // Set Subject: header field
+                    message.setSubject(subject);
+                    message.setContent(bodyPersonalized, "text/html; charset=utf-8");
+                    
+                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));   
+
+                    // Send the message to the current recipient
+                    System.out.println("sending message!");
+                    Transport.send(message);
+
+                }
+
+                /* SEND TO bccRecipients */
+                if (!bccRecipients.isEmpty()) {
+
+                    // Create a default MimeMessage object.
+                    message = new MimeMessage(session);
+
+                    // Set From: header field of the header.
+                    message.setFrom(new InternetAddress(from));
+
+                    for (String bccRecipient : bccRecipients) {
+                        message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccRecipient));
                     }
 
-                // Set Subject: header field
-                message.setSubject(subject);
+                    // Set Subject: header field
+                    message.setSubject(subject);
+                    message.setContent(body, "text/html; charset=utf-8");
 
-                // Now set the actual message
-                message.setContent(body, "text/html; charset=utf-8");
+                    // Send the message to the current BCC recipients
+                    System.out.println("sending message (BCC)!");
+                    Transport.send(message);
 
-                // Send message
-                System.out.println("sending message!");
-                Transport.send(message);
-                System.out.println("Sent message successfully....");
+                }
+
+                System.out.println("Sent messages successfully....");
 
             } catch (MessagingException mex) {
                 mex.printStackTrace();
