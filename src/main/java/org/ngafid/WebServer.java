@@ -37,7 +37,6 @@ import static org.ngafid.SendEmail.sendAdminEmails;
  */
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
