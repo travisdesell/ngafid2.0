@@ -5,6 +5,8 @@ import ReactDOM from "react-dom";
 import Plotly from 'plotly.js';
 import { errorModal } from "./error_modal.js";
 
+var currSeriesName;
+
 class TraceButtons extends React.Component {
     constructor(props) {
         super(props);
@@ -54,21 +56,99 @@ class TraceButtons extends React.Component {
 
     }
 
-    combineDateTime(datesObj,timesObj){
+
+    plotGraph(dateStamp){
+
+        var thisTrace = this;
+        let parentFlight = this.state.parentFlight;
+
+        var submissionData = {
+            flightId : this.props.flightId,
+            seriesName : currSeriesName
+        };   
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/double_series',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ");
+                console.log(response);
+
+                var trace = {
+                    x : dateStamp,
+                    y : response.y,
+                    mode : "lines",
+                    //marker : { size: 1},
+                    name : thisTrace.props.flightId + " - " + currSeriesName
+                }
+
+                //set the trace number for this series
+                parentFlight.state.traceIndex[currSeriesName] = $("#plot")[0].data.length;
+                parentFlight.state.traceVisibility[currSeriesName] = true;
+                parentFlight.setState(parentFlight.state);
+
+                Plotly.addTraces('plot', [trace]);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Flight Coordinates", errorThrown);
+            },   
+            async: true 
+        });
+
+    }
+
+    combineDateTime(datesObj,timesObj,offsetObj){
         var date_time_combo = [];
         var dates = Object.values(datesObj)[1];
         var times = Object.values(timesObj)[1];
+        var offsets = Object.values(offsetObj)[1];
         console.log("dates: ");
         console.log(dates);
         console.log("times: ");
         console.log(times);
         var size = Object.keys(dates).length;
         for (let i = 0; i < size; i++) {
-                date_time_combo[i] = new Date(dates[i] +" "+ times[i]);
+            if(dates[i] == ""){
+                date_time_combo[i] = "";
+            } else{
+                var time = times[i];
+                var offset_time = offsets[i];
+                var temp = Number(time.substring(0,2)) - Number(offset_time.substring(0,3));
+                time = temp.toString() + time.substring(2);
+                var date_stamp = new Date(dates[i] +" "+ time);
+                date_time_combo[i] = date_stamp;
+            }
         }
         console.log("Timestamps: ");
         console.log(date_time_combo);
+        this.plotGraph(date_time_combo);
 
+    }
+
+    getTimeOffset(dates,times){
+        var submissionData = {
+            flightId : this.props.flightId,
+            seriesName : "UTCOfst"
+        };
+        
+        var self = this;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/string_series',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received Time Offset (hopefully): ");
+                console.log(response);
+                self.combineDateTime(dates,times,response);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Start Date", errorThrown);
+                return(none);
+            }
+        });
     }
 
     getFlightTimes(dates){
@@ -87,7 +167,7 @@ class TraceButtons extends React.Component {
             success : function(response) {
                 console.log("received response FOR TIME: ");
                 console.log(response);
-                self.combineDateTime(dates,response);
+                self.getTimeOffset(dates,response);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Start Time", errorThrown);
@@ -131,9 +211,12 @@ class TraceButtons extends React.Component {
 
             console.log(seriesName);
             console.log("seriesName: " + seriesName + ", flightId: " + this.props.flightId);
-            var date = this.getFlightDates();
-            console.log("RETURNED DATE IS:");
-            console.log(date);
+            currSeriesName = seriesName;
+            this.getFlightDates();
+            //var date = this.getFlightDates();
+            //console.log("RETURNED DATE IS:");
+            //console.log(date);
+            /* 
             var submissionData = {
                 flightId : this.props.flightId,
                 seriesName : seriesName
@@ -167,7 +250,7 @@ class TraceButtons extends React.Component {
                     errorModal.show("Error Loading Flight Coordinates", errorThrown);
                 },   
                 async: true 
-            });  
+            });  */
         } else {
             //toggle visibility for this series
             let visibility = !parentFlight.state.traceVisibility[seriesName];
