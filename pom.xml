@@ -136,14 +136,10 @@
                     <artifactId>maven-compiler-plugin</artifactId>
                     <version>3.8.1</version>
                     <configuration>
-<<<<<<< HEAD
-                        <source>16</source>
-                        <target>16</target>
-=======
+
                         <source>20</source>
                         <target>20</target>
 
->>>>>>> b5c1f606 (Squashed airsync fixes)
                         <compilerArgs>
                             <arg>-Xlint:all</arg>
                             <arg>-Xmaxwarns</arg>
@@ -158,13 +154,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
-<<<<<<< HEAD
-                    <source>16</source>
-                    <target>16</target>
-=======
                     <source>20</source>
                     <target>20</target>
->>>>>>> b5c1f606 (Squashed airsync fixes)
                 </configuration>
             </plugin>
         </plugins>
