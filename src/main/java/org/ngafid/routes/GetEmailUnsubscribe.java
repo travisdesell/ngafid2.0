@@ -62,7 +62,7 @@ public class GetEmailUnsubscribe implements Route {
             query.setInt(2, id);
             ResultSet resultSet = query.executeQuery();
             if (!resultSet.next()) {
-                String exceptionMessage = "Provided token/id pairing was not found: ("+token+", "+id+"), may have already been used";
+                String exceptionMessage = "Provided token/id pairing was not found: ("+token+", "+id+"), may have already expired or been used";
                 LOG.severe(exceptionMessage);
                 throw new Exception(exceptionMessage);
             }
