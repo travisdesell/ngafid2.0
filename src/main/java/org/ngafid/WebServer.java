@@ -13,15 +13,20 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import java.io.IOException;
 
-import java.time.LocalDateTime;
+import java.time.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.*;
+import com.google.gson.TypeAdapter;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
 
@@ -33,12 +38,33 @@ import static org.ngafid.SendEmail.sendAdminEmails;
  */
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
 
+    public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
+        @Override
+        public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
+            if (localDate == null) {
+                jsonWriter.nullValue();
+                return;
+            }
+            jsonWriter.value(localDate.toString());
+        }
+    
+        @Override
+        public LocalDateTime read(final JsonReader jsonReader) throws IOException {
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return null;
+            }
+            return ZonedDateTime.parse(jsonReader.nextString()).toLocalDateTime();
+        }
+    }
+
+    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
+    
     static {
 
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
