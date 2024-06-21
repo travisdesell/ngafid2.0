@@ -58,30 +58,13 @@ public class PostManualAirSyncUpdate implements Route {
         try {
             AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
 
-            if (fleet.lock(connection)) {
-                LOG.info("Beginning AirSync update process!");
-                String status = fleet.update(connection);
-                LOG.info("AirSync update process complete! Status: " + status);
+            LOG.info("Beginning AirSync update process!");
+            String status = fleet.update(connection);
+            LOG.info("AirSync update process complete! Status: " + status);
 
-                fleet.unlock(connection);
+            fleet.setOverride(connection, true);
 
-                StringBuilder sb = new StringBuilder("<h1>NGAFID Manual AirSync Update Report</h1>");
-                sb.append("<br><p>");
-                sb.append(status);
-                sb.append("</p>");
-
-                //Send email
-                ArrayList<String> emailList = new ArrayList<>();
-                emailList.add(user.getEmail());
-
-                SendEmail.sendEmail(emailList, new ArrayList<String>(), "NGAFID AirSync Update Report", sb.toString(), EmailType.AIRSYNC_UPDATE_REPORT);
-                String lastUpdateTime = fleet.getLastUpdateTime(connection);
-
-                return gson.toJson(lastUpdateTime);
-            } else {
-                LOG.info("Unable to enter critical section!");
-                return gson.toJson("UNABLE_MUTEX");
-            }
+            return gson.toJson("OK");
         } catch (Exception e) {
             return gson.toJson(new ErrorResponse(e));
         }

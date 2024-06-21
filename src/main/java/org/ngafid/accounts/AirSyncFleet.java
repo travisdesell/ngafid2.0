@@ -30,7 +30,7 @@ import com.google.gson.reflect.*;
 public class AirSyncFleet extends Fleet {
     private AirSyncAuth authCreds;
     private List<AirSyncAircraft> aircraft;
-    private LocalDateTime lastQueryTime;
+    private transient LocalDateTime lastQueryTime;
 
     //timeout in minutes
     private int timeout = -1;
@@ -89,6 +89,59 @@ public class AirSyncFleet extends Fleet {
         }
     }
 
+    public boolean getOverride(Connection connection) throws SQLException {
+        String query = """
+            SELECT override from airsync_fleet_info WHERE
+                fleet_id = ?
+        """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, getId());
+
+            try (ResultSet rs = statement.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("override") != 0;
+                } else {
+                    return false;
+                }
+            }
+        }
+    }
+
+    public void setOverride(Connection connection, boolean value) throws SQLException {
+        String query = """
+            UPDATE airsync_fleet_info SET override = ? WHERE fleet_id = ?
+        """;
+
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setInt(1, value ? 1 : 0);
+            statement.setInt(2, getId());
+
+            statement.executeUpdate();
+        }
+    }
+
+    public boolean compareAndSetMutex(Connection connection, int expected, int newValue) throws SQLException {
+        String queryText = """
+            SELECT fleet_id, mutex FROM airsync_fleet_info WHERE 
+                    fleet_id = ? 
+                AND mutex = ? FOR UPDATE
+        """;
+
+        PreparedStatement query = connection.prepareStatement(queryText, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+        query.setInt(1, getId());
+        query.setInt(2, expected);
+
+        ResultSet rs = query.executeQuery();
+        if (rs.next()) {
+            rs.updateInt("mutex", newValue);
+            rs.updateRow();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
     /**
      * Semaphore-style (P) mutex that allows for an entity (i.e. the daemon or user) to 
      * ask AirSync for updates
@@ -103,25 +156,7 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if the DMBS has an issue
      */
     public boolean lock(Connection connection) throws SQLException {
-        String sql = "SELECT mutex FROM airsync_fleet_info WHERE fleet_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        query.setInt(1, super.getId());
-        ResultSet resultSet = query.executeQuery();
-
-        if (resultSet.next() && !resultSet.getBoolean(1)) {
-            sql = "UPDATE airsync_fleet_info SET mutex = 1 WHERE fleet_id = ?";
-            query = connection.prepareStatement(sql);
-
-            query.setInt(1, super.getId());
-            query.executeUpdate();
-            query.close();
-
-            return true;
-        }
-
-        query.close();
-        return false;
+        return compareAndSetMutex(connection, 0, 1);
     }
 
     /**
@@ -134,14 +169,8 @@ public class AirSyncFleet extends Fleet {
      *
      * @throws SQLException if the DMBS has an issue
      */
-    public void unlock(Connection connection) throws SQLException {
-       String sql = "UPDATE airsync_fleet_info SET mutex = 0 WHERE fleet_id = ?";
-       PreparedStatement query = connection.prepareStatement(sql);
-
-       query.setInt(1, super.getId());
-       query.executeUpdate();
-
-       query.close();
+    public boolean unlock(Connection connection) throws SQLException {
+        return compareAndSetMutex(connection, 1, 0);
     }
 
     private LocalDateTime getLastQueryTime(Connection connection) throws SQLException {
@@ -244,6 +273,8 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if there is a DBMS issue
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
+        LOG.info("dur " + Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes());
+        LOG.info("dur " + getTimeout(connection));
         return (Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes() >= getTimeout(connection));
     }
 
@@ -371,27 +402,24 @@ public class AirSyncFleet extends Fleet {
      *
      * @return a {@link List} of the {@link AirSyncAircraft} in this fleet.
      */
-    public List<AirSyncAircraft> getAircraft() {
+    public List<AirSyncAircraft> getAircraft() throws IOException {
         if (aircraft == null) {
-            try {
-                HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRCRAFT).openConnection();
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRCRAFT).openConnection();
 
-                connection.setRequestMethod("GET");
-                connection.setDoOutput(true);
-                connection.setRequestProperty("Authorization", this.authCreds.bearerString());     
+            connection.setRequestMethod("GET");
+            connection.setDoOutput(true);
+            connection.setRequestProperty("Authorization", this.authCreds.bearerString());     
 
-                InputStream is = connection.getInputStream();
-                byte [] respRaw = is.readAllBytes();
-                
-                String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
-                
-                Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
-                this.aircraft = gson.fromJson(resp, target);
+            InputStream is = connection.getInputStream();
+            byte [] respRaw = is.readAllBytes();
+            
+            String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
+            
+            Type target = new TypeToken<List<AirSyncAircraft>>(){}.getType();
+            System.out.println(resp);
+            this.aircraft = gson.fromJson(resp, target);
 
-                for (AirSyncAircraft a : aircraft) a.initialize(this);
-            } catch (IOException ie) {
-                AirSync.handleAirSyncAPIException(ie, this.authCreds);
-            }
+            for (AirSyncAircraft a : aircraft) a.initialize(this);
         }
         
         return this.aircraft;

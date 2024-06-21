@@ -71,6 +71,8 @@ public class GetAirSyncUploads implements Route {
             int pageSize = 10;
 
             String timestamp = fleet.getLastUpdateTime(connection);
+            if (fleet.getOverride(connection))
+                timestamp = "Pending";
             int totalUploads = AirSyncImport.getNumUploads(connection, fleet.getId(), null);
             List<Upload> uploads = AirSyncImport.getUploads(connection, fleet.getId(), " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
             int numberPages = totalUploads / pageSize;
