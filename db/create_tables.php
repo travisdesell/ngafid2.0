@@ -603,11 +603,13 @@ if (!$update_2022_02_17) {
         `api_secret` varchar(64) NOT NULL,                                                      
         `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
         `timeout` int(11) DEFAULT NULL,                                                             
-        `mutex` TINYINT DEFAULT 0,                                                             
-        KEY `airsync_fleet_id_fk` (`fleet_id`),                                                     
-        CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
-    );";
+        `mutex` TINYINT DEFAULT 0,
 
+        PRIMARY KEY(`fleet_id`),
+        FOREIGN KEY(`fleet_id`) REFERENCES `fleet`(`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=latin1;";
+
+    # CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
     query_ngafid_db($query);
 
     $query = "CREATE TABLE `airsync_imports` (
@@ -725,4 +727,5 @@ if ($create_event_metadata) {
     query_ngafid_db($query);
 
 }
+
 ?>
