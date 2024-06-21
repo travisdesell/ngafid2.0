@@ -75,7 +75,7 @@ if ($drop_tables) {
     return;
 }
 
-if (!$update_2022_02_17) {
+if ($update_2022_02_17) {
 
     $query = "CREATE TABLE `fleet` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
