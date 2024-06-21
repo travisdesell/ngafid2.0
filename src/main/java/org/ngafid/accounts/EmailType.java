@@ -1,11 +1,5 @@
 package org.ngafid.accounts;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-
-import java.io.FileWriter;
-import java.io.IOException;
-
 import java.util.*;
 import java.util.logging.Logger;
 
@@ -75,10 +69,20 @@ public enum EmailType {
 
     //Store number of email types
     private final static int emailTypeCount = values().length;
+    private final static int emailTypeNonForcedCount;
 
     private static Logger LOG = Logger.getLogger(EmailType.class.getName());
 
     static {
+
+        int emailTypeNonForcedCounter = 0;
+        for (EmailType emailType : EmailType.values()) {
+            if (!isForced(emailType)) {
+                emailTypeNonForcedCounter++;
+            }
+        }
+        emailTypeNonForcedCount = emailTypeNonForcedCounter;
+
         LOG.info("EmailType class loaded...");
         LOG.info("Detected " + emailTypeCount + " email types");
     }
@@ -96,6 +100,9 @@ public enum EmailType {
 
     public static int getEmailTypeCount() {
         return emailTypeCount;
+    }
+    public static int getEmailTypeCountNonForced() {
+        return emailTypeNonForcedCount;
     }
 
     public static EmailType[] getAllTypes() {

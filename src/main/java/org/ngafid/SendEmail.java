@@ -32,10 +32,15 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
-    public static final String baseURL = "https://ngafid.org";
-    //public static final String baseURL = "https://ngafidbeta.rit.edu";
-    public static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
-    public static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
+    private static final String baseURL = "https://ngafid.org";
+    //private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
+    private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
+    private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
+    private static final int MS_PER_DAY = 86_400_000;
+    private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY);   //Minimum number of milliseconds needed before trying to free old tokens
+
+
 
     static {
 
@@ -126,34 +131,6 @@ public class SendEmail {
         return adminEmails;
     }
 
-    public static void freeExpiredUnsubscribeTokens() {
-        
-        final java.sql.Date lastTokenFree = new java.sql.Date(0);
-
-        Calendar calendar = Calendar.getInstance();
-        java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
-
-        //Only try freeing tokens every 24 hours
-        if (currentDate.getTime() - lastTokenFree.getTime() < 86400000) {
-            return;
-        }
-        lastTokenFree.setTime(currentDate.getTime());
-
-        try (Connection connection = Database.getConnection()) {
-
-            String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setDate(1, currentDate);
-            preparedStatement.execute();
-
-            LOG.info("Freed expired email unsubscribe tokens");
-
-        } catch (Exception e) {
-            LOG.severe("Failed to free expired email unsubscribe tokens");
-        }
-
-    }
-
     private static class SMTPAuthenticator extends javax.mail.Authenticator {
 
         String username;
@@ -178,16 +155,45 @@ public class SendEmail {
     }
 
 
+    public static void freeExpiredUnsubscribeTokens() {
+        
+        Calendar calendar = Calendar.getInstance();
+        java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
+
+        //Wait at least 24 hours before trying to free tokens again
+        long tokenDeltaTime = (currentDate.getTime() - lastTokenFree.getTime());
+        LOG.info("Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " "  + lastTokenFree.getTime());
+        if (tokenDeltaTime < EXPIRATION_POLL_THRESHOLD_MS) {
+            LOG.info("Not attempting to free expired tokens (only " + tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
+            return;
+        }
+        lastTokenFree.setTime(currentDate.getTime());
+
+        try (Connection connection = Database.getConnection()) {
+
+            String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setDate(1, currentDate);
+            preparedStatement.execute();
+
+            LOG.info("Freed expired email unsubscribe tokens");
+
+        } catch (Exception e) {
+            LOG.severe("Failed to free expired email unsubscribe tokens");
+        }
+
+    }
+
     private static String generateUnsubscribeToken(String recipientEmail, int userID) {
         
         //Generate a random string
         String token = UUID.randomUUID().toString().replace("-", "");        
 
-        try (Connection connection = Database.getConnection()) {
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
+        java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
 
-            Calendar calendar = Calendar.getInstance();
-            calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
-            java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
+        try (Connection connection = Database.getConnection()) {
 
             String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -199,7 +205,19 @@ public class SendEmail {
         } catch (Exception e) {
             LOG.severe("Failed to generate token for email recipient: "+recipientEmail);
         }
-        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token);
+
+        //Log the token's expiration date
+        Calendar expirationCalendar = Calendar.getInstance();
+        expirationCalendar.setTime(expirationDate);
+        String expirationDateString =
+            expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US)
+            + " " + expirationCalendar.get(Calendar.DAY_OF_MONTH)
+            + ", " + expirationCalendar.get(Calendar.YEAR)
+            + " " + expirationCalendar.get(Calendar.HOUR_OF_DAY)
+            + ":" + expirationCalendar.get(Calendar.MINUTE)
+            + ":" + expirationCalendar.get(Calendar.SECOND);
+
+        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at " + expirationDateString + ")");
 
         return token;
 

@@ -573,8 +573,7 @@ if (!$update_2022_02_17) {
     );";
     query_ngafid_db($query);
 
-
-    //  query_ngafid_db("DROP TABLE email_unsubscribe_tokens");    
+    
     $query = "CREATE TABLE `email_unsubscribe_tokens` (
         `token` VARCHAR(64) NOT NULL,
         `user_id` INT(11) NOT NULL,
