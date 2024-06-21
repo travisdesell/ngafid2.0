@@ -23,7 +23,6 @@ import javax.mail.*;
 import javax.mail.internet.*;
 import javax.activation.*;
 
-
 public class SendEmail {
 
     private static String password;
@@ -32,6 +31,16 @@ public class SendEmail {
     private static boolean emailEnabled = true;
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
+
+    private static final String baseURL = "https://ngafid.org";
+    //private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
+    private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
+    private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
+    private static final int MS_PER_DAY = 86_400_000;
+    private static final int EXPIRATION_POLL_THRESHOLD_MS = (MS_PER_DAY);   //Minimum number of milliseconds needed before trying to free old tokens
+
+
 
     static {
 
@@ -145,6 +154,75 @@ public class SendEmail {
     
     }
 
+
+    public static void freeExpiredUnsubscribeTokens() {
+        
+        Calendar calendar = Calendar.getInstance();
+        java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
+
+        //Wait at least 24 hours before trying to free tokens again
+        long tokenDeltaTime = (currentDate.getTime() - lastTokenFree.getTime());
+        LOG.info("Token timings: DELTA/CURRENT/LAST: " + tokenDeltaTime + " " + currentDate.getTime() + " "  + lastTokenFree.getTime());
+        if (tokenDeltaTime < EXPIRATION_POLL_THRESHOLD_MS) {
+            LOG.info("Not attempting to free expired tokens (only " + tokenDeltaTime + " / " + EXPIRATION_POLL_THRESHOLD_MS + " milliseconds have passed)");
+            return;
+        }
+        lastTokenFree.setTime(currentDate.getTime());
+
+        try (Connection connection = Database.getConnection()) {
+
+            String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setDate(1, currentDate);
+            preparedStatement.execute();
+
+            LOG.info("Freed expired email unsubscribe tokens");
+
+        } catch (Exception e) {
+            LOG.severe("Failed to free expired email unsubscribe tokens");
+        }
+
+    }
+
+    private static String generateUnsubscribeToken(String recipientEmail, int userID) {
+        
+        //Generate a random string
+        String token = UUID.randomUUID().toString().replace("-", "");        
+
+        Calendar calendar = Calendar.getInstance();
+        calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
+        java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
+
+        try (Connection connection = Database.getConnection()) {
+
+            String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
+            PreparedStatement preparedStatement = connection.prepareStatement(query);
+            preparedStatement.setString(1, token);
+            preparedStatement.setInt(2, userID);
+            preparedStatement.setDate(3, expirationDate);
+            preparedStatement.execute();
+
+        } catch (Exception e) {
+            LOG.severe("Failed to generate token for email recipient: "+recipientEmail);
+        }
+
+        //Log the token's expiration date
+        Calendar expirationCalendar = Calendar.getInstance();
+        expirationCalendar.setTime(expirationDate);
+        String expirationDateString =
+            expirationCalendar.getDisplayName(Calendar.MONTH, Calendar.LONG, Locale.US)
+            + " " + expirationCalendar.get(Calendar.DAY_OF_MONTH)
+            + ", " + expirationCalendar.get(Calendar.YEAR)
+            + " " + expirationCalendar.get(Calendar.HOUR_OF_DAY)
+            + ":" + expirationCalendar.get(Calendar.MINUTE)
+            + ":" + expirationCalendar.get(Calendar.SECOND);
+
+        LOG.info("Generated email unsubscribe token for " + recipientEmail + ": " + token + " (Expires at " + expirationDateString + ")");
+
+        return token;
+
+    }
+
     /**
      * Wrapper for sending an email to NGAFID admins
      * @param subject - subject of the email
@@ -162,6 +240,9 @@ public class SendEmail {
             System.out.println("Emailing has been disabled, not sending email");
             return;
         }
+
+        //Attempt to free expired tokens
+        freeExpiredUnsubscribeTokens();
 
         //System.out.println(String.format("Username: %s, PW: %s", username, password));
 
@@ -195,6 +276,8 @@ public class SendEmail {
 
             try {
 
+                /* SEND TO toRecipients */
+
                 // Create a default MimeMessage object.
                 MimeMessage message = new MimeMessage(session);
 
@@ -210,9 +293,11 @@ public class SendEmail {
                     }
 
                     //Check if the emailType is forced
+                    boolean embedUnsubscribeURL = true;
                     if (EmailType.isForced(emailType)) {
 
                         System.out.println("Delivering FORCED email type: " + emailType);
+                        embedUnsubscribeURL = false;
 
                     } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {   //Check whether or not the emailType is enabled for the user
 
@@ -220,26 +305,62 @@ public class SendEmail {
                         
                     }
 
-                    System.out.println("EMAILING TO: " + toRecipient);
+                    String bodyPersonalized = body;
+                    if (embedUnsubscribeURL) {
 
-                    message.addRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));
+                        try {
+                            int userID = UserEmailPreferences.getUserIDFromEmail(toRecipient);
+
+                            //Generate a token for the user to unsubscribe
+                            String token = generateUnsubscribeToken(toRecipient, userID);
+                            String unsubscribeURL = unsubscribeURLTemplate.replace("__ID__", Integer.toString(userID)).replace("__TOKEN__", token);
+
+                            //Embed the Unsubscribe URL at the top of the email body
+                            bodyPersonalized = ("<a href=\""+unsubscribeURL+"\">Unsubscribe from non-critical NGAFID emails</a><br><br>" + body);
+
+                        }
+                        catch(Exception e) {
+                            LOG.severe("Recipient email "+toRecipient+" is not mapped in UserEmailPreferences, skipping unsubscribe URL");
+                        }
 
                     }
 
-                for (String bccRecipient : bccRecipients) {
-                    message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccRecipient));
+                    // Set Subject: header field
+                    message.setSubject(subject);
+                    message.setContent(bodyPersonalized, "text/html; charset=utf-8");
+                    
+                    message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));   
+
+                    // Send the message to the current recipient
+                    System.out.println("sending message!");
+                    Transport.send(message);
+
+                }
+
+                /* SEND TO bccRecipients */
+                if (!bccRecipients.isEmpty()) {
+
+                    // Create a default MimeMessage object.
+                    message = new MimeMessage(session);
+
+                    // Set From: header field of the header.
+                    message.setFrom(new InternetAddress(from));
+
+                    for (String bccRecipient : bccRecipients) {
+                        message.addRecipient(Message.RecipientType.BCC, new InternetAddress(bccRecipient));
                     }
 
-                // Set Subject: header field
-                message.setSubject(subject);
+                    // Set Subject: header field
+                    message.setSubject(subject);
+                    message.setContent(body, "text/html; charset=utf-8");
 
-                // Now set the actual message
-                message.setContent(body, "text/html; charset=utf-8");
+                    // Send the message to the current BCC recipients
+                    System.out.println("sending message (BCC)!");
+                    Transport.send(message);
 
-                // Send message
-                System.out.println("sending message!");
-                Transport.send(message);
-                System.out.println("Sent message successfully....");
+                }
+
+                System.out.println("Sent messages successfully....");
 
             } catch (MessagingException mex) {
                 mex.printStackTrace();

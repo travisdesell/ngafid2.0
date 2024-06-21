@@ -25,8 +25,9 @@ public class UserEmailPreferences {
     private HashMap<String, Boolean> emailTypesUser;
     private String[] emailTypesKeys;
 
-    private static HashMap<Integer, User> users = new HashMap<Integer, User>();
-    private static HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<String, HashMap<String, Boolean>>();
+    private static HashMap<Integer, User> users = new HashMap<>();
+    private static HashMap<String, Integer> userIDs = new HashMap<>();
+    private static HashMap<String, HashMap<String, Boolean>> emailTypesUsers = new HashMap<>();
 
     private static final Logger LOG = Logger.getLogger(UserEmailPreferences.class.getName());
 
@@ -48,7 +49,14 @@ public class UserEmailPreferences {
 
     public static void addUser(Connection connection, User user) throws SQLException {
 
-        users.put(user.getId(), user);
+        int userID = user.getId();
+        String userEmail = user.getEmail();
+
+        //user email --> userId
+        userIDs.put(userEmail, userID);
+
+        //userId --> User
+        users.put(userID, user);
 
         emailTypesUsers.put( user.getEmail(), user.getUserEmailPreferences(connection).getEmailTypesUser() );
 
@@ -56,6 +64,10 @@ public class UserEmailPreferences {
 
     public static User getUser(int userId) {
         return users.get(userId);
+    }
+
+    public static int getUserIDFromEmail(String userEmail) {
+        return userIDs.get(userEmail);
     }
 
     public HashMap<String, Boolean> getEmailTypesUser() {

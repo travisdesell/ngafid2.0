@@ -233,6 +233,13 @@ public final class WebServer {
         Spark.get("/reset_password", new GetResetPassword(gson));
         Spark.post("/reset_password", new PostResetPassword(gson));
 
+        //to unsubscribe from emails
+        Spark.get("/email_unsubscribe", new GetEmailUnsubscribe(gson));
+        Spark.after("/email_unsubscribe", (request, response) -> {
+            response.redirect("/");
+        });
+
+
         Spark.get("/protected/welcome", new GetWelcome(gson));
         Spark.get("/protected/aggregate", new GetAggregate(gson));
         Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
@@ -351,6 +358,7 @@ public final class WebServer {
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
         Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
+        
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
