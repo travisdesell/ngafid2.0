@@ -171,14 +171,13 @@ class Upload extends React.Component {
                         type="button"
                         className={"btn btn-danger btn-sm"}
                         style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
+                        onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
                         >
                         <i
                             className="fa fa-times"
                             aria-hidden="true"
                             style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
-                            >
-                        </i>
+                        />
                     </Button>
 
                     <Button

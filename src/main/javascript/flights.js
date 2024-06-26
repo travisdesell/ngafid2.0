@@ -19,6 +19,7 @@ import { FlightsCard } from "./flights_card_component.js";
 import Plotly from "plotly.js";
 
 import { timeZones } from "./time_zones.js";
+import { linearRingLength } from "ol/geom/flat/length.js";
 
 function invalidString(str) {
   return str == null || str.length < 0 || /^\s*$/.test(str);
@@ -559,6 +560,7 @@ class FlightsPage extends React.Component {
   }
 
   hidePlot() {
+
     if (!this.state.plotVisible) return;
 
     if ($("#plot-toggle-button").hasClass("active")) {
@@ -573,11 +575,13 @@ class FlightsPage extends React.Component {
 
     if (this.state.mapVisible) {
       $("#map").css("width", "100%");
+      $("#map").css("height", "100%");
       map.updateSize();
     } else {
       $("#plot-map-div").css("height", "0%");
     }
-  }
+    
+}
 
   togglePlot() {
     if (this.state.plotVisible) {
@@ -843,22 +847,39 @@ class FlightsPage extends React.Component {
    * Handles when the user presses the delete button, and prompts them with @module confirmModal
    */
   deleteTag(flightId, tagId) {
-    console.log(tag);
-    if (tagId != null) {
-      console.log("delete tag invoked!");
-      confirmModal.show(
-        "Confirm Delete Tag: '" + tag.name + "'",
-        "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
-        () => {
-          this.removeTag(flightId, tagId, true);
+
+    return new Promise((resolve, reject) => {
+
+        let tag = this.state.flights.find(
+            (flight) => (flight.id == flightId)
+        ).tags.find(
+            (tag) => (tag.hashId == tagId)
+        );
+
+        console.log(tag);
+        if (tag==null)
+            return resolve(null);
+
+        if (tagId == null) { 
+            errorModal.show(
+                "Please select a tag to delete first!",
+                "You did not select a tag to delete"
+            );
+            return resolve(null);
         }
-      );
-    } else {
-      errorModal.show(
-        "Please select a tag to delete first!",
-        "You did not select a tag to delete"
-      );
-    }
+
+        console.log("delete tag invoked!");
+        confirmModal.show(
+            "Confirm Delete Tag: '" + tag.name + "'",
+            "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+            () => {
+                let confirmResult = this.removeTag(flightId, tagId, true);
+                return resolve(confirmResult);
+            }
+        );
+
+    });
+
   }
 
   /**
@@ -868,72 +889,83 @@ class FlightsPage extends React.Component {
    * @param isPermanent a bool representing whether or not the removal is permanent
    */
   removeTag(flightId, tagId, isPermanent) {
+
     console.log("un-associating tag #" + tagId + " with flight #" + flightId);
 
     if (tagId == null || tagId == -1) {
-      errorModal.show(
-        "Please select a flight to remove first!",
-        "Cannot remove any flights!"
-      );
-      return;
+        errorModal.show("Please select a flight to remove first!", "Cannot remove any flights!");
+        return;
     }
 
     var submissionData = {
-      flight_id: flightId,
-      tag_id: tagId,
-      permanent: isPermanent,
-      all: tagId == -2,
+        flight_id : flightId,
+        tag_id : tagId,
+        permanent : isPermanent,
+        all : (tagId == -2)
     };
 
     let thisFlight = this;
     console.log("calling deletion ajax");
 
-    $.ajax({
-      type: "POST",
-      url: "/protected/remove_tag",
-      data: submissionData,
-      dataType: "json",
-      success: function (response) {
-        console.log("received response: ");
-        console.log(response);
-        if (isPermanent) {
-          console.log("permanent deletion of tag with id: " + tagId);
-          for (var i = 0; i < thisFlight.state.flights.length; i++) {
-            let flight = thisFlight.state.flights[i];
-            console.log(flight);
-            if (flight.tags != null) {
-              let tags = flight.tags;
-              for (var j = 0; j < tags.length; j++) {
-                let tag = tags[j];
-                if (tagId == response.tagId) {
-                  tags.splice(j, 1);
+    return new Promise((resolve, reject) => {
+
+        $.ajax({
+            type: "POST",
+            url: "/protected/remove_tag",
+            data: submissionData,
+            dataType: "json",
+            success: function (response) {
+
+                console.log("received response: ");
+                console.log(response);
+        
+                //Permanently deleting a tag
+                if (isPermanent) {
+        
+                    console.log("permanent deletion of tag with id: " + tagId);
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            let tags = flight.tags;
+                            tags.splice(tags.indexOf(response.tag)-1, 1);
+                        }
+                    }
+                
+                //Clearing all tags from a flight
+                } else if (response.allTagsCleared) {
+        
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            flight.tags = [];
+                        }
+                    }
+        
+                //Removing a tag from a flight
+                } else {
+        
+                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                        let flight = thisFlight.state.flights[i];
+                        if (flight.id == flightId) {
+                            let tags = flight.tags;
+                            tags.splice(tags.indexOf(response.tag)-1, 1);
+                        }
+                    }
+                    
                 }
-              }
-            }
-          }
-        } else if (response.allTagsCleared) {
-          for (var i = 0; i < thisFlight.state.flights.length; i++) {
-            let flight = thisFlight.state.flights[i];
-            if (flight.id == flightId) {
-              flight.tags = [];
-            }
-          }
-        } else {
-          for (var i = 0; i < thisFlight.state.flights.length; i++) {
-            let flight = thisFlight.state.flights[i];
-            let tags = flight.tags;
-            if (flight.id == flightId) {
-              let tags = flight.tags;
-              tags.splice(tags.indexOf(tag), 1);
-            }
-          }
-        }
-        thisFlight.setState(thisFlight.state);
-      },
-      error: function (jqXHR, textStatus, errorThrown) {},
-      async: false,
+                thisFlight.setState(thisFlight.state);
+
+                resolve(response);
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                reject(errorThrown);
+            },
+            async: false,
+        });
+
     });
-  }
+
+    }
 
   /**
    * Associates a tag with this flight
@@ -1011,17 +1043,23 @@ class FlightsPage extends React.Component {
     if (this.state.mapVisible || this.state.plotVisible) {
       console.log("rendering half");
       style = {
-        overflow: "scroll",
+        overflow: "auto",
+        overflowX: "hidden",
         height: "calc(50%)",
+        padding: "5",
+        paddingBottom: "100px",
+        direction: "rtl"
       };
     } else {
       style = {
-        overflow: "scroll",
+        overflow: "auto",
+        overflowX: "hidden",
         height: "calc(100%)",
+        padding: "5",
+        paddingBottom: "100px",
+        direction: "rtl"
       };
     }
-
-    style.padding = "5";
 
     let sortableColumnsHumanReadable = Array.from(sortableColumns.keys());
 
@@ -1055,122 +1093,127 @@ class FlightsPage extends React.Component {
           style={{ width: "100%", height: "0%" }}
         >
           <div
+            id="plot"
+            style={{ width: "50%", display: "none" }}
+          />
+          <div
             id="map"
             className="map"
             style={{ width: "50%", display: "none" }}
-          ></div>
-          <div id="plot" style={{ width: "50%", display: "none" }}></div>
+          />
         </div>
 
         <div style={style}>
-          <Filter
-            filterVisible={this.state.filterVisible}
-            submitButtonName="Apply Filter"
-            submitFilter={(resetCurrentPage) => {
-              this.submitFilter(resetCurrentPage);
-            }}
-            rules={rules}
-            filters={this.state.filters}
-            getFilter={() => {
-              return this.state.filters;
-            }}
-            setFilter={(filter) => this.setFilter(filter)}
-            setCurrentSortingColumn={(sortColumn) =>
-              this.setCurrentSortingColumn(sortColumn)
-            }
-            getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
-          />
+            <div style={{direction: "ltr"}}>
+                <Filter
+                    filterVisible={this.state.filterVisible}
+                    submitButtonName="Apply Filter"
+                    submitFilter={(resetCurrentPage=true) => {
+                    this.submitFilter(resetCurrentPage);
+                    }}
+                    rules={rules}
+                    filters={this.state.filters}
+                    getFilter={() => {
+                    return this.state.filters;
+                    }}
+                    setFilter={(filter) => this.setFilter(filter)}
+                    setCurrentSortingColumn={(sortColumn) =>
+                    this.setCurrentSortingColumn(sortColumn)
+                    }
+                    getCurrentSortingColumn={() => this.getCurrentSortingColumn()}
+                />
 
-          <Paginator
-            submitFilter={(resetCurrentPage) => {
-              this.submitFilter(resetCurrentPage);
-            }}
-            items={this.state.flights}
-            itemName="flights"
-            currentPage={this.state.currentPage}
-            numberPages={this.state.numberPages}
-            pageSize={this.state.pageSize}
-            rules={sortableColumns}
-            setClearButton={() => this.clearCesiumFlights()}
-            setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
-            getSortingColumn={() => this.getSortingColumn()}
-            setSortingOrder={(order) => this.setSortingOrder(order)}
-            getSortingOrder={() => this.getSortingOrder()}
-            sortOptions={sortableColumnsHumanReadable}
-            updateCurrentPage={(currentPage) => {
-              this.state.currentPage = currentPage;
-            }}
-            updateItemsPerPage={(pageSize) => {
-              this.state.pageSize = pageSize;
-            }}
-            location="Top"
-          />
+                <Paginator
+                    submitFilter={(resetCurrentPage) => {
+                    this.submitFilter(resetCurrentPage);
+                    }}
+                    items={this.state.flights}
+                    itemName="flights"
+                    currentPage={this.state.currentPage}
+                    numberPages={this.state.numberPages}
+                    pageSize={this.state.pageSize}
+                    rules={sortableColumns}
+                    setClearButton={() => this.clearCesiumFlights()}
+                    setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                    getSortingColumn={() => this.getSortingColumn()}
+                    setSortingOrder={(order) => this.setSortingOrder(order)}
+                    getSortingOrder={() => this.getSortingOrder()}
+                    sortOptions={sortableColumnsHumanReadable}
+                    updateCurrentPage={(currentPage) => {
+                    this.state.currentPage = currentPage;
+                    }}
+                    updateItemsPerPage={(pageSize) => {
+                    this.state.pageSize = pageSize;
+                    }}
+                    location="Top"
+                />
 
-          <FlightsCard
-            parent={this}
-            layers={this.state.layers}
-            flights={this.state.flights}
-            navBar={this.navRef}
-            ref={(elem) => (this.flightsRef = elem)}
-            showMap={() => {
-              this.showMap();
-            }}
-            showPlot={() => {
-              this.showPlot();
-            }}
-            setAvailableLayers={(plotLayers) => {
-              this.setAvailableLayers(plotLayers);
-            }}
-            setFlights={(flights) => {
-              this.setState({
-                flights: flights,
-              });
-            }}
-            updateNumberPages={(numberPages) => {
-              this.setState({
-                numberPages: numberPages,
-              });
-            }}
-            addTag={(flightId, name, description, color) =>
-              this.addTag(flightId, name, description, color)
-            }
-            removeTag={(flightId, tagId, perm) =>
-              this.removeTag(flightId, tagId, perm)
-            }
-            deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
-            getUnassociatedTags={(flightId) =>
-              this.getUnassociatedTags(flightId)
-            }
-            associateTag={(tagId, flightId) =>
-              this.associateTag(tagId, flightId)
-            }
-            clearTags={(flightId) => this.clearTags(flightId)}
-            editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
-          />
+                <FlightsCard
+                    parent={this}
+                    layers={this.state.layers}
+                    flights={this.state.flights}
+                    navBar={this.navRef}
+                    ref={(elem) => (this.flightsRef = elem)}
+                    showMap={() => {
+                    this.showMap();
+                    }}
+                    showPlot={() => {
+                    this.showPlot();
+                    }}
+                    setAvailableLayers={(plotLayers) => {
+                    this.setAvailableLayers(plotLayers);
+                    }}
+                    setFlights={(flights) => {
+                    this.setState({
+                        flights: flights,
+                    });
+                    }}
+                    updateNumberPages={(numberPages) => {
+                    this.setState({
+                        numberPages: numberPages,
+                    });
+                    }}
+                    addTag={(flightId, name, description, color) =>
+                    this.addTag(flightId, name, description, color)
+                    }
+                    removeTag={(flightId, tagId, perm) =>
+                    this.removeTag(flightId, tagId, perm)
+                    }
+                    deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
+                    getUnassociatedTags={(flightId) =>
+                    this.getUnassociatedTags(flightId)
+                    }
+                    associateTag={(tagId, flightId) =>
+                    this.associateTag(tagId, flightId)
+                    }
+                    clearTags={(flightId) => this.clearTags(flightId)}
+                    editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
+                />
 
-          <Paginator
-            submitFilter={(resetCurrentPage) => {
-              this.submitFilter(resetCurrentPage);
-            }}
-            items={this.state.flights}
-            itemName="flights"
-            rules={sortableColumns}
-            currentPage={this.state.currentPage}
-            numberPages={this.state.numberPages}
-            pageSize={this.state.pageSize}
-            setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
-            getSortingColumn={() => this.getSortingColumn()}
-            setSortingOrder={(order) => this.setSortingOrder(order)}
-            getSortingOrder={() => this.getSortingOrder()}
-            sortOptions={sortableColumnsHumanReadable}
-            updateCurrentPage={(currentPage) => {
-              this.state.currentPage = currentPage;
-            }}
-            updateItemsPerPage={(pageSize) => {
-              this.state.pageSize = pageSize;
-            }}
-            location="Bottom"
-          />
+                <Paginator
+                    submitFilter={(resetCurrentPage) => {
+                    this.submitFilter(resetCurrentPage);
+                    }}
+                    items={this.state.flights}
+                    itemName="flights"
+                    rules={sortableColumns}
+                    currentPage={this.state.currentPage}
+                    numberPages={this.state.numberPages}
+                    pageSize={this.state.pageSize}
+                    setSortingColumn={(sortColumn) => this.setSortingColumn(sortColumn)}
+                    getSortingColumn={() => this.getSortingColumn()}
+                    setSortingOrder={(order) => this.setSortingOrder(order)}
+                    getSortingOrder={() => this.getSortingOrder()}
+                    sortOptions={sortableColumnsHumanReadable}
+                    updateCurrentPage={(currentPage) => {
+                    this.state.currentPage = currentPage;
+                    }}
+                    updateItemsPerPage={(pageSize) => {
+                    this.state.pageSize = pageSize;
+                    }}
+                    location="Bottom"
+                />
+            </div>
         </div>
       </div>
     );

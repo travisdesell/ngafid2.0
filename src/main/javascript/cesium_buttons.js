@@ -70,7 +70,7 @@ class CesiumButtons extends React.Component {
             <div className="col form-row input-group m-0 p-0" style={{
                 position: "center", display: 'flex',
                 justifyContent: 'center',
-                alignItems: 'center',
+                alignItems: 'flex-start',
             }}>
                 <div className="input-group-prepend p-0">
                     <button id={"cesiumViewButton" + this.props.location} className="btn btn-sm btn-primary"

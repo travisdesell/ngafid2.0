@@ -141,9 +141,11 @@ class Paginator extends React.Component {
 
         if (typeof this.props.items != 'undefined') {
             return (
-                <div className="card mb-1 border-secondary">
+                <div className="card mb-1 border-secondary" style={{userSelect:"none"}}>
                     <div className="row m-0 p-2">
-                        <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {numTotalPages}</button>
+                        <button className="btn btn-sm btn-info mr-2 m-0" disabled>
+                            Page: {this.props.currentPage + 1} of {numTotalPages}
+                        </button>
 
                         <Pagination size="sm" className="m-0 mr-2">
                             <Pagination.First disabled={this.props.currentPage === 0} onClick={() => this.jumpPage(0)}/>
@@ -156,8 +158,10 @@ class Paginator extends React.Component {
                         </Pagination>
 
                         <div className="col form-row input-group m-0 p-0">
-                            <div className="input-group-prepend p-0">
-                                <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>Go To</button>
+                            <div className="input-group-prepend p-0" style={{display:"flex", flexFlow:"column wrap"}}>
+                                <button className="btn btn-sm btn-primary" disabled={!this.state.goto_active} onClick={() => this.jumpPage(this.state.goto_value - 1)}>
+                                    Go To
+                                </button>
                             </div>
                             <input id="jump-text" type="text" className="form-control col-2" placeholder="Page" style={{height:"31px"}} onChange={(event) => {this.updateGoto(event);}}></input>
                         </div>
