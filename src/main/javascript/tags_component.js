@@ -359,16 +359,16 @@ class Tags extends React.Component {
 
         let submitButton = (
             <button id="submit-tag-button" className="btn btn-outline-secondary" style={styleButton} onClick={defAddAction} data-toggle="tooltip" data-trigger='manual' data-placement="top" disabled>
-                <i className="fa fa-check mr-1" aria-hidden="true"></i>
-                    Submit
+                <i className="fa fa-check mr-1" aria-hidden="true"/>
+                Submit
             </button> 
         );
 
         if (!this.state.editing || !this.tagEquals(activeTag, editedTag)) {
             submitButton = (
                 <button id="submit-tag-button" className="btn btn-outline-secondary" data-toggle="tooltip" data-trigger='manual' data-placement="top" style={styleButton} onClick={defAddAction} >
-                    <i className="fa fa-check mr-1" aria-hidden="true"></i>
-                        Submit
+                    <i className="fa fa-check mr-1" aria-hidden="true"/>
+                    Submit
                 </button> 
             );
         }
