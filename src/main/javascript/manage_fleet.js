@@ -254,23 +254,27 @@ class ManageFleetPage extends React.Component {
                 />
 
                 <div className="card-body" hidden={hidden}>
+
                     <div className="row ml-1 mb-2 invite" style={bgStyle}>
-                        <p style={fgStyle}>
-                            Invite user to {fleetName}:
-                        </p>
-                        <form onSubmit={this.handleSubmit}>
-                            <input
-                                id="inviteEmail"
-                                type="email"
-                                placeholder="Enter user email"
-                                name="email"
-                                pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-                                title="Please enter a valid email address"
-                                required
-                            />
-                            <button className="btn btn-primary ml-1" type="submit">Invite</button>
-                        </form>
+                        <div style={{ display:"flex", alignItems:"start", width:"100%" }}>
+                            <p style={fgStyle}>
+                                Invite user to {fleetName}:
+                            </p>
+                            <form onSubmit={this.handleSubmit} style={{ display:"flex", alignItems:"baseline" }}>
+                                <input
+                                    id="inviteEmail"
+                                    type="email"
+                                    placeholder="Enter user email"
+                                    name="email"
+                                    pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                    title="Please enter a valid email address"
+                                    required
+                                />
+                                <button className="btn btn-primary ml-1 mb-2" type="submit">Invite</button>
+                            </form>
+                        </div>
                     </div>
+
                     <div className="card mb-1" style={bgStyle}>
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
