@@ -19,6 +19,8 @@ import { Colors } from "./map.js";
 import { timeZones } from "./time_zones.js";
 import { confirmModal } from "./confirm_modal.js";
 
+const MESSAGE_BIND_PERIOD_MS = 3000;
+
 //Used to check names for filter validation
 function isEmptyOrSpaces(str){
     return str === null || str.match(/^ *$/) !== null;
@@ -59,6 +61,7 @@ function filterValid(filter, rules) {
             }
 
             for (let i = 0; i < rule.conditions.length; i++) {
+
                 if (rule.conditions[i].type == "number") {
                     if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
                         return "Please enter a number.";
@@ -78,7 +81,10 @@ function filterValid(filter, rules) {
                     if (typeof inputs[i+1] == 'undefined' || inputs[i+1] == "") {
                         return "Please enter a date and time.";
                     }
+                } else if (rule.conditions[i].options.length === 0) {
+                    return "No options available for this condition.";
                 }
+
             }
             return "";
         }
@@ -91,7 +97,6 @@ function recursiveValid(filters, rules) {
     if (filterValid(filters, rules) != "") return false;
 
     //console.log("recursiveValid on:");
-    //console.log(filters);
 
     let subFilters = filters.filters;
     for (let i = 0; i < subFilters.length; i++) {
@@ -280,7 +285,9 @@ class Rule extends React.Component {
                         }
                     </select>
 
-                    <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
+                        <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
+                    </button>
                 </div>
             );
 
@@ -347,6 +354,7 @@ class Rule extends React.Component {
 
                     {
                         selectedRule.conditions.map((conditionInfo, index) => {
+
                             if (conditionInfo.type == "select") {
                                 let flexBasis = "150px";
                                 if (conditionInfo.name == "timezone") {
@@ -354,13 +362,25 @@ class Rule extends React.Component {
                                 }
 
                                 return (
-                                    <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))} style={{flexBasis:flexBasis, flexShrink:0, marginRight:5}} value={inputs[index + 1]}>
-                                        { 
-                                            conditionInfo.options.map((optionInfo, index) => {
-                                                return ( <option value={optionInfo} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
-                                            })
+
+                                    <div> 
+                                        {
+                                            //No options for the given condition
+                                            (conditionInfo.options.length==0)
+                                            ?
+                                            <select disabled={true} className="form-control" key={"select-"+index} value={null}>
+                                                 <option value={null} key={conditionInfo.name + "-" + index}>N/A</option>"
+                                            </select>
+                                            :
+                                            <select id="stateSelect" type={conditionInfo.type} key={"select-" + index} className="form-control" onChange={(event) => this.props.setFilter(ruleValueChange(this.props.getFilter(), this.props.treeIndex, inputs, index, event))} style={{flexBasis:flexBasis, flexShrink:0, marginRight:5}} value={inputs[index + 1]}>
+                                            { 
+                                                conditionInfo.options.map((optionInfo, index) => {
+                                                    return ( <option value={optionInfo} key={conditionInfo.name + "-" + index} >{optionInfo}</option> );
+                                                })
+                                            }
+                                            </select>
                                         }
-                                    </select>
+                                    </div>
                                 );
 
                             } else if (conditionInfo.type == "time" || conditionInfo.type == "date" || conditionInfo.type == "number" || conditionInfo.type == "datetime-local") {
@@ -372,8 +392,9 @@ class Rule extends React.Component {
                         })
                     }
 
-                    <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
-
+                    <button type="button" className="btn btn-danger btn-sm" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
+                        <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
+                    </button>
                 </div>
             );
         }
@@ -453,16 +474,16 @@ class Group extends React.Component {
 
         if (isEmptyOrSpaces(submissionData.newName)) {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
-            setTimeout(function() { //show resolution tooltip for a max 10s
+            setTimeout(function() {
                 $('#modify-filter-submit-button').tooltip('hide');
-             }.bind(this), 10000)
+             }.bind(this), MESSAGE_BIND_PERIOD_MS)
 
             return;
         } else if (submissionData.newName === submissionData.currentName && filter.filter === this.props.getFilter() && filter.color === submissionData.color) {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is different from its original name, the filter color is different, or that the filter rules are different.').tooltip('show');
-            setTimeout(function() { //show resolution tooltip for a max 10s
+            setTimeout(function() {
                 $('#modify-filter-submit-button').tooltip('hide');
-             }.bind(this), 10000)
+             }.bind(this), MESSAGE_BIND_PERIOD_MS)
 
             return;
         }
@@ -478,18 +499,18 @@ class Group extends React.Component {
             success : function(response) {
                 if (response === "DUPLICATE_PK") {
                     $('#modify-filter-submit-button').tooltip('show');
-                    setTimeout(function() { //show resolution tooltip for a max 10s
+                    setTimeout(function() {
                         $('#modify-filter-submit-button').tooltip('hide');
-                     }.bind(this), 10000)
+                     }.bind(this), MESSAGE_BIND_PERIOD_MS)
                 } else {
                     thisFilter.state.editingFilter = {};
                     thisFilter.state.showLoadPopover = false;
                     
                     $('#modify-filter-submit-button').tooltip('hide');
                     $('#load-filter-button').tooltip('show');
-                    setTimeout(function() { //show resolution tooltip for a max 10s
+                    setTimeout(function() {
                         $('#load-filter-button').tooltip('hide');
-                     }.bind(this), 10000)
+                     }.bind(this), MESSAGE_BIND_PERIOD_MS)
                 }
 
                 thisFilter.setState(thisFilter.state);
@@ -545,9 +566,9 @@ class Group extends React.Component {
         if (isEmptyOrSpaces(name)) {
             console.log('empty str');
             $('#save-filter-button-card').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
-            setTimeout(function() { //show resolution tooltip for a max 10s
+            setTimeout(function() {
                 $('#save-filter-button-card').tooltip('hide');
-             }.bind(this), 10000)
+             }.bind(this), MESSAGE_BIND_PERIOD_MS)
 
             return;
         }
@@ -564,9 +585,9 @@ class Group extends React.Component {
                 if (response === "DUPLICATE_PK") {
                     console.log("duplicate pk detected");
                     $('#save-filter-button-card').tooltip('show');
-                    setTimeout(function() { //show resolution tooltip for a max 10s
+                    setTimeout(function() {
                         $('#save-filter-button-card').tooltip('hide');
-                     }.bind(this), 10000)
+                     }.bind(this), MESSAGE_BIND_PERIOD_MS)
                 } else {
                     $('#save-filter-button-card').tooltip('hide');
                     $('#save-filter-button').tooltip('show');
@@ -744,13 +765,23 @@ class Group extends React.Component {
             loadFilterFunction = this.handleLoadClickPersist;
         }
 
+
+        let submitHidden = true;
+        let submitDisabled = true;
+        if (typeof this.props.submitButtonName !== 'undefined') {
+            submitHidden = false;
+            submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
+            this.state.saveButtonDisabled = !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved;
+            this.state.filterSaved = false;
+        }
+
         var saveCard = "";
         if (this.state.showSavePopover) {
             saveCard = (
                 <div className="card m-1 float-right" style={{minWidth : "500px"}}>
-                    <div className="card-header float-left">Store Filter:
-                        <button type="button" className="mr-1 btn btn-danger btn-sm float-right">
-                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showSavePopover : false})}></i> 
+                    <div className="card-header float-left">Save Filter:
+                        <button type="button" className="mr-1 btn btn-danger btn-sm float-right" onClick={() => this.setState({showSavePopover : false})}>
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                         </button>
                     </div>
                 <div className="card-body">
@@ -765,7 +796,19 @@ class Group extends React.Component {
                             </div>
                                 <input type="text" className="form-control" placeholder="Filter Name" aria-label="Filter Name" aria-describedby="basic-addon2" value={this.state.filterName} onChange={e => this.setState({ filterName : e.target.value })} />
                             <div className="input-group-append">
-                                  <button type="button" id='save-filter-button-card' className="btn btn-outline-secondary" onClick={() => {this.saveFilter()}} data-toggle="tooltip" data-trigger='manual' data-placement="top" data-title='A filter with that name already exists in your fleet. Please provide a unique name.'>Save</button>
+                                <button
+                                    type="button"
+                                    id='save-filter-button-card'
+                                    className="btn btn-outline-secondary"
+                                    onClick={() => {this.saveFilter()}}
+                                    data-toggle="tooltip"
+                                    data-trigger='manual'
+                                    data-placement="top"
+                                    data-title='A filter with that name already exists in your fleet. Please provide a unique name.'
+                                    disabled={submitDisabled}
+                                >
+                                    Save
+                                </button>
                             </div>
                       </div>
                   </div>
@@ -780,11 +823,11 @@ class Group extends React.Component {
                 loadCard = (
                     <div className="card m-1 float-right" style={{minWidth : "800px"}}>
                             <div className="card-header float-left">Saved Filters:
-                                <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
-                                    <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                                <button type="button" className="mr-2 btn btn-danger btn-sm float-right" onClick={() => this.setState({showLoadPopover : false})}>
+                                    <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                                 </button>
                             </div>
-                        <div className="card-body" style={{maxHeight : "400px", overflowY : "scroll"}}>
+                        <div className="card-body" style={{maxHeight : "400px", overflowY : "auto"}}>
                             <ul className="list-group">
                             {
                                 filters.map((filter, index) => {
@@ -865,8 +908,8 @@ class Group extends React.Component {
                 loadCard = (
                     <div className="card m-1 float-right" style={{maxWidth : "500px"}}>
                         <div className="card-header float-left">No filters stored yet.
-                            <button type="button" className="mr-2 btn btn-danger btn-sm float-right">
-                                <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.setState({showLoadPopover : false})}></i> 
+                            <button type="button" className="mr-2 btn btn-danger btn-sm float-right" onClick={() => this.setState({showLoadPopover : false})}>
+                                <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
                             </button>
                         </div>
                         <div className="card-body">
@@ -875,15 +918,6 @@ class Group extends React.Component {
                     </div>
                 );
             }
-        }
-
-        let submitHidden = true;
-        let submitDisabled = true;
-        if (typeof this.props.submitButtonName !== 'undefined') {
-            submitHidden = false;
-            submitDisabled = !isValidFilter(this.props.filters, this.props.rules);
-            this.state.saveButtonDisabled = !isValidFilter(this.props.filters, this.props.rules) || this.state.filterSaved;
-            this.state.filterSaved = false;
         }
 
         return (
@@ -905,12 +939,15 @@ class Group extends React.Component {
                     <div className="p-2">
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addRule(this.props.getFilter(), this.props.treeIndex))}>Add Rule</button>
                         <button type="button" className="btn btn-primary btn-sm mr-1" onClick={() => this.props.setFilter(addGroup(this.props.getFilter(), this.props.treeIndex))}>Add Group</button>
-                        <button type="button" className="btn btn-danger btn-sm"> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}></i> </button>
+                        <button type="button" className="btn btn-danger btn-sm" onClick={() => this.props.setFilter(removeFilter(this.props.getFilter(), this.props.treeIndex))}>
+                            <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}}/>
+                        </button>
                     </div>
                 </div>
 
                 {
                     this.props.filters.filters.map((filterInfo, index) => {
+                        
                         if (filterInfo.type === "GROUP") {
                             return (
                                 <div className="p-2" key={this.props.treeIndex + "," + index}>

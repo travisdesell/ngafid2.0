@@ -974,7 +974,7 @@ class Flight extends React.Component {
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
-        const styleButton = { };
+        const styleButton = { minWidth:"2.25em", minHeight:"2.25em" };
 
         let firstCellClasses = "p-1 card mr-1"
         let cellClasses = "p-1 card mr-1"
@@ -1007,12 +1007,6 @@ class Flight extends React.Component {
             }
         }
 
-        let itineraryRow = "";
-        if (this.state.itineraryVisible) {
-            itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
-            );
-        }
 
         let eventsRow = "";
         if (this.state.eventsVisible) {
@@ -1026,6 +1020,13 @@ class Flight extends React.Component {
             tagsRow = (
                     <Tags flight={this.props.flightInfo} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} addTag={this.props.addTag} removeTag={this.props.removeTag} 
                         deleteTag={this.props.deleteTag} getUnassociatedTags={this.props.getUnassociatedTags} associateTag={this.props.associateTag} clearTags={this.props.clearTags} editTag={this.props.editTag}/>
+            );
+        }
+
+        let itineraryRow = "";
+        if (this.state.itineraryVisible) {
+            itineraryRow = (
+                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
@@ -1062,7 +1063,7 @@ class Flight extends React.Component {
         })
 
         return (
-            <div className="card mb-1">
+            <div className="card mb-1" style={{backgroundColor: (this.props.pageIndex%2) ? "#FFFFFFFF" : "#FFFFFFFF"}}>
                 <div className="card-body m-0 p-0">
                     <div className="d-flex flex-row p-1">
                         <div className={firstCellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
@@ -1121,15 +1122,15 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
-                                <i className="fa fa-map-o p-1"></i>
-                            </button>
-
                             <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
+                                <i className="fa fa-map-o p-1"></i>
+                            </button>
+
+                            <button className={buttonClasses + globeClasses} title={globeTooltip} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
@@ -1137,7 +1138,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-video-camera p-1"></i>
                             </button>
 
-                            <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <button className={buttonClasses} style={styleButton} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-download p-1"></i>
                             </button>
 
@@ -1158,13 +1159,11 @@ class Flight extends React.Component {
                         </div>
                     </div>
 
+                    {eventsRow}
+                    {tagsRow}
+                    {tracesRow}
                     {itineraryRow}
 
-                    {tagsRow}
-
-                    {eventsRow}
-
-                    {tracesRow}
                 </div>
             </div>
         );

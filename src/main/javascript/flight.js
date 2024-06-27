@@ -15,6 +15,9 @@ import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 
 import { FlightsCard } from './flights_card_component.js';
 
+import { errorModal } from "./error_modal.js";
+import { confirmModal } from "./confirm_modal.js";
+
 import Plotly from 'plotly.js';
 import {CesiumButtons} from "./cesium_buttons";
 
@@ -66,52 +69,54 @@ class FlightPage extends React.Component {
         this.setState({selectableLayers : plotLayers});
     }
 
+
     showMap() {
         if (this.state.mapVisible) return;
-
-        if ( !$("#map-toggle-button").hasClass("active") ) {
-            $("#map-toggle-button").addClass("active");
-            $("#map-toggle-button").attr("aria-pressed", true);
+    
+        if (!$("#map-toggle-button").hasClass("active")) {
+          $("#map-toggle-button").addClass("active");
+          $("#map-toggle-button").attr("aria-pressed", true);
         }
-
+    
         this.state.mapVisible = true;
         this.setState(this.state);
-
+    
         $("#plot-map-div").css("height", "50%");
         $("#map").show();
-
+    
         if (this.state.plotVisible) {
-            $("#map").css("width", "50%");
-            map.updateSize();
-            $("#plot").css("width", "50%");
-            Plotly.Plots.resize("plot");
+          $("#map").css("width", "50%");
+          map.updateSize();
+          $("#plot").css("width", "50%");
+          Plotly.Plots.resize("plot");
         } else {
-            $("#map").css("width", "100%");
-            map.updateSize();
+          $("#map").css("width", "100%");
+          map.updateSize();
         }
 
     }
-
-    hideMap() {
+    
+      hideMap() {
         if (!this.state.mapVisible) return;
-
-        if ( $("#map-toggle-button").hasClass("active") ) {
-            $("#map-toggle-button").removeClass("active");
-            $("#map-toggle-button").attr("aria-pressed", false);
+    
+        if ($("#map-toggle-button").hasClass("active")) {
+          $("#map-toggle-button").removeClass("active");
+          $("#map-toggle-button").attr("aria-pressed", false);
         }
-
+    
         this.state.mapVisible = false;
         this.setState(this.state);
-
+    
         $("#map").hide();
-
+    
         if (this.state.plotVisible) {
-            $("#plot").css("width", "100%");
-            var update = { width : "100%" };
-            Plotly.Plots.resize("plot");
+          $("#plot").css("width", "100%");
+          var update = { width: "100%" };
+          Plotly.Plots.resize("plot");
         } else {
-            $("#plot-map-div").css("height", "0%");
+          $("#plot-map-div").css("height", "0%");
         }
+
     }
 
     toggleMap() {
@@ -123,49 +128,54 @@ class FlightPage extends React.Component {
     }
 
     showPlot() {
+
         if (this.state.plotVisible) return;
-
-        if ( !$("#plot-toggle-button").hasClass("active") ) {
-            $("#plot-toggle-button").addClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", true);
+    
+        if (!$("#plot-toggle-button").hasClass("active")) {
+          $("#plot-toggle-button").addClass("active");
+          $("#plot-toggle-button").attr("aria-pressed", true);
         }
-
+    
         this.state.plotVisible = true;
         this.setState(this.state);
-
+    
         $("#plot").show();
         $("#plot-map-div").css("height", "50%");
-
+    
         if (this.state.mapVisible) {
-            $("#map").css("width", "50%");
-            map.updateSize();
-            $("#plot").css("width", "50%");
-            Plotly.Plots.resize("plot");
+          $("#map").css("width", "50%");
+          map.updateSize();
+          $("#plot").css("width", "50%");
+          Plotly.Plots.resize("plot");
         } else {
-            $("#plot").css("width", "100%");
-            Plotly.Plots.resize("plot");
+          $("#plot").css("width", "100%");
+          Plotly.Plots.resize("plot");
         }
-    }
+
+    }    
 
     hidePlot() {
+
         if (!this.state.plotVisible) return;
-
-        if ( $("#plot-toggle-button").hasClass("active") ) {
-            $("#plot-toggle-button").removeClass("active");
-            $("#plot-toggle-button").attr("aria-pressed", false);
+    
+        if ($("#plot-toggle-button").hasClass("active")) {
+          $("#plot-toggle-button").removeClass("active");
+          $("#plot-toggle-button").attr("aria-pressed", false);
         }
-
+    
         this.state.plotVisible = false;
         this.setState(this.state);
-
+    
         $("#plot").hide();
-
+    
         if (this.state.mapVisible) {
-            $("#map").css("width", "100%");
-            map.updateSize();
+          $("#map").css("width", "100%");
+          $("#map").css("height", "100%");
+          map.updateSize();
         } else {
-            $("#plot-map-div").css("height", "0%");
+          $("#plot-map-div").css("height", "0%");
         }
+
     }
 
     togglePlot() {
@@ -331,19 +341,40 @@ class FlightPage extends React.Component {
      * Handles when the user presses the delete button, and prompts them with @module confirmModal
      */
     deleteTag(flightId, tagId) {
-        console.log(tag);
-        if (tagId != null) {
-            console.log("delete tag invoked!");
-            confirmModal.show("Confirm Delete Tag: '" + tag.name + "'",
-                "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
-                () => {this.removeTag(flightId, tagId, true)}
-            );
-        } else {
-            errorModal.show("Please select a tag to delete first!",
-                            "You did not select a tag to delete");
-        }
 
-    }
+        return new Promise((resolve, reject) => {
+    
+            let tag = this.state.flights.find(
+                (flight) => (flight.id == flightId)
+            ).tags.find(
+                (tag) => (tag.hashId == tagId)
+            );
+    
+            console.log(tag);
+            if (tag==null)
+                return resolve(null);
+    
+            if (tagId == null) { 
+                errorModal.show(
+                    "Please select a tag to delete first!",
+                    "You did not select a tag to delete"
+                );
+                return resolve(null);
+            }
+    
+            console.log("delete tag invoked!");
+            confirmModal.show(
+                "Confirm Delete Tag: '" + tag.name + "'",
+                "Are you sure you wish to delete this tag?\n\nThis operation will remove it from this flight as well as all other flights that this tag is associated with. This operation cannot be undone!",
+                () => {
+                    let confirmResult = this.removeTag(flightId, tagId, true);
+                    return resolve(confirmResult);
+                }
+            );
+    
+        });
+    
+      }
 
     /**
      * removes a tag from a flight, either permanent or just from one flight
@@ -369,52 +400,64 @@ class FlightPage extends React.Component {
         let thisFlight = this;
         console.log("calling deletion ajax");
 
-        $.ajax({
-            type: 'POST',
-            url: '/protected/remove_tag',
-            data : submissionData,
-            dataType : 'json',
-            success : function(response) {
-                console.log("received response: ");
-                console.log(response);
-                if (isPermanent) {
-                    console.log("permanent deletion of tag with id: " + tagId);
-                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
-                        let flight = thisFlight.state.flights[i];
-                        console.log(flight);
-                        if (flight.tags != null) {
-                            let tags = flight.tags;
-                            for (var j = 0; j < tags.length; j++) {
-                                let tag = tags[j];
-                                if (tagId == response.tagId) {
-                                    tags.splice(j, 1);
-                                }
+        return new Promise((resolve, reject) => {
+
+            $.ajax({
+                type: "POST",
+                url: "/protected/remove_tag",
+                data: submissionData,
+                dataType: "json",
+                success: function (response) {
+
+                    console.log("received response: ");
+                    console.log(response);
+            
+                    //Permanently deleting a tag
+                    if (isPermanent) {
+            
+                        console.log("permanent deletion of tag with id: " + tagId);
+                        for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                            let flight = thisFlight.state.flights[i];
+                            if (flight.id == flightId) {
+                                let tags = flight.tags;
+                                tags.splice(tags.indexOf(response.tag)-1, 1);
                             }
                         }
-                    }
-                } else if (response.allTagsCleared) {
-                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
-                        let flight = thisFlight.state.flights[i];
-                        if (flight.id == flightId) {
-                            flight.tags = [];
+                    
+                    //Clearing all tags from a flight
+                    } else if (response.allTagsCleared) {
+            
+                        for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                            let flight = thisFlight.state.flights[i];
+                            if (flight.id == flightId) {
+                                flight.tags = [];
+                            }
                         }
-                    }
-                } else {
-                    for (var i = 0; i < thisFlight.state.flights.length; i++) {
-                        let flight = thisFlight.state.flights[i];
-                        let tags = flight.tags;
-                        if (flight.id == flightId) {
-                            let tags = flight.tags;
-                            tags.splice(tags.indexOf(tag), 1);
+            
+                    //Removing a tag from a flight
+                    } else {
+            
+                        for (var i = 0; i < thisFlight.state.flights.length; i++) {
+                            let flight = thisFlight.state.flights[i];
+                            if (flight.id == flightId) {
+                                let tags = flight.tags;
+                                tags.splice(tags.indexOf(response.tag)-1, 1);
+                            }
                         }
+                        
                     }
-                }
-                thisFlight.setState(thisFlight.state);
-            },
-            error : function(jqXHR, textStatus, errorThrown) {
-            },
-            async: false
+                    thisFlight.setState(thisFlight.state);
+
+                    resolve(response);
+                },
+                error: function (jqXHR, textStatus, errorThrown) {
+                    reject(errorThrown);
+                },
+                async: false,
+            });
+
         });
+
     }
 
     /**
@@ -486,13 +529,21 @@ class FlightPage extends React.Component {
         if (this.state.mapVisible || this.state.plotVisible) {
             console.log("rendering half");
             style = {
-                overflow : "scroll",
-                height : "calc(50%)"
+                overflow : "auto",
+                overflowX : "hidden",
+                height : "calc(50%)",
+                padding: "5",
+                paddingBottom: "100px",
+                direction: "rtl"
             };
         } else {
             style = {
-                overflow : "scroll",
-                height : "calc(100%)"
+                overflow : "auto",
+                overflowX : "hidden",
+                height : "calc(100%)",
+                padding: "5",
+                paddingBottom: "100px",
+                direction: "rtl"
             };
         }
 
@@ -520,52 +571,64 @@ class FlightPage extends React.Component {
                     modifyTailsAccess={modifyTailsAccess}
                 />
 
-                <div id="plot-map-div" className='row m-0' style={{width:"100%", height:"0%"}}>
-                    <div id="map" className="map" style={{width:"50%", display:"none"}}></div>
-                    <div id="plot" style={{width:"50%", display:"none"}}></div>
+                <div
+                    id="plot-map-div"
+                    className="row m-0"
+                    style={{ width: "100%", height: "0%" }}
+                    >
+                    <div
+                        id="plot"
+                        style={{ width: "50%", display: "none" }}
+                    />
+                    <div
+                        id="map"
+                        className="map"
+                        style={{ width: "50%", display: "none" }}
+                    />
                 </div>
 
                 <div style={style}>
-                    <div className="card mb-1 border-secondary">
-                        <div className="row m-0 p-2">
-                            <div className="col-12">
-                                <div className="float-right">
-                                    <CesiumButtons location="Top"></CesiumButtons>
+                    <div style={{direction: "ltr"}}>
+                        <div className="card mb-1 border-secondary">
+                            <div className="row m-0 p-2">
+                                <div className="col-12" style={{userSelect:"none"}}>
+                                    <div className="float-right">
+                                        <CesiumButtons location="Top"></CesiumButtons>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-                    </div>
 
-                    <FlightsCard
-                        parent={this}
-                        flights={this.state.flights}
-                        navBar={this.navRef}
-                        ref={elem => this.flightsRef = elem}
-                        showMap={() => {this.showMap();}}
-                        showPlot={() => {this.showPlot();}}
-                        getFilterQuery={() => {return this.getQuery();}}
-                        flights={this.state.flights}
-                        setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
-                        setFlights={(flights) => {
-                            this.setState({
-                                flights : flights
-                            });
-                        }}
+                        <FlightsCard
+                            parent={this}
+                            flights={this.state.flights}
+                            navBar={this.navRef}
+                            ref={elem => this.flightsRef = elem}
+                            showMap={() => {this.showMap();}}
+                            showPlot={() => {this.showPlot();}}
+                            getFilterQuery={() => {return this.getQuery();}}
+                            setAvailableLayers={(plotLayers) => {this.setAvailableLayers(plotLayers);}}
+                            setFlights={(flights) => {
+                                this.setState({
+                                    flights : flights
+                                });
+                            }}
 
-                        addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
-                        removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
-                        deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
-                        getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
-                        associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
-                        clearTags={(flightId) => this.clearTags(flightId)}
-                        editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
-                    />
+                            addTag={(flightId, name, description, color) => this.addTag(flightId, name, description, color)}
+                            removeTag={(flightId, tagId, perm) => this.removeTag(flightId, tagId, perm)}
+                            deleteTag={(flightId, tagId) => this.deleteTag(flightId, tagId)}
+                            getUnassociatedTags={(flightId) => this.getUnassociatedTags(flightId)}
+                            associateTag={(tagId, flightId) => this.associateTag(tagId, flightId)}
+                            clearTags={(flightId) => this.clearTags(flightId)}
+                            editTag={(currentTag, newTag) => this.editTag(currentTag, newTag)}
+                        />
 
-                    <div className="card mb-1 border-secondary">
-                        <div className="row m-0 p-2">
-                            <div className="col-12">
-                                <div className="float-right">
-                                    <CesiumButtons location="Bottom"></CesiumButtons>
+                        <div className="card mb-1 border-secondary">
+                            <div className="row m-0 p-2">
+                                <div className="col-12" style={{userSelect:"none"}}>
+                                    <div className="float-right">
+                                        <CesiumButtons location="Bottom"></CesiumButtons>
+                                    </div>
                                 </div>
                             </div>
                         </div>

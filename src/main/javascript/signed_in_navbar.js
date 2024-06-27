@@ -108,7 +108,8 @@ class SignedInNavbar extends React.Component {
         let navbarBgColor = "rgba(188,203,218,0.8)";
         let selectBgColor = "rgba(203,210,218,0.8)";
         //const buttonStyle = { backgroundColor : selectBgColor };
-        const buttonStyle = { };
+        const buttonStyle = { minWidth: "2.5em", minHeight: "2.5em" };
+
         //const [show, setShow] = React.useState(false);
         var uploadsButton = "";
         var importsButton = "";

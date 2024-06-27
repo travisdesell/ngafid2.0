@@ -598,7 +598,7 @@ class EventDefinitionsTable extends React.Component {
 
 
         return (
-            <div className="container-fluid" style={{backgroundColor: "white"}}>
+            <div className="card-body" style={{backgroundColor: "white", margin:10, padding:10, borderRadius:5}}>
 
                 <div className="row">
                     <div className="col-md-12">
@@ -632,12 +632,14 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{arrayToString(eventDefinition.columnNames)}</td>
                                         <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
                                         <td>{eventDefinition.severityType}</td>
-                                        <td>
-                                            <button onClick={() => updateModal.show(eventDefinition)}>
+                                        <td style={{display:"flex", flexDirection:"row"}}>
+                                            <button className="btn btn-outline-secondary" onClick={() => updateModal.show(eventDefinition)}>
+                                                <i className="fa fa-gear mr-1" aria-hidden="true"/>
                                                 Update
                                             </button>
-                                            <button onClick={() => this.confirmDelete(eventDefinition)}>
-                                                Delete
+                                            <div style={{margin:"0 5px"}}/>
+                                            <button className="btn btn-danger" onClick={() => this.confirmDelete(eventDefinition)}>
+                                                <i className="fa fa-times" aria-hidden="true"/>
                                             </button>
                                         </td>
                                     </tr>

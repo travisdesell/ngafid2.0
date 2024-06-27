@@ -21,7 +21,11 @@ class PaginationSorter extends React.Component {
             console.log("rendering pagination sorter!");
             return (
                 <div className="col form-row input-group m-0 p-0">
-                    <DropdownButton className="ml-auto mr-0" id="dropdown-item-button-sort" title={"Sorting by: " + currentColumnName} size="sm">
+                    <DropdownButton className="ml-auto mr-0" id="dropdown-item-button-sort" title={
+                        <span style={{ overflow: "hidden", maxWidth: "175px", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", verticalAlign: "-25%"}}>
+                            Sorting by: {currentColumnName}
+                        </span>
+                    } size="sm">
                     {
                         this.props.sortOptions.map((ruleInfo, index) => {
                             return (
