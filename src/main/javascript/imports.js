@@ -17,8 +17,8 @@ class FlightWarning extends React.Component {
     render() {
         let warning = this.props.warning;
 
-        const styleName = { flex : "0 0 25em" };
-        let filenameClasses = "p-1 mr-1 card border-warning text-warning";
+        const styleName = { flex : "0 0 25em", color: "#eb9515" };
+        let filenameClasses = "p-1 mr-1 card border-warning";
         let filenameText = warning.filename;
         if (warning.sameFilename) {
             filenameClasses = "p-1 mr-1";
@@ -30,7 +30,7 @@ class FlightWarning extends React.Component {
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-warning text-warning flex-fill">
+                <div className="p-1 card border-warning flex-fill" style={{color: "#eb9515"}}>
                     {warning.message}
                 </div>
             </div>
@@ -268,7 +268,7 @@ class Import extends React.Component {
 
         const styleName = { };
         const styleTime = { flex : "0 0 11em" };
-        const styleCount = { flex : "0 0 8em" };
+        const styleCount = { marginRight: "5px", borderRadius: "8px", color: "white", textAlign: "center", alignContent: "center" };
         const styleStatus = { flex : "0 0 10em" };
         const styleButton = { };
 
@@ -335,27 +335,63 @@ class Import extends React.Component {
         }
 
         let textClasses = "p-1 mr-1 card bg-light";
-        let cardClasses = textClasses + colorClasses;
+        let cardClasses = (textClasses + colorClasses);
 
         return (
             <div className="m-1">
-                <div className="d-flex flex-row">
-                    <div className={textClasses + " flex-fill"} style={styleName}>{importInfo.filename}</div>
-                    <div className={textClasses} style={styleTime}>{importInfo.endTime}</div>
-                    <div className={textClasses + " text-success"} style={styleCount}>{importInfo.validFlights} valid</div>
-                    <div className={textClasses + " text-warning"} style={styleCount}>{importInfo.warningFlights} warnings</div>
-                    <div className={textClasses + " text-danger"} style={styleCount}>{importInfo.errorFlights} errors</div>
-                    <div className={cardClasses} style={styleStatus}>{statusText}</div>
-                    <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
-
+                <div className="d-flex justify-content-between align-items-start" style={{ ...styleName, backgroundColor: 'white', padding: '10px', borderRadius: "10px" }}>
+        
+                    {/* LEFT ELEMENTS */}
+                    <div className="d-flex justify-content-start flex-wrap" style={{ flexWrap: "wrap", minWidth:"30%" }}>
+                        <div className={textClasses} style={{ ...styleTime, minWidth:"40%"}}>
+                            {importInfo.filename}
+                        </div>
+                        <div className={textClasses} style={{...styleTime, minWidth:"40%"}}>
+                            {importInfo.endTime}
+                        </div>
+                    </div>
+        
+                    {/* RIGHT ELEMENTS */}
+                    <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "70%" }}>
+                        <div
+                            style={{ ...styleCount, flex: "0 0 6em", backgroundColor: "gray" }}
+                        >
+                            <i className="fa fa-upload" aria-hidden="true" /> Total: {importInfo.validFlights}
+                        </div>
+                        <div
+                            style={{ ...styleCount, flex: "0 0 6em", backgroundColor: "green" }}
+                        >
+                            <i className="fa fa-check" aria-hidden="true" /> Valid: {importInfo.validFlights}
+                        </div>
+                        <div
+                            style={{ ...styleCount, flex: "0 0 8em", backgroundColor: "#eb9515" }}
+                        >
+                            <i className="fa fa-exclamation-triangle" aria-hidden="true" /> Warnings: {importInfo.warningFlights}
+                        </div>
+                        <div
+                            style={{ ...styleCount, flex: "0 0 6.5em", backgroundColor: "#dc3545" }}
+                        >
+                            <i className="fa fa-exclamation-circle" aria-hidden="true" /> Errors: {importInfo.errorFlights}
+                        </div>
+                        <div
+                            className={cardClasses}
+                            style={{ ...styleStatus, flex: "0 0 18em", marginLeft: "10px", marginRight: "10px" }}
+                        >
+                            {statusText}
+                        </div>
+                        <button className={expandButtonClasses + "d-flex justify-content-end flex-wrap"} style={{...styleButton, marginLeft: "10px"}} onClick={() => this.expandClicked()}>
+                            <i className={expandIconClasses}/>
+                        </button>
+                    </div>
                 </div>
                 <div className={expandDivClasses} hidden={!expanded}>
-                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors}/>
-                    <FlightWarnings expanded={expanded} flightWarnings={flightWarnings}/>
-                    <FlightErrors expanded={expanded} flightErrors={flightErrors}/>
+                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors} />
+                    <FlightWarnings expanded={expanded} flightWarnings={flightWarnings} />
+                    <FlightErrors expanded={expanded} flightErrors={flightErrors} />
                 </div>
             </div>
         );
+        
 
     }
 }
@@ -416,49 +452,53 @@ class ImportsPage extends React.Component {
 
     render() {
         return (
-            <div>
-                <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <body style={{overflowY:"scroll"}}>
+                <div>
+                    <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
+                    <div className="p-1">
+                        <Paginator
+                            submitFilter={() => {this.submitFilter();}}
+                            items={this.state.imports}
+                            itemName="uploads"
+                            currentPage={this.state.currentPage}
+                            numberPages={this.state.numberPages}
+                            pageSize={this.state.pageSize}
+                            updateCurrentPage={(currentPage) => {
+                                this.state.currentPage = currentPage;
+                            }}
+                            updateItemsPerPage={(pageSize) => {
+                                this.state.pageSize = pageSize;
+                            }}
+                        />
 
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.imports}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
+                        {
+                            
+                            this.state.imports.map((importInfo, index) => {
+                                return (
+                                    <Import importInfo={importInfo} key={importInfo.identifier} />
+                                );
+                            })
+                            
+                        }
 
-                {
-                    this.state.imports.map((importInfo, index) => {
-                        return (
-                            <Import importInfo={importInfo} key={importInfo.identifier} />
-                        );
-                    })
-                }
-
-
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.imports}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
-            </div>
+                        <Paginator
+                            submitFilter={() => {this.submitFilter();}}
+                            items={this.state.imports}
+                            itemName="uploads"
+                            currentPage={this.state.currentPage}
+                            numberPages={this.state.numberPages}
+                            pageSize={this.state.pageSize}
+                            updateCurrentPage={(currentPage) => {
+                                this.state.currentPage = currentPage;
+                            }}
+                            updateItemsPerPage={(pageSize) => {
+                                this.state.pageSize = pageSize;
+                            }}
+                        />
+                    </div>
+                </div>
+            </body>
         );
     }
 }
