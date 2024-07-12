@@ -154,8 +154,12 @@ class SignedInNavbar extends React.Component {
                 );
             }
 
-        let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
+        //let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
+        const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
+        let eventsActive = (eventPageNames.includes(this.props.activePage));
         let analysisActive = this.props.activePage === "ttf";
+
+        console.log("[EX] ACTIVE PAGE", this.props.activePage);
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
@@ -206,7 +210,7 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink icon={"fa-home"} name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink icon={"fa-home"} name={"Home"} active={this.props.activePage==="welcome" || this.props.activePage==="aggregate"} href="/protected/welcome"/>
 
                         {aggregateView ?
                             <li className="nav-item dropdown">
