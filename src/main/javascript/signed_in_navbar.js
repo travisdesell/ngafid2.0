@@ -11,6 +11,7 @@ class NavLink extends React.Component {
     render() {
         const name = this.props.name;
         const hidden = this.props.hidden;
+        const icon = this.props.icon;
         let active = this.props.active;
 
         let onClick = this.props.onClick;
@@ -25,7 +26,10 @@ class NavLink extends React.Component {
 
         return (
             <li className={classNames}>
-                <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>{name} {isCurrent}</a>
+                <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>
+                    {(icon!==undefined) ?     <i className={"fa fa-fw "+icon} aria-hidden="true"/>     : ""}
+                    &nbsp;{name} {isCurrent}
+                </a>
             </li>
         );
     }
@@ -113,9 +117,11 @@ class SignedInNavbar extends React.Component {
         var uploadsButton = "";
         var importsButton = "";
             if (airSyncEnabled) {
+
                 uploadsButton = (
                     <li className="nav-item dropdown">
                         <a className={"nav-link dropdown-toggle" + (this.props.activePage === "uploads" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
                             {"Uploads"}
                         </a>
                         <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
@@ -123,12 +129,12 @@ class SignedInNavbar extends React.Component {
                             <DropdownLink name={"AirSync Uploads"} href="/protected/airsync_uploads"/>
                         </div>
                     </li>
-
                 );
 
                 importsButton = (
                     <li className="nav-item dropdown">
                         <a className={"nav-link dropdown-toggle" + (this.props.activePage === "imports" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
                             {"Imports"}
                         </a>
                         <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
@@ -136,14 +142,15 @@ class SignedInNavbar extends React.Component {
                             <DropdownLink name={"AirSync Imports"} href="/protected/airsync_imports"/>
                         </div>
                     </li>
-
                 );
+
             } else {
+                
                 importsButton = (
-                    <NavLink name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
+                    <NavLink icon={"fa-cloud-download"} name={"Imports"} active={this.props.activePage === "imports"} href="/protected/imports"/>
                 )
                 uploadsButton = (
-                    <NavLink name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
+                    <NavLink icon={"fa-upload"} name={"Uploads"} active={this.props.activePage === "uploads"} href="/protected/uploads"/>
                 );
             }
 
@@ -199,7 +206,7 @@ class SignedInNavbar extends React.Component {
                     </ul>
 
                     <ul className="navbar-nav">
-                        <NavLink name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
+                        <NavLink icon={"fa-home"} name={"Home"} active={this.props.activePage === "welcome"} href="/protected/welcome"/>
 
                         {aggregateView ?
                             <li className="nav-item dropdown">
@@ -215,7 +222,8 @@ class SignedInNavbar extends React.Component {
 
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
+                                <i className="fa fa-fw fa-calendar-check-o" aria-hidden="true"/>
+                                &nbsp;Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
@@ -236,20 +244,23 @@ class SignedInNavbar extends React.Component {
                         
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                Analysis{analysisActive ? (<span className="sr-only">(current)</span>) : ""}
+                                <i className="fa fa-fw fa-search" aria-hidden="true"/>
+                                &nbsp;Analysis{analysisActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
                                 <DropdownLink name={"Turn to Final Tool"} hidden={false} active={this.props.activePage === "ttf"} href="/protected/ttf"/>
                             </div>
                         </li>
 
-                        <NavLink name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
+                        <NavLink icon={"fa-plane"} name={"Flights"} active={this.props.activePage === "flights"} href="/protected/flights"/>
+                        
                         {importsButton}
                         {uploadsButton}
 
                         <li className="nav-item dropdown">
                             <a className={"nav-link dropdown-toggle" + (this.props.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                {"Account" + accountNotifications}{this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
+                                <i className="fa fa-fw fa-user" aria-hidden="true"/>
+                                &nbsp;{"Account" + accountNotifications}{this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>

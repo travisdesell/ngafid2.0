@@ -1,3 +1,10 @@
+:root {
+    --warning: #eb9515;
+    --danger: #dc3545;
+    --valid: green;
+    --info: gray;
+}
+
 html, body {
     background: url('../images/clouds.jpg') no-repeat center center fixed;
     -webkit-background-size: cover;

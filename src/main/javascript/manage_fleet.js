@@ -17,6 +17,7 @@ class AccessCheck extends React.Component {
         let checkType = this.props.checkType;
         let lcType = checkType.toLowerCase();
         let ucType = checkType.toUpperCase();
+        let slcType = lcType.charAt(0).toUpperCase() + lcType.slice(1);
 
         let userAccess = this.props.userAccess;
         let fleetUserRow = this.props.fleetUserRow;
@@ -27,10 +28,10 @@ class AccessCheck extends React.Component {
         //console.log("rendering check " + checkType + " with access: " + userAccess);
 
         return (
-            <div className="form-check form-check-inline">
+            <div className="form-check form-check-inline" style={{marginRight:"1.5em"}}>
                 <input className="form-check-input" type="radio" name={"accessRadios" + userId} id={radioId} value={ucType} checked={ucType == userAccess} onChange={() => fleetUserRow.checkRadio(ucType)}/>
                 <label className="form-check-label" htmlFor={radioId}>
-                    {lcType}
+                    {slcType}
                 </label>
             </div>
 

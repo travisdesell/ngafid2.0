@@ -337,6 +337,9 @@ class Import extends React.Component {
         let textClasses = "p-1 mr-1 card bg-light";
         let cardClasses = (textClasses + colorClasses);
 
+        console.log("[EX] Import Info: ", importInfo);
+        let totalFlights = (importInfo.validFlights + importInfo.warningFlights + importInfo.errorFlights);
+
         return (
             <div className="m-1">
                 <div className="d-flex justify-content-between align-items-start" style={{ ...styleName, backgroundColor: 'white', padding: '10px', borderRadius: "10px" }}>
@@ -353,26 +356,28 @@ class Import extends React.Component {
         
                     {/* RIGHT ELEMENTS */}
                     <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "70%" }}>
+
                         <div
-                            style={{ ...styleCount, flex: "0 0 6em", backgroundColor: "gray" }}
-                        >
-                            <i className="fa fa-upload" aria-hidden="true" /> Total: {importInfo.validFlights}
-                        </div>
-                        <div
-                            style={{ ...styleCount, flex: "0 0 6em", backgroundColor: "green" }}
+                            style={{ ...styleCount, flex: "0 0 6.5em", padding:"5", backgroundColor: "green" }}
                         >
                             <i className="fa fa-check" aria-hidden="true" /> Valid: {importInfo.validFlights}
                         </div>
                         <div
-                            style={{ ...styleCount, flex: "0 0 8em", backgroundColor: "#eb9515" }}
+                            style={{ ...styleCount, flex: "0 0 8.5em", padding:"5", backgroundColor: "#eb9515" }}
                         >
                             <i className="fa fa-exclamation-triangle" aria-hidden="true" /> Warnings: {importInfo.warningFlights}
                         </div>
                         <div
-                            style={{ ...styleCount, flex: "0 0 6.5em", backgroundColor: "#dc3545" }}
+                            style={{ ...styleCount, flex: "0 0 6.75em", padding:"5", backgroundColor: "#dc3545" }}
                         >
                             <i className="fa fa-exclamation-circle" aria-hidden="true" /> Errors: {importInfo.errorFlights}
                         </div>
+                        <div
+                            style={{ ...styleCount, flex: "0 0 6.5em", padding:"5", backgroundColor: "gray" }}
+                        >
+                            <i className="fa fa-upload" aria-hidden="true" /> Total: {totalFlights}
+                        </div>
+                        
                         <div
                             className={cardClasses}
                             style={{ ...styleStatus, flex: "0 0 18em", marginLeft: "10px", marginRight: "10px" }}

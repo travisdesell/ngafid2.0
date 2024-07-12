@@ -90,7 +90,7 @@ class Notifications extends React.Component {
                     badgeType: "badge-info" 
                 },
                 {   count: unconfirmedTailsCount, 
-                    message: "tail numbers need to be confirmed",
+                    message: "Tail Numbers awaiting Confirmation",
                     badgeType: "badge-info"
                 }
             ]
@@ -130,7 +130,12 @@ class Notifications extends React.Component {
                                 } else {
                                     return (
                                         <tr key={index}>
-                                            <td style={{textAlign:"right", paddingBottom:"6"}}><span className={'badge ' + info.badgeType}>{Number(info.count).toLocaleString('en')}</span></td>
+                                            <td style={{textAlign:"right", paddingBottom:"6"}}>
+                                                <span className={'badge ' + info.badgeType}>
+                                                    <i className="fa fa-fw fa-bell" aria-hidden="true"/>
+                                                    &nbsp;{Number(info.count).toLocaleString('en')}
+                                                </span>
+                                            </td>
                                             <td style={{paddingBottom:"6"}}>&nbsp;{info.message}</td>
                                         </tr>
                                     );
@@ -478,43 +483,91 @@ export default class SummaryPage extends React.Component {
     }
 
     UploadsSummary() {
+
+        let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithWarning + this.state.statistics.flightsWithError);
+
         return (
                 <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
                     <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Uploads</h4>
                     <div className="card-body">
                         <table className="row">
                             <tbody className="col-sm-6">
+
+
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-info">{formatNumberAsync(this.state.statistics.uploads, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Uploads</td>
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--info)", color:"white"}}>
+                                            <i className="fa fa-fw fa-upload" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s)</td>
                                 </tr>
 
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-warning">{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Pending Upload(s)</td>
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--warning)", color:"white"}}>
+                                            <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s) awaiting Import</td>
                                 </tr>
  
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-danger">{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Uploads with Error(s)</td>
-                                </tr>                               
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--danger)", color:"white"}}>
+                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Upload(s) with Errors</td>
+                                </tr>  
+
                             </tbody>
 
                             <tbody className="col-sm-6">
+
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-info">{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights</td>
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--valid)", color:"white"}}>
+                                            <i className="fa fa-fw fa-check" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) Valid</td>
                                 </tr>
 
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-warning">{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights with Warning(s)</td>
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--warning)", color:"white"}}>
+                                            <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) with Warnings</td>
                                 </tr>
  
                                 <tr>
-                                    <td style={{textAlign: "right"}}><span className="badge badge-danger">{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}</span></td> 
-                                    <td style={{paddingBottom: "6"}}>&nbsp;Flights with Error(s)</td>
-                                </tr>                               
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge badge-danger">
+                                            <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) with Errors</td>
+                                </tr>     
+
+                                <tr>
+                                    <td style={{textAlign: "right"}}>
+                                        <span className="badge" style={{backgroundColor:"gray", color:"white"}}>
+                                            <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
+                                            &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
+                                        </span>
+                                    </td> 
+                                    <td style={{paddingBottom: "6"}}>&nbsp;Flight(s) Imported</td>
+                                </tr>
+
                             </tbody>
                         </table>
                     </div>
