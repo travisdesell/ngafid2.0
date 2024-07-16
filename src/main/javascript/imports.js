@@ -17,7 +17,7 @@ class FlightWarning extends React.Component {
     render() {
         let warning = this.props.warning;
 
-        const styleName = { flex : "0 0 25em", color: "#eb9515" };
+        const styleName = { flex : "0 0 25em", color: "var(--warning)" };
         let filenameClasses = "p-1 mr-1 card border-warning";
         let filenameText = warning.filename;
         if (warning.sameFilename) {
@@ -30,7 +30,7 @@ class FlightWarning extends React.Component {
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-warning flex-fill" style={{color: "#eb9515"}}>
+                <div className="p-1 card border-warning flex-fill" style={{color: "var(--warning)"}}>
                     {warning.message}
                 </div>
             </div>
@@ -368,7 +368,7 @@ class Import extends React.Component {
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "#eb9515" }}
+                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--warning)" }}
                         >
                             <i className="fa fa-exclamation-triangle" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Warnings:</div>
@@ -377,7 +377,7 @@ class Import extends React.Component {
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "#dc3545" }}
+                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--danger)" }}
                         >
                             <i className="fa fa-exclamation-circle" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Erorrs:</div>
