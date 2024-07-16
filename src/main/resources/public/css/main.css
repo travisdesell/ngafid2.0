@@ -1,7 +1,7 @@
 :root {
+    --valid: green;
     --warning: #eb9515;
     --danger: #dc3545;
-    --valid: green;
     --info: gray;
 }
 
@@ -13,6 +13,16 @@ html, body {
     background-size: cover;
     height: 100%;
 }
+
+.nav-item {
+    border-radius: 8px;
+    transition: background-color 0.1s
+}
+
+.nav-item:hover {
+    background-color: rgba(0, 0, 0, 0.1);
+}
+
 
 #loading {
     width: 100%;

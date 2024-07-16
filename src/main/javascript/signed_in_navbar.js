@@ -18,16 +18,17 @@ class NavLink extends React.Component {
         let href = this.props.href;
 
         if (typeof href == 'undefined') href = "#!";
-        //make unclick an empty function if its not defined
+
+        //make onClick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
-        const classNames = active ? "nav-item active" : "nav-item";
-        const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
+        const classNames = (active ? "nav-item active" : "nav-item");
+        const isCurrent = (active ? (<span className="sr-only">(current)</span>) : "");
 
         return (
             <li className={classNames}>
                 <a className="nav-link" href={href} hidden={hidden} onClick={() => onClick()}>
-                    {(icon!==undefined) ?     <i className={"fa fa-fw "+icon} aria-hidden="true"/>     : ""}
+                    {(icon!==undefined) ? <i className={"fa fa-fw "+icon} aria-hidden="true"/> : ""}
                     &nbsp;{name} {isCurrent}
                 </a>
             </li>

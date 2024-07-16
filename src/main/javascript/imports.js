@@ -358,24 +358,39 @@ class Import extends React.Component {
                     <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "70%" }}>
 
                         <div
-                            style={{ ...styleCount, flex: "0 0 6.5em", padding:"5", backgroundColor: "green" }}
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "green" }}
                         >
-                            <i className="fa fa-check" aria-hidden="true" /> Valid: {importInfo.validFlights}
+                            <i className="fa fa-check" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Valid:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.validFlights}&nbsp;</div>
                         </div>
+
                         <div
-                            style={{ ...styleCount, flex: "0 0 8.5em", padding:"5", backgroundColor: "#eb9515" }}
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "#eb9515" }}
                         >
-                            <i className="fa fa-exclamation-triangle" aria-hidden="true" /> Warnings: {importInfo.warningFlights}
+                            <i className="fa fa-exclamation-triangle" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Warnings:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.warningFlights}&nbsp;</div>
                         </div>
+
                         <div
-                            style={{ ...styleCount, flex: "0 0 6.75em", padding:"5", backgroundColor: "#dc3545" }}
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "#dc3545" }}
                         >
-                            <i className="fa fa-exclamation-circle" aria-hidden="true" /> Errors: {importInfo.errorFlights}
+                            <i className="fa fa-exclamation-circle" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Erorrs:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.errorFlights}&nbsp;</div>
                         </div>
+
                         <div
-                            style={{ ...styleCount, flex: "0 0 6.5em", padding:"5", backgroundColor: "gray" }}
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "gray" }}
                         >
-                            <i className="fa fa-upload" aria-hidden="true" /> Total: {totalFlights}
+                            <i className="fa fa-upload" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Total:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{totalFlights}&nbsp;</div>
                         </div>
                         
                         <div

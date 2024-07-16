@@ -550,7 +550,7 @@ export default class SummaryPage extends React.Component {
  
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge badge-danger">
+                                    <span className="badge" style={{backgroundColor:"var(--danger)", color:"white"}}>
                                             <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
                                         </span>
@@ -560,7 +560,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"gray", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--info)", color:"white"}}>
                                             <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
                                         </span>
