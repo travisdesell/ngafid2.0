@@ -169,7 +169,7 @@ class Paginator extends React.Component {
 
                         {sorter}
 
-                        <DropdownButton className="ml-auto mr-2" id="dropdown-item-button-resize" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
+                        <DropdownButton className="ml-auto" id="dropdown-item-button-resize" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
                             <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(15)}>15 {this.props.itemName} per page</Dropdown.Item>
                             <Dropdown.Item as="button" onClick={() => this.repaginate(25)}>25 {this.props.itemName} per page</Dropdown.Item>

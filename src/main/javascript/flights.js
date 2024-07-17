@@ -32,6 +32,18 @@ var visitedAirports = [ "GFK", "FAR", "ALB", "ROC" ];
 */
 // var tagNames = ["Tag A", "Tag B"];
 var rules = [
+
+    {
+        name: "Has Any Event(s)",
+        conditions: [
+            {
+                type: "select",
+                name: "airframes",
+                options: airframes,
+            }
+        ]
+    },
+
   {
     name: "Airframe",
     conditions: [
@@ -620,6 +632,52 @@ class FlightsPage extends React.Component {
     return storedFilters;
   }
 
+
+    transformHasAnyEvent(filters) {
+
+        let newFilters = [];
+        filters.forEach((filter) => {
+
+            if (filter.inputs && filter.inputs[0] === "Has Any Event(s)") {
+
+                console.log("Rebuilding filter for 'Has Any Event(s)' as 'Event Count' > 0 for all events for the given airframe...");
+
+                let airframe = filter.inputs[1];
+                newFilters.push({
+                    type: "GROUP",
+                    condition: "AND",
+                    filters: [
+                        {
+                            type: "RULE",
+                            inputs: ["Airframe", "is", airframe]
+                        },
+                        {
+                            type: "GROUP",
+                            condition: "OR",
+                            filters: eventNames.map((eventName) => ({
+                                type: "RULE",
+                                inputs: ["Event Count", eventName, ">", "0"]
+                            }))
+                        }
+                    ]
+                });
+            
+            //Attempt to recursively transform nested filters...
+            } else if (filter.filters) {
+                newFilters.push({
+                    ...filter,
+                    filters: transformAirframeEventsCountFilter(filter.filters)
+                });
+            } else {
+                newFilters.push(filter);
+            }
+
+        });
+
+        return newFilters;
+
+    };
+
   submitFilter(resetCurrentPage = false) {
     console.log(
       "submitting filter! currentPage: " +
@@ -630,8 +688,7 @@ class FlightsPage extends React.Component {
         this.state.sortColumn
     );
 
-    console.log("Submitting filters:");
-    console.log(this.state.filters);
+    console.log("Submitting filters: ", this.state.filters);
 
     $("#loading").show();
 
@@ -642,6 +699,10 @@ class FlightsPage extends React.Component {
       currentPage = 0;
     }
 
+    //Transform the 'Has Any Event(s)' filter
+    let originalFilters = this.state.filters.filters;
+    this.state.filters.filters = this.transformHasAnyEvent(this.state.filters.filters);
+
     var submissionData = {
       filterQuery: JSON.stringify(this.state.filters),
       currentPage: currentPage,
@@ -651,6 +712,9 @@ class FlightsPage extends React.Component {
     };
 
     console.log(submissionData);
+
+    //Undo the transformation
+    this.state.filters.filters = originalFilters;
 
     let flightsPage = this;
 
@@ -689,6 +753,7 @@ class FlightsPage extends React.Component {
       },
       error: function (jqXHR, textStatus, errorThrown) {
         errorModal.show("Error Loading Flights", errorThrown);
+        $("#loading").hide();
       },
       async: true,
     });
