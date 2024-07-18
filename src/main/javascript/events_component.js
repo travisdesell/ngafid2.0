@@ -57,11 +57,154 @@ class Events extends React.Component {
         };
     }
 
-    updateEventDisplay(index, toggle) {
+    async getUTCOffset(id){
+        if(id != null){
+
+            var submissionData = {
+                flightId : id,
+                seriesName : "UTCOfst"
+            };   
+    
+            var res = $.ajax({
+                async: false, 
+                type: 'POST',
+                url: '/protected/string_series',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    console.log("OFFSET IN FUNCTION (hopefully)");
+                    console.log(response);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Loading Flight Coordinates", errorThrown);
+                },   
+                
+            });
+
+            console.log("Res.responseText: ");
+            console.log(res.responseText);
+            return res.responseText;
+
+        } else{
+            return 0;
+        }
+    }
+
+    convertUTC(time,offset){
+        var newTime = time;
+        var hour = Number(time.substring(time.length - 8, time.length - 6));
+        hour -= offset;
+        newTime =  time.substring(0, time.length - 8) + hour.toString() + time.substring(time.length - 6);
+        console.log(newTime);
+        return newTime;
+
+        
+    }
+
+    offsetTime(time,amount){
+        var dateTimeCombo;
+        var parts = time.split(" ");
+        var date = parts[0];
+        var time = parts[1];
+        time = time.split(":");
+        var hour = Number(time[0]);
+        var minute = Number(time[1]);
+        var second = Number(time[2]);
+        date = date.split("-");
+        var year = Number(date[0]);
+        var month = Number(date[1]);
+        var day = Number(date[2]);
+
+        second += amount;
+        if(second >= 60){
+            minute += 1;
+            second = 0;
+        } else if(second < 0){
+            minute -= 1;
+            second = 59;
+        }
+
+        if(minute >= 60){
+            hour += 1;
+            minute = 0;
+        } else if(minute < 0){
+            hour -= 1;
+            minute = 59;
+        }
+
+        if(hour >= 24){
+            day += 1;
+            hour = 0;
+        } else if(hour < 0){
+            day -= 1;
+            hour = 23;
+        }
+
+
+
+        if(hour < 10){
+            time = "0" + hour + ":";
+        } else{
+            time = hour + ":";
+        }
+
+        if(minute < 10){
+            time += "0" + minute + ":";
+        } else{
+            time += minute + ":";
+        }
+
+        if(second < 10){
+            time += "0" + second;
+        } else{
+            time += second;
+        }
+
+        date = year + "-";
+        if(month < 10){
+            date += "0" + month + "-";
+        } else{
+            date += month + "-";
+        }
+
+        if(day < 10){
+            date += "0" + day;
+        } else{
+            date += day;
+        }
+
+
+        dateTimeCombo = date + " " + time;
+        return dateTimeCombo;
+
+    }
+
+    async updateEventDisplay(index, toggle) {
             // Draw rectangles on plot
         var event = this.state.events[index];
-        console.log("drawing plotly rectangle from " + event.startLine + " to " + event.endLine);
+        console.log("EVENT DETAILS: ");
+        console.log(event);
+        
+        console.log("Adjusting Times to be -/+ 1");
+        var tempStart = this.offsetTime(event.startTime,-1);
+        var tempEnd = this.offsetTime(event.endTime,1);
+        console.log(tempStart);
+        console.log(tempEnd);
+
+        var res = await this.getUTCOffset(event.flightId);
+        res = res.split(" ");
+        var offset = res[res.length-1];
+        offset = offset.substring(offset.length-9,offset.length-6);
+
+        var startTime = await this.convertUTC(tempStart, offset);
+        var endTime = await this.convertUTC(tempEnd, offset);
+
+        
+
+        console.log("drawing plotly rectangle from " + startTime + " to " + endTime);
         let shapes = global.plotlyLayout.shapes;
+        //console.log("Type of event.startTime: ");
+        //console.log(typeof(event.startTime));
 
         let update = {
             id: event.id,
@@ -70,9 +213,9 @@ class Events extends React.Component {
             xref: 'x',
             // y-reference is assigned to the plot paper [0,1]
             yref: 'paper',
-            x0: event.startLine - 1,
+            x0: startTime,
             y0: 0,
-            x1: event.endLine + 1,
+            x1: endTime,
             y1: 1,
             fillcolor: event.color,
             'opacity': 0.5,
