@@ -91,91 +91,27 @@ class Events extends React.Component {
     }
 
     convertUTC(time,offset){
-        var newTime = time;
-        var hour = Number(time.substring(time.length - 8, time.length - 6));
-        hour -= offset;
-        newTime =  time.substring(0, time.length - 8) + hour.toString() + time.substring(time.length - 6);
-        console.log(newTime);
-        return newTime;
-
+        
+        var day = new Date(time);
+        day = day.getTime();
+        day -= offset*60*60*1000;
+        var updated = new Date();
+        updated.setTime(day);
+        console.log("UTC Time: " + updated);
+        return updated;
         
     }
 
+    //amount needs to be in seconds
     offsetTime(time,amount){
-        var dateTimeCombo;
-        var parts = time.split(" ");
-        var date = parts[0];
-        var time = parts[1];
-        time = time.split(":");
-        var hour = Number(time[0]);
-        var minute = Number(time[1]);
-        var second = Number(time[2]);
-        date = date.split("-");
-        var year = Number(date[0]);
-        var month = Number(date[1]);
-        var day = Number(date[2]);
 
-        second += amount;
-        if(second >= 60){
-            minute += 1;
-            second = 0;
-        } else if(second < 0){
-            minute -= 1;
-            second = 59;
-        }
-
-        if(minute >= 60){
-            hour += 1;
-            minute = 0;
-        } else if(minute < 0){
-            hour -= 1;
-            minute = 59;
-        }
-
-        if(hour >= 24){
-            day += 1;
-            hour = 0;
-        } else if(hour < 0){
-            day -= 1;
-            hour = 23;
-        }
-
-
-
-        if(hour < 10){
-            time = "0" + hour + ":";
-        } else{
-            time = hour + ":";
-        }
-
-        if(minute < 10){
-            time += "0" + minute + ":";
-        } else{
-            time += minute + ":";
-        }
-
-        if(second < 10){
-            time += "0" + second;
-        } else{
-            time += second;
-        }
-
-        date = year + "-";
-        if(month < 10){
-            date += "0" + month + "-";
-        } else{
-            date += month + "-";
-        }
-
-        if(day < 10){
-            date += "0" + day;
-        } else{
-            date += day;
-        }
-
-
-        dateTimeCombo = date + " " + time;
-        return dateTimeCombo;
+        var day = new Date(time);
+        day = day.getTime();
+        day += amount*1000;
+        var updated = new Date();
+        updated.setTime(day);
+        console.log("Updated Time: " + updated);
+        return updated;
 
     }
 
