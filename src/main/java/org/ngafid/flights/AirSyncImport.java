@@ -85,6 +85,10 @@ public class AirSyncImport {
         this.localDateTimeEnd = LocalDateTime.parse(this.timeEnd.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
+    public LocalDateTime getUploadTime() {
+        return localDateTimeUpload;
+    }
+
     /**
      * Gets the uploader id of the AirSync user
      *
@@ -94,7 +98,7 @@ public class AirSyncImport {
      */
     public static int getUploaderId() throws SQLException {
         if (AIRSYNC_UPLOADER_ID <= 0) {
-            String sql = "SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user'";
+            String sql = "SELECT id FROM user WHERE id = -1";
             PreparedStatement query = Database.getConnection().prepareStatement(sql);
 
             ResultSet resultSet = query.executeQuery();
@@ -138,7 +142,7 @@ public class AirSyncImport {
      *
      * @throws MalformedFlightFileException if we get a bad file from AirSync
      */
-    public void process(Connection connection) throws MalformedFlightFileException {
+    public void process(Connection connection) throws IOException {
         //Ensure there is data to read before proceeding...
         int count = 0;
         String identifier = getUploadIdentifier(this.fleet.getId(), aircraftId, this.localDateTimeStart);
@@ -236,7 +240,7 @@ public class AirSyncImport {
                 this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
-			} catch (IOException | FatalFlightFileException | FlightAlreadyExistsException e) {
+			} catch (FatalFlightFileException | FlightAlreadyExistsException e) {
                 UploadException ue = new UploadException(e.getMessage(), e, csvName);
                 try {
                     FlightError.insertError(connection, uploadId, ue.getFilename(), ue.getMessage());
@@ -244,7 +248,7 @@ public class AirSyncImport {
                 } catch (SQLException se) {
                     AirSync.crashGracefully(se);
                 }
-            } catch (Exception e) {
+            } catch (SQLException e) {
                 AirSync.crashGracefully(e);
 			}
         } else {
@@ -537,30 +541,25 @@ public class AirSyncImport {
      *
      * @return an InputStream instance with the import's CSV data
      */
-    private InputStream getFileInputStream() {
+    private InputStream getFileInputStream() throws IOException {
         InputStream is = null;
 
-        try {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
+        HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
 
-            connection.setRequestMethod("GET");
-            connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());     
+        connection.setRequestMethod("GET");
+        connection.setDoOutput(true);
+        connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());     
 
-            is = connection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
-            
-            String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
+        is = connection.getInputStream();
+        byte [] respRaw = is.readAllBytes();
+        
+        String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
 
-            LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);
-            URL input = new URL(log.fileUrl);
-            LOG.info("Got URL for logfile " + log.fileUrl);
+        LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);
+        URL input = new URL(log.fileUrl);
+        LOG.info("Got URL for logfile " + log.fileUrl);
 
-            is = input.openStream();
-
-        } catch (IOException ie) {
-            AirSync.crashGracefully(ie);
-        }
+        is = input.openStream();
 
         return is;
     }
@@ -570,22 +569,15 @@ public class AirSyncImport {
      *
      * @param the size of the CSV buffer, in bytes
      */
-    public int readCsvData() {
-        try {
-            InputStream is = getFileInputStream();
-
+    public int readCsvData() throws IOException {
+        try (InputStream is = getFileInputStream()) {
             if (is == null) {
-                AirSync.logFile.println("ERROR: Unable to read fileUrl from log endpoint for aircraft " + this.aircraftId + ": " + fileUrl + " with log: " + this.id + ".");
                 return -1;
             } else {
                 this.data = is.readAllBytes();
             }
-        } catch (Exception e) {
-            AirSync.logFile.println("ERROR: Unable to read fileUrl for aircraftId " + this.aircraftId + ": " + fileUrl);
-            return -1;
         }
-
-        // Return num of bytes read
+        
         return data.length;
     }
 

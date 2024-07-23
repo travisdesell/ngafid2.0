@@ -107,7 +107,6 @@ if (!$update_2022_02_17) {
     query_ngafid_db($query);
 
 
-
     $query = "CREATE TABLE `user` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
         `email` VARCHAR(128) NOT NULL,
