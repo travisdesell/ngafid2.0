@@ -113,11 +113,12 @@ class TraceButtons extends React.Component {
             if(dates[i] == ""){
                 date_time_combo[i] = "";
             } else{
-                var time = times[i];
-                var offset_time = offsets[i];
-                var temp = Number(time.substring(0,2)) - Number(offset_time.substring(0,3));
-                time = temp.toString() + time.substring(2);
-                var date_stamp = new Date(dates[i] +" "+ time);
+                var time = new Date(dates[i] +" "+ times[i]);
+                time = time.getTime();
+                var offset_time =Number(offsets[i].substring(0,3));
+                time -= offset_time*60*60*1000;
+                var date_stamp = new Date();
+                date_stamp.setTime(time);
                 date_time_combo[i] = date_stamp;
             }
         }
