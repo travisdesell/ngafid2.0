@@ -718,6 +718,11 @@ class TrendsPage extends React.Component {
         console.log(percentData);
         */
 
+        let styles = getComputedStyle(document.documentElement);
+        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+
         var countLayout = {
             title : 'Event Counts Over Time',
             hovermode : "x unified",
@@ -730,6 +735,17 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : plotBgColor,
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -745,6 +761,17 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : plotBgColor,
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -841,13 +868,13 @@ class TrendsPage extends React.Component {
 
         return (
             <div>
-                <SignedInNavbar activePage={"trends"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage={"trends"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="container-fluid">
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                            <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Trends"
                                     airframes={airframes}
@@ -907,7 +934,7 @@ class TrendsPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="count-trends-plot"></div>
                                         <div id="percent-trends-plot"></div>
                                     </div>

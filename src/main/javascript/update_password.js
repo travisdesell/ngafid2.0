@@ -85,7 +85,7 @@ class UpdatePasswordPage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
+        
         const fgStyle = {opacity : 1.0};
 
         let formGroupStyle = {
@@ -165,56 +165,53 @@ class UpdatePasswordPage extends React.Component {
         return (
             <div>
                 <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <div className="card-body" hidden={hidden}>
+                <div className="card mb-1 m-2">
+                    <h5 className="card-header" style={fgStyle}>
+                        Update Password
+                    </h5>
 
-                    <div className="card mb-1" style={bgStyle}>
-                        <h5 className="card-header" style={fgStyle}>
-                            Update Password
-                        </h5>
+                    <div className="card-body" style={fgStyle}>
 
-                        <div className="card-body" style={fgStyle}>
+                        <form onSubmit={(event) => this.updatePassword(event)} >
 
-                            <form onSubmit={(event) => this.updatePassword(event)} >
-
-                                <div className="form-group" style={formGroupStyle}>
-
-                                    <div className="d-flex">
-                                        <div className="p-2" style={formHeaderStyle}>
-                                            <label htmlFor="createPassword" style={labelStyle}>Current Password</label>
-                                        </div>
-                                        <div className="p-2 flex-fill">
-                                            <input type="password" className="form-control" id="currentPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeCurrentPassword(event)}} value={this.state.currentPassword}/>
-                                        </div>
-                                    </div>
-                                </div>
+                            <div className="form-group" style={formGroupStyle}>
 
                                 <div className="d-flex">
                                     <div className="p-2" style={formHeaderStyle}>
-                                        <label htmlFor="createPassword" style={labelStyle}>New Password</label>
+                                        <label htmlFor="createPassword" style={labelStyle}>Current Password</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="newPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeNewPassword(event)}} value={this.state.newPassword}/>
-                                    </div>
-                                    <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={(event) => {this.changeConfirmPassword(event)}} value={this.state.confirmPassword}/>
+                                        <input type="password" className="form-control" id="currentPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeCurrentPassword(event)}} value={this.state.currentPassword}/>
                                     </div>
                                 </div>
+                            </div>
 
-                                <div className="d-flex">
-                                    <div className="p-2" style={formHeaderStyle}>
-                                    </div>
-                                    <div className="p-2 flex-fill">
-                                        <span style={validationMessageStyle} hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
-                                    </div>
-                                    <div className="p-2">
-                                        <button type="submit" className="btn btn-primary float-right" disabled={updatePasswordDisabled}>Update Password</button>
-                                    </div>
+                            <div className="d-flex">
+                                <div className="p-2" style={formHeaderStyle}>
+                                    <label htmlFor="createPassword" style={labelStyle}>New Password</label>
                                 </div>
+                                <div className="p-2 flex-fill">
+                                    <input type="password" className="form-control" id="newPassword" placeholder="Password (required)" required={true} onChange={(event) => {this.changeNewPassword(event)}} value={this.state.newPassword}/>
+                                </div>
+                                <div className="p-2 flex-fill">
+                                    <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={(event) => {this.changeConfirmPassword(event)}} value={this.state.confirmPassword}/>
+                                </div>
+                            </div>
+
+                            <div className="d-flex">
+                                <div className="p-2" style={formHeaderStyle}>
+                                </div>
+                                <div className="p-2 flex-fill">
+                                    <span style={validationMessageStyle} hidden={passwordValidationHidden}>{passwordValidationMessage}</span>
+                                </div>
+                                <div className="p-2">
+                                    <button type="submit" className="btn btn-primary float-right" disabled={updatePasswordDisabled}>Update Password</button>
+                                </div>
+                            </div>
 
 
-                            </form>
+                        </form>
 
-                        </div>
                     </div>
                 </div>
             </div>

@@ -89,6 +89,10 @@ class SeveritiesPage extends React.Component {
 
     }
 
+    componentDidMount() {
+        this.displayPlot(this.state.airframe);
+    }
+
     exportCSV() {
         let selectedAirframe = this.state.airframe;
 
@@ -180,6 +184,7 @@ class SeveritiesPage extends React.Component {
         let severityTraces = [];
         var airframeNames = {};
 
+        
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
             if (!this.state.eventChecked[eventName]) continue;
@@ -282,6 +287,11 @@ class SeveritiesPage extends React.Component {
             }
         }
 
+        let styles = getComputedStyle(document.documentElement);
+        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+
         var severityLayout = {
             title : 'Severity of Events',
             hovermode : "closest",
@@ -294,6 +304,17 @@ class SeveritiesPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : plotBgColor,
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -606,13 +627,13 @@ class SeveritiesPage extends React.Component {
 
         return (
             <div>
-                <SignedInNavbar activePage={"severities"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage={"severities"} darkModeOnClickAlt={()=>{this.displayPlot(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="container-fluid">
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                            <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Severities"
                                     airframes={airframes}
@@ -644,7 +665,7 @@ class SeveritiesPage extends React.Component {
                                                 //Don't show a description for the "ANY Event" event
                                                 if (eventName === "ANY Event") return (
                                                     <div key={index} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)} style={{border:"1px solid red;"}}/>
                                                         <label className="form-check-label">
                                                             {eventName}
                                                         </label>
@@ -674,7 +695,7 @@ class SeveritiesPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="severities-plot"></div>
                                     </div>
                                 </div>

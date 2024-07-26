@@ -226,9 +226,6 @@ class CreateEventCard extends React.Component {
     }
 
     render() {
-        let style = {
-            padding : 5
-        };
 
         let bgStyle = {
             background : "rgba(248,259,250,0.8)",
@@ -236,7 +233,7 @@ class CreateEventCard extends React.Component {
         };
 
         return (
-            <div className="card-body" style={style}>
+            <div className="card-body m-2" style={style}>
 
                 <div className="card mb-1" style={bgStyle}>
                     <h5 className="card-header">

@@ -100,7 +100,7 @@ class Upload extends React.Component {
         let statusText = "";
 
         let progressBarClasses = "progress-bar";
-        let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
+        let statusClasses = "p-1 pl-2 pr-2 ml-1 card";
         let status = uploadInfo.status;
         if (status == "HASHING") {
             statusText = "Hashing";
@@ -159,12 +159,12 @@ class Upload extends React.Component {
 
         return (
             <div className="m-1">
-                <div className="d-flex align-items-start" style={{backgroundColor: 'white', padding: '10px', borderRadius: "10px", position:"relative" }}>
+                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_upload_import_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
         
                     {/* LEFT ELEMENTS */}
                     <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
-                        <div className="p-1 mr-1 card bg-light" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
-                        <div className="p-1 mr-1 card bg-light" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
                     </div>
 
                     {/* CENTER ELEMENTS */}
@@ -663,28 +663,10 @@ class UploadsPage extends React.Component {
             <div>
                 <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
-                <div className="p-1">
+                <div className="m-2">
                     <input id ="upload-file-input" type="file" style={hiddenStyle} />
-
-                    <div className="card mb-1 border-secondary">
-                        <div className="p-2">
-                            {
-                                this.state.pending_uploads.length > 0
-                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
-                                    : ""
-                            }
-                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
-                        </div>
-                    </div>
-
                     {
                         this.state.pending_uploads.map((uploadInfo, index) => {
-
-                            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-                            // console.log(`[EX] Previewing all Pending Uploads: ${uploadStringMap}`);
-                            // console.log(`[EX] Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
 
                             //uploadInfo.position = index;
                             return (
@@ -697,21 +679,6 @@ class UploadsPage extends React.Component {
                         })
                     }
 
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
-
                     {
                         this.state.uploads.map((uploadInfo, index) => {
                             uploadInfo.position = index;
@@ -721,20 +688,22 @@ class UploadsPage extends React.Component {
                         })
                     }
 
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
+                    <div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
+                        <Paginator
+                            submitFilter={() => {this.submitFilter();}}
+                            items={this.state.uploads}
+                            itemName="uploads"
+                            currentPage={this.state.currentPage}
+                            numberPages={this.state.numberPages}
+                            pageSize={this.state.pageSize}
+                            updateCurrentPage={(currentPage) => {
+                                this.state.currentPage = currentPage;
+                            }}
+                            updateItemsPerPage={(pageSize) => {
+                                this.state.pageSize = pageSize;
+                            }}
+                        />
+                    </div>
 
                 </div>
 

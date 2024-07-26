@@ -8,7 +8,8 @@ import SignedInNavbar from "./signed_in_navbar.js";
 
 import  TimeHeader from "./time_header.js";
 
-import Plotly from "plotly.js";
+import Plotly, { redraw } from "plotly.js";
+import { RuntimeGlobals } from "webpack";
 
 
 airframes.unshift("All Airframes");
@@ -86,17 +87,18 @@ class Notifications extends React.Component {
         this.state = {
             notifications: [
                 {   count: waitingUserCount,
-                    message: "users waiting for access", 
+                    message: "User(s) awaiting Access Privileges", 
                     badgeType: "badge-info" 
                 },
                 {   count: unconfirmedTailsCount, 
-                    message: "Tail Numbers awaiting Confirmation",
+                    message: "Tail Number(s) awaiting Confirmation",
                     badgeType: "badge-info"
                 }
             ]
         };
     
         this.fetchStatistics();
+        
     }
 
     fetchStatistics() {
@@ -136,7 +138,7 @@ class Notifications extends React.Component {
                                                     &nbsp;{Number(info.count).toLocaleString('en')}
                                                 </span>
                                             </td>
-                                            <td style={{paddingBottom:"6"}}>&nbsp;{info.message}</td>
+                                            <td style={{paddingBottom:"6", color:"var(--c_text)"}}>&nbsp;{info.message}</td>
                                         </tr>
                                     );
                                 }
@@ -167,8 +169,13 @@ export default class SummaryPage extends React.Component {
         
         this.dateChange();
         this.fetchStatistics();
+        
     }
     
+    componentDidMount() {
+        this.displayPlots(this.state.airframe);
+    }
+
     displayPlots(selectedAirframe) {
         var countData = [];
         var percentData = [];
@@ -264,6 +271,11 @@ export default class SummaryPage extends React.Component {
             }
         }
     
+        let styles = getComputedStyle(document.documentElement);
+        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+
         var countLayout = {
             title : "Event Counts",
             barmode: "stack",
@@ -276,6 +288,17 @@ export default class SummaryPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : plotBgColor,
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
     
@@ -290,9 +313,22 @@ export default class SummaryPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : plotBgColor,
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
     
+        console.log("[EX] Plot bg color: ", plotBgColor);
+        console.log("[EX] Plot text color: ", plotTextColor);
     
         var config = {responsive: true}
     
@@ -394,8 +430,8 @@ export default class SummaryPage extends React.Component {
             title = "Your Fleet";
 
         return (
-                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>{title}</h4>
+                <div className="card mb-2 m-2">
+                    <h4 className="card-header">{title}</h4>
                     <div className="card-body">
                         {!this.props.aggregate && this.state.notifications}
                         {!this.props.aggregate && (<hr></hr>)}
@@ -441,8 +477,8 @@ export default class SummaryPage extends React.Component {
 
     EventSummary() {
         return (
-                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Events</h4>
+                <div className="card mb-2 m-2">
+                    <h4 className="card-header">Events</h4>
                     <div className="card-body">
                         <div className="row">
                             <div className = "col-sm-4">
@@ -465,8 +501,8 @@ export default class SummaryPage extends React.Component {
 
     ParticipationSummary() {
         return (
-                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Participation</h4>
+                <div className="card mb-2 m-2">
+                    <h4 className="card-header">Participation</h4>
                     <div className="card-body">
                         <div className="row">
                             <div className = "col-sm-4">
@@ -487,8 +523,8 @@ export default class SummaryPage extends React.Component {
         let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithWarning + this.state.statistics.flightsWithError);
 
         return (
-                <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
-                    <h4 className="card-header" style={{color : "rgba(75,75,75,250)"}}>Uploads</h4>
+                <div className="card mb-2 m-2">
+                    <h4 className="card-header">Uploads</h4>
                     <div className="card-body">
                         <table className="row">
                             <tbody className="col-sm-6">
@@ -496,7 +532,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--info)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_info)", color:"white"}}>
                                             <i className="fa fa-fw fa-upload" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploads, integerOptions)}
                                         </span>
@@ -506,7 +542,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--warning)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_warning)", color:"white"}}>
                                             <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploadsNotImported, integerOptions)}
                                         </span>
@@ -516,7 +552,7 @@ export default class SummaryPage extends React.Component {
  
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--danger)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_danger)", color:"white"}}>
                                             <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.uploadsWithError, integerOptions)}
                                         </span>
@@ -530,7 +566,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--valid)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_valid)", color:"white"}}>
                                             <i className="fa fa-fw fa-check" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.numberFlights, integerOptions)}
                                         </span>
@@ -540,7 +576,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--warning)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_warning)", color:"white"}}>
                                             <i className="fa fa-fw fa-exclamation-triangle" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.flightsWithWarning, integerOptions)}
                                         </span>
@@ -550,7 +586,7 @@ export default class SummaryPage extends React.Component {
  
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                    <span className="badge" style={{backgroundColor:"var(--danger)", color:"white"}}>
+                                    <span className="badge" style={{backgroundColor:"var(--c_danger)", color:"white"}}>
                                             <i className="fa fa-fw fa-exclamation-circle" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(this.state.statistics.flightsWithError, integerOptions)}
                                         </span>
@@ -560,7 +596,7 @@ export default class SummaryPage extends React.Component {
 
                                 <tr>
                                     <td style={{textAlign: "right"}}>
-                                        <span className="badge" style={{backgroundColor:"var(--info)", color:"white"}}>
+                                        <span className="badge" style={{backgroundColor:"var(--c_info)", color:"white"}}>
                                             <i className="fa fa-fw fa-cloud-download" aria-hidden="true"/>
                                             &nbsp;{formatNumberAsync(totalFlights, integerOptions)}
                                         </span>
@@ -578,7 +614,7 @@ export default class SummaryPage extends React.Component {
     render() {
         return (
             <div>
-                <SignedInNavbar activePage={"aggregate"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                <SignedInNavbar activePage={"aggregate"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="container-fluid">
                     <div className="row">
@@ -592,9 +628,9 @@ export default class SummaryPage extends React.Component {
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                            <div className="card mb-2 m-2">
                                 <TimeHeader
-                                    name="Events"
+                                    name="Event Statistics"
                                     airframes={airframes}
                                     airframe={this.state.airframe}
                                     startYear={this.state.startYear} 
@@ -610,7 +646,7 @@ export default class SummaryPage extends React.Component {
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                 />
 
-                            <div className="card-body" style={{padding:"0"}}>
+                            <div className="card-body" style={{padding:"0", opacity:"0.80"}}>
                                 <div className="row" style={{margin:"0"}}>
                                     <div className="col-lg-6" style={{padding:"0 8 0 0"}}>
                                         <div id="event-counts-plot"></div>

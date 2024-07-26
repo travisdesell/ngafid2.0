@@ -276,6 +276,7 @@ class AirframeCard extends React.Component {
     }
 
     render() {
+
         let marginTop = 0;
         if (!this.props.first) {
             marginTop = 14;
@@ -296,8 +297,8 @@ class AirframeCard extends React.Component {
 
 
         return (
-            <div style={{marginTop:marginTop, padding:"0 5 0 5"}}>
-                <div className="card mb-1 m-1" style={{background : "rgba(100,100,100,0.2)", padding:"10 10 10 10"}}>
+            <div className="m-2" style={{marginTop:marginTop, padding:"0 5 0 5"}}>
+                <div className="card mb-1 m-1" style={{padding:"10 10 10 10"}}>
                     <h5 style={{marginBottom:0}}> 
                         {this.props.airframeName + " Event Statistics"}
                         <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>

@@ -2,16 +2,18 @@ const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 var path = require('path');
 
+
 module.exports = {
     watch: true,
+
 
     resolve: {
         fallback: {
             fs: false,
             path: false,
-            "stream": require.resolve("stream-browserify")
         }
     },
+
 
     /*
     node: {
@@ -19,17 +21,20 @@ module.exports = {
     },
     */
 
+
     watchOptions: {
         aggregateTimeout: 300,
         poll: 1000,
         ignored: /node_modules/
     },
 
+
     optimization: {
         removeAvailableModules: false,
         removeEmptyChunks: false,
         splitChunks: false,
     },
+
 
     entry: {
         aggregate: __dirname + "/src/main/javascript/aggregate.js",
@@ -66,7 +71,9 @@ module.exports = {
         welcome: __dirname + "/src/main/javascript/welcome.js"
     },
 
-    devtool: false, //"source-map",
+
+    devtool: "source-map",
+
 
     output: {
         // Farhad: for webpackCesium
@@ -76,13 +83,14 @@ module.exports = {
         filename: "[name]-bundle.js"
     },
 
+
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
                 use: [
-                    'cache-loader', 
+                    'cache-loader',
                     {
                         loader: 'babel-loader',
                         options: {
@@ -92,6 +100,7 @@ module.exports = {
                 ],
                 include: path.resolve('src')
             },
+
 
             {
                 test: /\.html$/,
@@ -109,6 +118,7 @@ module.exports = {
         ]
     },
 
+
     plugins: [
         new webpack.ProvidePlugin({
             $: "jquery",
@@ -116,6 +126,7 @@ module.exports = {
             'window.jQuery': 'jquery',
             Popper: ['popper.js', 'default']
         })
+
 
         /*
         new HtmlWebPackPlugin({

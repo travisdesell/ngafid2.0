@@ -49,7 +49,8 @@ class FleetUserRow extends React.Component {
         this.state = {
             fleetUser : fleetUser,
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            settingIndex : props.settingIndex
         };
     }
 
@@ -123,8 +124,10 @@ class FleetUserRow extends React.Component {
         let buttonClasses = "btn btn-outline-secondary";
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
+        console.log("[EX] Setting Index", this.settingIndex);
+
         return (
-            <tr userid={fleetUser.id}>
+            <tr userid={fleetUser.id} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(this.state.settingIndex%2 === 0) ? "row-bg-B" : "row-bg-A"}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
                 <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
 
@@ -254,62 +257,75 @@ class ManageFleetPage extends React.Component {
                     plotMapHidden={plotMapHidden}
                 />
 
-                <div className="card-body" hidden={hidden}>
-                    <div className="row ml-1 mb-2 invite" style={bgStyle}>
-                        <p style={fgStyle}>
-                            Invite user to {fleetName}:
-                        </p>
-                        <form onSubmit={this.handleSubmit}>
-                            <input
-                                id="inviteEmail"
-                                type="email"
-                                placeholder="Enter user email"
-                                name="email"
-                                pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
-                                title="Please enter a valid email address"
-                                required
-                            />
-                            <button className="btn btn-primary ml-1" type="submit">Invite</button>
-                        </form>
-                    </div>
-                    <div className="card mb-1" style={bgStyle}>
+                <div className="m-2">
+                    <div className="card mb-1">
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
                         </h5>
 
                         <div className="card-body" style={fgStyle}>
-                            <table className="table">
-                                <thead>
-                                    <tr>
-                                        <th scope="col">Email</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Access Level</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {
-                                        fleetUsers.map((fleetUser, index) => {
-                                            return (
-                                                <FleetUserRow
-                                                    key={fleetUser.id}
-                                                    fleetUser={fleetUser}
-                                                    incrementWaiting={() => {this.incrementWaiting();}}
-                                                    decrementWaiting={() => {this.decrementWaiting();}}
-                                                />
-                                            );
 
-                                        })
-                                    }
-                                </tbody>
-                            </table>
+                            {/* INVITE USER */}
+                            <div className="row ml-1 mb-3 invite">
+                                <p style={fgStyle}>
+                                    Invite User to {fleetName}:
+                                </p>
+                                <form onSubmit={this.handleSubmit}>
+                                    <input
+                                        style={{color:"var(--c_white)"}}
+                                        id="inviteEmail"
+                                        type="email"
+                                        placeholder="Enter user email"
+                                        name="email"
+                                        pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
+                                        title="Please enter a valid email address"
+                                        required
+                                    />
+                                    <button className="btn btn-primary ml-1" type="submit">Invite</button>
+                                </form>
+                            </div>
+
+                            <div className="card card-alt">
+                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                                    Fleet Access Preferences
+                                </h6>
+                                <table style={{borderCollapse: "collapse", width:"100%", color:"var(--c_text)", backgroundColor:"var(--c_card_bg_alt) !important"}}>
+                                    <thead>
+                                        <tr>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Email </div></th>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Name </div></th>
+                                            <th style={{padding:"0 18px"}} scope="col"> <div style={{display: 'flex', alignItems: 'center', padding:"20px 0px", margin:"-7px", gap:"8px", width:"95%"}}> Access Level </div></th>
+                                            <th scope="col"/>
+                                        </tr>
+                                        <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
+                                    </thead>
+                                    <tbody>
+                                        {
+                                            fleetUsers.map((fleetUser, index) => {
+                                                return (
+                                                    <FleetUserRow
+                                                        key={fleetUser.id}
+                                                        settingIndex={index}
+                                                        fleetUser={fleetUser}
+                                                        incrementWaiting={() => {this.incrementWaiting();}}
+                                                        decrementWaiting={() => {this.decrementWaiting();}}
+                                                    />
+                                                );
+
+                                            })
+                                        }
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            <br/>
                             
-
-                            <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
-                                Fleet Email Preferences
-                            </h6>
-                            <div className="form-group">
-                                <div className="d-flex">
-                                    <EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
+                            <div className="card-alt card">
+                                <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                                    Fleet Email Preferences
+                                </h6>
+                                <div className="form-group d-flex" style={{marginBottom:"0"}}>
+                                    <EmailSettingsTableManager fleetUsers={fleetUsers}/>
                                 </div>
                             </div>
 
@@ -338,6 +354,10 @@ class ManageFleetPage extends React.Component {
                         }
                         .invite input:focus {
                           border-color: #007bff;
+                        }
+                        .table>tbody>tr>td,
+                        .table>tbody>tr>th {
+                            border-top: none;
                         }
                    `}
                 </style>

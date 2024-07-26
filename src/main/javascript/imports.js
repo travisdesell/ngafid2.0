@@ -17,7 +17,7 @@ class FlightWarning extends React.Component {
     render() {
         let warning = this.props.warning;
 
-        const styleName = { flex : "0 0 25em", color: "var(--warning)" };
+        const styleName = { flex : "0 0 25em" };
         let filenameClasses = "p-1 mr-1 card border-warning";
         let filenameText = warning.filename;
         if (warning.sameFilename) {
@@ -26,11 +26,11 @@ class FlightWarning extends React.Component {
         }
 
         return (
-            <div className="d-flex flex-row p-0 mt-1">
+            <div className="d-flex flex-row p-0 mt-1 border-warning">
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-warning flex-fill" style={{color: "var(--warning)"}}>
+                <div className="p-1 card border-warning flex-fill">
                     {warning.message}
                 </div>
             </div>
@@ -334,7 +334,7 @@ class Import extends React.Component {
             colorClasses += " border-danger text-danger";
         }
 
-        let textClasses = "p-1 mr-1 card bg-light";
+        let textClasses = "p-1 mr-1 card";
         let cardClasses = (textClasses + colorClasses);
 
         console.log("[EX] Import Info: ", importInfo);
@@ -342,20 +342,16 @@ class Import extends React.Component {
 
         return (
             <div className="m-1">
-                <div className="d-flex justify-content-between align-items-start" style={{ ...styleName, backgroundColor: 'white', padding: '10px', borderRadius: "10px" }}>
+                <div className="d-flex flex-row justify-content-between align-items-start" style={{ ...styleName, backgroundColor:"var(--c_upload_import_bg)", padding: '10px', borderRadius: "10px", border:"1px solid var(--c_border_alt)" }}>
         
                     {/* LEFT ELEMENTS */}
-                    <div className="d-flex justify-content-start flex-wrap" style={{ flexWrap: "wrap", minWidth:"30%" }}>
-                        <div className={textClasses} style={{ ...styleTime, minWidth:"40%"}}>
-                            {importInfo.filename}
-                        </div>
-                        <div className={textClasses} style={{...styleTime, minWidth:"40%"}}>
-                            {importInfo.endTime}
-                        </div>
+                    <div className="d-flex justify-content-start flex-wrap" style={{ flexWrap: "wrap", minWidth:"35%", maxWidth:"35%" }}>
+                        <div className={textClasses} style={{ ...styleTime, minWidth:"60%", maxWidth:"60%" }}>{importInfo.filename}</div>
+                        <div className={textClasses} style={{...styleTime, minWidth:"35%", maxWidth:"35%"}}>{importInfo.endTime}</div>
                     </div>
         
                     {/* RIGHT ELEMENTS */}
-                    <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "70%" }}>
+                    <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "65%" }}>
 
                         <div
                             className="d-flex flex-row"
@@ -368,7 +364,7 @@ class Import extends React.Component {
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--warning)" }}
+                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_warning)" }}
                         >
                             <i className="fa fa-exclamation-triangle" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Warnings:</div>
@@ -377,7 +373,7 @@ class Import extends React.Component {
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--danger)" }}
+                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_danger)" }}
                         >
                             <i className="fa fa-exclamation-circle" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Erorrs:</div>
@@ -472,54 +468,40 @@ class ImportsPage extends React.Component {
 
     render() {
         return (
-            <body style={{overflowY:"scroll"}}>
-                <div>
-                    <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-
-                    <div className="p-1">
+            <body style={{ overflowY: "scroll", height: "100%", margin: "0" }}>
+                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                    <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden} />
+        
+                    <div className="m-1">
+                        {this.state.imports.map((importInfo, index) => {
+                            return (
+                                <Import importInfo={importInfo} key={importInfo.identifier} />
+                            );
+                        })}
+                    </div>
+        
+                    <div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
                         <Paginator
-                            submitFilter={() => {this.submitFilter();}}
+                            submitFilter={() => { this.submitFilter(); }}
                             items={this.state.imports}
                             itemName="uploads"
                             currentPage={this.state.currentPage}
                             numberPages={this.state.numberPages}
                             pageSize={this.state.pageSize}
                             updateCurrentPage={(currentPage) => {
-                                this.state.currentPage = currentPage;
+                                this.setState({ currentPage: currentPage });
                             }}
                             updateItemsPerPage={(pageSize) => {
-                                this.state.pageSize = pageSize;
-                            }}
-                        />
-
-                        {
-                            
-                            this.state.imports.map((importInfo, index) => {
-                                return (
-                                    <Import importInfo={importInfo} key={importInfo.identifier} />
-                                );
-                            })
-                            
-                        }
-
-                        <Paginator
-                            submitFilter={() => {this.submitFilter();}}
-                            items={this.state.imports}
-                            itemName="uploads"
-                            currentPage={this.state.currentPage}
-                            numberPages={this.state.numberPages}
-                            pageSize={this.state.pageSize}
-                            updateCurrentPage={(currentPage) => {
-                                this.state.currentPage = currentPage;
-                            }}
-                            updateItemsPerPage={(pageSize) => {
-                                this.state.pageSize = pageSize;
+                                this.setState({ pageSize: pageSize });
                             }}
                         />
                     </div>
+
                 </div>
             </body>
         );
+        
+        
     }
 }
 

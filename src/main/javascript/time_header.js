@@ -82,9 +82,8 @@ export default class TimeHeader extends React.Component {
             );
         }
 
-        return (
-            <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
-
+        return  (
+            <div className="form-row justify-content-center d-flex align-items-center" style={{ textAlign: 'center' }}>
                 { exportButton }
 
                 <div className="col-auto">
@@ -96,29 +95,33 @@ export default class TimeHeader extends React.Component {
                 <div className="col-auto">
                     <div className="input-group">
                         <div className="input-group-prepend">
-                            <div className="input-group-text">Start Date</div>
+                            <div className="time-selector">
 
-                            <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content"}}>
-                                {
-                                    this.state.years.map((year, index) => {
-                                        if (year <= this.props.endYear)
+                                &nbsp;Start Date&nbsp;
+
+                                <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content"}}>
+                                    {
+                                        this.state.years.map((year, index) => {
+                                            if (year <= this.props.endYear)
+                                                return (
+                                                    <option key={index} value={year}>{year}</option>
+                                                );
+                                            else
+                                                return null;
+                                        })
+                                    }
+                                </select>
+                                &nbsp;
+                                <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content"}}>
+                                    {
+                                        this.state.months.map((month, index) => {
                                             return (
-                                                <option key={index} value={year}>{year}</option>
+                                                <option key={index} value={index+1}>{month}</option>
                                             );
-                                        else
-                                            return null;
-                                    })
-                                }
-                            </select>
-                            <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content"}}>
-                                {
-                                    this.state.months.map((month, index) => {
-                                        return (
-                                            <option key={index} value={index+1}>{month}</option>
-                                        );
-                                    })
-                                }
-                            </select>
+                                        })
+                                    }
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -126,28 +129,33 @@ export default class TimeHeader extends React.Component {
                 <div className="col-auto">
                     <div className="input-group">
                         <div className="input-group-prepend">
-                            <div className="input-group-text">End Date</div>
-                            <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content"}}>
-                                {
-                                    this.state.years.map((year, index) => {
-                                        if (year >= this.props.startYear)
+                            <div className="time-selector">
+
+                                &nbsp;End Date&nbsp;
+                                
+                                <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content"}}>
+                                    {
+                                        this.state.years.map((year, index) => {
+                                            if (year >= this.props.startYear)
+                                                return (
+                                                    <option key={index} value={year}>{year}</option>
+                                                );
+                                            else
+                                                return null;
+                                        })
+                                    }
+                                </select>
+                                &nbsp;
+                                <select id="end-month-select" className="custom-select" value={this.props.endMonth} onChange={event => this.props.updateEndMonth(event.target.value)} style={{width:"fit-content"}}>
+                                    {
+                                        this.state.months.map((month, index) => {
                                             return (
-                                                <option key={index} value={year}>{year}</option>
+                                                <option key={index} value={index+1}>{month}</option>
                                             );
-                                        else
-                                            return null;
-                                    })
-                                }
-                            </select>
-                            <select id="end-month-select" className="custom-select" value={this.props.endMonth} onChange={event => this.props.updateEndMonth(event.target.value)} style={{width:"fit-content"}}>
-                                {
-                                    this.state.months.map((month, index) => {
-                                        return (
-                                            <option key={index} value={index+1}>{month}</option>
-                                        );
-                                    })
-                                }
-                            </select>
+                                        })
+                                    }
+                                </select>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -165,8 +173,8 @@ export default class TimeHeader extends React.Component {
 
     render() {
         return (
-            <div className="row card-header d-flex" style={{color : "rgba(75,75,75,250)", padding:"7 20 7 20", margin:"0"}}>
-                <h4 className="mr-auto" style={{margin:"4 0 4 0"}}>{this.props.name}</h4>
+            <div className="row card-header d-flex" style={{padding:"7 20 7 20", margin:"0"}}>
+                <h4 className="mr-auto" style={{margin:"4 0 4 0", alignContent:"center"}}>{this.props.name}</h4>
                 { this.makeHeaderContents(this.props.extraHeaderComponents, this.props.extraRowComponents) }
             </div>
         );

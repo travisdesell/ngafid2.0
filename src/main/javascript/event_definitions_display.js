@@ -19,37 +19,33 @@ class EventDefinitionsDisplayPage extends React.Component {
         }
 
         return (
-            <div>
+            <div style={{width:"100%", overflowX:"hidden"}}>
                 <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
                                 fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
-                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <div className="container-fluid" style={{backgroundColor: "white"}}>
-                    <div className="row">
-                        <div className="col-md-12">
-                            <table className="table table-striped table-bordered table-hover">
-                                <thead>
-                                <tr>
-                                    <th>Event Name</th>
-                                    <th>Aircraft Type</th>
-                                    <th>Event Definition</th>
-                                </tr>
-                                </thead>
-                                <tbody>
-                                {rows.map((row, index) => {
-                                    return (
-                                        <tr key={index}>
-                                            <th>{row[0]}</th>
-                                            <th>{row[1]}</th>
-                                            <th>{row[2]}</th>
-                                        </tr>
-                                    )
-                                })}
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}
+                />
+                <div className="m-2" style={{border: "1px solid white", borderRadius:"8px"}}>
+                    <table className="table table-striped table-hover" style={{backgroundColor:"var(--c_card_bg)", borderRadius:"8px"}}>
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th style={{minWidth:"10%"}}>Aircraft Type</th>
+                                <th>Event Definition</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {rows.map((row, index) => {
+                                return (
+                                    <tr key={index}>
+                                        <th>{row[0]}</th>
+                                        <th>{row[1]}</th>
+                                        <th>{row[2]}</th>
+                                    </tr>
+                                )
+                            })}
+                        </tbody>
+                    </table>
                 </div>
-
             </div>
         )
     }

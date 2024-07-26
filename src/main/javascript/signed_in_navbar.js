@@ -5,6 +5,8 @@ import ReactDOM from "react-dom";
 import Overlay from 'react-bootstrap/Overlay';
 import { errorModal } from "./error_modal.js";
 
+import { DarkModeToggle } from "./dark_mode_toggle.js";
+
 var activePage = "";
 
 class NavLink extends React.Component {
@@ -49,7 +51,9 @@ class DropdownLink extends React.Component {
         if (typeof onClick == 'undefined') onClick = function(){};
 
         return (
-            <a className="dropdown-item" href={href} hidden={hidden} onClick={() => onClick()}>{name}</a>
+            <a className="dropdown-item" href={href} hidden={hidden} onClick={() => onClick()} style={{color:"var(--c_text)"}}>
+                {name}
+            </a>
         );
     }
 }
@@ -59,6 +63,8 @@ class DropdownLink extends React.Component {
 class SignedInNavbar extends React.Component {
     constructor(props) {
         super(props);
+
+        this.darkModeOnClickAlt = props.darkModeOnClickAlt ?? (()=>{});
 
         this.infoTarget = React.createRef();
     }
@@ -110,9 +116,6 @@ class SignedInNavbar extends React.Component {
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
-        let navbarBgColor = "rgba(188,203,218,0.8)";
-        let selectBgColor = "rgba(203,210,218,0.8)";
-        //const buttonStyle = { backgroundColor : selectBgColor };
         const buttonStyle = { };
         //const [show, setShow] = React.useState(false);
         var uploadsButton = "";
@@ -158,13 +161,14 @@ class SignedInNavbar extends React.Component {
         //let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
         const eventPageNames = ["trends", "event_statistics", "create_event", "update_event", "severities", "event definitions", "event statistics"];
         let eventsActive = (eventPageNames.includes(this.props.activePage));
-        let analysisActive = this.props.activePage === "ttf";
+        let analysisActive = (this.props.activePage === "ttf");
+        let accountsActive = (this.props.activePage === "account");
 
         console.log("[EX] ACTIVE PAGE", this.props.activePage);
 
         return (
-            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:navbarBgColor}}>
-                <a className="navbar-brand" href="../">NGAFID</a>
+            <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"var(--c_navbar_bg)"}}>
+                <a className="navbar-brand" style={{color:"var(--c_text)"}} href="../">NGAFID</a>
                 <button className="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown" aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
                     <span className="navbar-toggler-icon"></span>
                 </button>
@@ -192,7 +196,7 @@ class SignedInNavbar extends React.Component {
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} style={{backgroundColor:selectBgColor}} 
+                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} 
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
@@ -226,11 +230,11 @@ class SignedInNavbar extends React.Component {
                         }
 
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (eventsActive ? " active" : "")} style={eventsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-calendar-check-o" aria-hidden="true"/>
                                 &nbsp;Events{eventsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
-                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink" >
+                            <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Trends"} hidden={false} href="/protected/trends"/>
                                 <DropdownLink name={"Severity"} hidden={false} href="/protected/severities"/>
                                 <DropdownLink name={"Statistics"} hidden={false} href="/protected/event_statistics"/>
@@ -248,7 +252,7 @@ class SignedInNavbar extends React.Component {
                         </li>
                         
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (analysisActive ? " active" : "")} style={analysisActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-search" aria-hidden="true"/>
                                 &nbsp;Analysis{analysisActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
@@ -263,9 +267,9 @@ class SignedInNavbar extends React.Component {
                         {uploadsButton}
 
                         <li className="nav-item dropdown">
-                            <a className={"nav-link dropdown-toggle" + (this.props.activePage === "account" ? " active" : "")} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <a className={"nav-link dropdown-toggle" + (accountsActive ? " active" : "")} style={accountsActive ? {color:"var(--c_text)"} : {}} href="#!" id="navbarDropdownMenuLink" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <i className="fa fa-fw fa-user" aria-hidden="true"/>
-                                &nbsp;{"Account" + accountNotifications}{this.props.activePage === "account" ? (<span className="sr-only">(current)</span>) : ""}
+                                &nbsp;{"Account" + accountNotifications}{accountsActive ? (<span className="sr-only">(current)</span>) : ""}
                             </a>
                             <div className="dropdown-menu dropdown-menu-right text-right" aria-labelledby="navbarDropdownMenuLink">
                                 <DropdownLink name={"Manage Fleet" + waitingUsersString} hidden={manageHidden} href="/protected/manage_fleet"/>
@@ -281,6 +285,11 @@ class SignedInNavbar extends React.Component {
                         </li>
 
                     </ul>
+
+                    <div>
+                        &nbsp;<DarkModeToggle onClickAlt={this.darkModeOnClickAlt}/>
+                    </div>
+
                 </div>
             </nav>
         );

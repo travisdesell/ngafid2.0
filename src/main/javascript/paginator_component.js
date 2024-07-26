@@ -139,9 +139,16 @@ class Paginator extends React.Component {
             numTotalPages = 1;
         }
 
+
         if (typeof this.props.items != 'undefined') {
             return (
-                <div className="card mb-1 border-secondary">
+                <div className="card border-secondary"
+                    style={{
+                        backgroundColor:"var(--c_bg)",
+                        textAlign: "center",
+                        width: "100%"
+                    }}
+                >
                     <div className="row m-0 p-2">
                         <button className="btn btn-sm btn-info mr-2" disabled>Page: {this.props.currentPage + 1} of {numTotalPages}</button>
 
@@ -168,6 +175,14 @@ class Paginator extends React.Component {
 
 
                         {sorter}
+
+                        {
+                        (window.location.pathname === "/protected/uploads") &&
+                        <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                            <i className="fa fa-upload"></i> Upload Flights
+                        </button>
+                        }
+                        <div className="mr-2"/>
 
                         <DropdownButton className="ml-auto" id="dropdown-item-button-resize" title={this.props.pageSize+ " " + this.props.itemName + " per page"} size="sm">
                             <Dropdown.Item as="button" onClick={() => this.repaginate(10)}>10 {this.props.itemName} per page</Dropdown.Item>

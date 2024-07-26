@@ -115,7 +115,7 @@ class ForgotPassword extends React.Component {
                     <div className="form-group" style={formGroupStyle}>
                         <div className="d-flex">
                             <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="email" style={labelStyle}>Email address</label>
+                                <label htmlFor="email" style={labelStyle}>Email Address</label>
                             </div>
                             <div className="p-2 flex-fill">
                                 <input type="email" className="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => {this.validateEmail();}}/>

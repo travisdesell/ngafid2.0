@@ -88,7 +88,7 @@ class SystemIdsPage extends React.Component {
         return (
             <div style={{marginTop:"4", padding:"0 0 0 0"}}>
                 <div className="col-sm-12" style={{padding:"0 0 0 0"}}>
-                    <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                    <div className="card mb-1 m-1">
                         <h5 className="card-header">
                             {name}
                         </h5>
