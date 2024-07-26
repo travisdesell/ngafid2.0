@@ -185,6 +185,7 @@ class Paginator extends React.Component {
             numTotalPages = 1;
         }
 
+
         let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
         return (

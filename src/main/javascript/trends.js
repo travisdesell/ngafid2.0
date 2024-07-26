@@ -936,7 +936,7 @@ class TrendsPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="count-trends-plot"></div>
                                         <div id="percent-trends-plot"></div>
                                     </div>

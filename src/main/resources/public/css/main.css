@@ -628,6 +628,11 @@ html, body {
     text-align: center;
 }
 
+.form-control {
+    background-color: var(--c_bg) !important;
+    color: var(--c_text) !important;
+}
+
 #loading-image {
     margin-left: auto;
     margin-right: auto;

@@ -695,7 +695,7 @@ class SeveritiesPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="severities-plot"></div>
                                     </div>
                                 </div>
