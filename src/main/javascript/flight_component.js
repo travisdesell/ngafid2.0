@@ -972,9 +972,13 @@ class Flight extends React.Component {
     }
 
     render() {
-        let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
+        let buttonClasses = "p-1 expand-import-button btn btn-outline-secondary d-flex align-items-center justify-content-center";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
-        const styleButton = { };
+        //const styleButton = { minWidth:"2.25em", minHeight:"2.25em" };'
+
+        const buttonSize = "1.75em";
+        const styleButton = { minWidth:buttonSize, minHeight:buttonSize, width:buttonSize, height:buttonSize, display:"inlineBlock", justifyContent:"center", alignContent:"center", textAlign:"center" };
+        const styleEmptyCell = {fontStyle:"italic", fontSize:"0.75em", opacity:"0.50", userSelect:"none"};
 
         let firstCellClasses = "p-1 card mr-1"
         let cellClasses = "p-1 card mr-1"
@@ -1006,13 +1010,14 @@ class Flight extends React.Component {
                 visitedAirports.push(flightInfo.itinerary[i].airport);
             }
         }
-
-        let itineraryRow = "";
-        if (this.state.itineraryVisible) {
-            itineraryRow = (
-                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
-            );
+        let visitedAirportsRow = "";
+        if (visitedAirports.length > 0) {
+            visitedAirportsRow = visitedAirports.join(", ");
+        } else {
+            visitedAirportsRow = <div style={styleEmptyCell}>No airports...</div>
         }
+
+
 
         let eventsRow = "";
         if (this.state.eventsVisible) {
@@ -1026,6 +1031,13 @@ class Flight extends React.Component {
             tagsRow = (
                     <Tags flight={this.props.flightInfo} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} addTag={this.props.addTag} removeTag={this.props.removeTag} 
                         deleteTag={this.props.deleteTag} getUnassociatedTags={this.props.getUnassociatedTags} associateTag={this.props.associateTag} clearTags={this.props.clearTags} editTag={this.props.editTag}/>
+            );
+        }
+
+        let itineraryRow = "";
+        if (this.state.itineraryVisible) {
+            itineraryRow = (
+                <Itinerary showMap={() => {this.props.showMap();}} layers={this.state.layers} itinerary={flightInfo.itinerary} color={this.state.color} coordinates={this.state.coordinates} nanOffset={this.state.nanOffset} parent={this} flightColorChange={this.flightColorChange}/>
             );
         }
 
@@ -1048,13 +1060,15 @@ class Flight extends React.Component {
                     opacity : '75%'
                 }
                 return(
-                    <span key={index} className="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : '#e3e3e3', color : '#000000'}} title={tag.description}>
+                    <span key={index} className="badge badge-primary" style={{lineHeight : '1.5', marginRight : '4px', backgroundColor : 'var(--c_tag_badge)', color : 'var(--c_text)'}} title={tag.description}>
                         <span className="badge badge-pill badge-primary" style={style} page={this.state.page}>
-                            <i className="fa fa-tag" aria-hidden="true"></i>
+                            <i className="fa fa-tag" aria-hidden="true"/>
                         </span>   {tag.name}
                     </span>
                 );
             });
+        } else {
+            tagPills = <div style={styleEmptyCell}>No tags...</div>
         }
 
         $(function () {
@@ -1062,109 +1076,142 @@ class Flight extends React.Component {
         })
 
         return (
-            <div className="card mb-1">
-                <div className="card-body m-0 p-0">
-                    <div className="d-flex flex-row p-1">
-                        <div className={firstCellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
-                            <i className="fa fa-plane p-1"> <a href={'/protected/flight?flight_id=' + flightInfo.id}>{flightInfo.id}</a></i>
-                        </div>
+            <div className="card mb-1" style={{backgroundColor:"var(--c_entry_bg)"}}>
+                <div className="">
+                    <div className="d-flex flex-column">
 
-                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
-                            {flightInfo.tailNumber}
-                        </div>
+                        <div className="d-flex flex-row p-1">
 
-                        <div className={cellClasses} style={{flexBasis:"100px", flexShrink:0, flexGrow:0}}>
-                            {flightInfo.systemId}
-                        </div>
+                            {/* FLIGHT INFO */}
+                            <div style={{ flexBasis: "27.5%", whiteSpace: "nowrap" }}>
+                                <div className={`${firstCellClasses} d-flex flex-row`} style={{ height: "100%" }}>
+                                    <div className="d-flex flex-column" style={{ alignItems: "center" }}>
+                                        <a href={'/protected/flight?flight_id=' + flightInfo.id}>
+                                            <i className="fa fa-plane p-1">
+                                                &nbsp;{flightInfo.id}
+                                            </i>
+                                        </a>
+                                        <div>
+                                            ◦ {flightInfo.tailNumber}
+                                        </div>
+                                    </div>
 
-
-                        <div className={cellClasses} style={{flexBasis:"120px", flexShrink:0, flexGrow:0}}>
-
-                            {flightInfo.airframeName}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-
-                            {flightInfo.startDateTime}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-
-                            {flightInfo.endDateTime}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"80px", flexShrink:0, flexGrow:0}}>
-
-                            {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
-                        </div>
-
-                        <div className={cellClasses} style={{flexBasis:"200px", flexShrink:0, flexGrow:0}}>
-                            {visitedAirports.join(", ")}
-                        </div>
-
-                        <div className={cellClasses} style={{
-                            flexGrow:1,
-                            //textShadow: '-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000'
-                        }}>
-
-                            <div>
-                                {tagPills}
+                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "center" }}>
+                                        <div>
+                                            ◦ {flightInfo.systemId}
+                                        </div>
+                                        <div>
+                                            ◦ {flightInfo.airframeName}
+                                        </div>
+                                    </div>
+                                </div>
                             </div>
+
+                            {/* START - END DATES */}
+                            <div style={{ flexBasis: "37.5%", whiteSpace: "nowrap" }}>
+                                <div className={`${cellClasses} d-flex flex-row`} style={{ height: "100%" }}>
+                                    <div className="d-flex flex-column" style={{ alignItems: "center" }}>
+                                        <div>
+                                            ◦ {flightInfo.startDateTime}
+                                        </div>
+                                        <div>
+                                            ◦ {flightInfo.endDateTime}
+                                        </div>
+                                    </div>
+
+                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "center" }}>
+                                        <div>
+                                            ◦ {moment.utc(endTime.diff(startTime)).format("HH:mm:ss")}
+                                        </div>
+                                        <div style={{ visibility: "hidden" }}>
+                                            &emsp;
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* AIRPORTS */}
+                            <div className={cellClasses} style={{flexBasis:"12.50%"}}>
+                                {visitedAirportsRow}
+                            </div>
+
+                            {/* TAGS */}
+                            <div className={cellClasses} style={{flexBasis:"22.50%"}}>
+                                <div style={{overflow:"hidden"}}>
+
+                                    <div style={{ position: "absolute", top: "1", right: "1", zIndex:"1", scale:"0.75"}} onClick={() => this.tagClicked()}>
+                                        <button className={"p-1 btn btn-outline-secondary d-flex align-items-center justify-content-center"} data-toggle="button" title={tagTooltip} aria-pressed="false" style={{...styleButton, border:"none"}}>
+                                            <i className="fa fa-plus p-1"/>
+                                        </button>
+                                    </div>
+
+                                    {tagPills}
+                                    
+                                </div>
+                            </div>
+
+
+                            {/* BUTTONS */}
+                            <div style={{flexBasis:"12.50%"}}>
+                                <div className={"card mr-0"} style={{flexBasis:"100px", minHeight:"100%", backgroundColor:"transparent", borderColor:"transparent", margin:"0", padding:"0"}}>
+                                    <div className={"d-flex flex-column"} style={{gap:"0.25em"}}>
+
+                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
+                                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
+                                                <i className="fa fa-exclamation p-1"></i>
+                                            </button>
+
+                                            <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
+                                                <i className="fa fa-area-chart p-1"></i>
+                                            </button>
+
+                                            <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.mapClicked()}>
+                                                <i className="fa fa-map-o p-1"></i>
+                                            </button>
+                                        </div>
+
+                                        <div className={"d-flex flex-row ml-auto mr-auto"} style={{flexShrink:"1", gap:"0.25em"}}>
+                                            <button className={buttonClasses + globeClasses} style={styleButton} title={globeTooltip} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                                                <i className="fa fa-globe p-1"></i>
+                                            </button>
+
+                                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
+                                                <i className="fa fa-video-camera p-1"></i>
+                                            </button>
+
+                                            <button className={buttonClasses} style={styleButton} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                <i className="fa fa-download p-1"></i>
+                                            </button>
+
+                                            <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
+                                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
+                                                    Export to CSV (Original)
+                                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
+                                                </button>
+                                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
+                                                    Export to CSV (Generated)
+                                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
+                                                </button>
+                                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
+                                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
+                                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
+                                            </div>
+                                        </div>
+
+                                    </div>
+
+                                </div>
+                            </div>
+
                         </div>
 
-                        <div className="p-0">
-                            <button className={buttonClasses} data-toggle="button" aria-pressed="false" style={styleButton} onClick={() => this.exclamationClicked()}>
-                                <i className="fa fa-exclamation p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses} data-toggle="button" title={tagTooltip} aria-pressed="false" style={styleButton} onClick={() => this.tagClicked()}>
-                                <i className="fa fa-tag p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
-                                <i className="fa fa-map-o p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses} style={styleButton} data-toggle="button" aria-pressed="false" onClick={() => this.plotClicked()}>
-                                <i className="fa fa-area-chart p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
-                                <i className="fa fa-globe p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses} style={styleButton} onClick={() => this.replayClicked()}>
-                                <i className="fa fa-video-camera p-1"></i>
-                            </button>
-
-                            <button className={buttonClasses} type="button" id="dropdownMenu2" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <i className="fa fa-download p-1"></i>
-                            </button>
-
-                            <div className="dropdown-menu" aria-labelledby="dropdownMenu2">
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-IMP')}>
-                                    Export to CSV (Original)
-                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID stores original CSV files from the aircraft's flight data recorder. Select this option if you wish to view this flight's original CSV file."></i>
-                                </button>
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('CSV-GEN')}>
-                                    Export to CSV (Generated)
-                                    <i className="ml-1 fa fa-question-circle" data-toggle="tooltip" data-placement="top" title="The NGAFID adds additional calculated parameters for further flight analysis, such as angle of attack. Select this option if you wish for the CSV file to contain such parameters."></i>
-                                </button>
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('KML')}>Export to KML</button>
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL10')}>Export to X-Plane 10</button>
-                                <button className="dropdown-item" type="button" onClick={() => this.downloadClicked('XPL11')}>Export to X-Plane 11</button>
-                           </div>
-
-                        </div>
                     </div>
 
+                    {tagsRow}
+                    {eventsRow}
+                    {tracesRow}
                     {itineraryRow}
 
-                    {tagsRow}
-
-                    {eventsRow}
-
-                    {tracesRow}
                 </div>
             </div>
         );
