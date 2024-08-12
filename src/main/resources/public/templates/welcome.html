@@ -1,5 +1,23 @@
 <html>
 <head>
+
+    <style>
+        /* PREVENT FLASHBANG AFTER PAGE LOAD */
+        body {
+            background-color: white;
+        }
+        .dark-theme {
+            background-color: #1a1a1a;
+        }
+    </style>
+    <script>
+        {/* USE PROPER BACKGROUND IMAGE BETWEEN PAGES */}
+        const darkMode = (localStorage.getItem('darkMode') === 'true');
+        if (darkMode)
+            document.documentElement.classList.add('dark-theme');
+    </script>
+
+
     <title>The National General Aviation Flight Information Database (NGAFID)</title>
 
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" integrity="sha384-MCw98/SFnGE8fJT3GXwEOngsV7Zt27NXFoaoApmYm81iuXoPkFOJwJ8ERdknLPMO" crossorigin="anonymous">

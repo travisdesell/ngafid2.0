@@ -21,7 +21,11 @@ class PaginationSorter extends React.Component {
             console.log("rendering pagination sorter!");
             return (
                 <div className="col form-row input-group m-0 p-0">
-                    <DropdownButton className="ml-auto mr-0" id="dropdown-item-button-sort" title={"Sorting by: " + currentColumnName} size="sm">
+                    <DropdownButton className="mr-0" id="dropdown-item-button-sort" title={
+                        <span style={{ overflow: "hidden", maxWidth: "8vw", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", verticalAlign: "-25%"}}>
+                            Sorting by: {currentColumnName}
+                        </span>
+                    } size="sm">
                     {
                         this.props.sortOptions.map((ruleInfo, index) => {
                             return (
@@ -31,7 +35,11 @@ class PaginationSorter extends React.Component {
                     }
                     </DropdownButton>
 
-                    <DropdownButton className="ml-2 mr-2" id="dropdown-item-button-resize" title={currentOrder + " Order"} size="sm">
+                    <DropdownButton className="ml-2 mr-2" id="dropdown-item-button-resize" title={
+                        <span style={{ overflow: "hidden", maxWidth: "8vw", textOverflow: "ellipsis", whiteSpace: "nowrap", display: "inline-block", verticalAlign: "-25%"}}>
+                            {currentOrder} Order
+                        </span>
+                    } size="sm">
                         <Dropdown.Item as="button" onClick={() => this.props.setSortingOrder("Ascending")}>Ascending Order</Dropdown.Item>
                         <Dropdown.Item as="button" onClick={() => this.props.setSortingOrder("Descending")}>Descending Order</Dropdown.Item>
                     </DropdownButton>

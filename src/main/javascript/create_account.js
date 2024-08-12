@@ -440,7 +440,7 @@ class CreateAccountCard extends React.Component {
                             <div className="form-group" style={formGroupStyle}>
                                 <div className="d-flex">
                                     <div className="p-2" style={formHeaderStyle}>
-                                        <label htmlFor="createEmail" style={labelStyle}>Email address</label>
+                                        <label htmlFor="createEmail" style={labelStyle}>Email Address</label>
                                     </div>
                                     <div className="p-2 flex-fill">
                                         <input type="email" className="form-control" id="createEmail" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => this.validateEmails()}/>
@@ -457,7 +457,7 @@ class CreateAccountCard extends React.Component {
                                         <label htmlFor="createPassword" style={labelStyle}>Password</label>
                                     </div>
                                     <div className="p-2 flex-fill">
-                                        <input type="password" className="form-control" id="createPassword" placeholder="Password (required)" required={true} onChange={() => this.validatePasswords()}/>
+                                        <input type="password" className="form-control" id="createPassword" placeholder="Enter password (required)" required={true} onChange={() => this.validatePasswords()}/>
                                     </div>
                                     <div className="p-2 flex-fill">
                                         <input type="password" className="form-control" id="confirmPassword" placeholder="Confirm password (required)" required={true} onChange={() => this.validatePasswords()}/>
