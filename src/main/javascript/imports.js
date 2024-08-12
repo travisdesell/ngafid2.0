@@ -17,7 +17,7 @@ class FlightWarning extends React.Component {
     render() {
         let warning = this.props.warning;
 
-        const styleName = { flex : "0 0 25em" };
+        const styleName = { flex : "0 0 25em",  textShadow: "1px 1px 1px rgba(0,0,0,0.10)" };
         let filenameClasses = "p-1 mr-1 card border-warning";
         let filenameText = warning.filename;
         if (warning.sameFilename) {
@@ -30,7 +30,7 @@ class FlightWarning extends React.Component {
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-warning flex-fill">
+                <div className="p-1 card border-warning flex-fill" style={styleName}>
                     {warning.message}
                 </div>
             </div>
@@ -69,7 +69,7 @@ class FlightError extends React.Component {
     render() {
         let error = this.props.error;
 
-        const styleName = { flex : "0 0 25em" };
+        const styleName = { flex : "0 0 25em",  textShadow: "1px 1px 1px rgba(0,0,0,0.10)" };
         let filenameClasses = "p-1 mr-1 card border-danger text-danger";
         let filenameText = error.filename;
         if (error.sameFilename) {
@@ -82,7 +82,7 @@ class FlightError extends React.Component {
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-danger text-danger flex-fill">
+                <div className="p-1 card border-danger text-danger flex-fill" style={styleName} >
                     {error.message}
                 </div>
             </div>
@@ -273,7 +273,7 @@ class Import extends React.Component {
         const styleButton = { };
 
         let statusText = "";
-        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
         let expandIconClasses = "fa ";
 
         let expandDivClasses = "";
@@ -341,8 +341,8 @@ class Import extends React.Component {
         let totalFlights = (importInfo.validFlights + importInfo.warningFlights + importInfo.errorFlights);
 
         return (
-            <div className="m-1">
-                <div className="d-flex flex-row justify-content-between align-items-start" style={{ ...styleName, backgroundColor:"var(--c_upload_import_bg)", padding: '10px', borderRadius: "10px", border:"1px solid var(--c_border_alt)" }}>
+            <div className="m-2">
+                <div className="d-flex flex-row justify-content-between align-items-start" style={{ ...styleName, backgroundColor:"var(--c_entry_bg)", padding: '10px', borderRadius: "10px", border:"1px solid var(--c_border_alt)" }}>
         
                     {/* LEFT ELEMENTS */}
                     <div className="d-flex justify-content-start flex-wrap" style={{ flexWrap: "wrap", minWidth:"35%", maxWidth:"35%" }}>
@@ -355,7 +355,7 @@ class Import extends React.Component {
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "green" }}
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_valid)" }}
                         >
                             <i className="fa fa-check" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Valid:</div>
@@ -376,13 +376,13 @@ class Import extends React.Component {
                             style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_danger)" }}
                         >
                             <i className="fa fa-exclamation-circle" style={{alignContent:"center"}} aria-hidden="true" />
-                            <div>&nbsp;Erorrs:</div>
+                            <div>&nbsp;Errors:</div>
                             <div style={{textAlign:"end", width:"100%"}}>{importInfo.errorFlights}&nbsp;</div>
                         </div>
 
                         <div
                             className="d-flex flex-row"
-                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "gray" }}
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_info)" }}
                         >
                             <i className="fa fa-upload" style={{alignContent:"center"}} aria-hidden="true" />
                             <div>&nbsp;Total:</div>
@@ -468,10 +468,13 @@ class ImportsPage extends React.Component {
 
     render() {
         return (
-            <body style={{ overflowY: "scroll", height: "100%", margin: "0" }}>
-                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+            <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", maxHeight: "100vh"}}>
+                
+                <div style={{flex:"0 0 auto"}}>
                     <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden} />
-        
+                </div>
+
+                <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
                     <div className="m-1">
                         {this.state.imports.map((importInfo, index) => {
                             return (
@@ -496,9 +499,9 @@ class ImportsPage extends React.Component {
                             }}
                         />
                     </div>
-
                 </div>
-            </body>
+
+            </div>
         );
         
         
