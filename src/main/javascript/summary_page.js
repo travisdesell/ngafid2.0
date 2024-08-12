@@ -289,7 +289,7 @@ export default class SummaryPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            plot_bgcolor : plotBgColor,
+            plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
             font : {
                 color : plotTextColor
@@ -314,7 +314,7 @@ export default class SummaryPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            plot_bgcolor : plotBgColor,
+            plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
             font : {
                 color : plotTextColor
@@ -327,8 +327,8 @@ export default class SummaryPage extends React.Component {
             }
         };
     
-        console.log("[EX] Plot bg color: ", plotBgColor);
-        console.log("[EX] Plot text color: ", plotTextColor);
+        console.log("Plot bg color: ", plotBgColor);
+        console.log("Plot text color: ", plotTextColor);
     
         var config = {responsive: true}
     
@@ -613,52 +613,58 @@ export default class SummaryPage extends React.Component {
 
     render() {
         return (
-            <div>
-                <SignedInNavbar activePage={"aggregate"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="container-fluid">
-                    <div className="row">
-                        <div className="col-6">{this.FlightSummary()}</div>
-                        <div className="col-6">
-                            {this.EventSummary()}
-                            {!this.props.aggregate && this.UploadsSummary()}
-                            {this.props.aggregate && this.ParticipationSummary()}
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage={"aggregate"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="container-fluid">
+                        <div className="row">
+                            <div className="col-6">{this.FlightSummary()}</div>
+                            <div className="col-6">
+                                {this.EventSummary()}
+                                {!this.props.aggregate && this.UploadsSummary()}
+                                {this.props.aggregate && this.ParticipationSummary()}
+                            </div>
                         </div>
-                    </div>
 
-                    <div className="row">
-                        <div className="col-lg-12">
-                            <div className="card mb-2 m-2">
-                                <TimeHeader
-                                    name="Event Statistics"
-                                    airframes={airframes}
-                                    airframe={this.state.airframe}
-                                    startYear={this.state.startYear} 
-                                    startMonth={this.state.startMonth} 
-                                    endYear={this.state.endYear} 
-                                    endMonth={this.state.endMonth} 
-                                    datesChanged={this.state.datesChanged}
-                                    dateChange={() => this.dateChange()}
-                                    airframeChange={(airframe) => this.airframeChange(airframe)}
-                                    updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
-                                    updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
-                                    updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
-                                    updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
-                                />
+                        <div className="row">
+                            <div className="col-lg-12">
+                                <div className="card mb-2 m-2">
+                                    <TimeHeader
+                                        name="Event Statistics"
+                                        airframes={airframes}
+                                        airframe={this.state.airframe}
+                                        startYear={this.state.startYear} 
+                                        startMonth={this.state.startMonth} 
+                                        endYear={this.state.endYear} 
+                                        endMonth={this.state.endMonth} 
+                                        datesChanged={this.state.datesChanged}
+                                        dateChange={() => this.dateChange()}
+                                        airframeChange={(airframe) => this.airframeChange(airframe)}
+                                        updateStartYear={(newStartYear) => this.updateStartYear(newStartYear)}
+                                        updateStartMonth={(newStartMonth) => this.updateStartMonth(newStartMonth)}
+                                        updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
+                                        updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
+                                    />
 
-                            <div className="card-body" style={{padding:"0", opacity:"0.80"}}>
-                                <div className="row" style={{margin:"0"}}>
-                                    <div className="col-lg-6" style={{padding:"0 8 0 0"}}>
-                                        <div id="event-counts-plot"></div>
-                                    </div>
-                                    <div className="col-lg-6" style={{padding:"0 0 0 8"}}>
-                                        <div id="event-percents-plot"></div>
+                                <div className="card-body" style={{padding:"0" ,backgroundColor:"transparent"}}>
+                                    <div className="row" style={{margin:"0"}}>
+                                        <div className="col-lg-6" style={{padding:"0 0 0 0"}}>
+                                            <div id="event-counts-plot"></div>
+                                        </div>
+                                        <div className="col-lg-6" style={{padding:"0 0 0 0"}}>
+                                            <div id="event-percents-plot"></div>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
+
             </div>
         </div>
         );
