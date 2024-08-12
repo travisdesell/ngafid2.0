@@ -21,6 +21,7 @@ class Upload extends React.Component {
     constructor(props) {
         super(props);
         this.isFleetManager = this.props.isFleetManager;
+        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
