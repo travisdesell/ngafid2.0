@@ -337,7 +337,7 @@ class Import extends React.Component {
         let textClasses = "p-1 mr-1 card";
         let cardClasses = (textClasses + colorClasses);
 
-        console.log("[EX] Import Info: ", importInfo);
+        console.log("Import Info: ", importInfo);
         let totalFlights = (importInfo.validFlights + importInfo.warningFlights + importInfo.errorFlights);
 
         return (

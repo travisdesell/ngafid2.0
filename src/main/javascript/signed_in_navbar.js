@@ -99,25 +99,29 @@ class SignedInNavbar extends React.Component {
 
     render() {
         let waitingUsersString = "";
-        if (this.props.waitingUserCount > 0) waitingUsersString = " (" + this.props.waitingUserCount + ")";
+        if (this.props.waitingUserCount > 0)
+            waitingUsersString = " (" + this.props.waitingUserCount + ")";
         let manageHidden = !this.props.fleetManager;
 
         let tailsHidden = !this.props.modifyTailsAccess;
 
         let unconfirmedTailsString = "";
-        if (this.props.unconfirmedTailsCount > 0) unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
+        if (this.props.unconfirmedTailsCount > 0)
+            unconfirmedTailsString = " (" + this.props.unconfirmedTailsCount + ")";
 
         let accountNotifications = " (" + (this.props.waitingUserCount + this.props.unconfirmedTailsCount) + ")";
 
         let filterButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
 
-        if (this.props.filterVisible) filterButtonClasses += " active";
+        if (this.props.filterVisible)
+            filterButtonClasses += " active";
 
         let plotButtonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let mapButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
 
-        const buttonStyle = { };
-        //const [show, setShow] = React.useState(false);
+        const buttonStyle = { minWidth: "2.5em", minHeight: "2.5em" };
+        
+        
         var uploadsButton = "";
         var importsButton = "";
             if (airSyncEnabled) {
@@ -164,7 +168,7 @@ class SignedInNavbar extends React.Component {
         let analysisActive = (this.props.activePage === "ttf");
         let accountsActive = (this.props.activePage === "account");
 
-        console.log("[EX] ACTIVE PAGE", this.props.activePage);
+        //console.log("[EX] ACTIVE PAGE", this.props.activePage);
 
         return (
             <nav id='ngafid-navbar' className="navbar navbar-expand-lg navbar-light" style={{zIndex: "999", opacity: "1.0", backgroundColor:"var(--c_navbar_bg)"}}>
@@ -186,17 +190,20 @@ class SignedInNavbar extends React.Component {
                                 ) : ( "" )
                             }
 
-                            <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
-                                <i className="fa fa-area-chart p-1"></i>
-                            </button>
+                            {
+                                (this.props.showPlotButton) &&
+                                <button id="plot-toggle-button" className={plotButtonClasses} data-toggle="button" title="Toggle the plot." aria-pressed="false" style={buttonStyle} onClick={() => this.props.togglePlot()}>
+                                    <i className="fa fa-area-chart p-1"></i>
+                                </button>
+                            }
 
                             <div className="input-group m-0">
                                 <div className="input-group-prepend">
-                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()}>
+                                    <button id="map-toggle-button" className={mapButtonClasses} data-toggle="button" title="Toggle the map." aria-pressed="false" style={buttonStyle} onClick={() => this.props.toggleMap()} disabled={this.props.disableMapButton}>
                                         <i className="fa fa-map-o p-1"></i>
                                     </button>
                                 </div>
-                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget} 
+                                <select className="custom-select" id="mapLayerSelect" ref={this.infoTarget}  style={{marginLeft:"1px", height:"100%", border: "1px solid rgb(108, 117, 125)"}}
                                     value={this.props.mapStyle}
                                     onChange={event => this.props.mapSelectChanged(event.target.value)}>
 
@@ -294,6 +301,12 @@ class SignedInNavbar extends React.Component {
             </nav>
         );
     }
+}
+
+SignedInNavbar.defaultProps = {
+    disableMapButton : false,
+    showPlotButton : true,
+    plotMapHidden : false,
 }
 
 export default SignedInNavbar;

@@ -295,8 +295,6 @@ class SeveritiesPage extends React.Component {
         var severityLayout = {
             title : 'Severity of Events',
             hovermode : "closest",
-            //autosize: false,
-            //width: 500,
             height: 700,
             margin: {
                 l: 50,
@@ -305,7 +303,7 @@ class SeveritiesPage extends React.Component {
                 t: 50,
                 pad: 4
             },
-            plot_bgcolor : plotBgColor,
+            plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
             font : {
                 color : plotTextColor
@@ -456,8 +454,7 @@ class SeveritiesPage extends React.Component {
                     if (isEmpty) {
                         severitiesPage.state.eventsEmpty[eventName] = true;
                         eventSeverities[eventName] = {};
-                        }
-                    else {
+                    } else {
                         severitiesPage.state.eventsEmpty[eventName] = false;
                         eventSeverities[eventName] = eventSeverityCounts;
                     }
@@ -626,10 +623,13 @@ class SeveritiesPage extends React.Component {
         };
 
         return (
-            <div>
-                <SignedInNavbar activePage={"severities"} darkModeOnClickAlt={()=>{this.displayPlot(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="container-fluid">
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage={"severities"} darkModeOnClickAlt={()=>{this.displayPlot(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
                         <div className="col-lg-12">
@@ -695,7 +695,7 @@ class SeveritiesPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
                                         <div id="severities-plot"></div>
                                     </div>
                                 </div>

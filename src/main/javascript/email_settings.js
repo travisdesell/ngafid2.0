@@ -530,7 +530,7 @@ class EmailSettingsTableManager extends React.Component {
                 <tr style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "2px 0px"}}/>
                 {
                     this.state.fleetUsers.map((userCurrent, settingIndex) => (
-                        <tr key={settingIndex} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(settingIndex%2 === 0) ? "row-bg-B" : "row-bg-A"}>
+                        <tr key={settingIndex} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
                             <td style={{padding:"16px 12px"}}>{userCurrent.email}</td>
                             {
                                 this.state.emailTypes.map((type, typeIndex) => (

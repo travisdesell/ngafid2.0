@@ -163,9 +163,14 @@ class UpdatePasswordPage extends React.Component {
         console.log("rendering with password validation message: '" + passwordValidationMessage + "' and password validation visible: " + passwordValidationHidden);
 
         return (
-            <div>
-                <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <div className="card mb-1 m-2">
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="card mb-1 m-2">
                     <h5 className="card-header" style={fgStyle}>
                         Update Password
                     </h5>
@@ -213,7 +218,9 @@ class UpdatePasswordPage extends React.Component {
                         </form>
 
                     </div>
+                    </div>
                 </div>
+
             </div>
         );
     }

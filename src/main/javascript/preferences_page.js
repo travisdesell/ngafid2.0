@@ -61,42 +61,47 @@ class PreferencesPage extends React.Component {
         }
 
         return (
-            <div>
-                <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="card-body-rounded m-2">
-                        <div style={{marginTop:"4", padding:"0 0 0 0"}}>
-                            <div className="col" style={{padding:"0 0 0 0"}}>
-                                <div className="card">
-                                    <h5 className="card-header">
-                                        {this.state.fullName}'s Preferences:
-                                    </h5>
-                                    <MetricViewerSettings
-                                        isVertical={false}
-                                        selectedMetrics={this.state.selectedMetrics}
-                                        decimalPrecision={this.state.decimalPrecision}>
-                                    </MetricViewerSettings>
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="account" waitingUserCount={this.state.waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={this.state.unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
 
-                                    {adminContent}
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="card-body-rounded m-2">
+                    <div style={{marginTop:"4", padding:"0 0 0 0"}}>
+                        <div className="col" style={{padding:"0 0 0 0"}}>
+                            <div className="card">
+                                <h5 className="card-header">
+                                    {this.state.fullName}'s Preferences:
+                                </h5>
+                                <MetricViewerSettings
+                                    isVertical={false}
+                                    selectedMetrics={this.state.selectedMetrics}
+                                    decimalPrecision={this.state.decimalPrecision}>
+                                </MetricViewerSettings>
 
-                                    <div className="card-body">
-                                        <div className="col" style={{padding:"0 0 0 0"}}>
-                                            <div className="card-alt card">
-                                                <h6 className="card-header">
-                                                    Your Email Preferences:
-                                                </h6>
-                                                <div className="form-group">
-                                                    <div className="d-flex">
-                                                        <EmailSettingsTableUser isAdmin={isAdmin}></EmailSettingsTableUser>
-                                                    <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
-                                                    </div>
+                                {adminContent}
+
+                                <div className="card-body">
+                                    <div className="col" style={{padding:"0 0 0 0"}}>
+                                        <div className="card-alt card">
+                                            <h6 className="card-header">
+                                                Your Email Preferences:
+                                            </h6>
+                                            <div className="form-group">
+                                                <div className="d-flex">
+                                                    <EmailSettingsTableUser isAdmin={isAdmin}></EmailSettingsTableUser>
+                                                <hr style={{padding:"0", margin:"0 0 0 0"}}></hr>
                                                 </div>
                                             </div>
                                         </div>
                                     </div>
+                                </div>
 
                             </div>
                         </div>
+                    </div>
                     </div>
                 </div>
             </div>

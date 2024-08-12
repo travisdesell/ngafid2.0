@@ -190,7 +190,7 @@ class EventCard extends React.Component {
     render() {
         return (
             <div className="col-sm-12" key={eventIndex} style={{padding:"0 0 0 0"}}>
-                <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                <div className="card mb-1 m-1">
                     <h5 className="card-header">
                         <div className="d-flex">
                             <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
@@ -199,7 +199,7 @@ class EventCard extends React.Component {
                             <button type="button" className="btn btn-outline-secondary" style={{padding:"3 8 3 8", marginRight:"5"}} onClick={() => {this.toggleEventInfo(eventInfo)}}>
                                 <i className='fa fa-info'></i>
                             </button>
-                            <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
+                            <div className="progress flex-fill" style={{height:"24px"}}>
                                 <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
                             </div>
                         </div>
@@ -297,7 +297,7 @@ class AirframeCard extends React.Component {
 
 
         return (
-            <div className="m-2" style={{marginTop:marginTop, padding:"0 5 0 5"}}>
+            <div className="m-2" style={{marginTop:marginTop, padding:"0 5 0 5", overflowX:"hidden"}}>
                 <div className="card mb-1 m-1" style={{padding:"10 10 10 10"}}>
                     <h5 style={{marginBottom:0}}> 
                         {this.props.airframeName + " Event Statistics"}
@@ -313,7 +313,7 @@ class AirframeCard extends React.Component {
 
                             return (
                                 <div className="col-sm-12" key={eventIndex} style={{padding:"0 0 0 0"}}>
-                                    <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                                    <div className="card mb-1 m-1">
                                         <h5 className="card-header">
                                             <div className="d-flex">
                                                 <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
@@ -322,7 +322,7 @@ class AirframeCard extends React.Component {
                                                 <button type="button" className="btn btn-outline-secondary" style={{padding:"3 8 3 8", marginRight:"5"}} onClick={() => {this.toggleEventInfo(eventInfo)}}>
                                                     <i className='fa fa-info'></i>
                                                 </button>
-                                                <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
+                                                <div className="progress flex-fill" style={{height:"24px"}}>
                                                     <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
                                                 </div>
                                             </div>
@@ -333,7 +333,7 @@ class AirframeCard extends React.Component {
                                                 {eventInfo.humanReadable}
                                             </p>
 
-                                            <table style={{width:"100%"}}>
+                                            <table style={{width:"100%", color:"var(--c_text_alt)"}}>
                                                 <thead>
                                                 <tr>
                                                     <th></th>
@@ -430,22 +430,26 @@ class DashboardCard extends React.Component {
         let airframeIds = Object.keys(airframeMap);
 
         return (
-            <div>
-                <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="event statistics" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
 
-                {
-                    airframeIds.map((airframeId, airframeIndex) => {
-                        let first = true;
-                        if (airframeIndex > 0) first = false
-                        return (
-                            <AirframeCard
-                                key={airframeIndex}
-                                first={first}
-                                airframeId={airframeId}
-                                airframeName={airframeMap[airframeId]}
-                            />);
-                    })
-                }
+                <div style={{overflowY:"scroll", flex:"1 1 auto"}}>
+                    {
+                        airframeIds.map((airframeId, airframeIndex) => {
+                            let first = true;
+                            if (airframeIndex > 0) first = false
+                            return (
+                                <AirframeCard
+                                    key={airframeIndex}
+                                    first={first}
+                                    airframeId={airframeId}
+                                    airframeName={airframeMap[airframeId]}
+                                />);
+                        })
+                    }
+                </div>
             </div>
          );
     }
@@ -463,7 +467,7 @@ class DashboardCard extends React.Component {
                         }
                         return (
                             <div key={airframeIndex} style={{marginTop:marginTop, padding:"0 5 0 5"}}>
-                                <div className="card mb-1 m-1" style={{background : "rgba(100,100,100,0.2)", padding:"10 10 10 10"}}>
+                                <div className="card mb-1 m-1" style={{padding:"10 10 10 10"}}>
                                     <h5 style={{marginBottom:0}}> 
                                         {airframeStats.airframeName + " Events"}
                                     </h5>
@@ -478,7 +482,7 @@ class DashboardCard extends React.Component {
 
                                             return (
                                                 <div className="col-sm-12" key={eventIndex} style={{padding:"0 0 0 0"}}>
-                                                    <div className="card mb-1 m-1" style={{background : "rgba(248,259,250,0.8)"}}>
+                                                    <div className="card mb-1 m-1">
                                                         <h5 className="card-header">
                                                             <div className="d-flex">
                                                                 <div style={{flexBasis:"30%", flexShrink:0, flexGrow:0}}>
@@ -487,7 +491,7 @@ class DashboardCard extends React.Component {
                                                                 <button type="button" className="btn btn-outline-secondary" style={{padding:"3 8 3 8", marginRight:"5"}} onClick={() => {this.toggleEventInfo(eventInfo)}}>
                                                                     <i className='fa fa-info'></i>
                                                                 </button>
-                                                                <div className="progress flex-fill" style={{height:"24px", background:"rgba(183,186,199,1.0)"}}>
+                                                                <div className="progress flex-fill" style={{height:"24px"}}>
                                                                     <div className="progress-bar" role="progressbar" style={{width: processedPercentage + "%"}} aria-valuenow={processedPercentage} aria-valuemin="0" aria-valuemax="100"> &nbsp; {eventInfo.processedFlights + " / " + eventInfo.totalFlights + " (" + processedPercentage + "%) flights processed"} </div>
                                                                 </div>
                                                             </div>
