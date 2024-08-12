@@ -185,6 +185,7 @@ class Paginator extends React.Component {
             numTotalPages = 1;
         }
 
+        let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
         let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
@@ -214,9 +215,9 @@ class Paginator extends React.Component {
 
                                 {pages}
 
-                            <Pagination.Next disabled={this.props.currentPage >= (this.props.numberPages-1)} onClick={() => this.nextPage()} />
-                            <Pagination.Last disabled={this.props.currentPage >= (this.props.numberPages-1)} onClick={() => this.jumpPage(this.props.numberPages - 1)} />
-                        </Pagination>
+                                <Pagination.Next disabled={this.props.currentPage >= (this.props.numberPages-1)} onClick={() => this.nextPage()} />
+                                <Pagination.Last disabled={this.props.currentPage >= (this.props.numberPages-1)} onClick={() => this.jumpPage(this.props.numberPages - 1)} />
+                            </Pagination>
 
                             <div className="col form-row input-group m-0 p-0" style={{width:"160px"}}>
                                 <div className="input-group-prepend p-0" style={{display:"flex", flexFlow:"column wrap", minWidth:"35%", maxWidth:"35%"}}>
