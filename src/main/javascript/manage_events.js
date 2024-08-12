@@ -62,13 +62,20 @@ class EventManager extends React.Component {
         }
 
         return (
-            <div>
-                <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
-                                fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
-                                modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
-                <CreateEventCard/>
-                <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} confirmDelete={this.confirmDelete}
-                                       confirmUpload={this.confirmUpload}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
+
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="event definitions" waitingUserCount={waitingUserCount}
+                                    fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount}
+                                    modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div style={{overflowY:"scroll", flex:"1 1 auto"}}>
+                    <CreateEventCard/>
+                    <EventDefinitionsTable eventDefinitions={this.state.eventDefinitions} confirmDelete={this.confirmDelete}
+                                        confirmUpload={this.confirmUpload}/>
+                </div>
+
             </div>
         );
     }
@@ -228,14 +235,11 @@ class CreateEventCard extends React.Component {
     render() {
 
         let bgStyle = {
-            background : "rgba(248,259,250,0.8)",
             margin:0
         };
 
         return (
-            <div className="card-body m-2" style={style}>
-
-                <div className="card mb-1" style={bgStyle}>
+                <div className="card mb-1 m-2" style={bgStyle}>
                     <h5 className="card-header">
                         Create Event
                     </h5>
@@ -270,7 +274,6 @@ class CreateEventCard extends React.Component {
                         validateStopBuffer={(event) => this.validateStopBuffer(event)}
                     />
                 </div>
-            </div>
         );
     }
 }
@@ -460,7 +463,6 @@ class UpdateEventDefinitionModal extends React.Component {
         };
 
         let bgStyle = {
-            background: "rgba(248,259,250,0.8)",
             margin: 0
         };
 
@@ -480,43 +482,38 @@ class UpdateEventDefinitionModal extends React.Component {
 
                 <form>
                     <div className="card-body" style={style}>
-                            <div className="card mb-1" style={bgStyle}>
-                                <div className="card mb-1" style={bgStyle}>
-                                    <EventDefinitionCard
-                                        rules={rules}
-                                        airframes={airframes}
-                                        doubleTimeSeriesNames={doubleTimeSeriesNames}
+                        <EventDefinitionCard
+                            rules={rules}
+                            airframes={airframes}
+                            doubleTimeSeriesNames={doubleTimeSeriesNames}
 
-                                        submitName={"Update Event"}
-                                        eventName={this.state.eventName}
-                                        eventID={this.state.eventDefinitionID}
-                                        airframe={this.state.airframe}
-                                        startBuffer={this.state.startBuffer}
-                                        stopBuffer={this.state.stopBuffer}
-                                        severityType={this.state.severityType}
-                                        severityColumn={this.state.severityColumn}
-                                        severityColumnNames={this.state.severityColumnNames}
-                                        filters={this.state.filters}
+                            submitName={"Update Event"}
+                            eventName={this.state.eventName}
+                            eventID={this.state.eventDefinitionID}
+                            airframe={this.state.airframe}
+                            startBuffer={this.state.startBuffer}
+                            stopBuffer={this.state.stopBuffer}
+                            severityType={this.state.severityType}
+                            severityColumn={this.state.severityColumn}
+                            severityColumnNames={this.state.severityColumnNames}
+                            filters={this.state.filters}
 
-                                        getFilter={() => {
-                                            return this.state.filters
-                                        }}
+                            getFilter={() => {
+                                return this.state.filters
+                            }}
 
-                                        setFilter={(filter) => this.setFilter(filter)}
+                            setFilter={(filter) => this.setFilter(filter)}
 
-                                        submitFilter={() => this.submit()}
-                                        validateEventName={(event) => this.validateEventName(event)}
-                                        validateAirframe={(event) => this.validateAirframe(event)}
-                                        validateSeverityType={(event) => this.validateSeverityType(event)}
-                                        changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
-                                        addSeverityColumn={() => this.addSeverityColumn()}
-                                        removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
-                                        validateStartBuffer={(event) => this.validateStartBuffer(event)}
-                                        validateStopBuffer={(event) => this.validateStopBuffer(event)}
-                                    />
-                                </div>
-                            </div>
-
+                            submitFilter={() => this.submit()}
+                            validateEventName={(event) => this.validateEventName(event)}
+                            validateAirframe={(event) => this.validateAirframe(event)}
+                            validateSeverityType={(event) => this.validateSeverityType(event)}
+                            changeSeverityColumn={(event) => this.changeSeverityColumn(event)}
+                            addSeverityColumn={() => this.addSeverityColumn()}
+                            removeSeverityColumn={(columnName) => this.removeSeverityColumn(columnName)}
+                            validateStartBuffer={(event) => this.validateStartBuffer(event)}
+                            validateStopBuffer={(event) => this.validateStopBuffer(event)}
+                        />
                     </div>
 
                     <div className="modal-footer">
@@ -595,13 +592,12 @@ class EventDefinitionsTable extends React.Component {
 
 
         return (
-            <div className="container-fluid" style={{backgroundColor: "white"}}>
-
+            <div className="card-body" style={{margin:10, padding:10, borderRadius:5}}>
                 <div className="row">
                     <div className="col-md-12">
                         <Col>
                             <Table striped bordered hover size="sm">
-                                <thead>
+                                <thead style={{color:"var(--c_text)", backgroundColor:"var(--c_bg)"}}>
                                 <tr>
                                     <th>id</th>
                                     <th>fleet_id</th>
@@ -616,9 +612,9 @@ class EventDefinitionsTable extends React.Component {
                                     <th>actions</th>
                                 </tr>
                                 </thead>
-                                <tbody>
+                                <tbody style={{color:"var(--c_text_alt)"}}>
                                 {eventDefinitions.map((eventDefinition, index) => (
-                                    <tr key={index}>
+                                    <tr key={index} style={{backgroundColor:(index%2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid")}}>
                                         <td>{eventDefinition.id}</td>
                                         <td>{eventDefinition.fleetId}</td>
                                         <td>{eventDefinition.airframeNameId}</td>
@@ -629,13 +625,17 @@ class EventDefinitionsTable extends React.Component {
                                         <td>{arrayToString(eventDefinition.columnNames)}</td>
                                         <td>{arrayToString(eventDefinition.severityColumnNames)}</td>
                                         <td>{eventDefinition.severityType}</td>
-                                        <td>
-                                            <button onClick={() => updateModal.show(eventDefinition)}>
-                                                Update
-                                            </button>
-                                            <button onClick={() => this.confirmDelete(eventDefinition)}>
-                                                Delete
-                                            </button>
+                                        <td visibility="hidden">
+                                            <div style={{display:"flex", flexDirection:"row"}}>
+                                                <button className="btn btn-outline-primary" onClick={() => updateModal.show(eventDefinition)}>
+                                                    <i className="fa fa-gear mr-1" aria-hidden="true"/>
+                                                    Update
+                                                </button>
+                                                <div style={{margin:"0 5px"}}/>
+                                                <button className="btn btn-danger" onClick={() => this.confirmDelete(eventDefinition)}>
+                                                    <i className="fa fa-times" aria-hidden="true"/>
+                                                </button>
+                                            </div>
                                         </td>
                                     </tr>
                                 ))}
