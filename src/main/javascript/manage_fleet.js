@@ -124,13 +124,12 @@ class FleetUserRow extends React.Component {
         let buttonClasses = "btn btn-outline-secondary";
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
-        console.log("[EX] Setting Index", this.settingIndex);
+        console.log("Setting Index", this.settingIndex);
 
         return (
-            <tr userid={fleetUser.id} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(this.state.settingIndex%2 === 0) ? "row-bg-B" : "row-bg-A"}>
+            <tr userid={fleetUser.id} style={{border:"solid", borderColor:"var(--c_table_border)", borderWidth: "1px 0px"}} className={(this.state.settingIndex%2 === 0) ? "row-bg-solid-B" : "row-bg-solid-A"}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
                 <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
-
                 <td style={{padding: "15 12 15 12"}}>
                     <AccessCheck checkType="MANAGER" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
                     <AccessCheck checkType="UPLOAD" userAccess={accessType} fleetUserRow={this} userId={fleetUser.id}/>
@@ -247,18 +246,21 @@ class ManageFleetPage extends React.Component {
         }
 
         return (
-            <div>
-                <SignedInNavbar
-                    activePage="account"
-                    waitingUserCount={this.state.waitingUserCount}
-                    fleetManager={fleetManager}
-                    unconfirmedTailsCount={this.state.unconfirmedTailsCount}
-                    modifyTailsAccess={modifyTailsAccess}
-                    plotMapHidden={plotMapHidden}
-                />
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="m-2">
-                    <div className="card mb-1">
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar
+                        activePage="account"
+                        waitingUserCount={this.state.waitingUserCount}
+                        fleetManager={fleetManager}
+                        unconfirmedTailsCount={this.state.unconfirmedTailsCount}
+                        modifyTailsAccess={modifyTailsAccess}
+                        plotMapHidden={plotMapHidden}
+                    />
+                </div>
+
+                <div style={{overflowY:"auto", flex:"1 1 auto"}}>
+                    <div className="card mb-1 m-2">
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
                         </h5>
@@ -266,14 +268,14 @@ class ManageFleetPage extends React.Component {
                         <div className="card-body" style={fgStyle}>
 
                             {/* INVITE USER */}
-                            <div className="row ml-1 mb-3 invite">
-                                <p style={fgStyle}>
-                                    Invite User to {fleetName}:
+                            <div style={{ display:"flex", alignItems:"start", width:"100%" }}>
+                                <p style={{...fgStyle, marginTop:"0.4em", marginRight:"1em" }}>
+                                    Invite user to {fleetName}:
                                 </p>
-                                <form onSubmit={this.handleSubmit}>
+                                <form onSubmit={this.handleSubmit} style={{ display:"flex", alignItems:"baseline" }}>
                                     <input
-                                        style={{color:"var(--c_white)"}}
                                         id="inviteEmail"
+                                        className="form-control"
                                         type="email"
                                         placeholder="Enter user email"
                                         name="email"
@@ -281,7 +283,7 @@ class ManageFleetPage extends React.Component {
                                         title="Please enter a valid email address"
                                         required
                                     />
-                                    <button className="btn btn-primary ml-1" type="submit">Invite</button>
+                                    <button className="btn btn-primary ml-1 mb-2" type="submit">Invite</button>
                                 </form>
                             </div>
 
