@@ -34,7 +34,7 @@ export default class TimeHeader extends React.Component {
         if ('exportCSV' in this.props) {
             exportButton = (
                 <div className="col-auto">
-                    <button className="btn btn-primary-outline" onClick={() => this.props.exportCSV()}>Export</button>
+                    <button className="btn btn-outline-primary" onClick={() => this.props.exportCSV()}>Export</button>
                 </div>
             );
         }
@@ -99,7 +99,7 @@ export default class TimeHeader extends React.Component {
 
                                 &nbsp;Start Date&nbsp;
 
-                                <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content"}}>
+                                <select id="start-year-select" className="custom-select" value={this.props.startYear} onChange={event => this.props.updateStartYear(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
                                     {
                                         this.state.years.map((year, index) => {
                                             if (year <= this.props.endYear)
@@ -112,7 +112,7 @@ export default class TimeHeader extends React.Component {
                                     }
                                 </select>
                                 &nbsp;
-                                <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content"}}>
+                                <select id="start-month-select" className="custom-select" value={this.props.startMonth} onChange={event => this.props.updateStartMonth(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
                                     {
                                         this.state.months.map((month, index) => {
                                             return (
@@ -133,7 +133,7 @@ export default class TimeHeader extends React.Component {
 
                                 &nbsp;End Date&nbsp;
                                 
-                                <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content"}}>
+                                <select id="end-year-select" className="custom-select" value={this.props.endYear} onChange={event => this.props.updateEndYear(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
                                     {
                                         this.state.years.map((year, index) => {
                                             if (year >= this.props.startYear)
@@ -146,7 +146,7 @@ export default class TimeHeader extends React.Component {
                                     }
                                 </select>
                                 &nbsp;
-                                <select id="end-month-select" className="custom-select" value={this.props.endMonth} onChange={event => this.props.updateEndMonth(event.target.value)} style={{width:"fit-content"}}>
+                                <select id="end-month-select" className="custom-select" value={this.props.endMonth} onChange={event => this.props.updateEndMonth(event.target.value)} style={{width:"fit-content", border:"1px solid var(--c_border_alt)"}}>
                                     {
                                         this.state.months.map((month, index) => {
                                             return (
@@ -163,7 +163,7 @@ export default class TimeHeader extends React.Component {
                 { additionalHeaderContents }
 
                 <div className="col-auto mr-5">
-                    <button className="btn btn-primary btn-primary-outline" onClick={() => this.props.dateChange()} disabled={!this.props.datesChanged}>{this.state.buttonContent}</button>
+                    <button className="btn btn-primary btn-outline-primary" onClick={() => this.props.dateChange()} disabled={!this.props.datesChanged}>{this.state.buttonContent}</button>
                 </div>
 
                 { additionalRowContents }
