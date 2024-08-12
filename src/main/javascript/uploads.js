@@ -20,6 +20,7 @@ var chunkSize = 2 * 1024 * 1024; //2MB
 class Upload extends React.Component {
     constructor(props) {
         super(props);
+        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
@@ -153,13 +154,13 @@ class Upload extends React.Component {
         console.log("uploadInfo:");
         console.log(uploadInfo);
 
-        //Disable Download/Delete buttons while Upload HASHING / UPLOADING
+        //Disable Download/Delete buttons while Hashing/Uploading or if not a Fleet Manager
         const BUTTON_DISPLAY_DISALLOW_LIST = ["HASHING", "UPLOADING"];
         let doButtonDisplay = !(BUTTON_DISPLAY_DISALLOW_LIST.includes(status));
 
         return (
-            <div className="m-1">
-                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_upload_import_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
+            <div className="m-2">
+                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_entry_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
         
                     {/* LEFT ELEMENTS */}
                     <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
@@ -178,12 +179,12 @@ class Upload extends React.Component {
                         type="button"
                         className={"btn btn-danger btn-sm"}
                         style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
+                        onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
                         >
                         <i
                             className="fa fa-times"
                             aria-hidden="true"
                             style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
                             >
                         </i>
                     </Button>
@@ -191,12 +192,12 @@ class Upload extends React.Component {
                         type="button"
                         className={"btn btn btn-sm"}
                         style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
+                        onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
                         >
                         <i
                             className="fa fa-download"
                             aria-hidden="true"
                             style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
                             >
                         </i>
                     </Button>
@@ -438,7 +439,7 @@ class UploadsPage extends React.Component {
         this.setState(this.state);
         this.startUpload(file);
     
-        }
+    }
 
     removePendingUpload(file) {
 
@@ -621,36 +622,7 @@ class UploadsPage extends React.Component {
             async: true
         });
     }
-
-    triggerInput() {
-        console.log("input triggered!");
-
-        var uploadsPage = this;
-
-        $('#upload-file-input').trigger('click');
-
-        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
-            console.log("number files selected: " + this.files.length);
-            console.log( this.files );
-
-            if (this.files.length > 0) {
-                var file = this.files[0];
-                var filename = file.webkitRelativePath || file.fileName || file.name;
-
-                const isZip = file['type'].includes("zip");
-                console.log("isZip: " + isZip);
-
-                if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
-                } else if (!isZip) {
-                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
-                } else {
-                    uploadsPage.addUpload(file);
-                }
-            }
-        });
-    }
-
+    
     render() {
         console.log("rendering uploads!");
 
@@ -658,55 +630,63 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
+        //Disable Upload Flights button if not a Fleet Manager
+        let doButtonDisplay = (fleetManager);
+
         return (
 
-            <div>
-                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
+                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                    
+                    <div style={{flex:"0 0 auto"}}>
+                        <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    </div>
 
-                <div className="m-2">
-                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
-                    {
-                        this.state.pending_uploads.map((uploadInfo, index) => {
+                    <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
+                        <div className="m-1">
+                            {
+                                this.state.pending_uploads.map((uploadInfo, index) => {
+                                    return (
+                                        <Upload
+                                            uploadInfo={ uploadInfo }
+                                            key={ uploadInfo.identifier }
+                                            removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
+                                            />
+                                    );
+                                })
+                            }
+                            
+                            {
+                                this.state.uploads.map((uploadInfo, index) => {
+                                    uploadInfo.position = index;
+                                    return (
+                                        <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                    );
+                                })
+                            }
+                        </div>
 
-                            //uploadInfo.position = index;
-                            return (
-                                <Upload
-                                    uploadInfo={ uploadInfo }
-                                    key={ uploadInfo.identifier }
-                                    removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
-                                    />
-                            );
-                        })
-                    }
-
-                    {
-                        this.state.uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
-                            return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
-                            );
-                        })
-                    }
-
-                    <div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
-                        <Paginator
-                            submitFilter={() => {this.submitFilter();}}
-                            items={this.state.uploads}
-                            itemName="uploads"
-                            currentPage={this.state.currentPage}
-                            numberPages={this.state.numberPages}
-                            pageSize={this.state.pageSize}
-                            updateCurrentPage={(currentPage) => {
-                                this.state.currentPage = currentPage;
-                            }}
-                            updateItemsPerPage={(pageSize) => {
-                                this.state.pageSize = pageSize;
-                            }}
-                        />
+                        <input id ="upload-file-input" type="file" style={hiddenStyle} />   {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
+                        <div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
+                            <Paginator
+                                submitFilter={() => {this.submitFilter();}}
+                                items={this.state.uploads}
+                                itemName="uploads"
+                                uploadsPage={this}
+                                currentPage={this.state.currentPage}
+                                numberPages={this.state.numberPages}
+                                pageSize={this.state.pageSize}
+                                updateCurrentPage={(currentPage) => {
+                                    this.state.currentPage = currentPage;
+                                }}
+                                updateItemsPerPage={(pageSize) => {
+                                    this.state.pageSize = pageSize;
+                                }}
+                            />
+                        </div>
                     </div>
 
                 </div>
-
             </div>
         );
     }
