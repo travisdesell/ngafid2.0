@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.logging.Logger;
 
 public class GetTurnToFinal implements Route {
-    private static final Logger LOG = Logger.getLogger(GetFlights.class.getName());
+    private static final Logger LOG = Logger.getLogger(GetTurnToFinal.class.getName());
     private Gson gson;
 
     private List<Event> events = null;

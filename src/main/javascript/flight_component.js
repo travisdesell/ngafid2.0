@@ -780,7 +780,7 @@ class Flight extends React.Component {
                 request : "GET_COORDINATES",
                 id_token : "TEST_ID_TOKEN",
                 //id_token : id_token,
-                //user_id : user_id
+                //user_id : user_id,
                 user_id : 1,
                 flightId : this.props.flightInfo.id,
             };
@@ -1139,7 +1139,7 @@ class Flight extends React.Component {
             flightPhasesCheckBox = (
                 <div>
                     <b className={"m-0 p-1"} style={{marginBottom: "0", overflowY:"auto"}}>Flight Phase : </b>
-                    <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
+                    <div className={"d-flex flex-row p-1"} style={{"overflowX" : "auto"}}>
                         {   
                         flightPhases.map((phase, index) => {
                             return (
@@ -1150,6 +1150,7 @@ class Flight extends React.Component {
                         }
                     )
                         }
+                        
                     </div>
                 </div>
         );

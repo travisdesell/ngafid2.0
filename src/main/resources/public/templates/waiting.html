@@ -35,22 +35,28 @@
     </div>
 
     <div class="card-body">
-        <div class="card mb-1" style="opacity:0.8">
-            <h5 class="card-header" style="opacity:1.0">
-                Account Awaiting Fleet Access
-            </h5>
-
-            <div class="card-body" style="opacity:1.0">
-                <div class="text-center">
-                    <img src='../images/holding_pattern.jpg' style={{marginBottom: '8px'}}/>
-                </div>
-                <p class="card-text">
-                Welcome to the NGAFID! Your account has created however the your fleet manager(s) have not yet granted you access to the fleet data. Please contact your fleet manager(s) so they can log in and provide access.
-                </p>
+        <div class="card mb-1 m-1" style="opacity: 0.8">
+            <div class="d-flex justify-content-between">
+                <div class="p-2">
+                        <h5 style="opacity: 1.0">
+                            Account Awaiting Fleet Access
+                        </h5>
             </div>
-
+                <div class="p-2">
+                    <button type="button" class="btn btn-primary btn-sm mr-1" onclick="logOut()">Logout</button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body" style="opacity:1.0">
+            <div class="text-center">
+                <img src='../images/holding_pattern.jpg' style={{marginBottom: '8px'}}/>
+            </div>
+            <p class="card-text">
+                Welcome to the NGAFID! Your account has created however the your fleet manager(s) have not yet granted you access to the fleet data. Please contact your fleet manager(s) so they can log in and provide access.
+            </p>
         </div>
     </div>
+
 
     <!-- Load React. -->
     <!-- Note: when deploying, replace "development.js" with "production.min.js". -->
@@ -61,6 +67,33 @@
     <!-- Load our React components. -->
     <script type="text/babel" src="/js/waiting_navbar.js"></script>
     <script type="text/babel" src="/js/error_modal.js"></script>
+    <script type="application/javascript">
+        function logOut() {
+            console.log("attempting log out!");
+
+            var submissionData = {};
+
+            $.ajax({
+                type: 'POST',
+                url: '../logout',
+                data : submissionData,
+                dataType : 'json',
+                success : function(response) {
+                    //processing the response will update the navbar
+                    //to the logged out state
+
+                    //logout so they can log back in
+                    window.location.replace("/logout_success");
+                },
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Logging Out", errorThrown);
+                },
+                async: true
+            });
+
+        }
+    </script>
+
 
 </body>
 </html>

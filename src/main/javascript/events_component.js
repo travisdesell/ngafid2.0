@@ -7,8 +7,6 @@ import { map } from "./map.js";
 import {Circle, Fill, Icon, Stroke, Style} from 'ol/style.js';
 import GetDescription from "./get_description";
 import {errorModal} from "./error_modal";
-
-
 // establish set of RGB values to combine //
 let BG_values = ["00", "55", "AA", "FF"];
 let R_values = ["FF", "D6", "AB", "80"];                            // heavier on the red for "warmer" colors
@@ -175,6 +173,33 @@ class Events extends React.Component {
         this.updateEventDisplay(index, true);
     }
 
+    getEventMetaData(eventId) {
+
+        var eventMetaData = null;
+        var submissionData = {
+            eventId : eventId
+        };
+        $.ajax({
+            type: 'POST',
+            url: '/protected/event_metadata',
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                eventMetaData =  response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Event Metadata ", errorThrown);
+            },
+            async: false
+        })
+        console.log("Event MetaData : ");
+        console.log(eventMetaData);
+
+        return eventMetaData;
+
+    }
+
+   
     render() {
         let cellClasses = "d-flex flex-row p-1";
         let cellStyle = { "overflowX" : "auto" };
@@ -257,10 +282,14 @@ class Events extends React.Component {
                         let rateOfClosureBtn = "";
                         let rocPlot = "";
                         let zoomToCesiumEntityBtn = "";
+                        let eventMetaDataText = "";
+                        var eventMetaData = this.getEventMetaData(event.id);
                         if (event.eventDefinitionId == -1) {
                             var rocPlotData = this.getRateOfClosureData(event);
+                            
                             otherFlightText = ", other flight id: ";
                             otherFlightURL = ( <a href={"./flight?flight_id=" + event.flightId + "&flight_id=" + event.otherFlightId}> {event.otherFlightId} </a> );
+
                             if (rocPlotData != null) {
                                 rateOfClosureBtn = ( <button id="rocButton" data-toggle="button" className={buttonClasses} onClick={() => this.displayRateOfClosurePlot(rocPlotData, event)}>
                                     <i className="fa fa-area-chart p-1" ></i></button>   );
@@ -268,6 +297,7 @@ class Events extends React.Component {
                                     rocPlot = (<div id={event.id + "-rocPlot"}></div>);
                                 }
                             }
+
                         }
                         console.log("Event mapped : " + thisFlight.state.eventsMapped[index]);
                         console.log("Flight id " + event.flightId);
@@ -277,6 +307,14 @@ class Events extends React.Component {
                                     <i className="fa fa-search-plus"></i>
                                 </button>)
                         }
+
+                        if (eventMetaData != null) {
+                            eventMetaDataText = " , ";
+                            eventMetaData.map((item) => {
+                                eventMetaDataText += item.name + ": " +  (Math.round(item.value * 100) / 100).toFixed(2) + ", ";
+                            })
+                            eventMetaDataText = eventMetaDataText.substring(0, eventMetaDataText.length - 2);
+                        } 
 
                         return (
                             <div className={cellClasses} style={cellStyle} key={index}>
@@ -292,6 +330,7 @@ class Events extends React.Component {
                                 <div>
                                     {zoomToCesiumEntityBtn}
                                 </div>
+
                             </div>
 
                         );

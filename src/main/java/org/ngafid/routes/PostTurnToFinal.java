@@ -32,6 +32,7 @@ public class PostTurnToFinal implements Route {
 
     public PostTurnToFinal(Gson gson) {
         this.gson = new GsonBuilder().setPrettyPrinting().create();
+        LOG.info("post " + PostTurnToFinal.class.getName() + " initialized");
     }
 
     @Override
@@ -85,6 +86,8 @@ public class PostTurnToFinal implements Route {
                 .stream()
                 .collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().jsonify(gson)));
 
+        response.type("application/json");
+        response.status(200);
         return gson.toJson(Map.of(
             "airports", airports,
             "ttfs", _ttfs

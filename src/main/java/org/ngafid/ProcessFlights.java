@@ -97,7 +97,7 @@ public class ProcessFlights {
 
                                     System.err.println("PROCESSING: " + name);
 
-                                    if (entry.getName().endsWith(".csv")) {
+                                    if (entry.getName().toLowerCase().endsWith(".csv")) {
                                         try {
                                             InputStream stream = zipFile.getInputStream(entry);
                                             Flight flight = new Flight(fleetId, entry.getName(), stream, connection);

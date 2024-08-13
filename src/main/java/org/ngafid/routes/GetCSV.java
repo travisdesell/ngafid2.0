@@ -22,6 +22,7 @@ import org.ngafid.flights.GeneratedCSVWriter;
 import org.ngafid.flights.CSVWriter;
 import org.ngafid.flights.CachedCSVWriter;
 import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.Upload;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
@@ -71,15 +72,30 @@ public class GetCSV implements Route {
 
             int uploaderId = flight.getUploaderId(); 
 
-            String zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" +
-                uploaderId + "/";
+            boolean isAirSync = false;
+            String zipRoot;
+            if (uploaderId == 284) {
+                //TODO: need to look up user from uploaderId and check if it is the airsync user
+
+                zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/";
+
+                Upload upload = Upload.getUploadById(connection, flight.getUploadId());
+                String startTime = upload.getStartTime();
+                String year = startTime.substring(0, 4);
+                int month = Integer.parseInt(startTime.substring(5, 7)); // convert to int to strip leading 0
+                zipRoot += year + "/" + month + "/";
+
+                isAirSync = true;
+            } else {
+                zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/";
+            }
             
             CSVWriter csvWriter;
 
             if (generated) {
                 csvWriter = new GeneratedCSVWriter(flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
             } else {
-                csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty());
+                csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty(), isAirSync);
             }
 
             LOG.info("Got file path for flight #" + flightId);

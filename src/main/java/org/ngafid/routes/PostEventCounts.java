@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
@@ -57,7 +58,7 @@ public class PostEventCounts implements Route {
         try {
             Connection connection = Database.getConnection();
 
-            HashMap<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {

@@ -53,6 +53,14 @@ public class Upload {
         return id;
     }
 
+    public String getStartTime() {
+        return startTime;
+    }
+
+    public String getEndTime() {
+        return endTime;
+    }
+
     /**
      * This is used for getting uploads for the GetUpload route. If an upload was incomplete it will
      * be stored as "UPLOADING" in the database, but this needs to be updated to "UPLOAD INCOMPLETE" for

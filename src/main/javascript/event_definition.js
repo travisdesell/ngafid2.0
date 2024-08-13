@@ -14,6 +14,12 @@ class EventDefinitionCard extends React.Component {
         this.exceedenceFilter = React.createRef();
     }
 
+    componentDidMount() {
+        this.setState({
+            conditionText: ""
+        });
+    }
+
     render() {
         let style = {
             padding : 5
@@ -63,7 +69,7 @@ class EventDefinitionCard extends React.Component {
             validationMessage = "Stop buffer time must be greater than 1 second.";
 
             //first time rendering this component exceedenceFilter will not be defined
-        } else if ( !isValidFilter(this.props.filters, this.props.rules)) {
+        } else if (this.props.eventDefinitionID > 0 && !isValidFilter(this.props.filters, this.props.rules)) {
             validationMessage = "Correct the incomplete filter.";
         }
 
@@ -179,24 +185,45 @@ class EventDefinitionCard extends React.Component {
                     </div>
                 </div>
 
+                {this.props.eventID >= 0 ? (
+                    <div className="form-group" style={formGroupStyle} hidden={this.props.eventDefinitionID < 0}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label style={labelStyle}>Exceedence Definition</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+                                <Filter
+                                    filterVisible={true}
+                                    filters={this.props.filters}
+                                    rules={this.props.rules}
 
-                <div className="form-group" style={formGroupStyle}>
-                    <div className="d-flex">
-                        <div className="p-2" style={formHeaderStyle}>
-                            <label style={labelStyle}>Exceedence Definition</label>
-                        </div>
-                        <div className="p-2 flex-fill">
-                            <Filter 
-                                filterVisible={true}
-                                filters={this.props.filters}
-                                rules={this.props.rules} 
-
-                                getFilter={() => {return this.props.getFilter()}}
-                                setFilter={(filter) => this.props.setFilter(filter)}
-                            />
+                                    getFilter={() => {return this.props.getFilter()}}
+                                    setFilter={(filter) => this.props.setFilter(filter)}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
+                ) : (
+                    <div className="form-group" style={formGroupStyle}>
+                        <div className="d-flex">
+                            <div className="p-2" style={formHeaderStyle}>
+                                <label htmlFor="conditionJsonText" style={labelStyle}>Condition JSON Text</label>
+                            </div>
+                            <div className="p-2 flex-fill">
+                                <input type="text" className="form-control" id="conditionJsonText" aria-describedby="conditionJsonText"
+                                       placeholder="Enter condition JSON text"
+                                       onChange={(event) => {
+                                            this.setState({conditionText: event.target.value});
+                                            this.props.setFilter({
+                                                "text": event.target.value,
+                                            });
+
+                                       }}
+                                       value={this.props.filters.text}/>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 <div className="d-flex">
                     <div className="p-2" style={formHeaderStyle}>
@@ -205,7 +232,9 @@ class EventDefinitionCard extends React.Component {
                         <span style={validationMessageStyle} hidden={validationHidden}>{validationMessage}</span>
                     </div>
                     <div className="p-2">
-                        <button className="btn btn-primary float-right" onClick={() => {this.props.submitFilter()}} disabled={createEventDisabled}>{this.props.submitName}</button>
+                        <button className="btn btn-primary float-right" onClick={() => {
+                            this.props.submitFilter()
+                        }} disabled={createEventDisabled}>{this.props.submitName}</button>
                     </div>
                 </div>
 

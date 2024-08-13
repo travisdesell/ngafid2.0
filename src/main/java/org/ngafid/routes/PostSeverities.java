@@ -44,7 +44,7 @@ public class PostSeverities implements Route {
         String startDate = request.queryParams("startDate");
         String endDate = request.queryParams("endDate");
         String eventName = request.queryParams("eventName");
-
+        String tagName = request.queryParams("tagName");
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
@@ -59,7 +59,7 @@ public class PostSeverities implements Route {
         try {
             Connection connection = Database.getConnection();
 
-            HashMap<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            HashMap<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
             return gson.toJson(eventMap);
 
         } catch (SQLException e) {
