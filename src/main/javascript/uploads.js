@@ -20,6 +20,7 @@ var chunkSize = 2 * 1024 * 1024; //2MB
 class Upload extends React.Component {
     constructor(props) {
         super(props);
+        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
@@ -658,6 +659,9 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
+        //Disable Upload Flights button if not a Fleet Manager
+        let doButtonDisplay = (fleetManager);
+        
         return (
 
             <div>
@@ -673,7 +677,12 @@ class UploadsPage extends React.Component {
                                     ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
                                     : ""
                             }
-                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
+                            <button
+                                id="upload-flights-button"
+                                className="btn btn-primary btn-sm float-right"
+                                onClick={() => (doButtonDisplay ? this.triggerInput() : undefined)}
+                                style={{backgroundColor: doButtonDisplay ? '#007BFF' : '#444444'}}
+                                >
                                 <i className="fa fa-upload"></i> Upload Flights
                             </button>
                         </div>
@@ -689,6 +698,7 @@ class UploadsPage extends React.Component {
                             //uploadInfo.position = index;
                             return (
                                 <Upload
+                                    isFleetManager={fleetManager}
                                     uploadInfo={ uploadInfo }
                                     key={ uploadInfo.identifier }
                                     removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
@@ -716,7 +726,7 @@ class UploadsPage extends React.Component {
                         this.state.uploads.map((uploadInfo, index) => {
                             uploadInfo.position = index;
                             return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                <Upload isFleetManager={fleetManager} uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
                             );
                         })
                     }
