@@ -94,6 +94,7 @@ class CreateEventCard extends React.Component {
             stopBuffer : "",
             severityType : "min",
             severityColumnNames : [],
+            severityColumn : doubleTimeSeriesNames[0],
             filters : {
                 type : "GROUP",
                 condition : "AND",
@@ -291,6 +292,7 @@ class UpdateEventDefinitionModal extends React.Component {
             stopBuffer: "",
             severityType: "min",
             severityColumnNames: [],
+            severityColumn: doubleTimeSeriesNames[0],
             filters: {
                 type: "GROUP",
                 condition: "AND",
