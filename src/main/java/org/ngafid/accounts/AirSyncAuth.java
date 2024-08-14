@@ -45,7 +45,8 @@ public class AirSyncAuth {
     public AirSyncAuth(String apiKey, String apiSecret) {
         byte [] srcWord = (apiKey + ":" + apiSecret).getBytes();
         this.hash = Base64.getEncoder().encode(srcWord);
-
+        System.out.println("API Key = " + apiKey);
+        System.out.println("API Secret = " + apiSecret);
         this.requestAuthorization();
     }
 

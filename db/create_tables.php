@@ -597,13 +597,13 @@ if (!$update_2022_02_17) {
     query_ngafid_db($query);
 
     $query = "CREATE TABLE `airsync_fleet_info` (
-        `fleet_id` int(11) NOT NULL,                                                            
-        `api_key` varchar(32) NOT NULL,                                                         
-        `api_secret` varchar(64) NOT NULL,                                                      
+        `fleet_id` int(11) NOT NULL, 
+        `airsync_fleet_name` TEXT NOT NULL,
+        `api_key` varchar(32) NOT NULL,
+        `api_secret` varchar(64) NOT NULL,
         `last_upload_time` timestamp ON UPDATE CURRENT_TIMESTAMP,
         `timeout` int(11) DEFAULT NULL,
-        `override` tinyint(4) DEFAULT NULL,        
-        `mutex` TINYINT DEFAULT 0,
+        `override` tinyint(4) DEFAULT NULL,
 
         PRIMARY KEY(`fleet_id`),
         FOREIGN KEY(`fleet_id`) REFERENCES `fleet`(`id`)

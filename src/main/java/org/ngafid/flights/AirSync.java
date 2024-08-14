@@ -103,7 +103,6 @@ public class AirSync {
 
             while (true) {
                 AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
-
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
                     LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
@@ -113,7 +112,7 @@ public class AirSync {
                     String logMessage = "Fleet " + fleet.getName() + ": %s";
                     LOG.info("Override = " + fleet.getOverride(connection));
 
-                    if (fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
+                    if (true || fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
                         fleet.setOverride(connection, false);
 

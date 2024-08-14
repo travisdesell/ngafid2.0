@@ -3,6 +3,7 @@ package org.ngafid.accounts;
 import java.net.*;
 import java.sql.*;
 import javax.net.ssl.HttpsURLConnection;
+import java.nio.charset.StandardCharsets;
 
 import org.ngafid.WebServer;
 import org.ngafid.accounts.AirSyncAuth.AccessToken;
@@ -12,6 +13,7 @@ import org.ngafid.flights.AirSyncImport;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.google.gson.reflect.*;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -152,6 +154,38 @@ public class AirSyncAircraft {
         for (AirSyncImport i : page) i.init(fleet, this);
 
         return page;
+    }
+
+    static class AirSyncAircraftAccountInfo {
+        public String account_token, name;
+
+        public AirSyncAircraftAccountInfo() {}
+    }
+
+    public String getAirSyncFleetName() {
+        try {
+            AirSyncAuth authentication = fleet.getAuth();
+            HttpsURLConnection netConnection = (HttpsURLConnection) new URL(AirSyncEndpoints.AIRSYNC_ROOT + "/aircraft/accounts").openConnection();
+            netConnection.setRequestMethod("GET");
+            netConnection.setDoOutput(true);
+            netConnection.setRequestProperty("Authorization", authentication.bearerString());
+            
+            byte[] respRaw;
+            try (InputStream is = netConnection.getInputStream()) {
+                respRaw = is.readAllBytes();
+            }
+
+            List<AirSyncAircraftAccountInfo> info = gson.fromJson(new String(respRaw), new TypeToken<List<AirSyncAircraftAccountInfo>>(){}.getType());
+
+            if (info.size() != 1) {
+                LOG.severe("AirSync aircraft appears for multiple fleets. We do not support this functionality currently...");
+                System.exit(1);
+            }
+
+            return info.get(0).name;
+        } catch (IOException e) {
+            return null;
+        }
     }
 
     /**
