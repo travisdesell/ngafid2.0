@@ -112,7 +112,7 @@ public class AirSync {
                     String logMessage = "Fleet " + fleet.getName() + ": %s";
                     LOG.info("Override = " + fleet.getOverride(connection));
 
-                    if (true || fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
+                    if (fleet.getOverride(connection) || fleet.isQueryOutdated(connection)) {
                         LOG.info(String.format(logMessage, "past timeout! Checking with the AirSync servers now."));
                         fleet.setOverride(connection, false);
 
@@ -126,6 +126,11 @@ public class AirSync {
                 LOG.info("Sleeping for " + waitTime / 1000 + "s.");
                 Thread.sleep(waitTime);
             }
+        } catch (IOException e) {
+            String message = e.getMessage();
+            LOG.info("Got exception: " + e.getMessage());
+            if (message.contains("HTTP response code: 40"))
+                LOG.info("HINT: Your bearer token is either expired, or you are rate limited");
         } catch (Exception e) {
             crashGracefully(e);
         }

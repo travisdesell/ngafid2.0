@@ -114,6 +114,7 @@ public class AirSyncFleet extends Fleet {
                 }
             }
         }
+<<<<<<< HEAD
     }
 
     public void setOverride(Connection connection, boolean value) throws SQLException {
@@ -380,7 +381,6 @@ public class AirSyncFleet extends Fleet {
             for (AirSyncAircraft a : aircraft) a.initialize(this);
 
             this.aircraft = aircraft.stream().filter(a -> a.getAirSyncFleetName().equals(airsyncFleetName)).collect(Collectors.toList());
-
         }
         
         return this.aircraft;

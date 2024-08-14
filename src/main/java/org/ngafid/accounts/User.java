@@ -393,7 +393,7 @@ public class User {
         }
 
 
-        int emailTypeCountExpected = EmailType.getEmailTypeCount();
+        int emailTypeCountExpected = EmailType.getEmailTypeCountNonForced();
 
         LOG.info("Checking email preferences for user with ID (" + userId + ")... Expected: " + emailTypeCountExpected + " / Actual: " + emailPreferencesCount);
 
