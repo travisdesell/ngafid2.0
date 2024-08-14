@@ -68,7 +68,8 @@ module.exports = {
         update_password: __dirname + "/src/main/javascript/update_password.js",
         update_profile: __dirname + "/src/main/javascript/update_profile.js",
         uploads: __dirname + "/src/main/javascript/uploads.js",
-        welcome: __dirname + "/src/main/javascript/welcome.js"
+        welcome: __dirname + "/src/main/javascript/welcome.js",
+        theme_preload: __dirname + "/src/main/javascript/theme_preload.js",
     },
 
 

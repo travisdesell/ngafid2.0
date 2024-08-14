@@ -2,21 +2,8 @@
 <head>
 
     
-    <style>
-        /* PREVENT FLASHBANG AFTER PAGE LOAD */
-        body {
-            background-color: white;
-        }
-        .dark-theme {
-            background-color: #1a1a1a;
-        }
-    </style>
-    <script>
-        {/* USE PROPER BACKGROUND IMAGE BETWEEN PAGES */}
-        const darkMode = (localStorage.getItem('darkMode') === 'true');
-        if (darkMode)
-            document.documentElement.classList.add('dark-theme');
-    </script>
+	<link rel="stylesheet" href="/css/theme-preload.css">
+	<script src="/js/theme_preload-bundle.js"></script>
 
 
     <title>The National General Aviation Flight Information Database (NGAFID)</title>
