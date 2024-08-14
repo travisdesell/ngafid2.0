@@ -9,7 +9,6 @@ import SignedInNavbar from "./signed_in_navbar.js";
 import  TimeHeader from "./time_header.js";
 
 import Plotly, { redraw } from "plotly.js";
-import { RuntimeGlobals } from "webpack";
 
 
 airframes.unshift("All Airframes");
