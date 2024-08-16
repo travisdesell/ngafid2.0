@@ -187,8 +187,6 @@ class Paginator extends React.Component {
 
         let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
 
-        let PAGE_FLIGHTS = (window.location.pathname === "/protected/flights");
-
         return (
             <div className="card border-secondary"
                 style={{
