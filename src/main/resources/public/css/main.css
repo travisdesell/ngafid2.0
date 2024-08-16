@@ -20,7 +20,7 @@
 
     /* Background Image */
     --c_bg_image_light: url('../images/clouds.jpg');
-    --c_bg_image_dark: url('../images/clouds_dark.jpg');
+    --c_bg_image_dark: url('../images/clouds_dark_compressed.jpg');
     --c_bg_image: var(--c_bg_image_light);
 
     /* Scrollbar Colors */
