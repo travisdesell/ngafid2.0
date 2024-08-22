@@ -659,8 +659,8 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
-        //Disable Upload Flights button if not a Fleet Manager
-        let doButtonDisplay = (fleetManager);
+        // Only enable the upload button for admin users
+        let doButtonDisplay = uploader;
         
         return (
 
