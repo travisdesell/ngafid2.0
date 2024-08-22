@@ -20,9 +20,6 @@ var chunkSize = 2 * 1024 * 1024; //2MB
 class Upload extends React.Component {
     constructor(props) {
         super(props);
-        this.state = {
-            userFleetAccess : this.props.userFleetAccess
-        }
     }
 
     componentDidMount() {
@@ -89,14 +86,6 @@ class Upload extends React.Component {
     }
 
     render() {
-
-
-        let user = "";
-        let fleetName = "";
-        let fleetUsers = []
-        if (typeof this.state.user != 'undefined')
-            user = this.state.user;
-
 
         let uploadInfo = this.props.uploadInfo;
 
@@ -170,14 +159,12 @@ class Upload extends React.Component {
         let doButtonsDisable = buttonDisableStates.includes(status);
 
         //Disable Delete buttons with no Upload Access
-        const deleteButtonAccess = ["MANAGER", "UPLOAD"];
-        let hasDeleteAccess = deleteButtonAccess.includes(this.state.userFleetAccess);
+        let hasDeleteAccess = (isUploader);
         let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
         let doDeleteButtonHide = (!hasDeleteAccess);
 
         //Disable Delete buttons with no View Access
-        const downloadButtonAccess = ["MANAGER", "UPLOAD", "VIEW"];
-        let hasDownloadAccess = downloadButtonAccess.includes(this.state.userFleetAccess);
+        let hasDownloadAccess = true;
         let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
         let doDownloadButtonHide = (!hasDownloadAccess);
 
@@ -242,7 +229,6 @@ class UploadsPage extends React.Component {
         super(props);
 
         this.state = {
-            user : this.props.user,
             uploads : this.props.uploads,
             pending_uploads : this.props.pending_uploads,
 
@@ -683,16 +669,9 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
-        //Get User Fleet Access
-        let userFleetAccess = "VIEW";
-        if (typeof this.state.user != 'undefined')
-            userFleetAccess = this.state.user.fleetAccess.accessType;
-
         //Disable Upload buttons with no Upload Access
-        const uploadButtonAccess = ["MANAGER", "UPLOAD"];
-        let hasUploadAccess = uploadButtonAccess.includes(userFleetAccess);
-        let doUploadButtonDisable = (!hasUploadAccess);
-        let doUploadButtonHide = (!hasUploadAccess);
+        let doUploadButtonDisable = (!isUploader);
+        let doUploadButtonHide = (!isUploader);
 
         return (
 
@@ -735,7 +714,6 @@ class UploadsPage extends React.Component {
                             //uploadInfo.position = index;
                             return (
                                 <Upload
-                                    userFleetAccess={userFleetAccess}
                                     uploadInfo={uploadInfo}
                                     key={uploadInfo.identifier}
                                     removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
@@ -746,7 +724,6 @@ class UploadsPage extends React.Component {
 
                     <Paginator
                         submitFilter={() => {this.submitFilter();}}
-                        userFleetAccess={userFleetAccess}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -765,7 +742,6 @@ class UploadsPage extends React.Component {
                             uploadInfo.position = index;
                             return (
                                 <Upload
-                                    userFleetAccess={userFleetAccess}
                                     uploadInfo={uploadInfo}
                                     key={uploadInfo.identifier}
                                     removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}}
@@ -776,7 +752,6 @@ class UploadsPage extends React.Component {
 
                     <Paginator
                         submitFilter={() => {this.submitFilter();}}
-                        userFleetAccess={userFleetAccess}
                         items={this.state.uploads}
                         itemName="uploads"
                         currentPage={this.state.currentPage}
@@ -799,6 +774,6 @@ class UploadsPage extends React.Component {
 
 
 var uploadsPage = ReactDOM.render(
-    <UploadsPage user={user} uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages} currentPage={currentPage}/>,
+    <UploadsPage uploads={uploads} pending_uploads={pending_uploads} numberPages={numberPages} currentPage={currentPage}/>,
     document.querySelector('#uploads-page')
 );
