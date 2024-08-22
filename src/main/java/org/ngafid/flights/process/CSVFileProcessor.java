@@ -88,7 +88,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     .map(String::strip)
                     .forEachOrdered(headers::add);;
             }
-            
+
             updateAirframe();
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
@@ -118,6 +118,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                 }
             }
+
+            for (String name : doubleTimeSeries.keySet()) {
+                LOG.info("name = " + name + "; = " + doubleTimeSeries.get(name));
+            }
+
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);

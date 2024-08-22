@@ -87,7 +87,7 @@ public class SeriesNames {
                 //create a new entry in the data_type_names table for this
                 //previously unseen name
 
-                String insertQueryString = "INSERT INTO string_series_names SET name = ?";
+                String insertQueryString = "INSERT IGNORE INTO string_series_names SET name = ?";
                 PreparedStatement insertQuery = connection.prepareStatement(insertQueryString, Statement.RETURN_GENERATED_KEYS);
                 insertQuery.setString(1, name);
 

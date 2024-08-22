@@ -88,7 +88,7 @@ public class TypeNames {
                 //create a new entry in the data_type_names table for this
                 //previously unseen name
 
-                String insertQueryString = "INSERT INTO data_type_names SET name = ?";
+                String insertQueryString = "INSERT IGNORE INTO data_type_names SET name = ?";
                 PreparedStatement insertQuery = connection.prepareStatement(insertQueryString, Statement.RETURN_GENERATED_KEYS);
                 insertQuery.setString(1, name);
 

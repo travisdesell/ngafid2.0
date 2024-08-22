@@ -133,50 +133,18 @@ public class Tails {
     private static HashMap<Integer, FleetInstance> fleetMaps = new HashMap<>();
 
     public static void setSuggestedTail(Connection connection, int fleetId, String systemId, String suggestedTail) throws SQLException {
-        //check to see if this tail entry exists
-        //if it does, do nothing
-        //otherwise, add this to tails with confirmed = false
+        String queryString = """
+            INSERT IGNORE INTO tails SET system_id = ?, fleet_id = ?, tail = ?, confirmed = false
+        """;
 
-        String queryString = "SELECT tail, confirmed FROM tails WHERE fleet_id = ? AND system_id = ?";
         PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, fleetId);
-        query.setString(2, systemId);
+
+        query.setString(1, systemId);
+        query.setInt(2, fleetId);
+        query.setString(3, suggestedTail == null ? "" : suggestedTail);
 
         LOG.fine(query.toString());
-        ResultSet resultSet = query.executeQuery();
-
-        String tail = null;
-        boolean confirmed = false;
-        if (resultSet.next()) {
-            //system id existed in the database, get its tail number and if it was confirmed
-            tail = resultSet.getString(1);
-            confirmed = resultSet.getBoolean(2);
-            LOG.fine("tail was not in db!");
-        }
-        resultSet.close();
-        query.close();
-
-        //tail was not set in the database, set it with a suggested value since we have one
-        if (tail == null) {
-            queryString = "INSERT INTO tails SET tail = ?, fleet_id = ?, system_id = ?, confirmed = false";
-            query = connection.prepareStatement(queryString);
-            if (suggestedTail == null) {
-                query.setString(1, "");
-            } else {
-                // TODO: This is a hack. Probably should change the DB or change how suggestedTail is generated
-                if (suggestedTail.length() > 16)
-                    suggestedTail = suggestedTail.substring(0, 16);
-                query.setString(1, suggestedTail);
-            }
-            query.setInt(2, fleetId);
-            query.setString(3, systemId);
-
-            LOG.fine("suggestedTail = '" + suggestedTail + "'");
-            LOG.fine(query.toString());
-            query.executeUpdate();
-
-            query.close();
-        }
+        query.executeUpdate();
     }
 
     public static void updateTail(Connection connection, int fleetId, String systemId, String tail) throws SQLException {
