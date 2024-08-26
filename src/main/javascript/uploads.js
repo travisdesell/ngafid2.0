@@ -173,11 +173,13 @@ class Upload extends React.Component {
         const deleteButtonAccess = ["MANAGER", "UPLOAD"];
         let hasDeleteAccess = deleteButtonAccess.includes(this.state.userFleetAccess);
         let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
+        let doDeleteButtonHide = (!hasDeleteAccess);
 
         //Disable Delete buttons with no View Access
         const downloadButtonAccess = ["MANAGER", "UPLOAD", "VIEW"];
         let hasDownloadAccess = downloadButtonAccess.includes(this.state.userFleetAccess);
         let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
+        let doDownloadButtonHide = (!hasDownloadAccess);
 
         return (
             <div className="m-1">
@@ -189,33 +191,39 @@ class Upload extends React.Component {
                     </div>
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
-                    <Button
-                        type="button"
-                        className={"btn btn-danger btn-sm"}
-                        style={{backgroundColor:(doDeleteButtonDisable ? '#444444' : '#DC3545'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-times"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload()) }
+                    {
+                        (!doDeleteButtonHide) &&
+                        <Button
+                            type="button"
+                            className={"btn btn-danger btn-sm"}
+                            style={{backgroundColor:(doDeleteButtonDisable ? '#444444' : '#DC3545'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
                             >
-                        </i>
-                    </Button>
+                            <i
+                                className="fa fa-times"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                onClick={ () => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload()) }
+                                >
+                            </i>
+                        </Button>
+                    }
 
-                    <Button
-                        type="button"
-                        className={"btn btn btn-sm"}
-                        style={{backgroundColor:(doDownloadButtonDisable ? '#444444' : '#007BFF'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-download"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
-                            onClick={ () => (doDownloadButtonDisable ? undefined : this.downloadUpload()) }
+                    {
+                        (!doDownloadButtonHide) &&
+                        <Button
+                            type="button"
+                            className={"btn btn btn-sm"}
+                            style={{backgroundColor:(doDownloadButtonDisable ? '#444444' : '#007BFF'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
                             >
-                        </i>
-                    </Button>
+                            <i
+                                className="fa fa-download"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                onClick={ () => (doDownloadButtonDisable ? undefined : this.downloadUpload()) }
+                                >
+                            </i>
+                        </Button>
+                    }
 
                 </div>
             </div>
@@ -684,6 +692,7 @@ class UploadsPage extends React.Component {
         const uploadButtonAccess = ["MANAGER", "UPLOAD"];
         let hasUploadAccess = uploadButtonAccess.includes(userFleetAccess);
         let doUploadButtonDisable = (!hasUploadAccess);
+        let doUploadButtonHide = (!hasUploadAccess);
 
         return (
 
@@ -691,25 +700,30 @@ class UploadsPage extends React.Component {
                 <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="p-1">
-                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
 
-                    <div className="card mb-1 border-secondary">
-                        <div className="p-2">
-                            {
-                                this.state.pending_uploads.length > 0
-                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
-                                    : ""
-                            }
-                            <button
-                                id="upload-flights-button"
-                                className="btn btn-primary btn-sm float-right"
-                                onClick={() => (doUploadButtonDisable ? undefined : this.triggerInput())}
-                                style={{backgroundColor: doUploadButtonDisable ?  '#444444' : '#007BFF'}}
-                                >
-                                <i className="fa fa-upload"/>Upload Flights
-                            </button>
+                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                    {
+                        (!doUploadButtonHide) &&
+                        <div className="card mb-1 border-secondary">
+                            <div className="p-2">
+                                {
+                                    this.state.pending_uploads.length > 0
+                                        ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
+                                        : ""
+                                }
+
+                                <button
+                                    id="upload-flights-button"
+                                    className="btn btn-primary btn-sm float-right"
+                                    onClick={() => (doUploadButtonDisable ? undefined : this.triggerInput())}
+                                    style={{backgroundColor: doUploadButtonDisable ?  '#444444' : '#007BFF'}}
+                                    >
+                                    <i className="fa fa-upload"/>Upload Flights
+                                </button>
+                                
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     {
                         this.state.pending_uploads.map((uploadInfo, index) => {
