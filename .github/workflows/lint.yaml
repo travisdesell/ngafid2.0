@@ -3,6 +3,8 @@ name: Lint
 on:
   pull_request:
     branches: [main]
+  workflow_dispatch:
+    branches: []
 
 jobs:
   lint:
