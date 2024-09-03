@@ -21,7 +21,7 @@ public class PostRemoveFilter implements Route {
     public PostRemoveFilter(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override

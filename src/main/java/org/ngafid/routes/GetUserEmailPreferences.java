@@ -49,7 +49,7 @@ public class GetUserEmailPreferences implements Route {
 
     public GetUserEmailPreferences(Gson gson) {
         this.gson = gson;
-        LOG.info("get " + this.getClass().getName() + " initalized");   
+        LOG.info("get " + this.getClass().getName() + " initialized");   
     }
 
     @Override

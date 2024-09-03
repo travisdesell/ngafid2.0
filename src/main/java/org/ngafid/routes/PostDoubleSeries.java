@@ -31,7 +31,7 @@ public class PostDoubleSeries implements Route {
     public PostDoubleSeries(Gson gson) {
         this.gson = gson;
 
-        System.out.println("post main content route initalized");
+        System.out.println("post main content route initialized");
         LOG.info("post main content route initialized.");
     }
 

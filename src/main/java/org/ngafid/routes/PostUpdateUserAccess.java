@@ -28,7 +28,7 @@ public class PostUpdateUserAccess implements Route {
     public PostUpdateUserAccess(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private class UpdateUserAccess {

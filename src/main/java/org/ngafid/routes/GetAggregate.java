@@ -69,13 +69,13 @@ public class GetAggregate implements Route {
     public GetAggregate(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetAggregate(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages = new ArrayList<Message>();
         messages.add(new Message(messageType, messageText));

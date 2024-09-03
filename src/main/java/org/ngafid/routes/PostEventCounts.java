@@ -35,7 +35,7 @@ public class PostEventCounts implements Route {
         this.gson = gson;
         this.aggregate = aggregate;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
 

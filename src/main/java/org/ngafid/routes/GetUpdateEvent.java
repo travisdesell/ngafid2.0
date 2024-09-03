@@ -45,13 +45,13 @@ public class GetUpdateEvent implements Route {
     public GetUpdateEvent(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetUpdateEvent(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override

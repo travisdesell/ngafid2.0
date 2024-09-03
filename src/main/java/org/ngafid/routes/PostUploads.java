@@ -28,7 +28,7 @@ public class PostUploads implements Route {
     public PostUploads(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public static class UploadsResponse {

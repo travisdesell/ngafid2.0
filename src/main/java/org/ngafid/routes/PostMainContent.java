@@ -26,7 +26,7 @@ public class PostMainContent implements Route {
     public PostMainContent(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private class MainContent {

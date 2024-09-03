@@ -48,13 +48,13 @@ public class GetHome implements Route {
     public GetHome(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetHome(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages.add(new Message(messageType, messageText));
     }

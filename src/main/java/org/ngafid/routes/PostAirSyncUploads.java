@@ -31,7 +31,7 @@ public class PostAirSyncUploads implements Route {
     public PostAirSyncUploads(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
 

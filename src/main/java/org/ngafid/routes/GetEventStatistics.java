@@ -53,13 +53,13 @@ public class GetEventStatistics implements Route {
     public GetEventStatistics(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetEventStatistics(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages = new ArrayList<Message>();
         messages.add(new Message(messageType, messageText));

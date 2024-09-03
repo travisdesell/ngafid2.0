@@ -67,13 +67,13 @@ public class GetSeverities implements Route {
     public GetSeverities(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetSeverities(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages = new ArrayList<Message>();
         messages.add(new Message(messageType, messageText));

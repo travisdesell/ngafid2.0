@@ -31,16 +31,16 @@ public class CalculateExceedences {
     private final int stopBuffer;
 
     /**
-     * Constructor
+     * Constructor.
      *
      * @param eventDefinition Event definition to calculate exceedences for
      */
-    public CalculateExceedences(EventDefinition eventDefinition) {
-        this.eventDefinition = eventDefinition;
-        this.filter = eventDefinition.getFilter();
+    public CalculateExceedences(EventDefinition eventDef) {
+        this.eventDefinition = eventDef;
+        this.filter = eventDef.getFilter();
         this.conditional = new Conditional(filter);
-        this.startBuffer = eventDefinition.getStartBuffer();
-        this.stopBuffer = eventDefinition.getStopBuffer();
+        this.startBuffer = eventDef.getStartBuffer();
+        this.stopBuffer = eventDef.getStopBuffer();
     }
 
     /**
@@ -51,7 +51,8 @@ public class CalculateExceedences {
      * @param eventDefinition      Event definition to calculate exceedences for
      * @param uploadProcessedEmail Email object to send information to
      */
-    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition, UploadProcessedEmail uploadProcessedEmail) {
+    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition,
+                              UploadProcessedEmail uploadProcessedEmail) {
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
@@ -278,7 +279,7 @@ public class CalculateExceedences {
                 if (currentDuration < minDuration) minDuration = currentDuration;
             }
 
-            if (eventList.size() > 0) {
+            if (!eventList.isEmpty()) {
                 PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0");
                 stmt.setInt(1, fleetId);
                 stmt.setInt(2, flightId);

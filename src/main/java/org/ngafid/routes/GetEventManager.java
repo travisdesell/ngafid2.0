@@ -48,7 +48,7 @@ public class GetEventManager implements Route {
     public GetEventManager(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetEventManager(Gson gson, String messageType, String messageText) {
