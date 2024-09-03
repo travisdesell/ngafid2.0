@@ -22,7 +22,7 @@ public class PostResetPassword implements Route {
     public PostResetPassword(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private class ResetSuccessResponse {

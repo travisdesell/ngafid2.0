@@ -23,7 +23,7 @@ public class PostFleetNames implements Route {
     public PostFleetNames(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override

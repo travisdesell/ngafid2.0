@@ -26,7 +26,7 @@ public class PostLogin implements Route {
     public PostLogin(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private class LoginResponse {

@@ -21,7 +21,7 @@ public class GetForgotPassword implements Route {
 
     public GetForgotPassword(Gson gson) {
         this.gson = gson;
-        LOG.info("GET " + this.getClass().getName() + " initalized");
+        LOG.info("GET " + this.getClass().getName() + " initialized");
     }
     @Override
     public Object handle(Request request, Response response) {

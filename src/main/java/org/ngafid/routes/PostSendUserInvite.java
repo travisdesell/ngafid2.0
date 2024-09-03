@@ -24,7 +24,7 @@ public class PostSendUserInvite implements Route {
     public PostSendUserInvite(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private static class InvitationSent {

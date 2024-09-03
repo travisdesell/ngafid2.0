@@ -31,7 +31,7 @@ public class GetSimAircraft implements Route {
     public GetSimAircraft(Gson gson) {
         this.gson = gson;
 
-        LOG.info("GET " + this.getClass().getName() + " initalized");
+        LOG.info("GET " + this.getClass().getName() + " initialized");
     }
 
     /**

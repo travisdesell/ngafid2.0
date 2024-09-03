@@ -51,7 +51,7 @@ public class PostRemoveUpload implements Route {
     public PostRemoveUpload(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
     @Override
     public Object handle(Request request, Response response) {

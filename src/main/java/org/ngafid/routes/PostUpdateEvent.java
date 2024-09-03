@@ -29,7 +29,7 @@ public class PostUpdateEvent implements Route {
     public PostUpdateEvent(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override

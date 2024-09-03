@@ -2,7 +2,6 @@ package org.ngafid.routes;
 
 import java.time.LocalDate;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.HashMap;
@@ -20,25 +19,26 @@ import spark.Session;
 import spark.Spark;
 
 import org.ngafid.Database;
-import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
-import org.ngafid.events.EventStatistics;
-import org.ngafid.common.*;
 
 public class PostSeverities implements Route {
     private static final Logger LOG = Logger.getLogger(PostSeverities.class.getName());
-    private Gson gson;
+    private final Gson gson;
 
+    /**
+     * Constructor
+     * @param gson GSON object
+     */
     public PostSeverities(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
 
     @Override
-    public Object handle(Request request, Response response) {
+    public Object handle(final Request request, final Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         String startDate = request.queryParams("startDate");

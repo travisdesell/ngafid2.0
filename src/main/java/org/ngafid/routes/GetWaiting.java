@@ -36,7 +36,7 @@ public class GetWaiting implements Route {
     public GetWaiting(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     @Override

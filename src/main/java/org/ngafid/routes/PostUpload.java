@@ -44,7 +44,7 @@ public class PostUpload implements Route {
     public PostUpload(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private static void deleteDirectory(File folder) {

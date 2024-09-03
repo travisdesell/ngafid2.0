@@ -24,7 +24,7 @@ public class GetFlightDisplay implements Route {
     public GetFlightDisplay(Gson gson) {
         this.gson = gson;
 
-        LOG.info("get " + this.getClass().getName() + " initalized");
+        LOG.info("get " + this.getClass().getName() + " initialized");
     }
 
     @Override

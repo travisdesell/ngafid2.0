@@ -32,7 +32,7 @@ public class GetXPlane implements Route {
     public GetXPlane(Gson gson) {
         this.gson = gson;
 
-        LOG.info("GET " + this.getClass().getName() + " initalized");
+        LOG.info("GET " + this.getClass().getName() + " initialized");
     }
 
     /**

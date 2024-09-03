@@ -27,7 +27,7 @@ public class PostUpdateTail implements Route {
     public PostUpdateTail(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     private class UpdateTailResponse {

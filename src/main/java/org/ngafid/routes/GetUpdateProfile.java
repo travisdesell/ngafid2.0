@@ -48,13 +48,13 @@ public class GetUpdateProfile implements Route {
     public GetUpdateProfile(Gson gson) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
     }
 
     public GetUpdateProfile(Gson gson, String messageType, String messageText) {
         this.gson = gson;
 
-        LOG.info("post " + this.getClass().getName() + " initalized");
+        LOG.info("post " + this.getClass().getName() + " initialized");
 
         messages = new ArrayList<Message>();
         messages.add(new Message(messageType, messageText));
