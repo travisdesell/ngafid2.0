@@ -28,3 +28,14 @@ jobs:
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
           FIX_GOOGLE_JAVA_FORMAT: true
+
+      - name: Commit and Push Formatting Fixes
+        if: >
+          github.event_name == 'pull_request' &&
+          github.ref_name != github.event.repository.default_branch
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          branch: ${{ github.event.pull_request.head.ref || github.head_ref || github.ref }}
+          commit_message: "Fix Formatting Issues"
+          commit_user_name: ngafid-bot
+          commit_user_email: ngafid@ngafid.org

@@ -23,7 +23,7 @@ public class CalculateExceedences {
 
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
-
+    private static ArrayList<EventDefinition> allEvents = null;
     private final EventDefinition eventDefinition;
     private final Filter filter;
     private final Conditional conditional;
@@ -33,7 +33,7 @@ public class CalculateExceedences {
     /**
      * Constructor.
      *
-     * @param eventDefinition Event definition to calculate exceedences for
+     * @param eventDef Event definition to calculate exceedences for
      */
     public CalculateExceedences(EventDefinition eventDef) {
         this.eventDefinition = eventDef;
@@ -44,6 +44,126 @@ public class CalculateExceedences {
     }
 
     /**
+     * Calculate exceedences for all events
+     *
+     * @param connection           Database connection
+     * @param uploadId             Upload ID
+     * @param uploadProcessedEmail Email object to send information to
+     * @throws SQLException SQL Exception
+     */
+    public static void calculateExceedences(Connection connection, int uploadId, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
+        Instant start = Instant.now();
+        if (allEvents == null) {
+            allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
+        }
+        System.out.println("n events = " + allEvents.size());
+
+        int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
+
+        for (int i = 0; i < allEvents.size(); i++) {
+            //process events for this event type
+            EventDefinition currentDefinition = allEvents.get(i);
+            System.out.println("\t" + currentDefinition.toString());
+
+            CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
+
+            ArrayList<Flight> flights = null;
+
+            if (currentDefinition.getAirframeNameId() == 0) {
+                flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND upload_id = " + uploadId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
+            } else {
+                flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND upload_id = " + uploadId + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
+            }
+
+            for (int j = 0; j < flights.size(); j++) {
+                if (!flights.get(j).insertCompleted()) {
+                    //this flight is currently being inserted to
+                    //the database by ProcessFlights
+                    continue;
+                }
+
+                currentCalculator.processFlight(connection, flights.get(j), currentDefinition, uploadProcessedEmail);
+            }
+        }
+
+        Instant end = Instant.now();
+        long elapsed_millis = Duration.between(start, end).toMillis();
+        double elapsed_seconds = ((double) elapsed_millis) / 1000;
+        System.out.println("finished in " + elapsed_seconds);
+
+        if (uploadProcessedEmail != null) uploadProcessedEmail.setExceedencesElapsedTime(elapsed_seconds);
+    }
+
+    /**
+     * Main method
+     *
+     * @param arguments Command line arguments
+     */
+    public static void main(String[] arguments) {
+        try {
+            Connection connection = Database.resetConnection();
+
+            //for now only calculate exceedences for fixed wing aircraft
+            int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
+
+            while (true) {
+                connection = Database.resetConnection();
+                Instant start = Instant.now();
+                //ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
+                //
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id = ?", new Object[]{68});
+
+                System.out.println("n events = " + allEvents.size());
+                for (int i = 0; i < allEvents.size(); i++) {
+                    //process events for this event type
+                    EventDefinition currentDefinition = allEvents.get(i);
+                    System.out.println("\t" + currentDefinition.toString());
+
+                    CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
+
+                    ArrayList<Flight> flights = null;
+
+                    if (currentDefinition.getAirframeNameId() == 0) {
+                        flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
+                    } else {
+                        flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
+                    }
+
+                    for (int j = 0; j < flights.size(); j++) {
+                        if (!flights.get(j).insertCompleted()) {
+                            //this flight is currently being inserted to
+                            //the database by ProcessFlights
+                            continue;
+                        }
+
+                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition, null);
+                    }
+                }
+
+                Instant end = Instant.now();
+                long elapsed_millis = Duration.between(start, end).toMillis();
+                double elapsed_seconds = ((double) elapsed_millis) / 1000;
+                System.out.println("finished in " + elapsed_seconds);
+
+                try {
+                    Thread.sleep(3000);
+                } catch (Exception e) {
+                    System.err.println(e);
+                    e.printStackTrace();
+                }
+            }
+
+            //connection.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        System.err.println("finished!");
+        System.exit(1);
+    }
+
+    /**
      * Process a flight to calculate exceedences
      *
      * @param connection           Database connection
@@ -51,8 +171,7 @@ public class CalculateExceedences {
      * @param eventDefinition      Event definition to calculate exceedences for
      * @param uploadProcessedEmail Email object to send information to
      */
-    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition,
-                              UploadProcessedEmail uploadProcessedEmail) {
+    public void processFlight(Connection connection, Flight flight, EventDefinition eventDefinition, UploadProcessedEmail uploadProcessedEmail) {
         int fleetId = flight.getFleetId();
         int flightId = flight.getId();
         int airframeNameId = flight.getAirframeNameId();
@@ -251,8 +370,9 @@ public class CalculateExceedences {
             for (i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
                 System.out.println("Event : [line: " + event.getStartLine() + " to " + event.getEndLine() + ", time: " + event.getStartTime() + " to " + event.getEndTime() + "]");
-                if (uploadProcessedEmail != null)
+                if (uploadProcessedEmail != null) {
                     uploadProcessedEmail.addExceedence(flightFilename, "flight " + flightId + ", '" + flightFilename + "' - '" + eventDefinition.getName() + "' from " + event.getStartTime() + " to " + event.getEndTime());
+                }
             }
 
             //Step 2: export the pitch events to the database
@@ -314,125 +434,5 @@ public class CalculateExceedences {
             e.printStackTrace();
             System.exit(1);
         }
-    }
-
-    private static ArrayList<EventDefinition> allEvents = null;
-
-    /**
-     * Calculate exceedences for all events
-     * @param connection Database connection
-     * @param uploadId Upload ID
-     * @param uploadProcessedEmail Email object to send information to
-     * @throws SQLException SQL Exception
-     */
-    public static void calculateExceedences(Connection connection, int uploadId, UploadProcessedEmail uploadProcessedEmail) throws SQLException {
-        Instant start = Instant.now();
-        if (allEvents == null) {
-            allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
-        }
-        System.out.println("n events = " + allEvents.size());
-
-        int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
-
-        for (int i = 0; i < allEvents.size(); i++) {
-            //process events for this event type
-            EventDefinition currentDefinition = allEvents.get(i);
-            System.out.println("\t" + currentDefinition.toString());
-
-            CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
-
-            ArrayList<Flight> flights = null;
-
-            if (currentDefinition.getAirframeNameId() == 0) {
-                flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND upload_id = " + uploadId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
-            } else {
-                flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND upload_id = " + uploadId + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)");
-            }
-
-            for (int j = 0; j < flights.size(); j++) {
-                if (!flights.get(j).insertCompleted()) {
-                    //this flight is currently being inserted to
-                    //the database by ProcessFlights
-                    continue;
-                }
-
-                currentCalculator.processFlight(connection, flights.get(j), currentDefinition, uploadProcessedEmail);
-            }
-        }
-
-        Instant end = Instant.now();
-        long elapsed_millis = Duration.between(start, end).toMillis();
-        double elapsed_seconds = ((double) elapsed_millis) / 1000;
-        System.out.println("finished in " + elapsed_seconds);
-
-        if (uploadProcessedEmail != null) uploadProcessedEmail.setExceedencesElapsedTime(elapsed_seconds);
-    }
-
-    /**
-     * Main method
-     * @param arguments Command line arguments
-     */
-    public static void main(String[] arguments) {
-        try {
-            Connection connection = Database.resetConnection();
-
-            //for now only calculate exceedences for fixed wing aircraft
-            int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
-
-            while (true) {
-                connection = Database.resetConnection();
-                Instant start = Instant.now();
-                //ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
-                //
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id = ?", new Object[]{68});
-
-                System.out.println("n events = " + allEvents.size());
-                for (int i = 0; i < allEvents.size(); i++) {
-                    //process events for this event type
-                    EventDefinition currentDefinition = allEvents.get(i);
-                    System.out.println("\t" + currentDefinition.toString());
-
-                    CalculateExceedences currentCalculator = new CalculateExceedences(currentDefinition);
-
-                    ArrayList<Flight> flights = null;
-
-                    if (currentDefinition.getAirframeNameId() == 0) {
-                        flights = Flight.getFlights(connection, "airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
-                    } else {
-                        flights = Flight.getFlights(connection, "flights.airframe_id = " + currentDefinition.getAirframeNameId() + " AND airframe_type_id = " + airframeTypeId + " AND NOT EXISTS (SELECT flight_id FROM flight_processed WHERE event_definition_id = " + currentDefinition.getId() + " AND flight_processed.flight_id = flights.id)", 100);
-                    }
-
-                    for (int j = 0; j < flights.size(); j++) {
-                        if (!flights.get(j).insertCompleted()) {
-                            //this flight is currently being inserted to
-                            //the database by ProcessFlights
-                            continue;
-                        }
-
-                        currentCalculator.processFlight(connection, flights.get(j), currentDefinition, null);
-                    }
-                }
-
-                Instant end = Instant.now();
-                long elapsed_millis = Duration.between(start, end).toMillis();
-                double elapsed_seconds = ((double) elapsed_millis) / 1000;
-                System.out.println("finished in " + elapsed_seconds);
-
-                try {
-                    Thread.sleep(3000);
-                } catch (Exception e) {
-                    System.err.println(e);
-                    e.printStackTrace();
-                }
-            }
-
-            //connection.close();
-        } catch (SQLException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-
-        System.err.println("finished!");
-        System.exit(1);
     }
 }
