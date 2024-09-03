@@ -27,3 +27,4 @@ jobs:
           VALIDATE_JSX: true
           VALIDATE_PHP: true
           IGNORE_GITIGNORED_FILES: true
+          FIX_GOOGLE_JAVA_FORMAT: true
