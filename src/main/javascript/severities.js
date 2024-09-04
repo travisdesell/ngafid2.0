@@ -89,6 +89,10 @@ class SeveritiesPage extends React.Component {
 
     }
 
+    componentDidMount() {
+        this.displayPlot(this.state.airframe);
+    }
+
     exportCSV() {
         let selectedAirframe = this.state.airframe;
 
@@ -175,25 +179,35 @@ class SeveritiesPage extends React.Component {
     }
 
     displayPlot(selectedAirframe) {
-        console.log("displaying plots with airframe: '" + selectedAirframe + "'");
+
+        console.log("Displaying plots with airframe: '" + selectedAirframe + "'");
+        // console.log("Event Severities: ", eventSeverities);
 
         let severityTraces = [];
         var airframeNames = {};
 
+
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
-            //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-            if (!this.state.eventChecked[eventName]) continue;
+            
+            if (!this.state.eventChecked[eventName])
+                continue;
 
             for (let [airframe, counts] of Object.entries(countsMap)) {
 
-                if (airframe === "Garmin Flight Display") continue;
-                if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
+                if (airframe === "Garmin Flight Display")
+                    continue;
+
+                if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes")
+                    continue;
 
                 //Map airframe names to a consistent marker symbol
-                const markerSymbolList = ["circle", "diamond", "square", "triangle", "pentagon", "hexagon", "octagon"];
+                const markerSymbolList = ["circle", "diamond", "square", "x", "pentagon", "hexagon", "octagon"];
+                // console.log("Marker Symbol List: ", markerSymbolList);
 
-                airframeNames[airframe]= (airframeNames[airframe] ?? Object.keys(airframeNames).length);
+                airframeNames[airframe] ??= Object.keys(airframeNames).length;
+                // console.log(`airframeNames[${airframe}]: `, airframeNames[airframe]);
                 let markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
+                // console.log("Marker Symbol: ", markerSymbol);
                 let markerSymbolAny = (markerSymbol + "-open-dot");
 
                 let severityTrace = {
@@ -282,11 +296,14 @@ class SeveritiesPage extends React.Component {
             }
         }
 
+        let styles = getComputedStyle(document.documentElement);
+        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+
         var severityLayout = {
             title : 'Severity of Events',
             hovermode : "closest",
-            //autosize: false,
-            //width: 500,
             height: 700,
             margin: {
                 l: 50,
@@ -294,6 +311,17 @@ class SeveritiesPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -410,7 +438,7 @@ class SeveritiesPage extends React.Component {
             data : submission_data,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ", this.data, response);
+                console.log("Received response <all_severities>: ", this.data, response);
 
                 $('#loading').hide();
 
@@ -435,16 +463,32 @@ class SeveritiesPage extends React.Component {
                     if (isEmpty) {
                         severitiesPage.state.eventsEmpty[eventName] = true;
                         eventSeverities[eventName] = {};
-                        }
-                    else {
+                    } else {
+
+                        //Mark severities for event
                         severitiesPage.state.eventsEmpty[eventName] = false;
                         eventSeverities[eventName] = eventSeverityCounts;
+
+                        //Concatenate the counts for the "ANY Event" event
+                        if (eventSeverities["ANY Event"] == null)
+                            eventSeverities["ANY Event"] = {};                        
+                        console.log("Merging counts for event: '" + eventName + "'");
+                        for(let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+
+                            if (eventSeverities["ANY Event"][airframe] == null)
+                                eventSeverities["ANY Event"][airframe] = eventSeverityCounts[airframe];
+                            else
+                                eventSeverities["ANY Event"][airframe] = eventSeverities["ANY Event"][airframe].concat(eventSeverityCounts[airframe]);
+                            
+                        }
+
                     }
                     
                 }
 
-                // severitiesPage.displayPlot(severitiesPage.state.airframe);
                 severitiesPage.setState(severitiesPage.state);
+                severitiesPage.displayPlot(severitiesPage.state.airframe);
+
             },
 
             error : function(jqXHR, textStatus, errorThrown) {
@@ -487,7 +531,7 @@ class SeveritiesPage extends React.Component {
             data : submission_data,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ", this.data, response);
+                console.log("Received response <severities>: ", this.data, response);
 
                 $('#loading').hide();
 
@@ -502,6 +546,8 @@ class SeveritiesPage extends React.Component {
                     if (counts.length != 0)
                         continue;
                 
+                    console.log("No counts for event: '" + eventName + "' and airframe: '" + airframe + "'");
+
                     severitiesPage.state.eventsEmpty[eventName] = true;
                     eventSeverities[eventName] = {};
                     severitiesPage.setState(severitiesPage.state);
@@ -509,9 +555,9 @@ class SeveritiesPage extends React.Component {
                 }
 
                 eventSeverities[eventName] = response;
+                severitiesPage.setState(severitiesPage.state);
                 severitiesPage.displayPlot(severitiesPage.state.airframe);
 
-                severitiesPage.setState(severitiesPage.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
@@ -523,7 +569,7 @@ class SeveritiesPage extends React.Component {
 
     checkEvent(eventName) {
 
-        console.log("checking event: '" + eventName + "'");
+        console.log("Checking event: '" + eventName + "'");
         this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
         this.setState(this.state);
 
@@ -605,14 +651,17 @@ class SeveritiesPage extends React.Component {
         };
 
         return (
-            <div>
-                <SignedInNavbar activePage={"severities"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="container-fluid">
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage={"severities"} darkModeOnClickAlt={()=>{this.displayPlot(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                            <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Severities"
                                     airframes={airframes}
@@ -644,7 +693,7 @@ class SeveritiesPage extends React.Component {
                                                 //Don't show a description for the "ANY Event" event
                                                 if (eventName === "ANY Event") return (
                                                     <div key={index} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)} style={{border:"1px solid red"}}/>
                                                         <label className="form-check-label">
                                                             {eventName}
                                                         </label>
@@ -674,7 +723,7 @@ class SeveritiesPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="severities-plot"></div>
                                     </div>
                                 </div>
