@@ -875,7 +875,7 @@ public class User {
         body.append("<p> Password Reset Link : <a href=" + resetPassswordURL + ">Reset Password</a></p><br>");
         body.append("</body></html>");
         ArrayList<String> bccRecipients = new ArrayList<>();
-        SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString(), EmailType.PASSWORD_RESET);
+        SendEmail.sendEmail(recipients, bccRecipients,"NGAFID Password Reset Information", body.toString(), EmailType.PASSWORD_RESET, connection);
     }
 
     public void updateLastLoginTimeStamp(Connection connection) throws SQLException {
