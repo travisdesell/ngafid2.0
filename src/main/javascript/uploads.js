@@ -673,6 +673,7 @@ class UploadsPage extends React.Component {
         let doUploadButtonDisable = (!isUploader);
         let doUploadButtonHide = (!isUploader);
 
+
         return (
 
             <div>

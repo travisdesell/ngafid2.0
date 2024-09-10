@@ -64,5 +64,6 @@ public class Navbar {
             +   "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";" 
             +   "var airSyncEnabled = " + airSyncEnabled + ";"
             +   "var isUploader = " + hasUploadAccess + ";";
+
     }
 }
