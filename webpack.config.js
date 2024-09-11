@@ -66,8 +66,10 @@ module.exports = {
         welcome: __dirname + "/src/main/javascript/welcome.js"
     },
 
-    devtool: false, //"source-map",
 
+    devtool: "source-map",
+
+    
     output: {
         // Farhad: for webpackCesium
         sourcePrefix: "",
