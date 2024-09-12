@@ -32,8 +32,9 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
-    private static final String baseURL = "https://ngafid.org";
-    //private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String baseURLFallback = "https://ngafid.org";
+    private static final String baseURLEnvironment = System.getenv("NGAFID_BASE_URL");
+    private static final String baseURL = Objects.requireNonNullElse(baseURLEnvironment, baseURLFallback);
     private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
     private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
@@ -45,6 +46,7 @@ public class SendEmail {
     static {
 
         String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
+        LOG.info("Email base URL: " + baseURL);
 
         if (enabled != null && enabled.toLowerCase().equals("false")) {
             LOG.info("Emailing has been disabled");
