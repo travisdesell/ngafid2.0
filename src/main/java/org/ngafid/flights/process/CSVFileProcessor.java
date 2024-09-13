@@ -54,6 +54,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
+        LOG.info("Parsing " + this.meta.filename);
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             byte[] hash = md.digest(super.stream.readAllBytes());
@@ -83,24 +84,24 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 bufferedReader.read(); // Skip first char (#)
                 Arrays.stream(csvReader.readNext())
                     .map(String::strip)
-                    .forEachOrdered(dataTypes::add);;
+                    .forEachOrdered(dataTypes::add);
                 Arrays.stream(csvReader.readNext())
                     .map(String::strip)
-                    .forEachOrdered(headers::add);;
+                    .forEachOrdered(headers::add);
             }
 
             updateAirframe();
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
-            String[] firstRow = csvReader.peek();
-            for (int i = 0; i < firstRow.length; i++)
+            for (int i = 0; i < headers.size(); i++)
                 columns.add(new ArrayList<>());
 
             // Documentation of CSVReader claims this is a linked list,
             // so it is important to iterate over it rather than using indexing
             List<String[]> rows = csvReader.readAll();
             for (String[] row : rows) {
-                if (row.length < firstRow.length)
+                // Encountered a row that is broken for some reason?
+                if (row.length != headers.size())
                     break;
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i]);

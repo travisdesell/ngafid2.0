@@ -148,6 +148,17 @@ public class CalculateProximity {
 
         return roc;
     }
+
+    public static boolean addProximityIfNotInList(ArrayList<Event> eventList, Event testEvent) {
+        for (Event event : eventList) {
+            if (event.getFlightId() == testEvent.getFlightId() && event.getOtherFlightId() == testEvent.getOtherFlightId()) {
+                return false;
+            }
+        }
+        eventList.add(testEvent);
+
+        return true;
+    }
     
     public static void processFlightWithError(Connection connection, int fleetId, int flightId) throws SQLException {
         PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 1");
@@ -349,10 +360,12 @@ public class CalculateProximity {
                                             event.setRateOfClosure(rateOfClosure);
                                             otherEvent.setRateOfClosure(rateOfClosure);
                                         }
-                                        eventList.add(event);
-                                        eventList.add(otherEvent);
+
+                                        addProximityIfNotInList(eventList, event);
+                                        addProximityIfNotInList(eventList, otherEvent);
+
                                         //add in an event for the other flight as well so we don't need to recalculate this
-                                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
+                                        //otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
                                     }
 
                                     //reset the event values
@@ -399,10 +412,13 @@ public class CalculateProximity {
                             event.setRateOfClosure(rateOfClosure);
                             otherEvent.setRateOfClosure(rateOfClosure);
                         }
-                        eventList.add(event);
-                        eventList.add(otherEvent);
+
+                        addProximityIfNotInList(eventList, event);
+                        addProximityIfNotInList(eventList, otherEvent);
+
                         //add in an event for the other flight as well so we don't need to recalculate this
-                        otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
+                        //otherInfo.updateWithEvent(connection, otherEvent, otherFlight.getStartDateTime());
+
                     }
                 }
                 //end the loop processing a particular flight

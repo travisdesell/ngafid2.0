@@ -160,6 +160,7 @@ function andClicked(filter, treeIndex) {
     if (targetFilter.type === "GROUP") {
         targetFilter.condition = "AND";
     }
+    return filter;
 }
 
 function orClicked(filter, treeIndex) {
@@ -448,7 +449,7 @@ class Group extends React.Component {
             newName : this.state.filterName,
             filterJSON : JSON.stringify(this.props.getFilter()),
             color : this.state.filterColor
-        }
+        };
 
         if (isEmptyOrSpaces(submissionData.newName)) {
             $('#modify-filter-submit-button').attr('data-title', 'Please make sure the filter name is not empty before saving.').tooltip('show');
@@ -511,7 +512,7 @@ class Group extends React.Component {
 
         let submissionData = {
             name : name,
-        }
+        };
 
         console.log("Removing filter " + name);
         console.log(this.filterRef);
@@ -539,7 +540,7 @@ class Group extends React.Component {
             name : name,
             filterJSON : JSON.stringify(this.props.getFilter()),
             color : color
-        }
+        };
 
         if (isEmptyOrSpaces(name)) {
             console.log('empty str');

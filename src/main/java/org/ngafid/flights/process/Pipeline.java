@@ -63,6 +63,7 @@ public class Pipeline {
     }
     
     public static Pipeline run(Connection connection, Upload upload, ZipFile zipFile) throws IOException {
+        LOG.info("Creating pipeline to process upload id" + upload.id + " / " + upload.filename);
         Pipeline pipeline = new Pipeline(connection, upload, zipFile);
 
         var flights = new ArrayBlockingQueue<Flight>(BATCH_SIZE * 2);

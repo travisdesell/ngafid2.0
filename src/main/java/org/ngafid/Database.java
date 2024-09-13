@@ -16,14 +16,16 @@ import java.util.logging.Logger;
 
 
 public class Database {
-    private static Connection connection;
-    public static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+    private static ThreadLocal<Connection> connection = new ThreadLocal<>();
+    private static boolean connectionInitiated;
+    private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
     public static Connection getConnection() { 
         try {
-            if (connection.isClosed()) { //investigate further here 
+            Connection c = connection.get();
+            if (c == null || c.isClosed()) { //investigate further here 
                 setConnection();
             } 
         } catch (SQLException e) {
@@ -31,7 +33,7 @@ public class Database {
             System.exit(1);
         }
 
-        return connection;
+        return connection.get();
     }
 
     public static boolean dbInfoExists() {
@@ -40,13 +42,14 @@ public class Database {
 
     public static Connection resetConnection() {
         try {
-            if (connection != null) connection.close();
+            Connection c = connection.get();
+            if (c != null) c.close();
             setConnection();
         } catch (SQLException e) {
             e.printStackTrace();
             System.exit(1);
         }
-        return connection;
+        return connection.get();
     }
 
     public static Connection createConnection(String dbUser, String dbName, String dbHost, String dbPassword) {
@@ -121,9 +124,5 @@ public class Database {
         }
 
         connection = createConnection(dbUser, dbName, dbHost, dbPassword);
-    }
-
-    static {
-        setConnection();
     }
 }

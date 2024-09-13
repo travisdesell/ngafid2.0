@@ -3,6 +3,7 @@ package org.ngafid;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.EmailType;
 
 import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
@@ -12,17 +13,23 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
+import java.io.IOException;
 
-import java.time.LocalDateTime;
+import java.time.*;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.stream.*;
+import com.google.gson.TypeAdapter;
 
 import static org.ngafid.SendEmail.sendAdminEmails;
+
 
 /**
  * The entry point for the NGAFID web server.
@@ -31,13 +38,35 @@ import static org.ngafid.SendEmail.sendAdminEmails;
  */
 public final class WebServer {
     private static final Logger LOG = Logger.getLogger(WebServer.class.getName());
-    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
 
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
 
+    public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
+        @Override
+        public void write(final JsonWriter jsonWriter, final LocalDateTime localDate) throws IOException {
+            if (localDate == null) {
+                jsonWriter.nullValue();
+                return;
+            }
+            jsonWriter.value(localDate.toString());
+        }
+    
+        @Override
+        public LocalDateTime read(final JsonReader jsonReader) throws IOException {
+            if (jsonReader.peek() == JsonToken.NULL) {
+                jsonReader.nextNull();
+                return null;
+            }
+            return ZonedDateTime.parse(jsonReader.nextString()).toLocalDateTime();
+        }
+    }
+
+    public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
+    
     static {
+
         if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
             System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -65,7 +94,7 @@ public final class WebServer {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
             LOG.info(message);
-            sendAdminEmails(message, "");
+            sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
         }));
     }
 
@@ -208,10 +237,17 @@ public final class WebServer {
         Spark.get("/reset_password", new GetResetPassword(gson));
         Spark.post("/reset_password", new PostResetPassword(gson));
 
+        //to unsubscribe from emails
+        Spark.get("/email_unsubscribe", new GetEmailUnsubscribe(gson));
+        Spark.after("/email_unsubscribe", (request, response) -> {
+            response.redirect("/");
+        });
+
+
         Spark.get("/protected/welcome", new GetWelcome(gson));
         Spark.get("/protected/aggregate", new GetAggregate(gson));
-        Spark.post("/protected/event_counts", new PostEventCounts(gson));
-        Spark.post("/protected/all_event_counts", new PostAllEventCounts(gson));
+        Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
+        Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
 
         Spark.get("/protected/trends", new GetTrends(gson));
         Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
@@ -255,6 +291,14 @@ public final class WebServer {
 
         Spark.get("/protected/ttf", new GetTurnToFinal());
         Spark.post("/protected/ttf", new PostTurnToFinal(gson));
+
+        Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
+        Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
+        Spark.post("/protected/statistics/aggregate/*", new PostStatistic(gson, true));
+
+        Spark.post("/protected/statistics/summary", new PostSummaryStatistics(gson, false));
+        Spark.post("/protected/statistics/event_counts", new PostEventCounts(gson, false));
+        Spark.post("/protected/statistics/*", new PostStatistic(gson, false));
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
@@ -309,6 +353,7 @@ public final class WebServer {
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
         Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
         Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.get("/protected/get_event_description", new GetEventDescription(gson));
@@ -316,6 +361,8 @@ public final class WebServer {
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
         Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
+        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
+        
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
@@ -345,10 +392,13 @@ public final class WebServer {
                                                 .append("\n The non-pretty stack trace is:\n").append(sStackTrace).append("\n")
                                                 .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
 
-            sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message));
+            sendAdminEmails(
+                String.format( "Uncaught Exception in NGAFID: %s", exception.getMessage() ),
+                ConvertToHTML.convertString(message),
+                EmailType.ADMIN_EXCEPTION_NOTIFICATION
+                );
         });
 
         LOG.info("NGAFID WebServer initialization complete.");
     }
 }
-

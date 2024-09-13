@@ -79,8 +79,12 @@ public class FlightWarning {
      * @return the number of flight warnings for a fleet
      */
     public static int getCount(Connection connection, int fleetId) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT sum(n_warning_flights) FROM uploads WHERE fleet_id = ?");
-        query.setInt(1, fleetId);
+        String queryString = "SELECT sum(n_warning_flights) FROM uploads";
+        
+        if (fleetId > 0)
+            queryString += " WHERE fleet_id = " + fleetId;
+
+        PreparedStatement query = connection.prepareStatement(queryString);
         LOG.info(query.toString());
 
         ResultSet resultSet = query.executeQuery();

@@ -110,7 +110,7 @@ $query = "CREATE TABLE `airframe_types` (
     `name` VARCHAR(32) NOT NULL,
 
     PRIMARY KEY(`id`),
-    UNIQUE KEY `name_key` (`name`) 
+    UNIQUE KEY `name_key` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 query_ngafid_db($query);
 query_ngafid_db("INSERT INTO airframe_types SET name = 'Fixed Wing'");
@@ -222,5 +222,3 @@ if ($update_event_meta_data) {
 }
 
 ?>
-
-

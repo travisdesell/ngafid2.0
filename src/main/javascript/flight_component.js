@@ -534,7 +534,7 @@ class Flight extends React.Component {
             let submissionData = {
                 flight_id : this.props.flightInfo.id,
                 time_index : index
-            }
+            };
 
             lociInfo.push(index);
 

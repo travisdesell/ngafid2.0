@@ -51,6 +51,7 @@ import org.ngafid.flights.UploadError;
 import org.ngafid.flights.process.*;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+import org.ngafid.accounts.EmailType;
 
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
@@ -142,6 +143,11 @@ public class ProcessUpload {
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     LOG.info("Importing an upload from fleet: " + targetFleetId);
+                    System.err.println("Importing an upload from fleet: " + targetFleetId);
+                    if (targetFleetId == 164 || targetFleetId == 105) {
+                        System.err.println("SKIPPING 164 because we do not support this fleet type yet.");
+                        continue;
+                    }
 
                     PreparedStatement uploadsPreparedStatement = connection.prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ? LIMIT 1");
 
@@ -158,6 +164,7 @@ public class ProcessUpload {
                     resultSet.close();
                     uploadsPreparedStatement.close();
                     sendMonthlyFlightsUpdate(targetFleetId);
+
                 }
 
                 fleetSet.close();
@@ -199,7 +206,7 @@ public class ProcessUpload {
                     processUpload(upload);
                 }
             }
-            sendMonthlyFlightsUpdate(fleetId);
+            //  sendMonthlyFlightsUpdate(fleetId);  [EX] Disabling ALL monthly flight update calls for now!
 
         } catch (SQLException e) {
             LOG.info("Encountered error");
@@ -226,6 +233,7 @@ public class ProcessUpload {
 
     public static void processUpload(Upload upload) {
         try {
+
             int uploadId = upload.getId();
             int uploaderId = upload.getUploaderId();
             int fleetId = upload.getFleetId();
@@ -242,7 +250,7 @@ public class ProcessUpload {
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
 
             upload.reset(connection);
             LOG.info("upload was reset!\n\n");
@@ -277,6 +285,7 @@ public class ProcessUpload {
             double asSeconds = ((double) diff) * 1.0e-9;
 
             sendMonthlyFlightsUpdate(fleetId);
+
             uploadProcessedEmail.sendEmail();
 
         } catch (SQLException e) {
@@ -436,3 +445,4 @@ public class ProcessUpload {
         return true;
     }
 }
+
