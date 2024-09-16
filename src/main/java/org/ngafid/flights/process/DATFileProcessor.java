@@ -55,20 +55,21 @@ public class DATFileProcessor extends FlightFileProcessor {
         try {
             convertAndInsert();
             InputStream csvFileStream = new FileInputStream(processedCSVFile);
-            List<InputStream> inputStreams = duplicateInputStream(csvFileStream, 2);
-            Map<Integer, String> indexedCols = new HashMap<>();
+            // List<InputStream> inputStreams = duplicateInputStream(csvFileStream, 2);
             Map<String, DoubleTimeSeries> doubleTimeSeriesMap = new HashMap<>();
             Map<String, StringTimeSeries> stringTimeSeriesMap = new HashMap<>();
-            Map<String, String> attributeMap = getAttributeMap(inputStreams.remove(inputStreams.size() - 1));
+            Map<String, String> attributeMap = getAttributeMap(csvFileStream); // inputStreams.remove(inputStreams.size() - 1));
+
+            csvFileStream.reset();
 
             if (!attributeMap.containsKey("mcID(SN)")) {
                 throw new FlightProcessingException(new FatalFlightFileException("No DJI serial number provided in binary."));
             }
 
-            try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(inputStreams.remove(inputStreams.size() - 1))))) {
-                processCols(reader.readNext(), indexedCols, doubleTimeSeriesMap, stringTimeSeriesMap);
+            try (CSVReader reader = new CSVReader(new BufferedReader(new InputStreamReader(csvFileStream)))) {
+                ArrayList<String> columnNames = processCols(reader.readNext(), doubleTimeSeriesMap, stringTimeSeriesMap);
 
-                readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, indexedCols);
+                readData(reader, doubleTimeSeriesMap, stringTimeSeriesMap, columnNames);
                 calculateLatLonGPS(doubleTimeSeriesMap);
 
                 if (attributeMap.containsKey("dateTime")) {
@@ -181,30 +182,30 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @param reader - CSV reader
      * @param doubleTimeSeriesMap - Map of double time series data
      * @param stringTimeSeriesMap - Map of string time series data
-     * @param indexedCols - Map of indexed columns
+     * @param columnNames - column names by index
      * @throws IOException
      * @throws CsvValidationException
      */
     private static void readData(CSVReader reader, Map<String, DoubleTimeSeries> doubleTimeSeriesMap,
-                                 Map<String, StringTimeSeries> stringTimeSeriesMap, Map<Integer, String> indexedCols) throws IOException, CsvValidationException {
+                                 Map<String, StringTimeSeries> stringTimeSeriesMap, ArrayList<String> columnNames) throws IOException, CsvValidationException {
         String[] line;
 
         while ((line = reader.readNext()) != null) {
             for (int i = 0; i < line.length; i++) {
 
-                String column = indexedCols.get(i);
+                String name = columnNames.get(i);
 
                 try {
-                    if (doubleTimeSeriesMap.containsKey(column)) {
-                        DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(column);
+                    if (doubleTimeSeriesMap.containsKey(name)) {
+                        DoubleTimeSeries colTimeSeries = doubleTimeSeriesMap.get(name);
                         double value = !line[i].equals("") ? JavaDoubleParser.parseDouble(line[i]) : Double.NaN;
                         colTimeSeries.add(value);
                     } else {
-                        StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(column);
+                        StringTimeSeries colTimeSeries = stringTimeSeriesMap.get(name);
                         colTimeSeries.add(line[i]);
                     }
                 } catch (NullPointerException e) {
-                    LOG.log(Level.WARNING, "Column {0} not found in time series map", column);
+                    LOG.log(Level.WARNING, "Column with name {0} not found in time series map", name);
                 } catch (NumberFormatException e) {
                     LOG.log(Level.WARNING, "Could not parse value {0} as double", line[i]);
                 }
@@ -344,38 +345,44 @@ public class DATFileProcessor extends FlightFileProcessor {
         return null;
     }
 
+    // /**
+    //  * Duplicate an input stream a given number of times
+    //  * @param inputStream - Input Stream to duplicate
+    //  * @param copies - Number of copies to make
+    //  * @return - List of input streams
+    //  * @throws IOException
+    //  */
+    // private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
+    //     List<InputStream> inputStreams = new ArrayList<>();
+    //     List<OutputStream> outputStreams = new ArrayList<>();
+
+    //     for (int i = 0; i < copies; i++) {
+    //         outputStreams.add(new ByteArrayOutputStream());
+    //     }
+
+    //     byte[] buffer = new byte[1024];
+    //     while (inputStream.read(buffer) > -1) {
+    //         for (OutputStream outputStream : outputStreams) {
+    //             outputStream.write(buffer);
+    //         }
+    //     }
+
+    //     for (OutputStream outputStream : outputStreams) {
+    //         outputStream.flush();
+    //         inputStreams.add(new ByteArrayInputStream(((ByteArrayOutputStream) outputStream).toByteArray()));
+    //     }
+
+    //     return inputStreams;
+    // }
+
     /**
-     * Duplicate an input stream a given number of times
-     * @param inputStream - Input Stream to duplicate
-     * @param copies - Number of copies to make
-     * @return - List of input streams
-     * @throws IOException
-     */
-    private static List<InputStream> duplicateInputStream(InputStream inputStream, int copies) throws IOException {
-        List<InputStream> inputStreams = new ArrayList<>();
-        List<OutputStream> outputStreams = new ArrayList<>();
-
-        for (int i = 0; i < copies; i++) {
-            outputStreams.add(new ByteArrayOutputStream());
-        }
-
-        byte[] buffer = new byte[1024];
-        while (inputStream.read(buffer) > -1) {
-            for (OutputStream outputStream : outputStreams) {
-                outputStream.write(buffer);
-            }
-        }
-
-        for (OutputStream outputStream : outputStreams) {
-            outputStream.flush();
-            inputStreams.add(new ByteArrayInputStream(((ByteArrayOutputStream) outputStream).toByteArray()));
-        }
-
-        return inputStreams;
-    }
-
-    /**
-     * Gets the attributes of the flight
+     * Gets the attributes of the flight. At the end of each and every line, there may be an attribute in the format of:
+     * ```
+     * ..., ..., AttributeName|AttributeValue
+     * ```
+     *
+     * They seem to be somewhat random, so we look at every line.
+     *
      * @param stream - Input stream of flight file
      * @return
      */
@@ -385,8 +392,11 @@ public class DATFileProcessor extends FlightFileProcessor {
             String[] line;
             while ((line = reader.readNext()) != null) {
                 if (line[line.length - 1].contains("|")) {
-                    String[] split = line[line.length - 1].split("\\|");
-                    attributeMap.put(split[0], split[1]);
+                    String[] split = line[line.length - 1].split("|");
+
+                    // We may encounter the case of "AttrName|" which will yield an array of size 1
+                    if (split.length > 1)
+                        attributeMap.put(split[0], split[1]);
                 }
             }
         } catch (IOException | CsvValidationException e) {
@@ -420,14 +430,13 @@ public class DATFileProcessor extends FlightFileProcessor {
     /**
      * Initialize columns based on flight data
      * @param cols
-     * @param indexedCols
      * @param doubleTimeSeriesMap
      * @param stringTimeSeriesMap
      */
-    private static void processCols(String[] cols, Map<Integer, String> indexedCols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
-        int i = 0;
+    private static ArrayList<String> processCols(String[] cols, Map<String, DoubleTimeSeries> doubleTimeSeriesMap, Map<String, StringTimeSeries> stringTimeSeriesMap) {
+        ArrayList<String> columnNames = new ArrayList<>(cols.length);
         for (String col : cols) {
-            indexedCols.put(i++, col);
+            columnNames.add(col);
             String[] splitCol = col.split(":");
 
             // Format of a column is roughly:
@@ -479,6 +488,8 @@ public class DATFileProcessor extends FlightFileProcessor {
             }
 
         }
+
+        return columnNames;
     }
 
     static final Map<String, String> DATA_TYPE_MAP = Map.ofEntries(

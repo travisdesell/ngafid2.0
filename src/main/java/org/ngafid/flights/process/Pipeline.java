@@ -57,7 +57,10 @@ public class Pipeline {
             parallelism = Runtime.getRuntime().availableProcessors();
         }
 
-        pool = new ForkJoinPool(parallelism);
+        if (parallelism <= 0)
+            pool = new ForkJoinPool();
+        else
+            pool = new ForkJoinPool(parallelism);
 
         LOG.info("Created pool with " + parallelism + " threads");
     }

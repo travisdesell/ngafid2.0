@@ -88,23 +88,14 @@ public class SeriesNames {
                 //previously unseen name
 
                 String insertQueryString = "INSERT IGNORE INTO string_series_names SET name = ?";
-                PreparedStatement insertQuery = connection.prepareStatement(insertQueryString, Statement.RETURN_GENERATED_KEYS);
+                PreparedStatement insertQuery = connection.prepareStatement(insertQueryString);
                 insertQuery.setString(1, name);
 
                 insertQuery.executeUpdate();
-
-                ResultSet insertResultSet = insertQuery.getGeneratedKeys();
-                insertResultSet.next();
-
-                id = insertResultSet.getInt(1);
-
-                //now that it was added to the database, add the name and id
-                //to *both* hashmaps to save other lookups
-                stringIdToName.put(id, name);
-                stringNameToId.put(name, id);
-
-                insertResultSet.close();
+                
                 insertQuery.close();
+
+                return getStringNameId(connection, name);
             }
 
             resultSet.close();
@@ -182,27 +173,17 @@ public class SeriesNames {
                 doubleNameToId.put(name, id);
 
             } else {
-                //create a new entry in the data_type_names table for this
-                //previously unseen name
+                // create a new entry in the data_type_names table for this
+                // previously unseen name
 
-                String insertQueryString = "INSERT INTO double_series_names SET name = ?";
-                PreparedStatement insertQuery = connection.prepareStatement(insertQueryString, Statement.RETURN_GENERATED_KEYS);
+                String insertQueryString = "INSERT IGNORE INTO double_series_names SET name = ?";
+                PreparedStatement insertQuery = connection.prepareStatement(insertQueryString);
                 insertQuery.setString(1, name);
 
                 insertQuery.executeUpdate();
-
-                ResultSet insertResultSet = insertQuery.getGeneratedKeys();
-                insertResultSet.next();
-
-                id = insertResultSet.getInt(1);
-
-                //now that it was added to the database, add the name and id
-                //to *both* hashmaps to save other lookups
-                doubleIdToName.put(id, name);
-                doubleNameToId.put(name, id);
-
-                insertResultSet.close();
                 insertQuery.close();
+
+                return getDoubleNameId(connection, name);
              }
 
             resultSet.close();

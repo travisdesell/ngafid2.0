@@ -29,7 +29,7 @@ import org.ngafid.accounts.UserEmailPreferences;
 import org.ngafid.accounts.EmailType;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 
 

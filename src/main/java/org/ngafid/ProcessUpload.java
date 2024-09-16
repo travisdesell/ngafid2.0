@@ -163,8 +163,6 @@ public class ProcessUpload {
 
                     resultSet.close();
                     uploadsPreparedStatement.close();
-                    sendMonthlyFlightsUpdate(targetFleetId);
-
                 }
 
                 fleetSet.close();
@@ -283,8 +281,6 @@ public class ProcessUpload {
             long end = System.nanoTime();
             long diff = end - start;
             double asSeconds = ((double) diff) * 1.0e-9;
-
-            sendMonthlyFlightsUpdate(fleetId);
 
             uploadProcessedEmail.sendEmail();
 

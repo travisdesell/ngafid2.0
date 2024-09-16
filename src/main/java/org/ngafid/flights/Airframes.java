@@ -105,9 +105,8 @@ public class Airframes {
 
         if (id != null) {
             return id;
-
         } else {
-            //id wasn't in the hashmap, look it up
+            // id wasn't in the hashmap, look it up
             String queryString = "SELECT id FROM airframes WHERE airframe = ?";
             PreparedStatement query = connection.prepareStatement(queryString);
             query.setString(1, airframeName);
@@ -125,25 +124,18 @@ public class Airframes {
                 return airframeNameId;
 
             } else {
-                //airframe did not exist in the database, insert it and return it's generated id
-                queryString = "INSERT INTO airframes SET airframe = ?";
+                // airframe did not exist in the database, insert it and return it's generated id
+                queryString = "INSERT IGNORE INTO airframes SET airframe = ?";
                 query = connection.prepareStatement(queryString, Statement.RETURN_GENERATED_KEYS);
                 query.setString(1, airframeName);
 
-                //LOG.info(query.toString());
+                // LOG.info(query.toString());
                 query.executeUpdate();
                 resultSet.close();
 
-                resultSet = query.getGeneratedKeys();
-                resultSet.next();
-
-                int airframeNameId = resultSet.getInt(1);
-                nameIdMap.put(airframeName, airframeNameId);
-
-                resultSet.close();
-                query.close();
-
-                return airframeNameId;
+                // Recursive call, because if `INSERT IGNORE` ignores the raw, we can't use `query.getGeneratedKeys()`
+                // to get the newly generated airframe id.
+                return getNameId(connection, airframeName);
             }
         }
     }

@@ -102,6 +102,7 @@ public class FindLowEndingFuelEvents {
 
             if (currentTime.equals(" ")) continue;
 
+            LOG.info("DATE = " + currentTime);
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
         }
 

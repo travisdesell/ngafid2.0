@@ -18,7 +18,7 @@ import java.util.logging.Logger;
 public class Database {
     private static ThreadLocal<Connection> connection = new ThreadLocal<>();
     private static boolean connectionInitiated;
-    private static String dbHost = "", dbName = "", dbUser = "", dbPassword = "";
+    private static String dbHost = null, dbName = null, dbUser = null, dbPassword = null;
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
 
@@ -37,7 +37,7 @@ public class Database {
     }
 
     public static boolean dbInfoExists() {
-        return !dbHost.isBlank() && !dbName.isBlank() && !dbUser.isBlank() && !dbPassword.isBlank();
+        return dbHost != null || dbName != null || dbUser != null || dbPassword != null;
     }
 
     public static Connection resetConnection() {
@@ -77,6 +77,36 @@ public class Database {
         }
     }
     
+    private static String DB_NAME = null;
+    private static String DB_HOST = null;
+    private static String DB_USER = null;
+    private static String DB_PASS = null;
+
+    private static void readDatabaseCredentials(String path) throws IOException {
+        try(BufferedReader bufferedReader = new BufferedReader(new FileReader(path))) {
+            bufferedReader.readLine();
+
+            dbUser = bufferedReader.readLine();
+            dbUser = dbUser.substring(dbUser.indexOf("'") + 1);
+            dbUser = dbUser.substring(0, dbUser.indexOf("'"));
+
+            dbName = bufferedReader.readLine();
+            dbName = dbName.substring(dbName.indexOf("'") + 1);
+            dbName = dbName.substring(0, dbName.indexOf("'"));
+
+            dbHost = bufferedReader.readLine();
+            dbHost = dbHost.substring(dbHost.indexOf("'") + 1);
+            dbHost = dbHost.substring(0, dbHost.indexOf("'"));
+
+            dbPassword = bufferedReader.readLine();
+            dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
+            dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
+
+            //Don't remove this!
+            bufferedReader.close();
+        }
+    }
+
     private static void setConnection() {
         if (System.getenv("NGAFID_DB_INFO") == null) {
             System.err.println("ERROR: 'NGAFID_DB_INFO' environment variable not specified at runtime.");
@@ -84,45 +114,19 @@ public class Database {
             System.err.println("export NGAFID_DB_INFO=<path/to/db_info_file>");
             System.exit(1);
         }
-        String NGAFID_DB_INFO = System.getenv("NGAFID_DB_INFO");
 
+        String dbInfoPath = System.getenv("NGAFID_DB_INFO");
 
-        try {
-            if (!dbInfoExists()) {
-                BufferedReader bufferedReader = new BufferedReader(new FileReader(NGAFID_DB_INFO));
-                bufferedReader.readLine();
-
-                dbUser = bufferedReader.readLine();
-                dbUser = dbUser.substring(dbUser.indexOf("'") + 1);
-                dbUser = dbUser.substring(0, dbUser.indexOf("'"));
-
-                dbName = bufferedReader.readLine();
-                dbName = dbName.substring(dbName.indexOf("'") + 1);
-                dbName = dbName.substring(0, dbName.indexOf("'"));
-
-                dbHost = bufferedReader.readLine();
-                dbHost = dbHost.substring(dbHost.indexOf("'") + 1);
-                dbHost = dbHost.substring(0, dbHost.indexOf("'"));
-
-                dbPassword = bufferedReader.readLine();
-                dbPassword = dbPassword.substring(dbPassword.indexOf("'") + 1);
-                dbPassword = dbPassword.substring(0, dbPassword.indexOf("'"));
-
-                System.out.println("dbHost: '" + dbHost + "'");
-                System.out.println("dbName: '" + dbName + "'");
-                System.out.println("dbUser: '" + dbUser + "'");
-                System.out.println("dbPassword: '" + dbPassword + "'");
-
-                //Don't remove this!
-                bufferedReader.close();
+        if (!dbInfoExists()) {
+            try {
+                readDatabaseCredentials(dbInfoPath);
+            } catch (IOException e) {
+                System.err.println("Error reading from NGAFID_DB_INFO: '" + dbInfoPath + "'");
+                e.printStackTrace();
+                System.exit(1);
             }
-
-        } catch (IOException e) {
-            System.err.println("Error reading from NGAFID_DB_INFO: '" + NGAFID_DB_INFO + "'");
-            e.printStackTrace();
-            System.exit(1);
         }
 
-        connection = createConnection(dbUser, dbName, dbHost, dbPassword);
+        connection.set(createConnection(dbUser, dbName, dbHost, dbPassword));
     }
 }

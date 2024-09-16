@@ -99,12 +99,19 @@ public class CSVFileProcessor extends FlightFileProcessor {
             // Documentation of CSVReader claims this is a linked list,
             // so it is important to iterate over it rather than using indexing
             List<String[]> rows = csvReader.readAll();
+            int validRows = 0;
             for (String[] row : rows) {
                 // Encountered a row that is broken for some reason?
                 if (row.length != headers.size())
                     break;
                 for (int i = 0; i < row.length; i++)
                     columns.get(i).add(row[i]);
+                validRows += 1;
+            }
+
+            // This flight file contains 0 valid rows, or something is seriously wrong with it.
+            if (validRows == 0) {
+                throw new FatalFlightFileException("Flight file has 0 valid rows - something serious is wrong with the format.");
             }
 
             for (int i = 0; i < columns.size(); i++) {
@@ -174,7 +181,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     private void processFileInormation(String fileInformation) throws FatalFlightFileException {
+        // Some files have random double quotes in the header for some reason? We can just remove these since we don't consider them anyways.
+        fileInformation = fileInformation.replace("\"", "");
         String[] infoParts = fileInformation.split(",");
+
         try {
             for (int i = 1; i < infoParts.length; i++) {
                 //process everything else (G1000 data)
@@ -186,7 +196,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
                 // TODO: Create some sort of automatic mapping for synonomous airframe names.
                 if (key.equals("airframe_name")) {
-                    meta.airframeName = value.substring(1, value.length() - 1);
+                    meta.airframeName = value;
 
                     //throw an error for 'Unknown Aircraft'
                     if (meta.airframeName.equals("Unknown Aircraft")) {
@@ -200,7 +210,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         meta.airframeName = "R44";
                     } else if (meta.airframeName.equals("Garmin Flight Display")) {
                         throw new FatalFlightFileException("Flight airframe name was 'Garmin Flight Display' which does not specify what airframe type the flight was, please fix and re-upload so the flight can be properly identified and processed.");
-
                     }
 
                     if (meta.airframeName.equals("Cirrus SR22 (3600 GW)")) {
@@ -219,7 +228,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     }
 
                 } else if (key.equals("system_id")) {
-                    meta.systemId = value.substring(1, value.length() - 1);
+                    meta.systemId = value;
                 }
             }
         } catch (Exception e) {
