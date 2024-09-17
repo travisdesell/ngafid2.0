@@ -342,15 +342,27 @@ public class CalculateProximity {
                                     } else {
                                         //we had enough triggers to reach the start count so create the event
                                         System.out.println("Creating event for flight : " + flightId );
-                                        Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
-                                        Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        // Event event = new Event (startTime, endTime, startLine, endLine, severity, otherFlight.getId());
+                                        // Event otherEvent = new Event(otherStartTime, otherEndTime, otherStartLine, otherEndLine, severity, flightId);
+                                        Event event = new Event(
+                                            startTime, endTime,
+                                            startLine, endLine,
+                                            severity,
+                                            flightId, otherFlight.getId()
+                                        );
+                                        Event otherEvent = new Event(
+                                            otherStartTime, otherEndTime,
+                                            otherStartLine, otherEndLine,
+                                            severity,
+                                            otherFlight.getId(), flightId
+                                        );
                                         EventMetaData lateralDistanceMetaData = new EventMetaData("lateral_distance", lateralDistance); 
                                         EventMetaData verticalDistanceMetaData = new EventMetaData("vertical_distance", verticalDistance);
                                         event.addMetaData(lateralDistanceMetaData);
                                         event.addMetaData(verticalDistanceMetaData);
-
                                         otherEvent.addMetaData(lateralDistanceMetaData);
                                         otherEvent.addMetaData(verticalDistanceMetaData);
+                                        
                                         if ( severity > 0) {
                                             double[] rateOfClosureArray = calculateRateOfClosure(flightInfo, otherInfo, startLine, endLine, otherStartLine, otherEndLine);
                                             RateOfClosure rateOfClosure = new RateOfClosure(rateOfClosureArray);
@@ -440,7 +452,8 @@ public class CalculateProximity {
             double maxDuration = -Double.MAX_VALUE;
             for (int i = 0; i < eventList.size(); i++) {
                 Event event = eventList.get(i);
-                event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
+                //  event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
+                event.updateDatabase(connection, fleetId, event.getFlightId(), adjacencyEventDefinitionId);
                 if (event.getStartTime() != null) {
                     EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getStartTime(), event.getSeverity(), event.getDuration());
                 } else if (event.getEndTime() != null) {
