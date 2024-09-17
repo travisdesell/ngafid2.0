@@ -1,0 +1,15 @@
+[Unit]
+Description=NGAFID Fileshare Service
+After=multi-user.target
+
+[Service]
+Type=simple
+User=ngafid
+WorkingDirectory=/www/ngafid/www
+ExecStart=python3 -m  http.server 8181
+
+ProtectHome=true
+ProtectSystem=false
+
+[Install]
+WantedBy=multi-user.target
