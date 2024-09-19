@@ -696,7 +696,7 @@ if (!$update_rate_of_closure) {
         `data` MEDIUMBLOB,
         
         PRIMARY KEY(`id`),
-        FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE
+        FOREIGN KEY(`event_id`) REFERENCES events(`id`) ON DELETE CASCADE   /* Event deleted => Delete rate of closure */
         ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
