@@ -31,8 +31,8 @@ import java.util.stream.Stream;
 public class JSONFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(JSONFileProcessor.class.getName());
 
-    public JSONFileProcessor(Connection connection, InputStream stream, String filename) {
-        super(connection, stream, filename);
+    public JSONFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+        super(connection, stream, filename, pipeline);
     }
 
     @Override
@@ -41,18 +41,19 @@ public class JSONFileProcessor extends FlightFileProcessor {
         final Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         final Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-
         try {
             processTimeSeries(flightMeta, doubleTimeSeries, stringTimeSeries);
-        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException |
-                 FlightAlreadyExistsException e) {
+        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException
+                | FlightAlreadyExistsException e) {
             throw new FlightProcessingException(e);
         }
 
         return Stream.of(new FlightBuilder(flightMeta, doubleTimeSeries, stringTimeSeries));
     }
 
-    private void processTimeSeries(FlightMeta flightMeta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    private void processTimeSeries(FlightMeta flightMeta, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) throws SQLException, MalformedFlightFileException,
+            IOException, FatalFlightFileException, FlightAlreadyExistsException {
         String status = "";
         Gson gson = new Gson();
         JsonReader reader = new JsonReader(new InputStreamReader(super.stream));
@@ -93,8 +94,10 @@ public class JSONFileProcessor extends FlightFileProcessor {
         int spdIndex = headers.indexOf("speed");
         int timeIndex = headers.indexOf("time");
 
-        double timeDiff = ((double) lines.get(lines.size() - 1).get(timeIndex)) - ((double) lines.get(0).get(timeIndex));
-        if (timeDiff < 180) throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
+        double timeDiff = ((double) lines.get(lines.size() - 1).get(timeIndex))
+                - ((double) lines.get(0).get(timeIndex));
+        if (timeDiff < 180)
+            throw new FatalFlightFileException("Flight file was less than 3 minutes long, ignoring.");
 
         double prevSeconds = 0;
         double metersToFeet = 3.28084;
@@ -159,7 +162,8 @@ public class JSONFileProcessor extends FlightFileProcessor {
         byte[] hash = md.digest(filename.getBytes());
 
         flightMeta.setStartDateTime(localDateSeries.get(0) + " " + localTimeSeries.get(0) + " " + utcOfstSeries.get(0));
-        flightMeta.setEndDateTime(localDateSeries.get(localDateSeries.size() - 1) + " " + localTimeSeries.get(localTimeSeries.size() - 1) + " " + utcOfstSeries.get(utcOfstSeries.size() - 1));
+        flightMeta.setEndDateTime(localDateSeries.get(localDateSeries.size() - 1) + " "
+                + localTimeSeries.get(localTimeSeries.size() - 1) + " " + utcOfstSeries.get(utcOfstSeries.size() - 1));
         flightMeta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
         flightMeta.setAirframeType("UAS Rotorcraft");
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));

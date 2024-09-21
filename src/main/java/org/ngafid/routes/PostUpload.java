@@ -141,10 +141,10 @@ public class PostUpload implements Route {
 
             if (upload.completed()) {
                 //create the final file
-                String targetDirectory = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId;
+                String targetDirectory = upload.getArchiveDirectory();
                 //create the directory structure in case it doesn't exit
                 new File(targetDirectory).mkdirs();
-                String targetFilename = targetDirectory + "/" + upload.getId() + "__" + upload.getFilename();
+                String targetFilename = targetDirectory + "/" + upload.getArchiveFilename();
 
                 LOG.info("attempting to write file to '" + targetFilename + "'");
 

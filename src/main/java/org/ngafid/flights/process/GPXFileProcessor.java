@@ -32,8 +32,8 @@ import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 public class GPXFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(GPXFileProcessor.class.getName());
 
-    public GPXFileProcessor(Connection connection, InputStream stream, String filename) {
-        super(connection, stream, filename);
+    public GPXFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline) {
+        super(connection, stream, filename, pipeline);
     }
 
     @Override
@@ -42,13 +42,14 @@ public class GPXFileProcessor extends FlightFileProcessor {
             List<FlightBuilder> flights = parseFlights(filename, stream);
 
             return flights.stream();
-        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException |
-                 FlightAlreadyExistsException e) {
+        } catch (SQLException | MalformedFlightFileException | IOException | FatalFlightFileException
+                | FlightAlreadyExistsException e) {
             throw new RuntimeException(e);
         }
     }
 
-    public List<FlightBuilder> parseFlights(String entry, InputStream stream) throws SQLException, MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
+    public List<FlightBuilder> parseFlights(String entry, InputStream stream) throws SQLException,
+            MalformedFlightFileException, IOException, FatalFlightFileException, FlightAlreadyExistsException {
         List<FlightBuilder> flights = new ArrayList<>();
         // BE-GPS-2200
         DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
@@ -80,7 +81,8 @@ public class GPXFileProcessor extends FlightFileProcessor {
             SimpleDateFormat lclDateFormat = new SimpleDateFormat("yyyy-MM-dd");
             SimpleDateFormat lclTimeFormat = new SimpleDateFormat("HH:mm:ss");
 
-            // NodeList serialNumberNodes = doc.getElementsByTagName("badelf:modelSerialNumber");
+            // NodeList serialNumberNodes =
+            // doc.getElementsByTagName("badelf:modelSerialNumber");
             // String serialNumber = serialNumberNodes.item(0).getTextContent();
             NodeList nicknameNodes = doc.getElementsByTagName("badelf:modelNickname");
             if (nicknameNodes.item(0) == null)
@@ -97,7 +99,6 @@ public class GPXFileProcessor extends FlightFileProcessor {
             NodeList datanodes = doc.getElementsByTagName("trkpt");
             NodeList elenodes = doc.getElementsByTagName("ele");
             NodeList spdnodes = doc.getElementsByTagName("badelf:speed");
-
 
             if (spdnodes.item(0) == null)
                 throw new FatalFlightFileException("GPX file is missing GndSpd.");
@@ -169,7 +170,6 @@ public class GPXFileProcessor extends FlightFileProcessor {
                     DoubleTimeSeries nlon = lon.subSeries(start, end);
                     DoubleTimeSeries nmsl = msl.subSeries(start, end);
                     DoubleTimeSeries nspd = spd.subSeries(start, end);
-
 
                     HashMap<String, DoubleTimeSeries> doubleSeries = new HashMap<>();
                     doubleSeries.put("GndSpd", nspd);

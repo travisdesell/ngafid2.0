@@ -1,6 +1,8 @@
 package org.ngafid.flights.process;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
@@ -11,6 +13,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -20,14 +23,17 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+import java.util.zip.ZipOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Objects;
+import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ArrayBlockingQueue;
@@ -41,16 +47,25 @@ import org.ngafid.UploadException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.Upload;
 
-
-public class Pipeline {
+/**
+ * Provides the relevant methods and book keeping for a parallelized flight
+ * processing pipeline.
+ * See `Pipeline::run` for how these methods are put together.
+ *
+ * @author Joshua Karns (josh@karns.dev)
+ */
+public class Pipeline implements AutoCloseable {
     private static Logger LOG = Logger.getLogger(Pipeline.class.getName());
-    
+
     private static final int BATCH_SIZE = 1;
     private static int parallelism = 1;
-    
+
     private static ForkJoinPool pool = null;
 
-    static {
+    /**
+     * Creates the thread pool used for flight file processing pipelines
+     */
+    private static void initialize() {
         try {
             parallelism = Integer.parseInt(System.getenv("PARALLELISM"));
         } catch (NullPointerException | NumberFormatException e) {
@@ -64,70 +79,91 @@ public class Pipeline {
 
         LOG.info("Created pool with " + parallelism + " threads");
     }
-    
-    public static Pipeline run(Connection connection, Upload upload, ZipFile zipFile) throws IOException {
-        LOG.info("Creating pipeline to process upload id" + upload.id + " / " + upload.filename);
-        Pipeline pipeline = new Pipeline(connection, upload, zipFile);
-
-        var flights = new ArrayBlockingQueue<Flight>(BATCH_SIZE * 2);
-
-        var processHandle = pool.submit(() ->
-            pipeline
-                .parallelStream()
-                .forEach(s -> {
-                    List<Flight> f =  pipeline.parse(s).sequential()
-                        .map(pipeline::build)
-                        .filter(Objects::nonNull)
-                        .map(pipeline::finalize)
-                        .collect(Collectors.toList());
-
-                    if (BATCH_SIZE > 1) {
-                        flights.addAll(f);
-                        if (flights.size() >= BATCH_SIZE) {
-                            var batch = new ArrayList<Flight>(128);
-                            flights.drainTo(batch);
-                            Flight.batchUpdateDatabase(Database.getConnection(), upload, batch);
-                        }
-                    } else {
-                        Flight.batchUpdateDatabase(Database.getConnection(), upload, f);
-                    }
-                })
-        );
-        
-        processHandle.join();
-
-        if (flights.size() > 0) {
-            Flight.batchUpdateDatabase(connection, upload, flights);
-        }
-        
-        URI zipURI = URI.create("jar:" + Paths.get(upload.filename).toUri());
-        pipeline.insertConvertedFiles(zipURI);
-        
-        return pipeline;
-    }
 
     private final Connection connection;
-    private final ZipFile zipFile;
-    private final Map<String, FlightFileProcessor.Factory> factories;
+
     private final Upload upload;
+    private final ZipFile zipFile;
+
+    // ZipFileSystem
+    private FileSystem derivedFileSystem = null;
+    private Upload derivedUpload = null;
+
+    private final Map<String, FlightFileProcessor.Factory> factories;
+
     private final AtomicInteger validFlightsCount = new AtomicInteger(0);
     private final AtomicInteger warningFlightsCount = new AtomicInteger(0);
 
     private final ConcurrentHashMap<String, UploadException> flightErrors = new ConcurrentHashMap<>();
     private final ConcurrentHashMap<String, FlightInfo> flightInfo = new ConcurrentHashMap<>();
-    private final ConcurrentLinkedQueue<String> convertedFiles = new ConcurrentLinkedQueue<>();
-    
+
     public Pipeline(Connection connection, Upload upload, ZipFile zipFile) {
         this.connection = connection;
         this.upload = upload;
         this.zipFile = zipFile;
 
         this.factories = Map.of(
-            "csv",  this::createCSVFileProcessor,
-            "dat",  this::createDATFileProcessor,
-            "json", JSONFileProcessor::new,
-            "gpx",  GPXFileProcessor::new
-        );
+                "csv", CSVFileProcessor::new,
+                "dat", DATFileProcessor::new,
+                "json", JSONFileProcessor::new,
+                "gpx", GPXFileProcessor::new);
+    }
+
+    @Override
+    public void close() throws IOException {
+        if (derivedFileSystem != null)
+            derivedFileSystem.close();
+    }
+
+    public void execute() throws IOException {
+        if (Pipeline.pool == null)
+            initialize();
+
+        LOG.info("Creating pipeline to process upload id " + upload.id + " / " + upload.filename);
+
+        var flights = new ArrayBlockingQueue<Flight>(BATCH_SIZE * 2);
+
+        var processHandle = pool.submit(() -> this.parallelStream()
+                .filter(Objects::nonNull)
+                .forEach(s -> {
+                    List<Flight> f = this.parse(s).sequential()
+                            .map(this::build)
+                            .filter(Objects::nonNull)
+                            .map(this::finalize)
+                            .collect(Collectors.toList());
+
+                    Flight.batchUpdateDatabase(Database.getConnection(), upload, f);
+                }));
+
+        processHandle.join();
+        if (flights.size() > 0) {
+            Flight.batchUpdateDatabase(connection, upload, flights);
+        }
+    }
+
+    public FileSystem createDerivedFileSystem() throws IOException {
+        File f = new File(derivedUpload.getDerivedDirectory() + "/" + derivedUpload.getDerivedFilename());
+        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(f));
+        out.close();
+
+        Map<String, String> zipENV = new HashMap<>();
+        zipENV.put("create", "true");
+
+        Path zipFilePath = Paths.get(derivedUpload.getDerivedDirectory() + "/" + derivedUpload.getDerivedFilename());
+
+        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
+        return FileSystems.newFileSystem(zipURI, zipENV);
+    }
+
+    public void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
+        if (derivedFileSystem == null) {
+            derivedUpload = Upload.createDerivedUpload(connection, upload.uploaderId, upload.fleetId, upload.filename,
+                    upload.identifier);
+            derivedFileSystem = createDerivedFileSystem();
+        }
+
+        Path zipFileSystemPath = derivedFileSystem.getPath(filename);
+        Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
     public Map<String, FlightInfo> getFlightInfo() {
@@ -138,46 +174,62 @@ public class Pipeline {
         return Collections.unmodifiableMap(flightErrors);
     }
 
-    private FlightFileProcessor createDATFileProcessor(Connection connection, InputStream is, String filename) {
-        return new DATFileProcessor(connection, is, filename, zipFile);
-    }
-
-    private FlightFileProcessor createCSVFileProcessor(Connection connection, InputStream is, String filename) throws IOException {
-        return new CSVFileProcessor(connection, is, filename, upload);
+    public boolean supportedFileType(ZipEntry x) {
+        int index = x.getName().lastIndexOf('.');
+        if (index > 0 && x.getName().length() > index + 1) {
+            return factories.containsKey(x.getName().substring(index + 1).toLowerCase());
+        } else {
+            return false;
+        }
     }
 
     private Stream<? extends ZipEntry> getValidFilesStream() {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
-        Stream<? extends ZipEntry> validFiles = 
-            StreamSupport.stream(
+        Stream<? extends ZipEntry> validFiles = StreamSupport.stream(
                 Spliterators.spliteratorUnknownSize(entries.asIterator(), Spliterator.ORDERED),
-                false
-            )
-            .filter(z -> !z.getName().contains("__MACOSX"))
-            .filter(z -> !z.isDirectory());
+                false)
+                .filter(z -> !z.getName().contains("__MACOSX"))
+                .filter(z -> !z.isDirectory());
         return validFiles;
     }
 
     private Stream<FlightFileProcessor> stream() {
-        // TODO: This reads all files into memory sequentially because ZipFile is not thread safe.
-        // TODO: We should in the future interleave the loading of files and processing of files.
         return getValidFilesStream().map(this::create).filter(Objects::nonNull).collect(Collectors.toList()).stream();
     }
 
     private Stream<FlightFileProcessor> parallelStream() {
         var validFiles = getValidFilesStream().collect(Collectors.toList());
-        var queue = new ArrayBlockingQueue<FlightFileProcessor>(validFiles.size());
-        var handle = pool.submit(() -> {
-            validFiles.stream().map(this::create).filter(Objects::nonNull).forEach(queue::add);
+        LOG.info(validFiles.toString());
+        var queue = new LinkedList<FlightFileProcessor>();
+
+        pool.submit(() -> {
+            validFiles.stream().map(this::create).forEach(o -> {
+                synchronized (queue) {
+                    queue.add(o);
+                    queue.notify();
+                }
+            });
+
+            synchronized (queue) {
+                queue.notifyAll();
+            }
         });
 
-        return IntStream.range(0, validFiles.size()).parallel().mapToObj(x ->{
-            while (true) {
-                try {
-                    return queue.take(); 
-                } catch (InterruptedException e) {
+        return IntStream.range(0, validFiles.size()).parallel().mapToObj(x -> {
+            try {
+                synchronized (queue) {
+                    while (queue.size() < 0) {
+                        queue.wait();
 
+                        if (queue.size() > 0)
+                            return queue.pop();
+                        else
+                            return null;
+                    }
+                    return null;
                 }
+            } catch (InterruptedException ie) {
+                return null;
             }
         });
     }
@@ -214,12 +266,13 @@ public class Pipeline {
 
         if (f != null) {
             try {
-                return f.create(connection, zipFile.getInputStream(entry), filename);
-            } catch (IOException e) {
+                return f.create(connection, zipFile.getInputStream(entry), filename, this);
+            } catch (Exception e) {
                 flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
-            flightErrors.put(filename, new UploadException("Unknown file type '" + extension + "' contained in zip file.", filename));
+            flightErrors.put(filename,
+                    new UploadException("Unknown file type '" + extension + "' contained in zip file.", filename));
         }
 
         return null;
@@ -231,23 +284,11 @@ public class Pipeline {
         } else {
             validFlightsCount.incrementAndGet();
         }
-        
-        flightInfo.put(flight.getFilename(), new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
+
+        flightInfo.put(flight.getFilename(),
+                new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
         return flight;
-    }
-
-    public void insertConvertedFiles(URI zipURI) throws IOException {
-        Map<String, String> zipENV = new HashMap<>();
-        zipENV.put("create", "true");
-        
-        try (FileSystem fileSystem = FileSystems.newFileSystem(zipURI, zipENV)) {
-            for (String convertedFile : convertedFiles) {
-                Path csvFilePath = Paths.get(convertedFile);
-                Path zipFileSystemPath = fileSystem.getPath(convertedFile.substring(convertedFile.lastIndexOf("/") + 1));
-                Files.write(zipFileSystemPath, Files.readAllBytes(csvFilePath), StandardOpenOption.CREATE);
-            }
-        }
     }
 
     public int getWarningFlightsCount() {
@@ -256,5 +297,13 @@ public class Pipeline {
 
     public int getValidFlightsCount() {
         return validFlightsCount.get();
+    }
+
+    public int getDerivedUploadId() {
+        return derivedUpload.id;
+    }
+
+    public Upload getUpload() {
+        return upload;
     }
 }
