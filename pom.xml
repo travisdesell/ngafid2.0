@@ -156,18 +156,21 @@
                             <arg>50000</arg>
                         </compilerArgs>
                     </configuration>
-                </plugin>
+                    </plugin>
+                <plugin>
+                    <groupId>com.github.spotbugs</groupId>
+                    <artifactId>spotbugs-maven-plugin</artifactId>
+                    <version>4.8.6.0</version>
+                    <dependencies>
+                      <!-- overwrite dependency on spotbugs if you want to specify the version of spotbugs -->
+                      <dependency>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs</artifactId>
+                        <version>4.8.6</version>
+                      </dependency>
+                    </dependencies>
+                  </plugin>
             </plugins>
         </pluginManagement>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>20</source>
-                    <target>20</target>
-                </configuration>
-            </plugin>
-        </plugins>
     </build>
 </project>
