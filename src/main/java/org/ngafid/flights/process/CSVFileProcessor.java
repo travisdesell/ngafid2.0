@@ -131,11 +131,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
+            e.printStackTrace();
             throw new FlightProcessingException(e);
         }
 
         FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
 
+        LOG.info("Returning flight builder!");
         return Stream.of(builder);
     }
 

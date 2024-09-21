@@ -25,7 +25,8 @@ public class FlightBuilder {
 
     public final ArrayList<MalformedFlightFileException> exceptions = new ArrayList<>();
 
-    public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+    public FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         this.doubleTimeSeries = new ConcurrentHashMap<>(doubleTimeSeries);
         this.stringTimeSeries = new ConcurrentHashMap<>(stringTimeSeries);
         this.meta = meta;
@@ -35,7 +36,7 @@ public class FlightBuilder {
         doubleTimeSeries.put(name, timeSeries);
         return this;
     }
-    
+
     public FlightBuilder addTimeSeries(String name, StringTimeSeries timeSeries) {
         stringTimeSeries.put(name, timeSeries);
         return this;
@@ -62,15 +63,14 @@ public class FlightBuilder {
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        required(ProcessStartEndTime::new),
-        ProcessAirportProximity::new,
-        ProcessLaggedAltMSL::new,
-        ProcessStallIndex::new,
-        ProcessTotalFuel::new,
-        ProcessDivergence::new,
-        ProcessLOCI::new,
-        ProcessItinerary::new
-    );
+            required(ProcessStartEndTime::new),
+            ProcessAirportProximity::new,
+            ProcessLaggedAltMSL::new,
+            ProcessStallIndex::new,
+            ProcessTotalFuel::new,
+            ProcessDivergence::new,
+            ProcessLOCI::new,
+            ProcessItinerary::new);
 
     // This can be overridden.
     protected List<ProcessStep> gatherSteps(Connection connection) {
@@ -78,18 +78,17 @@ public class FlightBuilder {
         // The order doesn't matter; the DependencyGraph will resolve
         // the order in the event that there are dependencies.
         return processSteps.stream().map(factory -> factory.create(connection, this))
-          .filter(step -> 
-              step.getOutputColumns()
-              .stream()
-              .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x))
-          ).collect(Collectors.toList());
+                .filter(step -> step.getOutputColumns()
+                        .stream()
+                        .noneMatch(x -> doubleTimeSeries.contains(x) || stringTimeSeries.contains(x)))
+                .collect(Collectors.toList());
     }
 
     // throws a flight processing exception if an unrecoverable error occurred.
     public Flight build(Connection connection) throws FlightProcessingException {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
         Executor executor = Runnable::run;
-        FlightProcessingException[] exception = new FlightProcessingException[] {null};
+        FlightProcessingException[] exception = new FlightProcessingException[] { null };
 
         executor.execute(() -> {
             try {
@@ -103,6 +102,10 @@ public class FlightBuilder {
             throw exception[0];
         }
 
+        for (var e : exceptions) {
+            e.printStackTrace();
+        }
+
         // TODO: Make sure headers are calculated appropriately.
         // TODO: Make sure hasAGL and hasCoords get set correctly
         try {
@@ -114,5 +117,6 @@ public class FlightBuilder {
     }
 
     // TODO: implement this
-    public void validate() {}
+    public void validate() {
+    }
 }

@@ -51,6 +51,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             stream.reset();
 
             if (!attributeMap.containsKey("mcID(SN)")) {
+                LOG.info("No DJI Serial number provided in binary.");
                 throw new FlightProcessingException(
                         new FatalFlightFileException("No DJI serial number provided in binary."));
             }
@@ -71,6 +72,7 @@ public class DATFileProcessor extends FlightFileProcessor {
                     }
                 }
             } catch (CsvValidationException | FatalFlightFileException | IOException e) {
+                e.printStackTrace();
                 throw new FlightProcessingException(e);
             } catch (ParseException e) {
                 e.printStackTrace();
@@ -85,6 +87,7 @@ public class DATFileProcessor extends FlightFileProcessor {
             meta.setAirframeName("DJI " + attributeMap.get("ACType"));
             meta.setSystemId(attributeMap.get("mcID(SN)"));
 
+            LOG.info("Flight builder DA");
             return Stream
                     .of(new FlightBuilder[] { new DATFlightBuilder(meta, doubleTimeSeriesMap, stringTimeSeriesMap) });
         } catch (IOException e) {
@@ -105,16 +108,14 @@ public class DATFileProcessor extends FlightFileProcessor {
             throws NotDatFile, IOException, FileEnd, SQLException {
         // We must extract the DAT file temporarily to do the conversion, as per the
         // library we use
-        File tempExtractedFile = File.createTempFile("NGAFID-", "-temp");
+        Path tempExtractedFile = Files.createTempFile("NGAFID-", "-temp");
 
-        try (FileOutputStream fileOutputStream = new FileOutputStream(tempExtractedFile)) {
-            Files.copy(inputStream, tempExtractedFile.toPath());
-        }
+        Files.copy(inputStream, tempExtractedFile, StandardCopyOption.REPLACE_EXISTING);
 
-        File convertedCSV = convertDATToCSV(tempExtractedFile);
+        File convertedCSV = convertDATToCSV(tempExtractedFile.toAbsolutePath());
 
         // Delete the temporarily extracted DAT file.
-        tempExtractedFile.delete();
+        Files.delete(tempExtractedFile);
 
         byte[] allBytes = Files.readAllBytes(convertedCSV.toPath());
 
@@ -138,15 +139,14 @@ public class DATFileProcessor extends FlightFileProcessor {
      * @throws IOException
      * @throws FileEnd
      */
-    private static File convertDATToCSV(File file) throws NotDatFile, IOException, FileEnd {
-        LOG.info("Converting to CSV: " + file.getAbsolutePath());
-        DatFile datFile = DatFile.createDatFile(file.getAbsolutePath());
+    private static File convertDATToCSV(Path path) throws NotDatFile, IOException, FileEnd {
+        DatFile datFile = DatFile.createDatFile(path.toString());
         datFile.reset();
         datFile.preAnalyze();
 
         ConvertDat convertDat = datFile.createConVertDat();
 
-        String csvFilename = file.getAbsolutePath() + ".csv";
+        String csvFilename = path.toString() + ".csv";
         convertDat.csvWriter = new CsvWriter(csvFilename);
         convertDat.createRecordParsers();
 
@@ -154,7 +154,7 @@ public class DATFileProcessor extends FlightFileProcessor {
         convertDat.analyze(false);
         LOG.info(datFile.getFile().getAbsolutePath());
 
-        return new File(csvFilename + ".csv");
+        return new File(csvFilename);
     }
 
     /**
@@ -359,8 +359,6 @@ public class DATFileProcessor extends FlightFileProcessor {
         } catch (IOException | CsvValidationException e) {
             e.printStackTrace();
         }
-
-        LOG.log(Level.INFO, "Attribute Map: {0}", attributeMap);
 
         return attributeMap;
     }
