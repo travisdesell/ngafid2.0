@@ -5,18 +5,20 @@ import java.util.*;
 import java.io.*;
 import java.sql.Connection;
 
+import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.flights.*;
 
 public class GeneratedCSVWriter extends CSVWriter {
     private List<DoubleTimeSeries> timeSeries;
 
-    public GeneratedCSVWriter(Flight flight, String [] timeSeriesColumnNames, Optional<File> outputCSVFile) {
+    public GeneratedCSVWriter(Flight flight, String[] timeSeriesColumnNames, Optional<File> outputCSVFile) {
         super(flight, outputCSVFile);
 
         this.timeSeries = new ArrayList<>();
 
         try {
+            Connection connection = Database.getConnection();
             for (String columnName : timeSeriesColumnNames) {
                 timeSeries.add(super.flight.getDoubleTimeSeries(connection, columnName));
             }
@@ -90,8 +92,10 @@ public class GeneratedCSVWriter extends CSVWriter {
         int startLine = event.getStartLine() - padding;
         int stopLine = event.getEndLine() + padding;
 
-        if (startLine < 0) startLine = 0;
-        if (stopLine > flightLength) stopLine = flightLength;
+        if (startLine < 0)
+            startLine = 0;
+        if (stopLine > flightLength)
+            stopLine = flightLength;
 
         writeToFile(startLine, stopLine);
     }

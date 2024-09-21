@@ -43,8 +43,6 @@ public class PostNewUpload implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        Connection connection = Database.getConnection();
-
         int uploaderId = user.getId();
         int fleetId = user.getFleetId();
 
@@ -104,6 +102,8 @@ public class PostNewUpload implements Route {
         // 4. file does exist but with different hash -- error message
 
         try {
+            Connection connection = Database.getConnection();
+
             PreparedStatement query = connection.prepareStatement(
                     "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?");
             query.setString(1, md5Hash);

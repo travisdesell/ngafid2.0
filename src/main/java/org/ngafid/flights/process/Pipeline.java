@@ -131,14 +131,27 @@ public class Pipeline implements AutoCloseable {
                             .filter(Objects::nonNull)
                             .map(this::finalize)
                             .collect(Collectors.toList());
-
-                    Flight.batchUpdateDatabase(Database.getConnection(), upload, f);
+                    try (Connection connection = Database.getConnection()) {
+                        Flight.batchUpdateDatabase(connection, upload, f);
+                    } catch (SQLException e) {
+                        LOG.info("Encountered SQLException trying to get database connection...");
+                        e.printStackTrace();
+                        this.fail();
+                    }
                 }));
 
         processHandle.join();
         if (flights.size() > 0) {
             Flight.batchUpdateDatabase(connection, upload, flights);
         }
+    }
+
+    /**
+     * Mark this upload as having failed in an irrecoverable way, marking it for
+     * re-processing
+     */
+    public void fail() {
+        // TODO: Implement
     }
 
     public FileSystem createDerivedFileSystem() throws IOException {
@@ -174,15 +187,6 @@ public class Pipeline implements AutoCloseable {
         return Collections.unmodifiableMap(flightErrors);
     }
 
-    public boolean supportedFileType(ZipEntry x) {
-        int index = x.getName().lastIndexOf('.');
-        if (index > 0 && x.getName().length() > index + 1) {
-            return factories.containsKey(x.getName().substring(index + 1).toLowerCase());
-        } else {
-            return false;
-        }
-    }
-
     private Stream<? extends ZipEntry> getValidFilesStream() {
         Enumeration<? extends ZipEntry> entries = zipFile.entries();
         Stream<? extends ZipEntry> validFiles = StreamSupport.stream(
@@ -199,39 +203,8 @@ public class Pipeline implements AutoCloseable {
 
     private Stream<FlightFileProcessor> parallelStream() {
         var validFiles = getValidFilesStream().collect(Collectors.toList());
-        LOG.info(validFiles.toString());
-        var queue = new LinkedList<FlightFileProcessor>();
 
-        pool.submit(() -> {
-            validFiles.stream().map(this::create).forEach(o -> {
-                synchronized (queue) {
-                    queue.add(o);
-                    queue.notify();
-                }
-            });
-
-            synchronized (queue) {
-                queue.notifyAll();
-            }
-        });
-
-        return IntStream.range(0, validFiles.size()).parallel().mapToObj(x -> {
-            try {
-                synchronized (queue) {
-                    while (queue.size() < 0) {
-                        queue.wait();
-
-                        if (queue.size() > 0)
-                            return queue.pop();
-                        else
-                            return null;
-                    }
-                    return null;
-                }
-            } catch (InterruptedException ie) {
-                return null;
-            }
-        });
+        return validFiles.parallelStream().map(this::create);
     }
 
     public Stream<FlightBuilder> parse(FlightFileProcessor processor) {

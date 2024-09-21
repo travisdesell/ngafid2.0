@@ -56,7 +56,6 @@ import org.ngafid.accounts.EmailType;
 import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
 public class ProcessUpload {
-    private static Connection connection = null;
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
     private static final String ERROR_STATUS_STR = "ERROR";
 
@@ -83,7 +82,7 @@ public class ProcessUpload {
 
     }
 
-    public static void main(String[] arguments) {
+    public static void main(String[] arguments) throws SQLException {
         String poolSizeS = System.getenv("POOL_SIZE");
         if (poolSizeS != null)
             poolSize = Integer.parseInt(poolSizeS);
@@ -93,9 +92,7 @@ public class ProcessUpload {
         if (batchedDBS != null)
             batchedDB = Boolean.parseBoolean(batchedDBS);
 
-        connection = Database.getConnection();
-
-        removeNoUploadFlights(connection);
+        removeNoUploadFlights();
 
         if (arguments.length >= 1) {
             if (arguments[0].equals("--fleet")) {
@@ -118,8 +115,8 @@ public class ProcessUpload {
      *
      * @param connection is the connection to the database
      */
-    public static void removeNoUploadFlights(Connection connection) {
-        try {
+    public static void removeNoUploadFlights() {
+        try (Connection connection = Database.getConnection()) {
             ArrayList<Flight> noUploadFlights = Flight.getFlights(connection,
                     "NOT EXISTS (SELECT * FROM uploads WHERE uploads.id = flights.upload_id)");
 
@@ -136,13 +133,11 @@ public class ProcessUpload {
         }
     }
 
-    public static void operateAsDaemon() {
+    public static void operateAsDaemon() throws SQLException {
         while (true) {
-            connection = Database.resetConnection();
-
             Instant start = Instant.now();
 
-            try {
+            try (Connection connection = Database.getConnection()) {
                 PreparedStatement fleetPreparedStatement = connection.prepareStatement(
                         "SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'UPLOADED')");
                 ResultSet fleetSet = fleetPreparedStatement.executeQuery();
@@ -195,7 +190,7 @@ public class ProcessUpload {
 
     public static void processFleetUploads(int fleetId) {
         LOG.info("processing uploads from fleet with id: " + fleetId);
-        try {
+        try (Connection connection = Database.getConnection()) {
             Fleet fleet = Fleet.get(connection, fleetId);
             String f = fleet.getName() == null ? " NULL NAME " : fleet.getName();
             List<Upload> uploads = Upload.getUploads(connection, fleetId);
@@ -224,7 +219,7 @@ public class ProcessUpload {
 
     public static void processUpload(int uploadId) {
         LOG.info("processing upload with id: " + uploadId);
-        try {
+        try (Connection connection = Database.getConnection()) {
             Upload upload = Upload.getUploadById(connection, uploadId);
 
             if (upload == null) {
@@ -234,6 +229,7 @@ public class ProcessUpload {
                         + ", but the upload did not exist. This should never happen.");
                 System.exit(1);
             }
+
             processUpload(upload);
         } catch (SQLException e) {
             LOG.severe("ERROR processing upload: " + e);
@@ -242,9 +238,7 @@ public class ProcessUpload {
     }
 
     public static void processUpload(Upload upload) {
-        try {
-
-            int uploadId = upload.getId();
+        try (Connection connection = Database.getConnection()) {
             int uploaderId = upload.getUploaderId();
             int fleetId = upload.getFleetId();
             String filename = upload.getFilename();
@@ -273,15 +267,17 @@ public class ProcessUpload {
             boolean success = ingestFlights(connection, upload, uploadProcessedEmail);
             // only progress if the upload ingestion was successful
             if (success) {
-                FindSpinEvents.findSpinEventsInUpload(connection, upload);
+                // FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
-                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+                // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
 
-                CalculateExceedences.calculateExceedences(connection, uploadId, uploadProcessedEmail);
+                // CalculateExceedences.calculateExceedences(connection, uploadId,
+                // uploadProcessedEmail);
 
-                CalculateProximity.calculateProximity(connection, uploadId, uploadProcessedEmail);
+                // CalculateProximity.calculateProximity(connection, uploadId,
+                // uploadProcessedEmail);
 
-                CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
+                // CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
 
                 String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
 

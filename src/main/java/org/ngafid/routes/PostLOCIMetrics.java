@@ -28,7 +28,6 @@ import org.ngafid.flights.DoubleTimeSeries;
 public class PostLOCIMetrics implements Route {
     private static final Logger LOG = Logger.getLogger(PostLOCIMetrics.class.getName());
     private Gson gson;
-    private static Connection connection = Database.getConnection();
 
     public PostLOCIMetrics(Gson gson) {
         this.gson = gson;
@@ -41,7 +40,7 @@ public class PostLOCIMetrics implements Route {
         String name;
 
         public FlightMetric(double value, String name) {
-            //json does not like NaN so we must make it a null string
+            // json does not like NaN so we must make it a null string
             this.value = Double.isNaN(value) ? "null" : String.valueOf(value);
             this.name = name;
         }
@@ -80,10 +79,11 @@ public class PostLOCIMetrics implements Route {
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int timeIndex = Integer.parseInt(request.queryParams("time_index"));
 
-
         try {
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+            Connection connection = Database.getConnection();
+
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
@@ -96,16 +96,16 @@ public class PostLOCIMetrics implements Route {
 
             for (String seriesName : metrics) {
                 System.out.println(seriesName);
-                DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName); 
+                DoubleTimeSeries series = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, seriesName);
 
                 if (series == null) {
                     flightMetrics.add(new FlightMetric(seriesName));
                 } else {
-                    FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);  
+                    FlightMetric flightMetric = new FlightMetric(series.get(timeIndex), seriesName);
                     flightMetrics.add(flightMetric);
                 }
             }
-            
+
             LOG.info("Posting " + flightMetrics.size() + " metrics to user");
 
             return gson.toJson(new FlightMetricResponse(flightMetrics, userPreferences.getDecimalPrecision()));
@@ -115,4 +115,3 @@ public class PostLOCIMetrics implements Route {
         }
     }
 }
-

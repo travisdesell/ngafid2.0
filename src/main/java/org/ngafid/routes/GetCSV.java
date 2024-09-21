@@ -26,7 +26,6 @@ import org.ngafid.flights.Upload;
 
 public class GetCSV implements Route {
     private static final Logger LOG = Logger.getLogger(GetCSV.class.getName());
-    private static final Connection connection = Database.getConnection();
 
     private Gson gson;
 
@@ -36,10 +35,9 @@ public class GetCSV implements Route {
         LOG.info("get " + this.getClass().getName() + " initalized");
     }
 
-
     /**
-    * {inheritDoc}
-    */
+     * {inheritDoc}
+     */
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -55,27 +53,28 @@ public class GetCSV implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
             Spark.halt(401, "User did not have access to view acces for this fleet.");
             return null;
         }
 
-
         try {
+            Connection connection = Database.getConnection();
+
             response.header("Content-Disposition", "attachment; filename=flight_" + flightId + ".csv");
             response.type("application/force-download");
 
-            Flight flight = Flight.getFlight(Database.getConnection(), flightId);
+            Flight flight = Flight.getFlight(connection, flightId);
 
-            int uploaderId = flight.getUploaderId(); 
+            int uploaderId = flight.getUploaderId();
 
             boolean isAirSync = false;
             String zipRoot;
             if (uploaderId == 284) {
-                //TODO: need to look up user from uploaderId and check if it is the airsync user
+                // TODO: need to look up user from uploaderId and check if it is the airsync
+                // user
 
                 zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/";
 
@@ -89,11 +88,12 @@ public class GetCSV implements Route {
             } else {
                 zipRoot = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/";
             }
-            
+
             CSVWriter csvWriter;
 
             if (generated) {
-                csvWriter = new GeneratedCSVWriter(flight, Optional.empty(), DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
+                csvWriter = new GeneratedCSVWriter(flight, Optional.empty(),
+                        DoubleTimeSeries.getAllDoubleTimeSeries(connection, flight.getId()));
             } else {
                 csvWriter = new CachedCSVWriter(zipRoot, flight, Optional.empty(), isAirSync);
             }

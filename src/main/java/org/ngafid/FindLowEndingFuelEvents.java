@@ -23,12 +23,13 @@ public class FindLowEndingFuelEvents {
     private static Map<Integer, EventDefinition> eventDefs = new HashMap<>();
     private static Map<Integer, Double> thresholds = new HashMap<>();
 
-
     public static void findLowEndFuelEventsInUpload(Connection connection, Upload upload) {
         try {
             String whereClause = "upload_id = " + upload.getId() + " AND insert_completed = 1 AND NOT EXISTS " +
-                    "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId() +
-                    " OR event_definition_id = " + LOW_END_FUEL_PA_44.getId() + " OR event_definition_id = " + LOW_END_FUEL_CESSNA_172.getId() +
+                    "(SELECT flight_id FROM flight_processed WHERE (event_definition_id = " + LOW_END_FUEL_PA_28.getId()
+                    +
+                    " OR event_definition_id = " + LOW_END_FUEL_PA_44.getId() + " OR event_definition_id = "
+                    + LOW_END_FUEL_CESSNA_172.getId() +
                     ") AND flight_processed.flight_id = flights.id)";
 
             List<Flight> flights = Flight.getFlights(connection, whereClause);
@@ -58,7 +59,8 @@ public class FindLowEndingFuelEvents {
         }
     }
 
-    public static void findLowEndFuel(Connection connection, Flight flight) throws SQLException, FatalFlightFileException, MalformedFlightFileException, ParseException {
+    public static void findLowEndFuel(Connection connection, Flight flight)
+            throws SQLException, FatalFlightFileException, MalformedFlightFileException, ParseException {
         int airframeNameID = flight.getAirframeNameId();
 
         if (!eventDefs.containsKey(airframeNameID)) {
@@ -71,7 +73,6 @@ public class FindLowEndingFuelEvents {
             eventDefs.put(airframeNameID, lowEndEventDef);
             thresholds.put(airframeNameID, getThresholdValueFromText(eventDefs.get(airframeNameID).toHumanReadable()));
         }
-
 
         LOG.info("Processing flight " + flight.getId());
 
@@ -100,7 +101,8 @@ public class FindLowEndingFuelEvents {
             fuelSum += fuel.get(i);
             fuelValues++;
 
-            if (currentTime.equals(" ")) continue;
+            if (currentTime.equals(" "))
+                continue;
 
             LOG.info("DATE = " + currentTime);
             duration = TimeUtils.calculateDurationInSeconds(currentTime, endTime, "yyyy-MM-dd HH:mm:ss");
@@ -110,14 +112,17 @@ public class FindLowEndingFuelEvents {
         if (duration >= 15) {
             double average = (fuelSum / fuelValues);
             if (average < threshold) {
-                CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight, eventDef);
+                CustomEvent event = new CustomEvent(currentTime, endTime, i, flight.getNumberRows(), average, flight,
+                        eventDef);
 
                 event.updateDatabase(connection);
                 event.updateStatistics(connection, flight.getFleetId(), flight.getAirframeTypeId(), eventDef.getId());
-                EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithEvent(connection, flight.getFleetId(), flight.getAirframeNameId(),
+                        eventDef.getId(), flight.getStartDateTime());
                 hadEvent++;
             } else {
-                EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(), eventDef.getId(), flight.getStartDateTime());
+                EventStatistics.updateFlightsWithoutEvent(connection, flight.getFleetId(), flight.getAirframeNameId(),
+                        eventDef.getId(), flight.getStartDateTime());
             }
         }
 
@@ -143,10 +148,9 @@ public class FindLowEndingFuelEvents {
         stmt.close();
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
         List<Fleet> fleets = null;
         Connection connection = Database.getConnection();
-
 
         if (args.length == 1) {
             try {
@@ -180,7 +184,7 @@ public class FindLowEndingFuelEvents {
                         e.printStackTrace();
                         System.exit(1);
                     }
-                    
+
                 }
             } catch (SQLException e) {
                 System.exit(1);

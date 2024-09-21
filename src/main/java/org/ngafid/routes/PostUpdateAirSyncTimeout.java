@@ -16,7 +16,6 @@ import org.ngafid.accounts.User;
 public class PostUpdateAirSyncTimeout implements Route {
     private static final Logger LOG = Logger.getLogger(PostUpdateAirSyncTimeout.class.getName());
     private Gson gson;
-    private static Connection connection = Database.getConnection();
 
     public PostUpdateAirSyncTimeout(Gson gson) {
         this.gson = gson;
@@ -34,6 +33,7 @@ public class PostUpdateAirSyncTimeout implements Route {
         String newTimeout = request.queryParams("timeout");
 
         try {
+            Connection connection = Database.getConnection();
             LOG.info("User set new timeout: " + newTimeout + ", requesting user: " + user.getFullName());
             AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
 

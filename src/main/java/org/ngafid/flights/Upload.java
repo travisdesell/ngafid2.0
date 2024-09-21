@@ -267,7 +267,6 @@ public class Upload {
      */
     public static Upload createNewUpload(Connection connection, int uploaderId, int fleetId, String filename,
             String identifier, long size, int numberChunks, String md5hash) throws SQLException {
-        String chunkStatus = "0".repeat(numberChunks);
         return createUpload(connection, uploaderId, fleetId, filename, identifier, size, numberChunks, md5hash, 0,
                 "0".repeat(numberChunks), "UPLOADING");
     }

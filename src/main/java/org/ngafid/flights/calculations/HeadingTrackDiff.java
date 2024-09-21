@@ -60,7 +60,7 @@ public class HeadingTrackDiff implements Calculation {
         return false;
     }
 
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         Options options = new Options();
 
         Option flightIds = new Option("f", "fleet_ids", true, "list of fleet ids to calculate for");
@@ -82,26 +82,26 @@ public class HeadingTrackDiff implements Calculation {
             System.exit(1);
         }
 
-        Connection connection = Database.getConnection();
-
-        String [] fleetIdStrs = cmd.getOptionValues('f');
-
-        if (fleetIdStrs == null || fleetIdStrs.length <= 0) {
-            fleets = Fleet.getAllFleets(connection);
-        }
-
         try {
+            Connection connection = Database.getConnection();
+
+            String[] fleetIdStrs = cmd.getOptionValues('f');
+
+            if (fleetIdStrs == null || fleetIdStrs.length <= 0) {
+                fleets = Fleet.getAllFleets(connection);
+            }
             for (Fleet fleet : fleets) {
                 LOG.info("Calculating hdg/trk diff for fleet: " + fleet.getName());
                 int fleetId = fleet.getId();
-                // This may be slow for large fleets like UND 
+                // This may be slow for large fleets like UND
                 List<Flight> flights = Flight.getFlights(connection, fleetId);
 
                 for (Flight flight : flights) {
                     List<String> missingParams = flight.checkCalculationParameters(HDG_TRK_DEPENDENCIES);
                     if (missingParams.isEmpty()) {
                         HeadingTrackDiff calculation = new HeadingTrackDiff(flight, connection);
-                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection, HDG_TRK_DIFF, "degrees", true, flight);
+                        CalculatedDoubleTimeSeries hdgTrakDiff = new CalculatedDoubleTimeSeries(connection,
+                                HDG_TRK_DIFF, "degrees", true, flight);
                         if (!calculation.existsInDB(connection)) {
                             hdgTrakDiff.create(calculation);
                             hdgTrakDiff.updateDatabase(connection, flight.getId());
@@ -109,7 +109,7 @@ public class HeadingTrackDiff implements Calculation {
                             LOG.info("Already calculated for flight " + flight.toString());
                         }
                     } else {
-                        //Cant be calculated. 
+                        // Cant be calculated.
                         LOG.severe("Skipping flight " + flight.toString());
                         LOG.severe("Missing columns: " + missingParams.toString());
                     }
@@ -118,7 +118,7 @@ public class HeadingTrackDiff implements Calculation {
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
-        } 
+        }
 
         LOG.info("All done!");
         System.exit(0);

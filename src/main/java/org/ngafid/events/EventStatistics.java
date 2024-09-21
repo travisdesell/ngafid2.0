@@ -17,7 +17,6 @@ import java.util.stream.Stream;
 import java.util.stream.Collectors;
 import java.util.logging.Logger;
 
-
 import org.ngafid.flights.Airframes;
 
 public class EventStatistics {
@@ -26,72 +25,62 @@ public class EventStatistics {
     // Fleet ID - Airframe - Month - Total Flights
     private static Map<Integer, Map<String, Map<String, Integer>>> monthlyTotalFlightsMap = new HashMap<>();
 
-    static {
-        Connection connection = Database.getConnection();
-        // try (PreparedStatement ps = connection.prepareStatement("SELECT id FROM fleet")) {
-        //     ResultSet result = ps.executeQuery();
-        //     while (result.next()) {
-        //         int fleetId = result.getInt("id");
-        //         updateMonthlyTotalFlights(connection, fleetId);
-        //     }
-        // } catch (SQLException e) {
-        //     throw new RuntimeException(e);
-        // }
-    }
-
     private static final String EVENT_COUNT_BASE_QUERY_PARAMS = """
-             SELECT COUNT(DISTINCT e.id) AS 
-                    event_count, 
-                    COUNT(DISTINCT flights.id) as flight_count,
-                    event_definition_id,
-                    flights.fleet_id as fleet_id,
-                    flights.airframe_id as airframe_id
-    """;
+                     SELECT COUNT(DISTINCT e.id) AS
+                            event_count,
+                            COUNT(DISTINCT flights.id) as flight_count,
+                            event_definition_id,
+                            flights.fleet_id as fleet_id,
+                            flights.airframe_id as airframe_id
+            """;
 
     private static final String EVENT_COUNT_BASE_QUERY_CONDITIONS = """
-               FROM events AS e 
-         INNER JOIN flights 
-                 ON flights.id = e.flight_id
-    """;
-    
+                       FROM events AS e
+                 INNER JOIN flights
+                         ON flights.id = e.flight_id
+            """;
+
     private static final String EVENT_COUNT_BASE_QUERY_GROUP_BY = """
-           GROUP BY event_definition_id,
-                    flights.airframe_id,
-                    flights.fleet_id
-    """;
-    
+                   GROUP BY event_definition_id,
+                            flights.airframe_id,
+                            flights.fleet_id
+            """;
+
     private static final String EVENT_COUNT_BETWEEN_DATE_CLAUSE = """
-              WHERE e.start_time BETWEEN ? AND ?
-    """;
+                      WHERE e.start_time BETWEEN ? AND ?
+            """;
 
     private static final String MONTHLY_EVENT_COUNT_QUERY_PARAMS = EVENT_COUNT_BASE_QUERY_PARAMS + """
-                  , YEAR(e.start_time) as year,
-                    MONTH(e.start_time) as month
-    """;
-    
+                          , YEAR(e.start_time) as year,
+                            MONTH(e.start_time) as month
+            """;
+
     private static final String MONTHLY_EVENT_COUNT_QUERY_GROUP_BY = EVENT_COUNT_BASE_QUERY_GROUP_BY + """
-                  , YEAR(e.start_time), 
-                    MONTH(e.start_time)
+                          , YEAR(e.start_time),
+                            MONTH(e.start_time)
 
-    """;
+            """;
 
-    // NOTES: You are going to have to mess with the js code that calls this, because it wont look in the aggregate fields for osme reason.
+    // NOTES: You are going to have to mess with the js code that calls this,
+    // because it wont look in the aggregate fields for osme reason.
     // this isnt a problem w the monthly stuff.
-    public static Map<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
+    public static Map<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime)
+            throws SQLException {
         return getEventCounts(connection, -1, startTime, endTime);
     }
 
-    public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startDate, LocalDate endDate) throws SQLException {
+    public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startDate,
+            LocalDate endDate) throws SQLException {
         if (startDate == null)
             startDate = LocalDate.of(0, 1, 1);
 
         if (endDate == null)
             endDate = LocalDate.now();
 
-        String query =  EVENT_COUNT_BASE_QUERY_PARAMS
-                      + EVENT_COUNT_BASE_QUERY_CONDITIONS
-                      + EVENT_COUNT_BETWEEN_DATE_CLAUSE
-                      + EVENT_COUNT_BASE_QUERY_GROUP_BY;
+        String query = EVENT_COUNT_BASE_QUERY_PARAMS
+                + EVENT_COUNT_BASE_QUERY_CONDITIONS
+                + EVENT_COUNT_BETWEEN_DATE_CLAUSE
+                + EVENT_COUNT_BASE_QUERY_GROUP_BY;
 
         PreparedStatement statement = connection.prepareStatement(query);
         statement.setString(1, startDate.toString());
@@ -114,7 +103,7 @@ public class EventStatistics {
 
             String eventName = idToEventNameMap.get(eventDefinitionId);
             String airframeName = idToAirframeNameMap.get(airframeId);
-            
+
             EventCountsBuilder ec = eventCounts.computeIfAbsent(airframeName, EventCountsBuilder::new);
             ec.updateAggregate(eventName, flightCount, 0, eventCount);
             ec.setAggregateTotalFlights(eventName, fc.getAggregateCounts().get(airframeId));
@@ -125,24 +114,23 @@ public class EventStatistics {
         }
 
         return eventCounts
-            .entrySet()
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> entry.getValue().build()
-                )
-            );
+                .entrySet()
+                .stream()
+                .collect(
+                        Collectors.toMap(
+                                Map.Entry::getKey,
+                                entry -> entry.getValue().build()));
     }
 
-    public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(Connection connection, int fleetId, LocalDate startDateNullable, LocalDate endDateNullable) throws SQLException {
+    public static Map<String, Map<String, MonthlyEventCounts>> getMonthlyEventCounts(Connection connection, int fleetId,
+            LocalDate startDateNullable, LocalDate endDateNullable) throws SQLException {
         final LocalDate startDate = startDateNullable == null ? LocalDate.of(0, 1, 1) : startDateNullable;
         final LocalDate endDate = endDateNullable == null ? LocalDate.now() : endDateNullable;
 
-        String query =  MONTHLY_EVENT_COUNT_QUERY_PARAMS
-                      + EVENT_COUNT_BASE_QUERY_CONDITIONS
-                      + EVENT_COUNT_BETWEEN_DATE_CLAUSE
-                      + MONTHLY_EVENT_COUNT_QUERY_GROUP_BY;
+        String query = MONTHLY_EVENT_COUNT_QUERY_PARAMS
+                + EVENT_COUNT_BASE_QUERY_CONDITIONS
+                + EVENT_COUNT_BETWEEN_DATE_CLAUSE
+                + MONTHLY_EVENT_COUNT_QUERY_GROUP_BY;
 
         PreparedStatement statement = connection.prepareStatement(query);
         statement.setString(1, startDate.toString());
@@ -152,10 +140,10 @@ public class EventStatistics {
 
         Map<Integer, String> idToAirframeNameMap = Airframes.getIdToNameMap(connection);
         Map<Integer, String> idToEventNameMap = EventDefinition.getEventDefinitionIdToNameMap(connection);
-    
+
         FlightCounts fc = getFlightCounts(connection, startDate, endDate);
         Map<String, Map<String, MonthlyEventCountsBuilder>> eventCounts = new HashMap<>();
-   
+
         while (result.next()) {
             final int fleet = result.getInt("fleet_id");
             final int eventCount = result.getInt("event_count");
@@ -169,49 +157,52 @@ public class EventStatistics {
             final String date = LocalDate.of(year, month, 1).toString();
             final String eventName = idToEventNameMap.get(eventDefinitionId);
             final String airframeName = idToAirframeNameMap.get(airframeId);
-            
+
             MonthlyEventCountsBuilder mec = eventCounts
-                .computeIfAbsent(eventName, k -> new HashMap<>())
-                .computeIfAbsent(airframeName, k -> new MonthlyEventCountsBuilder(airframeName, eventName, startDate, endDate));
+                    .computeIfAbsent(eventName, k -> new HashMap<>())
+                    .computeIfAbsent(airframeName,
+                            k -> new MonthlyEventCountsBuilder(airframeName, eventName, startDate, endDate));
 
             mec.updateAggregate(date, flightCount, totalFlights, eventCount);
             if (fleetId == fleet)
                 mec.update(date, flightCount, totalFlights, eventCount);
         }
 
-        // Create a new map, where each value is itself a map that has MonthlyEventCounts for values.
-        // Map<String, Map<String, MonthlyEventCounts>> monthlyEventCounts = new HashMap<>(eventCounts.size());
+        // Create a new map, where each value is itself a map that has
+        // MonthlyEventCounts for values.
+        // Map<String, Map<String, MonthlyEventCounts>> monthlyEventCounts = new
+        // HashMap<>(eventCounts.size());
 
-        // for (Map.Entry<String, Map<String, MonthlyEventCountsBuilder>> entry : eventCounts.entrySet()) {
-        //     Map<String, MonthlyEventCounts> 
+        // for (Map.Entry<String, Map<String, MonthlyEventCountsBuilder>> entry :
+        // eventCounts.entrySet()) {
+        // Map<String, MonthlyEventCounts>
         // }
 
         return eventCounts
-            .entrySet()
-            .stream()
-            .collect(
-                Collectors.toMap(
-                    Map.Entry::getKey,
-                    entry -> entry.getValue().entrySet().stream()
-                        .collect(
-                            Collectors.toMap(
+                .entrySet()
+                .stream()
+                .collect(
+                        Collectors.toMap(
                                 Map.Entry::getKey,
-                                e -> e.getValue().build()
-                            )
-                        )
-                )
-            );
+                                entry -> entry.getValue().entrySet().stream()
+                                        .collect(
+                                                Collectors.toMap(
+                                                        Map.Entry::getKey,
+                                                        e -> e.getValue().build()))));
     }
 
     public static class FlightCounts {
-        
-        // Maps airframeId to another map, which maps fleetId to the number of flights in that fleet.
+
+        // Maps airframeId to another map, which maps fleetId to the number of flights
+        // in that fleet.
         private Map<Integer, Map<Integer, Integer>> airframeToFleetCounts = new HashMap<>();
 
-        // Maps fleetId to another map, which maps airframeId to the number of flights of that airframe type in the specified fleet.
+        // Maps fleetId to another map, which maps airframeId to the number of flights
+        // of that airframe type in the specified fleet.
         private Map<Integer, Map<Integer, Integer>> fleetToAirframeCounts = new HashMap<>();
 
-        // Total flight counts for all fleets. Maps airframe to the number of flights with that airframe.
+        // Total flight counts for all fleets. Maps airframe to the number of flights
+        // with that airframe.
         private Map<Integer, Integer> aggregateCounts = new HashMap<>();
 
         public FlightCounts(ResultSet results) throws SQLException {
@@ -226,15 +217,15 @@ public class EventStatistics {
 
         private void addRow(int airframeId, int fleetId, int flightCount) {
             airframeToFleetCounts
-                .computeIfAbsent(airframeId, k -> new HashMap<>())
-                .merge(fleetId, flightCount, Integer::sum);
+                    .computeIfAbsent(airframeId, k -> new HashMap<>())
+                    .merge(fleetId, flightCount, Integer::sum);
 
             fleetToAirframeCounts
-                .computeIfAbsent(fleetId, k -> new HashMap<>())
-                .merge(airframeId, flightCount, Integer::sum);
+                    .computeIfAbsent(fleetId, k -> new HashMap<>())
+                    .merge(airframeId, flightCount, Integer::sum);
 
             aggregateCounts
-                .merge(airframeId, flightCount, Integer::sum);
+                    .merge(airframeId, flightCount, Integer::sum);
         }
 
         public Map<Integer, Integer> getAggregateCounts() {
@@ -247,9 +238,11 @@ public class EventStatistics {
     }
 
     /**
-     * Returns a map of airframe id to the total number of flights with that id, one map per fleet id.
+     * Returns a map of airframe id to the total number of flights with that id, one
+     * map per fleet id.
      **/
-    public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate) throws SQLException {
+    public static FlightCounts getFlightCounts(Connection connection, LocalDate startDate, LocalDate endDate)
+            throws SQLException {
         if (startDate == null)
             startDate = LocalDate.of(0, 1, 1);
 
@@ -264,7 +257,7 @@ public class EventStatistics {
         ps.setString(2, endDate.toString());
 
         ResultSet results = ps.executeQuery();
-        
+
         FlightCounts counts = new FlightCounts(results);
 
         results.close();
@@ -275,9 +268,9 @@ public class EventStatistics {
 
     public static void updateMonthlyTotalFlights(Connection connection, int fleetId) {
         String query = "SELECT airframes.airframe AS airframe, DATE_FORMAT(flights.start_time, '%Y-%m-01') " +
-                        "AS month, COUNT(*) AS total_flights FROM flights " +
-                        "JOIN airframes ON flights.airframe_id = airframes.id WHERE flights.fleet_id = ? " +
-                        "GROUP BY airframes.airframe, month, flights.fleet_id ORDER BY month, airframes.airframe, flights.fleet_id";
+                "AS month, COUNT(*) AS total_flights FROM flights " +
+                "JOIN airframes ON flights.airframe_id = airframes.id WHERE flights.fleet_id = ? " +
+                "GROUP BY airframes.airframe, month, flights.fleet_id ORDER BY month, airframes.airframe, flights.fleet_id";
 
         try (PreparedStatement ps = connection.prepareStatement(query)) {
             ps.setInt(1, fleetId);
@@ -317,7 +310,8 @@ public class EventStatistics {
 
         for (Integer fleetID : monthlyTotalFlightsMap.keySet()) {
             try {
-                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).values().stream().mapToInt(Integer::intValue).sum();
+                result += monthlyTotalFlightsMap.get(fleetID).get(airframe).values().stream()
+                        .mapToInt(Integer::intValue).sum();
             } catch (NullPointerException e) {
             }
         }
@@ -361,14 +355,12 @@ public class EventStatistics {
         return result;
     }
 
-
     public static String getFirstOfMonth(String dateTime) {
         return dateTime.substring(0, 8) + "01";
     }
 
-
-
-    public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime, double severity, double duration) throws SQLException {
+    public static void updateEventStatistics(Connection connection, int fleetId, int airframeNameId, int eventId,
+            String startDateTime, double severity, double duration) throws SQLException {
         if (startDateTime.length() < 8) {
             LOG.severe("could not update event statistics because startDateTime was improperly formatted!");
             System.exit(1);
@@ -405,9 +397,11 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
-        //cannot update event statistics if the flight had no startDateTime
-        if (startDateTime == null) return;
+    public static void updateFlightsWithEvent(Connection connection, int fleetId, int airframeNameId, int eventId,
+            String startDateTime) throws SQLException {
+        // cannot update event statistics if the flight had no startDateTime
+        if (startDateTime == null)
+            return;
 
         String firstOfMonth = getFirstOfMonth(startDateTime);
 
@@ -424,9 +418,11 @@ public class EventStatistics {
         preparedStatement.close();
     }
 
-    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId, String startDateTime) throws SQLException {
-        //cannot update event statistics if the flight had no startDateTime
-        if (startDateTime == null) return;
+    public static void updateFlightsWithoutEvent(Connection connection, int fleetId, int airframeNameId, int eventId,
+            String startDateTime) throws SQLException {
+        // cannot update event statistics if the flight had no startDateTime
+        if (startDateTime == null)
+            return;
 
         String firstOfMonth = getFirstOfMonth(startDateTime);
 
@@ -442,7 +438,6 @@ public class EventStatistics {
         preparedStatement.executeUpdate();
         preparedStatement.close();
     }
-
 
     private static class EventRow {
         String rowName;
@@ -469,12 +464,12 @@ public class EventStatistics {
         double aggMinSeverity;
         double aggMaxSeverity;
 
-
         public EventRow(String rowName) {
             this.rowName = rowName;
         }
 
-        public static EventRow getStatistics(Connection connection, String rowName, int fleetId, int eventId, String extraQuery, int[] extraParams) throws SQLException {
+        public static EventRow getStatistics(Connection connection, String rowName, int fleetId, int eventId,
+                String extraQuery, int[] extraParams) throws SQLException {
             EventRow eventRow = new EventRow(rowName);
 
             String query = "SELECT SUM(flights_with_event), SUM(total_flights), SUM(total_events), MIN(min_duration), SUM(sum_duration), MAX(max_duration), MIN(min_severity), SUM(sum_severity), MAX(max_severity) FROM event_statistics WHERE fleet_id = ? AND event_definition_id = ?";
@@ -483,7 +478,7 @@ public class EventStatistics {
                 query += " AND " + extraQuery;
             }
 
-            //LOG.info(query);
+            // LOG.info(query);
 
             PreparedStatement preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, fleetId);
@@ -492,7 +487,7 @@ public class EventStatistics {
                 preparedStatement.setInt(3 + i, extraParams[i]);
             }
 
-            //LOG.info(preparedStatement.toString());
+            // LOG.info(preparedStatement.toString());
 
             ResultSet resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
@@ -527,7 +522,7 @@ public class EventStatistics {
                 query += " AND " + extraQuery;
             }
 
-            //LOG.info(query);
+            // LOG.info(query);
 
             preparedStatement = connection.prepareStatement(query);
             preparedStatement.setInt(1, fleetId);
@@ -536,7 +531,7 @@ public class EventStatistics {
                 preparedStatement.setInt(3 + i, extraParams[i]);
             }
 
-            //LOG.info(preparedStatement.toString());
+            // LOG.info(preparedStatement.toString());
 
             resultSet = preparedStatement.executeQuery();
             if (resultSet.next()) {
@@ -562,8 +557,7 @@ public class EventStatistics {
                 eventRow.aggMaxSeverity = 0;
             }
 
-
-            //zero out the default values if there are no events
+            // zero out the default values if there are no events
             if (eventRow.totalEvents == 0) {
                 eventRow.minDuration = 0;
                 eventRow.avgDuration = 0;
@@ -582,13 +576,19 @@ public class EventStatistics {
                 eventRow.aggMaxSeverity = 0;
             }
 
-            if (Double.isNaN(eventRow.avgDuration)) eventRow.avgDuration = 0;
-            if (Double.isNaN(eventRow.avgEvents)) eventRow.avgEvents = 0;
-            if (Double.isNaN(eventRow.avgSeverity)) eventRow.avgSeverity = 0;
+            if (Double.isNaN(eventRow.avgDuration))
+                eventRow.avgDuration = 0;
+            if (Double.isNaN(eventRow.avgEvents))
+                eventRow.avgEvents = 0;
+            if (Double.isNaN(eventRow.avgSeverity))
+                eventRow.avgSeverity = 0;
 
-            if (Double.isNaN(eventRow.aggAvgDuration)) eventRow.aggAvgDuration = 0;
-            if (Double.isNaN(eventRow.aggAvgEvents)) eventRow.aggAvgEvents = 0;
-            if (Double.isNaN(eventRow.aggAvgSeverity)) eventRow.aggAvgSeverity = 0;
+            if (Double.isNaN(eventRow.aggAvgDuration))
+                eventRow.aggAvgDuration = 0;
+            if (Double.isNaN(eventRow.aggAvgEvents))
+                eventRow.aggAvgEvents = 0;
+            if (Double.isNaN(eventRow.aggAvgSeverity))
+                eventRow.aggAvgSeverity = 0;
 
             resultSet.close();
             preparedStatement.close();
@@ -639,7 +639,7 @@ public class EventStatistics {
             resultSet.close();
             preparedStatement.close();
 
-            //get number flights processed 
+            // get number flights processed
             if (airframeNameId == 0) {
                 query = "SELECT count(*) FROM flight_processed WHERE flight_processed.fleet_id = ? AND flight_processed.event_definition_id = ?";
                 preparedStatement = connection.prepareStatement(query);
@@ -664,9 +664,12 @@ public class EventStatistics {
             int currentMonth = Calendar.getInstance().get(Calendar.MONTH) + 1;
             int currentYear = Calendar.getInstance().get(Calendar.YEAR);
 
-            //LOG.info("current year: " + currentYear + ", current month: " + currentMonth);
+            // LOG.info("current year: " + currentYear + ", current month: " +
+            // currentMonth);
 
-            monthStats.add(EventRow.getStatistics(connection, "Month to Date", fleetId, eventId, "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?", new int[]{currentYear, currentMonth}));
+            monthStats.add(EventRow.getStatistics(connection, "Month to Date", fleetId, eventId,
+                    "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?",
+                    new int[] { currentYear, currentMonth }));
 
             int previousMonth = currentMonth - 1;
             int tempYear = currentYear;
@@ -675,13 +678,17 @@ public class EventStatistics {
                 tempYear = currentYear - 1;
             }
 
-            monthStats.add(EventRow.getStatistics(connection, "Previous Month", fleetId, eventId, "YEAR(month_first_day) = ? AND MONTH(month_first_day) = ?", new int[]{currentYear, currentMonth}));
+            monthStats.add(EventRow.getStatistics(connection, "Previous Month", fleetId, eventId,
+                    "YEAR(month_first_day) = ? AND MONTH(month_first_day) = ?",
+                    new int[] { currentYear, currentMonth }));
 
-            monthStats.add(EventRow.getStatistics(connection, "Year to Date", fleetId, eventId, "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?", new int[]{currentYear, 1}));
+            monthStats.add(EventRow.getStatistics(connection, "Year to Date", fleetId, eventId,
+                    "YEAR(month_first_day) >= ? AND MONTH(month_first_day) >= ?", new int[] { currentYear, 1 }));
 
-            monthStats.add(EventRow.getStatistics(connection, "Previous Year", fleetId, eventId, "YEAR(month_first_day) = ?", new int[]{currentYear - 1}));
+            monthStats.add(EventRow.getStatistics(connection, "Previous Year", fleetId, eventId,
+                    "YEAR(month_first_day) = ?", new int[] { currentYear - 1 }));
 
-            monthStats.add(EventRow.getStatistics(connection, "Overall", fleetId, eventId, "", new int[]{}));
+            monthStats.add(EventRow.getStatistics(connection, "Overall", fleetId, eventId, "", new int[] {}));
         }
 
     }
@@ -690,12 +697,14 @@ public class EventStatistics {
     String airframeName;
     ArrayList<AirframeStatistics> events;
 
-    public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId) throws SQLException {
+    public EventStatistics(Connection connection, int airframeNameId, String airframeName, int fleetId)
+            throws SQLException {
         this.airframeNameId = airframeNameId;
         this.airframeName = airframeName;
         events = new ArrayList<>();
 
-        ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection, "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[]{airframeNameId, fleetId});
+        ArrayList<EventDefinition> eventDefinitions = EventDefinition.getAll(connection,
+                "airframe_id = ? AND  (fleet_id = 0 OR fleet_id = ?)", new Object[] { airframeNameId, fleetId });
 
         events = new ArrayList<>();
         for (int i = 0; i < eventDefinitions.size(); i++) {
@@ -718,7 +727,7 @@ public class EventStatistics {
 
         ResultSet resultSet = preparedStatement.executeQuery();
 
-        //get the event statistics for each airframe
+        // get the event statistics for each airframe
         while (resultSet.next()) {
             startTime = System.currentTimeMillis();
             int airframeNameId = resultSet.getInt(1);
@@ -726,7 +735,8 @@ public class EventStatistics {
             eventStatistics.add(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
             endTime = System.currentTimeMillis();
 
-            LOG.info("Took " + (endTime - startTime) + " ms to calculate event statistics for airframeNameId: " + airframeNameId);
+            LOG.info("Took " + (endTime - startTime) + " ms to calculate event statistics for airframeNameId: "
+                    + airframeNameId);
         }
 
         resultSet.close();
@@ -736,32 +746,41 @@ public class EventStatistics {
     }
 
     /**
-     * Gets the number of exceedences for the entire NGAFID between two dates. If either date is null it will
-     * select greater than or less than the date specified. If both are null it gets the total amount
+     * Gets the number of exceedences for the entire NGAFID between two dates. If
+     * either date is null it will
+     * select greater than or less than the date specified. If both are null it gets
+     * the total amount
      * of exceedences.
      *
      * @param connection is the connection to the database
-     * @param startTime  is the earliest time to start counting events (it will count from the beginning of time if it is null)
-     * @param endTime    is the latest time to count events (it will count until the current date if it is null)
+     * @param startTime  is the earliest time to start counting events (it will
+     *                   count from the beginning of time if it is null)
+     * @param endTime    is the latest time to count events (it will count until the
+     *                   current date if it is null)
      * @return the number of events between the two given times
      */
     public static int getEventCount(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
         return getEventCount(connection, 0, startTime, endTime);
     }
 
-
     /**
-     * Gets the number of exceedences for a given fleet between two dates. If either is null it will
-     * select greater than or less than the date specified. If both are null it gets the total amount
+     * Gets the number of exceedences for a given fleet between two dates. If either
+     * is null it will
+     * select greater than or less than the date specified. If both are null it gets
+     * the total amount
      * of exceedences.
      *
      * @param connection is the connection to the database
-     * @param fleetId    is the id of the fleet, if fleetId <= 0 it will return for the entire NGAFID
-     * @param startTime  is the earliest time to start counting events (it will count from the beginning of time if it is null)
-     * @param endTime    is the latest time to count events (it will count until the current date if it is null)
+     * @param fleetId    is the id of the fleet, if fleetId <= 0 it will return for
+     *                   the entire NGAFID
+     * @param startTime  is the earliest time to start counting events (it will
+     *                   count from the beginning of time if it is null)
+     * @param endTime    is the latest time to count events (it will count until the
+     *                   current date if it is null)
      * @return the number of events between the two given times
      */
-    public static int getEventCount(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
+    public static int getEventCount(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime)
+            throws SQLException {
         String query;
         if (fleetId > 0) {
             query = "SELECT count(events.id) FROM events, flights WHERE flights.fleet_id = ? AND events.flight_id = flights.id";
@@ -823,7 +842,7 @@ public class EventStatistics {
 
         public static int[] linearize(List<String> keys, HashMap<String, Integer> map) {
             int[] out = new int[keys.size()];
-            
+
             for (int i = 0; i < keys.size(); i++)
                 out[i] = map.getOrDefault(keys.get(i), 0);
 
@@ -853,15 +872,15 @@ public class EventStatistics {
         public final int[] flightsWithEventCounts;
         public final int[] totalFlightsCounts;
         public final int[] totalEventsCounts;
-        
+
         public final int[] aggregateFlightsWithEventCounts;
         public final int[] aggregateTotalFlightsCounts;
         public final int[] aggregateTotalEventsCounts;
-    
+
         public EventCountsWithAggregate(
-            int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
-            int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts, int[] aggregateTotalEventsCounts
-        ) {
+                int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
+                int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts,
+                int[] aggregateTotalEventsCounts) {
             this.flightsWithEventCounts = flightsWithEventCounts;
             this.totalFlightsCounts = totalFlightsCounts;
             this.totalEventsCounts = totalEventsCounts;
@@ -875,14 +894,15 @@ public class EventStatistics {
     public static class MonthlyEventCounts extends EventCountsWithAggregate {
         public final String airframeName, eventName;
         public final List<String> dates;
-        
+
         public MonthlyEventCounts(
-            String airframeName, String eventName, List<String> dates,
-            int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
-            int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts, int[] aggregateTotalEventsCounts
-        ) {
-            super(flightsWithEventCounts, totalFlightsCounts, totalEventsCounts, aggregateFlightsWithEventCounts, aggregateTotalFlightsCounts, aggregateTotalEventsCounts);
-            
+                String airframeName, String eventName, List<String> dates,
+                int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
+                int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts,
+                int[] aggregateTotalEventsCounts) {
+            super(flightsWithEventCounts, totalFlightsCounts, totalEventsCounts, aggregateFlightsWithEventCounts,
+                    aggregateTotalFlightsCounts, aggregateTotalEventsCounts);
+
             this.airframeName = airframeName;
             this.eventName = eventName;
             this.dates = dates;
@@ -895,15 +915,16 @@ public class EventStatistics {
 
         final List<String> dates;
 
-        public MonthlyEventCountsBuilder(String airframeName, String eventName, LocalDate startDate, LocalDate endDate) {
+        public MonthlyEventCountsBuilder(String airframeName, String eventName, LocalDate startDate,
+                LocalDate endDate) {
             this.airframeName = airframeName;
             this.eventName = eventName;
-            
+
             // Create a date for each month between start date and end date.
             dates = Stream.iterate(startDate, date -> date.plusMonths(1))
-                .limit(ChronoUnit.MONTHS.between(startDate, endDate))
-                .map(LocalDate::toString)
-                .collect(Collectors.toList());
+                    .limit(ChronoUnit.MONTHS.between(startDate, endDate))
+                    .map(LocalDate::toString)
+                    .collect(Collectors.toList());
         }
 
         private int[] linearize(HashMap<String, Integer> map) {
@@ -913,10 +934,10 @@ public class EventStatistics {
         @Override
         public MonthlyEventCounts build() {
             return new MonthlyEventCounts(
-                airframeName, eventName, dates,
-                linearize(flightsWithEventMap), linearize(totalFlightsMap), linearize(totalEventsMap),
-                linearize(aggregateFlightsWithEventMap), linearize(aggregateTotalFlightsMap), linearize(aggregateTotalEventsMap)
-            );
+                    airframeName, eventName, dates,
+                    linearize(flightsWithEventMap), linearize(totalFlightsMap), linearize(totalEventsMap),
+                    linearize(aggregateFlightsWithEventMap), linearize(aggregateTotalFlightsMap),
+                    linearize(aggregateTotalEventsMap));
         }
 
     }
@@ -924,13 +945,14 @@ public class EventStatistics {
     public static class EventCounts extends EventCountsWithAggregate {
         public final String airframeName;
         public final List<String> names;
-        
+
         public EventCounts(
-            String airframeName, List<String> names,
-            int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
-            int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts, int[] aggregateTotalEventsCounts
-        ) {
-            super(flightsWithEventCounts, totalFlightsCounts, totalEventsCounts, aggregateFlightsWithEventCounts, aggregateTotalFlightsCounts, aggregateTotalEventsCounts);
+                String airframeName, List<String> names,
+                int[] flightsWithEventCounts, int[] totalFlightsCounts, int[] totalEventsCounts,
+                int[] aggregateFlightsWithEventCounts, int[] aggregateTotalFlightsCounts,
+                int[] aggregateTotalEventsCounts) {
+            super(flightsWithEventCounts, totalFlightsCounts, totalEventsCounts, aggregateFlightsWithEventCounts,
+                    aggregateTotalFlightsCounts, aggregateTotalEventsCounts);
 
             this.names = names;
             this.airframeName = airframeName;
@@ -956,15 +978,17 @@ public class EventStatistics {
             // Should be sorted because keys is a tree set.
 
             return new EventCounts(
-                airframeName, sortedKeys,
-                linearize(sortedKeys, flightsWithEventMap), linearize(sortedKeys, totalFlightsMap), linearize(sortedKeys, totalEventsMap),
-                linearize(sortedKeys, aggregateFlightsWithEventMap), linearize(sortedKeys, aggregateTotalFlightsMap), linearize(sortedKeys, aggregateTotalEventsMap)
-            );
+                    airframeName, sortedKeys,
+                    linearize(sortedKeys, flightsWithEventMap), linearize(sortedKeys, totalFlightsMap),
+                    linearize(sortedKeys, totalEventsMap),
+                    linearize(sortedKeys, aggregateFlightsWithEventMap),
+                    linearize(sortedKeys, aggregateTotalFlightsMap), linearize(sortedKeys, aggregateTotalEventsMap));
         }
     }
 
     private static List<Integer> getAllAirframesEvents(Connection connection) {
-        try (PreparedStatement preparedStatement = connection.prepareStatement("SELECT id FROM event_definitions WHERE airframe_id = 0")) {
+        try (PreparedStatement preparedStatement = connection
+                .prepareStatement("SELECT id FROM event_definitions WHERE airframe_id = 0")) {
             ResultSet resultSet = preparedStatement.executeQuery();
             List<Integer> eventIds = new ArrayList<>();
             while (resultSet.next()) {
@@ -976,7 +1000,8 @@ public class EventStatistics {
         }
     }
 
-    private static PreparedStatement buildEventCountsQuery(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
+    private static PreparedStatement buildEventCountsQuery(Connection connection, LocalDate startTime,
+            LocalDate endTime) throws SQLException {
         if (startTime == null) {
             startTime = LocalDate.of(0, 1, 1);
         }
@@ -985,7 +1010,8 @@ public class EventStatistics {
             endTime = LocalDate.now();
         }
 
-        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name," +
+        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name,"
+                +
                 "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS total_events " +
                 "FROM flights JOIN airframes ON flights.airframe_id = airframes.id " +
                 "LEFT JOIN events ON events.flight_id = flights.id " +
@@ -1002,141 +1028,160 @@ public class EventStatistics {
     }
 
     // /**
-    //  * Gets the number of exceedences for each type and airframe. It will be organized into a data structure
-    //  * so plotly can display it on the webpage. Fleet can be specified or left null for all fleets
-    //  *
-    //  * @param connection is the connection to the database
-    //  * @param startTime  is the earliest time to start counting events (it will count from the beginning of time if it is null)
-    //  * @param endTime    is the latest time to count events (it will count until the current date if it is null)
-    //  */
-    // public static Map<String, EventCounts> getEventCounts(Connection connection, LocalDate startTime, LocalDate endTime) throws SQLException {
-    //     Map<String, EventCounts> eventCounts = new HashMap<>();
-    //     Set<String> eventNames = new HashSet<>();
-    //     Set<String> nullDataAirframes = new HashSet<>();
-    //     Map<String, Integer> totalFlightsMap = new HashMap<>();
+    // * Gets the number of exceedences for each type and airframe. It will be
+    // organized into a data structure
+    // * so plotly can display it on the webpage. Fleet can be specified or left
+    // null for all fleets
+    // *
+    // * @param connection is the connection to the database
+    // * @param startTime is the earliest time to start counting events (it will
+    // count from the beginning of time if it is null)
+    // * @param endTime is the latest time to count events (it will count until the
+    // current date if it is null)
+    // */
+    // public static Map<String, EventCounts> getEventCounts(Connection connection,
+    // LocalDate startTime, LocalDate endTime) throws SQLException {
+    // Map<String, EventCounts> eventCounts = new HashMap<>();
+    // Set<String> eventNames = new HashSet<>();
+    // Set<String> nullDataAirframes = new HashSet<>();
+    // Map<String, Integer> totalFlightsMap = new HashMap<>();
 
-    //     try (PreparedStatement ps = buildEventCountsQuery(connection, startTime, endTime)) {
-    //         ResultSet resultSet = ps.executeQuery();
+    // try (PreparedStatement ps = buildEventCountsQuery(connection, startTime,
+    // endTime)) {
+    // ResultSet resultSet = ps.executeQuery();
 
-    //         //get the event statistics for each airframe
-    //         while (resultSet.next()) {
-    //             String airframeName = resultSet.getString("airframe");
-    //             String eventName = resultSet.getString("event_name");
+    // //get the event statistics for each airframe
+    // while (resultSet.next()) {
+    // String airframeName = resultSet.getString("airframe");
+    // String eventName = resultSet.getString("event_name");
 
-    //             int flightsWithEvent = resultSet.getInt("flights_with_event");
-    //             int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k -> calculateAirframeFleetFlights(airframeName));
-    //             int totalEvents = resultSet.getInt("total_events");
+    // int flightsWithEvent = resultSet.getInt("flights_with_event");
+    // int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k ->
+    // calculateAirframeFleetFlights(airframeName));
+    // int totalEvents = resultSet.getInt("total_events");
 
-    //             if (eventName == null) { // No events for this airframe, skip
-    //                 nullDataAirframes.add(airframeName);
-    //                 continue;
-    //             } else {
-    //                 eventNames.add(eventName);
-    //             }
+    // if (eventName == null) { // No events for this airframe, skip
+    // nullDataAirframes.add(airframeName);
+    // continue;
+    // } else {
+    // eventNames.add(eventName);
+    // }
 
-    //             EventCounts eventCount;
-    //             if (eventCounts.containsKey(airframeName)) {
-    //                 eventCount = eventCounts.get(airframeName);
-    //             } else {
-    //                 eventCount = new EventCounts(airframeName);
-    //                 eventCounts.put(airframeName, eventCount);
-    //             }
+    // EventCounts eventCount;
+    // if (eventCounts.containsKey(airframeName)) {
+    // eventCount = eventCounts.get(airframeName);
+    // } else {
+    // eventCount = new EventCounts(airframeName);
+    // eventCounts.put(airframeName, eventCount);
+    // }
 
-    //             eventCount.initializeEvent(eventName);
-    //             eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
-    //         }
+    // eventCount.initializeEvent(eventName);
+    // eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
+    // }
 
-    //         resultSet.close();
-    //     }
+    // resultSet.close();
+    // }
 
-    //     for (String airframeName : nullDataAirframes) { // Add empty event counts for airframes with no events
-    //         EventCounts eventCount = new EventCounts(airframeName);
-    //         eventCounts.put(airframeName, eventCount);
+    // for (String airframeName : nullDataAirframes) { // Add empty event counts for
+    // airframes with no events
+    // EventCounts eventCount = new EventCounts(airframeName);
+    // eventCounts.put(airframeName, eventCount);
 
-    //         for (String eventName : eventNames) {
-    //             eventCount.initializeEvent(eventName);
-    //         }
-    //     }
+    // for (String eventName : eventNames) {
+    // eventCount.initializeEvent(eventName);
+    // }
+    // }
 
-    //     for (EventCounts eventCount : eventCounts.values()) {
-    //         eventCount.assignLists();
-    //     }
+    // for (EventCounts eventCount : eventCounts.values()) {
+    // eventCount.assignLists();
+    // }
 
-    //     return eventCounts;
+    // return eventCounts;
     // }
 
     // /**
-    //  * Gets the number of exceedences for each type and airframe. It will be organized into a data structure
-    //  * so plotly can display it on the webpage. Fleet can be specified or left null for all fleets
-    //  *
-    //  * @param connection is the connection to the database
-    //  * @param fleetId    is the id of the fleet, fleetId needs to be > 0 (i.e., a valid fleet id). Null for all fleets.
-    //  * @param startTime  is the earliest time to start counting events (it will count from the beginning of time if it is null)
-    //  * @param endTime    is the latest time to count events (it will count until the current date if it is null)
-    //  */
-    // public static Map<String, EventCounts> getEventCounts(Connection connection, int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
-    //     Map<String, EventCounts> eventCounts = new HashMap<>();
-    //     Map<String, Integer> totalFlightsMap = new HashMap<>();
-    //     Set<String> eventNames = new HashSet<>();
-    //     Set<String> nullDataAirframes = new HashSet<>();
+    // * Gets the number of exceedences for each type and airframe. It will be
+    // organized into a data structure
+    // * so plotly can display it on the webpage. Fleet can be specified or left
+    // null for all fleets
+    // *
+    // * @param connection is the connection to the database
+    // * @param fleetId is the id of the fleet, fleetId needs to be > 0 (i.e., a
+    // valid fleet id). Null for all fleets.
+    // * @param startTime is the earliest time to start counting events (it will
+    // count from the beginning of time if it is null)
+    // * @param endTime is the latest time to count events (it will count until the
+    // current date if it is null)
+    // */
+    // public static Map<String, EventCounts> getEventCounts(Connection connection,
+    // int fleetId, LocalDate startTime, LocalDate endTime) throws SQLException {
+    // Map<String, EventCounts> eventCounts = new HashMap<>();
+    // Map<String, Integer> totalFlightsMap = new HashMap<>();
+    // Set<String> eventNames = new HashSet<>();
+    // Set<String> nullDataAirframes = new HashSet<>();
 
-    //     try (PreparedStatement ps = buildEventCountsQuery(connection, startTime, endTime)) {
-    //         ResultSet resultSet = ps.executeQuery();
+    // try (PreparedStatement ps = buildEventCountsQuery(connection, startTime,
+    // endTime)) {
+    // ResultSet resultSet = ps.executeQuery();
 
-    //         //get the event statistics for each airframe
-    //         while (resultSet.next()) {
-    //             String airframeName = resultSet.getString("airframe");
-    //             String eventName = resultSet.getString("event_name");
+    // //get the event statistics for each airframe
+    // while (resultSet.next()) {
+    // String airframeName = resultSet.getString("airframe");
+    // String eventName = resultSet.getString("event_name");
 
-    //             int flightsWithEvent = resultSet.getInt("flights_with_event");
-    //             int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k -> calculateAirframeFleetFlights(airframeName));
-    //             int totalEvents = resultSet.getInt("total_events");
-    //             int resultFleetID = resultSet.getInt("fleet_id");
+    // int flightsWithEvent = resultSet.getInt("flights_with_event");
+    // int flightsTotal = totalFlightsMap.computeIfAbsent(airframeName, k ->
+    // calculateAirframeFleetFlights(airframeName));
+    // int totalEvents = resultSet.getInt("total_events");
+    // int resultFleetID = resultSet.getInt("fleet_id");
 
-    //             if (eventName == null) { // No events for this airframe, skip
-    //                 nullDataAirframes.add(airframeName);
-    //                 continue;
-    //             } else {
-    //                 eventNames.add(eventName);
-    //             }
-
-    //             EventCounts eventCount;
-    //             if (eventCounts.containsKey(airframeName)) {
-    //                 eventCount = eventCounts.get(airframeName);
-    //             } else {
-    //                 eventCount = new EventCounts(airframeName);
-    //                 eventCounts.put(airframeName, eventCount);
-    //             }
-
-    //             eventCount.initializeEvent(eventName);
-
-    //             if (resultFleetID == fleetId) {
-    //                 eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
-    //             } else {
-    //                 eventCount.updateAggregate(eventName, flightsWithEvent, flightsTotal, totalEvents);
-    //             }
-    //         }
-
-    //         resultSet.close();
-    //     }
-
-    //     for (String airframeName : nullDataAirframes) { // Add empty event counts for airframes with no events
-    //         EventCounts eventCount = new EventCounts(airframeName);
-    //         eventCounts.put(airframeName, eventCount);
-
-    //         for (String eventName : eventNames) {
-    //             eventCount.initializeEvent(eventName);
-    //         }
-    //     }
-
-    //     for (EventCounts eventCount : eventCounts.values()) {
-    //         eventCount.assignLists();
-    //     }
-
-    //     return eventCounts;
+    // if (eventName == null) { // No events for this airframe, skip
+    // nullDataAirframes.add(airframeName);
+    // continue;
+    // } else {
+    // eventNames.add(eventName);
     // }
 
-    private static PreparedStatement buildMonthlyEventsQuery(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
+    // EventCounts eventCount;
+    // if (eventCounts.containsKey(airframeName)) {
+    // eventCount = eventCounts.get(airframeName);
+    // } else {
+    // eventCount = new EventCounts(airframeName);
+    // eventCounts.put(airframeName, eventCount);
+    // }
+
+    // eventCount.initializeEvent(eventName);
+
+    // if (resultFleetID == fleetId) {
+    // eventCount.update(eventName, flightsWithEvent, flightsTotal, totalEvents);
+    // } else {
+    // eventCount.updateAggregate(eventName, flightsWithEvent, flightsTotal,
+    // totalEvents);
+    // }
+    // }
+
+    // resultSet.close();
+    // }
+
+    // for (String airframeName : nullDataAirframes) { // Add empty event counts for
+    // airframes with no events
+    // EventCounts eventCount = new EventCounts(airframeName);
+    // eventCounts.put(airframeName, eventCount);
+
+    // for (String eventName : eventNames) {
+    // eventCount.initializeEvent(eventName);
+    // }
+    // }
+
+    // for (EventCounts eventCount : eventCounts.values()) {
+    // eventCount.assignLists();
+    // }
+
+    // return eventCounts;
+    // }
+
+    private static PreparedStatement buildMonthlyEventsQuery(Connection connection, String eventName,
+            LocalDate startTime, LocalDate endTime) throws SQLException {
         if (startTime == null) {
             startTime = LocalDate.of(0, 1, 1);
         }
@@ -1145,11 +1190,15 @@ public class EventStatistics {
             endTime = LocalDate.now();
         }
 
-        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name, " +
-                        "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m-01') AS month_first_day " +
-                        "FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events ON events.flight_id = flights.id " +
-                        "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id WHERE events.start_time BETWEEN ? AND ? " +
-                        "AND event_definitions.name = ? GROUP BY airframes.airframe, events.fleet_id, month_first_day";
+        String query = "SELECT airframes.airframe AS airframe, events.fleet_id AS fleet_id, event_definitions.name AS event_name, "
+                +
+                "COUNT(DISTINCT flights.id) AS flights_with_event, COUNT(events.id) AS event_count, DATE_FORMAT(events.start_time, '%Y-%m-01') AS month_first_day "
+                +
+                "FROM flights JOIN airframes ON flights.airframe_id = airframes.id LEFT JOIN events ON events.flight_id = flights.id "
+                +
+                "LEFT JOIN event_definitions ON events.event_definition_id = event_definitions.id WHERE events.start_time BETWEEN ? AND ? "
+                +
+                "AND event_definitions.name = ? GROUP BY airframes.airframe, events.fleet_id, month_first_day";
 
         PreparedStatement ps = connection.prepareStatement(query);
         ps.setString(1, startTime.toString());
@@ -1161,115 +1210,131 @@ public class EventStatistics {
     }
 
     // /**
-    //  * Gets the number of exceedences for each type and airframe for a fleet, ordered by months, for a given event name. It will be organized into a data structure
-    //  * so plotly can display it on the webpage
-    //  *
-    //  * @param connection is the connection to the database
-    //  * @param eventName  is the name of the event
-    //  * @param startTime  is the earliest time to start getting events (it will get events from the beginning of time if it is null)
-    //  * @param endTime    is the latest time to getting events (it will get events until the current date if it is null)
-    //  */
-    // public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
-    //     Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
+    // * Gets the number of exceedences for each type and airframe for a fleet,
+    // ordered by months, for a given event name. It will be organized into a data
+    // structure
+    // * so plotly can display it on the webpage
+    // *
+    // * @param connection is the connection to the database
+    // * @param eventName is the name of the event
+    // * @param startTime is the earliest time to start getting events (it will get
+    // events from the beginning of time if it is null)
+    // * @param endTime is the latest time to getting events (it will get events
+    // until the current date if it is null)
+    // */
+    // public static Map<String, MonthlyEventCounts>
+    // getMonthlyEventCounts(Connection connection, String eventName, LocalDate
+    // startTime, LocalDate endTime) throws SQLException {
+    // Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
 
-    //     try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
-    //         ResultSet resultSet = ps.executeQuery();
-    //         if (resultSet == null) {
-    //             LOG.warning("Querying monthly events returned null");
-    //             return eventCounts;
-    //         }
+    // try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName,
+    // startTime, endTime)) {
+    // ResultSet resultSet = ps.executeQuery();
+    // if (resultSet == null) {
+    // LOG.warning("Querying monthly events returned null");
+    // return eventCounts;
+    // }
 
-    //         while (resultSet.next()) {
-    //             String airframeName = resultSet.getString("airframe");
-    //             MonthlyEventCounts eventCount = eventCounts.get(airframeName);
+    // while (resultSet.next()) {
+    // String airframeName = resultSet.getString("airframe");
+    // MonthlyEventCounts eventCount = eventCounts.get(airframeName);
 
-    //             if (eventCount == null) {
-    //                 eventCount = new MonthlyEventCounts(airframeName, eventName);
-    //                 eventCounts.put(airframeName, eventCount);
-    //             }
+    // if (eventCount == null) {
+    // eventCount = new MonthlyEventCounts(airframeName, eventName);
+    // eventCounts.put(airframeName, eventCount);
+    // }
 
-    //             String date = resultSet.getString("month_first_day");
-    //             int flightsWithEvent = resultSet.getInt("flights_with_event");
-    //             int totalEvents = resultSet.getInt("event_count");
-    //             int totalFlights = calculateTotalMonthAirframeFlights(airframeName, date);
+    // String date = resultSet.getString("month_first_day");
+    // int flightsWithEvent = resultSet.getInt("flights_with_event");
+    // int totalEvents = resultSet.getInt("event_count");
+    // int totalFlights = calculateTotalMonthAirframeFlights(airframeName, date);
 
-    //             LOG.info(airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
-    //             eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
-    //         }
+    // LOG.info(airframeName + " - " + date + ": " + flightsWithEvent + ", " +
+    // totalFlights + ", " + totalEvents);
+    // eventCount.updateAggregate(date, flightsWithEvent, totalFlights,
+    // totalEvents);
+    // }
 
-    //         resultSet.close();
-    //         for (MonthlyEventCounts eventCount : eventCounts.values()) {
-    //             eventCount.zeroMissingMonths(startTime, endTime);
-    //             eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
-    //             eventCount.assignAggregateLists();
-    //         }
+    // resultSet.close();
+    // for (MonthlyEventCounts eventCount : eventCounts.values()) {
+    // eventCount.zeroMissingMonths(startTime, endTime);
+    // eventCount.setDates(eventCount.aggregateFlightsWithEventMap);
+    // eventCount.assignAggregateLists();
+    // }
 
-    //     } catch (SQLException e) {
-    //         LOG.severe(e.getMessage());
-    //         throw e;
-    //     }
+    // } catch (SQLException e) {
+    // LOG.severe(e.getMessage());
+    // throw e;
+    // }
 
-
-    //     return eventCounts;
+    // return eventCounts;
     // }
 
     // /**
-    //  * Gets the number of exceedences for each type and airframe for a fleet, ordered by months, for a given event name. It will be organized into a data structure
-    //  * so plotly can display it on the webpage
-    //  *
-    //  * @param connection is the connection to the database
-    //  * @param fleetId    is the id of the fleet, if null get data for all fleets
-    //  * @param eventName  is the name of the event
-    //  * @param startTime  is the earliest time to start getting events (it will get events from the beginning of time if it is null)
-    //  * @param endTime    is the latest time to getting events (it will get events until the current date if it is null)
-    //  */
-    // public static Map<String, MonthlyEventCounts> getMonthlyEventCounts(Connection connection, int fleetId, String eventName, LocalDate startTime, LocalDate endTime) throws SQLException {
-    //     LOG.info("Getting monthly event counts for fleet: " + fleetId);
-    //     Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
-    //     try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName, startTime, endTime)) {
-    //         ResultSet resultSet = ps.executeQuery();
+    // * Gets the number of exceedences for each type and airframe for a fleet,
+    // ordered by months, for a given event name. It will be organized into a data
+    // structure
+    // * so plotly can display it on the webpage
+    // *
+    // * @param connection is the connection to the database
+    // * @param fleetId is the id of the fleet, if null get data for all fleets
+    // * @param eventName is the name of the event
+    // * @param startTime is the earliest time to start getting events (it will get
+    // events from the beginning of time if it is null)
+    // * @param endTime is the latest time to getting events (it will get events
+    // until the current date if it is null)
+    // */
+    // public static Map<String, MonthlyEventCounts>
+    // getMonthlyEventCounts(Connection connection, int fleetId, String eventName,
+    // LocalDate startTime, LocalDate endTime) throws SQLException {
+    // LOG.info("Getting monthly event counts for fleet: " + fleetId);
+    // Map<String, MonthlyEventCounts> eventCounts = new HashMap<>();
+    // try (PreparedStatement ps = buildMonthlyEventsQuery(connection, eventName,
+    // startTime, endTime)) {
+    // ResultSet resultSet = ps.executeQuery();
 
-    //         while (resultSet.next()) {
+    // while (resultSet.next()) {
 
-    //             String airframeName = resultSet.getString("airframe");
-    //             MonthlyEventCounts eventCount = eventCounts.get(airframeName);
+    // String airframeName = resultSet.getString("airframe");
+    // MonthlyEventCounts eventCount = eventCounts.get(airframeName);
 
-    //             if (eventCount == null) {
-    //                 eventCount = new MonthlyEventCounts(airframeName, eventName);
-    //                 eventCounts.put(airframeName, eventCount);
-    //             }
+    // if (eventCount == null) {
+    // eventCount = new MonthlyEventCounts(airframeName, eventName);
+    // eventCounts.put(airframeName, eventCount);
+    // }
 
-    //             String date = resultSet.getString("month_first_day");
-    //             int statFleetId = resultSet.getInt("fleet_id");
-    //             int flightsWithEvent = resultSet.getInt("flights_with_event");
-    //             Integer totalFlights = calculateTotalMonthAirframeFleetFlights(fleetId, airframeName, date);
-    //             if (totalFlights == null) {
-    //                 totalFlights = 0;
-    //             }
-    //             int totalEvents = resultSet.getInt("event_count");
+    // String date = resultSet.getString("month_first_day");
+    // int statFleetId = resultSet.getInt("fleet_id");
+    // int flightsWithEvent = resultSet.getInt("flights_with_event");
+    // Integer totalFlights = calculateTotalMonthAirframeFleetFlights(fleetId,
+    // airframeName, date);
+    // if (totalFlights == null) {
+    // totalFlights = 0;
+    // }
+    // int totalEvents = resultSet.getInt("event_count");
 
-    //             LOG.info(statFleetId + " " + airframeName + " - " + date + ": " + flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
+    // LOG.info(statFleetId + " " + airframeName + " - " + date + ": " +
+    // flightsWithEvent + ", " + totalFlights + ", " + totalEvents);
 
-    //             if (statFleetId == fleetId) {
-    //                 eventCount.update(date, flightsWithEvent, totalFlights, totalEvents);
-    //             } else {
-    //                 eventCount.updateAggregate(date, flightsWithEvent, totalFlights, totalEvents);
-    //             }
-    //         }
-    //     } catch (SQLException e) {
-    //         LOG.severe(e.getMessage());
-    //         throw e;
-    //     }
+    // if (statFleetId == fleetId) {
+    // eventCount.update(date, flightsWithEvent, totalFlights, totalEvents);
+    // } else {
+    // eventCount.updateAggregate(date, flightsWithEvent, totalFlights,
+    // totalEvents);
+    // }
+    // }
+    // } catch (SQLException e) {
+    // LOG.severe(e.getMessage());
+    // throw e;
+    // }
 
-    //     for (MonthlyEventCounts eventCount : eventCounts.values()) {
-    //         eventCount.zeroMissingMonths(startTime, endTime);
-    //         eventCount.setDates(eventCount.flightsWithEventMap);
-    //         eventCount.assignLists();
-    //         eventCount.assignAggregateLists();
-    //     }
+    // for (MonthlyEventCounts eventCount : eventCounts.values()) {
+    // eventCount.zeroMissingMonths(startTime, endTime);
+    // eventCount.setDates(eventCount.flightsWithEventMap);
+    // eventCount.assignLists();
+    // eventCount.assignAggregateLists();
+    // }
 
-
-    //     return eventCounts;
+    // return eventCounts;
     // }
 }
-
