@@ -28,9 +28,8 @@ public class PostModifyFilter implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             final Session session = request.session();
-            Connection connection = Database.getConnection();
 
             User user = session.attribute("user");
             int fleetId = user.getFleetId();

@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -33,7 +32,6 @@ import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
-
 public class GetAirSyncImports implements Route {
     private static final Logger LOG = Logger.getLogger(GetAirSyncImports.class.getName());
     private Gson gson;
@@ -52,7 +50,7 @@ public class GetAirSyncImports implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "airsync_imports.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -64,17 +62,15 @@ public class GetAirSyncImports implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            //default page values
+            // default page values
             int currentPage = 0;
             int pageSize = 10;
 
-            Connection connection = Database.getConnection();
-
             int totalUploads = AirSyncImport.getNumImports(connection, fleetId, null);
-            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId, " LIMIT "+ (currentPage * pageSize) + "," + pageSize);
+            List<AirSyncImportResponse> imports = AirSyncImport.getImports(connection, fleetId,
+                    " LIMIT " + (currentPage * pageSize) + "," + pageSize);
 
             int numberPages = totalUploads / pageSize;
-
 
             scopes.put("numPages_js", "var numberPages = " + numberPages + ";");
             scopes.put("index_js", "var currentPage = 0;");

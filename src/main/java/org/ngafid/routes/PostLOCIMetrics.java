@@ -79,9 +79,7 @@ public class PostLOCIMetrics implements Route {
         int flightId = Integer.parseInt(request.queryParams("flight_id"));
         int timeIndex = Integer.parseInt(request.queryParams("time_index"));
 
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
             if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");

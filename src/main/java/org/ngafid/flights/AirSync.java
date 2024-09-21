@@ -105,8 +105,7 @@ public class AirSync {
     public static void main(String[] args) {
         LOG.info("AirSync daemon started");
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             LocalDateTime now = LocalDateTime.now();
             String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-"
                     + now.getHour() + now.getMinute() + now.getSecond();

@@ -10,8 +10,7 @@ import org.ngafid.events.EventStatistics;
 public class TestEventCounts {
 
     public static void main(String[] arguments) {
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             Map<String, EventStatistics.EventCounts> counts = EventStatistics.getEventCounts(connection,
                     null, null);
             for (Map.Entry<String, EventStatistics.EventCounts> entry : counts.entrySet()) {

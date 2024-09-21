@@ -48,8 +48,7 @@ public class PostUserPreferencesMetric implements Route {
         String metric = request.queryParams("metricName");
         String type = request.queryParams("modificationType");
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             LOG.info("Modifiying " + metric + " (" + type + ") for user: " + user.toString());
 
             if (type.equals("addition")) {

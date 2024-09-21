@@ -44,27 +44,21 @@ public class PostTags implements Route {
         User user = session.attribute("user");
 
         int flightId = Integer.parseInt(request.queryParams("flightId"));
-        System.out.println("TAGGED FLTID: "+flightId);
+        System.out.println("TAGGED FLTID: " + flightId);
 
-
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             List<FlightTag> fltTags = null;
 
             List<FlightTag> tags = Flight.getTags(connection, flightId);
-            if(tags != null){
+            if (tags != null) {
                 fltTags = tags;
             }
 
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
-
-
-
 
             return gson.toJson(fltTags);
         } catch (SQLException e) {
@@ -74,4 +68,3 @@ public class PostTags implements Route {
         }
     }
 }
-

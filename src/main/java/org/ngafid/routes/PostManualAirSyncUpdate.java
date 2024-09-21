@@ -52,9 +52,7 @@ public class PostManualAirSyncUpdate implements Route {
             return null;
         }
 
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             AirSyncFleet fleet = AirSyncFleet.getAirSyncFleet(connection, fleetId);
 
             LOG.info("Beginning AirSync update process!");

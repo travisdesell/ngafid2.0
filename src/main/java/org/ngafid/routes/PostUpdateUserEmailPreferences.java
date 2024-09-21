@@ -88,8 +88,8 @@ public class PostUpdateUserEmailPreferences implements Route {
 
         }
 
-        try {
-            return gson.toJson(User.updateUserEmailPreferences(Database.getConnection(), userID, emailTypesUser));
+        try (Connection connection = Database.getConnection()) {
+            return gson.toJson(User.updateUserEmailPreferences(connection, userID, emailTypesUser));
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
@@ -122,8 +122,8 @@ public class PostUpdateUserEmailPreferences implements Route {
             return null;
         }
 
-        try {
-            return gson.toJson(User.updateUserEmailPreferences(Database.getConnection(), fleetUserID, emailTypesUser));
+        try (Connection connection = Database.getConnection()) {
+            return gson.toJson(User.updateUserEmailPreferences(connection, fleetUserID, emailTypesUser));
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

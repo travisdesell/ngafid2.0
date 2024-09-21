@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -23,8 +22,6 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
-
-
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -35,11 +32,9 @@ import org.ngafid.flights.Itinerary;
 import org.ngafid.flights.Tails;
 import org.ngafid.events.EventDefinition;
 
-
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 public class GetEventManager implements Route {
     private static final Logger LOG = Logger.getLogger(GetEventManager.class.getName());
@@ -65,7 +60,7 @@ public class GetEventManager implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "manage_events.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -83,14 +78,13 @@ public class GetEventManager implements Route {
                 return null;
             }
 
-            Connection connection = Database.getConnection();
-
             scopes.put("event_manager_js",
                     "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
-                    "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
-                    );
+                            "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
+                            "var doubleTimeSeriesNames = JSON.parse('"
+                            + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                            "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection))
+                            + "');\n");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

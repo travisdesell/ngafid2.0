@@ -31,14 +31,6 @@ import org.ngafid.filters.Filter;
 public class RunLOCICalculations {
     static Connection connection = null;
 
-    static {
-        try {
-            connection = Database.getConnection();
-        } catch (SQLException e) {
-            System.exit(1);
-        }
-    }
-
     /**
      * Gets an {@link Iterator} of flight ids that have not been calculated yet
      *
@@ -172,7 +164,8 @@ public class RunLOCICalculations {
      * @param args args from the command line, with the first being a filename for
      *             output
      */
-    public static void main(String[] args) {
+    public static void main(String[] args) throws SQLException {
+        connection = Database.getConnection();
         System.out.println("Loss of control calculator");
 
         Optional<Path> path = Optional.empty();
@@ -226,7 +219,7 @@ public class RunLOCICalculations {
                 inputs.add("is");
                 inputs.add("Cessna 172S");
 
-                int[] nums = Flight.getFlightNumbers(Database.getConnection(), fleetId, new Filter(inputs));
+                int[] nums = Flight.getFlightNumbers(connection, fleetId, new Filter(inputs));
                 calculateAll(Arrays.stream(nums).iterator(), path);
                 System.exit(0);
                 // here assume we will calcaulate for all flights for the given fleet

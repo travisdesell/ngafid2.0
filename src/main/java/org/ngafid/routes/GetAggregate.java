@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -46,7 +44,6 @@ import org.ngafid.flights.Upload;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 import org.ngafid.events.EventStatistics;
 
@@ -93,18 +90,16 @@ public class GetAggregate implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        //check to see if the user has access to view aggregate information
+        // check to see if the user has access to view aggregate information
         if (!user.hasAggregateView()) {
             LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate dashboard.");
             Spark.halt(401, "User did not have aggregate access to view aggregate dashboard.");
             return null;
         }
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -114,13 +109,14 @@ public class GetAggregate implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
-            LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
-            LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
+            LocalDate firstOfMonth = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+            LocalDate firstOfYear = LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
             LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null,
+                    null);
 
-            //create a filter to grab things 
+            // create a filter to grab things
             String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
             String yearQuery = "start_time >= '" + firstOfYear.toString() + "'";
 
@@ -128,28 +124,35 @@ public class GetAggregate implements Route {
 
             long startTime = System.currentTimeMillis();
             // String fleetInfo =
-            //     // Move to async summary
-            //     "var numberFlights = " + Flight.getNumFlights(connection) + ";\n" +
-            //     "var flightHours = " + Flight.getTotalFlightHours(connection) + ";\n" +
-            //     "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
-            //     "var yearNumberFlights = " + Flight.getNumFlights(connection, yearQuery) + ";\n" +
-            //     "var yearFlightHours = " + Flight.getTotalFlightHours(connection, yearQuery) + ";\n" +
-            //     "var monthNumberFlights = " + Flight.getNumFlights(connection, lastThirtyDaysQuery) + ";\n" +
-            //     "var monthFlightHours = " + Flight.getTotalFlightHours(connection, lastThirtyDaysQuery) + ";\n" +
-            //     "var totalEvents = " + EventStatistics.getEventCount(connection, null, null) + ";\n" +
-            //     "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
-            //     "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +
-            //     "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
-            //     "var numberUsers = " + User.getNumberUsers(connection) + ";" +
-            //     
-            //     // async event_counts
-            //     "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
+            // // Move to async summary
+            // "var numberFlights = " + Flight.getNumFlights(connection) + ";\n" +
+            // "var flightHours = " + Flight.getTotalFlightHours(connection) + ";\n" +
+            // "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
+            // "var yearNumberFlights = " + Flight.getNumFlights(connection, yearQuery) +
+            // ";\n" +
+            // "var yearFlightHours = " + Flight.getTotalFlightHours(connection, yearQuery)
+            // + ";\n" +
+            // "var monthNumberFlights = " + Flight.getNumFlights(connection,
+            // lastThirtyDaysQuery) + ";\n" +
+            // "var monthFlightHours = " + Flight.getTotalFlightHours(connection,
+            // lastThirtyDaysQuery) + ";\n" +
+            // "var totalEvents = " + EventStatistics.getEventCount(connection, null, null)
+            // + ";\n" +
+            // "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear,
+            // null) + ";\n" +
+            // "var monthEvents = " + EventStatistics.getEventCount(connection,
+            // firstOfMonth, null) + ";\n" +
+            // "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
+            // "var numberUsers = " + User.getNumberUsers(connection) + ";" +
+            //
+            // // async event_counts
+            // "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
 
             // scopes.put("fleet_info_js", fleetInfo);
             scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n");
 
             long endTime = System.currentTimeMillis();
-            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
+            LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

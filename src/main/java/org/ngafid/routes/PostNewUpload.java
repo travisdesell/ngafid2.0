@@ -101,8 +101,7 @@ public class PostNewUpload implements Route {
         // 3. file does exist and has finished uploading -- report finished
         // 4. file does exist but with different hash -- error message
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
 
             PreparedStatement query = connection.prepareStatement(
                     "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?");

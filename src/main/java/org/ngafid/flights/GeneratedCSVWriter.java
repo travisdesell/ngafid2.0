@@ -17,8 +17,7 @@ public class GeneratedCSVWriter extends CSVWriter {
 
         this.timeSeries = new ArrayList<>();
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             for (String columnName : timeSeriesColumnNames) {
                 timeSeries.add(super.flight.getDoubleTimeSeries(connection, columnName));
             }

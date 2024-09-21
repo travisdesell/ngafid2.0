@@ -35,17 +35,17 @@ public class PostForgotPassword implements Route {
     @Override
     public Object handle(Request request, Response response) throws Exception {
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             LOG.info("handling " + this.getClass().getName() + " route");
             String email = request.queryParams("email");
             if (User.exists(connection, email)) {
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);
-                return gson.toJson(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true));
-            }
-            else {
-                LOG.info("User with email : "  + email +  " doesn't exist.");
+                return gson.toJson(new ForgotPasswordResponse(
+                        "A password reset link has been sent to your registered email address. Please click on it to reset your password.",
+                        true));
+            } else {
+                LOG.info("User with email : " + email + " doesn't exist.");
                 return gson.toJson(new ForgotPasswordResponse("User doesn't exist in database", false));
             }
         } catch (SQLException e) {

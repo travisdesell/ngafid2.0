@@ -33,7 +33,8 @@ public class PostResetPassword implements Route {
         private String message;
         private User user;
 
-        public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
+        public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn,
+                String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
@@ -53,27 +54,27 @@ public class PostResetPassword implements Route {
         String confirmPassword = request.queryParams("confirmPassword");
 
         LOG.info("emailAddress: '" + emailAddress + "'");
-        //don't print the password to the log!
-        //LOG.info("password: '" + password + "'");
+        // don't print the password to the log!
+        // LOG.info("password: '" + password + "'");
 
-        try {
-            Connection connection = Database.getConnection();
-
-            //1. make sure the new password and confirm password are the same
+        try (Connection connection = Database.getConnection()) {
+            // 1. make sure the new password and confirm password are the same
             if (!newPassword.equals(confirmPassword)) {
-                return gson.toJson(new ErrorResponse("Could not reset password.", "The server received different new and confirmation passwords."));
+                return gson.toJson(new ErrorResponse("Could not reset password.",
+                        "The server received different new and confirmation passwords."));
             }
 
-            //2. make sure the passphrase is valid
+            // 2. make sure the passphrase is valid
             if (!User.validatePassphrase(connection, emailAddress, passphrase)) {
-                return gson.toJson(new ErrorResponse("Could not reset password.", "The passphrase provided was not correct."));
+                return gson.toJson(
+                        new ErrorResponse("Could not reset password.", "The passphrase provided was not correct."));
             }
 
             User.updatePassword(connection, emailAddress, newPassword);
             User user = User.get(connection, emailAddress, newPassword);
 
-            //set the session attribute for this user so
-            //it will be considered logged in.
+            // set the session attribute for this user so
+            // it will be considered logged in.
             request.session().attribute("user", user);
 
             return gson.toJson(new ResetSuccessResponse(false, false, false, true, "Success!", user));
@@ -83,8 +84,8 @@ public class PostResetPassword implements Route {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         } catch (AccountException e) {
-            return gson.toJson(new ResetSuccessResponse(true, false, false, false, "Incorrect email or password.", null));
+            return gson
+                    .toJson(new ResetSuccessResponse(true, false, false, false, "Incorrect email or password.", null));
         }
     }
 }
-

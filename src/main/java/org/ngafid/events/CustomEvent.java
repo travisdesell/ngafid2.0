@@ -16,26 +16,23 @@ public class CustomEvent extends Event {
     private EventDefinition customEventDefinition;
     private Flight flight;
 
-    public static final EventDefinition HIGH_ALTITUDE_SPIN;
-    public static final EventDefinition LOW_ALTITUDE_SPIN;
-    public static final EventDefinition LOW_END_FUEL_PA_28;
-    public static final EventDefinition LOW_END_FUEL_CESSNA_172;
-    public static final EventDefinition LOW_END_FUEL_PA_44;
+    public static EventDefinition HIGH_ALTITUDE_SPIN = null;
+    public static EventDefinition LOW_ALTITUDE_SPIN = null;
+    public static EventDefinition LOW_END_FUEL_PA_28 = null;
+    public static EventDefinition LOW_END_FUEL_CESSNA_172 = null;
+    public static EventDefinition LOW_END_FUEL_PA_44 = null;
 
     static {
-        Connection connection = null;
-        try {
-            connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
+            HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
+            LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
+            LOW_END_FUEL_PA_28 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 1);
+            LOW_END_FUEL_CESSNA_172 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 2);
+            LOW_END_FUEL_PA_44 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 3);
         } catch (SQLException e) {
             System.err.println("Failed to get connection.");
             System.exit(1);
         }
-
-        HIGH_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "High Altitude Spin");
-        LOW_ALTITUDE_SPIN = EventDefinition.getEventDefinition(connection, "Low Altitude Spin");
-        LOW_END_FUEL_PA_28 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 1);
-        LOW_END_FUEL_CESSNA_172 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 2);
-        LOW_END_FUEL_PA_44 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 3);
     }
 
     public CustomEvent(String startTime, String endTime, int startLine, int endLine, double severity, Flight flight,
@@ -55,7 +52,9 @@ public class CustomEvent extends Event {
     }
 
     public static EventDefinition getLowEndFuelDefinition(int airframeID) throws SQLException {
-        return EventDefinition.getEventDefinition(Database.getConnection(), "Low Ending Fuel", airframeID);
+        try (Connection connection = Database.getConnection()) {
+            return EventDefinition.getEventDefinition(connection, "Low Ending Fuel", airframeID);
+        }
     }
 
     public EventDefinition getDefinition() {

@@ -48,8 +48,7 @@ public class GetUserPreferencesPage implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             Fleet fleet = Fleet.get(connection, user.getFleetId());
             UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 

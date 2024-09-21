@@ -1,6 +1,7 @@
 
 package org.ngafid.routes;
 
+import java.sql.Connection;
 import java.util.logging.Logger;
 import com.google.gson.Gson;
 
@@ -30,8 +31,8 @@ public class GetUserPreferences implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        try {
-            UserPreferences userPreferences = User.getUserPreferences(Database.getConnection(), user.getId());
+        try (Connection connection = Database.getConnection()) {
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
 
             return gson.toJson(userPreferences);
         } catch (Exception se) {

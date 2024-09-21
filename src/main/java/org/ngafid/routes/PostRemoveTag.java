@@ -54,8 +54,7 @@ public class PostRemoveTag implements Route {
         boolean isPermanent = Boolean.parseBoolean(request.queryParams("permanent"));
         boolean allTags = Boolean.parseBoolean(request.queryParams("all"));
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
 
             FlightTag tag = Flight.getTag(connection, tagId);
             if (isPermanent) {
@@ -71,7 +70,7 @@ public class PostRemoveTag implements Route {
             }
 
             // check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }

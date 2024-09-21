@@ -29,7 +29,6 @@ public class GenerateBulkCSVS {
 	private List<Flight> flights;
 	private Optional<List<String>> aircraftNames;
 	private boolean useZip;
-	Connection connection;
 
 	/**
 	 * Constructor
@@ -43,8 +42,7 @@ public class GenerateBulkCSVS {
 		this.fleetId = fleetId;
 		this.useZip = useZip;
 
-		try {
-			connection = Database.getConnection();
+		try (Connection connection = Database.getConnection()) {
 			this.flights = Flight.getFlights(connection, query);
 		} catch (SQLException e) {
 			e.printStackTrace();
@@ -70,8 +68,7 @@ public class GenerateBulkCSVS {
 		this.fleetId = fleetId;
 		this.useZip = useZip;
 
-		try {
-			connection = Database.getConnection();
+		try (Connection connection = Database.getConnection()) {
 			if (aircraftNames.isPresent()) {
 				List<String> aircraftNamesList = aircraftNames.get();
 
@@ -101,7 +98,6 @@ public class GenerateBulkCSVS {
 	public GenerateBulkCSVS(String outDirectoryRoot, Optional<List<String>> aircraftNames, int fleetId, boolean useZip,
 			String startDate, String endDate) throws SQLException {
 
-		connection = Database.getConnection();
 		this.outDirectoryRoot = outDirectoryRoot;
 		this.fleetId = fleetId;
 		this.useZip = useZip;
@@ -133,7 +129,7 @@ public class GenerateBulkCSVS {
 		root.addFilter(new Filter(startInputs));
 		root.addFilter(new Filter(endInputs));
 
-		try {
+		try (Connection connection = Database.getConnection()) {
 			if (this.aircraftNames.isPresent()) {
 				Filter aircraftFilter = parseAircraftFilter(this.aircraftNames.get());
 				root.addFilter(aircraftFilter);

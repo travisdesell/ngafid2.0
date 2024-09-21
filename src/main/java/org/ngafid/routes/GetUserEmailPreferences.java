@@ -78,7 +78,7 @@ public class GetUserEmailPreferences implements Route {
 
         }
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             UserEmailPreferences userPreferences = User.getUserEmailPreferences(Database.getConnection(), fleetUserID);
             return gson.toJson(userPreferences);
         } catch (Exception se) {

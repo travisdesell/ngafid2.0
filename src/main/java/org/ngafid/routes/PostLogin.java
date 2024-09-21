@@ -37,7 +37,8 @@ public class PostLogin implements Route {
         private String message;
         private User user;
 
-        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
+        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message,
+                User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
@@ -55,11 +56,10 @@ public class PostLogin implements Route {
         String password = request.queryParams("password");
 
         LOG.info("email: '" + email + "'");
-        //don't print the password to the log!
-        //LOG.info("password: '" + password + "'");
+        // don't print the password to the log!
+        // LOG.info("password: '" + password + "'");
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             User user = User.get(connection, email, password);
 
             if (user == null) {
@@ -68,8 +68,8 @@ public class PostLogin implements Route {
             } else {
                 LOG.info("User authentication successful.");
                 user.updateLastLoginTimeStamp(connection);
-                //set the session attribute for this user so
-                //it will be considered logged in.
+                // set the session attribute for this user so
+                // it will be considered logged in.
                 request.session().attribute("user", user);
 
                 if (user.getFleetAccessType().equals(FleetAccess.DENIED)) {
@@ -90,4 +90,3 @@ public class PostLogin implements Route {
         }
     }
 }
-

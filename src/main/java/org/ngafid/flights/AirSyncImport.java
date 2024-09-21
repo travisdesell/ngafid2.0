@@ -23,7 +23,7 @@ import org.ngafid.accounts.AirSyncFleet;
  */
 public class AirSyncImport {
     private int id, uploadId, aircraftId;
-    private byte [] data;
+    private byte[] data;
     private String origin, destination, timeStart, timeEnd, md5Hash, fileUrl, timestampUploaded;
     private LocalDateTime localDateTimeStart, localDateTimeEnd, localDateTimeUpload;
     private AirSyncAircraft aircraft;
@@ -33,17 +33,20 @@ public class AirSyncImport {
     private static final String STATUS_ERR = "ERROR";
     private static final String STATUS_WARN = "WARNING";
 
-    /* The airsync uploader should be the same across all fleets!
-     * There should only be one dummy 'airsync user' in each NGAFID 
-     * instance's database! See db/update_tables.php for more info. */
+    /*
+     * The airsync uploader should be the same across all fleets!
+     * There should only be one dummy 'airsync user' in each NGAFID
+     * instance's database! See db/update_tables.php for more info.
+     */
     private static int AIRSYNC_UPLOADER_ID = -1;
 
     private static final Logger LOG = Logger.getLogger(AirSyncImport.class.getName());
 
     /**
-     * This is a static class to represent the response we get from the AirSync servers
+     * This is a static class to represent the response we get from the AirSync
+     * servers
      *
-     * @param id the logfiles id
+     * @param id      the logfiles id
      * @param fileUrl the accessible web URL where this import resides (csv data)
      */
     private static class LogResponse {
@@ -54,9 +57,9 @@ public class AirSyncImport {
     /**
      * Private contructor for instaniation within this class
      *
-     * @param id the id of this import in the database
+     * @param id       the id of this import in the database
      * @param uploadId the id of the upload this import belongs to in the database
-     * @param fleet the fleet that this import belongs to
+     * @param fleet    the fleet that this import belongs to
      */
     private AirSyncImport(int id, int uploadId, AirSyncFleet fleet) {
         this.uploadId = uploadId;
@@ -71,18 +74,22 @@ public class AirSyncImport {
      * It is up to the programmer to ensure this method is called each time a JSON
      * AirSyncImport class is instantiated.
      *
-     * @param {fleet} a reference to the fleet that this upload is for
-     * @param {aircraft} a reference to the aircraft this import is from {@link AirSyncAircraft}
+     * @param {fleet}    a reference to the fleet that this upload is for
+     * @param {aircraft} a reference to the aircraft this import is from
+     *                   {@link AirSyncAircraft}
      */
     public void init(AirSyncFleet fleet, AirSyncAircraft aircraft) {
         this.fleet = fleet;
         this.aircraft = aircraft;
 
-        //This does not include timezones yet
-        //TODO: Add time zone support!
-        this.localDateTimeUpload = LocalDateTime.parse(this.timestampUploaded.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        this.localDateTimeStart = LocalDateTime.parse(this.timeStart.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
-        this.localDateTimeEnd = LocalDateTime.parse(this.timeEnd.split("\\+")[0], DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        // This does not include timezones yet
+        // TODO: Add time zone support!
+        this.localDateTimeUpload = LocalDateTime.parse(this.timestampUploaded.split("\\+")[0],
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.localDateTimeStart = LocalDateTime.parse(this.timeStart.split("\\+")[0],
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+        this.localDateTimeEnd = LocalDateTime.parse(this.timeEnd.split("\\+")[0],
+                DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
     /**
@@ -95,15 +102,14 @@ public class AirSyncImport {
     public static int getUploaderId() throws SQLException {
         if (AIRSYNC_UPLOADER_ID <= 0) {
             String sql = "SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user'";
-            PreparedStatement query = Database.getConnection().prepareStatement(sql);
+            try (Connection connection = Database.getConnection();
+                    PreparedStatement query = connection.prepareStatement(sql)) {
+                ResultSet resultSet = query.executeQuery();
 
-            ResultSet resultSet = query.executeQuery();
-
-            if (resultSet.next()) {
-                AIRSYNC_UPLOADER_ID = resultSet.getInt(1);
+                if (resultSet.next()) {
+                    AIRSYNC_UPLOADER_ID = resultSet.getInt(1);
+                }
             }
-
-            query.close();
         }
 
         return AIRSYNC_UPLOADER_ID;
@@ -121,11 +127,12 @@ public class AirSyncImport {
     /**
      * Formats a string that will server as an identified for the uploads table
      *
-     * @param fleetId the id of the fleet that this import belongs to
+     * @param fleetId    the id of the fleet that this import belongs to
      * @param aircraftId the id of the aircraft this import is coming from
-     * @param time the time of this import
+     * @param time       the time of this import
      *
-     * @return a formatted string that will serve as a unique indetifier in the database (uploads table)
+     * @return a formatted string that will serve as a unique indetifier in the
+     *         database (uploads table)
      */
     public static String getUploadIdentifier(int fleetId, int aircraftId, LocalDateTime time) {
         return "AS-" + fleetId + "." + aircraftId + "-" + time.getYear() + "-" + time.getMonthValue();
@@ -139,7 +146,7 @@ public class AirSyncImport {
      * @throws MalformedFlightFileException if we get a bad file from AirSync
      */
     public void process(Connection connection) throws MalformedFlightFileException {
-        //Ensure there is data to read before proceeding...
+        // Ensure there is data to read before proceeding...
         int count = 0;
         String identifier = getUploadIdentifier(this.fleet.getId(), aircraftId, this.localDateTimeStart);
 
@@ -154,14 +161,16 @@ public class AirSyncImport {
 
             try {
                 String zipId = aircraftId + ".zip";
-                String path = WebServer.NGAFID_ARCHIVE_DIR + "/AirSyncUploader/"/* we will use this instead of the user id */ + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
+                String path = WebServer.NGAFID_ARCHIVE_DIR
+                        + "/AirSyncUploader/"/* we will use this instead of the user id */
+                        + this.localDateTimeStart.getYear() + "/" + this.localDateTimeStart.getMonthValue();
 
                 String fileName = path + "/" + zipId;
                 File file = new File(fileName);
 
                 if (file.exists()) {
                     LOG.info(String.format("Found file for aircraft %d and parent (date) %s", aircraftId, path));
-                }  else {
+                } else {
                     File dirPath = new File(path);
                     if (!dirPath.exists()) {
                         dirPath.mkdirs();
@@ -172,12 +181,12 @@ public class AirSyncImport {
                 ZipOutputStream zipOutputStream = new ZipOutputStream(bos);
 
                 if (file.exists()) {
-                    //If the zip archive already exists for this aircraft 
-                    //we must take the exisitng archive and append to it
-                    //File tempInput = new File(fileName + ".temp");
-                    //if (bos.)  {
+                    // If the zip archive already exists for this aircraft
+                    // we must take the exisitng archive and append to it
+                    // File tempInput = new File(fileName + ".temp");
+                    // if (bos.) {
                     ZipFile input = new ZipFile(file);
-                    
+
                     Enumeration<? extends ZipEntry> entries = input.entries();
 
                     while (entries.hasMoreElements()) {
@@ -185,7 +194,7 @@ public class AirSyncImport {
 
                         zipOutputStream.putNextEntry(entry);
 
-                        byte [] data = input.getInputStream(entry).readAllBytes();
+                        byte[] data = input.getInputStream(entry).readAllBytes();
 
                         zipOutputStream.write(data, 0, data.length);
                         zipOutputStream.closeEntry();
@@ -193,15 +202,16 @@ public class AirSyncImport {
 
                     // We don't need this file anymore, destroy it.
                     input.close();
-                    //}
+                    // }
 
                 } else if (file.createNewFile()) {
-                    //We can write directly to the output stream here since there
-                    //is nothing to overwrite
-                    //zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
+                    // We can write directly to the output stream here since there
+                    // is nothing to overwrite
+                    // zipOutputStream = new ZipOutputStream(new FileOutputStream(file));
                     LOG.info("Creating new zip file: " + file.toURI());
                 } else {
-                    LOG.severe("Could not create AirSync zip " + path + ". This should not happen - check your permissions!");
+                    LOG.severe("Could not create AirSync zip " + path
+                            + ". This should not happen - check your permissions!");
                     return;
                 }
 
@@ -214,17 +224,18 @@ public class AirSyncImport {
                 zipOutputStream.closeEntry();
                 zipOutputStream.close();
 
-                //Write to the new file from memory
-                byte [] buf = bos.toByteArray();
+                // Write to the new file from memory
+                byte[] buf = bos.toByteArray();
                 FileOutputStream fos = new FileOutputStream(file);
 
                 fos.write(buf);
                 fos.close();
 
-                // The identifier of any AirSync upload will be unique! 
+                // The identifier of any AirSync upload will be unique!
                 // NOTE: multiple imports will reside in one upload.
                 // Format: AS-<ngafid_fleet_id>.<airsync_aircraft_id>-<UPLOAD_YYYY>-<UPLOAD_MM>
-                Flight flight = new Flight(this.fleet.getId(), csvName, new ByteArrayInputStream(this.data), connection);
+                Flight flight = new Flight(this.fleet.getId(), csvName, new ByteArrayInputStream(this.data),
+                        connection);
 
                 if (connection != null) {
                     this.insertUpload(connection, STATUS_IMPORTED, zipId, identifier, count, flight);
@@ -236,7 +247,7 @@ public class AirSyncImport {
                 this.createImport(connection, flight);
 
                 CalculateExceedences.calculateExceedences(connection, uploadId, null);
-			} catch (IOException e) {
+            } catch (IOException e) {
                 UploadException ue = new UploadException(e.getMessage(), e, csvName);
                 try {
                     FlightError.insertError(connection, uploadId, ue.getFilename(), ue.getMessage());
@@ -246,7 +257,7 @@ public class AirSyncImport {
                 }
             } catch (Exception e) {
                 AirSync.crashGracefully(e);
-			}
+            }
         } else {
             try {
                 addErrorFlight(connection, identifier);
@@ -275,17 +286,19 @@ public class AirSyncImport {
     }
 
     /**
-     * Inserts into the uploads table and returns the id, if it does not already exist
+     * Inserts into the uploads table and returns the id, if it does not already
+     * exist
      *
      * @param {connection} the database connection
-     * @param {status} the current status of this upload
-     * @param {fileName} the location of the source upload (zip) file
+     * @param {status}     the current status of this upload
+     * @param {fileName}   the location of the source upload (zip) file
      * @param {identifier} how this AirSync upload is identified
-     * @param {count} the number of bytes uploaed
+     * @param {count}      the number of bytes uploaed
      *
      * @throws SQLException
      */
-    public void insertUpload(Connection connection, String status, String fileName, String identifier, int count, Flight flight) throws SQLException {
+    public void insertUpload(Connection connection, String status, String fileName, String identifier, int count,
+            Flight flight) throws SQLException {
         String sql = "SELECT id, size_bytes, bytes_uploaded, n_valid_flights, n_error_flights, n_warning_flights, start_time FROM uploads WHERE identifier = ?";
         PreparedStatement query = connection.prepareStatement(sql);
 
@@ -301,7 +314,7 @@ public class AirSyncImport {
             int nErr = resultSet.getInt(5);
             int nWarn = resultSet.getInt(6);
 
-            // This represents the "timestamp_uploaded" on the AirSync 
+            // This represents the "timestamp_uploaded" on the AirSync
             // side of things
             LocalDateTime latestStartTime = resultSet.getTimestamp(7).toLocalDateTime();
 
@@ -323,7 +336,7 @@ public class AirSyncImport {
             // Update respective statuses
             query.setInt(3, (flight.getStatus().equals(Flight.SUCCESS) ? nValid + 1 : nValid));
             query.setInt(4, (flight.getStatus().equals(Flight.ERROR) ? nErr + 1 : nErr));
-            query.setInt(5, (flight.getStatus().equals(Flight.WARNING) ? nWarn + 1 :nWarn));
+            query.setInt(5, (flight.getStatus().equals(Flight.WARNING) ? nWarn + 1 : nWarn));
             query.setTimestamp(6, Timestamp.valueOf(latestStartTime));
 
             query.setInt(7, this.uploadId);
@@ -331,16 +344,16 @@ public class AirSyncImport {
             query.executeUpdate();
         } else {
             sql = "INSERT INTO uploads (status, fleet_id, filename, identifier, size_bytes, start_time, end_time, n_valid_flights, n_warning_flights, n_error_flights, uploader_id, number_chunks, uploaded_chunks, chunk_status, md5_hash) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)";
-            
+
             if (!query.isClosed()) {
-                // Make sure we close our resources before 
+                // Make sure we close our resources before
                 // we proceed with another query.
                 query.close();
             }
 
             query = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
 
-            //String hash = this.getMd5Hash();
+            // String hash = this.getMd5Hash();
 
             query.setString(1, status);
             query.setInt(2, this.fleet.getId());
@@ -356,8 +369,8 @@ public class AirSyncImport {
             query.setInt(12, -2);
             query.setInt(13, 0);
             query.setInt(14, 0);
-        
-            //TODO: changeme when we get the MD5 hash from AirSync
+
+            // TODO: changeme when we get the MD5 hash from AirSync
             query.setInt(15, this.id);
 
             System.out.println(query.toString());
@@ -377,7 +390,7 @@ public class AirSyncImport {
      * Creates a record of this import in the database
      * 
      * @param connection the DBMS connection
-     * @param flight the {@link Flight} that came from this import
+     * @param flight     the {@link Flight} that came from this import
      *
      * @throws SQLException if there is an issue with the DBMS
      */
@@ -388,9 +401,9 @@ public class AirSyncImport {
         query.setInt(1, this.id);
         query.setString(2, this.aircraft.getTailNumber());
 
-        //NOTE: this is the time that we recieve the CSV, not the time 
-        //that AirSync recieves it. That will be denoted in the start_time
-        //column in `uploads`
+        // NOTE: this is the time that we recieve the CSV, not the time
+        // that AirSync recieves it. That will be denoted in the start_time
+        // column in `uploads`
         query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
         query.setInt(4, this.uploadId);
         query.setInt(5, this.fleet.getId());
@@ -404,7 +417,7 @@ public class AirSyncImport {
      * Gets a list of the uploads that belong to this fleet
      *
      * @param connection the DBMS connection
-     * @param fleetId the fleet id
+     * @param fleetId    the fleet id
      *
      * @throws SQLException if there is an issue with the DBMS
      */
@@ -416,14 +429,17 @@ public class AirSyncImport {
      * Gets uploads with an extra condition
      *
      * @param connection the DBMS connection
-     * @param fleetId the fleet id
-     * @param condition the extra SQL conditions
+     * @param fleetId    the fleet id
+     * @param condition  the extra SQL conditions
      *
      * @throws SQLException if there is an issue with the DBMS
      */
     public static List<Upload> getUploads(Connection connection, int fleetId, String condition) throws SQLException {
-        String sql = String.format("SELECT %s FROM uploads WHERE fleet_id = ? AND uploader_id = ? ORDER BY start_time DESC", Upload.DEFAULT_COLUMNS);
-        if (condition != null && !condition.isBlank()) sql += " " + condition;
+        String sql = String.format(
+                "SELECT %s FROM uploads WHERE fleet_id = ? AND uploader_id = ? ORDER BY start_time DESC",
+                Upload.DEFAULT_COLUMNS);
+        if (condition != null && !condition.isBlank())
+            sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
 
@@ -449,14 +465,15 @@ public class AirSyncImport {
      * Gets the COUNT of uploads with a condition
      *
      * @param connection the DBMS connection
-     * @param fleetId the fleet id
-     * @param condition the extra SQL conditions
+     * @param fleetId    the fleet id
+     * @param condition  the extra SQL conditions
      *
      * @throws SQLException if there is an issue with the DBMS
      */
     public static int getNumUploads(Connection connection, int fleetId, String condition) throws SQLException {
         String sql = "SELECT COUNT(*) FROM uploads WHERE fleet_id = ? AND uploader_id = ?";
-        if (condition != null && !condition.isBlank()) sql += " " + condition;
+        if (condition != null && !condition.isBlank())
+            sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
 
@@ -475,17 +492,20 @@ public class AirSyncImport {
     }
 
     /**
-     * Gets a list of AirSyncImportResponses that can be used to be populated on a webpage.
+     * Gets a list of AirSyncImportResponses that can be used to be populated on a
+     * webpage.
      *
      * @param connection the DBMS connection
-     * @param fleetId the fleet id
-     * @param condition the extra SQL conditions
+     * @param fleetId    the fleet id
+     * @param condition  the extra SQL conditions
      *
      * @throws SQLException if there is an issue with the DBMS
      */
-    public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition) throws SQLException {
+    public static List<AirSyncImportResponse> getImports(Connection connection, int fleetId, String condition)
+            throws SQLException {
         String sql = "SELECT a.id, a.time_received, a.upload_id, f.status, a.flight_id, a.tail FROM airsync_imports AS a INNER JOIN flights AS f ON f.id = a.flight_id WHERE a.fleet_id = ? ORDER BY a.time_received";
-        if (condition != null && !condition.isBlank()) sql += " " + condition;
+        if (condition != null && !condition.isBlank())
+            sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
 
@@ -508,14 +528,15 @@ public class AirSyncImport {
      * Gets the COUNT of imports with an extra condition
      *
      * @param connection the DBMS connection
-     * @param fleetId the fleet id
-     * @param condition the extra SQL conditions
+     * @param fleetId    the fleet id
+     * @param condition  the extra SQL conditions
      *
      * @throws SQLException if there is an issue with the DBMS
      */
     public static int getNumImports(Connection connection, int fleetId, String condition) throws SQLException {
         String sql = "SELECT COUNT(*) FROM airsync_imports WHERE fleet_id = ?";
-        if (condition != null && !condition.isBlank()) sql += " " + condition;
+        if (condition != null && !condition.isBlank())
+            sql += " " + condition;
 
         PreparedStatement query = connection.prepareStatement(sql);
 
@@ -541,15 +562,16 @@ public class AirSyncImport {
         InputStream is = null;
 
         try {
-            HttpsURLConnection connection = (HttpsURLConnection) new URL(String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
+            HttpsURLConnection connection = (HttpsURLConnection) new URL(
+                    String.format(AirSyncEndpoints.SINGLE_LOG, this.id)).openConnection();
 
             connection.setRequestMethod("GET");
             connection.setDoOutput(true);
-            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());     
+            connection.setRequestProperty("Authorization", this.fleet.getAuth().bearerString());
 
             is = connection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
-            
+            byte[] respRaw = is.readAllBytes();
+
             String resp = new String(respRaw).replaceAll("file_url", "fileUrl");
 
             LogResponse log = WebServer.gson.fromJson(resp, LogResponse.class);
@@ -566,7 +588,8 @@ public class AirSyncImport {
     }
 
     /**
-     * Reads the csv data into a local buffer and returns the amount of bytes (chars) read.
+     * Reads the csv data into a local buffer and returns the amount of bytes
+     * (chars) read.
      *
      * @param the size of the CSV buffer, in bytes
      */
@@ -575,7 +598,8 @@ public class AirSyncImport {
             InputStream is = getFileInputStream();
 
             if (is == null) {
-                AirSync.logFile.println("ERROR: Unable to read fileUrl from log endpoint for aircraft " + this.aircraftId + ": " + fileUrl + " with log: " + this.id + ".");
+                AirSync.logFile.println("ERROR: Unable to read fileUrl from log endpoint for aircraft "
+                        + this.aircraftId + ": " + fileUrl + " with log: " + this.id + ".");
                 return -1;
             } else {
                 this.data = is.readAllBytes();
@@ -594,7 +618,8 @@ public class AirSyncImport {
      * {@inheritDoc}
      */
     public String toString() {
-        return "AirSyncImport: " + this.uploadId + ", for aircraftId: " + aircraftId + ", origin: " + origin + ", destination: " + destination + ",\n" +
-            "url: " + fileUrl + ", start time: " + timeStart + ", end time: " + timeEnd + ";";
+        return "AirSyncImport: " + this.uploadId + ", for aircraftId: " + aircraftId + ", origin: " + origin
+                + ", destination: " + destination + ",\n" +
+                "url: " + fileUrl + ", start time: " + timeStart + ", end time: " + timeEnd + ";";
     }
 }

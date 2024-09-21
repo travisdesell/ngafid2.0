@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -36,7 +35,6 @@ public class PostSeverities implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -49,17 +47,16 @@ public class PostSeverities implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
             Spark.halt(401, "User did not have access to view imports for this fleet.");
             return null;
         }
 
-        try {
-            Connection connection = Database.getConnection();
-
-            HashMap<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
+        try (Connection connection = Database.getConnection()) {
+            HashMap<String, ArrayList<Event>> eventMap = Event.getEvents(connection, fleetId, eventName,
+                    LocalDate.parse(startDate), LocalDate.parse(endDate), tagName);
             return gson.toJson(eventMap);
 
         } catch (SQLException e) {

@@ -48,10 +48,8 @@ public class GetEmailUnsubscribe implements Route {
 
         LOG.info("Attempting to unsubscribe from emails... (id: " + id + ", token: " + token + ")");
 
-        Connection connection = Database.getConnection();
-
         // Check if the token is valid
-        try {
+        try (Connection connection = Database.getConnection()) {
 
             PreparedStatement query = connection
                     .prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?");
@@ -65,41 +63,42 @@ public class GetEmailUnsubscribe implements Route {
                 throw new Exception(exceptionMessage);
             }
 
+            // Remove the token from the database
+            PreparedStatement queryTokenRemoval;
+            queryTokenRemoval = connection
+                    .prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?");
+            queryTokenRemoval.setString(1, token);
+            queryTokenRemoval.setInt(2, id);
+            queryTokenRemoval.executeUpdate();
+            queryTokenRemoval.close();
+
+            // Set all non-forced email preferences to 0 in the database
+            PreparedStatement queryClearPreferences;
+            queryClearPreferences = connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?");
+            queryClearPreferences.setInt(1, id);
+            resultSet = queryClearPreferences.executeQuery();
+
+            while (resultSet.next()) {
+
+                String emailType = resultSet.getString("email_type");
+                if (EmailType.isForced(emailType)) {
+                    continue;
+                }
+
+                PreparedStatement update = connection
+                        .prepareStatement("UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?");
+                update.setInt(1, id);
+                update.setString(2, emailType);
+                update.executeUpdate();
+            }
+            resultSet.close();
+            queryClearPreferences.close();
+
+            return "Successfully unsubscribed from emails...";
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
-
-        // Remove the token from the database
-        PreparedStatement queryTokenRemoval;
-        queryTokenRemoval = connection
-                .prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?");
-        queryTokenRemoval.setString(1, token);
-        queryTokenRemoval.setInt(2, id);
-        queryTokenRemoval.executeUpdate();
-
-        // Set all non-forced email preferences to 0 in the database
-        PreparedStatement queryClearPreferences;
-        queryClearPreferences = connection.prepareStatement("SELECT * FROM email_preferences WHERE user_id=?");
-        queryClearPreferences.setInt(1, id);
-        ResultSet resultSet = queryClearPreferences.executeQuery();
-
-        while (resultSet.next()) {
-
-            String emailType = resultSet.getString("email_type");
-            if (EmailType.isForced(emailType)) {
-                continue;
-            }
-
-            PreparedStatement update = connection
-                    .prepareStatement("UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?");
-            update.setInt(1, id);
-            update.setString(2, emailType);
-            update.executeUpdate();
-        }
-
-        return "Successfully unsubscribed from emails...";
-
     }
 
 }

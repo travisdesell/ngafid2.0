@@ -82,9 +82,7 @@ public class HeadingTrackDiff implements Calculation {
             System.exit(1);
         }
 
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             String[] fleetIdStrs = cmd.getOptionValues('f');
 
             if (fleetIdStrs == null || fleetIdStrs.length <= 0) {

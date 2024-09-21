@@ -47,8 +47,7 @@ public abstract class XPlaneExport {
      *                     export
      */
     public XPlaneExport(int flightId, String aircraftPath, boolean useMSL) {
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             this.aircraftPath = aircraftPath + ",";
             this.useMSL = useMSL;
             this.flight = Flight.getFlight(connection, flightId);
@@ -159,8 +158,7 @@ public abstract class XPlaneExport {
      * @param scopes the {@link Map} to place the events into
      */
     private void writeEvents(Map<String, Object> scopes) {
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             ArrayList<Event> events = Event.getAll(connection, this.flight.getId());
 
             for (Event e : events) {

@@ -57,20 +57,16 @@ public class GetKML implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have view access this fleet.");
             Spark.halt(401, "User did not have access to view acces for this fleet.");
             return null;
         }
 
-
-        try {
+        try (Connection connection = Database.getConnection()) {
             response.header("Content-Disposition", "attachment; filename=flight_" + flightId + ".kml");
             response.type("application/force-download");
-
-            Connection connection = Database.getConnection();
 
             Flight flight = Flight.getFlight(connection, flightId);
 
@@ -84,7 +80,7 @@ public class GetKML implements Route {
             DoubleTimeSeries latitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitude = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
 
-            //LOG.info(gson.toJson(flights));
+            // LOG.info(gson.toJson(flights));
 
             StringBuffer sb = new StringBuffer();
 

@@ -57,8 +57,7 @@ public class PostSimAircraft implements Route {
 
         int fleetId = user.getFleetId();
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             switch (type) {
                 case CACHE:
                     List<String> currPaths = Flight.getSimAircraft(connection, fleetId);

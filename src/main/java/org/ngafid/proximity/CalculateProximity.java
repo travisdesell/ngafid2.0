@@ -605,11 +605,9 @@ public class CalculateProximity {
     }
 
     public static void main(String[] arguments) {
-        try {
-
+        try (Connection connection = Database.getConnection()) {
             int flightsPerQuery = 5000;
             while (true) {
-                Connection connection = Database.getConnection();
                 Instant start = Instant.now();
 
                 ArrayList<Flight> flights = Flight.getFlights(connection,

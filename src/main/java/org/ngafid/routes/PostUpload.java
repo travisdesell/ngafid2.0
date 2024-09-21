@@ -107,9 +107,7 @@ public class PostUpload implements Route {
         int chunkNumber = Integer.parseInt(sChunkNumber);
 
         Upload upload = null;
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             upload = Upload.getUploadByUser(connection, uploaderId, md5Hash);
 
             if (upload == null) {

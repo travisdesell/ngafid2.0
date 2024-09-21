@@ -14,6 +14,7 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.ngafid.Database;
@@ -26,6 +27,7 @@ public class GetSimAircraft implements Route {
 
     /**
      * Constructor
+     * 
      * @param gson the gson object for JSON conversions
      */
     public GetSimAircraft(Gson gson) {
@@ -51,11 +53,11 @@ public class GetSimAircraft implements Route {
             return null;
         }
 
-        try{
-            List<String> paths = Flight.getSimAircraft(Database.getConnection(), fleetId);
-            System.out.println("paths: "+paths.toString());
+        try (Connection connection = Database.getConnection()) {
+            List<String> paths = Flight.getSimAircraft(connection, fleetId);
+            System.out.println("paths: " + paths.toString());
             return gson.toJson(paths);
-        }catch(SQLException e){
+        } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
     }

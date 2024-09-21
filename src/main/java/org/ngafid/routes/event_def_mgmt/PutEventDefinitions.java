@@ -36,8 +36,7 @@ public class PutEventDefinitions implements Route {
         EventDefinition updatedEvent = gson.fromJson(request.body(), EventDefinition.class);
         LOG.info(updatedEvent.toString());
 
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             updatedEvent.updateSelf(connection);
         } catch (SQLException e) {
             response.status(500);

@@ -38,9 +38,7 @@ public class GetAllDoubleSeriesNames implements Route {
     private class AllDoubleSeriesNames {
         ArrayList<String> names = new ArrayList<String>();
 
-        public AllDoubleSeriesNames() throws SQLException {
-            Connection connection = Database.getConnection();
-
+        public AllDoubleSeriesNames(Connection connection) throws SQLException {
             PreparedStatement query = connection.prepareStatement("SELECT name FROM double_series_names ORDER BY name");
             LOG.info(query.toString());
             ResultSet resultSet = query.executeQuery();
@@ -58,17 +56,17 @@ public class GetAllDoubleSeriesNames implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        try {
-            //check to see if the user has access to this data
-            //if (!user.hasViewAccess(user.getFleetId())) {
-                //LOG.severe("INVALID ACCESS: user did not have access to this fleet.");
-                //Spark.halt(401, "User did not have access to this fleet.");
-            //}
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            // if (!user.hasViewAccess(user.getFleetId())) {
+            // LOG.severe("INVALID ACCESS: user did not have access to this fleet.");
+            // Spark.halt(401, "User did not have access to this fleet.");
+            // }
 
-            AllDoubleSeriesNames doubleSeriesNames = new AllDoubleSeriesNames();
+            AllDoubleSeriesNames doubleSeriesNames = new AllDoubleSeriesNames(connection);
 
-            //System.out.println(gson.toJson(doubleSeriesNames));
-            //LOG.info(gson.toJson(doubleSeriesNames));
+            // System.out.println(gson.toJson(doubleSeriesNames));
+            // LOG.info(gson.toJson(doubleSeriesNames));
 
             return gson.toJson(doubleSeriesNames);
         } catch (SQLException e) {
@@ -77,4 +75,3 @@ public class GetAllDoubleSeriesNames implements Route {
         }
     }
 }
-

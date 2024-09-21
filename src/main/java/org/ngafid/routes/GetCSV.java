@@ -60,9 +60,7 @@ public class GetCSV implements Route {
             return null;
         }
 
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             response.header("Content-Disposition", "attachment; filename=flight_" + flightId + ".csv");
             response.type("application/force-download");
 

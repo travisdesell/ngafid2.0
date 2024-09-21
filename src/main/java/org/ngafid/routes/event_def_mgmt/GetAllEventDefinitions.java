@@ -28,7 +28,8 @@ public class GetAllEventDefinitions implements Route {
     @Override
     public Object handle(Request request, Response response) throws Exception {
         LOG.info("Handling " + this.getClass().getName() + " route");
-        Connection connection = Database.getConnection();
-        return gson.toJson(EventDefinition.getAll(connection));
+        try (Connection connection = Database.getConnection()) {
+            return gson.toJson(EventDefinition.getAll(connection));
+        }
     }
 }
