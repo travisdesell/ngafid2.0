@@ -35,7 +35,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throws IOException {
         this(connection, stream.readAllBytes(), filename, pipeline);
     }
-
     private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
