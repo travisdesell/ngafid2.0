@@ -186,7 +186,15 @@ public class Pipeline implements AutoCloseable {
         }
 
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
-        Files.createDirectories(zipFileSystemPath.getParent());
+        Path parentPath = zipFileSystemPath.getParent();
+        if (parentPath != null && !Files.exists(parentPath)) {
+            Files.createDirectories(parentPath);
+        }else{
+            String path = upload.getDerivedDirectory();
+            Path derivedPath = Paths.get(path);
+            Files.createDirectories(derivedPath);
+        }
+
         Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 

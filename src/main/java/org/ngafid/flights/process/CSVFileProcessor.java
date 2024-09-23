@@ -1,18 +1,21 @@
 package org.ngafid.flights.process;
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
+
 import com.opencsv.exceptions.CsvException;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import java.security.MessageDigest;
@@ -35,7 +38,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throws IOException {
         this(connection, stream.readAllBytes(), filename, pipeline);
     }
-
     private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline)
             throws IOException {
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
@@ -49,97 +51,200 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     @Override
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
-        LOG.info("Parsing " + this.meta.filename);
-        try {
-            MessageDigest md = MessageDigest.getInstance("MD5");
-            byte[] hash = md.digest(super.stream.readAllBytes());
-            meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
-
-            super.stream.reset();
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-            System.exit(1);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
 
-        List<String[]> csvValues = null;
 
-        try (BufferedReader bufferedReader = new BufferedReader(
-                new InputStreamReader(super.stream, StandardCharsets.UTF_8));
-                CSVReader csvReader = new CSVReader(bufferedReader)) {
+        String airframeInfoLine = null;
+        String csvHeaderLine = null;
+
+        List<FlightBuilder> flightBuilders = new ArrayList<>();
+
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
+
             String fileInformation = getFlightInfo(bufferedReader); // Will read a line
 
             if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
-                processFileInormation(fileInformation);
+                processFileInformation(fileInformation);
                 bufferedReader.read(); // Skip first char (#)
                 Arrays.stream(csvReader.readNext())
                         .map(String::strip)
-                        .forEachOrdered(dataTypes::add);
+                        .forEachOrdered(dataTypes::add);;
                 Arrays.stream(csvReader.readNext())
                         .map(String::strip)
-                        .forEachOrdered(headers::add);
+                        .forEachOrdered(headers::add);;
             }
 
             updateAirframe();
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
-            for (int i = 0; i < headers.size(); i++)
+            String[] firstRow = csvReader.peek();
+
+
+            for (int i = 0; i < firstRow.length; i++)
                 columns.add(new ArrayList<>());
 
             // Documentation of CSVReader claims this is a linked list,
             // so it is important to iterate over it rather than using indexing
             List<String[]> rows = csvReader.readAll();
-            int validRows = 0;
-            for (String[] row : rows) {
-                // Encountered a row that is broken for some reason?
-                if (row.length != headers.size())
-                    break;
-                for (int i = 0; i < row.length; i++)
-                    columns.get(i).add(row[i]);
-                validRows += 1;
-            }
 
-            // This flight file contains 0 valid rows, or something is seriously wrong with
-            // it.
-            if (validRows == 0) {
-                throw new FatalFlightFileException(
-                        "Flight file has 0 valid rows - something serious is wrong with the format.");
-            }
+            List<List<String[]>> flights = splitCSVIntoFlights(rows);
 
-            for (int i = 0; i < columns.size(); i++) {
-                var column = columns.get(i);
-                var name = headers.get(i);
-                var dataType = dataTypes.get(i);
+            // If we have more than 1 flight — we have splits, hence we need to create derived files.
+            if (flights.size() > 1) {
+                for (int i = 0; i < flights.size(); i++) {
+                    List<String[]> flight = flights.get(i);
 
-                try {
-                    Double.parseDouble(column.get(0));
-                    doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
-                } catch (NumberFormatException e) {
-                    stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                    // Create a CSV filename for each flight
+                    String derivedFilename = filename.replace(".csv", "_flight_" + (i + 1) + ".csv");
+
+                    // Convert the flight data to CSV format and get it as a byte[]
+                    byte[] csvData = writeFlightToCSV(flight);
+
+                    // Call addDerivedFile to store the CSV file
+                    pipeline.addDerivedFile(derivedFilename, csvData);
                 }
             }
 
-            for (String name : doubleTimeSeries.keySet()) {
-                LOG.info("name = " + name + "; = " + doubleTimeSeries.get(name));
+            for(List<String[]> flight: flights){
+
+                for (String[] row : flight) {
+                    if (row.length < firstRow.length)
+                        break;
+                    for (int i = 0; i < row.length; i++)
+                        columns.get(i).add(row[i]);
+                }
+
+                for (int i = 0; i < columns.size(); i++) {
+                    var column = columns.get(i);
+                    var name = headers.get(i);
+                    var dataType = dataTypes.get(i);
+
+                    try {
+                        Double.parseDouble(column.get(0));
+                        doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                    } catch (NumberFormatException e) {
+                        stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                    }
+                }
+
+                //Calculate MD5 hash for the current flight's rows
+                String md5Hash = null;
+                try {
+                    MessageDigest md = MessageDigest.getInstance("MD5");
+                    StringBuilder flightDataBuilder = new StringBuilder();
+
+                    for (String[] flightRow : flight) {
+                        for (String cell : flightRow) {
+                            flightDataBuilder.append(cell);
+                        }
+                    }
+
+                    byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
+                    md5Hash = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
+                } catch (NoSuchAlgorithmException e) {
+                    e.printStackTrace();
+                    System.exit(1);
+                }
+
+                // After a flight is processed, build a flight and add to array of flightbuilders.
+
+                //Deep copy. Each FlightBuilder has its own FlightMeta object.
+                FlightMeta newMeta = new FlightMeta(meta);
+                newMeta.setMd5Hash(md5Hash);
+
+                FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
+                flightBuilders.add(builder);
+
+                // Clear after variables after each iteration
+                doubleTimeSeries.clear();
+                stringTimeSeries.clear();
             }
 
         } catch (IOException | FatalFlightFileException | CsvException e) {
-            e.printStackTrace();
             throw new FlightProcessingException(e);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+        return flightBuilders.stream();
+    }
+
+    // Method to write a List<String[]> (flight data) into CSV format and return it as a byte array
+    private byte[] writeFlightToCSV(List<String[]> flightData) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+
+        try (CSVWriter csvWriter = new CSVWriter(writer)) {
+            // Write each row of flight data to the CSV
+            for (String[] row : flightData) {
+                csvWriter.writeNext(row);
+            }
+        }
+        return outputStream.toByteArray();
+    }
+
+    /**
+     * Splits a list of CSV rows into multiple flights based on a 5-minute time gap.
+     *
+     * @param rows the list of CSV rows to process
+     * @return a list of lists of type string, where each inner list represents a separate flight
+     */
+    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) throws DateTimeParseException {
+        List<List<String[]>> flights = new ArrayList<>();
+        List<String[]> currentFlight = new ArrayList<>();
+        Date lastTimestamp = null;
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        for (String[] row : rows) {
+
+            // Parse timestamp from the row
+            String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
+            Date currentTimestamp = parseDateTime(dateTimeString, formatter);
+
+            if (lastTimestamp != null) {
+                // Check if the time difference between consecutive rows exceeds 5 minutes
+                long timeDifferenceInMillis = currentTimestamp.getTime() - lastTimestamp.getTime();
+                if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
+                    // Add the current flight to the list of flights and start a new flight
+                    flights.add(new ArrayList<>(currentFlight)); // Add the current flight
+                    currentFlight.clear(); // Reset for a new flight
+                }
+            }
+
+            // Add the current row to the current flight
+            currentFlight.add(row);
+
+            // Update lastTimestamp to the current row's timestamp
+            lastTimestamp = currentTimestamp;
         }
 
-        FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
+        // Add the last flight to the list if not empty
+        if (!currentFlight.isEmpty()) {
+            flights.add(currentFlight);
+        }
 
-        LOG.info("Returning flight builder!");
-        return Stream.of(builder);
+        return flights;
     }
+
+    /**
+     * Parses a date-time string into a Date object.
+     *
+     * @param dateTimeString the date-time string to parse
+     * @param formatter      the SimpleDateFormat object used to parse the string
+     * @return the parsed Date object
+     * @throws DateTimeParseException if the date-time string cannot be parsed
+     */
+    private Date parseDateTime(String dateTimeString, SimpleDateFormat formatter) throws DateTimeParseException {
+        try {
+            return formatter.parse(dateTimeString);
+        } catch (ParseException e) {
+            throw new DateTimeParseException(dateTimeString, e.getMessage(), e.getErrorOffset());
+        }
+    }
+
 
     /**
      * Updates the airframe type if airframe name does not belong to fixed wing
@@ -153,7 +258,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     /**
      * Gets the flight information from the first line of the file
-     * 
+     *
      * @param reader BufferedReader for reading the first line
      * @return
      * @throws FatalFlightFileException
@@ -181,7 +286,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return fileInformation;
     }
 
-    private void processFileInormation(String fileInformation) throws FatalFlightFileException {
+    private void processFileInformation(String fileInformation) throws FatalFlightFileException {
         // Some files have random double quotes in the header for some reason? We can
         // just remove these since we don't consider them anyways.
         fileInformation = fileInformation.replace("\"", "");
@@ -212,11 +317,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     } else if ((meta.airframeName
                             .equals("Garmin Flight Display") || meta.airframeName.equals("Robinson R44 Raven I"))
                             && pipeline.getUpload().getFleetId() == 1 /*
-                                                                       * This is a hack for UND who has their airframe
-                                                                       * names
-                                                                       * set up
-                                                                       * incorrectly for their helicopters
-                                                                       */) {
+                     * This is a hack for UND who has their airframe
+                     * names
+                     * set up
+                     * incorrectly for their helicopters
+                     */) {
                         meta.airframeName = "R44";
                     } else if (meta.airframeName.equals("Garmin Flight Display")) {
                         throw new FatalFlightFileException(
@@ -256,7 +361,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     /**
      * Parses for ScanEagle flight data
-     * 
+     *
      * @param fileInformation First line of the file
      */
     private void scanEagleParsing(String fileInformation) {
