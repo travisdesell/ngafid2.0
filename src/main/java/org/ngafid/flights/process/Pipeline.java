@@ -132,6 +132,11 @@ public class Pipeline implements AutoCloseable {
                             .map(this::finalize)
                             .collect(Collectors.toList());
                     try (Connection connection = Database.getConnection()) {
+                        LOG.info("Writing " + f.size() + " flights to database:");
+                        for (var flight : f) {
+                            LOG.info("STATUS: " + flight.getStatus());
+                            LOG.info("ERRORS: " + flight.getExceptions().size());
+                        }
                         Flight.batchUpdateDatabase(connection, upload, f);
                     } catch (SQLException e) {
                         LOG.info("Encountered SQLException trying to get database connection...");
@@ -155,7 +160,12 @@ public class Pipeline implements AutoCloseable {
     }
 
     public FileSystem createDerivedFileSystem() throws IOException {
-        File f = new File(derivedUpload.getDerivedDirectory() + "/" + derivedUpload.getDerivedFilename());
+        Path derivedZipPath = Paths.get(derivedUpload.getDerivedDirectory(), derivedUpload.getDerivedFilename());
+
+        // May need to create this directory
+        Files.createDirectories(derivedZipPath.getParent());
+
+        File f = new File(derivedZipPath.toString());
         ZipOutputStream out = new ZipOutputStream(new FileOutputStream(f));
         out.close();
 
@@ -168,14 +178,15 @@ public class Pipeline implements AutoCloseable {
         return FileSystems.newFileSystem(zipURI, zipENV);
     }
 
-    public void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
+    public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
         if (derivedFileSystem == null) {
             derivedUpload = Upload.createDerivedUpload(connection, upload.uploaderId, upload.fleetId, upload.filename,
-                    upload.identifier);
+                    upload.identifier, upload.md5Hash);
             derivedFileSystem = createDerivedFileSystem();
         }
 
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
+        Files.createDirectories(zipFileSystemPath.getParent());
         Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
@@ -241,6 +252,7 @@ public class Pipeline implements AutoCloseable {
             try {
                 return f.create(connection, zipFile.getInputStream(entry), filename, this);
             } catch (Exception e) {
+                e.printStackTrace();
                 flightErrors.put(filename, new UploadException(e.getMessage(), e, filename));
             }
         } else {
@@ -257,7 +269,10 @@ public class Pipeline implements AutoCloseable {
         } else {
             validFlightsCount.incrementAndGet();
         }
-
+        LOG.info("FLIGHT STATUS = " + flight.getStatus());
+        for (var e : flight.getExceptions()) {
+            e.printStackTrace();
+        }
         flightInfo.put(flight.getFilename(),
                 new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 

@@ -137,24 +137,35 @@ public class Upload {
      */
     public void clearUpload(Connection connection) throws SQLException {
         String query = "DELETE FROM upload_errors WHERE upload_id = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, this.id);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, this.id);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
 
         query = "DELETE FROM flight_errors WHERE upload_id = ?";
-        preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, this.id);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, this.id);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
 
         ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, this.id);
 
         for (Flight flight : flights) {
             flight.remove(connection);
         }
+
+        query = "DELETE FROM uploads WHERE md5_hash = ?";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setString(1, getDerivedMd5(md5Hash));
+            preparedStatement.executeUpdate();
+        }
+    }
+
+    static String getDerivedMd5(String md5) {
+        String md5prefix = md5.substring(0, md5.length() - "DERIVED".length());
+        return md5prefix + "DERIVED";
     }
 
     /**
@@ -280,8 +291,10 @@ public class Upload {
      * @throws SQLException
      */
     public static Upload createDerivedUpload(Connection connection, int uploaderId, int fleetId, String filename,
-            String identifier) throws SQLException {
-        return createUpload(connection, uploaderId, fleetId, filename, identifier, 0, 0, "DERIVED", 0, "", "DERIVED");
+            String identifier, String md5hash) throws SQLException {
+        // Need to create a fake md5 hash for the derived upload.
+        return createUpload(connection, uploaderId, fleetId, filename, identifier, 0, 0, getDerivedMd5(md5hash), 0, "",
+                "DERIVED");
     }
 
     /**
@@ -305,7 +318,7 @@ public class Upload {
         query.setInt(8, uploadedChunks);
         query.setString(9, chunkStatus);
         query.setString(10, uploadStatus);
-
+        LOG.info("QUERY: " + query.toString());
         query.executeUpdate();
 
         return Upload.getUploadByUser(connection, uploaderId, md5hash);
