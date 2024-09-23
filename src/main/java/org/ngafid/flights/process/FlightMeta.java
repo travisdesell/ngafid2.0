@@ -20,6 +20,28 @@ public final class FlightMeta {
                   calculated,
                   suggestedTailNumber;
 
+
+    // Copy constructor
+    public FlightMeta(FlightMeta meta) {
+        this.fleetId = meta.fleetId;
+        this.uploaderId = meta.uploaderId;
+        this.uploadId = meta.uploadId;
+        this.processingStatus = meta.processingStatus;
+        this.startDateTime = meta.startDateTime;
+        this.endDateTime = meta.endDateTime;
+        this.md5Hash = meta.md5Hash;
+        this.airframeType = meta.airframeType;
+        this.systemId = meta.systemId;
+        this.filename = meta.filename;
+        this.airframeName = meta.airframeName;
+        this.calculated = meta.calculated;
+        this.suggestedTailNumber = meta.suggestedTailNumber;
+    }
+
+    // Default constructor
+    public FlightMeta() {
+    }
+
     public int getFleetId() {
         return fleetId;
     }

@@ -101,7 +101,7 @@ public class Database {
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSize", "250");
         config.addDataSourceProperty("prepStmtCacheSqlLimit", "2048");
-        config.setMaximumPoolSize(256);
+        config.setMaximumPoolSize(50);
         CONNECTION_POOL = new HikariDataSource(config);
     }
 }

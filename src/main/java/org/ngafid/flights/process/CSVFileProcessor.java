@@ -11,11 +11,8 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.format.DateTimeParseException;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import java.security.MessageDigest;
@@ -63,7 +60,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
-                processFileInormation(fileInformation);
+                processFileInformation(fileInformation);
                 bufferedReader.read(); // Skip first char (#)
                 Arrays.stream(csvReader.readNext())
                         .map(String::strip)
@@ -109,12 +106,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                     }
                 }
+
                 //Calculate MD5 hash for the current flight's rows
+                String md5Hash = null;
                 try {
                     MessageDigest md = MessageDigest.getInstance("MD5");
-                    byte[] hash = md.digest(super.stream.readAllBytes());
-                    meta.setMd5Hash(DatatypeConverter.printHexBinary(hash).toLowerCase());
-
                     StringBuilder flightDataBuilder = new StringBuilder();
 
                     for (String[] flightRow : flight) {
@@ -124,20 +120,20 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     }
 
                     byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
-                    meta.setMd5Hash(DatatypeConverter.printHexBinary(flightHash).toLowerCase());
+                    md5Hash = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
                 } catch (NoSuchAlgorithmException e) {
-                    e.printStackTrace();
-                    System.exit(1);
-                } catch (IOException e) {
                     e.printStackTrace();
                     System.exit(1);
                 }
 
-
                 // After a flight is processed, build a flight and add to array of flightbuilders.
+
+                //Deep copy. Each FlightBuilder has its own FlightMeta object.
+                FlightMeta newMeta = new FlightMeta(meta);
+                newMeta.setMd5Hash(md5Hash);
+
                 FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
                 flightBuilders.add(builder);
-                System.out.println("META::: "+ meta.toString());
 
                 // Clear after variables after each iteration
                 doubleTimeSeries.clear();
@@ -149,7 +145,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
         return flightBuilders.stream();
     }
-
 
     /**
      * Splits a list of CSV rows into multiple flights based on a 5-minute time gap.
@@ -251,7 +246,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return fileInformation;
     }
 
-    private void processFileInormation(String fileInformation) throws FatalFlightFileException {
+    private void processFileInformation(String fileInformation) throws FatalFlightFileException {
         // Some files have random double quotes in the header for some reason? We can
         // just remove these since we don't consider them anyways.
         fileInformation = fileInformation.replace("\"", "");
