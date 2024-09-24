@@ -1,7 +1,0 @@
-spotless {
-  java {
-    googleJavaFormat('1.8')
-    indentWithSpaces(4)
-    maxLineLength(120)
-  }
-}
