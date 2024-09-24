@@ -23,9 +23,6 @@ import org.ngafid.accounts.Fleet;
  * as many other methods may be used by the daemon
  */
 public class AirSync {
-    //Used for debugging
-    static PrintStream logFile;
-
     // How long the daemon will wait before making another request
     private static final long DEFAULT_WAIT_TIME = 10000;
     private static Connection connection = Database.getConnection();
@@ -47,7 +44,6 @@ public class AirSync {
         if (message.contains("HTTP response code: 40")) {
             LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
-            //logFile.println("Got exception at time " + LocalDateTime.now().toString() + ": " + e.getMessage());
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
             crashGracefully(e);
@@ -105,12 +101,8 @@ public class AirSync {
             LocalDateTime now = LocalDateTime.now();
             String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-" + now.getHour() + now.getMinute() + now.getSecond();
 
-            //logFile = new PrintStream(new File("/var/log/ngafid/airsync_" + timeStamp + ".log"));
-            //logFile.println("Starting AirSync daemon error log at: " + now.toString());
-
             while (true) {
                 AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
-
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
                     LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
