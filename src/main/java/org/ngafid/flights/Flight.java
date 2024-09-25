@@ -358,7 +358,7 @@ public class Flight {
 
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = ?";
-        if (limit > 0) queryString += " LIMIT 100";
+        if (limit > 0) queryString += " LIMIT " + limit;
 
         PreparedStatement query = connection.prepareStatement(queryString);
         query.setInt(1, fleetId);
@@ -2823,7 +2823,7 @@ public class Flight {
         CalculatedDoubleTimeSeries vspdCalculated = new CalculatedDoubleTimeSeries(connection, VSPD_CALCULATED, "ft/min", true, this);
         vspdCalculated.create(new VSPDRegression(connection, this));
 
-        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", false, this);
+        CalculatedDoubleTimeSeries densityRatio = new CalculatedDoubleTimeSeries(connection, DENSITY_RATIO, "ratio", true, this);
         densityRatio.create(index -> {
             DoubleTimeSeries baroA = getDoubleTimeSeries(BARO_A);
             DoubleTimeSeries oat = getDoubleTimeSeries(OAT);
@@ -2834,7 +2834,7 @@ public class Flight {
             return pressRatio / tempRatio;
         });
 
-        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", false, this);
+        CalculatedDoubleTimeSeries tasFtMin = new CalculatedDoubleTimeSeries(connection, TAS_FTMIN, "ft/min", true, this);
         tasFtMin.create(index -> {
             DoubleTimeSeries airspeed = this.isC172() ? getDoubleTimeSeries(CAS) : getDoubleTimeSeries(IAS);
 

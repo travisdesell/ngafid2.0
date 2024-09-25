@@ -2,9 +2,13 @@ package org.ngafid.flights;
 
 import java.sql.SQLException;
 import java.util.*;
+
+import static org.ngafid.flights.calculations.Parameters.*;
+
 import java.io.*;
 import java.sql.Connection;
 
+import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.flights.*;
 
@@ -122,5 +126,35 @@ public class GeneratedCSVWriter extends CSVWriter {
             // This should not happen!
             return;
         }
+    }
+
+    public static void main(String [] args) {
+        System.out.println("Generating new CSV files from the NGAFID for Aidan's SSL project.");
+
+        Connection connection = Database.getConnection();
+
+        String [] colNames = {HDG, IAS, LAT_AC, NORM_AC, IAS, VSPD, ALT_AGL, ALT_MSL, ALT_B, AOA_SIMPLE, CAS};
+
+        String outputDirectory = args[0];
+        System.out.println("Will save files to: " + outputDirectory);
+
+        try { 
+            List<Flight> flights = Flight.getFlights(connection, 1, 10);
+
+            for (Flight flight : flights) {
+                String filename = outputDirectory + "/flight_" + flight.getId() + ".csv";
+                File file = new File(filename);
+
+                GeneratedCSVWriter writer = new GeneratedCSVWriter(flight, colNames, Optional.of(file));
+                writer.writeToFile();
+                System.out.println("Wrote to CSV file: " + filename);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(1);
+        }
+
+        System.out.println("Finished!");
+        System.exit(0);
     }
 }
