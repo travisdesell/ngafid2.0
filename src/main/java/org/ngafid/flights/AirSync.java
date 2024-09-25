@@ -63,13 +63,13 @@ public class AirSync {
      *
      * @param message the message that needs to be sent
      */
-    public static void sendAdminCrashNotification(String message) {
+    public static void sendAdminCrashNotification(String message) throws SQLException {
         String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
         ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
         SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message,
-                EmailType.AIRSYNC_DAEMON_CRASH);
+                EmailType.AIRSYNC_DAEMON_CRASH, connection);
     }
 
     /**

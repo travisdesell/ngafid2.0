@@ -160,8 +160,7 @@ public class SendEmail {
 
     }
 
-    public static void freeExpiredUnsubscribeTokens() {
-
+    public static void freeExpiredUnsubscribeTokens(Connection connection) throws SQLException {
         Calendar calendar = Calendar.getInstance();
         java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
 
@@ -177,19 +176,16 @@ public class SendEmail {
         lastTokenFree.setTime(currentDate.getTime());
 
         String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
-        try (Connection connection = Database.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setDate(1, currentDate);
             preparedStatement.execute();
-
-        } catch (Exception e) {
-            LOG.severe("Failed to free expired email unsubscribe tokens");
         }
 
         LOG.info("Freed expired email unsubscribe tokens");
     }
 
-    private static String generateUnsubscribeToken(String recipientEmail, int userID) {
+    private static String generateUnsubscribeToken(String recipientEmail, int userID, Connection connection)
+            throws SQLException {
 
         // Generate a random string
         String token = UUID.randomUUID().toString().replace("-", "");
@@ -199,15 +195,19 @@ public class SendEmail {
         java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
 
         String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
-        try (Connection connection = Database.getConnection();
-                PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, token);
             preparedStatement.setInt(2, userID);
             preparedStatement.setDate(3, expirationDate);
             preparedStatement.execute();
 
+        } catch (SQLException e) {
+            LOG.severe("(SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": "
+                    + e.getMessage());
+            throw e;
         } catch (Exception e) {
-            LOG.severe("Failed to generate token for email recipient: " + recipientEmail);
+            LOG.severe("(Non-SQL Exception) Failed to generate token for email recipient: " + recipientEmail + ": "
+                    + e.getMessage());
         }
 
         // Log the token's expiration date
@@ -234,11 +234,27 @@ public class SendEmail {
      * @param body    - body of the email
      */
     public static void sendAdminEmails(String subject, String body, EmailType emailType) {
-        sendEmail(adminEmails, new ArrayList<>(), subject, body, emailType);
+
+        try {
+            sendEmail(adminEmails, new ArrayList<>(), subject, body, emailType);
+        } catch (SQLException e) {
+            LOG.severe("(SQL Exception) Failed to send admin email: " + e.getMessage());
+        }
     }
 
     public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject,
-            String body, EmailType emailType) {
+            String body, EmailType emailType) throws SQLException {
+
+        // Send the email with no existing connection
+        try (Connection connection = Database.getConnection()) {
+            LOG.info("Sending an email with a fresh SQL connection");
+            sendEmail(toRecipients, bccRecipients, subject, body, emailType, connection);
+        }
+
+    }
+
+    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject,
+            String body, EmailType emailType, Connection connection) throws SQLException {
 
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
@@ -248,7 +264,7 @@ public class SendEmail {
         }
 
         // Attempt to free expired tokens
-        freeExpiredUnsubscribeTokens();
+        freeExpiredUnsubscribeTokens(connection);
 
         // System.out.println(String.format("Username: %s, PW: %s", username,
         // password));
@@ -322,7 +338,7 @@ public class SendEmail {
                             int userID = UserEmailPreferences.getUserIDFromEmail(toRecipient);
 
                             // Generate a token for the user to unsubscribe
-                            String token = generateUnsubscribeToken(toRecipient, userID);
+                            String token = generateUnsubscribeToken(toRecipient, userID, connection);
                             String unsubscribeURL = unsubscribeURLTemplate.replace("__ID__", Integer.toString(userID))
                                     .replace("__TOKEN__", token);
 

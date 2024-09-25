@@ -20,6 +20,7 @@ public class Navbar {
         boolean airSyncEnabled = false;
         int waitingUserCount = 0;
         boolean modifyTailsAccess = false;
+        boolean hasUploadAccess = false;
         int unconfirmedTailsCount = 0;
 
         if (user != null && user.getFleetAccessType().equals(FleetAccess.MANAGER)) {
@@ -42,9 +43,9 @@ public class Navbar {
                     airSyncEnabled = resultSet.getBoolean(1);
                 }
 
-                if (user != null && (user.getFleetAccessType().equals(FleetAccess.MANAGER)
-                        || user.getFleetAccessType().equals(FleetAccess.UPLOAD))) {
-                    modifyTailsAccess = true;
+                if (user != null) {
+                    modifyTailsAccess = user.hasUploadAccess(fleetId);
+                    hasUploadAccess = user.hasUploadAccess(fleetId);
                     unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
                 }
             }
@@ -53,9 +54,13 @@ public class Navbar {
             // the database
         }
 
-        return "var admin = " + user.isAdmin() + "; var aggregateView = " + user.hasAggregateView()
-                + "; var fleetManager = " + fleetManager + "; var waitingUserCount = " + waitingUserCount
-                + "; var modifyTailsAccess = " + modifyTailsAccess + "; var unconfirmedTailsCount = "
-                + unconfirmedTailsCount + "; var airSyncEnabled = " + airSyncEnabled;
+        return "var admin = " + user.isAdmin() + ";"
+                + "var aggregateView = " + user.hasAggregateView() + ";"
+                + "var fleetManager = " + fleetManager + ";"
+                + "var waitingUserCount = " + waitingUserCount + ";"
+                + "var modifyTailsAccess = " + modifyTailsAccess + ";"
+                + "var unconfirmedTailsCount = " + unconfirmedTailsCount + ";"
+                + "var airSyncEnabled = " + airSyncEnabled + ";"
+                + "var uploader = " + hasUploadAccess + ";";
     }
 }

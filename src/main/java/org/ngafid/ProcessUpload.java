@@ -229,7 +229,7 @@ public class ProcessUpload {
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START, connection);
 
             upload.reset(connection);
             LOG.info("upload was reset!\n\n");
@@ -266,7 +266,7 @@ public class ProcessUpload {
 
             LOG.info("Processing upload took " + asSeconds + "s");
 
-            uploadProcessedEmail.sendEmail();
+            uploadProcessedEmail.sendEmail(connection);
 
         } catch (IOException | SQLException e) {
             LOG.severe("ERROR processing upload: " + e);
