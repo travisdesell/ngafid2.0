@@ -32,9 +32,9 @@ public class AirSync {
     /**
      * Gracefully handles an exception from the AirSync API
      *
-     * @param e the exception caught
-     * @param authentication the authentication used at the time. We can use this 
-     * to request a new one if its simply outdated.
+     * @param e              the exception caught
+     * @param authentication the authentication used at the time. We can use this
+     *                       to request a new one if its simply outdated.
      */
     public static void handleAirSyncAPIException(Exception e, AirSyncAuth authentication) {
         String message = e.getMessage();
@@ -42,7 +42,8 @@ public class AirSync {
         LOG.severe("Caught " + message + " when making AirSync request!");
 
         if (message.contains("HTTP response code: 40")) {
-            LOG.severe("Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
+            LOG.severe(
+                    "Bearer token is no longer valid (someone may have requested one elsewhere, or this daemon is running somewhere else!).");
             authentication.requestAuthorization();
         } else if (message.contains("HTTP response code: 502")) {
             LOG.severe("Got a 502 error!");
@@ -62,7 +63,8 @@ public class AirSync {
         ArrayList<String> adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
 
         ArrayList<String> bccRecipients = new ArrayList<String>();
-        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message, EmailType.AIRSYNC_DAEMON_CRASH);
+        SendEmail.sendEmail(adminEmails, bccRecipients, "CRITICAL: AirSync Daemon Exception!", message,
+                EmailType.AIRSYNC_DAEMON_CRASH);
     }
 
     /**
@@ -74,8 +76,9 @@ public class AirSync {
         System.err.println("FATAL: Exiting due to error " + e.getMessage() + "!");
         e.printStackTrace();
 
-        //TODO: format this as html!
-        StringBuilder sb = new StringBuilder("The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
+        // TODO: format this as html!
+        StringBuilder sb = new StringBuilder(
+                "The NGAFID AirSync daemon has crashed at " + LocalDateTime.now().toString() + "!\n");
         sb.append("Exception caught: " + e.getMessage() + "\n");
         sb.append("Stack trace:\n");
         sb.append(ExceptionUtils.getStackTrace(e));
@@ -89,22 +92,24 @@ public class AirSync {
     }
 
     /**
-     * This daemon's entry point. 
+     * This daemon's entry point.
      * This is where the logic for how the daemon operates will be defined.
      *
      * @param args command line args
      */
-    public static void main(String [] args) {
+    public static void main(String[] args) {
         LOG.info("AirSync daemon started");
 
         try {
             LocalDateTime now = LocalDateTime.now();
-            String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-" + now.getHour() + now.getMinute() + now.getSecond();
+            String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-"
+                    + now.getHour() + now.getMinute() + now.getSecond();
 
             while (true) {
-                AirSyncFleet [] airSyncFleets = AirSyncFleet.getAll(connection);
+                AirSyncFleet[] airSyncFleets = AirSyncFleet.getAll(connection);
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
-                    LOG.severe("This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
+                    LOG.severe(
+                            "This instance of the NGAFID does not have any AirSync fleets configured. Please check the database and try again");
                     System.exit(1);
                 }
 
@@ -126,11 +131,6 @@ public class AirSync {
                 LOG.info("Sleeping for " + waitTime / 1000 + "s.");
                 Thread.sleep(waitTime);
             }
-        } catch (IOException e) {
-            String message = e.getMessage();
-            LOG.info("Got exception: " + e.getMessage());
-            if (message.contains("HTTP response code: 40"))
-                LOG.info("HINT: Your bearer token is either expired, or you are rate limited");
         } catch (Exception e) {
             crashGracefully(e);
         }
