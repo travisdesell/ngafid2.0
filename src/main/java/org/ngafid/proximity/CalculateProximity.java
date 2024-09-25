@@ -5,6 +5,8 @@ import org.ngafid.UploadProcessedEmail;
 import org.ngafid.events.Event;
 import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.Flight;
+
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -560,7 +562,7 @@ public class CalculateProximity {
                         adjacencyEventDefinitionId, flight.getStartDateTime());
             }
 
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             System.err.println(e);
             e.printStackTrace();
             System.exit(1);

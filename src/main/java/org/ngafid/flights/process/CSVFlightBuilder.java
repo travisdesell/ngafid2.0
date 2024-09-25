@@ -9,14 +9,14 @@ import org.ngafid.flights.*;
 import static org.ngafid.flights.process.ProcessStep.required;
 
 public class CSVFlightBuilder extends FlightBuilder {
-    
-    public CSVFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+
+    public CSVFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 
     private static final List<ProcessStep.Factory> processSteps = List.of(
-        ProcessAltAGL::new
-    );
+            ProcessAltAGL::new);
 
     // This can be overridden.
     protected List<ProcessStep> gatherSteps(Connection connection) {

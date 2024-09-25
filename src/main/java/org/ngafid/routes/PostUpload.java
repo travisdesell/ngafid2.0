@@ -166,24 +166,13 @@ public class PostUpload implements Route {
 
                 // check to see if the MD5 hash matches
                 String newMd5Hash = null;
-                InputStream is = null;
-                try {
+                try (InputStream is = new FileInputStream(Paths.get(targetFilename).toFile())) {
                     MessageDigest md = MessageDigest.getInstance("MD5");
-                    is = new BufferedInputStream(new FileInputStream(Paths.get(targetFilename).toFile()));
-                    DigestInputStream dis = new DigestInputStream(is, md);
-
-                    // This walks through the input streams bytes
-                    while (dis.read() != -1) {
-                    }
-
-                    byte[] hash = md.digest();
+                    byte[] hash = md.digest(is.readAllBytes());
                     newMd5Hash = DatatypeConverter.printHexBinary(hash).toLowerCase();
                 } catch (NoSuchAlgorithmException | IOException e) {
                     e.printStackTrace();
                     System.exit(1);
-                } finally {
-                    if (is != null)
-                        is.close();
                 }
 
                 LOG.info("new md5 hash:      '" + newMd5Hash + "'");

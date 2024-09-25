@@ -1,6 +1,5 @@
 package org.ngafid.common;
 
-
 import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZonedDateTime;
@@ -15,7 +14,6 @@ import java.util.List;
 
 import org.ngafid.flights.FatalFlightFileException;
 
-
 public class TimeUtils {
 
     /**
@@ -27,7 +25,7 @@ public class TimeUtils {
      * @return the fixed offset
      */
     public static String updateBadOffset(LocalDateTime ldt, String offset) {
-        //weird input data
+        // weird input data
         if (offset.equals("+19:00")) {
             ldt = ldt.plusHours(1);
             offset = "+18:00";
@@ -60,7 +58,6 @@ public class TimeUtils {
             offset = "-18:00";
         }
 
-
         return offset;
     }
 
@@ -68,7 +65,7 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        //fix bad offset values
+        // fix bad offset values
         offset = updateBadOffset(ldt, offset);
 
         // parse the offset
@@ -78,16 +75,17 @@ public class TimeUtils {
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
 
         // print the date time with the parsed offset
-        //System.out.println(zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println(zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         // create a ZonedDateTime from the OffsetDateTime and use UTC as time zone
         ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
 
         // print the date time in UTC using the ISO ZONED DATE TIME format
-        //System.out.print(" -- UTC (zoned):\t" + utcZdt.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
+        // System.out.print(" -- UTC (zoned):\t" + utcZdt.format(DateTimeFormatter.ISO_ZONED_DATE_TIME));
 
         // and then print it again using your desired format
-        //System.out.println(" -- UTC:\t" + utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + " -- epoch second: " + utcZdt.toEpochSecond());
+        // System.out.println(" -- UTC:\t" + utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")) + " --
+        // epoch second: " + utcZdt.toEpochSecond());
 
         return utcZdt.toEpochSecond();
     }
@@ -96,7 +94,7 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        //fix bad offset values
+        // fix bad offset values
         offset = updateBadOffset(ldt, offset);
 
         // parse the offset
@@ -106,7 +104,7 @@ public class TimeUtils {
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
 
         // print the date time with the parsed offset
-        //System.out.println(zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println(zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         // create a ZonedDateTime from the OffsetDateTime and use UTC as time zone
         ZonedDateTime utcZdt = odt.atZoneSameInstant(ZoneOffset.UTC);
@@ -115,13 +113,15 @@ public class TimeUtils {
 
     }
 
-    public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset, String newOffset) {
-        //System.out.println("original:   \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
+    public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
+            String newOffset) {
+        // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
 
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime,
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        //fix bad offset values
+        // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
 
         // parse the offset
@@ -131,15 +131,16 @@ public class TimeUtils {
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
 
         // print the date time with the parsed offset
-        //System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        //System.out.println("with offset:               \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" +
+        // odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println("with offset: \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         ZoneOffset offset2 = ZoneOffset.of(newOffset);
         OffsetDateTime odt3 = odt.withOffsetSameInstant(offset2);
 
-        //String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        //String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        //System.out.println("with offset (same instant):\t" + newTime);
+        // String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        // String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        // System.out.println("with offset (same instant):\t" + newTime);
 
         return odt3;
     }
@@ -148,8 +149,8 @@ public class TimeUtils {
         // create a LocalDateTime using the date time passed as parameter
         LocalDateTime ldt = LocalDateTime.parse(originalDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
-        //fix bad offset values
-        //originalOffset = updateBadOffset(ldt, originalOffset);
+        // fix bad offset values
+        // originalOffset = updateBadOffset(ldt, originalOffset);
 
         // parse the offset
         ZoneOffset zoneOffset = ZoneOffset.of(originalOffset);
@@ -158,77 +159,72 @@ public class TimeUtils {
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);
 
         // print the date time with the parsed offset
-        //System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
-        //System.out.println("with offset:               \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println("with offset:\t" + zoneOffset.toString() + ":\t" +
+        // odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
+        // System.out.println("with offset: \t" + odt.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
 
         ZoneOffset offset2 = ZoneOffset.of(newOffset);
         OffsetDateTime odt3 = odt.withOffsetSameInstant(offset2);
 
-        //String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-        //String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-        //System.out.println("with offset (same instant):\t" + newTime);
+        // String newTime = odt3.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+        // String newTime = odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        // System.out.println("with offset (same instant):\t" + newTime);
 
         return odt3.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
     }
 
+    private static final List<DateTimeFormatter> DATE_FORMATTERS = List.of(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
+            DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
+            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
 
-    public static double calculateDurationInSeconds(String startDateTime, String endDateTime) throws FatalFlightFileException {
-        LocalDateTime start= null;
-        LocalDateTime end = null;
-        try {
-            start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-            end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"));
-        } catch (DateTimeParseException e) {
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
+            throws FatalFlightFileException {
+
+        for (var dateFormatter : DATE_FORMATTERS) {
             try {
-                start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
-                end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"));
-            } catch (DateTimeParseException er2) {
-                try {
-                    start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
-                    end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"));
-                } catch (DateTimeParseException e3) {
-                    try {
-                        start = LocalDateTime.parse(startDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
-                        end = LocalDateTime.parse(endDateTime, DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
-                    } catch (DateTimeParseException e4) {
-                        throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss or MM/dd/yyyy HH:mm:ss).");
-                    }
-                    throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be yyyy-MM-dd HH:mm:ss Z or yyyy/MM/dd HH:mm:ss or MM/dd/yyyy HH:mm:ss).");
-                }
+                var start = LocalDateTime.parse(startDateTime, dateFormatter);
+                var end = LocalDateTime.parse(endDateTime, dateFormatter);
+                return ChronoUnit.SECONDS.between(start, end);
+            } catch (DateTimeParseException e) {
+                continue;
             }
         }
 
-        return ChronoUnit.SECONDS.between(start, end);
+        throw new FatalFlightFileException("Flight file is using unsupported date time format.");
     }
 
-    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern) throws FatalFlightFileException {
-        List<String> formatStrings = Arrays.asList(pattern, "yyyy-MM-dd'T'HH:mm:ss'Z'", "yyyy/MM/dd'T'HH:mm:ss'Z'", "MM/dd/yyyy'T'HH:mm:ss'Z'", "MM/dd/yyyy'T'HH:mm:ss");
-
+    public static LocalDateTime parseLocalDateTime(String dateTimeString, String pattern)
+            throws FatalFlightFileException {
         LocalDateTime dateTime = null;
         String patterns = "";
         boolean first = true;
-        for (String format : formatStrings) {
+        for (var formatter : DATE_FORMATTERS) {
             try {
-                dateTime = LocalDateTime.parse(dateTimeString, DateTimeFormatter.ofPattern(format));
+                dateTime = LocalDateTime.parse(dateTimeString, formatter);
                 break;
+            } catch (DateTimeParseException e) {
             }
-            catch (DateTimeParseException e) {}
+
             if (!first) {
-                patterns +=  ", '" + format + "'";
+                patterns += ", '" + formatter.toString() + "'";
             } else {
-                patterns +=  "'" + format + "'";
+                patterns += "'" + formatter.toString() + "'";
             }
             first = false;
         }
 
         if (dateTime == null) {
-            throw new FatalFlightFileException("Flight had incorrectly formatted date/time values (should be one of " + patterns + ")");
+            throw new FatalFlightFileException(
+                    "Flight had incorrectly formatted date/time values (should be one of " + patterns + ")");
         }
 
         return dateTime;
     }
 
-    public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern) throws FatalFlightFileException {
+    public static double calculateDurationInSeconds(String startDateTime, String endDateTime, String pattern)
+            throws FatalFlightFileException {
         LocalDateTime start = parseLocalDateTime(startDateTime, pattern);
         LocalDateTime end = parseLocalDateTime(endDateTime, pattern);
 

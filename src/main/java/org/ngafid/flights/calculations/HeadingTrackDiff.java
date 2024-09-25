@@ -20,7 +20,7 @@ public class HeadingTrackDiff implements Calculation {
     private Flight flight;
     private static final Logger LOG = Logger.getLogger(HeadingTrackDiff.class.getName());
 
-    public HeadingTrackDiff(Flight flight, Connection connection) throws SQLException {
+    public HeadingTrackDiff(Flight flight, Connection connection) throws IOException, SQLException {
         this.flight = flight;
 
         this.hdg = DoubleTimeSeries.getDoubleTimeSeries(connection, this.flight.getId(), HDG);

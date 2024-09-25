@@ -111,8 +111,8 @@ public class PostNewUpload implements Route {
             ResultSet resultSet = query.executeQuery();
 
             if (!resultSet.next()) {
-                Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier, sizeBytes,
-                        numberChunks, md5Hash);
+                Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
+                        Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
 
                 return gson.toJson(upload);
 

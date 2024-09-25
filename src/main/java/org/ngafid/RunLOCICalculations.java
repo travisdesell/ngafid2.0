@@ -41,10 +41,8 @@ public class RunLOCICalculations {
                 " AND fleet_id = (SELECT id FROM fleet WHERE EXISTS (SELECT id FROM uploads WHERE fleet.id = uploads.fleet_id AND uploads.status = 'IMPORTED'))";
         List<Integer> nums = null;
 
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            // preparedStatement.setInt(1, C172SP_ID);
-            ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
 
             nums = new ArrayList<>();
             while (resultSet.next()) {

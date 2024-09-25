@@ -3,6 +3,8 @@ package org.ngafid.proximity;
 import org.ngafid.Database;
 import org.ngafid.events.RateOfClosure;
 import org.ngafid.flights.Flight;
+
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -69,7 +71,7 @@ public class CalculateRateOfClosure {
             resultSet.close();
             query.close();
             connection.close();
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             throw new RuntimeException(e);
         }
         System.out.println("Calculating Rate of Closure for all proximity events complete.");

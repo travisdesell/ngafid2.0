@@ -176,19 +176,17 @@ public class SendEmail {
         }
         lastTokenFree.setTime(currentDate.getTime());
 
-        try (Connection connection = Database.getConnection()) {
-
-            String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+        String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
+        try (Connection connection = Database.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setDate(1, currentDate);
             preparedStatement.execute();
-
-            LOG.info("Freed expired email unsubscribe tokens");
 
         } catch (Exception e) {
             LOG.severe("Failed to free expired email unsubscribe tokens");
         }
 
+        LOG.info("Freed expired email unsubscribe tokens");
     }
 
     private static String generateUnsubscribeToken(String recipientEmail, int userID) {
@@ -200,10 +198,9 @@ public class SendEmail {
         calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
         java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
 
-        try (Connection connection = Database.getConnection()) {
-
-            String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
+        String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
+        try (Connection connection = Database.getConnection();
+                PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setString(1, token);
             preparedStatement.setInt(2, userID);
             preparedStatement.setDate(3, expirationDate);

@@ -232,17 +232,15 @@ public class FindSpinEvents {
             throws SQLException {
         String queryString = "INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, had_error = ?";
 
-        PreparedStatement query = connection.prepareStatement(queryString);
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+            query.setInt(1, flight.getFleetId());
+            query.setInt(2, flight.getId());
+            query.setInt(3, eventDefinitonId);
+            query.setInt(4, count);
+            query.setInt(5, hadError);
 
-        query.setInt(1, flight.getFleetId());
-        query.setInt(2, flight.getId());
-        query.setInt(3, eventDefinitonId);
-        query.setInt(4, count);
-        query.setInt(5, hadError);
-
-        query.executeUpdate();
-        query.close();
-
+            query.executeUpdate();
+        }
     }
 
     /**

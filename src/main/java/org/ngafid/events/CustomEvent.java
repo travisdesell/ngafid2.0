@@ -3,6 +3,7 @@ package org.ngafid.events;
 import org.ngafid.*;
 import org.ngafid.flights.Flight;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -29,7 +30,7 @@ public class CustomEvent extends Event {
             LOW_END_FUEL_PA_28 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 1);
             LOW_END_FUEL_CESSNA_172 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 2);
             LOW_END_FUEL_PA_44 = EventDefinition.getEventDefinition(connection, "Low Ending Fuel", 3);
-        } catch (SQLException e) {
+        } catch (IOException | SQLException e) {
             System.err.println("Failed to get connection.");
             System.exit(1);
         }
@@ -51,7 +52,7 @@ public class CustomEvent extends Event {
         this.customEventDefinition = eventDefinition;
     }
 
-    public static EventDefinition getLowEndFuelDefinition(int airframeID) throws SQLException {
+    public static EventDefinition getLowEndFuelDefinition(int airframeID) throws IOException, SQLException {
         try (Connection connection = Database.getConnection()) {
             return EventDefinition.getEventDefinition(connection, "Low Ending Fuel", airframeID);
         }
@@ -61,7 +62,7 @@ public class CustomEvent extends Event {
         return this.customEventDefinition;
     }
 
-    public void updateDatabase(Connection connection) {
+    public void updateDatabase(Connection connection) throws IOException, SQLException {
         super.updateDatabase(connection, flight.getFleetId(), flight.getId(), customEventDefinition.getId());
     }
 }

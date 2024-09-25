@@ -23,8 +23,6 @@ import org.ngafid.flights.*;
 import org.ngafid.flights.calculations.TurnToFinal;
 
 public class CalculateTTF {
-    private static Connection connection = null;
-
     public static void calculateTTF(Connection connection, int uploadId, UploadProcessedEmail uploadProcessedEmail)
             throws SQLException {
         Instant start = Instant.now();
@@ -65,27 +63,21 @@ public class CalculateTTF {
                         .map(f -> "?")
                         .collect(Collectors.joining(", ")));
 
-        PreparedStatement stmt = connection.prepareStatement(query);
-
-        for (int i = 0; i < flights.size(); i++)
-            stmt.setInt(i + 1, flights.get(i).getId());
-        System.out.println(stmt);
-        stmt.executeUpdate();
+        try (PreparedStatement stmt = connection.prepareStatement(query)) {
+            for (int i = 0; i < flights.size(); i++)
+                stmt.setInt(i + 1, flights.get(i).getId());
+            stmt.executeUpdate();
+        }
     }
 
     public static void main(String[] arguments) throws SQLException {
         while (true) {
-            connection = Database.getConnection();
+            try (Connection connection = Database.getConnection()) {
+                Instant start = Instant.now();
+                int total = 0;
 
-            Instant start = Instant.now();
-            int total = 0;
-
-            int flightsProcessed = 1;
-            while (flightsProcessed > 0) {
-                flightsProcessed = 0;
-                try {
-                    // Grab flights that have not been inserted at all, or flights that have an old
-                    // version of TTF
+                int flightsProcessed = 0;
+                do {
                     String condition = "insert_completed = 1 AND NOT EXISTS (SELECT flight_id, version FROM turn_to_final where flight_id = id and version = "
                             + TurnToFinal.serialVersionUID + ")";
                     ArrayList<Flight> flights = Flight.getFlights(connection, condition, 100);
@@ -97,28 +89,27 @@ public class CalculateTTF {
                     for (Flight f : flights)
                         TurnToFinal.calculateFlightTurnToFinals(connection, f);
 
-                    flightsProcessed += flights.size();
+                    flightsProcessed = flights.size();
 
-                } catch (SQLException | IOException e) {
+                    total += flightsProcessed;
+                } while (flightsProcessed > 0);
+
+                Instant end = Instant.now();
+                double elapsed_millis = (double) Duration.between(start, end).toMillis();
+                double elapsed_seconds = Math.round(elapsed_millis) / 1000;
+                System.err.println("calculated TTF for " + total + " flight(s) in " + elapsed_seconds + "s");
+
+                try {
+                    Thread.sleep(10000);
+                } catch (Exception e) {
+                    System.err.println(e);
                     e.printStackTrace();
-                    System.exit(1);
                 }
-                total += flightsProcessed;
-            }
-
-            Instant end = Instant.now();
-            double elapsed_millis = (double) Duration.between(start, end).toMillis();
-            double elapsed_seconds = Math.round(elapsed_millis) / 1000;
-            System.err.println("calculated TTF for " + total + " flight(s) in " + elapsed_seconds + "s");
-
-            try {
-                Thread.sleep(10000);
-            } catch (Exception e) {
-                System.err.println(e);
+            } catch (SQLException | IOException e) {
                 e.printStackTrace();
+                System.err.println("Failed...");
+                return;
             }
-
         }
-
     }
 }

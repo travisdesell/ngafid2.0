@@ -3,57 +3,36 @@ package org.ngafid;
 import java.io.*;
 
 import java.net.HttpURLConnection;
-import java.net.URI;
 import java.net.URL;
-import java.nio.file.*;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
-
+import java.text.ParseException;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 
-import Files.*;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.ParserConfigurationException;
-import java.text.ParseException;
-
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.stream.IntStream;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ForkJoinPool;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.ZipFile;
-import java.util.zip.ZipEntry;
 
-import org.ngafid.proximity.CalculateProximity;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.FlightError;
 import org.ngafid.flights.MalformedFlightFileException;
-import org.ngafid.flights.FlightAlreadyExistsException;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.UploadError;
 import org.ngafid.flights.process.*;
+import org.ngafid.proximity.CalculateProximity;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.EmailType;
-
-import static org.ngafid.flights.DJIFlightProcessor.processDATFile;
 
 public class ProcessUpload {
     private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
@@ -83,11 +62,6 @@ public class ProcessUpload {
     }
 
     public static void main(String[] arguments) throws SQLException {
-        String poolSizeS = System.getenv("POOL_SIZE");
-        if (poolSizeS != null)
-            poolSize = Integer.parseInt(poolSizeS);
-        pool = new ForkJoinPool(poolSize);
-
         String batchedDBS = System.getenv("BATCHED_DB");
         if (batchedDBS != null)
             batchedDB = Boolean.parseBoolean(batchedDBS);
@@ -267,18 +241,17 @@ public class ProcessUpload {
             boolean success = ingestFlights(connection, upload, uploadProcessedEmail);
             // only progress if the upload ingestion was successful
             if (success) {
-                // FindSpinEvents.findSpinEventsInUpload(connection, upload);
 
-                // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+                FindSpinEvents.findSpinEventsInUpload(connection, upload);
+                try {
+                    FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+                } catch (FatalFlightFileException | MalformedFlightFileException | ParseException e) {
+                }
 
-                // CalculateExceedences.calculateExceedences(connection, uploadId,
-                // uploadProcessedEmail);
+                CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
+                CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
 
-                // CalculateProximity.calculateProximity(connection, uploadId,
-                // uploadProcessedEmail);
-
-                // CalculateTTF.calculateTTF(connection, uploadId, uploadProcessedEmail);
-
+                CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
                 String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
 
                 uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
@@ -291,9 +264,11 @@ public class ProcessUpload {
             long diff = end - start;
             double asSeconds = ((double) diff) * 1.0e-9;
 
+            LOG.info("Processing upload took " + asSeconds + "s");
+
             uploadProcessedEmail.sendEmail();
 
-        } catch (SQLException e) {
+        } catch (IOException | SQLException e) {
             LOG.severe("ERROR processing upload: " + e);
             e.printStackTrace();
         }
@@ -316,8 +291,6 @@ public class ProcessUpload {
             this.exceptions = exceptions;
         }
     }
-
-    private static ForkJoinPool pool;
 
     public static boolean ingestFlights(Connection connection, Upload upload, UploadProcessedEmail uploadProcessedEmail)
             throws SQLException {
@@ -387,15 +360,15 @@ public class ProcessUpload {
         }
 
         // update upload in database, add upload exceptions if there are any
-        PreparedStatement updateStatement = connection.prepareStatement(
-                "UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?");
-        updateStatement.setString(1, status);
-        updateStatement.setInt(2, validFlights);
-        updateStatement.setInt(3, warningFlights);
-        updateStatement.setInt(4, errorFlights);
-        updateStatement.setInt(5, uploadId);
-        updateStatement.executeUpdate();
-        updateStatement.close();
+        try (PreparedStatement updateStatement = connection.prepareStatement(
+                "UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
+            updateStatement.setString(1, status);
+            updateStatement.setInt(2, validFlights);
+            updateStatement.setInt(3, warningFlights);
+            updateStatement.setInt(4, errorFlights);
+            updateStatement.setInt(5, uploadId);
+            updateStatement.executeUpdate();
+        }
 
         // insert all the flight errors to the database
         for (Map.Entry<String, UploadException> entry : flightErrors.entrySet()) {

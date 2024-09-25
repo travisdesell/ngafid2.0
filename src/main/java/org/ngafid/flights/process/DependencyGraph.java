@@ -14,7 +14,8 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
 /**
- * A dependency graph which represents the dependencies of ProcessSteps on one another.
+ * A dependency graph which represents the dependencies of ProcessSteps on one
+ * another.
  **/
 public class DependencyGraph {
     private static final Logger LOG = Logger.getLogger(DependencyGraph.class.getName());
@@ -38,15 +39,18 @@ public class DependencyGraph {
         void disableChildren() {
             if (enabled.get()) {
                 enabled.set(false);
-                
+
                 String reason = step.explainApplicability();
                 if (step.isRequired()) {
-                    LOG.severe("Required step " + step.getClass().getName() + " has been disabled for the following reason:\n    " + reason);
+                    LOG.severe("Required step " + step.getClass().getName()
+                            + " has been disabled for the following reason:\n    " + reason);
                     exceptions.add(new FatalFlightFileException(reason));
-                 } else {
-                    exceptions.add(new MalformedFlightFileException(reason));
+                } else {
+                    LOG.finer("Optional step " + step.getClass().getName() + " has been disabled because:\n    "
+                            + reason);
                 }
-                for (var child : requiredBy) child.disable();
+                for (var child : requiredBy)
+                    child.disable();
             }
         }
 
@@ -56,11 +60,12 @@ public class DependencyGraph {
                 if (step.isRequired()) {
                     LOG.severe("Required step " + step.toString() + " has been disabled.");
                     exceptions.add(
-                        new FatalFlightFileException(
-                            "Required step " + step.getClass().getName() 
-                            + " has been disabled because a required parent step has been disabled"));
+                            new FatalFlightFileException(
+                                    "Required step " + step.getClass().getName()
+                                            + " has been disabled because a required parent step has been disabled"));
                 }
-                for (var child : requiredBy) child.disable();
+                for (var child : requiredBy)
+                    child.disable();
             }
         }
 
@@ -72,7 +77,8 @@ public class DependencyGraph {
                     disableChildren();
                 }
             } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
-                LOG.warning("Encountered exception when calculating process step " + step.toString() + ": " + e.toString());
+                LOG.warning(
+                        "Encountered exception when calculating process step " + step.toString() + ": " + e.toString());
                 exceptions.add(e);
                 disable();
             }
@@ -80,7 +86,7 @@ public class DependencyGraph {
     }
 
     class DependencyNodeTask extends RecursiveTask<Void> {
-        private static final long serialVersionUID = 0; 
+        private static final long serialVersionUID = 0;
 
         // This is used to avoid creating duplicate tasks.
         // This isn't a problem w/ a tree-like problem, but ours is a DAG.
@@ -100,7 +106,7 @@ public class DependencyGraph {
             for (var requiredNode : node.requires) {
                 getTask(requiredNode).join();
             }
-          
+
             if (node.enabled.get())
                 node.compute();
 
@@ -108,9 +114,10 @@ public class DependencyGraph {
         }
     }
 
-    /** 
-     * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file
-     * as output columns, so all other steps will depend on this. 
+    /**
+     * Dummy step meant to act as a root node in DAG. This is done by adding all of
+     * the columns included in the file
+     * as output columns, so all other steps will depend on this.
      **/
     class DummyStep extends ProcessStep {
         Set<String> outputColumns = new HashSet<>();
@@ -122,13 +129,25 @@ public class DependencyGraph {
             outputColumns.addAll(stringTS.keySet());
         }
 
-        public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getRequiredColumns() { return Collections.<String>emptySet(); }
-        public Set<String> getOutputColumns() { return outputColumns; }
+        public Set<String> getRequiredDoubleColumns() {
+            return Collections.<String>emptySet();
+        }
 
-        public boolean airframeIsValid(String airframe) { return true; }
+        public Set<String> getRequiredStringColumns() {
+            return Collections.<String>emptySet();
+        }
 
+        public Set<String> getRequiredColumns() {
+            return Collections.<String>emptySet();
+        }
+
+        public Set<String> getOutputColumns() {
+            return outputColumns;
+        }
+
+        public boolean airframeIsValid(String airframe) {
+            return true;
+        }
 
         // Left blank intentionally
         public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
@@ -136,29 +155,31 @@ public class DependencyGraph {
     }
 
     private void nodeConflictError(ProcessStep first, ProcessStep second) throws FatalFlightFileException {
-        throw new FatalFlightFileException( 
-           "ERROR when building dependency graph! "
-           + "Two ProcessSteps are indicated as having the same output column. "
-           + "While it is possible for two ProcessSteps to have the same output column(s), " 
-           + "their use should be mutually exclusive from one another. "
-           + "\nDEBUG INFO:\n node 0: " + first.toString() + "\n node 1: " + second.toString());
-        
+        throw new FatalFlightFileException(
+                "ERROR when building dependency graph! "
+                        + "Two ProcessSteps are indicated as having the same output column. "
+                        + "While it is possible for two ProcessSteps to have the same output column(s), "
+                        + "their use should be mutually exclusive from one another. "
+                        + "\nDEBUG INFO:\n node 0: " + first.toString() + "\n node 1: " + second.toString());
+
     }
 
     private DependencyNode registerStep(ProcessStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
         nodes.add(node);
-        
+
         for (String outputColumn : step.getOutputColumns()) {
             DependencyNode other = null;
-            if ((other = columnToSource.put(outputColumn, node)) != null) nodeConflictError(step, other.step);
+            if ((other = columnToSource.put(outputColumn, node)) != null)
+                nodeConflictError(step, other.step);
         }
 
         return node;
     }
-    
+
     /**
-     * Create the edges. An edge exists from step X to step Y if step X has an output column
+     * Create the edges. An edge exists from step X to step Y if step X has an
+     * output column
      * that step Y relies upon.
      **/
     private void createEdges(DependencyNode node) throws FatalFlightFileException {
@@ -175,20 +196,22 @@ public class DependencyGraph {
     HashMap<String, DependencyNode> columnToSource = new HashMap<>(64);
     HashSet<DependencyNode> nodes = new HashSet<>(64);
     FlightBuilder builder;
-    
+
     public DependencyGraph(FlightBuilder builder, List<ProcessStep> steps) throws FlightProcessingException {
         /**
-         *  Create nodes for each step and create a mapping from output column name
-         *  to the node that outputs that column. This should be a unique mapping, as
-         *  we don't want two steps generating the same output column.
+         * Create nodes for each step and create a mapping from output column name
+         * to the node that outputs that column. This should be a unique mapping, as
+         * we don't want two steps generating the same output column.
          **/
 
         this.builder = builder;
-        
+
         try {
             registerStep(new DummyStep(builder));
-            for (var step : steps) registerStep(step);
-            for (var node : nodes) createEdges(node);
+            for (var step : steps)
+                registerStep(step);
+            for (var node : nodes)
+                createEdges(node);
         } catch (FatalFlightFileException e) {
             throw new FlightProcessingException(e);
         }
@@ -206,15 +229,15 @@ public class DependencyGraph {
                 tasks.put(node, task);
             }
         }
-        
+
         scrutinize();
-        
+
         var handles = initialTasks
-            .stream()
-            .map(x -> x.fork())
-            .collect(Collectors.toList());
+                .stream()
+                .map(x -> x.fork())
+                .collect(Collectors.toList());
         handles.forEach(ForkJoinTask::join);
-   
+
         ArrayList<Exception> fatalExceptions = new ArrayList<>();
         for (var node : nodes) {
             for (var e : node.exceptions) {
@@ -226,10 +249,10 @@ public class DependencyGraph {
                     fatalExceptions.add(se);
                 } else {
                     LOG.severe(
-                        "Encountered exception of unknown type when executing dependency graph. "
-                        + "\"" + e.getMessage() + "\"" + "\n."
-                        + "This should not be possible - if this seems plausible you should add a handler for this "
-                        + "type of exception in DependencyGraph::compute.");
+                            "Encountered exception of unknown type when executing dependency graph. "
+                                    + "\"" + e.getMessage() + "\"" + "\n."
+                                    + "This should not be possible - if this seems plausible you should add a handler for this "
+                                    + "type of exception in DependencyGraph::compute.");
                     e.printStackTrace();
                     System.exit(1);
                 }
@@ -254,7 +277,8 @@ public class DependencyGraph {
 
             for (var parent : node.requiredBy) {
                 if (!parent.step.isRequired()) {
-                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent.step + "' has a required dependent step '" + node.step + "'.");
+                    System.err.println("ERROR in your DependencyGraph! The optional step '" + parent.step
+                            + "' has a required dependent step '" + node.step + "'.");
                     System.exit(1);
                 }
             }
@@ -266,7 +290,7 @@ public class DependencyGraph {
         for (var src : nodes) {
             for (var node : nodes)
                 node.mark = false;
-            
+
             Queue<DependencyNode> q = new ArrayDeque<>();
             var dst = src;
             for (var child : src.requiredBy)
@@ -274,7 +298,8 @@ public class DependencyGraph {
 
             while ((dst = q.poll()) != null) {
                 if (dst == src) {
-                    System.err.println("ERROR in your DependencyGraph! Cycle was detected from step '" + src + "' to step '" + dst + "'.");
+                    System.err.println("ERROR in your DependencyGraph! Cycle was detected from step '" + src
+                            + "' to step '" + dst + "'.");
                     System.exit(1);
                 }
 

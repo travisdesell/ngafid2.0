@@ -13,12 +13,10 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.stream.DoubleStream;
 import java.util.zip.Deflater;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
-import org.ngafid.Database;
 import org.ngafid.common.Compression;
 import org.ngafid.filters.Pair;
 
@@ -28,7 +26,6 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
-    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
     private int id = -1;
@@ -174,44 +171,38 @@ public class DoubleTimeSeries {
 
     public static Pair<Double, Double> getMinMax(Connection connection, int flightId, String name) throws SQLException {
         String queryString = "SELECT ds.min, ds.max FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? AND dsn.name = ?";
-        PreparedStatement query = connection.prepareStatement(queryString);
-        query.setInt(1, flightId);
-        query.setString(2, name);
 
-        // LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
+        try (PreparedStatement query = connection.prepareStatement(queryString)) {
+            query.setInt(1, flightId);
+            query.setString(2, name);
 
-        if (resultSet.next()) {
-            double min = resultSet.getDouble(1);
-            double max = resultSet.getDouble(2);
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    double min = resultSet.getDouble(1);
+                    double max = resultSet.getDouble(2);
 
-            resultSet.close();
-            query.close();
-            return new Pair<Double, Double>(min, max);
+                    return new Pair<Double, Double>(min, max);
+                }
+            }
+
+            return null;
         }
-
-        return null;
     }
 
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
         ArrayList<String> names = new ArrayList<>();
 
         String queryString = "SELECT name FROM double_series_names ORDER BY name";
-        PreparedStatement query = connection.prepareStatement(queryString);
+        try (PreparedStatement query = connection.prepareStatement(queryString);
+                ResultSet resultSet = query.executeQuery()) {
 
-        // LOG.info(query.toString());
-        ResultSet resultSet = query.executeQuery();
+            while (resultSet.next()) {
+                String name = resultSet.getString(1);
+                names.add(name);
+            }
 
-        while (resultSet.next()) {
-            // double series name existed in the database, return the id
-            String name = resultSet.getString(1);
-            names.add(name);
+            return names;
         }
-
-        resultSet.close();
-        query.close();
-
-        return names;
     }
 
     /**
@@ -223,22 +214,21 @@ public class DoubleTimeSeries {
      */
     public static ArrayList<DoubleTimeSeries> getAllDoubleTimeSeries(Connection connection, int flightId)
             throws SQLException, IOException {
-        PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
-                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name");
+        try (PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
+                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+            query.setInt(1, flightId);
 
-        query.setInt(1, flightId);
-        LOG.info(query.toString());
+            ArrayList<DoubleTimeSeries> allSeries = new ArrayList<DoubleTimeSeries>();
 
-        ArrayList<DoubleTimeSeries> allSeries = new ArrayList<DoubleTimeSeries>();
-        ResultSet resultSet = query.executeQuery();
-        while (resultSet.next()) {
-            DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
-            allSeries.add(result);
+            try (ResultSet resultSet = query.executeQuery()) {
+                while (resultSet.next()) {
+                    DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
+                    allSeries.add(result);
+                }
+            }
+
+            return allSeries;
         }
-        resultSet.close();
-        query.close();
-
-        return allSeries;
     }
 
     /**
@@ -252,33 +242,22 @@ public class DoubleTimeSeries {
      *         not exist.
      */
     public static DoubleTimeSeries getDoubleTimeSeries(Connection connection, int flightId, String name)
-            throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
-                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?");
+            throws IOException, SQLException {
+        try (PreparedStatement query = connection.prepareStatement("SELECT " + DS_COLUMNS
+                + " FROM double_series AS ds INNER JOIN double_series_names AS dsn on dsn.id = ds.name_id WHERE ds.flight_id = ? AND dsn.name = ?")) {
+            query.setInt(1, flightId);
+            query.setString(2, name);
 
-        query.setInt(1, flightId);
-        query.setString(2, name);
-        LOG.info(query.toString());
+            LOG.info(query.toString());
 
-        ResultSet resultSet = query.executeQuery();
-        if (resultSet.next()) {
-            try {
-                DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
-                return result;
-            } catch (IOException e) {
-                LOG.severe(
-                        "Encountered IOException while reading double time series from database. This should not happen.");
-                System.exit(1);
-            } finally {
-                resultSet.close();
-                query.close();
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    DoubleTimeSeries result = new DoubleTimeSeries(connection, resultSet);
+                    return result;
+                }
+
+                return null;
             }
-            return null; // This is unreachable
-        } else {
-            // TODO: should probably throw an exception
-            resultSet.close();
-            query.close();
-            return null;
         }
     }
 
@@ -463,58 +442,44 @@ public class DoubleTimeSeries {
         preparedStatement.addBatch();
     }
 
-    public void updateDatabase(Connection connection, int flightId) {
+    public void updateDatabase(Connection connection, int flightId) throws IOException, SQLException {
         if (this.temporary)
             return;
-        try {
-            setTypeId(connection);
-            setNameId(connection);
+        setTypeId(connection);
+        setNameId(connection);
 
-            PreparedStatement preparedStatement = connection.prepareStatement(
-                    "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        try (PreparedStatement preparedStatement = connection.prepareStatement(
+                "INSERT INTO double_series (flight_id, name_id, data_type_id, length, valid_length, min, avg, max, data) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)")) {
             this.addBatch(connection, preparedStatement, flightId);
             preparedStatement.executeBatch();
-            preparedStatement.close();
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.exit(1);
         }
     }
 
     public static Optional<DoubleTimeSeries> getExistingLaggedSeries(Connection connection, int flightId,
-            String seriesName, int n) {
+            String seriesName, int n) throws IOException, SQLException {
         String laggedName = seriesName + LAG_SUFFIX + n;
 
-        try {
-            DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
-            if (laggedSeries != null)
-                return Optional.of(laggedSeries);
-        } catch (SQLException se) {
-            se.printStackTrace();
-        }
+        DoubleTimeSeries laggedSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+        if (laggedSeries != null)
+            return Optional.of(laggedSeries);
 
         return Optional.empty();
     }
 
     public static Optional<DoubleTimeSeries> getExistingLeadingSeries(Connection connection, int flightId,
-            String seriesName, int n) {
+            String seriesName, int n) throws IOException, SQLException {
         String laggedName = seriesName + LEAD_SUFFIX + n;
 
-        try {
-            DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
-            if (leadingSeries != null)
-                return Optional.of(leadingSeries);
-        } catch (SQLException se) {
-            se.printStackTrace();
-        }
-
+        DoubleTimeSeries leadingSeries = getDoubleTimeSeries(connection, flightId, laggedName);
+        if (leadingSeries != null)
+            return Optional.of(leadingSeries);
         return Optional.empty();
     }
 
     /**
      * Lags a timeseries N indicies
      */
-    public DoubleTimeSeries lag(Connection connection, int n) throws SQLException {
+    public DoubleTimeSeries lag(Connection connection, int n) throws IOException, SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(connection, this.flightId, this.name, n);
 
         if (existingSeries.isPresent()) {
@@ -534,7 +499,7 @@ public class DoubleTimeSeries {
         return laggedSeries;
     }
 
-    public DoubleTimeSeries lead(Connection connection, int n) throws SQLException {
+    public DoubleTimeSeries lead(Connection connection, int n) throws IOException, SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLeadingSeries(connection, this.flightId,
                 this.name, n);
 

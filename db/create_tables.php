@@ -142,10 +142,12 @@ if (!$update_2022_02_17) {
 
     $query = "CREATE TABLE `uploads` (
         `id` INT(11) NOT NULL AUTO_INCREMENT,
+        `parent_id` INT(11) NULL DEFAULT NULL,
         `fleet_id` INT(11) NOT NULL,
         `uploader_id` INT(11) NOT NULL,
         `filename` VARCHAR(256) NOT NULL,
         `identifier` VARCHAR(128) NOT NULL,
+        `kind` enum('FILE', 'AIRSYNC', 'DERIVED') DEFAULT 'FILE',
         `number_chunks` int(11) NOT NULL,
         `uploaded_chunks` int(11) NOT NULL,
         `chunk_status` VARCHAR(8096) NOT NULL,
@@ -163,8 +165,10 @@ if (!$update_2022_02_17) {
         PRIMARY KEY (`id`),
         UNIQUE KEY (`uploader_id`, `md5_hash`),
         UNIQUE KEY (`fleet_id`, `md5_hash`),
+        UNIQUE KEY (`parent_id`),
         FOREIGN KEY(`fleet_id`) REFERENCES fleet(`id`),
-        FOREIGN KEY(`uploader_id`) REFERENCES user(`id`)
+        FOREIGN KEY(`uploader_id`) REFERENCES user(`id`),
+        FOREIGN KEY(`parent_id`) REFERENCES uploads(`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=latin1";
 
     query_ngafid_db($query);
@@ -630,7 +634,8 @@ if (!$update_2022_02_17) {
 
     # CONSTRAINT `airsync_fleet_id_fk` FOREIGN KEY (`fleet_id`) REFERENCES `fleet` (`id`)
     query_ngafid_db($query);
-
+    
+    # Node that the id here is not an auto-generated key, it is the id that airsync provides.
     $query = "CREATE TABLE `airsync_imports` (
         `id` int(11) NOT NULL,
         `time_received` timestamp NULL DEFAULT NULL,

@@ -11,10 +11,11 @@ import java.util.logging.Logger;
 public class ValidateImporting {
 
     private static final Logger LOG = Logger.getLogger(Database.class.getName());
-    
+
     public static void main(String[] args) throws SQLException {
         Connection connectionNew = Database.getConnection();
-        Connection connectionOld = connectionNew; // Database.createConnection("ngafid", Database.dbName, Database.dbHost, Database.dbPassword);
+        Connection connectionOld = connectionNew; // Database.createConnection("ngafid", Database.dbName,
+                                                  // Database.dbHost, Database.dbPassword);
 
         HashMap<String, Integer> newFlights = idMap(connectionNew);
         HashMap<String, Integer> oldFlights = idMap(connectionOld);
@@ -60,19 +61,17 @@ public class ValidateImporting {
         String idQuery = "SELECT id, md5_hash FROM flights LIMIT 1000000;";
 
         HashMap<String, Integer> hash2id = new HashMap<>();
-        PreparedStatement statement = connection.prepareStatement(idQuery);
-        ResultSet results = statement.executeQuery();
+        try (PreparedStatement statement = connection.prepareStatement(idQuery);
+                ResultSet results = statement.executeQuery()) {
 
-        while (results.next()) {
-            int id = results.getInt(1);
-            String md5 = results.getString(2);
-            LOG.info("md5 = " + md5);
-            hash2id.put(md5, id);
+            while (results.next()) {
+                int id = results.getInt(1);
+                String md5 = results.getString(2);
+                LOG.info("md5 = " + md5);
+                hash2id.put(md5, id);
+            }
         }
 
-        results.close();
-        statement.close();
-    
         return hash2id;
     }
 

@@ -1,10 +1,8 @@
 package org.ngafid.flights.process;
 
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
@@ -18,25 +16,17 @@ import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipOutputStream;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Objects;
-import java.util.Queue;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -57,7 +47,6 @@ import org.ngafid.flights.Upload;
 public class Pipeline implements AutoCloseable {
     private static Logger LOG = Logger.getLogger(Pipeline.class.getName());
 
-    private static final int BATCH_SIZE = 1;
     private static int parallelism = 1;
 
     private static ForkJoinPool pool = null;
@@ -115,13 +104,11 @@ public class Pipeline implements AutoCloseable {
             derivedFileSystem.close();
     }
 
-    public void execute() throws IOException {
+    public void execute() {
         if (Pipeline.pool == null)
             initialize();
 
         LOG.info("Creating pipeline to process upload id " + upload.id + " / " + upload.filename);
-
-        var flights = new ArrayBlockingQueue<Flight>(BATCH_SIZE * 2);
 
         var processHandle = pool.submit(() -> this.parallelStream()
                 .filter(Objects::nonNull)
@@ -132,13 +119,12 @@ public class Pipeline implements AutoCloseable {
                             .map(this::finalize)
                             .collect(Collectors.toList());
                     try (Connection connection = Database.getConnection()) {
-                        LOG.info("Writing " + f.size() + " flights to database:");
                         for (var flight : f) {
                             LOG.info("STATUS: " + flight.getStatus());
-                            LOG.info("ERRORS: " + flight.getExceptions().size());
+                            LOG.info("WARNINGS: " + flight.getExceptions().size());
                         }
                         Flight.batchUpdateDatabase(connection, upload, f);
-                    } catch (SQLException e) {
+                    } catch (SQLException | IOException e) {
                         LOG.info("Encountered SQLException trying to get database connection...");
                         e.printStackTrace();
                         this.fail();
@@ -146,9 +132,6 @@ public class Pipeline implements AutoCloseable {
                 }));
 
         processHandle.join();
-        if (flights.size() > 0) {
-            Flight.batchUpdateDatabase(connection, upload, flights);
-        }
     }
 
     /**
@@ -159,30 +142,10 @@ public class Pipeline implements AutoCloseable {
         // TODO: Implement
     }
 
-    public FileSystem createDerivedFileSystem() throws IOException {
-        Path derivedZipPath = Paths.get(derivedUpload.getDerivedDirectory(), derivedUpload.getDerivedFilename());
-
-        // May need to create this directory
-        Files.createDirectories(derivedZipPath.getParent());
-
-        File f = new File(derivedZipPath.toString());
-        ZipOutputStream out = new ZipOutputStream(new FileOutputStream(f));
-        out.close();
-
-        Map<String, String> zipENV = new HashMap<>();
-        zipENV.put("create", "true");
-
-        Path zipFilePath = Paths.get(derivedUpload.getDerivedDirectory() + "/" + derivedUpload.getDerivedFilename());
-
-        URI zipURI = URI.create("jar:" + zipFilePath.toUri());
-        return FileSystems.newFileSystem(zipURI, zipENV);
-    }
-
     public synchronized void addDerivedFile(String filename, byte[] data) throws IOException, SQLException {
         if (derivedFileSystem == null) {
-            derivedUpload = Upload.createDerivedUpload(connection, upload.uploaderId, upload.fleetId, upload.filename,
-                    upload.identifier, upload.md5Hash);
-            derivedFileSystem = createDerivedFileSystem();
+            derivedUpload = Upload.createDerivedUpload(connection, upload);
+            derivedFileSystem = derivedUpload.getZipFileSystem(Map.of("create", "true"));
         }
 
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
@@ -231,6 +194,7 @@ public class Pipeline implements AutoCloseable {
         try {
             return fb.build(connection);
         } catch (FlightProcessingException e) {
+            LOG.info("Encountered an irrecoverable issue processing a flight");
             e.printStackTrace();
             flightErrors.put(fb.meta.filename, new UploadException(e.getMessage(), e, fb.meta.filename));
             return null;
@@ -270,9 +234,9 @@ public class Pipeline implements AutoCloseable {
             validFlightsCount.incrementAndGet();
         }
         LOG.info("FLIGHT STATUS = " + flight.getStatus());
-        for (var e : flight.getExceptions()) {
-            e.printStackTrace();
-        }
+        // for (var e : flight.getExceptions()) {
+        // e.printStackTrace();
+        // }
         flightInfo.put(flight.getFilename(),
                 new FlightInfo(flight.getId(), flight.getNumberRows(), flight.getFilename(), flight.getExceptions()));
 
