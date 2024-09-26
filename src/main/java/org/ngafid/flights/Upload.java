@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.net.URI;
 import java.nio.file.FileSystem;
 import java.nio.file.FileSystems;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
@@ -332,7 +333,7 @@ public class Upload {
 
     public static Upload createAirsyncUpload(Connection connection, int fleetId) throws SQLException {
         Timestamp ts = Timestamp.valueOf(LocalDateTime.now());
-        return createUpload(connection, -1, fleetId, null, "airsync.zip", "airsync.zip", Kind.AIRSYNC, 0, 1,
+        return createUpload(connection, 1, fleetId, null, "airsync.zip", "airsync.zip", Kind.AIRSYNC, 0, 1,
                 ts.toString(), 1, "1", "UPLOADING");
     }
 
@@ -346,7 +347,7 @@ public class Upload {
             String filename, String identifier, Kind kind, long size, int numberChunks, String md5hash,
             int uploadedChunks, String chunkStatus, String uploadStatus) throws SQLException {
         PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()");
+                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()");
         query.setInt(1, uploaderId);
         query.setInt(2, fleetId);
 
@@ -592,6 +593,7 @@ public class Upload {
     }
 
     public FileSystem getZipFileSystem(Map<String, String> env) throws IOException {
+        Files.createDirectories(getArchivePath().getParent());
         return FileSystems.newFileSystem(URI.create("jar:" + getArchivePath().toUri()), env);
     }
 

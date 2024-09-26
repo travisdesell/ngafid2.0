@@ -494,6 +494,7 @@ public class AirSyncFleet extends Fleet {
                 if (imports != null && !imports.isEmpty()) {
                     for (var imp : imports) {
                         if (!imp.exists(connection)) {
+                            imp.setUploadId(upload.id);
                             byte[] data = imp.download();
                             Files.write(zipFileSystem.getPath("/" + imp.getFilename()), data);
                             imp.createImport(connection, null);

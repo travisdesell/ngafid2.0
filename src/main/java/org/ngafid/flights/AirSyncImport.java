@@ -98,6 +98,10 @@ public class AirSyncImport {
         return localDateTimeUpload;
     }
 
+    public void setUploadId(int uploadId) {
+        this.uploadId = uploadId;
+    }
+
     /**
      * Gets the uploader id of the AirSync user
      *
