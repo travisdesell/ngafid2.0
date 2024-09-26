@@ -94,6 +94,10 @@ public class AirSyncImport {
                 DateTimeFormatter.ISO_LOCAL_DATE_TIME);
     }
 
+    public LocalDateTime getUploadTime() {
+        return localDateTimeUpload;
+    }
+
     /**
      * Gets the uploader id of the AirSync user
      *
@@ -103,7 +107,7 @@ public class AirSyncImport {
      */
     public static int getUploaderId() throws SQLException {
         if (AIRSYNC_UPLOADER_ID <= 0) {
-            String sql = "SELECT id FROM user WHERE first_name = 'airsync' AND last_name = 'user'";
+            String sql = "SELECT id FROM user WHERE id = -1";
             try (Connection connection = Database.getConnection();
                     PreparedStatement query = connection.prepareStatement(sql)) {
                 ResultSet resultSet = query.executeQuery();

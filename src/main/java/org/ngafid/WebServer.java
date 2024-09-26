@@ -91,11 +91,11 @@ public final class WebServer {
         }
         MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
 
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
-            LOG.info(message);
-            sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
-        }));
+        // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+        //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
+        //     LOG.info(message);
+        //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
+        // }));
     }
 
     /**

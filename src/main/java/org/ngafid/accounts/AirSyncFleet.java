@@ -7,6 +7,9 @@ import java.time.Duration;
 import java.time.LocalDateTime;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.Collections;
+import java.util.stream.Collectors;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -24,6 +27,7 @@ import org.ngafid.flights.AirSync;
 import org.ngafid.flights.AirSyncEndpoints;
 import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
+import org.ngafid.flights.MalformedFlightFileException;
 
 import com.google.gson.Gson;
 import com.google.gson.reflect.*;
@@ -33,6 +37,7 @@ import com.google.gson.reflect.*;
  */
 public class AirSyncFleet extends Fleet {
     private AirSyncAuth authCreds;
+    private String airsyncFleetName;
     private List<AirSyncAircraft> aircraft;
     private transient LocalDateTime lastQueryTime;
 
@@ -51,16 +56,18 @@ public class AirSyncFleet extends Fleet {
     /**
      * Default constructor
      *
-     * @param id            the fleet id
-     * @param name          this fleet's name
-     * @param airSyncAuth   the credentials for this fleet
-     * @param lastQueryTime the last time this fleet was synced with AirSync
-     * @param timeout       how long the fleet is set to wait before checking for
-     *                      updates again
+     * @param id               the fleet id
+     * @param fleetName        the name of this fleet in the NGAFID
+     * @param airsyncFleetName the name of the fleet on Airsyncs service
+     * @param airSyncAuth      the credentials for this fleet
+     * @param lastQueryTime    the last time this fleet was synced with AirSync
+     * @param timeout          how long the fleet is set to wait before checking for updates again
      */
-    public AirSyncFleet(int id, String name, AirSyncAuth airSyncAuth, LocalDateTime lastQueryTime, int timeout) {
-        super(id, name);
+    public AirSyncFleet(int id, String fleetName, String airsyncFleetName, AirSyncAuth airSyncAuth,
+            LocalDateTime lastQueryTime, int timeout) {
+        super(id, fleetName);
         this.authCreds = airSyncAuth;
+        this.airsyncFleetName = airsyncFleetName;
         this.lastQueryTime = lastQueryTime;
 
         if (timeout <= 0) {
@@ -78,16 +85,17 @@ public class AirSyncFleet extends Fleet {
      */
     private AirSyncFleet(ResultSet resultSet) throws SQLException {
         super(resultSet.getInt(1), resultSet.getString(2));
-        this.authCreds = new AirSyncAuth(resultSet.getString(3), resultSet.getString(4));
+        this.airsyncFleetName = resultSet.getString(3);
+        this.authCreds = new AirSyncAuth(resultSet.getString(4), resultSet.getString(5));
 
-        Timestamp timestamp = resultSet.getTimestamp(5);
+        Timestamp timestamp = resultSet.getTimestamp(6);
         if (timestamp == null) {
             this.lastQueryTime = LocalDateTime.MIN;
         } else {
             this.lastQueryTime = timestamp.toLocalDateTime();
         }
 
-        int timeout = resultSet.getInt(6);
+        int timeout = resultSet.getInt(7);
         if (timeout <= 0) {
             this.timeout = DEFAULT_TIMEOUT;
         } else {
@@ -135,12 +143,12 @@ public class AirSyncFleet extends Fleet {
 
                 LocalDateTime lastQueryTime = null;
                 if (resultSet.next()) {
-                    lastQueryTime = resultSet.getTimestamp(1).toLocalDateTime();
+                    this.lastQueryTime = resultSet.getTimestamp(1).toLocalDateTime();
                 }
             }
         }
 
-        return lastQueryTime;
+        return this.lastQueryTime;
     }
 
     /**
@@ -204,8 +212,7 @@ public class AirSyncFleet extends Fleet {
     }
 
     /**
-     * Determines if the fleet is "out of data" i.e., is the last time we checked
-     * with airsync longer
+     * Determines if the fleet is "out of data" i.e., is the last time we checked with airsync longer
      * ago than the timeout specified?
      *
      * @param connection the DBMS connection
@@ -213,8 +220,6 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if there is a DBMS issue
      */
     public boolean isQueryOutdated(Connection connection) throws SQLException {
-        LOG.info("dur " + Duration.between(getLastQueryTime(connection), LocalDateTime.now()).toMinutes());
-        LOG.info("dur " + getTimeout(connection));
         return (Duration.between(getLastQueryTime(connection), LocalDateTime.now())
                 .toMinutes() >= getTimeout(connection));
     }
@@ -230,7 +235,7 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if the DBMS has an error
      */
     public static AirSyncFleet getAirSyncFleet(Connection connection, int fleetId) throws SQLException {
-        String sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id WHERE fl.id = "
+        String sql = "SELECT fl.id, fl.fleet_name, sync.airsync_fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id WHERE fl.id = "
                 + fleetId;
 
         try (PreparedStatement query = connection.prepareStatement(sql);
@@ -277,7 +282,6 @@ public class AirSyncFleet extends Fleet {
             try (PreparedStatement query = connection.prepareStatement(sql)) {
                 query.setInt(1, timeoutMinutes);
                 query.setInt(2, super.getId());
-
                 query.executeUpdate();
             }
         } else {
@@ -349,18 +353,23 @@ public class AirSyncFleet extends Fleet {
             connection.setDoOutput(true);
             connection.setRequestProperty("Authorization", this.authCreds.bearerString());
 
-            InputStream is = connection.getInputStream();
-            byte[] respRaw = is.readAllBytes();
+            byte[] respRaw;
+            try (InputStream is = connection.getInputStream()) {
+                respRaw = is.readAllBytes();
+            }
 
             String resp = new String(respRaw).replaceAll("tail_number", "tailNumber");
 
             Type target = new TypeToken<List<AirSyncAircraft>>() {
             }.getType();
             System.out.println(resp);
-            this.aircraft = gson.fromJson(resp, target);
 
+            List<AirSyncAircraft> aircraft = gson.fromJson(resp, target);
             for (AirSyncAircraft a : aircraft)
                 a.initialize(this);
+
+            this.aircraft = aircraft.stream().filter(a -> a.getAirSyncFleetName().equals(airsyncFleetName))
+                    .collect(Collectors.toList());
         }
 
         return this.aircraft;
@@ -389,16 +398,14 @@ public class AirSyncFleet extends Fleet {
         }
 
         if (fleets == null || fleets.length != asFleetCount) {
-            sql = "SELECT fl.id, fl.fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
+            sql = "SELECT fl.id, fl.fleet_name, sync.airsync_fleet_name, sync.api_key, sync.api_secret, sync.last_upload_time, sync.timeout FROM fleet AS fl INNER JOIN airsync_fleet_info AS sync ON sync.fleet_id = fl.id";
             try (PreparedStatement query = connection.prepareStatement(sql);
                     ResultSet resultSet = query.executeQuery()) {
                 fleets = new AirSyncFleet[asFleetCount];
-
                 int i = 0;
                 while (resultSet.next()) {
                     fleets[i++] = new AirSyncFleet(resultSet);
                 }
-
             }
         }
 
