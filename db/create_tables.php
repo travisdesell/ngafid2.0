@@ -629,6 +629,7 @@ if (!$update_2022_02_17) {
         `fleet_id` int(11) NOT NULL,
         `flight_id` int(11) DEFAULT NULL,
         `tail` varchar(512) NOT NULL,
+
         PRIMARY KEY (`id`),
         KEY `airsync_imports_uploads_null_fk` (`upload_id`),
         KEY `airsync_imports_fleet_id_fk` (`fleet_id`),
