@@ -192,11 +192,10 @@ public class Airframes {
                     } else {
                         // TODO: We need a better way to throw non-recoverable errors e.g. FatalFlightFileException but
                         // not for flight files in particular
-                        System.err.println(
+                        LOG.severe(
                                 "ERROR: tried to look up airframe type '" + airframeType
                                         + "' and it was not in the database.");
-                        System.err.println("Please update the airframe_types table with this new airframe type");
-                        System.exit(1);
+                        LOG.severe("Please update the airframe_types table with this new airframe type");
                         return -1;
                     }
                 }

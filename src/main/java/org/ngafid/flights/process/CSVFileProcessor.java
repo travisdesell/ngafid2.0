@@ -106,9 +106,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 validRows += 1;
             }
 
-            // This flight file contains 0 valid rows, or something is seriously wrong with
-            // it.
-            if (validRows == 0) {
+            // If we detect an invalid row before the last row of the file, or there are no valid rows.
+            if (validRows < Math.max(columns.size() - 2, 0)) {
                 throw new FatalFlightFileException(
                         "Flight file has 0 valid rows - something serious is wrong with the format.");
             }

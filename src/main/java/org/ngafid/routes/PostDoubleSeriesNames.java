@@ -34,13 +34,15 @@ public class PostDoubleSeriesNames implements Route {
         ArrayList<String> names = new ArrayList<String>();
 
         public DoubleSeriesNames(Connection connection, int flightId) throws SQLException {
-            PreparedStatement query = connection.prepareStatement(
-                    "SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name");
-            query.setInt(1, flightId);
-            ResultSet resultSet = query.executeQuery();
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT dsn.name FROM double_series AS ds INNER JOIN double_series_names AS dsn ON ds.name_id = dsn.id WHERE ds.flight_id = ? ORDER BY dsn.name")) {
+                query.setInt(1, flightId);
 
-            while (resultSet.next()) {
-                names.add(resultSet.getString(1));
+                try (ResultSet resultSet = query.executeQuery()) {
+                    while (resultSet.next()) {
+                        names.add(resultSet.getString(1));
+                    }
+                }
             }
         }
     }

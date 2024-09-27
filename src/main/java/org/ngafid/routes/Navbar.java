@@ -33,20 +33,22 @@ public class Navbar {
 
             if ((fleetId = user.getFleetId()) > 0) {
                 String sql = "SELECT EXISTS(SELECT fleet_id FROM airsync_fleet_info WHERE fleet_id = ?)";
-                PreparedStatement query = connection.prepareStatement(sql);
+                try (PreparedStatement query = connection.prepareStatement(sql)) {
 
-                query.setInt(1, fleetId);
+                    query.setInt(1, fleetId);
 
-                ResultSet resultSet = query.executeQuery();
+                    try (ResultSet resultSet = query.executeQuery()) {
 
-                if (resultSet.next()) {
-                    airSyncEnabled = resultSet.getBoolean(1);
-                }
+                        if (resultSet.next()) {
+                            airSyncEnabled = resultSet.getBoolean(1);
+                        }
 
-                if (user != null) {
-                    modifyTailsAccess = user.hasUploadAccess(fleetId);
-                    hasUploadAccess = user.hasUploadAccess(fleetId);
-                    unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
+                        if (user != null) {
+                            modifyTailsAccess = user.hasUploadAccess(fleetId);
+                            hasUploadAccess = user.hasUploadAccess(fleetId);
+                            unconfirmedTailsCount = user.getUnconfirmedTailsCount(connection);
+                        }
+                    }
                 }
             }
         } catch (SQLException e) {

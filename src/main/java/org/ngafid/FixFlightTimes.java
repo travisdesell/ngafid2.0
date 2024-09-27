@@ -6,6 +6,7 @@ import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -197,7 +198,7 @@ public class FixFlightTimes {
             System.out.println("processed " + count + " flights");
 
             connection.close();
-        } catch (SQLException e) {
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
             System.exit(1);
         }

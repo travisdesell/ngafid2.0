@@ -63,13 +63,14 @@ public class TimeUtils {
 
     public static long toEpochSecond(String date, String time, String offset) {
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(date + " " + time, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime ldt = LocalDateTime.parse(date.trim() + " " + time.trim(),
+                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
         // fix bad offset values
         offset = updateBadOffset(ldt, offset);
 
         // parse the offset
-        ZoneOffset zoneOffset = ZoneOffset.of(offset);
+        ZoneOffset zoneOffset = ZoneOffset.of(offset.trim());
 
         // create an OffsetDateTime using the parsed offset
         OffsetDateTime odt = OffsetDateTime.of(ldt, zoneOffset);

@@ -1581,7 +1581,7 @@ public class Flight {
         return series;
     }
 
-    public StringTimeSeries getStringTimeSeries(Connection connection, String name) throws SQLException {
+    public StringTimeSeries getStringTimeSeries(Connection connection, String name) throws IOException, SQLException {
         StringTimeSeries series = StringTimeSeries.getStringTimeSeries(connection, id, name);
         this.stringTimeSeries.put(name, series);
         return series;

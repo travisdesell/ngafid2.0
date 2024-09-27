@@ -1,18 +1,8 @@
 package org.ngafid.flights;
 
 import org.ngafid.common.Compression;
-import org.ngafid.flights.SeriesNames;
-import org.ngafid.flights.TypeNames;
-
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.DataInputStream;
-import java.io.ObjectOutputStream;
-import java.io.ObjectInputStream;
 import java.io.IOException;
 
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.sql.Blob;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,18 +11,13 @@ import java.sql.SQLException;
 import java.sql.ResultSet;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 import java.util.zip.Deflater;
-import java.util.zip.Inflater;
 
 import javax.sql.rowset.serial.SerialBlob;
 
-
 public class StringTimeSeries {
     private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
-    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
     private static final int SIZE_HINT = 256;
 
     private int nameId = -1;
@@ -41,7 +26,6 @@ public class StringTimeSeries {
     private String dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
-
 
     public StringTimeSeries(String name, String dataType, int sizeHint) {
         this.name = name;
@@ -61,7 +45,8 @@ public class StringTimeSeries {
         setTypeId(connection);
     }
 
-    public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries) throws SQLException {
+    public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries)
+            throws SQLException {
         this(name, dataType, timeSeries);
         setNameId(connection);
         setTypeId(connection);
@@ -77,64 +62,60 @@ public class StringTimeSeries {
                 validCount++;
             }
         }
-    } 
+    }
 
     // Added to get results for StringTimeSeries
-    public StringTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException, ClassNotFoundException {
+    public StringTimeSeries(Connection connection, ResultSet resultSet)
+            throws SQLException, IOException, ClassNotFoundException {
 
         this.nameId = resultSet.getInt(1);
         this.name = SeriesNames.getStringName(connection, this.nameId);
-        //System.out.println("name: " + name);
+        // System.out.println("name: " + name);
 
         this.typeId = resultSet.getInt(2);
         this.dataType = TypeNames.getName(connection, this.typeId);
-        //System.out.println("data type: " + dataType);
+        // System.out.println("data type: " + dataType);
 
         int length = resultSet.getInt(3);
-        //System.out.println("length: " + length);
+        // System.out.println("length: " + length);
         validCount = resultSet.getInt(4);
-        //System.out.println("valid count: " + validCount);
+        // System.out.println("valid count: " + validCount);
 
         Blob values = resultSet.getBlob(5);
-        byte[] bytes = values.getBytes(1, (int)values.length());
-        //System.out.println("values.length: " + (int)values.length());
+        byte[] bytes = values.getBytes(1, (int) values.length());
+        // System.out.println("values.length: " + (int)values.length());
         values.free();
-        
-        // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String> objects into the StringTimeSeries cache.
+
+        // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String>
+        // objects into the StringTimeSeries cache.
         this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
     }
-    
-    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name) throws SQLException {
-        PreparedStatement query = connection.prepareStatement("SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?");
 
-        query.setString(1, name);
-        query.setInt(2, flightId);
+    public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
+            throws IOException, SQLException {
+        try (PreparedStatement query = connection.prepareStatement(
+                "SELECT ss.name_id, ss.data_type_id, ss.length, ss.valid_length, ss.data FROM string_series AS ss INNER JOIN string_series_names AS ssn ON ssn.id = ss.name_id WHERE ssn.name = ? AND ss.flight_id = ?")) {
 
-        //LOG.info(query.toString());
+            query.setString(1, name);
+            query.setInt(2, flightId);
 
-        ResultSet resultSet = query.executeQuery();
-        if (resultSet.next()) {
-            try {
-                StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
-                //System.out.println( "StringTimeSeries.getStringTimeSeries: " + sts.name + "_" + sts.dataType );
-                resultSet.close();
-                query.close();
-                return sts;
-            } catch (IOException | ClassNotFoundException e) {
-                LOG.severe("Failed to read string time series from database due to a serialization error");
-                e.printStackTrace();
-                return null;
-            } finally {
-                resultSet.close();
-                query.close();
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    try {
+                        StringTimeSeries sts = new StringTimeSeries(connection, resultSet);
+                        return sts;
+                    } catch (ClassNotFoundException e) {
+                        LOG.severe("Failed to read string time series from database due to a serialization error");
+                        e.printStackTrace();
+                        return null;
+                    }
+                } else {
+                    return null;
+                }
             }
-        } else {
-            resultSet.close();
-            query.close();
-            return null;
         }
     }
-    
+
     private void setNameId(Connection connection) throws SQLException {
         this.nameId = SeriesNames.getStringNameId(connection, name);
     }
@@ -142,12 +123,14 @@ public class StringTimeSeries {
     private void setTypeId(Connection connection) throws SQLException {
         this.typeId = TypeNames.getId(connection, dataType);
     }
+
     public String toString() {
         return "[StringTimeSeries '" + name + "' size: " + timeSeries.size() + ", validCount: " + validCount + "]";
     }
 
     public void add(String s) {
-        if (!s.equals("")) validCount++;
+        if (!s.equals(""))
+            validCount++;
         timeSeries.add(s);
     }
 
@@ -196,7 +179,7 @@ public class StringTimeSeries {
             if (current.equals("")) {
                 position--;
             } else {
-                return new String[]{current, String.valueOf(position)};
+                return new String[] { current, String.valueOf(position) };
             }
         }
         return null;
@@ -211,13 +194,15 @@ public class StringTimeSeries {
     }
 
     public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
-        return connection.prepareStatement("INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
+        return connection.prepareStatement(
+                "INSERT INTO string_series (flight_id, name_id, data_type_id, length, valid_length, data) VALUES (?, ?, ?, ?, ?, ?)");
     }
 
-    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId) throws SQLException, IOException {
+    public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
+            throws SQLException, IOException {
         if (nameId == -1)
             setNameId(connection);
-        if (typeId == -1) 
+        if (typeId == -1)
             setTypeId(connection);
 
         preparedStatement.setInt(1, flightId);
@@ -234,18 +219,11 @@ public class StringTimeSeries {
         preparedStatement.addBatch();
     }
 
-    public void updateDatabase(Connection connection, int flightId) {
-        try {
-            PreparedStatement preparedStatement = createPreparedStatement(connection);
-
+    public void updateDatabase(Connection connection, int flightId) throws IOException, SQLException {
+        try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             this.addBatch(connection, preparedStatement, flightId);
 
             preparedStatement.executeUpdate();
-            preparedStatement.close();
-
-        } catch (SQLException | IOException e) {
-            e.printStackTrace();
-            System.exit(1);
         }
     }
 
@@ -253,7 +231,7 @@ public class StringTimeSeries {
         StringTimeSeries newSeries = new StringTimeSeries(connection, name, dataType);
 
         for (int i = from; i < until; i++)
-          newSeries.add(this.timeSeries.get(i));
+            newSeries.add(this.timeSeries.get(i));
 
         return newSeries;
     }
@@ -262,9 +240,8 @@ public class StringTimeSeries {
         StringTimeSeries newSeries = new StringTimeSeries(name, dataType);
 
         for (int i = from; i < until; i++)
-          newSeries.add(this.timeSeries.get(i));
+            newSeries.add(this.timeSeries.get(i));
 
         return newSeries;
     }
 }
-

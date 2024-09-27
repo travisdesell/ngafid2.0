@@ -58,21 +58,21 @@ public class GetCreateAccount implements Route {
             try (Connection connection = Database.getConnection()) {
                 ArrayList<String> names = new ArrayList<String>();
 
-                PreparedStatement query = connection
+                try (PreparedStatement query = connection
                         .prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
-                ResultSet resultSet = query.executeQuery();
-
-                boolean first = true;
-                while (resultSet.next()) {
-                    if (first) {
-                        first = false;
-                        fleetnamesJavascript.append("\"");
-                        fleetnamesJavascript.append(resultSet.getString(1));
-                        fleetnamesJavascript.append("\"");
-                    } else {
-                        fleetnamesJavascript.append(", \"");
-                        fleetnamesJavascript.append(resultSet.getString(1));
-                        fleetnamesJavascript.append("\"");
+                        ResultSet resultSet = query.executeQuery()) {
+                    boolean first = true;
+                    while (resultSet.next()) {
+                        if (first) {
+                            first = false;
+                            fleetnamesJavascript.append("\"");
+                            fleetnamesJavascript.append(resultSet.getString(1));
+                            fleetnamesJavascript.append("\"");
+                        } else {
+                            fleetnamesJavascript.append(", \"");
+                            fleetnamesJavascript.append(resultSet.getString(1));
+                            fleetnamesJavascript.append("\"");
+                        }
                     }
                 }
             } catch (SQLException e) {
@@ -80,14 +80,6 @@ public class GetCreateAccount implements Route {
             }
 
             fleetnamesJavascript.append("];");
-
-            /*
-             * List<Item> items = Arrays.asList(
-             * new Item("Travis", "3.00"),
-             * new Item("Shannon", "300.00"),
-             * new Item("Momo", "30.00")
-             * );
-             */
 
             scopes.put("fleetnames_js", fleetnamesJavascript);
 
