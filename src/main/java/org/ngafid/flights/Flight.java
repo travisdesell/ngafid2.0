@@ -130,31 +130,37 @@ public class Flight {
     }
 
     public void remove(Connection connection) throws SQLException {
-        String query = "SELECT id FROM events WHERE flight_id = " + this.id + " AND event_definition_id = -1";
+        // String query = "SELECT id FROM events WHERE flight_id = " + this.id + " AND event_definition_id = -1";
 
-        // TODO: This can probably be done in one query.
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
-                ResultSet resultSet = preparedStatement.executeQuery()) {
-            while (resultSet.next()) {
-                int eventId = resultSet.getInt(1);
-                query = "DELETE FROM rate_of_closure WHERE event_id = ?";
-                try (PreparedStatement eventStatement = connection.prepareStatement(query)) {
-                    eventStatement.setInt(1, eventId);
-                    LOG.info(preparedStatement.toString());
-                    eventStatement.executeUpdate();
-                }
+        String clearRateOfClosure = """
+                    DELETE rate_of_closure
+                      FROM rate_of_closure
+                INNER JOIN events
+                        ON events.event_definition_id = -1
+                           AND (flight_id = ? OR other_flight_id = ?)
+                """;
+        String clearEventMetaData = """
+                    DELETE event_metadata
+                      FROM event_metadata
+                INNER JOIN events
+                        ON events.event_definition_id = -1
+                           AND (flight_id = ? OR other_flight_id = ?)
+                """;
 
-                query = "DELETE FROM event_metadata WHERE event_id = ?";
-                try (PreparedStatement eventStatement = connection.prepareStatement(query)) {
-                    eventStatement.setInt(1, eventId);
-                    LOG.info(preparedStatement.toString());
-                    eventStatement.executeUpdate();
-                }
-            }
-
+        try (PreparedStatement preparedStatement = connection.prepareStatement(clearRateOfClosure)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.setInt(2, id);
+            int deleted = preparedStatement.executeUpdate();
+            LOG.info("Deleted " + deleted + " rows from rate of closure");
+        }
+        try (PreparedStatement preparedStatement = connection.prepareStatement(clearEventMetaData)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.setInt(2, id);
+            int deleted = preparedStatement.executeUpdate();
+            LOG.info("Deleted " + deleted + " rows from event meta data");
         }
 
-        query = "DELETE FROM events WHERE flight_id = ?";
+        String query = "DELETE FROM events WHERE flight_id = ?";
         try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
             preparedStatement.setInt(1, this.id);
             LOG.info(preparedStatement.toString());
