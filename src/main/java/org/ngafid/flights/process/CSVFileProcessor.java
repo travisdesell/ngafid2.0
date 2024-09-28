@@ -12,10 +12,13 @@ import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import java.security.MessageDigest;
@@ -50,7 +53,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     @Override
-    public Stream<FlightBuilder> parse() throws FlightProcessingException {
+    public Stream<FlightBuilder> parse() throws FlightProcessingException{
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
@@ -59,28 +62,78 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String airframeInfoLine = null;
         String csvHeaderLine = null;
 
+        String flightInformationLine = null; // The first
+
+        String secondLine = null;
+        String thirdLine = null;
+
+
         List<FlightBuilder> flightBuilders = new ArrayList<>();
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8)); CSVReader csvReader = new CSVReader(bufferedReader)) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8));
+             ) {
+            flightInformationLine = bufferedReader.readLine();
+            secondLine = bufferedReader.readLine();
+            thirdLine = bufferedReader.readLine();
 
-            String fileInformation = getFlightInfo(bufferedReader); // Will read a line
+            List<String> headerLines = new ArrayList<>();
+            headerLines.add(flightInformationLine);
+            headerLines.add(secondLine);
+            headerLines.add(thirdLine);
+
+            String flightInformation = getFlightInfo(flightInformationLine);
+
+            processFileInformation(flightInformation);
+          //  if (secondLine != null && secondLine.startsWith("#")) {
+            if (secondLine != null) {
+
+
 
             if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
-                scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
+                scanEagleParsing(flightInformation); // TODO: Handle ScanEagle data
             } else {
-                processFileInformation(fileInformation);
-                bufferedReader.read(); // Skip first char (#)
-                Arrays.stream(csvReader.readNext())
-                        .map(String::strip)
-                        .forEachOrdered(dataTypes::add);;
-                Arrays.stream(csvReader.readNext())
-                        .map(String::strip)
-                        .forEachOrdered(headers::add);;
+                if(secondLine.startsWith("#")){
+                    secondLine = secondLine.substring(1);  // Remove the first character (if it's '#')
+
+                }
+            }
+
+                // Split both secondLine and thirdLine into arrays
+                String[] secondLineArray = secondLine.split(",", -1);  // Use -1 to preserve empty values
+                String[] thirdLineArray = thirdLine.split(",", -1);    // Use -1 to preserve empty values
+
+// Ensure both arrays have the same length
+                if (secondLineArray.length != thirdLineArray.length) {
+                    throw new IllegalArgumentException("Lines have different lengths.");
+                }
+                for (int i = 0; i < secondLineArray.length; i++) {
+
+                    System.out.println("Processing secondLineArray at index " + i + ": " + secondLineArray[i]);
+
+                    String processedDataType = CSVFileProcessor.extractContentOrReturnFullString(secondLineArray[i].strip());
+                    dataTypes.add(processedDataType);  // Add the processed result to dataTypes
+
+                    String processedHeader = thirdLineArray[i].strip();
+                    headers.add(processedHeader.isEmpty() ? "<Empty>" : processedHeader);  // Add header or "<Empty>" if it's blank
+                }
+
+
+                /**
+                    Arrays.stream(secondLine.split(","))
+                            .map(String::strip)
+                            .map(CSVFileProcessor::extractContentOrReturnFullString)
+                            .forEachOrdered(dataTypes::add); // Populating dataTypes from second line
+
+                    Arrays.stream(thirdLine.split(","))
+                            .map(String::strip)
+                            .forEachOrdered(headers::add);
+    */
             }
 
             updateAirframe();
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
+            CSVReader csvReader = new CSVReader(bufferedReader);
             String[] firstRow = csvReader.peek();
 
 
@@ -101,8 +154,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     // Create a CSV filename for each flight
                     String derivedFilename = filename.replace(".csv", "_flight_" + (i + 1) + ".csv");
 
+
                     // Convert the flight data to CSV format and get it as a byte[]
-                    byte[] csvData = writeFlightToCSV(flight);
+                    byte[] csvData = writeFlightToCSV(flight,headerLines);
 
                     // Call addDerivedFile to store the CSV file
                     pipeline.addDerivedFile(derivedFilename, csvData);
@@ -172,7 +226,49 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return flightBuilders.stream();
     }
 
+
+    public static String extractContentOrReturnFullString(String input) {
+        // Define the regex pattern to extract content inside parentheses
+        Pattern pattern = Pattern.compile("\\(([^)]+)\\)");
+        Matcher matcher = pattern.matcher(input);
+
+        // If the parentheses are found, return the content inside
+        if (matcher.find()) {
+            return matcher.group(1);  // Content inside parentheses
+        }
+
+        // If no parentheses are found, return the entire string
+        return input;
+    }
+
     // Method to write a List<String[]> (flight data) into CSV format and return it as a byte array
+    private byte[] writeFlightToCSV(List<String[]> flightData, List<String> headerLines) throws IOException {
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);  // Use BufferedWriter for efficient writing
+
+        try {
+            // Step 1: Write header lines as-is, without splitting them
+            for (String line : headerLines) {
+                bufferedWriter.write(line);
+                bufferedWriter.newLine();  // Ensure a new line after each header line
+            }
+
+            // Step 2: Write the flight data manually (without using CSVWriter)
+            for (String[] row : flightData) {
+                String rowData = String.join(",", row);  // Manually join the columns with commas
+                bufferedWriter.write(rowData);
+                bufferedWriter.newLine();  // Ensure each row is written on a new line
+            }
+
+        } finally {
+            bufferedWriter.flush();  // Ensure all data is written
+        }
+
+        return outputStream.toByteArray();
+    }
+
+    /**
     private byte[] writeFlightToCSV(List<String[]> flightData) throws IOException {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
@@ -185,6 +281,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
         return outputStream.toByteArray();
     }
+     */
 
     /**
      * Splits a list of CSV rows into multiple flights based on a 5-minute time gap.
@@ -192,17 +289,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param rows the list of CSV rows to process
      * @return a list of lists of type string, where each inner list represents a separate flight
      */
-    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) throws DateTimeParseException {
+    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) throws FlightProcessingException {
         List<List<String[]>> flights = new ArrayList<>();
         List<String[]> currentFlight = new ArrayList<>();
         Date lastTimestamp = null;
-        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
 
         for (String[] row : rows) {
 
             // Parse timestamp from the row
             String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
-            Date currentTimestamp = parseDateTime(dateTimeString, formatter);
+            Date currentTimestamp = DateParser.parseDateTime(dateTimeString);
 
             if (lastTimestamp != null) {
                 // Check if the time difference between consecutive rows exceeds 5 minutes
@@ -233,11 +330,19 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * Parses a date-time string into a Date object.
      *
      * @param dateTimeString the date-time string to parse
-     * @param formatter      the SimpleDateFormat object used to parse the string
      * @return the parsed Date object
      * @throws DateTimeParseException if the date-time string cannot be parsed
      */
-    private Date parseDateTime(String dateTimeString, SimpleDateFormat formatter) throws DateTimeParseException {
+    private Date parseDateTime(String dateTimeString) throws DateTimeParseException {
+        SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+
+        // List of potential date formats
+        List<DateTimeFormatter> formatters = Arrays.asList(
+                DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+                DateTimeFormatter.ofPattern("M/d/yyyy"),
+                DateTimeFormatter.ofPattern("MM/dd/yyyy")
+        );
+
         try {
             return formatter.parse(dateTimeString);
         } catch (ParseException e) {
@@ -264,8 +369,33 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @throws FatalFlightFileException
      * @throws IOException
      */
+
+    /**
     private String getFlightInfo(BufferedReader reader) throws FatalFlightFileException, IOException {
         String fileInformation = reader.readLine();
+
+        if (fileInformation == null || fileInformation.trim().length() == 0) {
+            throw new FatalFlightFileException("The flight file was empty.");
+        }
+
+        if (fileInformation.charAt(0) != '#' && fileInformation.charAt(0) != '{') {
+            if (fileInformation.startsWith("DID_")) {
+                LOG.info("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
+
+                meta.airframeName = "ScanEagle";
+                meta.airframeType = "UAS Fixed Wing";
+            } else {
+                throw new FatalFlightFileException(
+                        "First line of the flight file should begin with a '#' and contain flight recorder information.");
+            }
+        }
+
+        return fileInformation;
+    }
+    */
+
+    private String getFlightInfo(String fileInformation) throws FatalFlightFileException{
+
 
         if (fileInformation == null || fileInformation.trim().length() == 0) {
             throw new FatalFlightFileException("The flight file was empty.");
