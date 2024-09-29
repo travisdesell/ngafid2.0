@@ -113,7 +113,6 @@ public class ProcessUpload {
      * non-existant
      * upload. This can cause the upload process to crash.
      *
-     * @param connection is the connection to the database
      */
     public static void removeNoUploadFlights() {
         try (Connection connection = Database.getConnection()) {
@@ -134,6 +133,9 @@ public class ProcessUpload {
     }
 
     public static void operateAsDaemon() throws SQLException {
+
+        LOG.info("Operate as daemon log.  ");
+
         while (true) {
             Instant start = Instant.now();
 
