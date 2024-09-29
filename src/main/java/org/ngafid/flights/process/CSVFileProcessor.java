@@ -3,6 +3,7 @@ package org.ngafid.flights.process;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.ngafid.flights.*;
+import org.ngafid.flights.Airframes.AliasKey;
 
 import java.sql.Connection;
 import java.io.*;
@@ -20,9 +21,10 @@ import java.security.NoSuchAlgorithmException;
 import javax.xml.bind.DatatypeConverter;
 
 /**
- * Handles parsing of CSV files
+ * Parses CSV files into Double and String time series, and returns a stream of flight builders.
  *
  * @author Aaron Chan
+ * @author Joshua Karns
  */
 
 public class CSVFileProcessor extends FlightFileProcessor {
@@ -180,12 +182,22 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return fileInformation;
     }
 
+    /**
+     * Flight files usually have two lines of meta data at the top, which are preceeded by pound signs #.
+     * An example line looks something like:
+     *
+     * #system_id=xxx, key1=val1, key2=val2, ...
+     *
+     * We gather the key:value pairs and pull out any useful information we find, storing the results in a FlightMeta
+     * object.
+     */
     private void processFileInormation(String fileInformation) throws FatalFlightFileException {
         // Some files have random double quotes in the header for some reason? We can
         // just remove these since we don't consider them anyways.
         fileInformation = fileInformation.replace("\"", "");
         String[] infoParts = fileInformation.split(",");
 
+        HashMap<String, String> values = new HashMap<>(infoParts.length * 2);
         try {
             for (int i = 1; i < infoParts.length; i++) {
                 // process everything else (G1000 data)
@@ -193,64 +205,57 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     continue;
 
                 String subParts[] = infoParts[i].trim().split("=");
-                String key = subParts[0];
-                String value = subParts[1];
 
-                // TODO: Create some sort of automatic mapping for synonomous airframe names.
-                if (key.equals("airframe_name")) {
-                    meta.airframeName = value;
-
-                    // throw an error for 'Unknown Aircraft'
-                    if (meta.airframeName.equals("Unknown Aircraft")) {
-                        throw new FatalFlightFileException(
-                                "Flight airframe name was 'Unknown Aircraft', please fix and re-upload so the flight can be properly identified and processed.");
-                    }
-
-                    if (meta.airframeName.equals("Diamond DA 40")) {
-                        meta.airframeName = "Diamond DA40";
-                    } else if ((meta.airframeName
-                            .equals("Garmin Flight Display") || meta.airframeName.equals("Robinson R44 Raven I"))
-                            && pipeline.getUpload().getFleetId() == 1 /*
-                                                                       * This is a hack for UND who has their airframe
-                                                                       * names
-                                                                       * set up
-                                                                       * incorrectly for their helicopters
-                                                                       */) {
-                        meta.airframeName = "R44";
-                    } else if (meta.airframeName.equals("Garmin Flight Display")) {
-                        throw new FatalFlightFileException(
-                                "Flight airframe name was 'Garmin Flight Display' which does not specify what airframe type the flight was, please fix and re-upload so the flight can be properly identified and processed.");
-                    }
-
-                    if (meta.airframeName.equals("Cirrus SR22 (3600 GW)")) {
-                        meta.airframeName = "Cirrus SR22";
-                    }
-
-                    if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframeName)
-                            || meta.airframeName.contains("Garmin")) {
-                        meta.airframeType = "Fixed Wing";
-                    } else if (meta.airframeName.equals("R44") || meta.airframeName.equals("Robinson R44")) {
-                        meta.airframeName = "R44";
-                        meta.airframeType = "Rotorcraft";
-                    } else {
-                        System.err.println(
-                                "Could not import flight because the aircraft type was unknown for the following airframe name: '"
-                                        + meta.airframeName + "'");
-                        System.err.println(
-                                "Please add this to the the `airframe_type` table in the database and update this method.");
-                        System.exit(1);
-                    }
-
-                } else if (key.equals("system_id")) {
-                    meta.systemId = value;
-                }
+                // May throw index out of bounds.
+                values.put(subParts[0].trim(), subParts[1].trim());
             }
-        } catch (Exception e) {
+        } catch (IndexOutOfBoundsException e) {
             // LOG.info("parsting flight information threw exception: " + e);
             // e.printStackTrace();
             throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.",
                     e);
         }
+
+        for (var entry : values.entrySet()) {
+            switch (entry.getKey()) {
+                case "airframe_name":
+                    setAirframeName(entry.getValue());
+                    break;
+                case "system_id":
+                    meta.systemId = entry.getValue();
+                    break;
+                default:
+                    continue;
+            }
+        }
+    }
+
+    private void setAirframeName(String name) throws FatalFlightFileException {
+        var fleetKey = new AliasKey(name, pipeline.getUpload().getFleetId());
+        var defaultKey = Airframes.defaultAlias(name);
+
+        if (Airframes.AIRFRAME_ALIASES.containsKey(fleetKey)) {
+            meta.airframeName = Airframes.AIRFRAME_ALIASES.get(fleetKey);
+        } else if (Airframes.AIRFRAME_ALIASES.containsKey(defaultKey)) {
+            meta.airframeName = Airframes.AIRFRAME_ALIASES.get(defaultKey);
+        } else {
+            meta.airframeName = name;
+        }
+
+        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframeName)
+                || meta.airframeName.contains("Garmin")) {
+            meta.airframeType = "Fixed Wing";
+        } else if (Airframes.ROTORCRAFT.contains(meta.airframeName)) {
+            meta.airframeType = "Rotorcraft";
+        } else {
+            LOG.severe(
+                    "Could not import flight because the aircraft type was unknown for the following airframe name: '"
+                            + meta.airframeName + "'");
+            LOG.severe(
+                    "Please add this to the the `airframe_type` table in the database and update this method.");
+            throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
+        }
+
     }
 
     /**

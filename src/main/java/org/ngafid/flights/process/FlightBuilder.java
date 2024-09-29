@@ -157,19 +157,29 @@ public class FlightBuilder {
         DependencyGraph dg = new DependencyGraph(this, gatherSteps(connection));
         FlightProcessingException[] exception = new FlightProcessingException[] { null };
 
-        // This is cheeky
-        Executor executor = Runnable::run;
-        executor.execute(() -> {
-            try {
-                dg.compute();
-            } catch (FlightProcessingException e) {
-                exception[0] = e;
-            }
-        });
+        // We can do this:
+        // (1) in serial
+        // (2) in parallel
+        //
+        // My (josh) unscientific testing shows that the parallel version is faster for tough uploads,
+        // and the same speed for easy uploads
 
-        if (exception[0] != null) {
-            throw exception[0];
-        }
+        // This is a cheeky way to execute things sequentially. This method will usually be invoked in a ThreadPool
+        // anyways, so if you want to make it concurrent just call dg.compute directly
+        // Executor executor = Runnable::run;
+        // executor.execute(() -> {
+        // try {
+        // dg.compute();
+        // } catch (FlightProcessingException e) {
+        // exception[0] = e;
+        // }
+        // });
+
+        // if (exception[0] != null) {
+        // throw exception[0];
+        // }
+
+        // dg.compute();
 
         try {
             return new Flight(connection, meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
@@ -179,7 +189,7 @@ public class FlightBuilder {
         }
     }
 
-    // TODO: implement this
+    // TODO: implement this hehe
     public void validate() {
     }
 }

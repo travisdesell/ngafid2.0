@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
 
@@ -79,6 +80,24 @@ public class Airframes {
             AIRFRAME_CESSNA_400,
             AIRFRAME_BEECHCRAFT_A36_G36,
             AIRFRAME_BEECHCRAFT_G58));
+
+    public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+
+    public record AliasKey(String name, int fleetId) {
+    }
+
+    public static AliasKey defaultAlias(String name) {
+        return new AliasKey(name, -1);
+    }
+
+    public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
+            Map.entry(defaultAlias("Unknown Aircraft"), ""),
+            Map.entry(defaultAlias("Garmin Flight Display"), ""),
+            Map.entry(defaultAlias("Diamond DA 40"), "Diamond DA40"),
+            Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
+            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
+            Map.entry(defaultAlias("Robinson R44"), "R44"),
+            Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
 
     public static void setAirframeFleet(Connection connection, int airframeId, int fleetId) throws SQLException {
         String key = airframeId + "-" + fleetId;

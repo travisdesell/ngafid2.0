@@ -2,7 +2,6 @@ package org.ngafid.flights.process;
 
 import java.sql.SQLException;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,28 +13,57 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
 /**
- * A dependency graph which represents the dependencies of ProcessSteps on one
- * another.
+ * A directed acyclic graph, where nodes are individual process steps and the edges are defined by column names that are
+ * either input or output by that process step. A dummy node is created in the case of columns that are contained in the
+ * data source.
+ *
+ * A basic understanding of how ForkJoin tasks work in Java is a prerequisite to understand this.
+ *
+ * @author Joshua Karns (josh@karns.dev)
  **/
 public class DependencyGraph {
     private static final Logger LOG = Logger.getLogger(DependencyGraph.class.getName());
 
-    class DependencyNode {
+    final ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> taskMap;
+
+    ForkJoinTask<Void> getTask(DependencyNode node) {
+        return taskMap.computeIfAbsent(node, x -> x.fork());
+    }
+
+    /**
+     * A single node in the DependencyGraph, correspnding to a single process step. Incoming and outgoing edges are
+     * stored in the `requires` and `requiredBy` fields.
+     */
+    private class DependencyNode extends RecursiveTask<Void> {
+        // Supresses a compiler error, not relevant or important since this will not be serialized
+        private static final long serialVersionUID = 0;
+
+        // The process step to execute.
         final ProcessStep step;
 
         // Used for cycle detection.
         boolean mark = false;
+
+        // Whether this process step should be executed. This will be set to `false` if an ancestor which this node is
+        // contingent on raises an exception.
         AtomicBoolean enabled = new AtomicBoolean(true);
 
+        // Outgoing edges.
         final HashSet<DependencyNode> requiredBy = new HashSet<>(32);
+
+        // Incoming edges.
         final HashSet<DependencyNode> requires = new HashSet<>(32);
 
+        // A list of exceptions that could be created during the execution of this process step.
         ArrayList<Exception> exceptions = new ArrayList<>();
 
         public DependencyNode(ProcessStep step) {
             this.step = step;
         }
 
+        /**
+         * Disable this node and all descendent nodes.
+         */
         void disableChildren() {
             if (enabled.get()) {
                 enabled.set(false);
@@ -50,74 +78,45 @@ public class DependencyGraph {
                             + reason);
                 }
                 for (var child : requiredBy)
-                    child.disable();
+                    child.disableChildren();
             }
         }
 
-        void disable() {
-            if (enabled.get()) {
-                enabled.set(false);
-                if (step.isRequired()) {
-                    LOG.severe("Required step " + step.toString() + " has been disabled.");
-                    exceptions.add(
-                            new FatalFlightFileException(
-                                    "Required step " + step.getClass().getName()
-                                            + " has been disabled because a required parent step has been disabled"));
-                }
-                for (var child : requiredBy)
-                    child.disable();
-            }
-        }
-
-        void compute() {
-            try {
-                if (step.applicable()) {
-                    step.compute();
-                } else {
-                    disableChildren();
-                }
-            } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
-                LOG.warning(
-                        "Encountered exception when calculating process step " + step.toString() + ": " + e.toString());
-                exceptions.add(e);
-                disable();
-            }
-        }
-    }
-
-    class DependencyNodeTask extends RecursiveTask<Void> {
-        private static final long serialVersionUID = 0;
-
-        // This is used to avoid creating duplicate tasks.
-        // This isn't a problem w/ a tree-like problem, but ours is a DAG.
-        final ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> taskMap;
-        final DependencyNode node;
-
-        public DependencyNodeTask(DependencyNode node, ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> taskMap) {
-            this.taskMap = taskMap;
-            this.node = node;
-        }
-
-        ForkJoinTask<Void> getTask(DependencyNode node) {
-            return taskMap.computeIfAbsent(node, x -> new DependencyNodeTask(x, taskMap).fork());
-        }
-
+        /**
+         * Attempts to compute the process step in this node, if the step is applicable. If it is not applicable, child
+         * process steps are disabled.
+         *
+         * Exceptions are caught and stored, and will cause descendent steps to be disabled.
+         */
         public Void compute() {
-            for (var requiredNode : node.requires) {
+            for (var requiredNode : requires) {
                 getTask(requiredNode).join();
             }
 
-            if (node.enabled.get())
-                node.compute();
+            if (enabled.get()) {
+
+                try {
+                    if (step.applicable()) {
+                        step.compute();
+                    } else {
+                        disableChildren();
+                    }
+                } catch (SQLException | MalformedFlightFileException | FatalFlightFileException e) {
+                    LOG.warning(
+                            "Encountered exception when calculating process step " + step.toString() + ": "
+                                    + e.toString());
+                    exceptions.add(e);
+                    disableChildren();
+                }
+            }
 
             return null;
         }
     }
 
     /**
-     * Dummy step meant to act as a root node in DAG. This is done by adding all of
-     * the columns included in the file
-     * as output columns, so all other steps will depend on this.
+     * Dummy step meant to act as a root node in DAG. This is done by adding all of the columns included in the file as
+     * output columns, so all other steps will depend on this.
      **/
     class DummyStep extends ProcessStep {
         Set<String> outputColumns = new HashSet<>();
@@ -164,6 +163,10 @@ public class DependencyGraph {
 
     }
 
+    /**
+     * Add a process step node to the set of nodes and verify there are no other nodes that have the same output
+     * column(s).
+     */
     private DependencyNode registerStep(ProcessStep step) throws FatalFlightFileException {
         DependencyNode node = new DependencyNode(step);
         nodes.add(node);
@@ -178,9 +181,7 @@ public class DependencyGraph {
     }
 
     /**
-     * Create the edges. An edge exists from step X to step Y if step X has an
-     * output column
-     * that step Y relies upon.
+     * Create the edges. An edge exists from step X to step Y if step X has an output column that step Y relies upon.
      **/
     private void createEdges(DependencyNode node) throws FatalFlightFileException {
         for (String column : node.step.getRequiredColumns()) {
@@ -194,16 +195,18 @@ public class DependencyGraph {
 
     // Maps column name to the node where that column is computed
     HashMap<String, DependencyNode> columnToSource = new HashMap<>(64);
+
     HashSet<DependencyNode> nodes = new HashSet<>(64);
+
     FlightBuilder builder;
 
+    /**
+     * Create nodes for each step and create a mapping from output column name
+     * to the node that outputs that column. This should be a unique mapping, as
+     * we don't want two steps generating the same output column.
+     **/
     public DependencyGraph(FlightBuilder builder, List<ProcessStep> steps) throws FlightProcessingException {
-        /**
-         * Create nodes for each step and create a mapping from output column name
-         * to the node that outputs that column. This should be a unique mapping, as
-         * we don't want two steps generating the same output column.
-         **/
-
+        this.taskMap = new ConcurrentHashMap<>(steps.size() * 2);
         this.builder = builder;
 
         try {
@@ -217,25 +220,35 @@ public class DependencyGraph {
         }
     }
 
-    // Modifies the flight object in place.
+    /**
+     * Compute all process steps, possibly concurrently depending on the executor that this method is invoked in. The
+     * order the process steps are executed in will not always be the same, but it will always be in a manner which
+     * obeys column requirements.
+     *
+     * If this method is invoked in the context of a ForkJoinPool or some other executor / threadpool, it will be
+     * executed concurrently. Otherwise, it will be executed it will be computed sequentially.
+     */
     public void compute() throws FlightProcessingException {
-        // Start with all of the leaf nodes.
+        // Start with root nodes only
         ConcurrentHashMap<DependencyNode, ForkJoinTask<Void>> tasks = new ConcurrentHashMap<>();
         ArrayList<ForkJoinTask<Void>> initialTasks = new ArrayList<>();
+
         for (var node : nodes) {
             if (node.requiredBy.size() == 0) {
-                var task = new DependencyNodeTask(node, tasks);
-                initialTasks.add(task);
-                tasks.put(node, task);
+                initialTasks.add(node);
+                tasks.put(node, node);
             }
         }
 
         scrutinize();
 
+        // We need to fork all of the root tasks before we proceed to join with them!
         var handles = initialTasks
                 .stream()
                 .map(x -> x.fork())
                 .collect(Collectors.toList());
+
+        // All tasks have been created: join them.
         handles.forEach(ForkJoinTask::join);
 
         ArrayList<Exception> fatalExceptions = new ArrayList<>();

@@ -125,7 +125,7 @@ public class ProcessUpload {
                     }
 
                     PreparedStatement uploadsPreparedStatement = connection
-                            .prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ? LIMIT 1");
+                            .prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ?");
 
                     uploadsPreparedStatement.setString(1, "UPLOADED");
                     uploadsPreparedStatement.setInt(2, targetFleetId);
