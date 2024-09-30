@@ -50,81 +50,60 @@ public class CSVFileProcessor extends FlightFileProcessor {
         meta.filename = filename;
     }
 
+    /**
+     * Reads a csv file and parses data into a list of FlightBuilder objects
+     * @return A list of FlightBuilders (correspond to flights) as a Stream
+     * @throws FlightProcessingException
+     */
+    public Stream<FlightBuilder> parse() throws FlightProcessingException {
 
-
-    public Stream<FlightBuilder> parse() throws FlightProcessingException{
-
-        LOG.info(logTag+ "- parse - start");
+        LOG.info(logTag + "- parse - start");
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
-
         List<FlightBuilder> flightBuilders = new ArrayList<>();
 
-        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8));
-             ) {
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8))) {
+
+            // Extract and process headers
             List<String> headerLines = extractHeaderLines(bufferedReader);
             String flightInformation = getFlightInfo(headerLines.get(0));
             processFileInformation(flightInformation);
+            processHeaders(headerLines,flightInformation);
 
-            if (headerLines.get(1) != null) {
-                if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
-                    LOG.info(logTag+ " CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
-                    scanEagleParsing(flightInformation); // TODO: Handle ScanEagle data
-                }
-                // Split both secondLine and thirdLine into arrays
-                String[] secondLineArray = headerLines.get(1).split(",", -1);  // Use -1 to preserve empty values
-                String[] thirdLineArray = headerLines.get(2).split(",", -1);    // Use -1 to preserve empty values
-
-                // Ensure both arrays have the same length
-                if (secondLineArray.length != thirdLineArray.length) {
-                    throw new IllegalArgumentException("Lines have different lengths.");
-                }
-                for (int i = 0; i < secondLineArray.length; i++) {
-                    String processedDataType = CSVFileProcessor.extractContentInsideParentheses(secondLineArray[i].strip());
-                    dataTypes.add(processedDataType);  // Add the processed result to dataTypes
-                    String processedHeader = thirdLineArray[i].strip();
-                    headers.add(processedHeader.isEmpty() ? "<Empty>" : processedHeader);  // Add header or "<Empty>" if it's blank
-                }
-            }
             updateAirframe();
 
-            ArrayList<ArrayList<String>> columns = new ArrayList<>();
             CSVReader csvReader = new CSVReader(bufferedReader);
             String[] firstRow = csvReader.peek();
-
-            for (int i = 0; i < firstRow.length; i++)
-                columns.add(new ArrayList<>());
-
-            // Documentation of CSVReader claims this is a linked list,
-            // so it is important to iterate over it rather
             List<String[]> rows = csvReader.readAll();
+
+            // Split the input list of entries from csv file into separate files if time difference between entries greater than 5 minutes.
             List<List<String[]>> flights = splitCSVIntoFlights(rows);
 
-            // If we have more than 1 flight — we have splits, hence we need to create derived files.
+            // Add derived csv files (if any) to the uploads folder.
             if (flights.size() > 1) {
                 for (int i = 0; i < flights.size(); i++) {
                     List<String[]> flight = flights.get(i);
-
-                    // Create a CSV filename for each flight
                     String derivedFilename = filename.replace(".csv", "_flight_" + (i + 1) + ".csv");
-
-                    // Convert the flight data to CSV format and get it as a byte[]
-                    byte[] csvData = writeFlightToCSV(flight,headerLines);
-
-                    // Call addDerivedFile to store the CSV file
+                    byte[] csvData = writeFlightToCSV(flight, headerLines);
                     pipeline.addDerivedFile(derivedFilename, csvData);
                 }
             }
 
-            for(List<String[]> flight: flights){
-
-                for (String[] row : flight) {
-                    if (row.length < firstRow.length)
-                        break;
-                    for (int i = 0; i < row.length; i++)
-                        columns.get(i).add(row[i]);
+            // Process each flight
+            for (List<String[]> flight : flights) {
+                ArrayList<ArrayList<String>> columns = new ArrayList<>();
+                for (int i = 0; i < firstRow.length; i++) {
+                    columns.add(new ArrayList<>());
                 }
-
+                for (String[] row : flight) {
+                    if (row.length < firstRow.length) {
+                        break;
+                    }
+                    for (int i = 0; i < row.length; i++) {
+                        columns.get(i).add(row[i]);
+                    }
+                }
+                // Populate doubleTimeSeries and stringTimeSeries maps
                 for (int i = 0; i < columns.size(); i++) {
                     var column = columns.get(i);
                     var name = headers.get(i);
@@ -137,26 +116,56 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                     }
                 }
-
                 String md5Hash = calculateMd5Hash(flight);
 
-                // After a flight is processed, build a flight and add to array of flightbuilders.
-                //Deep copy. Each FlightBuilder has its own FlightMeta object.
-                FlightMeta newMeta = new FlightMeta(meta);
+                // Build and add a flight
+                FlightMeta newMeta = new FlightMeta(meta); // Deep copy. Each FlightBuilder has its own FlightMeta object.
                 newMeta.setMd5Hash(md5Hash);
-                FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
+                FlightBuilder builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
                 flightBuilders.add(builder);
-                // Clear after variables after each iteration
+
+                // Clear data for the next flight
                 doubleTimeSeries.clear();
                 stringTimeSeries.clear();
             }
-
-        } catch (IOException | FatalFlightFileException | CsvException e) {
+        }catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
+        LOG.info(logTag+ "- parse - end. Returning flights: " + flightBuilders.size());
         return flightBuilders.stream();
+    }
+
+    /**
+     * Processes header lines from the csv flight, populates dataTypes and headers with
+     * the flight information.
+     * @param headerLines
+     * @param flightInformation
+     * @throws FatalFlightFileException
+     */
+    private void processHeaders(List<String> headerLines, String flightInformation) throws FatalFlightFileException {
+        if (headerLines.get(1) != null) {
+            if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
+                LOG.info(logTag + " CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
+
+                scanEagleParsing(flightInformation); // TODO: Handle ScanEagle data
+            }
+
+            String[] secondLineArray = headerLines.get(1).split(",", -1);  // Use -1 to preserve empty values
+            String[] thirdLineArray = headerLines.get(2).split(",", -1);    // Use -1 to preserve empty values
+
+            if (secondLineArray.length != thirdLineArray.length) {
+                throw new IllegalArgumentException("Lines have different lengths.");
+            }
+
+            for (int i = 0; i < secondLineArray.length; i++) {
+                String processedDataType = CSVFileProcessor.extractContentInsideParentheses(secondLineArray[i].strip());
+                dataTypes.add(processedDataType);  // Add the processed result to dataTypes
+                String processedHeader = thirdLineArray[i].strip();
+                headers.add(processedHeader.isEmpty() ? "<Empty>" : processedHeader);  // Add header or "<Empty>" if it's blank
+            }
+        }
     }
 
     /**
@@ -260,19 +269,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param rows the list of CSV rows to process
      * @return a list of lists of type string, where each inner list represents a separate flight
      */
-    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) throws FlightProcessingException {
+    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) {
 
         List<List<String[]>> flights = new ArrayList<>();
         List<String[]> currentFlight = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
-
         for (String[] row : rows) {
             // Parse timestamp from the row
             String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
-
-
-
             LocalDateTime currentTimestamp = TimeUtils.parseDateTime(dateTimeString);
 
             if (lastTimestamp != null) {

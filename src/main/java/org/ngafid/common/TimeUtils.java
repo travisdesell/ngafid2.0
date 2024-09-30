@@ -116,11 +116,11 @@ public class TimeUtils {
     }
 
     /**
-     * List of Date -time formats supported.
+     * List of DateTime formats supported.
      */
     private static final List<DateTimeFormatter> dateTimeFormatters = Arrays.asList(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),  // Expected format
-            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss")    // Single-digit month/day
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss")
 
     );
 
