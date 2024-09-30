@@ -68,6 +68,7 @@
             <version>${slf4j.version}</version>
         </dependency>
 
+        <!-- for sending email -->
         <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
