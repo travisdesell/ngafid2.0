@@ -2,12 +2,16 @@ package org.ngafid.flights.process;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
 
 import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -209,12 +213,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
      If parentheses not found, returns the original input.
      */
     public static String extractContentInsideParentheses(String input) {
-        LOG.info("CSVFileProcessor - extractContentInsideParentheses - start");
+
         Pattern pattern = Pattern.compile("\\(([^)]+)\\)");
         Matcher matcher = pattern.matcher(input);
 
         if (matcher.find()) {
-            LOG.info("CSVFileProcessor - extractContentInsideParentheses - parentheses found. Most likely it is a G3x or G5 flight recorder");
             return matcher.group(1);  // Content inside parentheses
         }
         // If no parentheses are found, return the entire string
@@ -258,21 +261,28 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @return a list of lists of type string, where each inner list represents a separate flight
      */
     public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) throws FlightProcessingException {
-        LOG.info("CSVFileProcessor - splitCSVIntoFlights - start");
+
         List<List<String[]>> flights = new ArrayList<>();
         List<String[]> currentFlight = new ArrayList<>();
-        Date lastTimestamp = null;
+        LocalDateTime lastTimestamp = null;
 
 
         for (String[] row : rows) {
             // Parse timestamp from the row
             String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
-            Date currentTimestamp = DateParser.parseDateTime(dateTimeString);
+
+
+
+            LocalDateTime currentTimestamp = TimeUtils.parseDateTime(dateTimeString);
 
             if (lastTimestamp != null) {
                 // Check if the time difference between consecutive rows exceeds 5 minutes
-                long timeDifferenceInMillis = currentTimestamp.getTime() - lastTimestamp.getTime();
+                Duration duration = Duration.between(currentTimestamp.toInstant(ZoneOffset.UTC), lastTimestamp.toInstant(ZoneOffset.UTC));
+                System.out.println("Duration is: " + duration + "Between " + lastTimestamp + " and " + currentTimestamp);
+                long timeDifferenceInMillis  = Math.abs(duration.toMillis());
+                System.out.println("Time Difference is  " + timeDifferenceInMillis);
                 if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
+
                     // Add the current flight to the list of flights and start a new flight
                     flights.add(new ArrayList<>(currentFlight)); // Add the current flight
                     currentFlight.clear(); // Reset for a new flight
