@@ -4,8 +4,11 @@ import java.sql.Connection;
 import java.sql.SQLException;
 
 import java.util.Map;
+import java.util.Set;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
@@ -27,11 +30,11 @@ public class FlightBuilder {
      * Contains the double time series' for this flight. This object can safely be read and written to concurrently, but
      * you are still responsible for ensuring things are not overwritten.
      */
-    public final ConcurrentHashMap<String, DoubleTimeSeries> doubleTimeSeries;
+    private final ConcurrentHashMap<String, DoubleTimeSeries> doubleTimeSeries;
     /**
      * Same as `doubleTimeSeries`, but for String series.
      */
-    public final ConcurrentHashMap<String, StringTimeSeries> stringTimeSeries;
+    private final ConcurrentHashMap<String, StringTimeSeries> stringTimeSeries;
 
     // A list of airports this aircraft visited.
     private ArrayList<Itinerary> itinerary = null;
@@ -52,69 +55,6 @@ public class FlightBuilder {
         this.meta = meta;
     }
 
-    /**
-     * Adds an entry to `doubleTimeSeries`, mapping the supplied name to the supplied time series.
-     *
-     * @returns this flight builder
-     */
-    public FlightBuilder addTimeSeries(String name, DoubleTimeSeries timeSeries) {
-        doubleTimeSeries.put(name, timeSeries);
-        return this;
-    }
-
-    /**
-     * Adds an entry to `stringTimeSeries`, mapping the supplied name to the supplied time series.
-     *
-     * @returns this flight builder
-     */
-    public FlightBuilder addTimeSeries(String name, StringTimeSeries timeSeries) {
-        stringTimeSeries.put(name, timeSeries);
-        return this;
-    }
-
-    /**
-     * Sets the `startDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
-     * `meta` object.
-     *
-     * @returns this flight builder
-     */
-    public synchronized FlightBuilder setStartDateTime(String startDateTime) {
-        this.meta.startDateTime = startDateTime;
-        return this;
-    }
-
-    /**
-     * Sets the `endDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
-     * `meta` object.
-     *
-     * @returns this flight builder
-     */
-    public synchronized FlightBuilder setEndDateTime(String endDateTime) {
-        this.meta.endDateTime = endDateTime;
-        return this;
-    }
-
-    /**
-     * Synchronized method to set the itinerary.
-     *
-     * @returns this flight builder
-     */
-    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> itinerary) {
-        this.itinerary = itinerary;
-        return this;
-    }
-
-    /**
-     * Masks in the supplied bits into the `processingStatus` field of `meta.` This is sychronized to avoid race
-     * conditions.
-     *
-     * @returns this flight builder
-     */
-    public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
-        this.meta.processingStatus |= processingStatus;
-        return this;
-    }
-
     // The only thing we require, by default, is a start and end time.
     // TODO: Determine if this is the exact behavior we want.
     private static final List<ProcessStep.Factory> processSteps = List.of(
@@ -125,7 +65,8 @@ public class FlightBuilder {
             ProcessTotalFuel::new,
             ProcessDivergence::new,
             ProcessLOCI::new,
-            ProcessItinerary::new);
+            ProcessItinerary::new,
+            ProcessAltAGL::new);
 
     /**
      * Gathers processing steps together which do not overwrite any existing time series.
@@ -179,7 +120,7 @@ public class FlightBuilder {
         // throw exception[0];
         // }
 
-        // dg.compute();
+        dg.compute();
 
         try {
             return new Flight(connection, meta, doubleTimeSeries, stringTimeSeries, itinerary, exceptions);
@@ -191,5 +132,144 @@ public class FlightBuilder {
 
     // TODO: implement this hehe
     public void validate() {
+    }
+
+    protected Map<String, Set<String>> getAliases() {
+        return Collections.emptyMap();
+    }
+
+    /**
+     * Adds an entry to `doubleTimeSeries`, mapping the supplied name to the supplied time series.
+     *
+     * @returns this flight builder
+     */
+    public FlightBuilder addTimeSeries(String name, DoubleTimeSeries timeSeries) {
+        doubleTimeSeries.put(name, timeSeries);
+        return this;
+    }
+
+    public FlightBuilder addTimeSeries(DoubleTimeSeries timeSeries) {
+        return addTimeSeries(timeSeries.getName(), timeSeries);
+    }
+
+    private final <T> T getSeries(String name, Map<String, T> map) {
+        T value = map.get(name);
+        if (value != null)
+            return value;
+
+        var aliases = getAliases().get(name);
+        if (aliases == null)
+            return null;
+
+        for (var alias : aliases) {
+            value = map.get(alias);
+            if (value != null)
+                return value;
+        }
+
+        return null;
+    }
+
+    private final <T> Set<String> getKeySet(Map<String, T> map) {
+        var set = new HashSet<>(map.keySet());
+
+        for (Map.Entry<String, Set<String>> alias : getAliases().entrySet()) {
+            for (var a : alias.getValue()) {
+                if (set.contains(a)) {
+                    set.add(alias.getKey());
+                }
+            }
+        }
+
+        return set;
+    }
+
+    /**
+     * Fetches a double series with the supplied name.
+     *
+     * @returns null if there is no time series with that name
+     */
+    public final DoubleTimeSeries getDoubleTimeSeries(String name) {
+        return getSeries(name, doubleTimeSeries);
+    }
+
+    /**
+     * Returns the key set of `this.doubleTimeSeries`
+     */
+    public final Set<String> getDoubleTimeSeriesKeySet() {
+        return getKeySet(doubleTimeSeries);
+    }
+
+    /**
+     * Adds an entry to `stringTimeSeries`, mapping the supplied name to the supplied time series.
+     *
+     * @returns this flight builder
+     */
+    public final FlightBuilder addTimeSeries(String name, StringTimeSeries timeSeries) {
+        stringTimeSeries.put(name, timeSeries);
+        return this;
+    }
+
+    public final FlightBuilder addTimeSeries(StringTimeSeries timeSeries) {
+        return addTimeSeries(timeSeries.getName(), timeSeries);
+    }
+
+    /**
+     * Fetches a string series with the supplied name.
+     *
+     * @returns null if there is no time series with that name
+     */
+    public final StringTimeSeries getStringTimeSeries(String name) {
+        return getSeries(name, stringTimeSeries);
+    }
+
+    /**
+     * Returns the key set of `this.stringTimeSeries`
+     */
+    public final Set<String> getStringTimeSeriesKeySet() {
+        return getKeySet(stringTimeSeries);
+    }
+
+    /**
+     * Sets the `startDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
+     * `meta` object.
+     *
+     * @returns this flight builder
+     */
+    public synchronized FlightBuilder setStartDateTime(String startDateTime) {
+        this.meta.startDateTime = startDateTime;
+        return this;
+    }
+
+    /**
+     * Sets the `endDateTime` field of `this.meta`. This method is synchronized to prevent concurrent access of the
+     * `meta` object.
+     *
+     * @returns this flight builder
+     */
+    public synchronized FlightBuilder setEndDateTime(String endDateTime) {
+        this.meta.endDateTime = endDateTime;
+        return this;
+    }
+
+    /**
+     * Synchronized method to set the itinerary.
+     *
+     * @returns this flight builder
+     */
+    public synchronized FlightBuilder setItinerary(ArrayList<Itinerary> itinerary) {
+        this.itinerary = itinerary;
+        return this;
+    }
+
+    /**
+     * Masks in the supplied bits into the `processingStatus` field of `meta.` This is sychronized to avoid race
+     * conditions.
+     *
+     * @returns this flight builder
+     */
+    public synchronized FlightBuilder updateProcessingStatus(int processingStatus) {
+        this.meta.processingStatus |= processingStatus;
+        return this;
     }
 }

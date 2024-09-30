@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.List;
 
 import org.ngafid.flights.*;
-import static org.ngafid.flights.process.ProcessStep.required;
 
+/**
+ * Flight builder for CSVFlightBuilder
+ */
 public class CSVFlightBuilder extends FlightBuilder {
 
     public CSVFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,

@@ -9,11 +9,8 @@ import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import java.security.MessageDigest;
@@ -68,8 +65,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
-
-        List<String[]> csvValues = null;
 
         try (BufferedReader bufferedReader = new BufferedReader(
                 new InputStreamReader(super.stream, StandardCharsets.UTF_8));
@@ -137,6 +132,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
 
         FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
+
+        if (1 == 1)
+            return Stream.of(new G5FlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
 
         LOG.info("Returning flight builder!");
         return Stream.of(builder);

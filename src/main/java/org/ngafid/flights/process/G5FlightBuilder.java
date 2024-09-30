@@ -1,9 +1,7 @@
 package org.ngafid.flights.process;
 
-import java.sql.Connection;
-
 import java.util.Map;
-import java.util.List;
+import java.util.Set;
 
 import org.ngafid.flights.*;
 
@@ -12,21 +10,17 @@ import org.ngafid.flights.*;
  */
 public class G5FlightBuilder extends FlightBuilder {
 
-  public G5FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
-      Map<String, StringTimeSeries> stringTimeSeries) {
-    super(meta, doubleTimeSeries, stringTimeSeries);
-  }
+    public G5FlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
+        super(meta, doubleTimeSeries, stringTimeSeries);
+    }
 
-  private static final List<ProcessStep.Factory> processSteps = List.of(
-      ProcessAltAGL::new);
+    private Map<String, Set<String>> ALIASES = Map.of(
+            "AltAGL", Set.of("Altitude Above Ground Level"));
 
-  // This can be overridden.
-  protected List<ProcessStep> gatherSteps(Connection connection) {
-    // Add all of our processing steps here...
-    // The order doesn't matter; the DependencyGraph will resolve
-    // the order in the event that there are dependencies.
-    List<ProcessStep> steps = super.gatherSteps(connection);
-    processSteps.stream().map(factory -> factory.create(connection, this)).forEach(steps::add);
-    return steps;
-  }
+    @Override
+    protected final Map<String, Set<String>> getAliases() {
+        return ALIASES;
+    }
+
 }

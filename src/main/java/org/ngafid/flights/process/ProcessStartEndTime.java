@@ -24,52 +24,66 @@ public class ProcessStartEndTime extends ProcessStep {
         super(connection, builder);
     }
 
-    public Set<String> getRequiredDoubleColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredStringColumns() { return REQUIRED_STRING_COLUMNS; }
-    public Set<String> getRequiredColumns() { return REQUIRED_STRING_COLUMNS; }
-    public Set<String> getOutputColumns() { return Collections.<String>emptySet(); }
+    public Set<String> getRequiredDoubleColumns() {
+        return Collections.<String>emptySet();
+    }
 
-    public boolean airframeIsValid(String airframe) { return true; }
+    public Set<String> getRequiredStringColumns() {
+        return REQUIRED_STRING_COLUMNS;
+    }
+
+    public Set<String> getRequiredColumns() {
+        return REQUIRED_STRING_COLUMNS;
+    }
+
+    public Set<String> getOutputColumns() {
+        return Collections.<String>emptySet();
+    }
+
+    public boolean airframeIsValid(String airframe) {
+        return true;
+    }
 
     public boolean entryIsEmpty(String date) {
         return date == null || date.trim() == "";
     }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        StringTimeSeries dates = builder.stringTimeSeries.get(LCL_DATE);
-        StringTimeSeries times = builder.stringTimeSeries.get(LCL_TIME);
-        StringTimeSeries offsets = builder.stringTimeSeries.get(UTC_OFFSET);
+        StringTimeSeries dates = builder.getStringTimeSeries(LCL_DATE);
+        StringTimeSeries times = builder.getStringTimeSeries(LCL_TIME);
+        StringTimeSeries offsets = builder.getStringTimeSeries(UTC_OFFSET);
 
         int dateSize = dates.size();
         int timeSize = times.size();
         int offsetSize = offsets.size();
 
-        //get the minimum sized length of each of these series, they should all be the same but 
-        //if the last column was cut off it might not be the case
+        // get the minimum sized length of each of these series, they should all be the same but
+        // if the last column was cut off it might not be the case
         int minSize = dateSize;
-        if (minSize < timeSize) minSize = timeSize;
-        if (minSize < offsetSize) minSize = offsetSize;
+        if (minSize < timeSize)
+            minSize = timeSize;
+        if (minSize < offsetSize)
+            minSize = offsetSize;
 
-        //find the first non-null time entry
+        // find the first non-null time entry
         int start = 0;
-        while (start < minSize && (
-                entryIsEmpty(dates.get(start))
-            ||  entryIsEmpty(times.get(start))
-            ||  entryIsEmpty(offsets.get(start))
-        )) { start++; }
+        while (start < minSize && (entryIsEmpty(dates.get(start))
+                || entryIsEmpty(times.get(start))
+                || entryIsEmpty(offsets.get(start)))) {
+            start++;
+        }
 
         if (start >= minSize)
-            throw new MalformedFlightFileException("Date, Time or Offset columns were all null! Cannot set start/end times.");
+            throw new MalformedFlightFileException(
+                    "Date, Time or Offset columns were all null! Cannot set start/end times.");
 
-        //find the last full date time offset entry row
+        // find the last full date time offset entry row
         int end = minSize;
-        do { 
-            end--; 
-        } while (end >= 0 && (
-               entryIsEmpty(dates.get(end)) 
-            || entryIsEmpty(times.get(end)) 
-            || entryIsEmpty(offsets.get(end)) 
-        ));
+        do {
+            end--;
+        } while (end >= 0 && (entryIsEmpty(dates.get(end))
+                || entryIsEmpty(times.get(end))
+                || entryIsEmpty(offsets.get(end))));
 
         String startDate = dates.get(start).trim();
         String startTime = times.get(start).trim();
@@ -84,7 +98,8 @@ public class ProcessStartEndTime extends ProcessStep {
             startODT = TimeUtils.convertToOffset(startDate, startTime, startOffset, "+00:00");
         } catch (DateTimeException dte) {
             LOG.severe("Corrupt start time data in flight file: " + dte.getMessage());
-            throw new MalformedFlightFileException("Corrupt start time data in flight file: '" + dte.getMessage() + "'");
+            throw new MalformedFlightFileException(
+                    "Corrupt start time data in flight file: '" + dte.getMessage() + "'");
         }
 
         OffsetDateTime endODT = null;
@@ -98,7 +113,8 @@ public class ProcessStartEndTime extends ProcessStep {
         if (startODT.isAfter(endODT)) {
             builder.setStartDateTime(null);
             builder.setEndDateTime(null);
-            throw new MalformedFlightFileException("Corrupt time data in flight file, start time was after the end time");
+            throw new MalformedFlightFileException(
+                    "Corrupt time data in flight file, start time was after the end time");
         }
 
         builder.setStartDateTime(startODT.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss")));

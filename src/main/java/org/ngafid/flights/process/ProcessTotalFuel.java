@@ -6,9 +6,6 @@ import java.util.Collections;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import java.nio.file.NoSuchFileException;
-
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
@@ -26,11 +23,22 @@ public class ProcessTotalFuel extends ProcessStep {
         super(connection, builder);
     }
 
-    public Set<String> getRequiredDoubleColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
-    
+    public Set<String> getRequiredDoubleColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getRequiredStringColumns() {
+        return Collections.<String>emptySet();
+    }
+
+    public Set<String> getRequiredColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getOutputColumns() {
+        return OUTPUT_COLUMNS;
+    }
+
     public boolean airframeIsValid(String airframe) {
         return !AIRFRAME_BLACKLIST.contains(airframe);
     }
@@ -39,7 +47,7 @@ public class ProcessTotalFuel extends ProcessStep {
         double[] totalFuel = null;
 
         for (var columnName : REQUIRED_DOUBLE_COLUMNS) {
-            DoubleTimeSeries fuelTS = doubleTS.get(columnName);
+            DoubleTimeSeries fuelTS = builder.getDoubleTimeSeries(columnName);
             if (totalFuel == null)
                 totalFuel = new double[fuelTS.size()];
 
@@ -47,8 +55,8 @@ public class ProcessTotalFuel extends ProcessStep {
                 totalFuel[i] += fuelTS.get(i);
         }
 
-        DoubleTimeSeries totalFuelTS = new DoubleTimeSeries(TOTAL_FUEL, UNIT_GALLONS, totalFuel);
-        doubleTS.put(TOTAL_FUEL, totalFuelTS);
+        DoubleTimeSeries totalFuelTS = new DoubleTimeSeries(TOTAL_FUEL, Unit.GALLONS, totalFuel);
+        builder.addTimeSeries(totalFuelTS);
     }
 
 }

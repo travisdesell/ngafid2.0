@@ -18,7 +18,7 @@ public interface Parameters {
      * EXC = Exceedences
      */
     public static final String PARAM_JSON_LOSS_OF_CONTROL_EXC = "locExceedences";
-    public static final String PARAM_JSON_CENTER_LINE_EXC =  "centerLineExceedences";
+    public static final String PARAM_JSON_CENTER_LINE_EXC = "centerLineExceedences";
     public static final String PARAM_JSON_SELF_DEFINED_GLIDE_PATH_ANGLE = "selfDefinedGlideAngle";
     public static final String PARAM_JSON_OPTIMAL_DESCENT_WARN = "optimalDescentWarnings";
     public static final String PARAM_JSON_OPTIMAL_DESCENT_EXC = "optimalDescentExceedences";
@@ -26,13 +26,14 @@ public interface Parameters {
     public static final String PARAM_JSON_LONGITUDE = "lon";
 
     public static final double STD_PRESS_INHG = 29.92;
-    public static final double COMP_CONV = Math.PI / 180.0; 
+    public static final double COMP_CONV = Math.PI / 180.0;
 
     /**
      * Critical Values
      *
-     * @param AOA_CRIT this is the critical angle of attack that can be changes based on the FDM's guidelines
-     * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on certain guidelines
+     * @param AOA_CRIT    this is the critical angle of attack that can be changes based on the FDM's guidelines
+     * @param PROSPIN_LIM this is the crirtical value for the "Coordination Index", which can also be changed based on
+     *                    certain guidelines
      */
     public static final double AOA_CRIT = 15;
     public static final double PROSPIN_LIM = 4;
@@ -58,7 +59,7 @@ public interface Parameters {
      * This is called velocity instead of speed because the number actually has a direction associated with it,
      * the sign of the number. If it is > 0, then the aircraft is ascending; likewise a negative value means
      * the aircraft is descending.
-     * */
+     */
     public static final String VSPD = "VSpd";
     public static final String DENSITY_RATIO = "DensityRatio";
     public static final String OAT = "OAT";
@@ -69,7 +70,7 @@ public interface Parameters {
     public static final String ALT_MSL = "AltMSL";
     public static final String ALT_MSL_LAG_DIFF = "AltMSL Lag Diff";
     public static final String ALT_B = "AltB";
-    public static final String AOA_SIMPLE = "AOASimple"; 
+    public static final String AOA_SIMPLE = "AOASimple";
     public static final String E1_RPM = "E1 RPM";
     public static final String TAS_FTMIN = "True Airspeed(ft/min)";
     public static final String STALL_PROB = "Stall Index";
@@ -98,14 +99,33 @@ public interface Parameters {
     public static final String RUNWAY_DISTANCE = "RunwayDistance";
     public static final String NEAREST_AIRPORT = "NearestAirport";
     public static final String AIRPORT_DISTANCE = "AirportDistance";
-   
+
     /**
      * Units
-     **/
-    public static final String UNIT_FT_AGL = "ft agl";
-    public static final String UNIT_FT_MSL = "ft msl";
-    public static final String UNIT_GALLONS = "gals";
-    public static final String UNIT_DEG_F = "deg F";
+     */
+    public enum Unit {
+        FT("ft"),
+        FT_AGL("ft agl"),
+        FT_MSL("ft msl"),
+        GALLONS("gals"),
+        DEGREES_F("deg f"),
+        IATA_CODE("IATA Code"),
+        KNOTS("knots"),
+        FT_PER_MINUTE("ft/min"),
+        DEGREES("degrees"),
+        INDEX("index"),
+        RATIO("ratio");
+
+        private String value;
+
+        private Unit(String name) {
+            value = name;
+        }
+
+        public String toString() {
+            return value;
+        }
+    }
 
     /**
      * {@link Airframes} id's
@@ -115,31 +135,31 @@ public interface Parameters {
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      *
-     * @param ALT_B is used as the time reference 
-     * @param VSPD not needed for cases where VSpd is drived from AltB
+     * @param ALT_B is used as the time reference
+     * @param VSPD  not needed for cases where VSpd is drived from AltB
      */
-    public static final String [] STALL_DEPENDENCIES = {PITCH, /*VSPD,*/ IAS, BARO_A, OAT, ALT_B};
-    
+    public static final String[] STALL_DEPENDENCIES = { PITCH, /* VSPD, */ IAS, BARO_A, OAT, ALT_B };
+
     /**
      * Strings that represent the parameters used in the Stall Index calculation
      */
-    public static final String [] LOCI_DEPENDENCIES = {HDG, ROLL, TAS_FTMIN};
+    public static final String[] LOCI_DEPENDENCIES = { HDG, ROLL, TAS_FTMIN };
     //
     // use these for a real true airspeed (Shelbys method) /*GND_SPD, WIND_SPEED, WIND_DIRECTION};*/
-    public static final String [] SPIN_DEPENDENCIES = {IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL};
+    public static final String[] SPIN_DEPENDENCIES = { IAS, VSPD_CALCULATED, NORM_AC, LAT_AC, ALT_AGL };
 
-    //Params required for HDG TRK diff
-    public static final String [] HDG_TRK_DEPENDENCIES = {HDG, TRK};
+    // Params required for HDG TRK diff
+    public static final String[] HDG_TRK_DEPENDENCIES = { HDG, TRK };
 
     // Used to determine average fuel
-    public static final String[] AVG_FUEL_DEPENDENCIES = {TOTAL_FUEL};
+    public static final String[] AVG_FUEL_DEPENDENCIES = { TOTAL_FUEL };
 
-    public static final String[] EVENT_RECOGNITION_COLUMNS = {TOTAL_FUEL};
+    public static final String[] EVENT_RECOGNITION_COLUMNS = { TOTAL_FUEL };
 
     /**
      * Strings that represent the supplementary metrics displayed in the UI
      */
-    public static final String [] uiMetrics = {ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL};
-    public static final String [] defaultMetrics = {ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM};
+    public static final String[] uiMetrics = { ROLL, IAS, PITCH, ALT_MSL, AOA_SIMPLE, E1_RPM, ALT_AGL };
+    public static final String[] defaultMetrics = { ROLL, PITCH, IAS, ALT_MSL, ALT_AGL, AOA_SIMPLE, E1_RPM };
 
 }

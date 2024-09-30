@@ -124,8 +124,8 @@ public class DependencyGraph {
         public DummyStep(FlightBuilder builder) {
             // We can pass in null rather than a connection object
             super(null, builder);
-            outputColumns.addAll(doubleTS.keySet());
-            outputColumns.addAll(stringTS.keySet());
+            outputColumns.addAll(builder.getDoubleTimeSeriesKeySet());
+            outputColumns.addAll(builder.getStringTimeSeriesKeySet());
         }
 
         public Set<String> getRequiredDoubleColumns() {

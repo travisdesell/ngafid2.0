@@ -60,16 +60,32 @@ public class DoubleTimeSeries {
         calculateValidCountMinMaxAvg();
     }
 
+    public DoubleTimeSeries(String name, Unit dataType, double[] data) {
+        this(name, dataType.toString(), data);
+    }
+
     public DoubleTimeSeries(String name, String dataType, double[] data) {
         this(name, dataType, data, data.length);
+    }
+
+    public DoubleTimeSeries(String name, Unit dataType, int sizeHint) {
+        this(name, dataType.toString(), sizeHint);
     }
 
     public DoubleTimeSeries(String name, String dataType, int sizeHint) {
         this(name, dataType, new double[sizeHint], 0);
     }
 
+    public DoubleTimeSeries(String name, Unit dataType) {
+        this(name, dataType.toString());
+    }
+
     public DoubleTimeSeries(String name, String dataType) {
         this(name, dataType, 16);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, Unit dataType, int sizeHint) throws SQLException {
+        this(connection, name, dataType.toString(), sizeHint);
     }
 
     public DoubleTimeSeries(Connection connection, String name, String dataType, int sizeHint) throws SQLException {
@@ -78,8 +94,17 @@ public class DoubleTimeSeries {
         setTypeId(connection);
     }
 
+    public DoubleTimeSeries(Connection connection, String name, Unit dataType) throws SQLException {
+        this(connection, name, dataType.toString());
+    }
+
     public DoubleTimeSeries(Connection connection, String name, String dataType) throws SQLException {
         this(connection, name, dataType, 16);
+    }
+
+    public DoubleTimeSeries(Connection connection, String name, Unit dataType, ArrayList<String> stringTimeSeries)
+            throws SQLException {
+        this(connection, name, dataType.toString(), stringTimeSeries);
     }
 
     public DoubleTimeSeries(Connection connection, String name, String dataType, ArrayList<String> stringTimeSeries)
@@ -87,6 +112,10 @@ public class DoubleTimeSeries {
         this(name, dataType, stringTimeSeries);
         setNameId(connection);
         setTypeId(connection);
+    }
+
+    public DoubleTimeSeries(String name, Unit dataType, ArrayList<String> stringTimeSeries) {
+        this(name, dataType.toString(), stringTimeSeries);
     }
 
     public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
@@ -159,6 +188,10 @@ public class DoubleTimeSeries {
 
     public void setTemporary(boolean temp) {
         this.temporary = temp;
+    }
+
+    public static DoubleTimeSeries computed(String name, Unit dataType, int length, TimeStepCalculation calculation) {
+        return computed(name, dataType.toString(), length, calculation);
     }
 
     public static DoubleTimeSeries computed(String name, String dataType, int length, TimeStepCalculation calculation) {

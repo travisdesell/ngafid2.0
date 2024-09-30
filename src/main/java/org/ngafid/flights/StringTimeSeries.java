@@ -1,6 +1,8 @@
 package org.ngafid.flights;
 
 import org.ngafid.common.Compression;
+import org.ngafid.flights.Parameters.Unit;
+
 import java.io.IOException;
 
 import java.sql.Blob;
@@ -18,7 +20,7 @@ import javax.sql.rowset.serial.SerialBlob;
 
 public class StringTimeSeries {
     private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
-    private static final int SIZE_HINT = 256;
+    private static final int SIZE_HINT = 1 << 16;
 
     private int nameId = -1;
     private String name;
@@ -26,6 +28,10 @@ public class StringTimeSeries {
     private String dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
+
+    public StringTimeSeries(String name, Unit dataType, int sizeHint) {
+        this(name, dataType.toString(), sizeHint);
+    }
 
     public StringTimeSeries(String name, String dataType, int sizeHint) {
         this.name = name;
@@ -35,8 +41,16 @@ public class StringTimeSeries {
         validCount = 0;
     }
 
+    public StringTimeSeries(String name, Unit dataType) {
+        this(name, dataType.toString());
+    }
+
     public StringTimeSeries(String name, String dataType) {
         this(name, dataType, SIZE_HINT);
+    }
+
+    public StringTimeSeries(Connection connection, String name, Unit dataType) throws SQLException {
+        this(connection, name, dataType.toString());
     }
 
     public StringTimeSeries(Connection connection, String name, String dataType) throws SQLException {
@@ -45,11 +59,20 @@ public class StringTimeSeries {
         setTypeId(connection);
     }
 
+    public StringTimeSeries(Connection connection, String name, Unit dataType, ArrayList<String> timeSeries)
+            throws SQLException {
+        this(connection, name, dataType.toString(), timeSeries);
+    }
+
     public StringTimeSeries(Connection connection, String name, String dataType, ArrayList<String> timeSeries)
             throws SQLException {
         this(name, dataType, timeSeries);
         setNameId(connection);
         setTypeId(connection);
+    }
+
+    public StringTimeSeries(String name, Unit dataType, ArrayList<String> timeSeries) {
+        this(name, dataType.toString(), timeSeries);
     }
 
     public StringTimeSeries(String name, String dataType, ArrayList<String> timeSeries) {

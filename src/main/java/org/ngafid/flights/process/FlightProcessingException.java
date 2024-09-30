@@ -13,7 +13,7 @@ import java.util.Collections;
  **/
 public class FlightProcessingException extends Exception {
     private static final long serialVersionUID = 1235003;
-    private static final String DEFAULT_MESSAGE = "(exception message was empty / null)"; 
+    private static final String DEFAULT_MESSAGE = "(exception message was empty / null)";
 
     private List<Exception> exceptions;
 
