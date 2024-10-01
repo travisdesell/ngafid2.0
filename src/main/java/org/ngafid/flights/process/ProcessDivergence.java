@@ -4,16 +4,11 @@ import java.util.Set;
 import java.util.Map;
 import static java.util.Map.entry;
 import java.util.List;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Collections;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import java.nio.file.NoSuchFileException;
-
-import org.ngafid.flights.Flight;
-import org.ngafid.terrain.TerrainCache;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
@@ -25,7 +20,6 @@ public class ProcessDivergence extends ProcessStep {
     private record DivergenceConfig(List<String> parameters, String output) {
     }
 
-    private static final Set<String> OUTPUT_COLUMNS = Set.of(TOTAL_FUEL);
     private static final Set<String> AIRFRAME_BLACKLIST = Set.of(AIRFRAME_SCAN_EAGLE, AIRFRAME_DJI);
 
     private static final List<DivergenceConfig> CESSNA_CONFIG = List.of(
@@ -73,7 +67,7 @@ public class ProcessDivergence extends ProcessStep {
     public Set<String> getRequiredDoubleColumns() {
         if (requiredDoubleColumns == null) {
 
-            var configs = CONFIG_MAP.get(builder.meta.airframeName);
+            var configs = CONFIG_MAP.get(builder.meta.airframe.getName());
             if (configs != null) {
 
                 requiredDoubleColumns = new HashSet<>(32);
@@ -101,7 +95,7 @@ public class ProcessDivergence extends ProcessStep {
     public Set<String> getOutputColumns() {
         if (outputColumns == null) {
 
-            var configs = CONFIG_MAP.get(builder.meta.airframeName);
+            var configs = CONFIG_MAP.get(builder.meta.airframe.getName());
             if (configs != null) {
 
                 outputColumns = new HashSet<>();
@@ -162,7 +156,7 @@ public class ProcessDivergence extends ProcessStep {
     }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        List<DivergenceConfig> configs = CONFIG_MAP.get(builder.meta.airframeName);
+        List<DivergenceConfig> configs = CONFIG_MAP.get(builder.meta.airframe.getName());
 
         if (configs == null)
             return;

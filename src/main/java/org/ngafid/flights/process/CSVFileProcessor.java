@@ -42,7 +42,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 
-        meta.airframeType = "Fixed Wing"; // Fixed Wing By default
+        meta.airframe = new Airframes.Airframe("Fixed Wing"); // Fixed Wing By default
         meta.filename = filename;
     }
 
@@ -71,7 +71,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 CSVReader csvReader = new CSVReader(bufferedReader)) {
             String fileInformation = getFlightInfo(bufferedReader); // Will read a line
 
-            if (meta.airframeName != null && meta.airframeName.equals("ScanEagle")) {
+            if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
                 processFileInormation(fileInformation);
@@ -83,8 +83,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         .map(String::strip)
                         .forEachOrdered(headers::add);
             }
-
-            updateAirframe();
 
             ArrayList<ArrayList<String>> columns = new ArrayList<>();
             for (int i = 0; i < headers.size(); i++)
@@ -133,21 +131,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         FlightBuilder builder = new CSVFlightBuilder(meta, doubleTimeSeries, stringTimeSeries);
 
-        if (1 == 1)
-            return Stream.of(new G5FlightBuilder(meta, doubleTimeSeries, stringTimeSeries));
-
         LOG.info("Returning flight builder!");
         return Stream.of(builder);
-    }
-
-    /**
-     * Updates the airframe type if airframe name does not belong to fixed wing
-     */
-    private void updateAirframe() {
-        if (meta.airframeName.equals("R44") || meta.airframeName.equals("Robinson R44")) {
-            meta.airframeName = "R44";
-            meta.airframeType = "Rotorcraft";
-        }
     }
 
     /**
@@ -169,8 +154,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (fileInformation.startsWith("DID_")) {
                 LOG.info("CAME FROM A SCANEAGLE! CAN CALCULATE SUGGESTED TAIL/SYSTEM ID FROM FILENAME");
 
-                meta.airframeName = "ScanEagle";
-                meta.airframeType = "UAS Fixed Wing";
+                meta.airframe = new Airframes.Airframe("ScanEagle");
+                meta.airframeType = new Airframes.AirframeType("UAS Fixed Wing");
             } else {
                 throw new FatalFlightFileException(
                         "First line of the flight file should begin with a '#' and contain flight recorder information.");
@@ -233,22 +218,22 @@ public class CSVFileProcessor extends FlightFileProcessor {
         var defaultKey = Airframes.defaultAlias(name);
 
         if (Airframes.AIRFRAME_ALIASES.containsKey(fleetKey)) {
-            meta.airframeName = Airframes.AIRFRAME_ALIASES.get(fleetKey);
+            meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.get(fleetKey));
         } else if (Airframes.AIRFRAME_ALIASES.containsKey(defaultKey)) {
-            meta.airframeName = Airframes.AIRFRAME_ALIASES.get(defaultKey);
+            meta.airframe = new Airframes.Airframe(Airframes.AIRFRAME_ALIASES.get(defaultKey));
         } else {
-            meta.airframeName = name;
+            meta.airframe = new Airframes.Airframe(name);
         }
 
-        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframeName)
-                || meta.airframeName.contains("Garmin")) {
-            meta.airframeType = "Fixed Wing";
-        } else if (Airframes.ROTORCRAFT.contains(meta.airframeName)) {
-            meta.airframeType = "Rotorcraft";
+        if (Airframes.FIXED_WING_AIRFRAMES.contains(meta.airframe.getName())
+                || meta.airframe.getName().contains("Garmin")) {
+            meta.airframeType = new Airframes.AirframeType("Fixed Wing");
+        } else if (Airframes.ROTORCRAFT.contains(meta.airframe.getName())) {
+            meta.airframeType = new Airframes.AirframeType("Rotorcraft");
         } else {
             LOG.severe(
                     "Could not import flight because the aircraft type was unknown for the following airframe name: '"
-                            + meta.airframeName + "'");
+                            + meta.airframe.getName() + "'");
             LOG.severe(
                     "Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");

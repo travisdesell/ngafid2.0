@@ -54,10 +54,12 @@ public class Flight {
     private int uploadId = -1;
 
     private String filename;
-    private int airframeNameId;
-    private String airframeName;
-    private int airframeTypeId;
-    private String airframeType;
+
+    // Make / model of the aircraft
+    private Airframes.Airframe airframe;
+
+    // The "type" meaning a fixed wing, rotorcraft, etc.
+    private Airframes.AirframeType airframeType;
     private String systemId;
 
     private String tailNumber;
@@ -108,7 +110,7 @@ public class Flight {
     private Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<String, DoubleTimeSeries>();
     private Map<String, StringTimeSeries> stringTimeSeries = new HashMap<String, StringTimeSeries>();
 
-    private ArrayList<Itinerary> itinerary = new ArrayList<Itinerary>();
+    private List<Itinerary> itinerary = null;
 
     public static ArrayList<Flight> getFlightsFromUpload(Connection connection, int uploadId) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE upload_id = " + uploadId;
@@ -1387,17 +1389,16 @@ public class Flight {
 
         filename = meta.filename;
 
-        airframeName = meta.airframeName;
-        airframeNameId = Airframes.getNameId(connection, airframeName);
-
+        airframe = meta.airframe;
         airframeType = meta.airframeType;
-        airframeTypeId = Airframes.getTypeId(connection, airframeType);
 
         systemId = meta.systemId;
         suggestedTailNumber = meta.suggestedTailNumber;
         md5Hash = meta.md5Hash;
         startDateTime = meta.startDateTime;
         endDateTime = meta.endDateTime;
+
+        this.itinerary = itinerary;
 
         hasCoords = doubleTimeSeries.containsKey(LATITUDE) && doubleTimeSeries.containsKey(LONGITUDE);
         hasAGL = doubleTimeSeries.containsKey(ALT_AGL);
@@ -1416,15 +1417,13 @@ public class Flight {
         uploadId = resultSet.getInt(4);
 
         systemId = resultSet.getString(5);
-        airframeNameId = resultSet.getInt(6);
-        airframeName = Airframes.getAirframeName(connection, airframeNameId);
+
+        airframe = new Airframes.Airframe(connection, resultSet.getInt(6));
+        airframeType = new Airframes.AirframeType(connection, resultSet.getInt(7));
 
         // this will set tailNumber and tailConfirmed
         tailNumber = Tails.getTail(connection, fleetId, systemId);
         tailConfirmed = Tails.getConfirmed(connection, fleetId, systemId);
-
-        airframeTypeId = resultSet.getInt(7);
-        airframeType = Airframes.getAirframeType(connection, airframeTypeId);
 
         startDateTime = resultSet.getString(8);
         endDateTime = resultSet.getString(9);
@@ -1467,28 +1466,28 @@ public class Flight {
      * @return the airframe id for this flight
      */
     public int getAirframeNameId() {
-        return airframeNameId;
+        return airframe.getId();
     }
 
     /**
      * @return the airframe name for this aircraft
      */
     public String getAirframeName() {
-        return airframeName;
+        return airframe.getName();
     }
 
     /**
      * @return the airframe type id for this flight
      */
     public int getAirframeTypeId() {
-        return airframeTypeId;
+        return airframeType.getId();
     }
 
     /**
      * @return the airframe type for this aircraft
      */
     public String getAirframeType() {
-        return airframeType;
+        return airframeType.getName();
     }
 
     /**
@@ -1498,7 +1497,7 @@ public class Flight {
      * @return true if the aircraft is a Cessna 172SP
      */
     public boolean isC172() {
-        return this.airframeName.equals("Cessna 172S");
+        return this.airframe.getName().equals("Cessna 172S");
     }
 
     public String getFilename() {
@@ -2011,108 +2010,6 @@ public class Flight {
         return mindex;
     }
 
-    public void calculateItineraryNoRPM(String groundSpeedColumnName) throws MalformedFlightFileException {
-        // cannot calculate the itinerary without airport/runway calculate, which
-        // requires
-        // lat and longs
-        if (!hasCoords)
-            return;
-
-        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
-
-        StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
-        DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
-
-        StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
-
-        if (groundSpeed == null) {
-            String message = "Cannot calculate itinerary, flight file had empty or missing ";
-
-            message += "'" + groundSpeedColumnName + "'";
-
-            message += " column";
-            // should be initialized to false, but lets make sure
-            LOG.info("Flight has no ground speed.");
-            throw new MalformedFlightFileException(message);
-        }
-
-        hasCoords = true;
-
-        itinerary.clear();
-
-        ArrayList<int[]> lowPoints = new ArrayList<int[]>();
-        ArrayList<String> runways = new ArrayList<>();
-
-        // Find a list of points where the aircraft has a sustained low altitude (low
-        // being defined as < 40).
-        // Insert itinerary entires between these boundries since they almost certainly
-        // indicate the aircraft being at an airport.
-        int lowStartIndex = -1;
-        outer: for (int i = 0; i < altitudeAGL.size(); i++) {
-            if (altitudeAGL.get(i) < 200 && i != altitudeAGL.size() - 1) {
-                if (lowStartIndex < 0) {
-                    lowStartIndex = i;
-                }
-            } else {
-                // ignore short durations of low altitude.
-                if (lowStartIndex >= 0 && i - lowStartIndex >= 5) {
-                    int minAltIndex = indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex);
-                    while (nearestAirportTS.get(minAltIndex).equals("")) {
-                        minAltIndex++;
-                        if (minAltIndex == i) {
-                            continue outer;
-                        }
-                    }
-                    lowPoints.add(new int[] { lowStartIndex, i,
-                            indexOfMin(altitudeAGL.innerArray(), lowStartIndex, i - lowStartIndex) });
-                    System.err.println("Adding lowPoints entry");
-                    HashMap<String, Integer> runwayCounts = new HashMap<String, Integer>();
-                    for (int j = lowStartIndex; j <= i; j++) {
-                        String nearest = nearestRunwayTS.get(j);
-                        runwayCounts.putIfAbsent(nearest, 0);
-                        runwayCounts.put(nearest, runwayCounts.get(nearest) + 1);
-                    }
-
-                    String bestRunway = "";
-                    int count = 0;
-                    for (Map.Entry<String, Integer> e : runwayCounts.entrySet()) {
-                        if (e.getValue() > count) {
-                            count = e.getValue();
-                            bestRunway = e.getKey();
-                        }
-                    }
-                    runways.add(bestRunway);
-                }
-                lowStartIndex = -1;
-            }
-        }
-
-        for (int i = 0; i < lowPoints.size() - 1; i++) {
-            int[] indices0 = lowPoints.get(i);
-            int endLow0 = indices0[1], lowest0 = indices0[2];
-            String runway0 = runways.get(i);
-
-            int[] indices1 = lowPoints.get(i + 1);
-            int startLow1 = indices1[0], lowest1 = indices1[2];
-
-            Itinerary it = new Itinerary(lowest0, endLow0, startLow1, lowest1, nearestAirportTS.get(lowest0), runway0);
-            itinerary.add(it);
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // setting and determining itinerary type
-        int itinerary_size = itinerary.size();
-        for (int i = 0; i < itinerary_size; i++) {
-            itinerary.get(i).determineType();
-        }
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        for (int i = 0; i < itinerary.size(); i++) {
-            System.err.println(itinerary.get(i));
-        }
-
-    }
-
     public void updateTail(Connection connection, String tailNumber) throws SQLException {
         if (this.systemId != null && !this.systemId.isBlank()) {
             String sql = "INSERT INTO tails(system_id, fleet_id, tail, confirmed) VALUES(?,?,?,?) ON DUPLICATE KEY UPDATE tail = ?";
@@ -2128,164 +2025,6 @@ public class Flight {
         }
     }
 
-    public void calculateItinerary(String groundSpeedColumnName, String rpmColumnName)
-            throws MalformedFlightFileException {
-        // cannot calculate the itinerary without airport/runway calculate, which
-        // requires
-        // lat and longs
-        if (!hasCoords)
-            return;
-
-        DoubleTimeSeries groundSpeed = doubleTimeSeries.get(groundSpeedColumnName);
-        DoubleTimeSeries rpm = doubleTimeSeries.get(rpmColumnName);
-        // DoubleTimeSeries groundSpeed = doubleTimeSeries.get("GndSpd");
-        // DoubleTimeSeries rpm = doubleTimeSeries.get("E1 RPM");
-
-        StringTimeSeries nearestAirportTS = stringTimeSeries.get("NearestAirport");
-        DoubleTimeSeries airportDistanceTS = doubleTimeSeries.get("AirportDistance");
-        DoubleTimeSeries altitudeAGL = doubleTimeSeries.get("AltAGL");
-
-        StringTimeSeries nearestRunwayTS = stringTimeSeries.get("NearestRunway");
-        DoubleTimeSeries runwayDistanceTS = doubleTimeSeries.get("RunwayDistance");
-
-        if (groundSpeed == null || rpm == null) {
-            String message = "Cannot calculate itinerary, flight file had empty or missing ";
-
-            int count = 0;
-            if (groundSpeed == null) {
-                message += "'" + groundSpeedColumnName + "'";
-                count++;
-            }
-
-            if (rpm == null) {
-                if (count > 0)
-                    message += " and ";
-                message += "'" + rpmColumnName + "'";
-                count++;
-            }
-
-            message += " column";
-            if (count >= 2)
-                message += "s";
-            message += ".";
-
-            // should be initialized to false, but lets make sure
-            LOG.info("Flight has no coordinates.");
-            throw new MalformedFlightFileException(message);
-        }
-        hasCoords = true;
-
-        itinerary.clear();
-
-        Itinerary currentItinerary = null;
-        for (int i = 1; i < nearestAirportTS.size(); i++) {
-            String airport = nearestAirportTS.get(i);
-            String runway = nearestRunwayTS.get(i);
-
-            if (airport != null && !airport.equals("")) {
-                // We've gotten close to an airport, so create a stop if there
-                // isn't one. If there is one, update the runway being visited.
-                // If the airport is a new airport (this shouldn't happen really),
-                // then create a new stop.
-                if (currentItinerary == null) {
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
-                } else if (airport.equals(currentItinerary.getAirport())) {
-                    currentItinerary.update(runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
-                } else {
-                    currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach())
-                        itinerary.add(currentItinerary);
-                    currentItinerary = new Itinerary(airport, runway, i, altitudeAGL.get(i), airportDistanceTS.get(i),
-                            runwayDistanceTS.get(i), groundSpeed.get(i), rpm.get(i));
-                }
-
-            } else {
-                // aiport is null, so if there was an airport being visited
-                // then we can determine it's runway and add it to the itinerary
-                if (currentItinerary != null) {
-                    currentItinerary.selectBestRunway();
-                    if (currentItinerary.wasApproach())
-                        itinerary.add(currentItinerary);
-                }
-
-                // set the currentItinerary to null until we approach another
-                // airport
-                currentItinerary = null;
-            }
-        }
-
-        // dont forget to add the last stop in the itinerary if it wasn't set to null
-        if (currentItinerary != null) {
-            currentItinerary.selectBestRunway();
-            if (currentItinerary.wasApproach())
-                itinerary.add(currentItinerary);
-        }
-
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-        // setting and determining itinerary type
-        int itinerary_size = itinerary.size();
-        for (int i = 0; i < itinerary_size; i++) {
-            itinerary.get(i).determineType();
-        }
-        ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-        System.err.println("Itinerary:");
-        for (int i = 0; i < itinerary.size(); i++) {
-            System.err.println(itinerary.get(i));
-        }
-    }
-
-    public void printValues(String[] requestedHeaders) {
-        System.out.println("Values:");
-
-        for (int i = 0; i < requestedHeaders.length; i++) {
-            if (i > 0)
-                System.out.print(",");
-            System.out.printf("%16s", requestedHeaders[i]);
-        }
-        System.out.println();
-
-        for (int i = 0; i < requestedHeaders.length; i++) {
-            String header = requestedHeaders[i];
-            if (i > 0)
-                System.out.print(",");
-
-            if (doubleTimeSeries.containsKey(header)) {
-                System.out.printf("%16s", doubleTimeSeries.get(header).size());
-            } else if (stringTimeSeries.containsKey(header)) {
-                System.out.printf("%16s", stringTimeSeries.get(header).size());
-            } else {
-                System.out.println("ERROR: header '" + header + "' not present in flight file: '" + filename + "'");
-                System.exit(1);
-            }
-        }
-        System.out.println();
-
-        for (int row = 0; row < numberRows; row++) {
-            boolean first = true;
-            for (int i = 0; i < requestedHeaders.length; i++) {
-                String header = requestedHeaders[i];
-
-                if (!first)
-                    System.out.print(",");
-                first = false;
-
-                if (doubleTimeSeries.containsKey(header)) {
-                    System.out.printf("%16.8f", doubleTimeSeries.get(header).get(row));
-                } else if (stringTimeSeries.containsKey(header)) {
-                    System.out.printf("%16s", stringTimeSeries.get(header).get(row));
-                } else {
-                    System.out.println("ERROR: header '" + header + "' not present in flight file: '" + filename + "'");
-                    System.exit(1);
-                }
-            }
-            System.out.println();
-        }
-        System.out.println();
-    }
-
     public static void batchUpdateDatabase(Connection connection, Upload upload, Iterable<Flight> flights)
             throws IOException, SQLException {
         int fleetId = upload.getFleetId();
@@ -2294,10 +2033,11 @@ public class Flight {
 
         try (PreparedStatement preparedStatement = createPreparedStatement(connection)) {
             for (Flight flight : flights) {
-                // This is fine because this stuff is mostly cached
-                flight.airframeNameId = Airframes.getNameId(connection, flight.airframeName);
-                flight.airframeTypeId = Airframes.getTypeId(connection, flight.airframeType);
-                Airframes.setAirframeFleet(connection, flight.airframeNameId, fleetId);
+                // Ensure that the `id` values are set. This will grab them from the database if not.
+                flight.airframe = new Airframes.Airframe(connection, flight.airframe.getName());
+                flight.airframeType = new Airframes.AirframeType(connection, flight.airframeType.getName());
+
+                Airframes.setAirframeFleet(connection, flight.airframe.getId(), fleetId);
 
                 Tails.setSuggestedTail(connection, fleetId, flight.systemId, flight.suggestedTailNumber);
                 flight.tailNumber = Tails.getTail(connection, fleetId, flight.systemId);
@@ -2308,7 +2048,7 @@ public class Flight {
                 flight.addBatch(preparedStatement);
             }
 
-            int[] _results = preparedStatement.executeBatch();
+            preparedStatement.executeBatch();
             ResultSet results = preparedStatement.getGeneratedKeys();
 
             for (Flight flight : flights) {
@@ -2339,9 +2079,11 @@ public class Flight {
                 PreparedStatement runwayPreparedStatement = Itinerary.createRunwayPreparedStatement(connection)) {
 
             for (Flight flight : flights) {
-                for (int i = 0; i < flight.itinerary.size(); i++)
-                    flight.itinerary.get(i).addBatch(itineraryPreparedStatement, airportPreparedStatement,
-                            runwayPreparedStatement, fleetId, flight.id, i);
+                if (flight.itinerary != null) {
+                    for (int i = 0; i < flight.itinerary.size(); i++)
+                        flight.itinerary.get(i).addBatch(itineraryPreparedStatement, airportPreparedStatement,
+                                runwayPreparedStatement, fleetId, flight.id, i);
+                }
             }
 
             itineraryPreparedStatement.executeBatch();
@@ -2381,8 +2123,8 @@ public class Flight {
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, uploaderId);
         preparedStatement.setInt(3, uploadId);
-        preparedStatement.setInt(4, airframeNameId);
-        preparedStatement.setInt(5, airframeTypeId);
+        preparedStatement.setInt(4, airframe.getId());
+        preparedStatement.setInt(5, airframeType.getId());
         preparedStatement.setString(6, systemId);
         preparedStatement.setString(7, startDateTime);
         preparedStatement.setString(8, endDateTime);
@@ -2410,9 +2152,9 @@ public class Flight {
             // first check and see if the airframe and tail number already exist in the
             // database for this
             // flight
-            airframeNameId = Airframes.getNameId(connection, airframeName);
-            airframeTypeId = Airframes.getTypeId(connection, airframeType);
-            Airframes.setAirframeFleet(connection, airframeNameId, fleetId);
+            airframe = new Airframes.Airframe(connection, airframe.getName());
+            airframeType = new Airframes.AirframeType(connection, airframeType.getName());
+            Airframes.setAirframeFleet(connection, airframe.getId(), fleetId);
 
             Tails.setSuggestedTail(connection, fleetId, systemId, suggestedTailNumber);
             tailNumber = Tails.getTail(connection, fleetId, systemId);
@@ -2511,23 +2253,4 @@ public class Flight {
         printWriter.close();
     }
 
-    public void setStatus(String status) {
-        this.status = status;
-    }
-
-    public void setAirframeType(String type) {
-        this.airframeType = type;
-    }
-
-    public void setAirframeTypeID(Integer typeID) {
-        this.airframeTypeId = typeID;
-    }
-
-    public void setHasCoords(boolean hasCoords) {
-        this.hasCoords = hasCoords;
-    }
-
-    public void setHasAGL(boolean hasAGL) {
-        this.hasAGL = hasAGL;
-    }
 }

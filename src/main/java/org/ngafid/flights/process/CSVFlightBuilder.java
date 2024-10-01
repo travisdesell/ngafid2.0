@@ -17,8 +17,7 @@ public class CSVFlightBuilder extends FlightBuilder {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 
-    private static final List<ProcessStep.Factory> processSteps = List.of(
-            ProcessAltAGL::new);
+    private static final List<ProcessStep.Factory> processSteps = List.of();
 
     // This can be overridden.
     protected List<ProcessStep> gatherSteps(Connection connection) {

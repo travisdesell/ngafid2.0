@@ -1,8 +1,6 @@
 package org.ngafid.flights;
 
 import java.io.IOException;
-import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 
 import java.sql.Blob;
 import java.sql.Connection;
@@ -13,11 +11,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Optional;
 import java.util.logging.Logger;
-import java.util.zip.Deflater;
 
 import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 import org.ngafid.common.Compression;
+import org.ngafid.common.NormalizedColumn;
 import org.ngafid.filters.Pair;
 
 import static org.ngafid.flights.Parameters.*;
@@ -28,12 +26,33 @@ public class DoubleTimeSeries {
     private static final Logger LOG = Logger.getLogger(DoubleTimeSeries.class.getName());
     private static final String DS_COLUMNS = "ds.id, ds.flight_id, ds.name_id, ds.data_type_id, ds.length, ds.valid_length, ds.min, ds.avg, ds.max, ds.data";
 
+    public static class DoubleSeriesName extends NormalizedColumn<DoubleSeriesName> {
+        public DoubleSeriesName(String name) {
+            super(name);
+        }
+
+        public DoubleSeriesName(int id) {
+            super(id);
+        }
+
+        public DoubleSeriesName(Connection connection, int id) throws SQLException {
+            super(connection, id);
+        }
+
+        public DoubleSeriesName(Connection connection, String string) throws SQLException {
+            super(connection, string);
+        }
+
+        @Override
+        protected String getTableName() {
+            return "double_series_names";
+        }
+    }
+
     private int id = -1;
     private int flightId = -1;
-    private int nameId;
-    private String name;
-    private int typeId;
-    private String dataType;
+    private DoubleSeriesName name;
+    private TypeName dataType;
     // private ArrayList<Double> timeSeries;
     private double[] data;
     private int size = 0;
@@ -52,8 +71,8 @@ public class DoubleTimeSeries {
 
     // Construct from an array
     public DoubleTimeSeries(String name, String dataType, double[] data, int size) {
-        this.name = name;
-        this.dataType = dataType;
+        this.name = new DoubleSeriesName(name);
+        this.dataType = new TypeName(dataType);
         this.data = data;
         this.size = size;
 
@@ -119,8 +138,8 @@ public class DoubleTimeSeries {
     }
 
     public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
-        this.name = name;
-        this.dataType = dataType;
+        this.name = new DoubleSeriesName(name);
+        this.dataType = new TypeName(dataType);
 
         this.data = new double[stringTimeSeries.size()];
 
@@ -165,10 +184,8 @@ public class DoubleTimeSeries {
     public DoubleTimeSeries(Connection connection, ResultSet resultSet) throws SQLException, IOException {
         id = resultSet.getInt(1);
         flightId = resultSet.getInt(2);
-        nameId = resultSet.getInt(3);
-        name = SeriesNames.getDoubleName(connection, nameId);
-        typeId = resultSet.getInt(4);
-        dataType = TypeNames.getName(connection, typeId);
+        name = new DoubleSeriesName(connection, resultSet.getInt(3));
+        dataType = new TypeName(connection, resultSet.getInt(4));
         size = resultSet.getInt(5);
         validCount = resultSet.getInt(6);
         min = resultSet.getDouble(7);
@@ -295,11 +312,11 @@ public class DoubleTimeSeries {
     }
 
     private void setNameId(Connection connection) throws SQLException {
-        this.nameId = SeriesNames.getDoubleNameId(connection, name);
+        this.name = new DoubleSeriesName(connection, name.getName());
     }
 
     private void setTypeId(Connection connection) throws SQLException {
-        this.typeId = TypeNames.getId(connection, dataType);
+        this.dataType = new TypeName(connection, dataType.getName());
     }
 
     private void calculateValidCountMinMaxAvg() {
@@ -330,7 +347,7 @@ public class DoubleTimeSeries {
      * @return the column name of the DoubleTimeSeries
      */
     public String getName() {
-        return name;
+        return name.getName();
     }
 
     /**
@@ -402,7 +419,7 @@ public class DoubleTimeSeries {
     }
 
     public String getDataType() {
-        return dataType;
+        return dataType.getName();
     }
 
     public int size() {
@@ -442,8 +459,8 @@ public class DoubleTimeSeries {
         setNameId(connection);
 
         preparedStatement.setInt(1, flightId);
-        preparedStatement.setInt(2, nameId);
-        preparedStatement.setInt(3, typeId);
+        preparedStatement.setInt(2, name.getId());
+        preparedStatement.setInt(3, dataType.getId());
 
         preparedStatement.setInt(4, this.size);
         preparedStatement.setInt(5, validCount);
@@ -513,7 +530,8 @@ public class DoubleTimeSeries {
      * Lags a timeseries N indicies
      */
     public DoubleTimeSeries lag(Connection connection, int n) throws IOException, SQLException {
-        Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(connection, this.flightId, this.name, n);
+        Optional<DoubleTimeSeries> existingSeries = getExistingLaggedSeries(connection, this.flightId,
+                this.name.getName(), n);
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
@@ -534,7 +552,7 @@ public class DoubleTimeSeries {
 
     public DoubleTimeSeries lead(Connection connection, int n) throws IOException, SQLException {
         Optional<DoubleTimeSeries> existingSeries = getExistingLeadingSeries(connection, this.flightId,
-                this.name, n);
+                this.name.getName(), n);
 
         if (existingSeries.isPresent()) {
             return existingSeries.get();
@@ -556,14 +574,14 @@ public class DoubleTimeSeries {
 
     // Creates a new DoubleTimeSeries from a slice in the range [from, until)
     public DoubleTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
-        DoubleTimeSeries newSeries = new DoubleTimeSeries(connection, name, dataType, until - from);
+        DoubleTimeSeries newSeries = new DoubleTimeSeries(connection, name.getName(), dataType.getName(), until - from);
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;
     }
 
     public DoubleTimeSeries subSeries(int from, int until) throws SQLException {
-        DoubleTimeSeries newSeries = new DoubleTimeSeries(name, dataType, until - from);
+        DoubleTimeSeries newSeries = new DoubleTimeSeries(name.getName(), dataType.getName(), until - from);
         newSeries.size = until - from;
         System.arraycopy(data, from, newSeries.data, 0, until - from);
         return newSeries;

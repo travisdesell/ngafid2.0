@@ -1,12 +1,9 @@
 package org.ngafid.flights.process;
 
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import org.ngafid.flights.DoubleTimeSeries;
-import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.MalformedFlightFileException;
 
@@ -56,7 +53,7 @@ public abstract class ProcessStep {
     public abstract boolean airframeIsValid(String airframe);
 
     public final boolean applicable() {
-        return airframeIsValid(builder.meta.airframeName)
+        return airframeIsValid(builder.meta.airframe.getName())
                 && builder
                         .getStringTimeSeriesKeySet()
                         .containsAll(getRequiredStringColumns())
@@ -74,8 +71,8 @@ public abstract class ProcessStep {
         StringBuilder sb = new StringBuilder(
                 "Step '" + className + "' cannot be applied for the following reason(s):\n");
 
-        if (!airframeIsValid(builder.meta.airframeName)) {
-            sb.append("  - airframeName '" + builder.meta.airframeName + "' is invalid ("
+        if (!airframeIsValid(builder.meta.airframe.getName())) {
+            sb.append("  - airframeName '" + builder.meta.airframe.getName() + "' is invalid ("
                     + className + "::airframeIsValid returned false for airframeName '" + className + "')\n");
         }
 

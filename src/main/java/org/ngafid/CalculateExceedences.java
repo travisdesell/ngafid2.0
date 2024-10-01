@@ -1,6 +1,5 @@
 package org.ngafid;
 
-import org.ngafid.Database;
 import org.ngafid.events.Event;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
@@ -8,19 +7,13 @@ import org.ngafid.flights.Flight;
 import org.ngafid.flights.StringTimeSeries;
 
 import java.io.IOException;
-import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Collections;
 import java.util.TreeSet;
 
 import org.ngafid.events.EventDefinition;
@@ -37,14 +30,12 @@ public class CalculateExceedences {
     static String timeSeriesName = "Lcl Time";
     static String dateSeriesName = "Lcl Date";
 
-    private EventDefinition eventDefinition;
     private Filter filter;
     private Conditional conditional;
     private int startBuffer;
     private int stopBuffer;
 
     public CalculateExceedences(EventDefinition eventDefinition) {
-        this.eventDefinition = eventDefinition;
         this.filter = eventDefinition.getFilter();
         this.conditional = new Conditional(filter);
         this.startBuffer = eventDefinition.getStartBuffer();
@@ -195,7 +186,6 @@ public class CalculateExceedences {
         for (i = 30; i < doubleSeries[0].size(); i++) {
             // for (i = 0; i < doubleSeries[0].size(); i++) {
             lineNumber = i;
-            double currentValue = doubleSeries[0].get(i);
 
             // LOG.info("Pre-set conditional: " + conditional.toString());
 
@@ -350,7 +340,7 @@ public class CalculateExceedences {
         }
         LOG.info("n events = " + allEvents.size());
 
-        int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
+        int airframeTypeId = new Airframes.Airframe(connection, "Fixed Wing").getId();
 
         for (int i = 0; i < allEvents.size(); i++) {
             // process events for this event type
@@ -398,7 +388,7 @@ public class CalculateExceedences {
         while (true) {
             try (Connection connection = Database.getConnection()) {
                 // for now only calculate exceedences for fixed wing aircraft
-                int airframeTypeId = Airframes.getTypeId(connection, "Fixed Wing");
+                int airframeTypeId = new Airframes.Airframe(connection, "Fixed Wing").getId();
 
                 Instant start = Instant.now();
 

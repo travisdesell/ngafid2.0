@@ -1,6 +1,7 @@
 package org.ngafid.flights;
 
 import org.ngafid.common.Compression;
+import org.ngafid.common.NormalizedColumn;
 import org.ngafid.flights.Parameters.Unit;
 
 import java.io.IOException;
@@ -14,18 +15,39 @@ import java.sql.ResultSet;
 
 import java.util.ArrayList;
 import java.util.logging.Logger;
-import java.util.zip.Deflater;
 
 import javax.sql.rowset.serial.SerialBlob;
 
 public class StringTimeSeries {
-    private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
-    private static final int SIZE_HINT = 1 << 16;
 
-    private int nameId = -1;
-    private String name;
-    private int typeId = -1;
-    private String dataType;
+    public static class StringSeriesName extends NormalizedColumn<StringSeriesName> {
+        public StringSeriesName(String name) {
+            super(name);
+        }
+
+        public StringSeriesName(int id) {
+            super(id);
+        }
+
+        public StringSeriesName(Connection connection, int id) throws SQLException {
+            super(connection, id);
+        }
+
+        public StringSeriesName(Connection connection, String string) throws SQLException {
+            super(connection, string);
+        }
+
+        @Override
+        protected String getTableName() {
+            return "string_series_names";
+        }
+    }
+
+    private static final Logger LOG = Logger.getLogger(StringTimeSeries.class.getName());
+    private static final int SIZE_HINT = 1 << 12;
+
+    private StringSeriesName name;
+    private TypeName dataType;
     private ArrayList<String> timeSeries;
     private int validCount;
 
@@ -34,8 +56,8 @@ public class StringTimeSeries {
     }
 
     public StringTimeSeries(String name, String dataType, int sizeHint) {
-        this.name = name;
-        this.dataType = dataType;
+        this.name = new StringSeriesName(name);
+        this.dataType = new TypeName(dataType);
         this.timeSeries = new ArrayList<String>(sizeHint);
 
         validCount = 0;
@@ -76,8 +98,8 @@ public class StringTimeSeries {
     }
 
     public StringTimeSeries(String name, String dataType, ArrayList<String> timeSeries) {
-        this.name = name;
-        this.dataType = dataType;
+        this.name = new StringSeriesName(name);
+        this.dataType = new TypeName(dataType);
         this.timeSeries = timeSeries;
         validCount = 0;
         for (int i = 0; i < timeSeries.size(); i++) {
@@ -91,15 +113,12 @@ public class StringTimeSeries {
     public StringTimeSeries(Connection connection, ResultSet resultSet)
             throws SQLException, IOException, ClassNotFoundException {
 
-        this.nameId = resultSet.getInt(1);
-        this.name = SeriesNames.getStringName(connection, this.nameId);
+        this.name = new StringSeriesName(connection, resultSet.getInt(1));
         // System.out.println("name: " + name);
 
-        this.typeId = resultSet.getInt(2);
-        this.dataType = TypeNames.getName(connection, this.typeId);
+        this.dataType = new TypeName(connection, resultSet.getInt(2));
         // System.out.println("data type: " + dataType);
 
-        int length = resultSet.getInt(3);
         // System.out.println("length: " + length);
         validCount = resultSet.getInt(4);
         // System.out.println("valid count: " + validCount);
@@ -111,7 +130,12 @@ public class StringTimeSeries {
 
         // This unchecked caste warning can be fixed but it shouldnt be necessary if we only but ArrayList<String>
         // objects into the StringTimeSeries cache.
-        this.timeSeries = (ArrayList<String>) Compression.inflateObject(bytes);
+        Object inflated = Compression.inflateObject(bytes);
+
+        @SuppressWarnings("unchecked")
+        ArrayList<String> array = (ArrayList<String>) inflated;
+
+        this.timeSeries = (ArrayList<String>) array;
     }
 
     public static StringTimeSeries getStringTimeSeries(Connection connection, int flightId, String name)
@@ -140,11 +164,11 @@ public class StringTimeSeries {
     }
 
     private void setNameId(Connection connection) throws SQLException {
-        this.nameId = SeriesNames.getStringNameId(connection, name);
+        this.name = new StringSeriesName(connection, name.getName());
     }
 
     private void setTypeId(Connection connection) throws SQLException {
-        this.typeId = TypeNames.getId(connection, dataType);
+        this.dataType = new TypeName(connection, dataType.getName());
     }
 
     public String toString() {
@@ -162,11 +186,11 @@ public class StringTimeSeries {
     }
 
     public String getName() {
-        return name;
+        return name.getName();
     }
 
     public String getDataType() {
-        return dataType;
+        return dataType.getName();
     }
 
     public String getFirstValid() {
@@ -223,14 +247,14 @@ public class StringTimeSeries {
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
             throws SQLException, IOException {
-        if (nameId == -1)
+        if (name.getId() == -1)
             setNameId(connection);
-        if (typeId == -1)
+        if (dataType.getId() == -1)
             setTypeId(connection);
 
         preparedStatement.setInt(1, flightId);
-        preparedStatement.setInt(2, nameId);
-        preparedStatement.setInt(3, typeId);
+        preparedStatement.setInt(2, name.getId());
+        preparedStatement.setInt(3, dataType.getId());
         preparedStatement.setInt(4, timeSeries.size());
         preparedStatement.setInt(5, validCount);
 
@@ -251,7 +275,7 @@ public class StringTimeSeries {
     }
 
     public StringTimeSeries subSeries(Connection connection, int from, int until) throws SQLException {
-        StringTimeSeries newSeries = new StringTimeSeries(connection, name, dataType);
+        StringTimeSeries newSeries = new StringTimeSeries(connection, name.getName(), dataType.getName());
 
         for (int i = from; i < until; i++)
             newSeries.add(this.timeSeries.get(i));
@@ -260,7 +284,7 @@ public class StringTimeSeries {
     }
 
     public StringTimeSeries subSeries(int from, int until) throws SQLException {
-        StringTimeSeries newSeries = new StringTimeSeries(name, dataType);
+        StringTimeSeries newSeries = new StringTimeSeries(name.getName(), dataType.getName());
 
         for (int i = from; i < until; i++)
             newSeries.add(this.timeSeries.get(i));

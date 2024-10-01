@@ -1,17 +1,13 @@
 package org.ngafid.flights.process;
 
-import java.time.*;
 import java.util.Set;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Collections;
 import java.util.logging.Logger;
-import java.time.format.DateTimeFormatter;
 
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
-import org.ngafid.common.*;
-import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.MalformedFlightFileException;
 import org.ngafid.flights.FatalFlightFileException;
@@ -51,7 +47,7 @@ public class ProcessStallIndex extends ProcessStep {
         DoubleTimeSeries ias = builder.getDoubleTimeSeries(IAS);
         int length = ias.size();
 
-        if (builder.meta.airframeName.equals(AIRFRAME_CESSNA_172S)) {
+        if (builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)) {
             DoubleTimeSeries cas = DoubleTimeSeries.computed(CAS, Unit.KNOTS, length,
                     index -> {
                         double iasValue = ias.get(index);
@@ -80,7 +76,7 @@ public class ProcessStallIndex extends ProcessStep {
                     return pressRatio / tempRatio;
                 });
 
-        DoubleTimeSeries airspeed = builder.meta.airframeName.equals(AIRFRAME_CESSNA_172S)
+        DoubleTimeSeries airspeed = builder.meta.airframe.getName().equals(AIRFRAME_CESSNA_172S)
                 ? builder.getDoubleTimeSeries(CAS)
                 : builder.getDoubleTimeSeries(IAS);
         DoubleTimeSeries tasFtMin = DoubleTimeSeries.computed(TAS_FTMIN, Unit.FT_PER_MINUTE, length,
