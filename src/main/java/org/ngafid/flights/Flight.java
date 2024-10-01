@@ -309,8 +309,7 @@ public class Flight {
      * @throws SQLException
      */
     public static List<Flight> getFlightsWithinDateRangeFromAirport(Connection connection, String startDate,
-            String endDate,
-            String airportIataCode, int limit) throws SQLException {
+            String endDate, String airportIataCode, int limit) throws SQLException {
         String extraCondition = "    (                " +
                 "    EXISTS(          " +
                 "        SELECT       " +
@@ -318,6 +317,7 @@ public class Flight {
                 "        FROM         " +
                 "          itinerary  " +
                 "        WHERE        " +
+                "          itinerary.flight_id = flights.id AND " +
                 "          airport = '" + airportIataCode + "' " +
                 "    ) " +
                 "AND   " +
@@ -332,7 +332,7 @@ public class Flight {
     public static ArrayList<Flight> getFlights(Connection connection, int fleetId, int limit) throws SQLException {
         String queryString = "SELECT " + FLIGHT_COLUMNS + " FROM flights WHERE fleet_id = " + fleetId;
         if (limit > 0)
-            queryString += " LIMIT 100";
+            queryString += " LIMIT " + limit;
 
         try (PreparedStatement query = connection.prepareStatement(queryString);
                 ResultSet resultSet = query.executeQuery()) {
@@ -1411,6 +1411,7 @@ public class Flight {
     }
 
     public Flight(Connection connection, ResultSet resultSet) throws SQLException {
+        LOG.info("Got flight w/ id = " + resultSet.getInt(1));
         id = resultSet.getInt(1);
         fleetId = resultSet.getInt(2);
         uploaderId = resultSet.getInt(3);
@@ -2123,6 +2124,8 @@ public class Flight {
         preparedStatement.setInt(1, fleetId);
         preparedStatement.setInt(2, uploaderId);
         preparedStatement.setInt(3, uploadId);
+        LOG.info("AIRFRAME = " + airframe.getId());
+        LOG.info("AIRFRAME TYPE = " + airframeType.getId());
         preparedStatement.setInt(4, airframe.getId());
         preparedStatement.setInt(5, airframeType.getId());
         preparedStatement.setString(6, systemId);
