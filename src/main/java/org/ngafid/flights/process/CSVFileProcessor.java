@@ -22,6 +22,7 @@ import javax.xml.bind.DatatypeConverter;
  *
  * @author Aaron Chan
  * @author Joshua Karns
+ * @author Roman Kozulia
  */
 
 public class CSVFileProcessor extends FlightFileProcessor {
