@@ -23,6 +23,33 @@ public final class FlightMeta {
     public Airframes.Airframe airframe = null;
     public Airframes.AirframeType airframeType = null;
 
+    // Default constructor
+    public FlightMeta() {
+    }
+
+    // Copy constructor
+    public FlightMeta(FlightMeta other) {
+        this.fleetId = other.fleetId;
+        this.uploaderId = other.uploaderId;
+        this.uploadId = other.uploadId;
+        this.processingStatus = other.processingStatus;
+        this.startDateTime = other.startDateTime != null ? new String(other.startDateTime) : null;
+        this.endDateTime = other.endDateTime != null ? new String(other.endDateTime) : null;
+        this.md5Hash = other.md5Hash != null ? new String(other.md5Hash) : null;
+        this.systemId = other.systemId != null ? new String(other.systemId) : null;
+        this.filename = other.filename != null ? new String(other.filename) : null;
+        this.calculated = other.calculated != null ? new String(other.calculated) : null;
+        this.suggestedTailNumber = other.suggestedTailNumber != null ? new String(other.suggestedTailNumber) : null;
+
+        // Deep copy of Airframe if not null
+        this.airframe = other.airframe != null ? new Airframes.Airframe(other.airframe.getName()) : null;
+
+        // Deep copy of AirframeType if not null
+        this.airframeType = other.airframeType != null ? new Airframes.AirframeType(other.airframeType.getName()) : null;
+    }
+
+
+
     public int getFleetId() {
         return fleetId;
     }

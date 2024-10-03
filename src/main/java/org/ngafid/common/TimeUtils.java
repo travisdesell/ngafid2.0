@@ -113,14 +113,39 @@ public class TimeUtils {
         return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
     }
+    /**
+     * List of DateTime formats supported.
+     */
+    private static final List<DateTimeFormatter> dateTimeFormatters = Arrays.asList(
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss")
+
+    );
+
+    /**
+     * Helper method to parse the date and time using the declared formatters
+     * @param dateTimeString
+     * @return
+     */
+    public static LocalDateTime parseDateTime(String dateTimeString) {
+        String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");  // Replaces multiple spaces with a single space
+        for (DateTimeFormatter formatter : dateTimeFormatters) {
+            try {
+                return LocalDateTime.parse(normalizedDateTime, formatter);
+            } catch (Exception e) {
+                // Continue trying other formats
+            }
+        }
+        // If none of the formats work, throw an exception or handle it appropriately
+        throw new IllegalArgumentException("Date format not supported: " + normalizedDateTime);
+    }
 
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
             String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
 
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = LocalDateTime.parse(originalDate + " " + originalTime,
-                DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTime ldt = parseDateTime(originalDate + " " + originalTime);
 
         // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
