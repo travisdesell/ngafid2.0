@@ -11,8 +11,11 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.sql.SQLException;
 import java.time.Duration;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -53,6 +56,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         meta.airframe = new Airframes.Airframe("Fixed Wing"); // Fixed Wing By default
         meta.filename = filename;
+
     }
 
     /**
@@ -74,6 +78,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             String fileInformation = getFlightInfo(headerLines.get(0)); // Will not read a line. Header lines are already read by buffer reader.
 
 
+
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
@@ -85,6 +90,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             CSVReader csvReader = new CSVReader(bufferedReader);
             String[] firstRow = csvReader.peek();
             List<String[]> rows = csvReader.readAll();
+
+            boolean isG5FlightRecorder = isG5FlightRecorder(headerLines, firstRow);
 
             // Split the input list of entries from csv file into separate files if time difference between entries greater than 5 minutes.
             List<List<String[]>> flights = splitCSVIntoFlights(rows);
@@ -119,6 +126,24 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     var name = headers.get(i);
                     var dataType = dataTypes.get(i);
 
+
+                    if(isG5FlightRecorder){
+                        if (i == 0){
+                            name = "Lcl Date";
+                        }else if(i == 1){
+                            name = "Lcl Time";
+                            //G5 Data recorder doesn't have UTCOfst, and Local time.
+                            //This is just for testing purposes.
+                            stringTimeSeries.put(name, new StringTimeSeries("UTC Time", dataType, column));
+                            ArrayList<String> dummyColumn = new ArrayList<>();
+                            dummyColumn.add("-07:00");
+                            stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm",dummyColumn));
+
+                        }
+                    }
+
+
+
                     try {
                         Double.parseDouble(column.get(0));
                         doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
@@ -131,8 +156,19 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 // Build and add a flight
                 FlightMeta newMeta = new FlightMeta(meta); // Deep copy. Each FlightBuilder has its own FlightMeta object.
                 newMeta.setMd5Hash(md5Hash);
-                FlightBuilder builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
+
+
+                FlightBuilder builder;
+                if (isG5FlightRecorder) {
+                    builder  = new G5FlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
+                    flightBuilders.add(builder);
+
+                }else{
+                    builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
+                }
+
                 flightBuilders.add(builder);
+
 
                 // Clear data for the next flight
                 doubleTimeSeries.clear();
@@ -148,10 +184,48 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     /**
-     * Processes header lines from the csv flight, populates dataTypes and headers with
-     * the flight information.
+     * Determines if the data comes from G5 date recorder.
+     * Checks the conditions:
+     * If G5 is in the file name - we assume the data recorder is G5
+     * If Headers contains serial_number AND no system_id AND no airframe_name AND
+     * If the date is in the following format: M/d/yyyy
      * @param headerLines
-     * @throws FatalFlightFileException
+     * @param firstRow
+     * @return true or false
+     */
+
+    private boolean isG5FlightRecorder(List<String> headerLines, String[] firstRow) {
+        String fileName = pipeline.getUpload().filename.toLowerCase();
+
+        //G5 recorder has date in the format below
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
+
+        if (fileName.contains("g5")) {
+            return true;
+        }
+
+        if (headerLines.get(0).contains("serial_number") &&
+                !headerLines.get(0).contains("system_id") &&
+                !headerLines.get(0).contains("airframe_name")) {
+
+            // Check if the date in the expected format.
+                try {
+                    LocalDate.parse(firstRow[0], formatter);
+                    return true; // If the date is valid, we return true
+                } catch (DateTimeParseException e) {
+                    // If the date is not valid, we return false or handle the logic accordingly
+                    return false;
+                }
+            }
+            return false;
+    }
+
+
+    /**
+         * Processes header lines from the csv flight, populates dataTypes and headers with
+         * the flight information.
+         * @param headerLines
+         * @throws FatalFlightFileException
      */
     private void processHeaders(List<String> headerLines) throws FatalFlightFileException {
         if (headerLines.get(1) != null) {
@@ -269,7 +343,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
     /**
      * Splits a list of CSV rows into multiple flights based on a 5-minute time gap.
-     *
+     * If a row has an invalid date time, the line is skipped.
      * @param rows the list of CSV rows to process
      * @return a list of lists of type string, where each inner list represents a separate flight
      */
@@ -280,37 +354,44 @@ public class CSVFileProcessor extends FlightFileProcessor {
         LocalDateTime lastTimestamp = null;
 
         for (String[] row : rows) {
-            // Parse timestamp from the row
-            String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
-            LocalDateTime currentTimestamp = TimeUtils.parseDateTime(dateTimeString);
+            try {
+                // Parse timestamp from the row
+                String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
+                LocalDateTime currentTimestamp = TimeUtils.parseDateTime(dateTimeString);
 
-            if (lastTimestamp != null) {
-                // Check if the time difference between consecutive rows exceeds 5 minutes
-                Duration duration = Duration.between(currentTimestamp.toInstant(ZoneOffset.UTC), lastTimestamp.toInstant(ZoneOffset.UTC));
-                System.out.println("Duration is: " + duration + "Between " + lastTimestamp + " and " + currentTimestamp);
-                long timeDifferenceInMillis  = Math.abs(duration.toMillis());
-                System.out.println("Time Difference is  " + timeDifferenceInMillis);
-                if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
+                if (lastTimestamp != null) {
+                    // Check if the time difference between consecutive rows exceeds 5 minutes
+                    Duration duration = Duration.between(currentTimestamp.toInstant(ZoneOffset.UTC), lastTimestamp.toInstant(ZoneOffset.UTC));
+                    long timeDifferenceInMillis  = Math.abs(duration.toMillis());
+                    if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
 
-                    // Add the current flight to the list of flights and start a new flight
-                    flights.add(new ArrayList<>(currentFlight)); // Add the current flight
-                    currentFlight.clear(); // Reset for a new flight
+                        // Add the current flight to the list of flights and start a new flight
+                        flights.add(new ArrayList<>(currentFlight)); // Add the current flight
+                        currentFlight.clear(); // Reset for a new flight
+                    }
                 }
-            }
-            // Add the current row to the current flight
-            currentFlight.add(row);
 
-            // Update lastTimestamp to the current row's timestamp
-            lastTimestamp = currentTimestamp;
+                // Add the current row to the current flight
+                currentFlight.add(row);
+
+                // Update lastTimestamp to the current row's timestamp
+                lastTimestamp = currentTimestamp;
+
+            } catch (IllegalArgumentException e) {
+                // If parseDateTime throws an exception, log it and skip this row
+                LOG.warning("Skipping row due to unparseable date/time: " + Arrays.toString(row));
+            }
         }
 
         // Add the last flight to the list if not empty
         if (!currentFlight.isEmpty()) {
             flights.add(currentFlight);
         }
+
         LOG.info("CSVFileProcessor - extractContentInsideParentheses - returning number of flights: " + flights.size());
         return flights;
     }
+
     /**
      * Gets the flight information from the first line of the file
      * @param fileInformation
@@ -371,6 +452,21 @@ public class CSVFileProcessor extends FlightFileProcessor {
             // e.printStackTrace();
             throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.",
                     e);
+        }
+        //Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
+        if (!values.containsKey("airframe_name")) {
+            values.put("airframe_name", "Cessna 172S");
+            LOG.severe(logTag + "!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
+        }
+
+        if (!values.containsKey("system_id")) {
+            if (values.containsKey("serial_number")){
+                values.put("system_id", values.get("serial_number"));
+                LOG.severe(logTag + "Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
+            }else{
+                values.put("system_id", "11111111111111");
+                LOG.severe(logTag + "!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
+            }
         }
 
         for (var entry : values.entrySet()) {
