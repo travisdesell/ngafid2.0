@@ -17,7 +17,6 @@ Install mysql on your system. For ubuntu:
 ~/ $ sudo apt install mysql-server
 ```
 
-
 ### NOTE: On most Linux distributions, the MySQL package is provided by MariaDB. MariaDB is essentially the open-source version of MySQL and fully compatible with the MySQL syntax, however make sure you are using the latest version or you may run into problems.
 Most distributions (with the exception of Arch and a few others) will alias MySQL to MariaDB
 i.e.
@@ -60,55 +59,24 @@ mysql> exit
 Bye
 ```
 
-To create the tables of the database, you'll need php and the php mysql library installed.
-For ubuntu:
+We need to store these credentials in a file called `src/main/resources/liquibase.properties`, along with some other information:
 ```
-~/ $ sudo apt install php7.2 php7.2-mysql
-```
-If you use an older version of PHP it will probably work too.
-
-
-Then, in the ngafid2.0 repo create the following two files:
-```
-~/ngafid2.0 $ touch db/db_info db/db_info.php
+changeLogFile=changelog-root.xml
+outputChangeLogFile=changelog.mysql.sql
+url=jdbc:mysql://localhost/ngafid
+username=ngafid_user
+password=password
 ```
 
-The contents of those files should be:
+You should not modify the first two lines, but lines 3-5 may need to be tweaked depending on your database setup. In particular, if you are using a database other than mysql you will have to tweak the URL.
 
-`db/db_info`
+Once you have done this, you can create the database tables by running the following:
 ```
-<database_name - probably ngafid or ngafid_test>
-<database_host - probably localhost>
-<database_user - probably ngafid_user>
-<database_password - better not be 'password' on production>
+~/ngafid2.0 $ mvn liquibase:update
 ```
-
-`db/db_info.php`
-```
-<?php
-$ngafid_db_user = '<database_user>';
-$ngafid_db_name = '<database_name>';
-$ngafid_db_host = '<probably localhost>';
-$ngafid_db_password = '<your password>';
-?>
-```
-
-Now that we've created these two files, we can create the tables of the database by running the
-PHP script `db/create_tables.php`:
-```
-~/ngafid2.0 $ php db/create_tables.php
-(lots of output here)
-```
-
-Now load the event definitions SQL to set up all the exceedence events in the database, filling in the appropriate things:
-
-```
-mysql -h <hostname> -u <database_user> --password=<your password> <database_name> < db/event_definitions_2020_05_15.sql
-```
-
 
 ## 3. Configure the environment
-We need to set up some environmental variables.
+We need to set up some environmental variables that point to some important data / directories.
 
 Create `init_env.sh`, and add the following:
 ```bash
@@ -117,7 +85,6 @@ export NGAFID_DATA_FOLDER=<create a ngafid data folder and put the absolute path
 export NGAFID_PORT=8181 # You can use whatever port you need or want to use
 export NGAFID_UPLOAD_DIR=$NGAFID_DATA_FOLDER/uploads
 export NGAFID_ARCHIVE_DIR=$NGAFID_DATA_FOLDER/archive
-export NGAFID_DB_INFO=$NGAFID_REPO/db/db_info.php
 # If you don't have the data to add to the terrain directory, ask for it.
 export TERRAIN_DIRECTORY=$NGAFID_DATA_FOLDER/terrain/
 # If you don't have the data for the airports directory, ask for it.
@@ -148,10 +115,24 @@ add the following line to your `~/.bashrc` file:
 source ~/ngafid2.0/init_env.sh
 ```
 
-## 4. Running the webserver
-For java 14:
-http://download.opensuse.org/repositories/Java:/Factory/openSUSE_Factory/x86_64/
+## 4. Download Data Required for Flight Processing
+You need to download the data from the following link, and place the files in the following folder structure: [NGAFID Setup Data](https://drive.google.com/drive/folders/1cPMWpXCQb-I1lraFDY5Snn14UvMqu2SH?usp=drive_link). Request permissions if you do not have them (if you use an RIT google account you should have access by default).
 
+```
+$NGAFID_DATA_FOLDER
+├── airports
+│   └── airports_parsed.csv
+├── archive
+├── runways
+│   └── runways_parsed.csv
+├── terrain        # You will have to decompress the terrain data.
+│   ├── H11
+│   ├── H12
+│   ├── H13
+...
+```
+
+## 5. Running the webserver
 First, we need to install a JAR file dependency to where Maven fetches your dependencies from.
 Running the next step will not be possible without running this script.
 ```
@@ -182,12 +163,12 @@ and automatically recompile whenever you change one of the files:
 ```
 
 Run:
-You should then be able to compile and run the webserver by running `run_webserver.sh`
+You should then be able to compile and run the webserver by running `run/webserver.sh`
 ```
-~/ngafid2.0 $ sh run_webserver.sh
+~/ngafid2.0 $ run/webserver.sh
 ```
 
-Importing flights and calculating exceedences can be done by running the `run_process_upload.sh` file.
+Importing flights and calculating exceedences can be done by running the `run/process_upload.sh` file.
 
 
 ## (Optional) using the backup daemon - works on Linux systems only.

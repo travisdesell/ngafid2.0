@@ -32,21 +32,6 @@ public class EventMetaData {
         }
     }
 
-    static {
-        try (Connection connection = Database.getConnection()) {
-            for (EventMetaDataKey emdk : EventMetaDataKey.values()) {
-                try (PreparedStatement insertion = connection
-                        .prepareStatement("INSERT IGNORE INTO event_metadata_keys (name) VALUES (?)")) {
-                    insertion.setString(1, emdk.toString());
-                    insertion.executeUpdate();
-                }
-            }
-        } catch (SQLException e) {
-            LOG.info("Encountered exception trying to insert meta data keys:");
-            e.printStackTrace();
-        }
-    }
-
     private int eventId;
 
     private EventMetaDataKey name;
