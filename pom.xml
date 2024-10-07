@@ -149,8 +149,10 @@
                     <artifactId>liquibase-maven-plugin</artifactId>
                     <version>4.29.2</version>
                     <configuration>
+			            <searchPath>src/main/resources</searchPath>
                         <propertyFile>liquibase.properties</propertyFile>
-                    </configuration>
+                        <changeLogFile>changelog-root.xml</changeLogFile>
+			</configuration>
                     </plugin>
 
                 <plugin>
