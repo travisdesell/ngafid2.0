@@ -3,7 +3,7 @@ package org.ngafid.routes;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
-
+import java.sql.Connection;
 import java.sql.SQLException;
 
 import com.google.gson.Gson;
@@ -34,10 +34,10 @@ public class PostMainContent implements Route {
         List<Upload> uploads;
         List<Upload> imports;
 
-        public MainContent(int fleetId) throws SQLException {
-            flights = Flight.getFlights(Database.getConnection(), fleetId);
-            uploads = Upload.getUploads(Database.getConnection(), fleetId);
-            imports = Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"});
+        public MainContent(Connection connection, int fleetId) throws SQLException {
+            flights = Flight.getFlights(connection, fleetId);
+            uploads = Upload.getUploads(connection, fleetId);
+            imports = Upload.getUploads(connection, fleetId, new String[] { "IMPORTED", "ERROR" });
         }
     }
 
@@ -48,10 +48,10 @@ public class PostMainContent implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        try {
-            MainContent mainContent = new MainContent(user.getFleetId());
+        try (Connection connection = Database.getConnection()) {
+            MainContent mainContent = new MainContent(connection, user.getFleetId());
 
-            //LOG.info(gson.toJson(mainContent));
+            // LOG.info(gson.toJson(mainContent));
 
             return gson.toJson(mainContent);
         } catch (SQLException e) {

@@ -1,1 +1,1 @@
-mvn compile exec:java -Dexec.mainClass="org.ngafid.flights.AirSync"
+mvn compile exec:java -Dexec.mainClass="org.ngafid.flights.AirSync" -Dexec.args="$@"

@@ -34,10 +34,11 @@ public class PostUploadDetails implements Route {
         ArrayList<FlightWarning> flightWarnings;
 
         public UploadDetails(int uploadId) throws SQLException {
-            Connection connection = Database.getConnection();
-            uploadErrors = UploadError.getUploadErrors(connection, uploadId);
-            flightErrors = FlightError.getFlightErrors(connection, uploadId);
-            flightWarnings = FlightWarning.getFlightWarnings(connection, uploadId);
+            try (Connection connection = Database.getConnection()) {
+                uploadErrors = UploadError.getUploadErrors(connection, uploadId);
+                flightErrors = FlightError.getFlightErrors(connection, uploadId);
+                flightWarnings = FlightWarning.getFlightWarnings(connection, uploadId);
+            }
         }
     }
 
@@ -49,13 +50,9 @@ public class PostUploadDetails implements Route {
         try {
             UploadDetails uploadDetails = new UploadDetails(uploadId);
 
-            System.out.println(gson.toJson(uploadDetails));
-            //LOG.info(gson.toJson(uploadDetails));
-
             return gson.toJson(uploadDetails);
         } catch (SQLException e) {
             return gson.toJson(new ErrorResponse(e));
         }
     }
 }
-

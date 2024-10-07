@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -15,7 +14,6 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
 
 import com.google.gson.Gson;
 
@@ -31,7 +29,6 @@ import org.ngafid.accounts.User;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 public class GetCreateAccount implements Route {
     private static final Logger LOG = Logger.getLogger(GetCreateAccount.class.getName());
@@ -51,31 +48,31 @@ public class GetCreateAccount implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "create_account.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
             StringBuilder fleetnamesJavascript = new StringBuilder("var fleetNames = [");
-            try {
+            try (Connection connection = Database.getConnection()) {
                 ArrayList<String> names = new ArrayList<String>();
-                Connection connection = Database.getConnection();
 
-                PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
-                ResultSet resultSet = query.executeQuery();
-
-                boolean first = true;
-                while (resultSet.next()) {
-                    if (first) {
-                        first = false;
-                        fleetnamesJavascript.append("\"");
-                        fleetnamesJavascript.append(resultSet.getString(1));
-                        fleetnamesJavascript.append("\"");
-                    } else {
-                        fleetnamesJavascript.append(", \"");
-                        fleetnamesJavascript.append(resultSet.getString(1));
-                        fleetnamesJavascript.append("\"");
+                try (PreparedStatement query = connection
+                        .prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
+                        ResultSet resultSet = query.executeQuery()) {
+                    boolean first = true;
+                    while (resultSet.next()) {
+                        if (first) {
+                            first = false;
+                            fleetnamesJavascript.append("\"");
+                            fleetnamesJavascript.append(resultSet.getString(1));
+                            fleetnamesJavascript.append("\"");
+                        } else {
+                            fleetnamesJavascript.append(", \"");
+                            fleetnamesJavascript.append(resultSet.getString(1));
+                            fleetnamesJavascript.append("\"");
+                        }
                     }
                 }
             } catch (SQLException e) {
@@ -83,14 +80,6 @@ public class GetCreateAccount implements Route {
             }
 
             fleetnamesJavascript.append("];");
-
-            /*
-            List<Item> items = Arrays.asList(
-                    new Item("Travis", "3.00"),
-                    new Item("Shannon", "300.00"),
-                    new Item("Momo", "30.00")
-                    );
-                    */
 
             scopes.put("fleetnames_js", fleetnamesJavascript);
 

@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.List;
@@ -23,7 +22,6 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
-
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -39,7 +37,6 @@ import org.ngafid.events.EventDefinition;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 public class GetFlight implements Route {
     private static final Logger LOG = Logger.getLogger(GetFlight.class.getName());
@@ -80,7 +77,7 @@ public class GetFlight implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flight.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -96,8 +93,6 @@ public class GetFlight implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            Connection connection = Database.getConnection();
-
             String[] flightIds = request.queryParamsValues("flight_id");
             LOG.info("Flight id(s) are: " + Arrays.toString(flightIds));
 
@@ -106,10 +101,12 @@ public class GetFlight implements Route {
             ArrayList<Flight> flights = new ArrayList<Flight>();
 
             for (String flightId : flightIds) {
-                Flight flight = Flight.getFlight(Database.getConnection(), Integer.parseInt(flightId));
+                Flight flight = Flight.getFlight(connection, Integer.parseInt(flightId));
 
                 if (flight.getFleetId() != fleetId) {
-                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: " + fleetId);
+                    LOG.severe("INVALID ACCESS: user did not have access to flight id: " + flightId
+                            + ", it belonged to fleet: " + flight.getFleetId() + " and the user's fleet id was: "
+                            + fleetId);
                     Spark.halt(401, "User did not have access to this flight.");
                 }
 
@@ -121,7 +118,8 @@ public class GetFlight implements Route {
 
             boolean first = true;
             for (Flight flight : flights) {
-                if (!first) sb.append(", ");
+                if (!first)
+                    sb.append(", ");
                 first = false;
                 sb.append(gson.toJson(flight));
             }

@@ -34,7 +34,6 @@ public class GetEventDefinitions implements Route {
         this.gson = gson;
     }
 
-
     @Override
     public Object handle(Request request, Response response) throws Exception {
         LOG.info("Handling " + this.getClass().getName() + " route");
@@ -43,11 +42,9 @@ public class GetEventDefinitions implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "event_definitions_display.html";
         LOG.severe("Template File: '" + templateFile + "'");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             final Session session = request.session();
             User user = session.attribute("user");
@@ -60,9 +57,9 @@ public class GetEventDefinitions implements Route {
             long startTime = System.currentTimeMillis();
 
             scopes.put("events_js",
-                    //"var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                    "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId)) + "');\n"
-            );
+                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
+                    "var eventNames = JSON.parse('" + gson.toJson(EventDefinition.getUniqueNames(connection, fleetId))
+                            + "');\n");
 
             long endTime = System.currentTimeMillis();
 
@@ -80,6 +77,5 @@ public class GetEventDefinitions implements Route {
 
         return resultString;
     }
-
 
 }

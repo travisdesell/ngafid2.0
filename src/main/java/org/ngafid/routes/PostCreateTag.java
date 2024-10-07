@@ -52,19 +52,17 @@ public class PostCreateTag implements Route {
 
         int fleetId = user.getFleetId();
 
-        try {
-            Connection connection = Database.getConnection();
-    
-            if(Flight.tagExists(connection, fleetId, name)){
+        try (Connection connection = Database.getConnection()) {
+
+            if (Flight.tagExists(connection, fleetId, name)) {
                 return gson.toJson(ALREADY_EXISTS);
             }
 
             FlightTag nTag = Flight.createTag(fleetId, flightId, name, description, color, connection);
 
-
             // if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
-            //     LOG.severe("INVALID ACCESS: user did not have access to this flight.");
-            //     Spark.halt(401, "User did not have access to this flight.");
+            // LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+            // Spark.halt(401, "User did not have access to this flight.");
             // }
 
             return gson.toJson(nTag);
@@ -75,4 +73,3 @@ public class PostCreateTag implements Route {
         }
     }
 }
-

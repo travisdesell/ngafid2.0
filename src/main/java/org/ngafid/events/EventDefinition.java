@@ -1,5 +1,6 @@
 package org.ngafid.events;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -17,11 +18,10 @@ import org.ngafid.filters.Filter;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 
-
 public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
-    
+
     private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type";
 
     public static final int MIN_SEVERITY = 1;
@@ -43,8 +43,8 @@ public class EventDefinition {
     private int severityTypeId;
 
     /**
-     *  Initializes the severity column ids and severity type id so that the severity values can
-     *  be calculated quickly.
+     * Initializes the severity column ids and severity type id so that the severity values can
+     * be calculated quickly.
      */
     void initializeSeverity() {
         if (severityType.equals("min")) {
@@ -73,7 +73,7 @@ public class EventDefinition {
         }
 
         if (current != severityColumnNames.size()) {
-            //there was a column in the severity column names that wasn't in the column names
+            // there was a column in the severity column names that wasn't in the column names
             LOG.severe("ERROR initializing EventDefinition: '" + this.name + "'");
             LOG.severe("current: " + current + ", severityColumnIds.length: " + severityColumnIds.length);
             LOG.severe("severityColumnNames did not match columnNames");
@@ -94,15 +94,17 @@ public class EventDefinition {
     /**
      * Creates an event definition.
      *
-     * @param fleetId the id of the fleet this event applies to. 0 is generic and will apply to all fleets
-     * @param name is the name of the event
-     * @param startBuffer is how many seconds this event needs to occur in before it will be tracked
-     * @param stopBuffer is how many seconds must go by witihout the event occuring before it stops being tracked
-     * @param filter is the event condition filter
+     * @param fleetId             the id of the fleet this event applies to. 0 is generic and will apply to all fleets
+     * @param name                is the name of the event
+     * @param startBuffer         is how many seconds this event needs to occur in before it will be tracked
+     * @param stopBuffer          is how many seconds must go by witihout the event occuring before it stops being
+     *                            tracked
+     * @param filter              is the event condition filter
      * @param severityColumnNames a list of column names (unique) which are used to calculate the severity
-     * @param severityType a string representation of the severity type, can be 'min', 'abs' or 'max'
+     * @param severityType        a string representation of the severity type, can be 'min', 'abs' or 'max'
      */
-    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId, Filter filter, TreeSet<String> severityColumnNames, String severityType) {
+    public EventDefinition(int fleetId, String name, int startBuffer, int stopBuffer, int airframeNameId, Filter filter,
+            TreeSet<String> severityColumnNames, String severityType) {
         this.fleetId = fleetId;
         this.startBuffer = startBuffer;
         this.stopBuffer = stopBuffer;
@@ -147,8 +149,10 @@ public class EventDefinition {
             }
         }
 
-        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
-        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
+        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>() {
+        }.getType());
+        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>() {
+        }.getType());
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
@@ -158,13 +162,13 @@ public class EventDefinition {
      * Get an event definition by specifying the event name
      *
      * @param connection is the DB session
-     * @param eventName is the event name being retrieved
+     * @param eventName  is the event name being retrieved
      * @return Event Definition matching the name passed in
      */
-    public static EventDefinition getEventDefinition(Connection connection, String eventName) {
+    public static EventDefinition getEventDefinition(Connection connection, String eventName)
+            throws IOException, SQLException {
         eventName = "name = '" + eventName + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
-
 
         return getEventDefinitionFromDB(connection, query);
     }
@@ -174,11 +178,12 @@ public class EventDefinition {
      * Useful for events that vary based on airframe ID
      *
      * @param connection is the DB session
-     * @param eventName is the event name being retrieved
+     * @param eventName  is the event name being retrieved
      * @param airframeID is the airframe ID that goes with the event
      * @return Event Definition matching name and ID passed in
      */
-    public static EventDefinition getEventDefinition(Connection connection, String eventName, int airframeID) {
+    public static EventDefinition getEventDefinition(Connection connection, String eventName, int airframeID)
+            throws IOException, SQLException {
         String airframeIDStr = "airframe_id = " + airframeID;
 
         eventName = "name = '" + eventName + "'";
@@ -187,9 +192,8 @@ public class EventDefinition {
         return getEventDefinitionFromDB(connection, query);
     }
 
-    public static EventDefinition getEventDefinition(Connection connection, int eventID) {
-        EventDefinition eventDef = null;
-
+    public static EventDefinition getEventDefinition(Connection connection, int eventID)
+            throws IOException, SQLException {
         String eventIDStr = "id = '" + eventID + "'";
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventIDStr;
 
@@ -201,47 +205,44 @@ public class EventDefinition {
      */
     private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
 
-    public static List<EventDefinition> getEventDefinitions(Connection connection, String eventName) throws SQLException {
+    public static List<EventDefinition> getEventDefinitions(Connection connection, String eventName)
+            throws SQLException {
         if (NAME_TO_EVENT_DEFINITIONS.containsKey(eventName))
             return NAME_TO_EVENT_DEFINITIONS.get(eventName);
 
         List<EventDefinition> definitions = new ArrayList<>();
 
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE name = ?";
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, eventName);
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, eventName);
 
-        ResultSet resultSet = statement.executeQuery();
-
-        while (resultSet.next()) {
-            EventDefinition ed = new EventDefinition(resultSet);
-            definitions.add(ed);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    EventDefinition ed = new EventDefinition(resultSet);
+                    definitions.add(ed);
+                }
+            }
         }
-        
-        statement.close();
-        resultSet.close();
 
         NAME_TO_EVENT_DEFINITIONS.put(eventName, definitions);
 
         return definitions;
     }
 
-    
     private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
 
     public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
         if (EVENT_DEFINITION_ID_TO_NAME == null) {
             String query = "SELECT id, name FROM event_definitions";
-            PreparedStatement ps = connection.prepareStatement(query);
-            
-            ResultSet resultSet = ps.executeQuery();
+            try (PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
 
-            EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
+                EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
 
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String name = resultSet.getString("name");
+                    EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+                }
             }
         }
 
@@ -252,29 +253,21 @@ public class EventDefinition {
      * Helper method for retrieving the EventDefinition from server
      *
      * @param connection is the DB session
-     * @param query is the query to execute to the DB
+     * @param query      is the query to execute to the DB
      * @return Event Definition result from DB
      */
-    private static EventDefinition getEventDefinitionFromDB(Connection connection, String query) {
-        EventDefinition eventDef = null;
-
-        try {
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            System.out.println(preparedStatement.toString());
-
-            ResultSet resultSet = preparedStatement.executeQuery();
+    private static EventDefinition getEventDefinitionFromDB(Connection connection, String query)
+            throws IOException, SQLException {
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
 
             if (resultSet.next()) {
-                eventDef = new EventDefinition(resultSet);
+                return new EventDefinition(resultSet);
+            } else {
+                return null;
             }
-
-            preparedStatement.close();
-            resultSet.close();
-        } catch (SQLException se) {
-            se.printStackTrace();
         }
-
-        return eventDef;
     }
 
     /**
@@ -340,7 +333,7 @@ public class EventDefinition {
      * It ignores NaNs and returns -Double.MAX_VALUE if all values are NaN
      *
      * @param columns are the DoubleTimeSeries
-     * @param time is the time step in the series
+     * @param time    is the time step in the series
      */
 
     double maxArray(DoubleTimeSeries[] columns, int time) {
@@ -348,19 +341,19 @@ public class EventDefinition {
 
         for (int i = 0; i < severityColumnIds.length; i++) {
             double value = columns[severityColumnIds[i]].get(time);
-            if (Double.isNaN(value)) continue;
+            if (Double.isNaN(value))
+                continue;
             max = Math.max(value, max);
         }
         return max;
     }
-
 
     /**
      * Calculates the maximum absolute value in an array of DoubleTimeSeries at a particular time.
      * It ignores NaNs and returns -Double.MAX_VALUE if all values are NaN
      *
      * @param columns are the DoubleTimeSeries
-     * @param time is the time step in the series
+     * @param time    is the time step in the series
      */
 
     double maxAbsArray(DoubleTimeSeries[] columns, int time) {
@@ -368,7 +361,8 @@ public class EventDefinition {
 
         for (int i = 0; i < severityColumnIds.length; i++) {
             double value = Math.abs(columns[severityColumnIds[i]].get(time));
-            if (Double.isNaN(value)) continue;
+            if (Double.isNaN(value))
+                continue;
             max = Math.max(value, max);
         }
         return max;
@@ -379,7 +373,7 @@ public class EventDefinition {
      * It ignores NaNs and returns Double.MAX_VALUE if all values are NaN
      *
      * @param columns are the DoubleTimeSeries
-     * @param time is the time step in the series
+     * @param time    is the time step in the series
      */
 
     double minArray(DoubleTimeSeries[] columns, int time) {
@@ -387,7 +381,8 @@ public class EventDefinition {
 
         for (int i = 0; i < severityColumnIds.length; i++) {
             double value = columns[severityColumnIds[i]].get(time);
-            if (Double.isNaN(value)) continue;
+            if (Double.isNaN(value))
+                continue;
             min = Math.min(value, min);
         }
         return min;
@@ -398,7 +393,7 @@ public class EventDefinition {
      * It ignores NaNs and returns +Double.MAX_VALUE if all values are NaN
      *
      * @param columns are the DoubleTimeSeries
-     * @param time is the time step in the series
+     * @param time    is the time step in the series
      */
 
     double minAbsArray(DoubleTimeSeries[] columns, int time) {
@@ -406,18 +401,18 @@ public class EventDefinition {
 
         for (int i = 0; i < severityColumnIds.length; i++) {
             double value = Math.abs(columns[severityColumnIds[i]].get(time));
-            if (Double.isNaN(value)) continue;
+            if (Double.isNaN(value))
+                continue;
             min = Math.min(value, min);
         }
         return min;
     }
 
-
     /**
-     * Gets the severity value for this event definition at time 
+     * Gets the severity value for this event definition at time
      *
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
-     * @param i is the time step the severity is being calculated for
+     * @param i       is the time step the severity is being calculated for
      *
      * @return the severity value from the given columns at time
      */
@@ -458,14 +453,13 @@ public class EventDefinition {
             }
         }
 
-        //should never get here
+        // should never get here
         return 0.0;
     }
 
-
     /**
      * @param columns is an array of DoubleTimeSeries for each column of data used to calculate this event
-     * @param i is the time step the severity is being calculated for
+     * @param i       is the time step the severity is being calculated for
      *
      * @return the severity value from the given columns at time i
      */
@@ -480,31 +474,33 @@ public class EventDefinition {
             case MIN_SEVERITY:
                 return Math.min(currentSeverity, getSeverity(doubleSeries, time));
 
-
             default:
                 System.err.println("Error getting severity for event:  " + toString());
-                System.err.println("Could not update severity for unknown event severity type: '" + severityType + "', severityTypeId: '" + severityTypeId + "'");
+                System.err.println("Could not update severity for unknown event severity type: '" + severityType
+                        + "', severityTypeId: '" + severityTypeId + "'");
                 System.exit(1);
         }
 
-        //should never get here
+        // should never get here
         return 0;
     }
 
-
     /**
      * Updates an existing event definition into the database.
      *
      * @param connection is the connection to the database.
      */
-    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
+    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
+            int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson, String severityType)
+            throws SQLException {
         int airframeNameID = 0;
 
         if (!airframe.equals("All Airframes")) {
-            airframeNameID = Airframes.getNameId(connection, airframe);
+            airframeNameID = new Airframes.Airframe(connection, airframe).getId();
         }
 
-        update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson, severityColumnNamesJson, severityType);
+        update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson,
+                severityColumnNamesJson, severityType);
     }
 
     /**
@@ -512,7 +508,9 @@ public class EventDefinition {
      *
      * @param connection is the connection to the database.
      */
-    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
+    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer,
+            int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson, String severityType)
+            throws SQLException {
         Filter filter = gson.fromJson(filterJson, Filter.class);
         String columnNamesJson;
 
@@ -524,32 +522,33 @@ public class EventDefinition {
 
         String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setString(2, name);
-        preparedStatement.setInt(3, startBuffer);
-        preparedStatement.setInt(4, stopBuffer);
-        preparedStatement.setInt(5, airframeNameID);
-        preparedStatement.setString(6, filterJson);
-        preparedStatement.setString(7, columnNamesJson);
-        preparedStatement.setString(8, severityColumnNamesJson);
-        preparedStatement.setString(9, severityType);
-        preparedStatement.setInt(10, eventId);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, startBuffer);
+            preparedStatement.setInt(4, stopBuffer);
+            preparedStatement.setInt(5, airframeNameID);
+            preparedStatement.setString(6, filterJson);
+            preparedStatement.setString(7, columnNamesJson);
+            preparedStatement.setString(8, severityColumnNamesJson);
+            preparedStatement.setString(9, severityType);
+            preparedStatement.setInt(10, eventId);
 
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
     }
-
 
     /**
      * Have an event definition update itself in the database.
+     * 
      * @param connection
      * @throws SQLException
      */
     public void updateSelf(Connection connection) throws SQLException {
         this.columnNames = new TreeSet<>(this.severityColumnNames);
-        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, gson.toJson(filter), gson.toJson(severityColumnNames), severityType);
+        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, gson.toJson(filter),
+                gson.toJson(severityColumnNames), severityType);
     }
 
     /**
@@ -557,45 +556,47 @@ public class EventDefinition {
      *
      * @param connection is the connection to the database.
      */
-    public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
+    public static void insert(Connection connection, int fleetId, String name, int startBuffer, int stopBuffer,
+            String airframe, String filterJson, String severityColumnNamesJson, String severityType)
+            throws SQLException {
         Filter filter = gson.fromJson(filterJson, Filter.class);
         TreeSet<String> columnNames = filter.getColumnNames();
 
         if (airframe.equals("All Airframes")) {
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, fleetId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, startBuffer);
-            preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, 0);
-            preparedStatement.setString(6, filterJson);
-            preparedStatement.setString(7, gson.toJson(columnNames));
-            preparedStatement.setString(8, severityColumnNamesJson);
-            preparedStatement.setString(9, severityType);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setString(2, name);
+                preparedStatement.setInt(3, startBuffer);
+                preparedStatement.setInt(4, stopBuffer);
+                preparedStatement.setInt(5, 0);
+                preparedStatement.setString(6, filterJson);
+                preparedStatement.setString(7, gson.toJson(columnNames));
+                preparedStatement.setString(8, severityColumnNamesJson);
+                preparedStatement.setString(9, severityType);
 
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
         } else {
-            int airframeNameId = Airframes.getNameId(connection, airframe);
+            int airframeNameId = new Airframes.Airframe(connection, airframe).getId();
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, fleetId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, startBuffer);
-            preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, airframeNameId);
-            preparedStatement.setString(6, filterJson);
-            preparedStatement.setString(7, gson.toJson(columnNames));
-            preparedStatement.setString(8, severityColumnNamesJson);
-            preparedStatement.setString(9, severityType);
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                preparedStatement.setInt(1, fleetId);
+                preparedStatement.setString(2, name);
+                preparedStatement.setInt(3, startBuffer);
+                preparedStatement.setInt(4, stopBuffer);
+                preparedStatement.setInt(5, airframeNameId);
+                preparedStatement.setString(6, filterJson);
+                preparedStatement.setString(7, gson.toJson(columnNames));
+                preparedStatement.setString(8, severityColumnNamesJson);
+                preparedStatement.setString(9, severityType);
 
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
+                LOG.info(preparedStatement.toString());
+                preparedStatement.executeUpdate();
+            }
         }
     }
 
@@ -605,7 +606,8 @@ public class EventDefinition {
      *
      * @param connection is the connection to the database.
      */
-    public static void insert(Connection connection, int id, String name, int startBuffer, int stopBuffer, int airframeId) throws SQLException {
+    public static void insert(Connection connection, int id, String name, int startBuffer, int stopBuffer,
+            int airframeId) throws SQLException {
         if (id > 0) {
             LOG.info("Passed a positive ID to special event insertion.");
             System.exit(0);
@@ -613,64 +615,62 @@ public class EventDefinition {
 
         String query = "INSERT INTO event_definitions SET fleet_id = ?, flight_id = 0, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?, id = ?";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, 0);
-        preparedStatement.setString(2, name);
-        preparedStatement.setInt(3, startBuffer);
-        preparedStatement.setInt(4, stopBuffer);
-        preparedStatement.setInt(5, airframeId);
-        preparedStatement.setString(6, "{}");
-        preparedStatement.setString(7, "{}");
-        preparedStatement.setString(8, "{}");
-        preparedStatement.setString(9, "max");
-        preparedStatement.setInt(10, id);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, 0);
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, startBuffer);
+            preparedStatement.setInt(4, stopBuffer);
+            preparedStatement.setInt(5, airframeId);
+            preparedStatement.setString(6, "{}");
+            preparedStatement.setString(7, "{}");
+            preparedStatement.setString(8, "{}");
+            preparedStatement.setString(9, "max");
+            preparedStatement.setInt(10, id);
 
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
     }
 
-
     /**
-     * Gets all  event definitions from the database with a query.
+     * Gets all event definitions from the database with a query.
      *
-     * @param connection is the connection to the database.
-     * @param extraQuery is a string of extra SQL conditions
+     * @param connection      is the connection to the database.
+     * @param extraQuery      is a string of extra SQL conditions
      * @param extraParameters are the parameters to that query
      *
      * @return the event definitions from the database.
      */
-    public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery, Object[] extraParameters) throws SQLException {
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + extraQuery;
+    public static ArrayList<EventDefinition> getAll(Connection connection, String extraQuery, Object[] extraParameters)
+            throws SQLException {
+        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE "
+                + extraQuery;
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        for (int i = 0; i < extraParameters.length; i++) {
-            if (extraParameters[i] instanceof String) {
-                preparedStatement.setString(i + 1, (String)extraParameters[i]);
-            } else if (extraParameters[i] instanceof Integer) {
-                preparedStatement.setInt(i + 1, (Integer)extraParameters[i]);
-            } else if (extraParameters[i] instanceof Double) {
-                preparedStatement.setDouble(i + 1, (Double)extraParameters[i]);
-            } else {
-                LOG.severe("unknown parameter to event definition query: " + extraParameters[i]);
-                System.exit(1);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            for (int i = 0; i < extraParameters.length; i++) {
+                if (extraParameters[i] instanceof String) {
+                    preparedStatement.setString(i + 1, (String) extraParameters[i]);
+                } else if (extraParameters[i] instanceof Integer) {
+                    preparedStatement.setInt(i + 1, (Integer) extraParameters[i]);
+                } else if (extraParameters[i] instanceof Double) {
+                    preparedStatement.setDouble(i + 1, (Double) extraParameters[i]);
+                } else {
+                    LOG.severe("unknown parameter to event definition query: " + extraParameters[i]);
+                    System.exit(1);
+                }
+            }
+
+            LOG.info(preparedStatement.toString());
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
+                while (resultSet.next()) {
+                    allEvents.add(new EventDefinition(resultSet));
+                }
+
+                return allEvents;
             }
         }
-
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
-        while (resultSet.next()) {
-            allEvents.add(new EventDefinition(resultSet));
-        }
-        resultSet.close();
-        preparedStatement.close();
-
-
-        return allEvents;
     }
-
 
     /**
      * Gets all of the event definitions from the database.
@@ -682,46 +682,44 @@ public class EventDefinition {
     public static ArrayList<EventDefinition> getAll(Connection connection) throws SQLException {
         String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
 
-        ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
-        while (resultSet.next()) {
-            allEvents.add(new EventDefinition(resultSet));
+            ArrayList<EventDefinition> allEvents = new ArrayList<EventDefinition>();
+            while (resultSet.next()) {
+                allEvents.add(new EventDefinition(resultSet));
+            }
+
+            return allEvents;
         }
-        resultSet.close();
-        preparedStatement.close();
-
-        return allEvents;
     }
 
     /**
      * Gets a list of all the event definition names, will only have one name for non-generic events.
      *
      * @param connection is the connection to the database.
-     * @param fleetId is the fleet id for the event definitions
+     * @param fleetId    is the fleet id for the event definitions
      *
      * @return an array list of all event names in the database for this fleet
      */
     public static ArrayList<String> getUniqueNames(Connection connection, int fleetId) throws SQLException {
-        //add all the generic event names
+        // add all the generic event names
         String query = "SELECT DISTINCT(name) FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?)";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, fleetId);
 
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
+            LOG.info(preparedStatement.toString());
 
-        ArrayList<String > uniqueNames = new ArrayList<>();
-        while (resultSet.next()) {
-            uniqueNames.add(resultSet.getString(1));
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                ArrayList<String> uniqueNames = new ArrayList<>();
+                while (resultSet.next()) {
+                    uniqueNames.add(resultSet.getString(1));
+                }
+                return uniqueNames;
+            }
         }
-        resultSet.close();
-        preparedStatement.close();
-
-        return uniqueNames;
     }
 
     /**
@@ -732,61 +730,59 @@ public class EventDefinition {
      * @return an array list of all event names in the database for this fleet
      */
     public static ArrayList<String> getUniqueNames(Connection connection) throws SQLException {
-        //add all the generic event names
+        // add all the generic event names
         String query = "SELECT DISTINCT(name) FROM event_definitions";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
-        ArrayList<String > uniqueNames = new ArrayList<>();
-        while (resultSet.next()) {
-            uniqueNames.add(resultSet.getString(1));
-        }
-        resultSet.close();
-        preparedStatement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query);
+                ResultSet resultSet = preparedStatement.executeQuery()) {
+            LOG.info(preparedStatement.toString());
 
-        return uniqueNames;
+            ArrayList<String> uniqueNames = new ArrayList<>();
+            while (resultSet.next()) {
+                uniqueNames.add(resultSet.getString(1));
+            }
+
+            return uniqueNames;
+        }
     }
 
     /**
      * Gets a list of all the event definition names. Will have "- airframe" appended to it for non-generic events.
      *
      * @param connection is the connection to the database.
-     * @param fleetId is the fleet id for the event definitions
+     * @param fleetId    is the fleet id for the event definitions
      *
      * @return an array list of all event names in the database for this fleet
      */
     public static ArrayList<String> getAllNames(Connection connection, int fleetId) throws SQLException {
-        //add all the generic event names
+        // add all the generic event names
+        ArrayList<String> allNames = new ArrayList<>();
+
         String query = "SELECT name FROM event_definitions WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND event_definitions.airframe_id = 0";
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, fleetId);
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
-
-        LOG.info(preparedStatement.toString());
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        ArrayList<String > allNames = new ArrayList<>();
-        while (resultSet.next()) {
-            allNames.add(resultSet.getString(1));
+            LOG.info(preparedStatement.toString());
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    allNames.add(resultSet.getString(1));
+                }
+            }
         }
-        resultSet.close();
-        preparedStatement.close();
 
-        //add all the event names with the airframe they are for
+        // add all the event names with the airframe they are for
         query = "SELECT name, airframe FROM event_definitions, airframes WHERE (event_definitions.fleet_id = 0 OR event_definitions.fleet_id = ?) AND airframes.id = event_definitions.airframe_id";
 
-        preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, fleetId);
 
-        LOG.info(preparedStatement.toString());
-        resultSet = preparedStatement.executeQuery();
-
-        while (resultSet.next()) {
-            allNames.add(resultSet.getString(1) + " - " + resultSet.getString(2));
+            LOG.info(preparedStatement.toString());
+            try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                while (resultSet.next()) {
+                    allNames.add(resultSet.getString(1) + " - " + resultSet.getString(2));
+                }
+            }
         }
-        resultSet.close();
-        preparedStatement.close();
 
         return allNames;
     }
@@ -799,15 +795,19 @@ public class EventDefinition {
     public String toHumanReadable() {
         if (this.id < 0) {
             String humanReadableStr = filter.toHumanReadable();
-            
+
             return (humanReadableStr.matches("^[AEIOU].*") ? "An " : "A ") + humanReadableStr;
         }
 
         String text = (name.matches("^[AEIOU].*") ? "An " : "A ");
         if (startBuffer == 1) {
-            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer
+                    + " time within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer
+                    + " seconds.";
         } else {
-            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer + " seconds.";
+            text += name + " event occurs when " + filter.toHumanReadable() + " is triggered at least " + startBuffer
+                    + " times within " + stopBuffer + " seconds, and ends when no trigger occurs for " + stopBuffer
+                    + " seconds.";
         }
 
         return text;
@@ -819,8 +819,11 @@ public class EventDefinition {
      * @return a string representation of this event definition
      */
     public String toString() {
-        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer + ", airframeNameId: " + airframeNameId +
-            ", condition: " + gson.toJson(filter) + ", column_names : " + gson.toJson(columnNames) + ", severity_column_names: " + gson.toJson(severityColumnNames) + ", severity_type: " + severityType + "]";
+        return "[id: " + id + ", name: '" + name + "', startBuffer: " + startBuffer + ", stopBuffer: " + stopBuffer
+                + ", airframeNameId: " + airframeNameId +
+                ", condition: " + gson.toJson(filter) + ", column_names : " + gson.toJson(columnNames)
+                + ", severity_column_names: " + gson.toJson(severityColumnNames) + ", severity_type: " + severityType
+                + "]";
     }
 
 }

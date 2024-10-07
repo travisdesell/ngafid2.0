@@ -29,7 +29,6 @@ import org.ngafid.flights.Flight;
 
 public class PostSimAircraft implements Route {
     private static final Logger LOG = Logger.getLogger(PostSimAircraft.class.getName());
-    private static Connection connection = Database.getConnection();
 
     private final static String CACHE = "cache";
     private final static String RMCACHE = "rmcache";
@@ -54,11 +53,11 @@ public class PostSimAircraft implements Route {
         String type = request.queryParams("type");
         String path = request.queryParams("path");
 
-        LOG.info("performing "+type+" on "+path);
+        LOG.info("performing " + type + " on " + path);
 
         int fleetId = user.getFleetId();
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             switch (type) {
                 case CACHE:
                     List<String> currPaths = Flight.getSimAircraft(connection, fleetId);

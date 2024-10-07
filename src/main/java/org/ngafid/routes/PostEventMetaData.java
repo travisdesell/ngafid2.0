@@ -30,8 +30,7 @@ public class PostEventMetaData implements Route {
 
         LOG.info("handling rate of closure route");
         int eventId = Integer.parseInt(request.queryParams("eventId"));
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
             if (metaDataList.size() > 0) {
                 return gson.toJson(metaDataList);

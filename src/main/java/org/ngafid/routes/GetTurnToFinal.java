@@ -45,7 +45,7 @@ public class GetTurnToFinal implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ttf.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -61,20 +61,10 @@ public class GetTurnToFinal implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            Connection connection = Database.getConnection();
-
-            scopes.put( "ttf_js",
-                        "var airports = " + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" +
-                        "var runways = " + gson.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId)) + ";\n"
-            );
-            /*
-            try {
-                //scopes.put("flights_js", "var flights = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"})) + "');");
-
-            } catch (SQLException e) {
-                return gson.toJson(new ErrorResponse(e));
-            }
-            */
+            scopes.put("ttf_js",
+                    "var airports = " + gson.toJson(Itinerary.getAllAirports(connection, fleetId)) + ";\n" +
+                            "var runways = " + gson.toJson(Itinerary.getAllRunwaysWithCoordinates(connection, fleetId))
+                            + ";\n");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

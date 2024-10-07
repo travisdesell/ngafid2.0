@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.logging.Logger;
 import java.util.HashMap;
 
-
 import java.sql.Connection;
 import java.sql.SQLException;
 
@@ -36,7 +35,6 @@ public class PostAllEventCounts implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
@@ -48,17 +46,16 @@ public class PostAllEventCounts implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        //check to see if the user has access to view aggregate information
+        // check to see if the user has access to view aggregate information
         if (!user.hasAggregateView()) {
             LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
             Spark.halt(401, "User did not have aggregate access to view all event counts.");
             return null;
         }
 
-        try {
-            Connection connection = Database.getConnection();
-
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, LocalDate.parse(startDate), LocalDate.parse(endDate));
+        try (Connection connection = Database.getConnection()) {
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    LocalDate.parse(startDate), LocalDate.parse(endDate));
             return gson.toJson(eventCountsMap);
 
         } catch (SQLException e) {

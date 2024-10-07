@@ -46,14 +46,13 @@ public class PostUpdateUserAccess implements Route {
         int fleetId = Integer.parseInt(request.queryParams("fleetId"));
         String accessType = request.queryParams("accessType");
 
-        //check to see if the logged in user can update access to this fleet
+        // check to see if the logged in user can update access to this fleet
         if (!user.managesFleet(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access to modify user access rights on this fleet.");
             Spark.halt(401, "User did not have access to modify user access rights on this fleet.");
             return null;
         } else {
-            try {
-                Connection connection = Database.getConnection();
+            try (Connection connection = Database.getConnection()) {
                 FleetAccess.update(connection, fleetUserId, fleetId, accessType);
                 user.updateFleet(connection);
                 return gson.toJson(new UpdateUserAccess());
@@ -64,6 +63,3 @@ public class PostUpdateUserAccess implements Route {
         }
     }
 }
-
-
-

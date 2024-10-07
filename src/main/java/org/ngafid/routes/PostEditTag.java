@@ -53,17 +53,14 @@ public class PostEditTag implements Route {
         String description = request.queryParams("description");
         String color = request.queryParams("color");
 
-
-        try {
-            Connection connection = Database.getConnection();
-
+        try (Connection connection = Database.getConnection()) {
             FlightTag flightTag = new FlightTag(tagId, user.getFleetId(), name, description, color);
 
             FlightTag currentTag = Flight.getTag(connection, tagId);
 
-            LOG.info("currentTag: "+currentTag+" edited tag: "+flightTag);
+            LOG.info("currentTag: " + currentTag + " edited tag: " + flightTag);
 
-            if(flightTag.equals(currentTag)){
+            if (flightTag.equals(currentTag)) {
                 LOG.info("No change detected in the tag.");
                 return gson.toJson(NO_CHANGE);
             }

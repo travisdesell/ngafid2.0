@@ -20,7 +20,6 @@ public class PutEventDefinitions implements Route {
     private static final Logger LOG = Logger.getLogger(PutEventDefinitions.class.getName());
     private Gson gson;
 
-
     public PutEventDefinitions(Gson gson) {
         this.gson = gson;
 
@@ -32,15 +31,12 @@ public class PutEventDefinitions implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("Handling " + this.getClass().getName() + " route");
 
-        Connection connection = Database.getConnection();
-
         // JSON parse
         LOG.info("request.body(): " + request.body());
         EventDefinition updatedEvent = gson.fromJson(request.body(), EventDefinition.class);
         LOG.info(updatedEvent.toString());
 
-
-        try {
+        try (Connection connection = Database.getConnection()) {
             updatedEvent.updateSelf(connection);
         } catch (SQLException e) {
             response.status(500);

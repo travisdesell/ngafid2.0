@@ -3,6 +3,7 @@ package org.ngafid.airports;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 public class GeoHash {
     private static final int hashDecimals = 2;
@@ -28,8 +29,8 @@ public class GeoHash {
         String latHash = decimalFormat.format(latitude);
         String lonHash = decimalFormat.format(longitude);
 
-        double trimmedLat = Double.parseDouble(latHash);
-        double trimmedLon = Double.parseDouble(lonHash);
+        double trimmedLat = JavaDoubleParser.parseDouble(latHash);
+        double trimmedLon = JavaDoubleParser.parseDouble(lonHash);
         double modifier = Math.pow(10, -hashDecimals);
 
         String[] hashes = new String[9];

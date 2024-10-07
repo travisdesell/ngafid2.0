@@ -25,7 +25,6 @@ import spark.Route;
 import spark.Session;
 import spark.Spark;
 
-
 public class GetAggregateTrends implements Route {
     private static final Logger LOG = Logger.getLogger(GetTrends.class.getName());
     private Gson gson;
@@ -73,11 +72,9 @@ public class GetAggregateTrends implements Route {
             Spark.halt(401, "User did not have aggregate access to view aggregate trends page.");
             return null;
         }
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -88,14 +85,13 @@ public class GetAggregateTrends implements Route {
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo =
-                    "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                            "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" +
-                            "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
+                    "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" +
+                    "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting aggreagte data info took " + (endTime-startTime) + "ms.");
+            LOG.info("getting aggreagte data info took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

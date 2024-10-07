@@ -52,13 +52,10 @@ public class PostFlights implements Route {
 
         String filterJSON = request.queryParams("filterQuery");
 
-
         System.err.println(request.queryParams("currentPage"));
         System.err.println(request.queryParams("numPerPage"));
 
-
         LOG.info(filterJSON);
-
 
         Filter filter = gson.fromJson(filterJSON, Filter.class);
         LOG.info("received request for flights with filter: " + filter);
@@ -69,22 +66,19 @@ public class PostFlights implements Route {
 
         LOG.info("USER: " + user.getId() + ", '" + user.getFullName() + "', fleetId: " + fleetId);
 
-
-        //check to see if the user has upload access for this fleet.
+        // check to see if the user has upload access for this fleet.
         if (!user.hasViewAccess(fleetId)) {
             LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
             Spark.halt(401, "User did not have access to view imports for this fleet.");
             return null;
         }
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             int currentPage = Integer.parseInt(request.queryParams("currentPage"));
             int pageSize = Integer.parseInt(request.queryParams("pageSize"));
             String orderingColumnn = request.queryParams("sortingColumn");
 
             boolean isAscending = (request.queryParams("sortingOrder").equals("Ascending") ? true : false);
-
-            Connection connection = Database.getConnection();
 
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             int numberPages = (int) Math.ceil((double) totalFlights / pageSize);
@@ -99,7 +93,7 @@ public class PostFlights implements Route {
              *
              * Flight Number
              * Flight Length (valid data points)
-             * Start Date and Time 
+             * Start Date and Time
              * End Date and Time
              * Number Airports Visited
              * Number of tags associated
@@ -111,7 +105,8 @@ public class PostFlights implements Route {
              * Flight ID
              **/
 
-            flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn, isAscending);
+            flights = Flight.getFlightsSorted(connection, fleetId, filter, currentPage, pageSize, orderingColumnn,
+                    isAscending);
 
             if (flights.size() == 0) {
                 return gson.toJson("NO_RESULTS");

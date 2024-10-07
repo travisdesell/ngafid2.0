@@ -45,7 +45,6 @@ public class PostRemoveTag implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route!");
-        Connection connection = Database.getConnection();
 
         final Session session = request.session();
         User user = session.attribute("user");
@@ -55,23 +54,23 @@ public class PostRemoveTag implements Route {
         boolean isPermanent = Boolean.parseBoolean(request.queryParams("permanent"));
         boolean allTags = Boolean.parseBoolean(request.queryParams("all"));
 
+        try (Connection connection = Database.getConnection()) {
 
-        try {
             FlightTag tag = Flight.getTag(connection, tagId);
-            if(isPermanent) {
+            if (isPermanent) {
                 LOG.info("Permanently deleting tag: " + tag.toString());
                 Flight.deleteTag(tagId, connection);
-            } else if(allTags) {
+            } else if (allTags) {
                 LOG.info("Clearing all tags from flight " + flightId);
                 Flight.unassociateAllTags(flightId, connection);
-                
+
                 return gson.toJson(new RemoveTagResponse());
             } else {
                 Flight.unassociateTags(tagId, connection, flightId);
             }
 
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }

@@ -47,22 +47,22 @@ public class PostNumberFlights implements Route {
         // int tagId = Integer.parseInt(request.queryParams("tag_id"));
 
         // try {
-        //     Connection connection = Database.getConnection();
+        // Connection connection = Database.getConnection();
 
-        //     if (!user.hasFlightAccess(connection, flightId)) {
-        //         LOG.severe("INVALID ACCESS: user did not have access to this flight.");
-        //         Spark.halt(401, "User did not have access to this flight.");
-        //     }
+        // if (!user.hasFlightAccess(connection, flightId)) {
+        // LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+        // Spark.halt(401, "User did not have access to this flight.");
+        // }
 
-        //     Flight.associateTag(flightId, tagId, connection);
+        // Flight.associateTag(flightId, tagId, connection);
 
-        //     FlightTag ft = Flight.getTag(connection, tagId);
+        // FlightTag ft = Flight.getTag(connection, tagId);
 
-        //     return gson.toJson(ft);
+        // return gson.toJson(ft);
         // } catch (SQLException e) {
-        //     System.err.println("Error in SQL ");
-        //     e.printStackTrace();
-        //     return gson.toJson(new ErrorResponse(e));
+        // System.err.println("Error in SQL ");
+        // e.printStackTrace();
+        // return gson.toJson(new ErrorResponse(e));
         // }
     }
 }

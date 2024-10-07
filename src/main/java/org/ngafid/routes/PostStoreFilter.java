@@ -14,7 +14,8 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 /**
- * This class provides the spark route for storing filters into the NGAFID's Database
+ * This class provides the spark route for storing filters into the NGAFID's
+ * Database
  *
  * @author <a href=mailto:apl1341@cs.rit.edu>Aidan LaBella</a>
  */
@@ -32,9 +33,8 @@ public class PostStoreFilter implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             final Session session = request.session();
-            Connection connection = Database.getConnection();
 
             User user = session.attribute("user");
             int fleetId = user.getFleetId();

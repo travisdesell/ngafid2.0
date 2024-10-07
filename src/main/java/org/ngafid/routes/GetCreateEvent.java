@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -22,8 +21,6 @@ import spark.Response;
 import spark.Session;
 import spark.Spark;
 
-
-
 import org.ngafid.Database;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -36,7 +33,6 @@ import org.ngafid.flights.Tails;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 public class GetCreateEvent implements Route {
     private static final Logger LOG = Logger.getLogger(GetCreateEvent.class.getName());
@@ -62,7 +58,7 @@ public class GetCreateEvent implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "create_event.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -80,13 +76,12 @@ public class GetCreateEvent implements Route {
                 return null;
             }
 
-            Connection connection = Database.getConnection();
-
             scopes.put("create_event_js",
                     "var airframes = JSON.parse('" + gson.toJson(Airframes.getAll(connection)) + "');\n" +
-                    "var doubleTimeSeriesNames = JSON.parse('" + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
-                    "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection)) + "');\n"
-                    );
+                            "var doubleTimeSeriesNames = JSON.parse('"
+                            + gson.toJson(DoubleTimeSeries.getAllNames(connection, fleetId)) + "');\n" +
+                            "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection))
+                            + "');\n");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
