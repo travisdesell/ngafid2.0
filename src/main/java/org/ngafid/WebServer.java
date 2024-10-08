@@ -126,9 +126,9 @@ public abstract class WebServer {
         sendAdminEmails(String.format("Uncaught Exception in NGAFID: %s", exception.getMessage()), ConvertToHTML.convertString(message), EmailType.ADMIN_EXCEPTION_NOTIFICATION);
     }
 
-    private void configureLogging() {
+    protected void configureLogging() {
         try {
-            ClassLoader classLoader = org.ngafid.webserver.SparkWebServer.class.getClassLoader();
+            ClassLoader classLoader = org.ngafid.WebServer.class.getClassLoader();
             final InputStream logConfig = classLoader.getResourceAsStream("log.properties");
             LogManager.getLogManager().readConfiguration(logConfig);
 
@@ -158,7 +158,6 @@ public abstract class WebServer {
     public static void main(String[] args) {
         String staticFiles = getEnvironmentVariable("SPARK_STATIC_FILES");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
-
 
         // The application uses Gson to generate JSON representations of Java objects.
         // This should be used by your Ajax Routes to generate JSON for the HTTP
