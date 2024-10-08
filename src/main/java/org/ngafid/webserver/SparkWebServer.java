@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 public final class SparkWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(org.ngafid.webserver.SparkWebServer.class.getName());
 
-    public SparkWebServer(String ipAddress, int port) {
-        super(ipAddress, port);
+    public SparkWebServer(String ipAddress, int port, String staticFilesLocation) {
+        super(ipAddress, port, staticFilesLocation);
     }
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
@@ -244,12 +244,12 @@ public final class SparkWebServer extends WebServer {
     @Override
     protected void configureThreads() {
         Spark.threadPool(maxThreads, minThreads, timeOutMillis);
-        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
+        Spark.webSocketIdleTimeoutMillis(timeOutMillis);
     }
 
     @Override
     protected void configureStaticFilesLocation() {
-        Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
+        Spark.staticFiles.externalLocation(staticFilesLocation);
     }
 
     protected void configureAuthChecks() {

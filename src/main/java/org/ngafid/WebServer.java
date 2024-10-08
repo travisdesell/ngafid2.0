@@ -35,12 +35,13 @@ public abstract class WebServer {
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
 
-    protected String ipAddress;
-    protected int port;
+    protected final String staticFilesLocation;
+    protected final String ipAddress;
+    protected final int port;
 
-    protected int maxThreads = 32;
-    protected int minThreads = 2;
-    protected int timeOutMillis = 1000 * 60 * 5;
+    protected final int maxThreads = 32;
+    protected final int minThreads = 2;
+    protected final int timeOutMillis = 1000 * 60 * 5;
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -65,30 +66,9 @@ public abstract class WebServer {
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new LocalDateTimeTypeAdapter()).create();
 
     static {
-
-        if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
-            System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_UPLOAD_DIR=<path/to/upload_dir>");
-            System.exit(1);
-        }
-        NGAFID_UPLOAD_DIR = System.getenv("NGAFID_UPLOAD_DIR");
-
-        if (System.getenv("NGAFID_ARCHIVE_DIR") == null) {
-            System.err.println("ERROR: 'NGAFID_ARCHIVE_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_ARCHIVE_DIR=<path/to/archive_dir>");
-            System.exit(1);
-        }
-        NGAFID_ARCHIVE_DIR = System.getenv("NGAFID_ARCHIVE_DIR");
-
-        if (System.getenv("MUSTACHE_TEMPLATE_DIR") == null) {
-            System.err.println("ERROR: 'MUSTACHE_TEMPLATE_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export MUSTACHE_TEMPLATE_DIR=<path/to/template_dir>");
-            System.exit(1);
-        }
-        MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
+        NGAFID_UPLOAD_DIR = getEnvironmentVariable("NGAFID_UPLOAD_DIR");
+        NGAFID_ARCHIVE_DIR = getEnvironmentVariable("NGAFID_ARCHIVE_DIR");
+        MUSTACHE_TEMPLATE_DIR = getEnvironmentVariable("MUSTACHE_TEMPLATE_DIR");
 
         // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
         //     String message = "NGAFID WebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
@@ -97,9 +77,10 @@ public abstract class WebServer {
         // }));
     }
 
-    public WebServer(String ipAddress, int port) {
+    public WebServer(String ipAddress, int port, String staticFilesLocation) {
         this.ipAddress = ipAddress;
         this.port = port;
+        this.staticFilesLocation = staticFilesLocation;
 
         configureLogging();
         LOG.info("NGAFID WebServer has started at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
@@ -159,35 +140,33 @@ public abstract class WebServer {
         }
     }
 
+    public static String getEnvironmentVariable(String key) {
+        String value = System.getenv(key);
+        if (value == null) {
+            System.err.println("ERROR: '" + key + "' environment variable not specified at runtime.");
+            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export " + key + "=<value>");
+            throw new RuntimeException("Environment variable '" + key + "' not set.");
+        }
+
+        return value;
+    }
+
     /**
      * Entry point for the NGAFID web server.
      *
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
-        if (System.getenv().containsKey("SERVER_ADDRESS") || System.getenv().containsKey("NGAFID_PORT")) {
-            System.err.println("ERROR: 'SERVER_ADDRESS' and 'NGAFID_PORT' environment variables must be set at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export SERVER_ADDRESS=<ip_address>");
-            System.err.println("export NGAFID_PORT=<port>");
-            System.exit(1);
-        }
+        String staticFiles = getEnvironmentVariable("SPARK_STATIC_FILES");
+        String ipAddress = getEnvironmentVariable("SERVER_ADDRESS");
+        int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
-        if (System.getenv("SPARK_STATIC_FILES") == null) {
-            System.err.println("ERROR: 'SPARK_STATIC_FILES' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export SPARK_STATIC_FILES=<path/to/template_dir>");
-            System.exit(1);
-        }
-
-        // Get the port for the NGAFID SparkWebServer to listen on
-        String ipAddress = System.getenv("SERVER_ADDRESS");
-        int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
 
         // The application uses Gson to generate JSON representations of Java objects.
         // This should be used by your Ajax Routes to generate JSON for the HTTP
         // response to Ajax requests.
-        WebServer webserver = new SparkWebServer(ipAddress, port);
+        WebServer webserver = new SparkWebServer(ipAddress, port, staticFiles);
         LOG.info("NGAFID SparkWebServer initialization complete.");
     }
 }
