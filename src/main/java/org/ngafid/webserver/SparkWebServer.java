@@ -1,31 +1,24 @@
 package org.ngafid.webserver;
 
-import org.ngafid.WebServer;
-import org.ngafid.common.ConvertToHTML;
-import org.ngafid.routes.*;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import org.ngafid.routes.event_def_mgmt.*;
-import spark.Spark;
-import spark.Service;
-
-import java.io.PrintWriter;
-import java.io.StringWriter;
-
-import java.io.IOException;
-
-import java.time.*;
-
-import java.time.format.DateTimeFormatter;
-import java.util.logging.Logger;
-
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
-import com.google.gson.stream.*;
 import com.google.gson.TypeAdapter;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonToken;
+import com.google.gson.stream.JsonWriter;
+import org.ngafid.WebServer;
+import org.ngafid.accounts.User;
+import org.ngafid.routes.*;
+import org.ngafid.routes.event_def_mgmt.DeleteEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.GetAllEventDefinitions;
+import org.ngafid.routes.event_def_mgmt.PutEventDefinitions;
+import spark.Service;
+import spark.Spark;
 
-import static org.ngafid.SendEmail.sendAdminEmails;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.logging.Logger;
 
 /**
  * The entry point for the NGAFID web server.
@@ -248,43 +241,24 @@ public final class SparkWebServer extends WebServer {
         }
     }
 
-
-    public static void main(String[] args) {
-        // The application uses Gson to generate JSON representations of Java objects.
-        // This should be used by your Ajax Routes to generate JSON for the HTTP
-        // response to Ajax requests.
-
-
-
-
-        //----- FOR HTTPS ONLY -----
-
-        //--------------------------
-
-        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
-
-        int maxThreads = 32;
-        int minThreads = 2;
-        int timeOutMillis = 1000 * 60 * 5;
+    @Override
+    protected void configureThreads() {
         Spark.threadPool(maxThreads, minThreads, timeOutMillis);
-        //String base = "/" + System.getenv("NGAFID_NAME") + "/";
+        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
+    }
 
-        // Configuration to serve static files
-        //Spark.staticFiles.location("/public");
-        if (System.getenv("SPARK_STATIC_FILES") == null) {
-            System.err.println("ERROR: 'SPARK_STATIC_FILES' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export SPARK_STATIC_FILES=<path/to/template_dir>");
-            System.exit(1);
-        }
+    @Override
+    protected void configureStaticFilesLocation() {
         Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
+    }
 
+    protected void configureAuthChecks() {
         Spark.before("/protected/*", (request, response) -> {
             LOG.info("protected URI: " + request.uri());
 
             //if the user session variable has not been set, then don't allow
             //access to the protected pages (the user is not logged in).
-            User user = (User)request.session().attribute("user");
+            User user = request.session().attribute("user");
 
             String previousURI = request.session().attribute("previous_uri");
             if (user == null) {
@@ -315,7 +289,7 @@ public final class SparkWebServer extends WebServer {
         });
 
         Spark.before("/", (request, response) -> {
-            User user = (User)request.session().attribute("user");
+            User user = request.session().attribute("user");
             if (user != null) {
                 String previousURI = request.session().attribute("previous_uri");
                 if (previousURI != null) {
@@ -328,33 +302,13 @@ public final class SparkWebServer extends WebServer {
                 }
             }
         });
-
-
-        Spark.exception(Exception.class, (exception, request, response) -> {
-            LOG.severe("Exception: " + exception);
-            LOG.severe("Exception message: " + exception.getMessage());
-
-            StringWriter sw = new StringWriter();
-            PrintWriter pw = new PrintWriter(sw);
-            exception.printStackTrace(pw);
-            String sStackTrace = sw.toString(); // stack trace as a string
-            LOG.severe("stack trace:\n" + sStackTrace);
-
-            String message = new StringBuilder().append("An uncaught exception was thrown in the NGAFID SparkWebServer at ")
-                    .append(LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")))
-                    .append(".\n The exception was: ").append(exception).append("\n")
-                    .append(".\n The exception message was: ").append(exception.getMessage()).append("\n")
-                    .append(".\n The exception (to string): ").append(exception.toString()).append("\n")
-                    .append("\n The non-pretty stack trace is:\n").append(sStackTrace).append("\n")
-                    .append("\nThe stack trace was:\n").append(ConvertToHTML.convertError(exception)).append("\n").toString();
-
-            sendAdminEmails(
-                    String.format( "Uncaught Exception in NGAFID: %s", exception.getMessage() ),
-                    ConvertToHTML.convertString(message),
-                    EmailType.ADMIN_EXCEPTION_NOTIFICATION
-            );
-        });
-
-        LOG.info("NGAFID SparkWebServer initialization complete.");
     }
+
+    @Override
+    protected void configureExceptions() {
+        Spark.exception(Exception.class, (exception, request, response) -> {
+            exceptionHandler(exception);
+        });
+    }
+
 }
