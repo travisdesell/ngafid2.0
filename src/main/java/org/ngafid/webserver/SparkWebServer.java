@@ -219,7 +219,7 @@ public final class SparkWebServer extends WebServer {
     }
 
     @Override
-    protected void setIpAndPort() {
+    protected void configurePort() {
         Spark.port(port);
     }
 

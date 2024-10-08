@@ -83,7 +83,7 @@ public abstract class WebServer {
         configureLogging();
         LOG.info("NGAFID WebServer has started at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
 
-        setIpAndPort();
+        configurePort();
         configureThreads();
 
         if (port == 8443 || port == 443) {
@@ -97,7 +97,7 @@ public abstract class WebServer {
     }
 
 
-    protected abstract void setIpAndPort();
+    protected abstract void configurePort();
 
     protected abstract void configureHttps();
 
