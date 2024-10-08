@@ -28,8 +28,8 @@ import java.util.logging.Logger;
 public final class SparkWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(org.ngafid.webserver.SparkWebServer.class.getName());
 
-    public SparkWebServer(String ipAddress, int port, String staticFilesLocation) {
-        super(ipAddress, port, staticFilesLocation);
+    public SparkWebServer(int port, String staticFilesLocation) {
+        super(port, staticFilesLocation);
     }
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
@@ -220,7 +220,6 @@ public final class SparkWebServer extends WebServer {
 
     @Override
     protected void setIpAndPort() {
-        Spark.ipAddress(ipAddress);
         Spark.port(port);
     }
 

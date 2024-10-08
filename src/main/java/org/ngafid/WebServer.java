@@ -36,7 +36,6 @@ public abstract class WebServer {
     public static final String MUSTACHE_TEMPLATE_DIR;
 
     protected final String staticFilesLocation;
-    protected final String ipAddress;
     protected final int port;
 
     protected final int maxThreads = 32;
@@ -77,8 +76,7 @@ public abstract class WebServer {
         // }));
     }
 
-    public WebServer(String ipAddress, int port, String staticFilesLocation) {
-        this.ipAddress = ipAddress;
+    public WebServer(int port, String staticFilesLocation) {
         this.port = port;
         this.staticFilesLocation = staticFilesLocation;
 
@@ -159,14 +157,13 @@ public abstract class WebServer {
      */
     public static void main(String[] args) {
         String staticFiles = getEnvironmentVariable("SPARK_STATIC_FILES");
-        String ipAddress = getEnvironmentVariable("SERVER_ADDRESS");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
 
         // The application uses Gson to generate JSON representations of Java objects.
         // This should be used by your Ajax Routes to generate JSON for the HTTP
         // response to Ajax requests.
-        WebServer webserver = new SparkWebServer(ipAddress, port, staticFiles);
+        WebServer webserver = new SparkWebServer(port, staticFiles);
         LOG.info("NGAFID SparkWebServer initialization complete.");
     }
 }
