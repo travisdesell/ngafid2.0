@@ -11,7 +11,9 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.logging.Logger;
+import java.util.Map;
 
 import org.ngafid.events.EventMetaData;
 import org.ngafid.events.EventStatistics;
@@ -19,6 +21,22 @@ import org.ngafid.airports.Airports;
 
 
 public class CalculateProximity {
+
+    public static class EventStats {
+
+        int eventCount = 0;
+        double sumDuration = 0.0;
+        double sumSeverity = 0.0;
+        double minSeverity = Double.MAX_VALUE;
+        double maxSeverity = -Double.MAX_VALUE;
+        double minDuration = Double.MAX_VALUE;
+        double maxDuration = -Double.MAX_VALUE;
+
+        boolean entryAlreadyExists = false; 
+
+    }
+
+    private static Map<Integer, EventStats> flightEventStats = new HashMap<>();
 
     private static Logger LOG = Logger.getLogger(CalculateProximity.class.getName());
 
@@ -538,12 +556,30 @@ public class CalculateProximity {
             double maxSeverity = -Double.MAX_VALUE;
             double minDuration = Double.MAX_VALUE;
             double maxDuration = -Double.MAX_VALUE;
-            for (int i = 0; i < eventList.size(); i++) {
+            for(Event event : eventList) {
 
-                Event event = eventList.get(i);
-                //  event.updateDatabase(connection, fleetId, flightId, adjacencyEventDefinitionId);
-                event.updateDatabase(connection, fleetId, event.getFlightId(), adjacencyEventDefinitionId);
+                int eventFlightId = event.getFlightId();
+                event.updateDatabase(connection, fleetId, eventFlightId, adjacencyEventDefinitionId);
 
+                //Fetch / Create EventStats for this flight
+                EventStats stats = flightEventStats.get(eventFlightId);
+                if (stats == null) {
+                    stats = new EventStats();
+                    flightEventStats.put(eventFlightId, stats);
+                }
+                stats.eventCount++;
+
+                double currentSeverity = event.getSeverity();   //eventList.get(i).getSeverity();
+                double currentDuration = event.getDuration();   //eventList.get(i).getDuration();
+                sumDuration += currentDuration;
+                sumSeverity += currentSeverity;
+
+                if (currentSeverity > maxSeverity) maxSeverity = currentSeverity;
+                if (currentSeverity < minSeverity) minSeverity = currentSeverity;
+                if (currentDuration > maxDuration) maxDuration = currentDuration;
+                if (currentDuration < minDuration) minDuration = currentDuration;
+
+                //Update the EventStats for this flight
                 if (event.getStartTime() != null) {
                     EventStatistics.updateEventStatistics(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, event.getStartTime(), event.getSeverity(), event.getDuration());
                 } else if (event.getEndTime() != null) {
@@ -553,48 +589,57 @@ public class CalculateProximity {
                     System.out.println("WARNING: event start and end time were both null.");
                 }
 
-                double currentSeverity = eventList.get(i).getSeverity();
-                double currentDuration = eventList.get(i).getDuration();
-                sumDuration += currentDuration;
-                sumSeverity += currentSeverity;
-
-                if (currentSeverity > maxSeverity) maxSeverity = currentSeverity;
-                if (currentSeverity < minSeverity) minSeverity = currentSeverity;
-                if (currentDuration > maxDuration) maxDuration = currentDuration;
-                if (currentDuration < minDuration) minDuration = currentDuration;
 
             }
 
-            if (eventList.size() > 0) {
+            //Convert Map to set to remove duplicates
+            for (Map.Entry<Integer, EventStats> entry : flightEventStats.entrySet()) {
 
-                PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0");
-                stmt.setInt(1, fleetId);
-                stmt.setInt(2, flightId);
-                stmt.setInt(3, adjacencyEventDefinitionId);
-                stmt.setInt(4, eventList.size());
-                stmt.setDouble(5, sumDuration);
-                stmt.setDouble(6, minDuration);
-                stmt.setDouble(7, maxDuration);
-                stmt.setDouble(8, sumSeverity);
-                stmt.setDouble(9, minSeverity);
-                stmt.setDouble(10, maxSeverity);
-                //System.out.println(stmt.toString());
-                stmt.executeUpdate();
-                stmt.close();
+                int eventFlightId = entry.getKey();
+                EventStats stats = entry.getValue();
 
-                EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, flight.getStartDateTime());
+                if (stats.entryAlreadyExists)
+                    continue;
 
-            } else {
+                LOG.info("[EX] Updating prox. stats for flight ID: " + eventFlightId +" with event count: " + stats.eventCount);
 
-                PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0");
-                stmt.setInt(1, fleetId);
-                stmt.setInt(2, flightId);
-                stmt.setInt(3, adjacencyEventDefinitionId);
-                //System.out.println(stmt.toString());
-                stmt.executeUpdate();
-                stmt.close();
+                if (stats.eventCount > 0) {
 
-                EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, flight.getStartDateTime());
+                    PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = ?, sum_duration = ?, min_duration = ?, max_duration = ?, sum_severity = ?, min_severity = ?, max_severity = ?, had_error = 0");
+                    
+                    stmt.setInt(1, fleetId);
+                    stmt.setInt(2, eventFlightId);
+                    stmt.setInt(3, adjacencyEventDefinitionId);
+                    stmt.setInt(4, stats.eventCount);
+                    stmt.setDouble(5, stats.sumDuration);
+                    stmt.setDouble(6, stats.minDuration);
+                    stmt.setDouble(7, stats.maxDuration);
+                    stmt.setDouble(8, stats.sumSeverity);
+                    stmt.setDouble(9, stats.minSeverity);
+                    stmt.setDouble(10, stats.maxSeverity);
+                    stmt.executeUpdate();
+                    stmt.close();
+            
+                    EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, flight.getStartDateTime());
+
+                    stats.entryAlreadyExists = true;
+
+                } else {
+
+                    PreparedStatement stmt = connection.prepareStatement("INSERT INTO flight_processed SET fleet_id = ?, flight_id = ?, event_definition_id = ?, count = 0, had_error = 0");
+
+                    stmt.setInt(1, fleetId);
+                    stmt.setInt(2, eventFlightId);
+                    stmt.setInt(3, adjacencyEventDefinitionId);
+                    stmt.executeUpdate();
+                    stmt.close();
+            
+                    EventStatistics.updateFlightsWithoutEvent(connection, fleetId, airframeNameId, adjacencyEventDefinitionId, flight.getStartDateTime());
+
+                    stats.entryAlreadyExists = true;
+
+                }
+
             }
 
         } catch(SQLException e) {
