@@ -1,5 +1,6 @@
 package org.ngafid.webserver;
 
+import org.ngafid.WebServer;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
 import org.ngafid.accounts.User;
@@ -9,18 +10,14 @@ import org.ngafid.routes.event_def_mgmt.*;
 import spark.Spark;
 import spark.Service;
 
-import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
 import java.io.IOException;
 
 import java.time.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import java.time.format.DateTimeFormatter;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 import com.google.gson.Gson;
@@ -35,12 +32,12 @@ import static org.ngafid.SendEmail.sendAdminEmails;
  *
  * @author <a href='mailto:tjdvse@rit.edu'>Travis Desell</a>
  */
-public final class SparkWebServer {
+public final class SparkWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(org.ngafid.webserver.SparkWebServer.class.getName());
 
-    public static final String NGAFID_UPLOAD_DIR;
-    public static final String NGAFID_ARCHIVE_DIR;
-    public static final String MUSTACHE_TEMPLATE_DIR;
+    public SparkWebServer(String ipAddress, int port) {
+        super(ipAddress, port);
+    }
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -64,155 +61,8 @@ public final class SparkWebServer {
 
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().registerTypeAdapter(LocalDateTime.class, new org.ngafid.webserver.SparkWebServer.LocalDateTimeTypeAdapter()).create();
 
-    static {
-
-        if (System.getenv("NGAFID_UPLOAD_DIR") == null) {
-            System.err.println("ERROR: 'NGAFID_UPLOAD_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_UPLOAD_DIR=<path/to/upload_dir>");
-            System.exit(1);
-        }
-        NGAFID_UPLOAD_DIR = System.getenv("NGAFID_UPLOAD_DIR");
-
-        if (System.getenv("NGAFID_ARCHIVE_DIR") == null) {
-            System.err.println("ERROR: 'NGAFID_ARCHIVE_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export NGAFID_ARCHIVE_DIR=<path/to/archive_dir>");
-            System.exit(1);
-        }
-        NGAFID_ARCHIVE_DIR = System.getenv("NGAFID_ARCHIVE_DIR");
-
-        if (System.getenv("MUSTACHE_TEMPLATE_DIR") == null) {
-            System.err.println("ERROR: 'MUSTACHE_TEMPLATE_DIR' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export MUSTACHE_TEMPLATE_DIR=<path/to/template_dir>");
-            System.exit(1);
-        }
-        MUSTACHE_TEMPLATE_DIR = System.getenv("MUSTACHE_TEMPLATE_DIR");
-
-        // Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-        //     String message = "NGAFID SparkWebServer has shutdown at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss"));
-        //     LOG.info(message);
-        //     sendAdminEmails(message, "", EmailType.ADMIN_SHUTDOWN_NOTIFICATION);
-        // }));
-    }
-
-    /**
-     * Entry point for the NGAFID web server.
-     *
-     * @param args
-     *    Command line arguments; none expected.
-     */
-    public static void main(String[] args) {
-        // initialize Logging
-        try {
-            ClassLoader classLoader = org.ngafid.webserver.SparkWebServer.class.getClassLoader();
-            final InputStream logConfig = classLoader.getResourceAsStream("log.properties");
-            LogManager.getLogManager().readConfiguration(logConfig);
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.err.println("Could not initialize log manager because: " + e.getMessage());
-        }
-
-        // The application uses Gson to generate JSON representations of Java objects.
-        // This should be used by your Ajax Routes to generate JSON for the HTTP
-        // response to Ajax requests.
-
-        LOG.info("NGAFID SparkWebServer is initializing.");
-
-        if (System.getenv().containsKey("SERVER_ADDRESS")) {
-            Spark.ipAddress(System.getenv("SERVER_ADDRESS"));
-        }
-
-        // Get the port for the NGAFID SparkWebServer to listen on
-        int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
-        Spark.port(port);
-
-        //----- FOR HTTPS ONLY -----
-        if (port == 8443 || port == 443) {
-            LOG.info("HTTPS Detected, using a keyfile");
-            Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
-
-            // Make sure we redirect all HTTP traffic to HTTPS now
-            Service http = Service.ignite().port(8080);
-            http.before(((request, response) -> {
-                final String url = request.url();
-                if (url.startsWith("http://")) {
-                    final String[] toHttps = url.split("http://");
-                    response.redirect("https://" + toHttps[1]);
-                }
-            }));
-        }
-        //--------------------------
-
-        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
-
-        int maxThreads = 32;
-        int minThreads = 2;
-        int timeOutMillis = 1000 * 60 * 5;
-        Spark.threadPool(maxThreads, minThreads, timeOutMillis);
-        //String base = "/" + System.getenv("NGAFID_NAME") + "/";
-
-        // Configuration to serve static files
-        //Spark.staticFiles.location("/public");
-        if (System.getenv("SPARK_STATIC_FILES") == null) {
-            System.err.println("ERROR: 'SPARK_STATIC_FILES' environment variable not specified at runtime.");
-            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
-            System.err.println("export SPARK_STATIC_FILES=<path/to/template_dir>");
-            System.exit(1);
-        }
-        Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
-
-        Spark.before("/protected/*", (request, response) -> {
-            LOG.info("protected URI: " + request.uri());
-
-            //if the user session variable has not been set, then don't allow
-            //access to the protected pages (the user is not logged in).
-            User user = (User)request.session().attribute("user");
-
-            String previousURI = request.session().attribute("previous_uri");
-            if (user == null) {
-                //save the previous uri so we can redirect there after the user logs in
-                LOG.info("request uri: '" + request.uri());
-                LOG.info("request url: '" + request.url());
-                LOG.info("request queryString: '" + request.queryString() + "'");
-
-                if (request.queryString() != null) {
-                    request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
-                } else {
-                    request.session().attribute("previous_uri", request.url());
-                }
-
-                LOG.info("redirecting to access_denied");
-                response.redirect("/access_denied");
-                Spark.halt(401, "Go Away!");
-
-            } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
-                LOG.info("user waiting status, redirecting to waiting page!");
-                response.redirect("/protected/waiting");
-                Spark.halt(401, "Go Away!");
-
-            } else if (previousURI != null) {
-                response.redirect(previousURI);
-                request.session().attribute("previous_uri", null);
-            }
-        });
-
-        Spark.before("/", (request, response) -> {
-            User user = (User)request.session().attribute("user");
-            if (user != null) {
-                String previousURI = request.session().attribute("previous_uri");
-                if (previousURI != null) {
-                    LOG.info("user already logged in, redirecting to the previous page because previous URI was not null");
-                    response.redirect(previousURI);
-                    request.session().attribute("previous_uri", null);
-                } else {
-                    LOG.info("user already logged in but accessing the '/' route, redirecting to welcome!");
-                    response.redirect("/protected/welcome");
-                }
-            }
-        });
-
+    @Override
+    public void configureRoutes() {
         Spark.get("/", new GetHome(gson));
         Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
         Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
@@ -372,6 +222,113 @@ public final class SparkWebServer {
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
+
+    }
+
+    @Override
+    protected void setIpAndPort() {
+        Spark.ipAddress(ipAddress);
+        Spark.port(port);
+    }
+
+    protected void configureHttps() {
+        if (port == 8443 || port == 443) {
+            LOG.info("HTTPS Detected, using a keyfile");
+            Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
+
+            // Make sure we redirect all HTTP traffic to HTTPS now
+            Service http = Service.ignite().port(8080);
+            http.before(((request, response) -> {
+                final String url = request.url();
+                if (url.startsWith("http://")) {
+                    final String[] toHttps = url.split("http://");
+                    response.redirect("https://" + toHttps[1]);
+                }
+            }));
+        }
+    }
+
+
+    public static void main(String[] args) {
+        // The application uses Gson to generate JSON representations of Java objects.
+        // This should be used by your Ajax Routes to generate JSON for the HTTP
+        // response to Ajax requests.
+
+
+
+
+        //----- FOR HTTPS ONLY -----
+
+        //--------------------------
+
+        Spark.webSocketIdleTimeoutMillis(1000 * 60 * 5);
+
+        int maxThreads = 32;
+        int minThreads = 2;
+        int timeOutMillis = 1000 * 60 * 5;
+        Spark.threadPool(maxThreads, minThreads, timeOutMillis);
+        //String base = "/" + System.getenv("NGAFID_NAME") + "/";
+
+        // Configuration to serve static files
+        //Spark.staticFiles.location("/public");
+        if (System.getenv("SPARK_STATIC_FILES") == null) {
+            System.err.println("ERROR: 'SPARK_STATIC_FILES' environment variable not specified at runtime.");
+            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export SPARK_STATIC_FILES=<path/to/template_dir>");
+            System.exit(1);
+        }
+        Spark.staticFiles.externalLocation(System.getenv("SPARK_STATIC_FILES"));
+
+        Spark.before("/protected/*", (request, response) -> {
+            LOG.info("protected URI: " + request.uri());
+
+            //if the user session variable has not been set, then don't allow
+            //access to the protected pages (the user is not logged in).
+            User user = (User)request.session().attribute("user");
+
+            String previousURI = request.session().attribute("previous_uri");
+            if (user == null) {
+                //save the previous uri so we can redirect there after the user logs in
+                LOG.info("request uri: '" + request.uri());
+                LOG.info("request url: '" + request.url());
+                LOG.info("request queryString: '" + request.queryString() + "'");
+
+                if (request.queryString() != null) {
+                    request.session().attribute("previous_uri", request.url() + "?" + request.queryString());
+                } else {
+                    request.session().attribute("previous_uri", request.url());
+                }
+
+                LOG.info("redirecting to access_denied");
+                response.redirect("/access_denied");
+                Spark.halt(401, "Go Away!");
+
+            } else if (!request.uri().equals("/protected/waiting") && !user.hasViewAccess(user.getFleetId())) {
+                LOG.info("user waiting status, redirecting to waiting page!");
+                response.redirect("/protected/waiting");
+                Spark.halt(401, "Go Away!");
+
+            } else if (previousURI != null) {
+                response.redirect(previousURI);
+                request.session().attribute("previous_uri", null);
+            }
+        });
+
+        Spark.before("/", (request, response) -> {
+            User user = (User)request.session().attribute("user");
+            if (user != null) {
+                String previousURI = request.session().attribute("previous_uri");
+                if (previousURI != null) {
+                    LOG.info("user already logged in, redirecting to the previous page because previous URI was not null");
+                    response.redirect(previousURI);
+                    request.session().attribute("previous_uri", null);
+                } else {
+                    LOG.info("user already logged in but accessing the '/' route, redirecting to welcome!");
+                    response.redirect("/protected/welcome");
+                }
+            }
+        });
+
 
         Spark.exception(Exception.class, (exception, request, response) -> {
             LOG.severe("Exception: " + exception);

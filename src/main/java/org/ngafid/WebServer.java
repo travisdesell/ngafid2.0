@@ -1,23 +1,13 @@
 package org.ngafid;
 
-import org.ngafid.common.ConvertToHTML;
-import org.ngafid.routes.*;
-import org.ngafid.accounts.User;
-import org.ngafid.accounts.EmailType;
-
-import org.ngafid.routes.event_def_mgmt.*;
+import org.ngafid.webserver.SparkWebServer;
 import spark.Spark;
-import spark.Service;
 
 import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import java.io.IOException;
 
 import java.time.*;
-import java.io.PrintWriter;
-import java.io.StringWriter;
 
 import java.time.format.DateTimeFormatter;
 import java.util.logging.LogManager;
@@ -27,8 +17,6 @@ import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.stream.*;
 import com.google.gson.TypeAdapter;
-
-import static org.ngafid.SendEmail.sendAdminEmails;
 
 
 /**
@@ -42,6 +30,24 @@ public abstract class WebServer {
     public static final String NGAFID_UPLOAD_DIR;
     public static final String NGAFID_ARCHIVE_DIR;
     public static final String MUSTACHE_TEMPLATE_DIR;
+
+    protected String ipAddress;
+    protected int port;
+
+    public WebServer(String ipAddress, int port) {
+        this.ipAddress = ipAddress;
+        this.port = port;
+
+        configureLogging();
+        LOG.info("NGAFID WebServer has started at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
+
+        setIpAndPort();
+        if (port == 8443 || port == 443) {
+            configureHttps();
+        }
+
+        configureRoutes();
+    }
 
     public static class LocalDateTimeTypeAdapter extends TypeAdapter<LocalDateTime> {
         @Override
@@ -98,7 +104,23 @@ public abstract class WebServer {
         // }));
     }
 
-    public abstract boolean configureRoutes();
+    private void configureLogging() {
+        try {
+            ClassLoader classLoader = org.ngafid.webserver.SparkWebServer.class.getClassLoader();
+            final InputStream logConfig = classLoader.getResourceAsStream("log.properties");
+            LogManager.getLogManager().readConfiguration(logConfig);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.err.println("Could not initialize log manager because: " + e.getMessage());
+        }
+    }
+
+    protected abstract void setIpAndPort();
+
+    protected abstract void configureHttps();
+
+    protected abstract void configureRoutes();
 
     /**
      * Entry point for the NGAFID web server.
@@ -107,6 +129,22 @@ public abstract class WebServer {
      *    Command line arguments; none expected.
      */
     public static void main(String[] args) {
+        if (System.getenv().containsKey("SERVER_ADDRESS") || System.getenv().containsKey("NGAFID_PORT")) {
+            System.err.println("ERROR: 'SERVER_ADDRESS' and 'NGAFID_PORT' environment variables must be set at runtime.");
+            System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
+            System.err.println("export SERVER_ADDRESS=<ip_address>");
+            System.err.println("export NGAFID_PORT=<port>");
+            System.exit(1);
+        }
+
+
+
+        // Get the port for the NGAFID SparkWebServer to listen on
+        String ipAddress = System.getenv("SERVER_ADDRESS");
+        int port = Integer.parseInt(System.getenv("NGAFID_PORT"));
+
+        WebServer webserver = new SparkWebServer(ipAddress, port);
+
 
     }
 }
