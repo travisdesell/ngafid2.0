@@ -2,16 +2,15 @@ package org.ngafid.webserver;
 
 import io.javalin.Javalin;
 import io.javalin.config.JavalinConfig;
-import org.apache.commons.logging.Log;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 
+import java.util.function.Consumer;
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
     private final Javalin app = Javalin.create();
-    private final JavalinConfig config = new JavalinConfig();
 
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
@@ -21,7 +20,7 @@ public class JavalinWebServer extends WebServer {
     protected void configureLogging() {
         super.configureLogging();
 
-        config.requestLogger.http((ctx, ms) -> {
+        app.unsafeConfig().requestLogger.http((ctx, ms) -> {
             LOG.info(ctx.method() + " " + ctx.path() + " took " + ms + "ms");
         });
     }
@@ -29,7 +28,7 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configurePort() {
-        config.jetty.defaultPort = port;
+        app.unsafeConfig().jetty.defaultPort = port;
     }
 
     @Override
@@ -45,12 +44,12 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureThreads() {
-        config.jetty.threadPool = new QueuedThreadPool(maxThreads, minThreads, timeOutMillis);
+        app.unsafeConfig().jetty.threadPool = new QueuedThreadPool(maxThreads, minThreads, timeOutMillis);
     }
 
     @Override
     protected void configureStaticFilesLocation() {
-        config.staticFiles.add(staticFilesLocation);
+        app.unsafeConfig().staticFiles.add(staticFilesLocation);
     }
 
     @Override
