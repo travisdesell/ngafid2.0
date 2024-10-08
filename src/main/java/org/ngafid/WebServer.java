@@ -88,6 +88,7 @@ public abstract class WebServer {
         configureThreads();
 
         if (port == 8443 || port == 443) {
+            LOG.info("HTTPS Detected, using a keyfile");
             configureHttps();
         }
 

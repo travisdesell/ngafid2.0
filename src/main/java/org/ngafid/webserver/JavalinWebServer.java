@@ -33,13 +33,13 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureHttps() {
-
     }
 
     @Override
     protected void configureRoutes() {
-
-
+        app.get("/", ctx -> {
+            ctx.redirect("/login");
+        });
     }
 
     @Override

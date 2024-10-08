@@ -8,10 +8,10 @@ import com.google.gson.stream.JsonToken;
 import com.google.gson.stream.JsonWriter;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.routes.*;
-import org.ngafid.routes.event_def_mgmt.DeleteEventDefinitions;
-import org.ngafid.routes.event_def_mgmt.GetAllEventDefinitions;
-import org.ngafid.routes.event_def_mgmt.PutEventDefinitions;
+import org.ngafid.routes.spark.event_def_mgmt.DeleteEventDefinitions;
+import org.ngafid.routes.spark.event_def_mgmt.GetAllEventDefinitions;
+import org.ngafid.routes.spark.event_def_mgmt.PutEventDefinitions;
+import org.ngafid.routes.spark.*;
 import spark.Service;
 import spark.Spark;
 
@@ -224,20 +224,17 @@ public final class SparkWebServer extends WebServer {
     }
 
     protected void configureHttps() {
-        if (port == 8443 || port == 443) {
-            LOG.info("HTTPS Detected, using a keyfile");
-            Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
+        Spark.secure(System.getenv("HTTPS_CERT_PATH"), System.getenv("HTTPS_PASSKEY"), null, null);
 
-            // Make sure we redirect all HTTP traffic to HTTPS now
-            Service http = Service.ignite().port(8080);
-            http.before(((request, response) -> {
-                final String url = request.url();
-                if (url.startsWith("http://")) {
-                    final String[] toHttps = url.split("http://");
-                    response.redirect("https://" + toHttps[1]);
-                }
-            }));
-        }
+        // Make sure we redirect all HTTP traffic to HTTPS now
+        Service http = Service.ignite().port(8080);
+        http.before(((request, response) -> {
+            final String url = request.url();
+            if (url.startsWith("http://")) {
+                final String[] toHttps = url.split("http://");
+                response.redirect("https://" + toHttps[1]);
+            }
+        }));
     }
 
     @Override
