@@ -165,6 +165,7 @@ export default class SummaryPage extends React.Component {
     }
     
     displayPlots(selectedAirframe) {
+        
         var countData = [];
         var percentData = [];
     
@@ -206,11 +207,10 @@ export default class SummaryPage extends React.Component {
             value.y = value.names;
             value.type = "bar";
             value.orientation = "h";
-            //value.hoverinfo = "text";
     
             //don"t add airframes to the count plot that the fleet doesn"t have
             if (airframes.indexOf(value.airframeName) >= 0)
-                countData.unshift(value);
+                countData.push(value);
 
             value.x = value.aggregateTotalEventsCounts;
             
@@ -282,11 +282,12 @@ export default class SummaryPage extends React.Component {
     
             }
         }
-    
+
+        
+
         var countLayout = {
             title : "Event Counts",
             barmode: "stack",
-            traceorder: "reversed",
             //autosize: false,
             //width: 500,
             height: 750,
@@ -296,9 +297,12 @@ export default class SummaryPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
             }
         };
-    
+
         var percentLayout = {
             title : "Percentage of Flights With Event",
             //autosize: false,
