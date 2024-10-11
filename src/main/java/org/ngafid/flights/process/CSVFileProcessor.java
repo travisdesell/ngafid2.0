@@ -5,6 +5,7 @@ import com.opencsv.exceptions.CsvException;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
 import org.ngafid.flights.Airframes.AliasKey;
+import us.dustinj.timezonemap.TimeZoneMap;
 
 import java.sql.Connection;
 import java.io.*;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-
+import us.dustinj.timezonemap.TimeZoneMap;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javax.xml.bind.DatatypeConverter;
@@ -93,8 +94,23 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             boolean isG5FlightRecorder = isG5FlightRecorder(headerLines, firstRow);
 
+
+            // Library for mapping lat/long to timizones.
+            TimeZoneMap timeZoneMap = null;
+            if (isG5FlightRecorder){
+                // TODO: TimeZoneEngine initialization take significant amount of time 1-2 seconds. If we expect many G5 files,
+                //  timeZoneMap needs to be created once per program lifetime.
+                long startTime = System.nanoTime();
+                // Time zone for the US including Alaska and Hawaii
+                timeZoneMap = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
+                long endTime = System.nanoTime();
+                long durationInNanoseconds = endTime - startTime;
+                double durationInMilliseconds = durationInNanoseconds / 1_000_000.0;
+                System.out.println("Time taken to initialize TimeZoneMap: " + durationInMilliseconds + " milliseconds");
+            }
+
             // Split the input list of entries from csv file into separate files if time difference between entries greater than 5 minutes.
-            List<List<String[]>> flights = splitCSVIntoFlights(rows);
+            List<List<String[]>> flights = splitCSVIntoFlights(rows, isG5FlightRecorder);
 
             // Add derived csv files (if any) to the uploads folder.
             if (flights.size() > 1) {
@@ -121,35 +137,39 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     }
                 }
                 // Populate doubleTimeSeries and stringTimeSeries maps
+
+                TimeUtils.LocalDateTimeResult localDateTimeResult = null;
+
+                // Calculate local date time and offset for G5 data
+                if(isG5FlightRecorder){
+                    localDateTimeResult = TimeUtils.calculateLocalDateTime(timeZoneMap, columns.get(0),columns.get(1),columns.get(4), columns.get(5));
+                }
+
                 for (int i = 0; i < columns.size(); i++) {
                     var column = columns.get(i);
                     var name = headers.get(i);
                     var dataType = dataTypes.get(i);
 
-
-                    if(isG5FlightRecorder){
+                    if(isG5FlightRecorder && (i  < 2)){
                         if (i == 0){
-                            name = "Lcl Date";
+
+                            stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", dataType, localDateTimeResult.getLocalDates()));
                         }else if(i == 1){
-                            name = "Lcl Time";
-                            //G5 Data recorder doesn't have UTCOfst, and Local time.
-                            //This is just for testing purposes.
-                            stringTimeSeries.put(name, new StringTimeSeries("UTC Time", dataType, column));
-                            ArrayList<String> dummyColumn = new ArrayList<>();
-                            dummyColumn.add("-07:00");
-                            stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm",dummyColumn));
-
+                            stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", dataType, localDateTimeResult.getLocalTimes()));
+                            stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm",localDateTimeResult.getUtcOffsets()));
                         }
+                    }else{
+
+                        try {
+                            Double.parseDouble(column.get(0));
+                            doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                        } catch (NumberFormatException e) {
+                            stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                        }
+
                     }
 
 
-
-                    try {
-                        Double.parseDouble(column.get(0));
-                        doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
-                    } catch (NumberFormatException e) {
-                        stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
-                    }
                 }
                 String md5Hash = calculateMd5Hash(flight);
 
@@ -161,7 +181,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 FlightBuilder builder;
                 if (isG5FlightRecorder) {
                     builder  = new G5FlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
-                    flightBuilders.add(builder);
 
                 }else{
                     builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
@@ -264,7 +283,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
             // Calculate MD5 hash and convert to hex
             byte[] flightHash = md.digest(flightDataBuilder.toString().getBytes(StandardCharsets.UTF_8));
-            return DatatypeConverter.printHexBinary(flightHash).toLowerCase();
+            String result = DatatypeConverter.printHexBinary(flightHash).toLowerCase();
+            System.out.println("Md5 hash calculated: " + result);
+            return result;
         } catch (NoSuchAlgorithmException e) {
             throw new FlightProcessingException(e);
         }
@@ -347,13 +368,17 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param rows the list of CSV rows to process
      * @return a list of lists of type string, where each inner list represents a separate flight
      */
-    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows) {
+    public List<List<String[]>> splitCSVIntoFlights(List<String[]> rows, boolean isG5flightRecorder) {
 
         List<List<String[]>> flights = new ArrayList<>();
         List<String[]> currentFlight = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
         for (String[] row : rows) {
+            if (isG5flightRecorder && row[4].isEmpty()) {
+                continue;
+            }
+
             try {
                 // Parse timestamp from the row
                 String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
