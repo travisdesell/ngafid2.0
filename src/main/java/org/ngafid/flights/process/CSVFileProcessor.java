@@ -1,12 +1,10 @@
 package org.ngafid.flights.process;
-
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
 import org.ngafid.common.TimeUtils;
 import org.ngafid.flights.*;
 import org.ngafid.flights.Airframes.AliasKey;
 import us.dustinj.timezonemap.TimeZoneMap;
-
 import java.sql.Connection;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -23,7 +21,6 @@ import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
-import us.dustinj.timezonemap.TimeZoneMap;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import javax.xml.bind.DatatypeConverter;
@@ -57,7 +54,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         meta.airframe = new Airframes.Airframe("Fixed Wing"); // Fixed Wing By default
         meta.filename = filename;
-
     }
 
     /**
@@ -78,8 +74,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             List<String> headerLines = extractHeaderLines(bufferedReader);
             String fileInformation = getFlightInfo(headerLines.get(0)); // Will not read a line. Header lines are already read by buffer reader.
 
-
-
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
@@ -94,19 +88,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             boolean isG5FlightRecorder = isG5FlightRecorder(headerLines, firstRow);
 
-
-            // Library for mapping lat/long to timizones.
+            // Library for mapping lat/long to timezones.
             TimeZoneMap timeZoneMap = null;
             if (isG5FlightRecorder){
                 // TODO: TimeZoneEngine initialization take significant amount of time 1-2 seconds. If we expect many G5 files,
                 //  timeZoneMap needs to be created once per program lifetime.
-                long startTime = System.nanoTime();
                 // Time zone for the US including Alaska and Hawaii
                 timeZoneMap = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
-                long endTime = System.nanoTime();
-                long durationInNanoseconds = endTime - startTime;
-                double durationInMilliseconds = durationInNanoseconds / 1_000_000.0;
-                System.out.println("Time taken to initialize TimeZoneMap: " + durationInMilliseconds + " milliseconds");
             }
 
             // Split the input list of entries from csv file into separate files if time difference between entries greater than 5 minutes.
@@ -149,34 +137,28 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     var column = columns.get(i);
                     var name = headers.get(i);
                     var dataType = dataTypes.get(i);
-
+                    // Add local Date Time for G5 flight recorder
                     if(isG5FlightRecorder && (i  < 2)){
                         if (i == 0){
-
                             stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", dataType, localDateTimeResult.getLocalDates()));
                         }else if(i == 1){
                             stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", dataType, localDateTimeResult.getLocalTimes()));
                             stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm",localDateTimeResult.getUtcOffsets()));
                         }
                     }else{
-
                         try {
                             Double.parseDouble(column.get(0));
                             doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
                         } catch (NumberFormatException e) {
                             stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                         }
-
                     }
-
-
                 }
                 String md5Hash = calculateMd5Hash(flight);
 
                 // Build and add a flight
                 FlightMeta newMeta = new FlightMeta(meta); // Deep copy. Each FlightBuilder has its own FlightMeta object.
                 newMeta.setMd5Hash(md5Hash);
-
 
                 FlightBuilder builder;
                 if (isG5FlightRecorder) {
@@ -187,7 +169,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 }
 
                 flightBuilders.add(builder);
-
 
                 // Clear data for the next flight
                 doubleTimeSeries.clear();
@@ -238,7 +219,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
             return false;
     }
-
 
     /**
          * Processes header lines from the csv flight, populates dataTypes and headers with
@@ -378,7 +358,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             if (isG5flightRecorder && row[4].isEmpty()) {
                 continue;
             }
-
             try {
                 // Parse timestamp from the row
                 String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
@@ -425,7 +404,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private String getFlightInfo(String fileInformation) throws FatalFlightFileException{
 
-
         if (fileInformation == null || fileInformation.trim().length() == 0) {
             throw new FatalFlightFileException("The flight file was empty.");
         }
@@ -446,7 +424,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     /**
-     * Flight files usually have two lines of meta data at the top, which are preceeded by pound signs #.
+     * Flight files usually have two lines of meta-data at the top, which are proceeded by pound signs #.
      * An example line looks something like:
      *
      * #system_id=xxx, key1=val1, key2=val2, ...
@@ -478,7 +456,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.",
                     e);
         }
-        //Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
+        // This is where we can integrate airframe name input from user.
+        // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
         if (!values.containsKey("airframe_name")) {
             values.put("airframe_name", "Cessna 172S");
             LOG.severe(logTag + "!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
@@ -487,7 +466,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         if (!values.containsKey("system_id")) {
             if (values.containsKey("serial_number")){
                 values.put("system_id", values.get("serial_number"));
-                LOG.severe(logTag + "Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
+                    LOG.severe(logTag + "Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
             }else{
                 values.put("system_id", "11111111111111");
                 LOG.severe(logTag + "!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
