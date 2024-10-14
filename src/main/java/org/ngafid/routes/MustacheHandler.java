@@ -8,12 +8,12 @@ import org.ngafid.WebServer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.HashMap;
+import java.util.Map;
 
 public class MustacheHandler {
     private static final MustacheFactory mf = new DefaultMustacheFactory();
 
-    public static Object handle(String templateFilename, HashMap<String, Object> scopes) throws IOException {
+    public static String handle(String templateFilename, Map<String, Object> scopes) throws IOException {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + templateFilename;
         Mustache mustache = mf.compile(templateFile);
         StringWriter stringOut = new StringWriter();

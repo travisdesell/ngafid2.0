@@ -4,17 +4,25 @@ import io.javalin.Javalin;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
+import org.ngafid.routes.javalin.HomeJavalinRoutes;
+import org.ngafid.routes.spark.GetHome;
+import org.ngafid.routes.spark.GetSandbox;
 import spark.Spark;
 
 import java.util.logging.Logger;
 
 public class JavalinWebServer extends WebServer {
     private static final Logger LOG = Logger.getLogger(JavalinWebServer.class.getName());
-    private final Javalin app = Javalin.create();
+    private Javalin app;
 
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
         app.start();
+    }
+
+    @Override
+    protected void preInitialize() {
+        app = Javalin.create();
     }
 
     @Override
@@ -37,9 +45,9 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureRoutes() {
-        app.get("/", ctx -> {
-            ctx.redirect("/login");
-        });
+        app.get("/", HomeJavalinRoutes::getHome);
+        app.get("/access_denied", HomeJavalinRoutes::getHome);
+        app.get("/logout_success", HomeJavalinRoutes::getHome);
     }
 
     @Override

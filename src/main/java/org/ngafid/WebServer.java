@@ -81,6 +81,7 @@ public abstract class WebServer {
         this.port = port;
         this.staticFilesLocation = staticFilesLocation;
 
+        preInitialize();
         configureLogging();
         LOG.info("NGAFID WebServer has started at " + LocalDateTime.now().format(DateTimeFormatter.ofPattern("MM-dd-yyyy HH:mm:ss")));
 
@@ -97,6 +98,8 @@ public abstract class WebServer {
         configureRoutes();
         configureExceptions();
     }
+
+    protected void preInitialize() {};
 
     protected abstract void configurePort();
 
