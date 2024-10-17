@@ -39,6 +39,7 @@ public class PostEventStatistics implements Route {
         try (Connection connection = Database.getConnection()) {
             return gson.toJson(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
         } catch (SQLException e) {
+            e.printStackTrace();
             LOG.severe(e.toString());
             return gson.toJson(new ErrorResponse(e));
         }
