@@ -455,8 +455,13 @@ public class DoubleTimeSeries {
 
     public void addBatch(Connection connection, PreparedStatement preparedStatement, int flightId)
             throws SQLException, IOException {
-        setTypeId(connection);
-        setNameId(connection);
+        if (this.dataType.getId() == -1)
+            setTypeId(connection);
+
+        if (this.name.getId() == -1)
+            setNameId(connection);
+
+        LOG.info("name id = " + name.getId());
 
         preparedStatement.setInt(1, flightId);
         preparedStatement.setInt(2, name.getId());

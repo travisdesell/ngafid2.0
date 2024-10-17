@@ -7,7 +7,6 @@ import java.sql.SQLException;
 import java.util.HashMap;
 
 public abstract class NormalizedColumn<T> {
-
   private static HashMap<String, Integer> ID_CACHE = new HashMap<>();
   private static HashMap<Integer, String> NAME_CACHE = new HashMap<>();
 
@@ -98,9 +97,10 @@ public abstract class NormalizedColumn<T> {
       query.setString(1, name);
       try (ResultSet resultSet = query.executeQuery()) {
         if (resultSet.next()) {
-          return resultSet.getInt(1);
+          var i = resultSet.getInt(1);
+          return i;
         } else {
-          return null;
+          return generateNewId(connection);
         }
       }
     }
@@ -110,8 +110,8 @@ public abstract class NormalizedColumn<T> {
     try (PreparedStatement insertQuery = connection.prepareStatement(getInsertionQuery())) {
       insertQuery.setString(1, name);
       insertQuery.executeUpdate();
-      return getId(connection);
     }
+    return getId(connection);
   }
 
   public int getId() {
