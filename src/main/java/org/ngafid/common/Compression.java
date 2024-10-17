@@ -1,5 +1,7 @@
 package org.ngafid.common;
 
+import org.apache.fury.*;
+import org.apache.fury.config.*;
 import java.io.*;
 import java.nio.ByteBuffer;
 import java.nio.DoubleBuffer;
@@ -8,33 +10,38 @@ import java.sql.SQLException;
 import java.util.logging.Logger;
 import java.util.zip.*;
 
+import org.ngafid.flights.DoubleTimeSeries;
+import org.ngafid.flights.StringTimeSeries;
 import org.ngafid.flights.calculations.TurnToFinal;
 
 public class Compression {
+    private static Logger LOG = Logger.getLogger(Compression.class.getName());
 
-    private static class TTFFixObjectInputStream extends ObjectInputStream {
-        public TTFFixObjectInputStream() throws IOException {
-            super();
+    private static int COMPRESSION_LEVEL = 2;
+    private static final boolean NOWRAP = false;
+
+    public static int USE_NEW_COMPRESSION = 1;
+
+    static {
+        String compressionStrategy = System.getenv("COMPRESSION_STRATEGY");
+        if (compressionStrategy == null || compressionStrategy.toLowerCase().equals("new")) {
+            USE_NEW_COMPRESSION = 1;
+        } else if (compressionStrategy.toLowerCase().equals("old")) {
+            USE_NEW_COMPRESSION = 0;
         }
-
-        public TTFFixObjectInputStream(InputStream in) throws IOException {
-            super(in);
-        }
-
-        protected ObjectStreamClass readClassDescriptor() throws IOException, ClassNotFoundException {
-            ObjectStreamClass read = super.readClassDescriptor();
-            if (read.getName().equals("org.ngafid.flights.TurnToFinal")) {
-                return ObjectStreamClass.lookup(TurnToFinal.class);
-            } else {
-                return read;
+        
+        String compressionLevelString = System.getenv("COMPRESSION_LEVEL");
+        if (compressionLevelString != null) {
+            try {
+                int x = Integer.parseInt(compressionLevelString);
+                COMPRESSION_LEVEL = x;
+            } catch (NumberFormatException e) {
+                if (compressionLevelString.toLowerCase().equals("default")) {
+                    COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
+                }
             }
         }
     }
-
-    private static Logger LOG = Logger.getLogger(Compression.class.getName());
-
-    private static final int COMPRESSION_LEVEL = Deflater.DEFAULT_COMPRESSION;
-    private static final boolean NOWRAP = false;
 
     private static byte[] inflate(byte[] data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -53,8 +60,7 @@ public class Compression {
     public static byte[] compress(byte[] data) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         Deflater deflater = new Deflater(Compression.COMPRESSION_LEVEL, NOWRAP);
-        DeflaterOutputStream deflaterOutputStream =
-                new DeflaterOutputStream(baos, deflater);
+        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(baos, deflater);
         deflaterOutputStream.write(data);
         deflaterOutputStream.finish();
 
@@ -62,43 +68,53 @@ public class Compression {
 
         deflaterOutputStream.close();
 
-
         return out;
     }
 
-    public static double[] inflateDoubleArray(byte[] bytes, int size) throws IOException {
-        byte[] inflated = inflate(bytes);
-        double[] output = new double[size];
-        ByteBuffer.wrap(inflated).asDoubleBuffer().get(output);
+    private static record SerializedObject(byte[] data, byte[] compressed) {} 
 
-        return output;
-    }
-
-    public static double[] inflateDoubleArray(Blob blob, int size) throws SQLException, IOException {
-        byte[] bytes = blob.getBytes(1, (int) blob.length());
-        return inflateDoubleArray(bytes, size);
-    }
-
-    public static byte[] compressDoubleArray(double[] data) throws IOException {
-        ByteBuffer bytes = ByteBuffer.allocate(data.length * Double.BYTES);
-        bytes.asDoubleBuffer().put(data);
-        return compress(bytes.array());
-    }
-
-    public static Object inflateTTFObject(byte[] bytes) throws IOException, ClassNotFoundException {
-        byte[] inflated = inflate(bytes);
-
-        // Deserialize
-        // Use the custom TTFFixObjectInputStream which will properly recognize the outdated reference to the turn to final class
-        ObjectInputStream inputStream = new TTFFixObjectInputStream(new ByteArrayInputStream(inflated)); // new ObjectInputStream(new ByteArrayInputStream(inflated));
-        Object o = inputStream.readObject();
-        inputStream.close();
-
-        return o;
-    }
-
+    private static ThreadSafeFury FURY = new ThreadLocalFury(classLoader -> {
+        Fury f = Fury.builder().withLanguage(Language.JAVA)
+            .withClassLoader(classLoader)
+            .withIntCompressed(true)    
+            .build();
+        f.register(SerializedObject.class);
+        f.register(DoubleTimeSeries.class);
+        f.register(StringTimeSeries.class);
+        f.register(StringTimeSeries.DenseStringSeriesData.class);
+        f.register(StringTimeSeries.SparseStringSeriesData.class);
+        f.register(TurnToFinal.class);
+        return f;
+    });
 
     public static Object inflateObject(byte[] bytes) throws IOException, ClassNotFoundException {
+        if (USE_NEW_COMPRESSION == 1) {
+            SerializedObject o = (SerializedObject) FURY.deserialize(bytes);
+            if (o.data != null) {
+                return FURY.deserialize(o.data);
+            } else {
+                return FURY.deserialize(inflate(o.compressed));
+            }
+        } else {
+            return inflateObjectOld(bytes);
+        }
+    }
+
+    public static byte[] compressObject(Object o) throws IOException {
+        if (USE_NEW_COMPRESSION == 1) {
+            byte[] data = FURY.serialize(o);
+            byte[] compressed = compress(data);
+
+            if (data.length < compressed.length) {
+                return FURY.serialize(new SerializedObject(data, null));
+            } else {
+                return FURY.serialize(new SerializedObject(null, compressed));
+            }
+        } else {
+            return compressObjectOld(o);
+        }
+    }
+    private static Object inflateObjectOld(byte[] bytes) throws IOException, ClassNotFoundException {
         byte[] inflated = inflate(bytes);
 
         // Deserialize
@@ -109,7 +125,7 @@ public class Compression {
         return o;
     }
 
-    public static byte[] compressObject(Object o) throws SQLException, IOException {
+    private static byte[] compressObjectOld(Object o) throws IOException {
         ByteArrayOutputStream bout = new ByteArrayOutputStream();
 
         final ObjectOutputStream oos = new ObjectOutputStream(bout);

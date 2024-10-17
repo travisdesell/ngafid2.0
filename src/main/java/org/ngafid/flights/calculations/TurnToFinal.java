@@ -256,7 +256,7 @@ public class TurnToFinal implements Serializable {
             }
 
             try {
-                Object o = Compression.inflateTTFObject(values.getBytes(1, (int) values.length()));
+                Object o = Compression.inflateObject(values.getBytes(1, (int) values.length()));
                 assert o instanceof ArrayList;
 
                 @SuppressWarnings("unchecked")

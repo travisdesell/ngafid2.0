@@ -10,7 +10,7 @@ import java.sql.SQLException;
 import static org.ngafid.flights.Parameters.*;
 
 /**
- * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression 
+ * This class is an instance of a {@link Calculation} that gets a derived VSI using linear regression
  *
  * @author <a href = "mailto:apl1341@cs.rit.edu">Aidan LaBella @ RIT CS</a>
  */
@@ -45,8 +45,8 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
         if (index < 1 || index >= altB.size() - 1) {
             return Double.NaN;
         } else {
-            double [] yValues = new double[3];
-            double [] xValues = new double[3];
+            double[] yValues = new double[3];
+            double[] xValues = new double[3];
 
             xValues[0] = index - 1;
             xValues[1] = index;
@@ -56,9 +56,9 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
             yValues[1] = altB.get(index);
             yValues[2] = altBLead.get(index);
 
-            //TODO: filter out bad readings here
-            //possible solution to improve accuracy if research is extended
-            
+            // TODO: filter out bad readings here
+            // possible solution to improve accuracy if research is extended
+
             double yA = average(yValues);
             double xA = average(xValues);
 
@@ -72,12 +72,12 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
     }
 
     /**
-     * Used to normalize altitudes 
+     * Used to normalize altitudes
      *
      * @param yValues the array of y values (altitudes)
-     * @param yA the average y value 
+     * @param yA      the average y value
      */
-    public static void normalizeAltitudes(double [] yValues, double yA) {
+    public static void normalizeAltitudes(double[] yValues, double yA) {
         double stdDev = stdDev(yValues, yA);
 
         for (int i = 1; i < yValues.length; i++) {
@@ -87,14 +87,14 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
 
         }
     }
-           
+
     /**
      * Takes the standard deviation of the yValues
      *
      * @param yValues the array of yValues (altitudes)
-     * @param yA the average y value
+     * @param yA      the average y value
      */
-    public static double stdDev(double [] yValues, double yA) {
+    public static double stdDev(double[] yValues, double yA) {
         double n = 0.d;
         int k = yValues.length;
 
@@ -112,7 +112,7 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
      *
      * @return the average of the y values as a double
      */
-    public static double average(double ... yValues) {
+    public static double average(double... yValues) {
         double sum = 0.d;
 
         for (int i = 0; i < yValues.length; i++) {
@@ -125,14 +125,14 @@ public class VSPDRegression implements TimeStepCalculation, Calculation {
     /**
      * Performs a linear regression on any data point such that the lengths of the datasets is 3
      *
-     * @param xValues the x values to use for the regression 
-     * @param yValues the x values to use for the regression 
-     * @param yA the average of the y values
-     * @param xA the average of the x values
+     * @param xValues the x values to use for the regression
+     * @param yValues the x values to use for the regression
+     * @param yA      the average of the y values
+     * @param xA      the average of the x values
      *
      * @return the regression coefeccient (derivative) of the functon portryaed through the x and y values
      */
-    public static double vsiLinearRegression(double [] xValues, double [] yValues, double yA, double xA) {
+    public static double vsiLinearRegression(double[] xValues, double[] yValues, double yA, double xA) {
         double n = 0.d;
         double d = 0.d;
 

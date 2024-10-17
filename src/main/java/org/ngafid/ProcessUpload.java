@@ -417,21 +417,21 @@ public class ProcessUpload {
             }
         }
 
-        if (status.equals("IMPORTED")) {
-            try {
-                FindSpinEvents.findSpinEventsInUpload(connection, upload);
-                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
-                CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
-                CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-                CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
-            } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException
-                    | ParseException e) {
-                LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
-                status = ERROR_STATUS_STR;
-                uploadException = new Exception(
-                        e.toString() + "\nFailed computing events...");
-            }
-        }
+        // if (status.equals("IMPORTED")) {
+        // try {
+        // FindSpinEvents.findSpinEventsInUpload(connection, upload);
+        // FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+        // CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
+        // CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
+        // CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
+        // } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException
+        // | ParseException e) {
+        // LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
+        // status = ERROR_STATUS_STR;
+        // uploadException = new Exception(
+        // e.toString() + "\nFailed computing events...");
+        // }
+        // }
 
         // ingestion was successfull
         return true;

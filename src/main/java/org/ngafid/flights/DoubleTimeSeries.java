@@ -133,11 +133,25 @@ public class DoubleTimeSeries {
         setTypeId(connection);
     }
 
-    public DoubleTimeSeries(String name, Unit dataType, ArrayList<String> stringTimeSeries) {
+    public DoubleTimeSeries(String name, Unit dataType, ArrayList<CharSequence> stringTimeSeries) {
         this(name, dataType.toString(), stringTimeSeries);
     }
 
-    public DoubleTimeSeries(String name, String dataType, ArrayList<String> stringTimeSeries) {
+    private static CharSequence trim(CharSequence seq) {
+        int left = 0;
+        while (left < seq.length() - 1 && Character.isWhitespace(seq.charAt(left))) {
+            left += 1;
+        }
+
+        int right = seq.length() - 1;
+        while (right > left && Character.isWhitespace(seq.charAt(right))) {
+            right -= 1;
+        }
+
+        return seq.subSequence(left, right);
+    }
+
+    public DoubleTimeSeries(String name, String dataType, ArrayList<? extends CharSequence> stringTimeSeries) {
         this.name = new DoubleSeriesName(name);
         this.dataType = new TypeName(dataType);
 
@@ -148,12 +162,13 @@ public class DoubleTimeSeries {
         validCount = 0;
 
         for (int i = 0; i < stringTimeSeries.size(); i++) {
-            String currentValue = stringTimeSeries.get(i);
+            CharSequence currentValue = trim(stringTimeSeries.get(i));
             if (currentValue.length() == 0) {
                 this.add(Double.NaN);
                 emptyValues++;
                 continue;
             }
+
             double currentDouble = JavaDoubleParser.parseDouble(stringTimeSeries.get(i));
 
             this.add(currentDouble);
@@ -196,7 +211,11 @@ public class DoubleTimeSeries {
         byte[] bytes = values.getBytes(1, (int) values.length());
         values.free();
 
-        this.data = Compression.inflateDoubleArray(bytes, size);
+        try {
+            this.data = (double[]) Compression.inflateObject(bytes);
+        } catch (ClassNotFoundException e) {
+            throw new Error("Failed to decompress object from database - did you change the compression code?");
+        }
     }
 
     public interface TimeStepCalculation {
@@ -484,7 +503,7 @@ public class DoubleTimeSeries {
         }
 
         // UPDATED COMPRESSION CODE
-        byte[] compressed = Compression.compressDoubleArray(this.data);
+        byte[] compressed = Compression.compressObject(this.data);
         Blob seriesBlob = new SerialBlob(compressed);
 
         preparedStatement.setBlob(9, seriesBlob);

@@ -2,11 +2,15 @@ package org.ngafid.flights.process;
 
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvException;
+
+import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
+
 import org.ngafid.flights.*;
 import org.ngafid.flights.Airframes.AliasKey;
 
 import java.sql.Connection;
 import java.io.*;
+import java.nio.CharBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.logging.Level;
@@ -29,6 +33,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private final List<String> headers;
     private final List<String> dataTypes;
     private final FlightMeta meta = new FlightMeta();
+    private final byte[] bytes;
 
     public CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
@@ -39,6 +44,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             throws IOException {
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
 
+        this.bytes = bytes;
         headers = new ArrayList<>();
         dataTypes = new ArrayList<>();
 
@@ -84,23 +90,43 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         .forEachOrdered(headers::add);
             }
 
-            ArrayList<ArrayList<String>> columns = new ArrayList<>();
+            // ArrayList<ArrayList<String>> columns = new ArrayList<>();
+            // for (int i = 0; i < headers.size(); i++)
+            // columns.add(new ArrayList<>());
+
+            // // Documentation of CSVReader claims this is a linked list,
+            // // so it is important to iterate over it rather than using indexing
+            // List<String[]> rows = csvReader.readAll();
+            // int validRows = 0;
+            // for (String[] row : rows) {
+            // // Encountered a row that is broken for some reason?
+            // if (row.length != headers.size())
+            // break;
+            // for (int i = 0; i < row.length; i++)
+            // columns.get(i).add(row[i]);
+            // validRows += 1;
+            // }
+
+            CSVParser parser = new CSVParser(bytes);
+            List<List<CharBuffer>> rows = parser.parse();
+            int validRows = 0;
+
+            ArrayList<ArrayList<CharBuffer>> columns = new ArrayList<>(headers.size());
             for (int i = 0; i < headers.size(); i++)
                 columns.add(new ArrayList<>());
 
-            // Documentation of CSVReader claims this is a linked list,
-            // so it is important to iterate over it rather than using indexing
-            List<String[]> rows = csvReader.readAll();
-            int validRows = 0;
-            for (String[] row : rows) {
+            // Start at 3 to ignore the first 3 lines of metadata.
+            // This may have to be programmable for certain data formats.
+            for (int irow = 3; irow < rows.size(); irow++) {
+                var row = rows.get(irow);
+
                 // Encountered a row that is broken for some reason?
-                if (row.length != headers.size())
+                if (row.size() != headers.size())
                     break;
-                for (int i = 0; i < row.length; i++)
-                    columns.get(i).add(row[i]);
+                for (int i = 0; i < row.size(); i++)
+                    columns.get(i).add(row.get(i));
                 validRows += 1;
             }
-
             // If we detect an invalid row before the last row of the file, or there are no valid rows.
             if (validRows < Math.max(columns.size() - 2, 0)) {
                 throw new FatalFlightFileException(
@@ -113,9 +139,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 var dataType = dataTypes.get(i);
 
                 try {
-                    Double.parseDouble(column.get(0));
+                    var value = column.getLast().toString().trim();
+                    LOG.info("Value = '" + value + "'");
+                    Double.parseDouble(value);
                     doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
                 } catch (NumberFormatException e) {
+                    LOG.info("" + e.toString());
+                    e.printStackTrace();
                     stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
                 }
             }

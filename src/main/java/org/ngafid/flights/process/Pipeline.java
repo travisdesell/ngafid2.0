@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Spliterator;
 import java.util.Spliterators;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Logger;
@@ -171,7 +172,16 @@ public class Pipeline implements AutoCloseable {
                     }
                 }));
 
+        // try {
         processHandle.join();
+        // } catch (ExecutionException | InterruptedException e) {
+        // LOG.severe(e.toString());
+        // e.printStackTrace();
+        // LOG.severe(
+        // "Failed to join the process. This is only likely to occur if there is a bug that explodes in the data
+        // processing pipeline");
+        // throw new RuntimeException(e);
+        // }
     }
 
     /**
