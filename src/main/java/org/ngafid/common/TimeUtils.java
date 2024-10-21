@@ -112,14 +112,6 @@ public class TimeUtils {
         return utcZdt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
 
     }
-    /**
-     * List of DateTime formats supported.
-     */
-    private static final List<DateTimeFormatter> dateTimeFormatters = Arrays.asList(
-            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
-            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss")
-
-    );
 
     /**
      * Helper method to parse the date and time using the declared formatters
@@ -128,7 +120,7 @@ public class TimeUtils {
      */
     public static LocalDateTime parseDateTime(String dateTimeString) {
         String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");  // Replaces multiple spaces with a single space
-        for (DateTimeFormatter formatter : dateTimeFormatters) {
+        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 return LocalDateTime.parse(normalizedDateTime, formatter);
             } catch (Exception e) {
@@ -202,7 +194,9 @@ public class TimeUtils {
             DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("yyyy/MM/dd'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
-            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"));
+            DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"),
+            DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"));
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {
@@ -315,7 +309,7 @@ public class TimeUtils {
             LocalDateTime utcDateTime = null;
 
             // Try parsing using a formatter.
-            for (DateTimeFormatter formatter : dateTimeFormatters) {
+            for (DateTimeFormatter formatter : DATE_FORMATTERS) {
                 try {
                     utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
                 } catch (Exception e) {
