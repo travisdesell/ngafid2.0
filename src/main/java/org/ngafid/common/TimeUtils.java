@@ -291,8 +291,6 @@ public class TimeUtils {
             ArrayList<String> utcDates, ArrayList<String> utcTimes,
             ArrayList<String> latitudes, ArrayList<String> longitudes) {
 
-
-
         // Validate that all lists are of the same size.
         if (utcDates.size() != utcTimes.size() || utcDates.size() != latitudes.size() || utcDates.size() != longitudes.size()) {
             throw new IllegalArgumentException("All input lists must have the same size.");
@@ -312,16 +310,17 @@ public class TimeUtils {
             for (DateTimeFormatter formatter : DATE_FORMATTERS) {
                 try {
                     utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
-                } catch (Exception e) {
+                } catch (DateTimeParseException e) {
                     // Continue trying other formats
                 }
             }
             // if utcTime has not been initialized still
-            if (utcDateTime == null) {throw new IllegalArgumentException("Invalid date/time format: " + dateTimeString);}
+            if (utcDateTime == null) {
+                throw new DateTimeParseException("Invalid date/time format: " + dateTimeString, dateTimeString, 0);
+            }
 
             double latitude = Double.parseDouble(latitudes.get(i));
             double longitude = Double.parseDouble(longitudes.get(i));
-
 
             String zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
             ZoneId zoneId = ZoneId.of(zoneIdStr);
@@ -335,7 +334,6 @@ public class TimeUtils {
             localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             utcOffsets.add(localZonedDateTime.getOffset().getId());
         }
-
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
     }
 
@@ -357,11 +355,9 @@ public class TimeUtils {
         public ArrayList<String> getLocalDates() {
             return localDates;
         }
-
         public ArrayList<String> getLocalTimes() {
             return localTimes;
         }
-
         public ArrayList<String> getUtcOffsets() {
             return utcOffsets;
         }

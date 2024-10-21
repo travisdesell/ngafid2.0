@@ -45,8 +45,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         this(connection, stream.readAllBytes(), filename, pipeline);
     }
 
-    private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline)
-            throws IOException {
+    private CSVFileProcessor(Connection connection, byte[] bytes, String filename, Pipeline pipeline) {
         super(connection, new ByteArrayInputStream(bytes), filename, pipeline);
 
         headers = new ArrayList<>();
@@ -88,7 +87,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
             // Library for mapping lat/long to timezones.
             TimeZoneMap timeZoneMap = null;
-            if (isG5FlightRecorder){
+            if (isG5FlightRecorder) {
                 // TODO: TimeZoneEngine initialization take significant amount of time 1-2 seconds. If we expect many G5 files,
                 //  timeZoneMap needs to be created once per program lifetime.
                 // Time zone for the US including Alaska and Hawaii
@@ -127,7 +126,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 TimeUtils.LocalDateTimeResult localDateTimeResult = null;
 
                 // Calculate local date time and offset for G5 data
-                if(isG5FlightRecorder){
+                if (isG5FlightRecorder) {
                     localDateTimeResult = TimeUtils.calculateLocalDateTime(timeZoneMap, columns.get(0),columns.get(1),columns.get(4), columns.get(5));
                 }
 
@@ -136,14 +135,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     var name = headers.get(i);
                     var dataType = dataTypes.get(i);
                     // Add local Date Time for G5 flight recorder
-                    if(isG5FlightRecorder && (i  < 2)){
-                        if (i == 0){
+                    if (isG5FlightRecorder && (i  < 2)) {
+                        if (i == 0) {
                             stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", dataType, localDateTimeResult.getLocalDates()));
-                        }else if(i == 1){
+                        } else {
                             stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", dataType, localDateTimeResult.getLocalTimes()));
                             stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm",localDateTimeResult.getUtcOffsets()));
                         }
-                    }else{
+                    } else {
                         try {
                             Double.parseDouble(column.get(0));
                             doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
@@ -162,7 +161,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 if (isG5FlightRecorder) {
                     builder  = new G5FlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
 
-                }else{
+                } else {
                     builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
                 }
 
@@ -172,7 +171,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 doubleTimeSeries.clear();
                 stringTimeSeries.clear();
             }
-        }catch (IOException | FatalFlightFileException | CsvException e) {
+        } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         } catch (SQLException e) {
             throw new RuntimeException(e);
@@ -280,7 +279,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String secondLine = bufferedReader.readLine();
         String thirdLine = bufferedReader.readLine();
 
-        if(secondLine.startsWith("#")){
+        if (secondLine.startsWith("#")) {
             LOG.info( "extractHeaderLines " + " # found in the beginning of the second line, removing." );
             secondLine = secondLine.substring(1);  // Remove the first character (if it's '#')
         }
@@ -333,7 +332,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } finally {
             bufferedWriter.flush();  // Ensure all data is written
         }
-
         return outputStream.toByteArray();
     }
 
@@ -397,7 +395,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @throws FatalFlightFileException
      * @throws IOException
      */
-    private String getFlightInfo(String fileInformation) throws FatalFlightFileException{
+    private String getFlightInfo(String fileInformation) throws FatalFlightFileException {
 
         if (fileInformation == null || fileInformation.trim().length() == 0) {
             throw new FatalFlightFileException("The flight file was empty.");
@@ -441,15 +439,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     continue;
 
                 String subParts[] = infoParts[i].trim().split("=");
-
                 // May throw index out of bounds.
                 values.put(subParts[0].trim(), subParts[1].trim());
             }
         } catch (IndexOutOfBoundsException e) {
-            // LOG.info("parsting flight information threw exception: " + e);
-            // e.printStackTrace();
-            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.",
-                    e);
+            throw new FatalFlightFileException("Flight information line was not properly formed with key value pairs.", e);
         }
         // This is where we can integrate airframe name input from user.
         // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
@@ -459,10 +453,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
         }
 
         if (!values.containsKey("system_id")) {
-            if (values.containsKey("serial_number")){
+            if (values.containsKey("serial_number")) {
                 values.put("system_id", values.get("serial_number"));
                     LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
-            }else{
+            } else {
                 values.put("system_id", "11111111111111");
                 LOG.severe("!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
             }
@@ -500,8 +494,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } else if (Airframes.ROTORCRAFT.contains(meta.airframe.getName())) {
             meta.airframeType = new Airframes.AirframeType("Rotorcraft");
         } else {
-            LOG.severe(
-                    "Could not import flight because the aircraft type was unknown for the following airframe name: '"
+            LOG.severe("Could not import flight because the aircraft type was unknown for the following airframe name: '"
                             + meta.airframe.getName() + "'");
             LOG.severe(
                     "Please add this to the the `airframe_type` table in the database and update this method.");
@@ -516,7 +509,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param fileInformation First line of the file
      */
     private void scanEagleParsing(String fileInformation) {
-
         // need a custom method to process ScanEagle data because the column
         // names are different and there is no header info
         scanEagleSetTailAndID();
