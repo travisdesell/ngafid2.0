@@ -295,13 +295,11 @@ public class Pipeline implements AutoCloseable {
             derivedUpload = Upload.createDerivedUpload(connection, upload);
             derivedFileSystem = derivedUpload.getZipFileSystem(Map.of("create", "true"));
         }
-
         Path zipFileSystemPath = derivedFileSystem.getPath(filename);
         Path parentPath = zipFileSystemPath.getParent();
         if (parentPath != null && !Files.exists(parentPath)) {
             Files.createDirectories(parentPath);
         }
-
         Files.write(zipFileSystemPath, data, StandardOpenOption.CREATE);
     }
 
