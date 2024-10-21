@@ -292,10 +292,13 @@ public class CSVFileProcessor extends FlightFileProcessor {
         return headerLines;
     }
 
+
     /**
-     G5, G3x data has metadata formated like this: UTC Date (yyyy-mm-dd),UTC Time (hh:mm:ss),
-     This method extracts the content inside parentheses
-     If parentheses not found, returns the original input.
+     *  G5, G3x data has metadata formated like this: UTC Date (yyyy-mm-dd),UTC Time (hh:mm:ss),
+     *  This method extracts the content inside parentheses
+     *  If parentheses not found, returns the original input.
+     * @param input
+     * @return
      */
     public static String extractContentInsideParentheses(String input) {
         Matcher matcher = PARENTHESIS_PATTERN.matcher(input);
