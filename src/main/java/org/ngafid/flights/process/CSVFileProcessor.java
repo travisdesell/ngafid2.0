@@ -355,14 +355,29 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 continue;
             }
             try {
-                // Parse timestamp from the row
                 String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
-                LocalDateTime currentTimestamp = TimeUtils.parseDateTime(dateTimeString);
+                String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
+                LocalDateTime currentTimestamp;
+
+                try {
+                    // Find the correct formatter for the current date-time string
+                    DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(normalizedDateTime);
+
+                    if (correctFormatter == null) {
+                        throw new DateTimeParseException("Unable to find correct formatter for  date/time: " + dateTimeString, dateTimeString, 0);
+                    }
+                    // Try to find a formatter if previous fails.
+                    currentTimestamp = LocalDateTime.parse(normalizedDateTime, correctFormatter);
+
+                } catch (DateTimeParseException e) {
+                    LOG.severe("Failed to parse date/time: " + normalizedDateTime + ". Error: " + e.getMessage());
+                    throw e;  // Rethrow or handle the exception
+                }
 
                 if (lastTimestamp != null) {
                     // Check if the time difference between consecutive rows exceeds 5 minutes
                     Duration duration = Duration.between(currentTimestamp.toInstant(ZoneOffset.UTC), lastTimestamp.toInstant(ZoneOffset.UTC));
-                    long timeDifferenceInMillis  = Math.abs(duration.toMillis());
+                    long timeDifferenceInMillis = Math.abs(duration.toMillis());
                     if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
 
                         // Add the current flight to the list of flights and start a new flight
@@ -378,7 +393,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 lastTimestamp = currentTimestamp;
 
             } catch (IllegalArgumentException e) {
-                // If parseDateTime throws an exception, log it and skip this row
+                // Log detailed error
                 LOG.warning("Skipping row due to unparseable date/time: " + Arrays.toString(row));
             }
         }
@@ -388,9 +403,10 @@ public class CSVFileProcessor extends FlightFileProcessor {
             flights.add(currentFlight);
         }
 
-        LOG.info("CSVFileProcessor - extractContentInsideParentheses - returning number of flights: " + flights.size());
+        LOG.info("CSVFileProcessor - returning number of flights: " + flights.size());
         return flights;
     }
+
 
     /**
      * Gets the flight information from the first line of the file

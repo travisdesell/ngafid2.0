@@ -196,6 +196,7 @@ public class TimeUtils {
             DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss'Z'"),
             DateTimeFormatter.ofPattern("MM/dd/yyyy'T'HH:mm:ss"),
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
+            DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss"),
             DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"));
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
@@ -288,12 +289,19 @@ public class TimeUtils {
      * @return a LocalDateTimeResult containing lists of local dates, times, and UTC offsets.
      */
     public static LocalDateTimeResult calculateLocalDateTime(TimeZoneMap map,
-            ArrayList<String> utcDates, ArrayList<String> utcTimes,
-            ArrayList<String> latitudes, ArrayList<String> longitudes) {
+                                                             ArrayList<String> utcDates, ArrayList<String> utcTimes,
+                                                             ArrayList<String> latitudes, ArrayList<String> longitudes) {
 
         // Validate that all lists are of the same size.
         if (utcDates.size() != utcTimes.size() || utcDates.size() != latitudes.size() || utcDates.size() != longitudes.size()) {
             throw new IllegalArgumentException("All input lists must have the same size.");
+        }
+
+        // Determine the correct DateTimeFormatter once, using the first entry.
+        String firstDateTimeString = utcDates.get(0) + " " + utcTimes.get(0);
+        DateTimeFormatter correctFormatter = findCorrectFormatter(firstDateTimeString);
+        if (correctFormatter == null) {
+            throw new DateTimeParseException("Invalid date/time format for the first entry: " + firstDateTimeString, firstDateTimeString, 0);
         }
 
         // Prepare lists for the results.
@@ -301,23 +309,10 @@ public class TimeUtils {
         ArrayList<String> localTimes = new ArrayList<>(utcDates.size());
         ArrayList<String> utcOffsets = new ArrayList<>(utcDates.size());
 
-        // Iterate over each index and calculate the corresponding local date, time, and offset.
+        // Iterate over each index and calculate the corresponding local date, time, and offset using the determined formatter.
         for (int i = 0; i < utcDates.size(); i++) {
             String dateTimeString = utcDates.get(i) + " " + utcTimes.get(i);
-            LocalDateTime utcDateTime = null;
-
-            // Try parsing using a formatter.
-            for (DateTimeFormatter formatter : DATE_FORMATTERS) {
-                try {
-                    utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
-                } catch (DateTimeParseException e) {
-                    // Continue trying other formats
-                }
-            }
-            // if utcTime has not been initialized still
-            if (utcDateTime == null) {
-                throw new DateTimeParseException("Invalid date/time format: " + dateTimeString, dateTimeString, 0);
-            }
+            LocalDateTime utcDateTime = LocalDateTime.parse(dateTimeString, correctFormatter);
 
             double latitude = Double.parseDouble(latitudes.get(i));
             double longitude = Double.parseDouble(longitudes.get(i));
@@ -326,17 +321,31 @@ public class TimeUtils {
             ZoneId zoneId = ZoneId.of(zoneIdStr);
 
             // Convert the UTC datetime to the local time in the specified zone.
-            ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC)
-                    .withZoneSameInstant(zoneId);
+            ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
 
             // Format the local date, local time, and UTC offset.
             localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
             localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             utcOffsets.add(localZonedDateTime.getOffset().getId());
         }
+
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
     }
 
+    /**
+     * Helper method to find the correct DateTimeFormatter by trying to parse the first date string.
+     */
+    public static DateTimeFormatter findCorrectFormatter(String dateTimeString) {
+        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
+            try {
+                LocalDateTime.parse(dateTimeString, formatter);
+                return formatter;  // Return the formatter if parsing succeeds
+            } catch (DateTimeParseException e) {
+                // Continue trying other formatters
+            }
+        }
+        return null;
+    }
 
 
     /**
