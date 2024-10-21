@@ -38,7 +38,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private final List<String> headers;
     private final List<String> dataTypes;
     private final FlightMeta meta = new FlightMeta();
-    String logTag = "CSVFileProcessor";
+    private static final Pattern PARENTHESIS_PATTERN = Pattern.compile("\\(([^)]+)\\)");
 
     public CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
@@ -62,8 +62,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @throws FlightProcessingException
      */
     public Stream<FlightBuilder> parse() throws FlightProcessingException {
-
-        LOG.info(logTag + "- parse - start");
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
         List<FlightBuilder> flightBuilders = new ArrayList<>();
@@ -179,7 +177,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        LOG.info(logTag+ "- parse - end. Returning flights: " + flightBuilders.size());
+        LOG.info( "Parse method end. Returning flights: " + flightBuilders.size());
         return flightBuilders.stream();
     }
 
@@ -283,7 +281,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String thirdLine = bufferedReader.readLine();
 
         if(secondLine.startsWith("#")){
-            LOG.info(logTag + " extractHeaderLines " + " # found in the beginning of the second line, removing." );
+            LOG.info( "extractHeaderLines " + " # found in the beginning of the second line, removing." );
             secondLine = secondLine.substring(1);  // Remove the first character (if it's '#')
         }
 
@@ -301,10 +299,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      If parentheses not found, returns the original input.
      */
     public static String extractContentInsideParentheses(String input) {
-
-        Pattern pattern = Pattern.compile("\\(([^)]+)\\)");
-        Matcher matcher = pattern.matcher(input);
-
+        Matcher matcher = PARENTHESIS_PATTERN.matcher(input);
         if (matcher.find()) {
             return matcher.group(1);  // Content inside parentheses
         }
@@ -460,16 +455,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
         // Check if flight information contains airframe_name and system_id, if not, put dummy values (for testing).
         if (!values.containsKey("airframe_name")) {
             values.put("airframe_name", "Cessna 172S");
-            LOG.severe(logTag + "!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
+            LOG.severe("!!! TESTING ONLY: Log: airframe_name is missing, setting to DummyAirframe - Cessna 172S.");
         }
 
         if (!values.containsKey("system_id")) {
             if (values.containsKey("serial_number")){
                 values.put("system_id", values.get("serial_number"));
-                    LOG.severe(logTag + "Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
+                    LOG.severe("Log: serial_number is missing, replacing serial_number with system_id: " + values.get("system_id"));
             }else{
                 values.put("system_id", "11111111111111");
-                LOG.severe(logTag + "!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
+                LOG.severe("!!! TESTING ONLY: Log: system_id is missing, setting to DummySystemId  - 111111111.");
             }
         }
 
