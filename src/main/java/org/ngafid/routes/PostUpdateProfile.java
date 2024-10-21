@@ -58,10 +58,8 @@ public class PostUpdateProfile implements Route {
         LOG.info("new phoneNumber: '" + phoneNumber + "'");
         LOG.info("new zipCode: '" + zipCode + "'");
 
-        try {
-            Connection connection = Database.getConnection();
-
-            User user = (User)request.session().attribute("user");
+        try (Connection connection = Database.getConnection()) {
+            User user = (User) request.session().attribute("user");
 
             user.updateProfile(connection, firstName, lastName, country, state, city, address, phoneNumber, zipCode);
 
@@ -74,4 +72,3 @@ public class PostUpdateProfile implements Route {
         }
     }
 }
-

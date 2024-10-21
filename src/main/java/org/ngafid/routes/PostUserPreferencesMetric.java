@@ -25,12 +25,11 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 public class PostUserPreferencesMetric implements Route {
     private static final Logger LOG = Logger.getLogger(PostUserPreferencesMetric.class.getName());
     private Gson gson;
-    private static Connection connection = Database.getConnection();
 
     public PostUserPreferencesMetric(Gson gson) {
         this.gson = gson;
@@ -49,12 +48,12 @@ public class PostUserPreferencesMetric implements Route {
         String metric = request.queryParams("metricName");
         String type = request.queryParams("modificationType");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             LOG.info("Modifiying " + metric + " (" + type + ") for user: " + user.toString());
 
             if (type.equals("addition")) {
                 User.addUserPreferenceMetric(connection, userId, metric);
-            } else { 
+            } else {
                 User.removeUserPreferenceMetric(connection, userId, metric);
             }
 

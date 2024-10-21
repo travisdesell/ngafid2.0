@@ -24,12 +24,11 @@ import org.ngafid.accounts.User;
 import org.ngafid.accounts.UserPreferences;
 import org.ngafid.flights.DoubleTimeSeries;
 
-import static org.ngafid.flights.calculations.Parameters.*;
+import static org.ngafid.flights.Parameters.*;
 
 public class PostUserPreferences implements Route {
     private static final Logger LOG = Logger.getLogger(PostUserPreferences.class.getName());
     private Gson gson;
-    private static Connection connection = Database.getConnection();
 
     public PostUserPreferences(Gson gson) {
         this.gson = gson;
@@ -45,8 +44,9 @@ public class PostUserPreferences implements Route {
         User user = session.attribute("user");
 
         int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
-        try {
-            return gson.toJson(User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
+        try (Connection connection = Database.getConnection()) {
+            return gson.toJson(
+                    User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
         } catch (Exception e) {
             e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));

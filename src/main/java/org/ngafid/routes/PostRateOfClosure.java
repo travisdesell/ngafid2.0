@@ -27,19 +27,19 @@ public class PostRateOfClosure implements Route {
             this.x = new int[rateOfClosure.getSize()];
             this.y = rateOfClosure.getRateOfClosureArray();
             for (int i = -5; i < rateOfClosure.getSize() - 5; i++) {
-                x[i+5] = i;
+                x[i + 5] = i;
             }
         }
     }
+
     @Override
     public Object handle(Request request, Response response) {
 
         LOG.info("handling rate of closure route");
         int eventId = Integer.parseInt(request.queryParams("eventId"));
-        try {
-            Connection connection = Database.getConnection();
+        try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
-            if (rateOfClosure!=null) {
+            if (rateOfClosure != null) {
                 RateOfClosurePlotData rocData = new RateOfClosurePlotData(rateOfClosure);
                 String output = gson.toJson(rocData);
                 return output;

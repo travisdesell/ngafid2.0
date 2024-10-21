@@ -18,11 +18,9 @@ import java.util.logging.Logger;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-
 public class GetUpload implements Route {
     private static final Logger LOG = Logger.getLogger(GetUpload.class.getName());
     private Gson gson;
-
 
     public GetUpload(Gson gson) {
         this.gson = gson;
@@ -34,10 +32,14 @@ public class GetUpload implements Route {
     public Object handle(Request request, Response response) throws SQLException {
         final Session session = request.session();
         User user = session.attribute("user");
-        Connection connection = Database.getConnection();
 
         LOG.info("Retrieving upload: " + request.queryParams("uploadId") + " " + request.queryParams("md5Hash"));
-        Upload upload = Upload.getUploadById(connection, Integer.parseInt(request.queryParams("uploadId")), request.queryParams("md5Hash"));
+        Upload upload;
+
+        try (Connection connection = Database.getConnection()) {
+            upload = Upload.getUploadById(connection, Integer.parseInt(request.queryParams("uploadId")),
+                    request.queryParams("md5Hash"));
+        }
 
         if (upload == null) {
             response.status(404);
@@ -50,14 +52,15 @@ public class GetUpload implements Route {
             return null;
         }
 
-        File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(), upload.getUploaderId(), upload.getId(), upload.getFilename()));
+        File file = new File(String.format("%s/%d/%d/%d__%s", WebServer.NGAFID_ARCHIVE_DIR, upload.getFleetId(),
+                upload.getUploaderId(), upload.getId(), upload.getFilename()));
         LOG.info("File: " + file.getAbsolutePath());
         if (file.exists()) {
             response.raw().setContentType("application/zip");
             response.raw().setHeader("Content-Disposition", "attachment; filename=" + upload.getFilename());
 
             try (InputStream buffInputStream = new BufferedInputStream(new FileInputStream(file));
-                 OutputStream outputStream = response.raw().getOutputStream()) {
+                    OutputStream outputStream = response.raw().getOutputStream()) {
 
                 IOUtils.copy(buffInputStream, outputStream);
 

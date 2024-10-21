@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -14,7 +13,6 @@ import java.util.HashMap;
 
 import java.sql.Connection;
 import java.sql.SQLException;
-
 
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -43,7 +41,6 @@ import org.ngafid.flights.Upload;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 import org.ngafid.events.EventStatistics;
 
@@ -90,11 +87,9 @@ public class GetWelcome implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -104,11 +99,12 @@ public class GetWelcome implements Route {
 
             scopes.put("navbar_js", Navbar.getJavascript(request));
 
-            LocalDate firstOfMonth = LocalDate.now().with( TemporalAdjusters.firstDayOfMonth() );
-            LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
+            LocalDate firstOfMonth = LocalDate.now().with(TemporalAdjusters.firstDayOfMonth());
+            LocalDate firstOfYear = LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
 
             long startTime = System.currentTimeMillis();
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, fleetId, null, null);
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    fleetId, null, null);
             LOG.info("getting event counts took " + (System.currentTimeMillis() - startTime) + "ms.");
 
             startTime = System.currentTimeMillis();
@@ -116,7 +112,7 @@ public class GetWelcome implements Route {
 
             scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
-            LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
+            LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();

@@ -35,8 +35,7 @@ public class PostCoordinates implements Route {
         int nanOffset = -1;
         ArrayList<double[]> coordinates = new ArrayList<double[]>();
 
-        public Coordinates(int flightId, String name) throws SQLException, IOException {
-            Connection connection = Database.getConnection();
+        public Coordinates(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries latitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Latitude");
             DoubleTimeSeries longitudes = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, "Longitude");
 
@@ -46,11 +45,12 @@ public class PostCoordinates implements Route {
 
                 if (Double.isNaN(longitude) || Double.isNaN(latitude) || latitude == 0.0 || longitude == 0.0) {
                 } else {
-                    if (nanOffset < 0) nanOffset = i;
-                    coordinates.add(new double[]{longitude, latitude});
+                    if (nanOffset < 0)
+                        nanOffset = i;
+                    coordinates.add(new double[] { longitude, latitude });
                 }
             }
-       }
+        }
     }
 
     @Override
@@ -63,22 +63,21 @@ public class PostCoordinates implements Route {
         int flightId = Integer.parseInt(request.queryParams("flightId"));
         String name = request.queryParams("seriesName");
 
-        try {
-
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            Coordinates coordinates = new Coordinates(flightId, name);
+            Coordinates coordinates = new Coordinates(connection, flightId, name);
 
-            //System.out.println(gson.toJson(uploadDetails));
+            // System.out.println(gson.toJson(uploadDetails));
             String output = gson.toJson(coordinates);
-            //need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN","null");
+            // need to convert NaNs to null so they can be parsed by JSON
+            output = output.replaceAll("NaN", "null");
 
-            //LOG.info(output);
+            // LOG.info(output);
 
             return output;
         } catch (SQLException | IOException e) {
@@ -87,6 +86,3 @@ public class PostCoordinates implements Route {
         }
     }
 }
-
-
-

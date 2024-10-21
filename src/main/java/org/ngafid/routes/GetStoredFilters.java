@@ -16,7 +16,6 @@ import spark.Request;
 import spark.Response;
 import spark.Session;
 
-
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.filters.Filter;
@@ -37,10 +36,9 @@ public class GetStoredFilters implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             final Session session = request.session();
             User user = session.attribute("user");
-            Connection connection = Database.getConnection();
 
             int fleetId = user.getFleetId();
 

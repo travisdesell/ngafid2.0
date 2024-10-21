@@ -45,7 +45,8 @@ public class AirSyncAuth {
     public AirSyncAuth(String apiKey, String apiSecret) {
         byte [] srcWord = (apiKey + ":" + apiSecret).getBytes();
         this.hash = Base64.getEncoder().encode(srcWord);
-
+        System.out.println("API Key = " + apiKey);
+        System.out.println("API Secret = " + apiSecret);
         this.requestAuthorization();
     }
 
@@ -69,13 +70,16 @@ public class AirSyncAuth {
             connection.setDoOutput(true);
             connection.setRequestProperty("Authorization", "Basic " + new String(this.hash));     
 
-            InputStream is = connection.getInputStream();
-            byte [] respRaw = is.readAllBytes();
+            try (InputStream is = connection.getInputStream()) {
+              byte [] respRaw = is.readAllBytes();
+              
+              is.close();
 
-            String resp = new String(respRaw).replaceAll("access_token", "accessToken");
+              String resp = new String(respRaw).replaceAll("access_token", "accessToken");
 
-            this.accessToken = gson.fromJson(resp, AccessToken.class);
-            this.issueTime = LocalDateTime.now();
+              this.accessToken = gson.fromJson(resp, AccessToken.class);
+              this.issueTime = LocalDateTime.now();
+            }
         } catch (IOException ie) {
             ie.printStackTrace();
             System.err.println("FATAL: Unable to get a token from AirSync! Exiting due to fatal error.");

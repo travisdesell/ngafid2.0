@@ -39,21 +39,24 @@ public class PostDoubleSeries implements Route {
         String[] x;
         double[] y;
 
-        public DoubleSeries(int flightId, String name) throws SQLException, IOException {
-            Connection connection = Database.getConnection();
+        public DoubleSeries(Connection connection, int flightId, String name) throws SQLException, IOException {
             DoubleTimeSeries doubleTimeSeries = DoubleTimeSeries.getDoubleTimeSeries(connection, flightId, name);
-            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name + "'");
+            LOG.info("POST double series getting double time series for flight id: " + flightId + " and name: '" + name
+                    + "'");
 
             /*
-            StringTimeSeries dateSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
-            StringTimeSeries timeSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
-            StringTimeSeries utcOffsetSeries = StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
+             * StringTimeSeries dateSeries =
+             * StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Date");
+             * StringTimeSeries timeSeries =
+             * StringTimeSeries.getStringTimeSeries(connection, flightId, "Lcl Time");
+             * StringTimeSeries utcOffsetSeries =
+             * StringTimeSeries.getStringTimeSeries(connection, flightId, "UTCOfst");
+             * 
+             * ArrayList<String> times = new ArrayList<String>();
+             * ArrayList<Double> values = new ArrayList<Double>();
+             */
 
-            ArrayList<String> times = new ArrayList<String>();
-            ArrayList<Double> values = new ArrayList<Double>();
-            */
-
-            //if (dateSeries == null || timeSeries == null || utcOffsetSeries == null) {
+            // if (dateSeries == null || timeSeries == null || utcOffsetSeries == null) {
             int size = 0;
             if (doubleTimeSeries != null) {
                 size = doubleTimeSeries.size();
@@ -67,27 +70,29 @@ public class PostDoubleSeries implements Route {
                 y[i] = doubleTimeSeries.get(i);
             }
 
-                /*
-            } else {
-                for (int i = 0; i < doubleTimeSeries.size(); i++) {
-                    if (dateSeries.get(i).equals("") || dateSeries.get(i) == null) continue;
-                    if (timeSeries.get(i).equals("") || timeSeries.get(i) == null) continue;
-                    if (utcOffsetSeries.get(i).equals("") || utcOffsetSeries.get(i) == null) continue;
-
-                    times.add( TimeUtils.toUTC(dateSeries.get(i), timeSeries.get(i), utcOffsetSeries.get(i)) );
-                    values.add( doubleTimeSeries.get(i) );
-                }
-
-                x = new String[times.size()];
-                y = new double[times.size()];
-
-                for (int i = 0; i < times.size(); i++) {
-                    x[i] = times.get(i);
-                    y[i] = values.get(i);
-                }
-            }
-            */
-       }
+            /*
+             * } else {
+             * for (int i = 0; i < doubleTimeSeries.size(); i++) {
+             * if (dateSeries.get(i).equals("") || dateSeries.get(i) == null) continue;
+             * if (timeSeries.get(i).equals("") || timeSeries.get(i) == null) continue;
+             * if (utcOffsetSeries.get(i).equals("") || utcOffsetSeries.get(i) == null)
+             * continue;
+             * 
+             * times.add( TimeUtils.toUTC(dateSeries.get(i), timeSeries.get(i),
+             * utcOffsetSeries.get(i)) );
+             * values.add( doubleTimeSeries.get(i) );
+             * }
+             * 
+             * x = new String[times.size()];
+             * y = new double[times.size()];
+             * 
+             * for (int i = 0; i < times.size(); i++) {
+             * x[i] = times.get(i);
+             * y[i] = values.get(i);
+             * }
+             * }
+             */
+        }
     }
 
     @Override
@@ -100,21 +105,19 @@ public class PostDoubleSeries implements Route {
         int flightId = Integer.parseInt(request.queryParams("flightId"));
         String name = request.queryParams("seriesName");
 
-        try {
-            //check to see if the user has access to this data
-            if (!user.hasFlightAccess(Database.getConnection(), flightId)) {
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
                 LOG.severe("INVALID ACCESS: user did not have access to this flight.");
                 Spark.halt(401, "User did not have access to this flight.");
             }
 
-            DoubleSeries doubleSeries = new DoubleSeries(flightId, name);
+            DoubleSeries doubleSeries = new DoubleSeries(connection, flightId, name);
 
-            //System.out.println(gson.toJson(uploadDetails));
+            // System.out.println(gson.toJson(uploadDetails));
             String output = gson.toJson(doubleSeries);
-            //need to convert NaNs to null so they can be parsed by JSON
-            output = output.replaceAll("NaN","null");
-
-            //LOG.info(output);
+            // need to convert NaNs to null so they can be parsed by JSON
+            output = output.replaceAll("NaN", "null");
 
             return output;
         } catch (SQLException | IOException e) {
@@ -123,5 +126,3 @@ public class PostDoubleSeries implements Route {
         }
     }
 }
-
-

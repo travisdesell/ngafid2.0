@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -20,7 +19,6 @@ import spark.Route;
 import spark.Request;
 import spark.Response;
 import spark.Session;
-
 
 import org.ngafid.Database;
 import org.ngafid.WebServer;
@@ -37,7 +35,6 @@ import org.ngafid.events.EventDefinition;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
 
 public class GetFlights implements Route {
     private static final Logger LOG = Logger.getLogger(GetFlights.class.getName());
@@ -78,7 +75,7 @@ public class GetFlights implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "flights.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
 
@@ -93,8 +90,6 @@ public class GetFlights implements Route {
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
-
-            Connection connection = Database.getConnection();
 
             long startTime, endTime;
 
@@ -159,16 +154,17 @@ public class GetFlights implements Route {
 
             sb.append("var flights = [];");
 
-
             scopes.put("flights_js", sb.toString());
             /*
-            try {
-                //scopes.put("flights_js", "var flights = JSON.parse('" + gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new String[]{"IMPORTED", "ERROR"})) + "');");
-
-            } catch (SQLException e) {
-                return gson.toJson(new ErrorResponse(e));
-            }
-            */
+             * try {
+             * //scopes.put("flights_js", "var flights = JSON.parse('" +
+             * gson.toJson(Upload.getUploads(Database.getConnection(), fleetId, new
+             * String[]{"IMPORTED", "ERROR"})) + "');");
+             * 
+             * } catch (SQLException e) {
+             * return gson.toJson(new ErrorResponse(e));
+             * }
+             */
 
             StringWriter stringOut = new StringWriter();
             startTime = System.currentTimeMillis();

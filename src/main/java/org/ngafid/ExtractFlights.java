@@ -13,7 +13,6 @@ import java.sql.ResultSet;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
-
 import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,10 +34,9 @@ import org.ngafid.flights.FatalFlightFileException;
 import org.ngafid.flights.Flight;
 
 public class ExtractFlights {
-    private static Connection connection = Database.getConnection();
-
 
     public static void main(String[] arguments) throws Exception {
+        Connection connection = Database.getConnection();
         Options options = new Options();
 
         Option flightIds = new Option("f", "flight_ids", true, "list of flight ids to extract");
@@ -49,7 +47,6 @@ public class ExtractFlights {
         Option outfilePrefix = new Option("o", "output_file_prefix", true, "prefix for output file names");
         outfilePrefix.setRequired(true);
         options.addOption(outfilePrefix);
-
 
         CommandLineParser parser = new DefaultParser();
         HelpFormatter formatter = new HelpFormatter();

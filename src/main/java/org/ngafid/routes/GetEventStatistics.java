@@ -5,7 +5,6 @@ import java.io.InputStream;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Logger;
@@ -31,8 +30,6 @@ import org.ngafid.flights.Airframes;
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
-
-
 
 public class GetEventStatistics implements Route {
     private static final Logger LOG = Logger.getLogger(GetEventStatistics.class.getName());
@@ -73,17 +70,16 @@ public class GetEventStatistics implements Route {
         String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "event_statistics.html";
         LOG.severe("template file: '" + templateFile + "'");
 
-        try  {
+        try (Connection connection = Database.getConnection()) {
             MustacheFactory mf = new DefaultMustacheFactory();
             Mustache mustache = mf.compile(templateFile);
-
-            Connection connection = Database.getConnection();
 
             final Session session = request.session();
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            //ArrayList<EventStatistics> eventStatistics = EventStatistics.getAll(connection, fleetId);
+            // ArrayList<EventStatistics> eventStatistics =
+            // EventStatistics.getAll(connection, fleetId);
 
             HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -95,12 +91,12 @@ public class GetEventStatistics implements Route {
 
             long startTime = System.currentTimeMillis();
             scopes.put("events_js",
-                //"var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
-                "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
-                "var airframeMap = JSON.parse('" + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n"
-            );
+                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
+                            "var airframeMap = JSON.parse('"
+                            + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
             long endTime = System.currentTimeMillis();
-            LOG.info("converting event statistics to JSON took " + (endTime-startTime) + "ms.");
+            LOG.info("converting event statistics to JSON took " + (endTime - startTime) + "ms.");
 
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
