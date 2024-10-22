@@ -165,7 +165,7 @@ public class DoubleTimeSeries {
         query.setInt(1, flightId);
         query.setString(2, name);
 
-        //LOG.info(query.toString());
+        LOG.info(query.toString());
         ResultSet resultSet = query.executeQuery();
 
         if (resultSet.next()) {

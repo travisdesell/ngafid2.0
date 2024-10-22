@@ -71,6 +71,8 @@ public class PostMonthlyEventCounts implements Route {
                 return gson.toJson(map.get(eventName));
             }
         } catch (SQLException e) {
+            LOG.severe(e.toString());
+            e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
     }

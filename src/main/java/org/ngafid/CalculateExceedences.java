@@ -95,7 +95,7 @@ public class CalculateExceedences {
                 Pair<Double,Double> minMax = DoubleTimeSeries.getMinMax(connection, flightId, columnName);
 
                 if (minMax == null) {
-                    System.out.println("minMax was null, setting flight_processed.had_error = 1");
+                    System.out.println("minMax for '" + columnName + "' was null, setting flight_processed.had_error = 1");
                     //couldn't calculate this exceedence because at least one of the columns was missing
                     if (uploadProcessedEmail != null) uploadProcessedEmail.addExceedenceError(flightFilename, "could not calculate '" + eventDefinition.getName() + "' for flight " + flightId + ", '" + flightFilename + "' - " + columnName + " was missing");
 
@@ -366,7 +366,7 @@ public class CalculateExceedences {
                 Instant start = Instant.now();
                 //ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id > ?", new Object[]{0});
                 //
-                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id = ?", new Object[]{68});
+                ArrayList<EventDefinition> allEvents = EventDefinition.getAll(connection, "id IN (?,?,?,?,?,?,?,?,?,?)", new Object[]{39, 40, 41, 42, 43, 44, 45, 65, 67, 72});
 
                 System.out.println("n events = " + allEvents.size());
                 for (int i = 0; i < allEvents.size(); i++) {
