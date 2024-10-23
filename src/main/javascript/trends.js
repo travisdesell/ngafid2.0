@@ -512,9 +512,9 @@ class TrendsPage extends React.Component {
                     
                     //Display the "ANY Event" lines under the other ones
                     if (eventName === "ANY Event") {
-                        countData.unshift(value);
-                    } else {
                         countData.push(value);
+                    } else {
+                        countData.unshift(value);
                     }
                     
                 }
@@ -661,11 +661,11 @@ class TrendsPage extends React.Component {
                     legendgroup: ngafidValue.name,
 
                     //Consistent rainbow colors for each event
-                    line : {
-                        width: 1,
-                        dash: 'dot',
-                        color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
-                    }
+                    // line : {
+                    //     width: 1,
+                    //     dash: 'dot',
+                    //     color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
+                    // }
 
                 };
 
@@ -685,11 +685,11 @@ class TrendsPage extends React.Component {
                         //     + parseInt(360.0 * eventNameIndex / eventNames.length)
                         //     + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
                         //     + parseInt(25.0 + 25.0 * airframeIndex / airframeNames.length) + '%)'
-                        color : 'hsl('
-                            + parseInt(360.0 * indexCur / indicesMax) + ','
-                            + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
-                            + parseInt(25.0 + 25.0) + '%)'
-//                                + parseInt(25.0 + 25.0 * (indexCur%2)) + '%)'
+//                         color : 'hsl('
+//                             + parseInt(360.0 * indexCur / indicesMax) + ','
+//                             + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
+//                             + parseInt(25.0 + 25.0) + '%)'
+// //                                + parseInt(25.0 + 25.0 * (indexCur%2)) + '%)'
                     }
 
                 };
@@ -739,6 +739,9 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
             }
         };
 
@@ -754,6 +757,9 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
             }
         };
 
