@@ -35,26 +35,37 @@
     </div>
 
     <div class="card-body">
-        <div class="card mb-1 m-1" style="opacity: 0.8">
-            <div class="d-flex justify-content-between">
+
+        <div class="card">
+            <div class="d-flex justify-content-between" style="text-align: start; opacity: 0.8;">
+                <h5 style="margin-right: auto; margin-top: auto; margin-bottom: auto; padding-left:1%">
+                    Account awaiting Fleet Access
+                </h5>
                 <div class="p-2">
-                        <h5 style="opacity: 1.0">
-                            Account Awaiting Fleet Access
-                        </h5>
-            </div>
-                <div class="p-2">
-                    <button type="button" class="btn btn-primary btn-sm mr-1" onclick="logOut()">Logout</button>
+                    <button type="button" class="btn btn-primary btn-sm mr-1" onclick="logOut()">Log Out</button>
                 </div>
             </div>
         </div>
+
         <div class="card-body" style="opacity:1.0">
-            <div class="text-center">
-                <img src='../images/holding_pattern.jpg' style={{marginBottom: '8px'}}/>
+
+            <div class="text-center m-4" style="margin-bottom: 8px;">
+                <img src="../images/holding_pattern.jpg">
             </div>
-            <p class="card-text">
-                Welcome to the NGAFID! Your account has created however the your fleet manager(s) have not yet granted you access to the fleet data. Please contact your fleet manager(s) so they can log in and provide access.
-            </p>
+
+            <div class="p-3 mr-1 card bg-light">
+                Welcome to the NGAFID! Your account has been created successfully.
+                <div>
+                    <br/>
+                </div>
+                <div class="p-2 card border-warning text-warning">
+                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i>
+                    However, your Fleet Manager(s) have not yet granted you access to the Fleet data.<br/>Please contact them so they may grant you access privileges.
+                </div>
+            </div>
+
         </div>
+
     </div>
 
 

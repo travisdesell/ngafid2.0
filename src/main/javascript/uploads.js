@@ -154,19 +154,27 @@ class Upload extends React.Component {
         console.log("uploadInfo:");
         console.log(uploadInfo);
 
-        //Disable Download/Delete buttons while Hashing/Uploading or if not a Fleet Manager
-        let doButtonDisplay = (this.isFleetManager && status!="HASHING" && status!="UPLOADING");
+        //Disable Download/Delete buttons while Upload HASHING / UPLOADING
+        const BUTTON_DISPLAY_DISALLOW_LIST = ["HASHING", "UPLOADING"];
+        let doButtonDisplay = !(BUTTON_DISPLAY_DISALLOW_LIST.includes(status));
 
         return (
             <div className="m-1">
-                <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.filename}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.startTime}</div>
-                    <div className="flex-fill card progress" style={{height:"34px", padding: "0 0 0 0"}}>
+                <div className="d-flex align-items-start" style={{backgroundColor: 'white', padding: '10px', borderRadius: "10px", position:"relative" }}>
+        
+                    {/* LEFT ELEMENTS */}
+                    <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
+                        <div className="p-1 mr-1 card bg-light" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
+                        <div className="p-1 mr-1 card bg-light" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
+                    </div>
+
+                    {/* CENTER ELEMENTS */}
+                    <div className="flex-fill card progress" style={{height:"34px"}}>
                         <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
-                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
-
+        
+                    {/* RIGHT ELEMENTS */}
+                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>                       
                     <Button
                         type="button"
                         className={"btn btn-danger btn-sm"}
@@ -180,7 +188,6 @@ class Upload extends React.Component {
                             >
                         </i>
                     </Button>
-
                     <Button
                         type="button"
                         className={"btn btn btn-sm"}
@@ -194,7 +201,7 @@ class Upload extends React.Component {
                             >
                         </i>
                     </Button>
-
+        
                 </div>
             </div>
         );
