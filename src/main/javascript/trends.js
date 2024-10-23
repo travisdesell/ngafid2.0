@@ -443,9 +443,15 @@ class TrendsPage extends React.Component {
 
 
             for (let [airframe, value] of Object.entries(countsObject)) {
-                if (value.airframeName === "Garmin Flight Display") continue;
-                if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
 
+                //Airframe name is 'Garmin Flight Display', skip
+                if (value.airframeName === "Garmin Flight Display")
+                    continue;
+
+                //Current airframe name is neither the selected airframe name or 'All Airframes', skip
+                if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
+                    continue;
+        
                 /*
                 console.log("airframes, airframeName, value:");
                 console.log(airframes);
@@ -607,7 +613,8 @@ class TrendsPage extends React.Component {
         */
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
-            let ngafidValue = eventNGAFIDPercents[eventName];
+
+            //Push fleet values...
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
                 fleetValue.x = [];
@@ -633,6 +640,9 @@ class TrendsPage extends React.Component {
                     fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
                 }
             }
+
+            //Push NGAFID data...
+            let ngafidValue = eventNGAFIDPercents[eventName];
 
 
 
@@ -710,7 +720,6 @@ class TrendsPage extends React.Component {
                 ngafidValue.hovertext.push(fixedText + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
             }
 
-            //console.log(ngafidValue);
         }
 
         /*
