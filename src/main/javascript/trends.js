@@ -687,7 +687,7 @@ class TrendsPage extends React.Component {
                                                         <OverlayTrigger overlay={(props) => (
                                                             <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
-                                                            <label className="form-check-label" onclick={() => this.checkEvent(eventName)}>
+                                                            <label className="form-check-label" onClick={() => this.checkEvent(eventName)}>
                                                                 {eventName}
                                                             </label>
                                                         </OverlayTrigger>
