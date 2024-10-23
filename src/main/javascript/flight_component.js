@@ -1014,7 +1014,7 @@ class Flight extends React.Component {
         if (visitedAirports.length > 0) {
             visitedAirportsRow = visitedAirports.join(", ");
         } else {
-            visitedAirportsRow = <div style={styleEmptyCell}>No airports...</div>
+            visitedAirportsRow = <div style={styleEmptyCell}>No Airports...</div>
         }
 
 
@@ -1068,12 +1068,14 @@ class Flight extends React.Component {
                 );
             });
         } else {
-            tagPills = <div style={styleEmptyCell}>No tags...</div>
+            tagPills = <div style={styleEmptyCell}>No Tags...</div>
         }
 
         $(function () {
             $('[data-toggle="tooltip"]').tooltip()
         })
+
+        console.log("[EX] Tail Number: " + flightInfo.tailNumber);
 
         return (
             <div className="card mb-1" style={{backgroundColor:"var(--c_entry_bg)"}}>
@@ -1083,32 +1085,47 @@ class Flight extends React.Component {
                         <div className="d-flex flex-row p-1">
 
                             {/* FLIGHT INFO */}
-                            <div style={{ flexBasis: "27.5%", whiteSpace: "nowrap" }}>
+                            <div style={{ flexBasis: "32.5%", whiteSpace: "nowrap" }}>
                                 <div className={`${firstCellClasses} d-flex flex-row`} style={{ height: "100%" }}>
-                                    <div className="d-flex flex-column" style={{ alignItems: "center" }}>
+                                    <div className="d-flex flex-column" style={{ alignItems: "start" }}>
                                         <a href={'/protected/flight?flight_id=' + flightInfo.id}>
                                             <i className="fa fa-plane p-1">
                                                 &nbsp;{flightInfo.id}
                                             </i>
                                         </a>
                                         <div>
-                                            ◦ {flightInfo.tailNumber}
+                                            ◦&nbsp;
+                                            {
+                                                (flightInfo.tailNumber!=null && flightInfo.tailNumber!="")
+                                                ? <a>{flightInfo.tailNumber}</a>
+                                                : <a style={styleEmptyCell}>No Tail Number...</a>
+                                            }
                                         </div>
                                     </div>
 
-                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "center" }}>
+                                    <div className="d-flex flex-column ml-3" style={{ alignItems: "start" }}>
                                         <div>
-                                            ◦ {flightInfo.systemId}
+                                            ◦&nbsp;
+                                            {
+                                                (flightInfo.systemId!=null && flightInfo.systemId!="")
+                                                ? <a>{flightInfo.systemId}</a>
+                                                : <a style={styleEmptyCell}>No System ID...</a>
+                                            }
                                         </div>
                                         <div>
-                                            ◦ {flightInfo.airframeName}
+                                            ◦&nbsp;
+                                            {
+                                                (flightInfo.airframeName!=null && flightInfo.airframeName!="")
+                                                ? <a>{flightInfo.airframeName}</a>
+                                                : <a style={styleEmptyCell}>No Airframe Name...</a>
+                                            }
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
                             {/* START - END DATES */}
-                            <div style={{ flexBasis: "37.5%", whiteSpace: "nowrap" }}>
+                            <div style={{ flexBasis: "32.5%", whiteSpace: "nowrap" }}>
                                 <div className={`${cellClasses} d-flex flex-row`} style={{ height: "100%" }}>
                                     <div className="d-flex flex-column" style={{ alignItems: "center" }}>
                                         <div>
