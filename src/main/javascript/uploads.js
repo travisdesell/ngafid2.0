@@ -21,7 +21,6 @@ class Upload extends React.Component {
     constructor(props) {
         super(props);
         this.isFleetManager = this.props.isFleetManager;
-        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
@@ -631,9 +630,9 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
-        //Disable Upload Flights button if not a Fleet Manager
-        let doButtonDisplay = (fleetManager);
-
+        // Only enable the upload button for admin users
+        let doButtonDisplay = uploader;
+        
         return (
 
             <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
@@ -649,7 +648,8 @@ class UploadsPage extends React.Component {
                                 this.state.pending_uploads.map((uploadInfo, index) => {
                                     return (
                                         <Upload
-                                            uploadInfo={ uploadInfo }
+                                            isFleetManager={fleetManager}
+                                    uploadInfo={ uploadInfo }
                                             key={ uploadInfo.identifier }
                                             removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
                                             />
@@ -661,7 +661,7 @@ class UploadsPage extends React.Component {
                                 this.state.uploads.map((uploadInfo, index) => {
                                     uploadInfo.position = index;
                                     return (
-                                        <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                        <Upload isFleetManager={fleetManager} uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
                                     );
                                 })
                             }

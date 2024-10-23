@@ -442,9 +442,15 @@ class TrendsPage extends React.Component {
 
 
             for (let [airframe, value] of Object.entries(countsObject)) {
-                if (value.airframeName === "Garmin Flight Display") continue;
-                if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
 
+                //Airframe name is 'Garmin Flight Display', skip
+                if (value.airframeName === "Garmin Flight Display")
+                    continue;
+
+                //Current airframe name is neither the selected airframe name or 'All Airframes', skip
+                if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
+                    continue;
+        
                 /*
                 console.log("airframes, airframeName, value:");
                 console.log(airframes);
@@ -505,9 +511,9 @@ class TrendsPage extends React.Component {
                     
                     //Display the "ANY Event" lines under the other ones
                     if (eventName === "ANY Event") {
-                        countData.unshift(value);
-                    } else {
                         countData.push(value);
+                    } else {
+                        countData.unshift(value);
                     }
                     
                 }
@@ -606,7 +612,8 @@ class TrendsPage extends React.Component {
         */
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
-            let ngafidValue = eventNGAFIDPercents[eventName];
+
+            //Push fleet values...
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
                 fleetValue.x = [];
@@ -633,6 +640,9 @@ class TrendsPage extends React.Component {
                 }
             }
 
+            //Push NGAFID data...
+            let ngafidValue = eventNGAFIDPercents[eventName];
+
 
 
             let airframeIndex = airframes.indexOf(ngafidValue.airframeName);
@@ -650,11 +660,11 @@ class TrendsPage extends React.Component {
                     legendgroup: ngafidValue.name,
 
                     //Consistent rainbow colors for each event
-                    line : {
-                        width: 1,
-                        dash: 'dot',
-                        color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
-                    }
+                    // line : {
+                    //     width: 1,
+                    //     dash: 'dot',
+                    //     color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
+                    // }
 
                 };
 
@@ -674,11 +684,11 @@ class TrendsPage extends React.Component {
                         //     + parseInt(360.0 * eventNameIndex / eventNames.length)
                         //     + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
                         //     + parseInt(25.0 + 25.0 * airframeIndex / airframeNames.length) + '%)'
-                        color : 'hsl('
-                            + parseInt(360.0 * indexCur / indicesMax) + ','
-                            + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
-                            + parseInt(25.0 + 25.0) + '%)'
-//                                + parseInt(25.0 + 25.0 * (indexCur%2)) + '%)'
+//                         color : 'hsl('
+//                             + parseInt(360.0 * indexCur / indicesMax) + ','
+//                             + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
+//                             + parseInt(25.0 + 25.0) + '%)'
+// //                                + parseInt(25.0 + 25.0 * (indexCur%2)) + '%)'
                     }
 
                 };
@@ -709,7 +719,6 @@ class TrendsPage extends React.Component {
                 ngafidValue.hovertext.push(fixedText + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
             }
 
-            //console.log(ngafidValue);
         }
 
         /*
@@ -734,6 +743,9 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
             },
             plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
@@ -760,6 +772,9 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
             },
             plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,

@@ -176,6 +176,7 @@ export default class SummaryPage extends React.Component {
     }
 
     displayPlots(selectedAirframe) {
+        
         var countData = [];
         var percentData = [];
     
@@ -204,23 +205,46 @@ export default class SummaryPage extends React.Component {
         };
     
         for (let [key, value] of Object.entries(this.state.eventCounts)) {
-            if (value.airframeName === "Garmin Flight Display") continue;
-            if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
+
+            //Airframe name is 'Garmin Flight Display', skip
+            if (value.airframeName === "Garmin Flight Display")
+                continue;
+
+            //Current airframe name is neither the selected airframe name or 'All Airframes', skip
+            if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
+                continue;
     
             value.name = value.airframeName;
             value.y = value.names;
             value.type = "bar";
             value.orientation = "h";
-            //value.hoverinfo = "text";
     
             //don"t add airframes to the count plot that the fleet doesn"t have
-            if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
+            if (airframes.indexOf(value.airframeName) >= 0)
+                countData.push(value);
+
             value.x = value.aggregateTotalEventsCounts;
             
-            let percents = this.props.aggregate ? fleetPercents : ngafidPercents;
+            //  let percents = (this.props.aggregate ? fleetPercents : ngafidPercents);
 
             for (let i = 0; i < value.names.length; i++) {
-                //don't add airframes to the fleet percentage plot that the fleet doesn't have
+
+                /*
+                    Don't add airframes to the fleet percentage
+                    plot that the fleet doesn't have.
+                */
+
+                var index = ngafidPercents.y.indexOf(value.names[i]);
+                if (index !== -1) {
+                    ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
+                    ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
+                } else {
+                    let pos = ngafidPercents.y.length;
+                    ngafidPercents.y.push(value.names[i]);
+                    ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
+                    ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
+                }
+
                 if (airframes.indexOf(value.airframeName) >= 0) {
                     var index = fleetPercents.y.indexOf(value.names[i]);
                     if (index !== -1) {
@@ -234,28 +258,28 @@ export default class SummaryPage extends React.Component {
                     }
                 }
 
-                var index = ngafidPercents.y.indexOf(value.names[i]);
-                if (index !== -1) {
-                    ngafidPercents.flightsWithEventCounts[index] += value.aggregateFlightsWithEventCounts[i];
-                    ngafidPercents.totalFlightsCounts[index] += value.aggregateTotalFlightsCounts[i];
-                } else {
-                    let pos = ngafidPercents.y.length;
-                    ngafidPercents.y.push(value.names[i]);
-                    ngafidPercents.flightsWithEventCounts[pos] = value.aggregateFlightsWithEventCounts[i];
-                    ngafidPercents.totalFlightsCounts[pos] = value.aggregateTotalFlightsCounts[i];
-                }
             }
 
         }
    
+        
+        //Push fleetPercents data ('Your Fleet')
+        if (!this.props.aggregate)
+            percentData.push(fleetPercents);
+
+
+        //Push ngafidPercents data ('All Other Fleets')
         percentData.push(ngafidPercents);
-        if (!this.props.aggregate) percentData.push(fleetPercents);
+
     
-        for (let j = 0; j < percentData.length; j++) {
+        //for (let j = 0; j < percentData.length; j++) {
+        for (let j = percentData.length-1 ; j >= 0 ; j--) {
+
             let value = percentData[j];
             value.x = [];
     
             for (let i = 0; i < value.flightsWithEventCounts.length; i++) {
+            
                 value.x.push( 100.0 * parseFloat(value.flightsWithEventCounts[i]) / parseFloat(value.totalFlightsCounts[i]) );
 
     
@@ -288,6 +312,9 @@ export default class SummaryPage extends React.Component {
                 t: 50,
                 pad: 4
             },
+            legend: { 
+                traceorder: "normal"
+            },
             plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
             font : {
@@ -300,7 +327,7 @@ export default class SummaryPage extends React.Component {
                 gridcolor : plotGridColor
             }
         };
-    
+
         var percentLayout = {
             title : "Percentage of Flights With Event",
             //autosize: false,
@@ -330,7 +357,7 @@ export default class SummaryPage extends React.Component {
         console.log("Plot text color: ", plotTextColor);
     
         var config = {responsive: true}
-    
+
         Plotly.newPlot("event-counts-plot", countData, countLayout, config);
         Plotly.newPlot("event-percents-plot", percentData, percentLayout, config);
     }

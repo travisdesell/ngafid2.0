@@ -32,8 +32,9 @@ public class SendEmail {
 
     private static final Logger LOG = Logger.getLogger(SendEmail.class.getName());
 
-    private static final String baseURL = "https://ngafid.org";
-    //private static final String baseURL = "https://ngafidbeta.rit.edu";
+    private static final String baseURLFallback = "https://ngafid.org";
+    private static final String baseURLEnvironment = System.getenv("NGAFID_BASE_URL");
+    private static final String baseURL = Objects.requireNonNullElse(baseURLEnvironment, baseURLFallback);
     private static final String unsubscribeURLTemplate = (baseURL + "/email_unsubscribe?id=__ID__&token=__TOKEN__");
     private static final java.sql.Date lastTokenFree = new java.sql.Date(0);
     private static final int EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS = 3;
@@ -45,6 +46,7 @@ public class SendEmail {
     static {
 
         String enabled = System.getenv("NGAFID_EMAIL_ENABLED");
+        LOG.info("Email base URL: " + baseURL);
 
         if (enabled != null && enabled.toLowerCase().equals("false")) {
             LOG.info("Emailing has been disabled");
@@ -69,9 +71,9 @@ public class SendEmail {
 
         String NGAFID_ADMIN_EMAILS = System.getenv("NGAFID_ADMIN_EMAILS");
         adminEmails = new ArrayList<String>(Arrays.asList(NGAFID_ADMIN_EMAILS.split(";")));
-        System.out.println("import emails will always also be sent to the following admin emails:");
+        LOG.info("import emails will always also be sent to the following admin emails:");
         for (String adminEmail : adminEmails) {
-            System.out.println("\t'" + adminEmail + "'");
+            LOG.info("\t'" + adminEmail + "'");
         }
 
         try {
@@ -139,23 +141,23 @@ public class SendEmail {
         public SMTPAuthenticator(String username, String password) {
             this.username = username;
             this.password = password;
-            System.out.println("Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info("Created authenticator with username: '" + this.username + "' and password: '" + this.password + "'");
         }
 
         public PasswordAuthentication getPasswordAuthentication() {
-            System.out.println("Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info("Attempting to authenticate with username: '" + this.username + "' and password: '" + this.password + "'");
             return new PasswordAuthentication(this.username, this.password);
         }
 
         public boolean isValid() {
-            System.out.println("Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
+            LOG.info("Checking if valid with username: '" + this.username + "' and password: '" + this.password + "'");
             return !(this.username == null || this.password == null);
         }
     
     }
 
 
-    public static void freeExpiredUnsubscribeTokens() {
+    public static void freeExpiredUnsubscribeTokens(Connection connection) throws SQLException {
         
         Calendar calendar = Calendar.getInstance();
         java.sql.Date currentDate = new java.sql.Date(calendar.getTimeInMillis());
@@ -169,7 +171,7 @@ public class SendEmail {
         }
         lastTokenFree.setTime(currentDate.getTime());
 
-        try (Connection connection = Database.getConnection()) {
+        try {
 
             String query = "DELETE FROM email_unsubscribe_tokens WHERE expiration_date < ?";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -178,13 +180,16 @@ public class SendEmail {
 
             LOG.info("Freed expired email unsubscribe tokens");
 
+        } catch (SQLException e) {
+            LOG.severe("(SQL Exception) Failed to free expired email unsubscribe tokens: "+e.getMessage());
+            throw e;
         } catch (Exception e) {
-            LOG.severe("Failed to free expired email unsubscribe tokens");
+            LOG.severe("(Non-SQL Exception) Failed to free expired email unsubscribe tokens: "+e.getMessage());
         }
 
     }
 
-    private static String generateUnsubscribeToken(String recipientEmail, int userID) {
+    private static String generateUnsubscribeToken(String recipientEmail, int userID, Connection connection) throws SQLException {
         
         //Generate a random string
         String token = UUID.randomUUID().toString().replace("-", "");        
@@ -193,7 +198,7 @@ public class SendEmail {
         calendar.add(Calendar.MONTH, EMAIL_UNSUBSCRIBE_TOKEN_EXPIRATION_MONTHS);
         java.sql.Date expirationDate = new java.sql.Date(calendar.getTimeInMillis());
 
-        try (Connection connection = Database.getConnection()) {
+        try {
 
             String query = "INSERT INTO email_unsubscribe_tokens (token, user_id, expiration_date) VALUES (?, ?, ?)";
             PreparedStatement preparedStatement = connection.prepareStatement(query);
@@ -202,8 +207,11 @@ public class SendEmail {
             preparedStatement.setDate(3, expirationDate);
             preparedStatement.execute();
 
+        } catch (SQLException e) {
+            LOG.severe("(SQL Exception) Failed to generate token for email recipient: "+recipientEmail+": "+e.getMessage());
+            throw e;
         } catch (Exception e) {
-            LOG.severe("Failed to generate token for email recipient: "+recipientEmail);
+            LOG.severe("(Non-SQL Exception) Failed to generate token for email recipient: "+recipientEmail+": "+e.getMessage());
         }
 
         //Log the token's expiration date
@@ -229,29 +237,45 @@ public class SendEmail {
      * @param body - body of the email
      */
     public static void sendAdminEmails(String subject, String body, EmailType emailType) {
-        sendEmail(adminEmails, new ArrayList<>(), subject, body, emailType);
+        
+        try {
+            sendEmail(adminEmails, new ArrayList<>(), subject, body, emailType);
+        }
+        catch(SQLException e) {
+            LOG.severe("(SQL Exception) Failed to send admin email: "+e.getMessage());
+        }
     }
 
-    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body, EmailType emailType) {
+    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body, EmailType emailType) throws SQLException {
+
+        //Send the email with no existing connection
+        try (Connection connection = Database.getConnection()) {
+            LOG.info("Sending an email with a fresh SQL connection");
+            sendEmail(toRecipients, bccRecipients, subject, body, emailType, connection);
+        }
+
+    }
+
+    public static void sendEmail(ArrayList<String> toRecipients, ArrayList<String> bccRecipients, String subject, String body, EmailType emailType, Connection connection) throws SQLException {
 
         SMTPAuthenticator auth = new SMTPAuthenticator(username, password);
 
         if (!emailEnabled) {
-            System.out.println("Emailing has been disabled, not sending email");
+            LOG.info("Emailing has been disabled, not sending email");
             return;
         }
 
         //Attempt to free expired tokens
-        freeExpiredUnsubscribeTokens();
+        freeExpiredUnsubscribeTokens(connection);
 
         //System.out.println(String.format("Username: %s, PW: %s", username, password));
 
         if (auth.isValid()) {
 
-            System.out.println("emailing to " + String.join(", ", toRecipients));
-            System.out.println("BCCing to " + String.join(", ", bccRecipients));
-            System.out.println("subject: '" + subject);
-            System.out.println("body: '" + body);
+            LOG.info("emailing to " + String.join(", ", toRecipients));
+            LOG.info("BCCing to " + String.join(", ", bccRecipients));
+            LOG.info("subject: '" + subject);
+            LOG.info("body: '" + body);
 
 
             // Sender's email ID needs to be mentioned
@@ -296,7 +320,7 @@ public class SendEmail {
                     boolean embedUnsubscribeURL = true;
                     if (EmailType.isForced(emailType)) {
 
-                        System.out.println("Delivering FORCED email type: " + emailType);
+                        LOG.info("Delivering FORCED email type: " + emailType);
                         embedUnsubscribeURL = false;
 
                     } else if (!UserEmailPreferences.getEmailTypeUserState(toRecipient, emailType)) {   //Check whether or not the emailType is enabled for the user
@@ -312,7 +336,7 @@ public class SendEmail {
                             int userID = UserEmailPreferences.getUserIDFromEmail(toRecipient);
 
                             //Generate a token for the user to unsubscribe
-                            String token = generateUnsubscribeToken(toRecipient, userID);
+                            String token = generateUnsubscribeToken(toRecipient, userID, connection);
                             String unsubscribeURL = unsubscribeURLTemplate.replace("__ID__", Integer.toString(userID)).replace("__TOKEN__", token);
 
                             //Embed the Unsubscribe URL at the top of the email body
@@ -332,7 +356,7 @@ public class SendEmail {
                     message.setRecipient(Message.RecipientType.TO, new InternetAddress(toRecipient));   
 
                     // Send the message to the current recipient
-                    System.out.println("sending message!");
+                    LOG.info("Sending email message!");
                     Transport.send(message);
 
                 }
@@ -355,12 +379,12 @@ public class SendEmail {
                     message.setContent(body, "text/html; charset=utf-8");
 
                     // Send the message to the current BCC recipients
-                    System.out.println("sending message (BCC)!");
+                    LOG.info("Sending email message (BCC)!");
                     Transport.send(message);
 
                 }
 
-                System.out.println("Sent messages successfully....");
+                LOG.info("Sent email messages successfully...");
 
             } catch (MessagingException mex) {
                 mex.printStackTrace();
