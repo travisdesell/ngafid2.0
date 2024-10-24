@@ -470,40 +470,37 @@ class TrendsPage extends React.Component {
                 let indexCur = (airframeIndex + eventNameIndex);
                 let indicesMax = (airframes.length + eventNames.length);
 
-                //Dashed lines for ANY Event
+                //Event name is 'ANY Event'
                 if (eventName === "ANY Event") {
 
                     value = {
                         ...value,
+
                         legendgroup: value.name,
 
-                        //Consistent rainbow colors for each airframe
+                        //Dashed lines for 'ANY Event'
                         line : {
-                            width: 1.0,
-                            dash: 'dot',
-                            color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
+                            dash: 'dot'
                         }
 
                     };
 
-                //'Glowing' rainbow lines for other events
+                //Event is NOT 'ANY Event'
                 } else {
 
                     value = {
                         ...value,
+
                         legendgroup: value.name,
-                        //showlegend: false,
-                        
                         mode : 'lines',
+
+                        //Standard lines for non-'ANY Event'
                         line : {
                             width : 2,
-                            // color : 'hsl('
-                            //     + parseInt(360.0 * indexCur / indicesMax) + ','
-                            //     + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
-                            //     + parseInt(25.0 + 25.0) + '%)'
                         }
 
                     };
+                    
                 }
 
                 //don't add airframes to the count plot that the fleet doesn't have
@@ -613,6 +610,47 @@ class TrendsPage extends React.Component {
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
 
+            console.log("[EX] EVENT NAME: ", eventName)
+
+
+            //FLEET VALUE -- Event name is 'ANY Event'
+            if (eventName === "ANY Event") {
+
+                //  console.log("[EX] NAME (AE): ", fleetValue.name);
+
+                fleetValue = {
+                    ...fleetValue,
+
+                    legendgroup: fleetValue.name,
+
+                    //Dashed lines for 'ANY Event'
+                    line : {
+                        dash: 'dot'
+                    }
+
+                };
+
+            //FLEET VALUE -- Event is NOT 'ANY Event'
+            } else {
+
+                //  console.log("[EX] NAME: ", fleetValue.name);
+
+                fleetValue = {
+                    ...fleetValue,
+
+                    legendgroup: fleetValue.name,
+                    mode : 'lines',
+
+                    //Standard lines for non-'ANY Event'
+                    line : {
+                        width : 2,
+                    }
+
+                };
+
+            }
+
+
             //Push fleet values...
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
@@ -644,32 +682,27 @@ class TrendsPage extends React.Component {
             let ngafidValue = eventNGAFIDPercents[eventName];
 
 
-
-            let airframeIndex = airframes.indexOf(ngafidValue.airframeName);
-            let eventNameIndex = eventNames.indexOf(eventName);
-
-            let indexCur = (airframeIndex + eventNameIndex);
-            let indicesMax = (airframes.length + eventNames.length);
-
-            //...
+            //NGAFID VALUE -- Event name is 'ANY Event'
             if (eventName === "ANY Event") {
+
+                //  console.log("[EX] NAME (AE): ", ngafidValue.name);
 
                 ngafidValue = {
                     ...ngafidValue,
 
                     legendgroup: ngafidValue.name,
 
-                    //Consistent rainbow colors for each event
-                    // line : {
-                    //     width: 1,
-                    //     dash: 'dot',
-                    //     color : 'hsl(' + parseInt(360.0 * airframeIndex / airframeNames.length) + ', 50%, 50%)'
-                    // }
+                    //Dashed lines for 'ANY Event'
+                    line : {
+                        dash: 'dot'
+                    }
 
                 };
 
-            //...
+            //NGAFID VALUE -- Event is NOT 'ANY Event'
             } else {
+
+                //  console.log("[EX] NAME: ", ngafidValue.name);
 
                 ngafidValue = {
                     ...ngafidValue,
@@ -677,22 +710,23 @@ class TrendsPage extends React.Component {
                     legendgroup: ngafidValue.name,
                     mode : 'lines',
 
-                    //Consistent rainbow colors for each event
+                    //Standard lines for non-'ANY Event'
                     line : {
                         width : 2,
-                        // color : 'hsl('
-                        //     + parseInt(360.0 * eventNameIndex / eventNames.length)
-                        //     + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
-                        //     + parseInt(25.0 + 25.0 * airframeIndex / airframeNames.length) + '%)'
-//                         color : 'hsl('
-//                             + parseInt(360.0 * indexCur / indicesMax) + ','
-//                             + parseInt(50.0 + 50.0 * airframeIndex / airframeNames.length) + '%,'
-//                             + parseInt(25.0 + 25.0) + '%)'
-// //                                + parseInt(25.0 + 25.0 * (indexCur%2)) + '%)'
                     }
 
                 };
+
             }
+
+
+            let airframeIndex = airframes.indexOf(ngafidValue.airframeName);
+            let eventNameIndex = eventNames.indexOf(eventName);
+
+            let indexCur = (airframeIndex + eventNameIndex);
+            let indicesMax = (airframes.length + eventNames.length);
+
+
 
             percentData.push(ngafidValue);
             ngafidValue.x = [];
