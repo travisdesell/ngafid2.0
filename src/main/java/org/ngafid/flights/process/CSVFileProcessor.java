@@ -32,7 +32,6 @@ import javax.xml.bind.DatatypeConverter;
  * @author Joshua Karns
  * @author Roman Kozulia
  */
-
 public class CSVFileProcessor extends FlightFileProcessor {
     private static final Logger LOG = Logger.getLogger(CSVFileProcessor.class.getName());
     private final List<String> headers;
@@ -56,11 +55,219 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     /**
+     *
+     * @return
+     * @throws FlightProcessingException
+     */
+
+    public Stream<FlightBuilder> parse() throws FlightProcessingException {
+        LOG.info("Parsing " + this.meta.filename);
+        Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
+        Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
+        List<FlightBuilder> flightBuilders = new ArrayList<>();
+
+        try (BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(super.stream, StandardCharsets.UTF_8))) {
+            // Extract and process headers
+            List<String> headerLines = extractHeaderLines(bufferedReader);
+            String fileInformation = getFlightInfo(headerLines.get(0));
+
+            if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
+                scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
+            } else {
+                processFileInformation(fileInformation);
+                processHeaders(headerLines);
+            }
+
+            CSVReader csvReader = new CSVReader(bufferedReader);
+            String[] firstRow = csvReader.peek();
+            List<String[]> rows = csvReader.readAll();
+            rows = filterValidRows(rows, headers);
+
+            boolean isG5FlightRecorder = isG5FlightRecorder(headerLines, firstRow);
+
+            // Library for mapping lat/long to timezones.
+            TimeZoneMap timeZoneMap = null;
+            if (isG5FlightRecorder) {
+                // If we expect many G5 files, we need to reuse this to avoid initialization overhead
+                // Time zone for the US including Alaska and Hawaii
+                timeZoneMap = TimeZoneMap.forRegion(18.91, -179.15, 71.538800, -66.93457);
+                rows = filterValidRowsG5(rows);
+            }
+
+            // Split the CSV rows into flight indices based on time gaps
+            List<Integer> splitIndices = splitCSVIntoFlightIndices(rows, isG5FlightRecorder);
+
+            // Add derived csv files (if any) to the uploads folder.
+            addDerivedFileToUploadFolder(splitIndices, rows, headerLines, filename);
+
+
+            // Now we process each flight by splitting the series based on the indices
+            for (int i = 0; i < splitIndices.size(); i++) {
+                int fromIndex = splitIndices.get(i);
+                int toIndex = (i == splitIndices.size() - 1) ? rows.size() : splitIndices.get(i + 1);
+                List<String[]> flightRows = rows.subList(fromIndex, toIndex);
+
+                // Create columns for each flight segment
+                ArrayList<ArrayList<String>> columns = new ArrayList<>();
+                for (int j = 0; j < firstRow.length; j++) {
+                    columns.add(new ArrayList<>());
+                }
+
+                // Populate columns with data from the flightRows
+                for (String[] row : flightRows) {
+                    if (row.length < firstRow.length) {
+                        break;
+                    }
+                    for (int j = 0; j < row.length; j++) {
+                        columns.get(j).add(row[j]);
+                    }
+                }
+
+                // Populate the time series (doubleTimeSeries and stringTimeSeries)
+                TimeUtils.LocalDateTimeResult localDateTimeResult = null;
+
+                if (isG5FlightRecorder) {
+                    // Calculate local date, time, and UTC offset using TimeZoneMap for G5 recorders
+                    localDateTimeResult = TimeUtils.calculateLocalDateTime(timeZoneMap, columns.get(0), columns.get(1), columns.get(4), columns.get(5));
+                }
+
+                for (int j = 0; j < columns.size(); j++) {
+                    var column = columns.get(j);
+                    var name = headers.get(j);
+                    var dataType = dataTypes.get(j);
+
+                    if (isG5FlightRecorder && j < 2) {
+                        if (j == 0) {
+                            stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", dataType, localDateTimeResult.getLocalDates()));
+                        } else {
+                            stringTimeSeries.put("Lcl Time", new StringTimeSeries("Lcl Time", dataType, localDateTimeResult.getLocalTimes()));
+                            stringTimeSeries.put("UTCOfst", new StringTimeSeries("UTCOfst", "hh:mm", localDateTimeResult.getUtcOffsets()));
+                        }
+                    } else {
+                        try {
+                            Double.parseDouble(column.get(0));
+                            doubleTimeSeries.put(name, new DoubleTimeSeries(name, dataType, column));
+                        } catch (NumberFormatException e) {
+                            stringTimeSeries.put(name, new StringTimeSeries(name, dataType, column));
+                        }
+                    }
+                }
+
+                String md5Hash = calculateMd5Hash(flightRows);
+
+                // Build and add a flight
+                FlightMeta newMeta = new FlightMeta(meta); // Deep copy. Each FlightBuilder has its own FlightMeta object.
+                newMeta.setMd5Hash(md5Hash);
+
+                FlightBuilder builder;
+                if (isG5FlightRecorder) {
+                    builder = new G5FlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
+                } else {
+                    builder = new CSVFlightBuilder(newMeta, doubleTimeSeries, stringTimeSeries);
+                }
+
+                flightBuilders.add(builder);
+
+                // Clear data for the next flight
+                doubleTimeSeries.clear();
+                stringTimeSeries.clear();
+            }
+
+        } catch (IOException | FatalFlightFileException | CsvException e) {
+            throw new FlightProcessingException(e);
+        } catch (SQLException e) {
+            String errorMessage = "SQL error occurred while processing the flight data for file: " + filename;
+            throw new FlightProcessingException(errorMessage, e);
+        } catch (Exception e) {
+            throw new IllegalArgumentException(e);
+        }
+
+        LOG.info("Parse method end. Returning flights: " + flightBuilders.size());
+        return flightBuilders.stream();
+    }
+
+    /**
+     *
+     * @param splitIndices
+     * @param rows
+     * @param headerLines
+     * @param filename
+     * @throws IOException
+     * @throws SQLException
+     */
+    private void addDerivedFileToUploadFolder(List<Integer> splitIndices, List<String[]> rows, List<String> headerLines, String filename) throws IOException, SQLException {
+        // Add derived CSV files (if any) to the uploads folder
+        if (splitIndices.size() > 1) {
+            for (int i = 0; i < splitIndices.size(); i++) {
+                int fromIndex = splitIndices.get(i);
+                int toIndex = (i == splitIndices.size() - 1) ? rows.size() : splitIndices.get(i + 1);
+                List<String[]> flightRows = rows.subList(fromIndex, toIndex);
+
+                String derivedFilename = filename.replace(".csv", "_flight_" + (i + 1) + ".csv");
+                byte[] csvData = writeFlightToCSV(flightRows, headerLines);
+                pipeline.addDerivedFile(derivedFilename, csvData);
+            }
+        }
+    }
+
+
+    /**
+     * Filter out invalid rows – rows that are not the same length as header rows.
+     * @param rows
+     * @param headers
+     * @return list of valid rows
+     * @throws FatalFlightFileException
+     */
+    private List<String[]> filterValidRows(List<String[]> rows, List<String> headers) throws FatalFlightFileException {
+        List<String[]> validRows = new ArrayList<>();
+
+        for (String[] row : rows) {
+            // Only add the row if its length matches the number of headers
+            if (row.length == headers.size()) {
+                validRows.add(row);
+            }
+        }
+
+        // If we detect an invalid row before the last row of the file, or there are no val
+        if (validRows.size() < Math.max(rows.size() - 2, 0)) {
+            throw new FatalFlightFileException("Flight file has 0 valid rows - something serious is wrong with the format.");
+        }
+
+        return validRows;
+    }
+
+
+
+
+    /**
+     * G5 data recorder have rows that do not have critical data missing:
+     * Latitude,Longitude,AltGPS,GPS HDOP,GPS VDOP,GPS Velocity E (m/s),GPS Velocity N (m/s),GPS Velocity U (m/s)
+     * Filters out rows where either Latitude or Longitude is missing or empty.
+     *
+     * @param rows List of rows from the CSV file.
+     * @return Filtered list of valid rows.
+     */
+    private List<String[]> filterValidRowsG5(List<String[]> rows) {
+        List<String[]> validRows = new ArrayList<>();
+        int rowsSkipped = 0;
+        for (String[] row : rows) {
+            // Assuming Latitude is at index 4 and Longitude is at index 5
+            if (!row[4].isEmpty() && !row[5].isEmpty()) {
+                validRows.add(row);
+            } else {
+                rowsSkipped++;
+            }
+        }
+        LOG.info("Found and skipped : " + rowsSkipped + "rows. Input rows size: " + rows.size() + ". valid rows size: " + validRows.size());
+        return validRows;
+    }
+
+    /**
      * Reads a csv file and parses data into a list of FlightBuilder objects
      * @return A list of FlightBuilders (correspond to flights) as a Stream
      * @throws FlightProcessingException
      */
-    public Stream<FlightBuilder> parse() throws FlightProcessingException {
+    public Stream<FlightBuilder> parse2() throws FlightProcessingException {
         Map<String, DoubleTimeSeries> doubleTimeSeries = new HashMap<>();
         Map<String, StringTimeSeries> stringTimeSeries = new HashMap<>();
         List<FlightBuilder> flightBuilders = new ArrayList<>();
@@ -127,7 +334,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
                 // Calculate local date time and offset for G5 data
                 if (isG5FlightRecorder) {
-                    localDateTimeResult = TimeUtils.calculateLocalDateTime(timeZoneMap, columns.get(0),columns.get(1),columns.get(4), columns.get(5));
+                  //  localDateTimeResult = TimeUtils.calculateLocalDateTime(timeZoneMap, columns.get(0),columns.get(1),columns.get(4), columns.get(5));
                 }
 
                 for (int i = 0; i < columns.size(); i++) {
@@ -174,9 +381,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
         } catch (IOException | FatalFlightFileException | CsvException e) {
             throw new FlightProcessingException(e);
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            String errorMessage = "SQL error occurred while processing the flight data for file: " + filename;
+            throw new FlightProcessingException(errorMessage, e);
         }
-        LOG.info( "Parse method end. Returning flights: " + flightBuilders.size());
         return flightBuilders.stream();
     }
 
@@ -190,7 +397,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param firstRow
      * @return true or false
      */
-
     private boolean isG5FlightRecorder(List<String> headerLines, String[] firstRow) {
         String fileName = pipeline.getUpload().filename.toLowerCase();
 
@@ -218,20 +424,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     /**
-         * Processes header lines from the csv flight, populates dataTypes and headers with
-         * the flight information.
-         * @param headerLines
-         * @throws FatalFlightFileException
+     * Processes header lines from the csv flight, populates dataTypes and headers with
+     * the flight information.
+     * @param headerLines
+     * @throws FatalFlightFileException
      */
     private void processHeaders(List<String> headerLines) throws FatalFlightFileException {
         if (headerLines.get(1) != null) {
 
             String[] secondLineArray = headerLines.get(1).split(",", -1);  // Use -1 to preserve empty values
             String[] thirdLineArray = headerLines.get(2).split(",", -1);    // Use -1 to preserve empty values
-
-            if (secondLineArray.length != thirdLineArray.length) {
-                throw new IllegalArgumentException("Lines have different lengths.");
-            }
 
             for (int i = 0; i < secondLineArray.length; i++) {
                 String processedDataType = CSVFileProcessor.extractContentInsideParentheses(secondLineArray[i].strip());
@@ -280,7 +482,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String thirdLine = bufferedReader.readLine();
 
         if (secondLine.startsWith("#")) {
-            LOG.info( "extractHeaderLines " + " # found in the beginning of the second line, removing." );
             secondLine = secondLine.substring(1);  // Remove the first character (if it's '#')
         }
 
@@ -317,11 +518,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @throws IOException
      */
     private byte[] writeFlightToCSV(List<String[]> flightData, List<String> headerLines) throws IOException {
-        LOG.info("CSVFileProcessor - writeFlightToCSV - start");
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
-        BufferedWriter bufferedWriter = new BufferedWriter(writer);
-        try {
+
+        try (OutputStreamWriter writer = new OutputStreamWriter(outputStream, StandardCharsets.UTF_8);
+             BufferedWriter bufferedWriter = new BufferedWriter(writer)) {
+
             for (String line : headerLines) {
                 bufferedWriter.write(line);
                 bufferedWriter.newLine();
@@ -332,10 +533,118 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 bufferedWriter.write(rowData);
                 bufferedWriter.newLine();
             }
-        } finally {
-            bufferedWriter.flush();  // Ensure all data is written
         }
         return outputStream.toByteArray();
+    }
+
+    /**
+     * Splits flights and returns flight indices.
+     * @param rows
+     * @param isG5FlightRecorder
+     * @return
+     */
+    public List<Integer> splitCSVIntoFlightIndices(List<String[]> rows, boolean isG5FlightRecorder) {
+        List<Integer> splitIndices = new ArrayList<>();
+        LocalDateTime lastTimestamp = null;
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss"); // Customize as needed
+
+        for (int i = 0; i < rows.size(); i++) {
+            String[] row = rows.get(i);
+
+            if (isG5FlightRecorder && row[4].isEmpty()) {
+                continue;
+            }
+
+            try {
+                String dateTimeString = row[0] + " " + row[1]; // Assuming the first two columns are date and time
+                String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
+
+                LocalDateTime currentTimestamp;
+
+                try {
+                    DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(normalizedDateTime);
+
+                    if (correctFormatter == null) {
+                        throw new DateTimeParseException("Unable to find correct formatter for date/time: " + dateTimeString, dateTimeString, 0);
+                    }
+                    currentTimestamp = LocalDateTime.parse(normalizedDateTime, correctFormatter);
+
+                } catch (DateTimeParseException e) {
+                    LOG.severe("Failed to parse date/time: " + normalizedDateTime + ". Error: " + e.getMessage());
+                    continue; // Skip this row due to parsing error
+                }
+
+                // Check time difference from the last timestamp and determine if a new flight starts
+                if (lastTimestamp != null) {
+                    Duration duration = Duration.between(lastTimestamp, currentTimestamp);
+                    long timeDifferenceInMillis = Math.abs(duration.toMillis());
+
+                    if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes difference
+                        splitIndices.add(i); // Mark the start of a new flight
+                    }
+                } else {
+                    splitIndices.add(i); // First flight always starts at index 0
+                }
+
+                lastTimestamp = currentTimestamp;
+
+            } catch (IllegalArgumentException e) {
+                LOG.warning("Skipping row due to unparseable date/time: " + Arrays.toString(row));
+            }
+        }
+        return splitIndices;
+    }
+
+    /**
+     * Splits a DoubleTimeSeries into subseries based on the provided indices using the subSeries method.
+     *
+     * @param series The DoubleTimeSeries to split.
+     * @param splitIndices The list of indices where the series should be split.
+     * @return A list of DoubleTimeSeries, one for each split section.
+     */
+    public List<DoubleTimeSeries> splitDoubleSeriesByIndices(DoubleTimeSeries series, List<Integer> splitIndices) throws SQLException {
+        List<DoubleTimeSeries> flightSeries = new ArrayList<>();
+        int fromIndex = 0;
+
+        for (int i = 0; i < splitIndices.size(); i++) {
+            int toIndex = splitIndices.get(i);  // Get the current split index
+
+            if (i == splitIndices.size() - 1) {
+                toIndex = series.size();
+            }
+
+            DoubleTimeSeries subSeries = series.subSeries(fromIndex, toIndex);
+            flightSeries.add(subSeries);
+            fromIndex = toIndex;
+        }
+
+        return flightSeries;
+    }
+
+    /**
+     * Splits a StringTimeSeries into subseries based on the provided indices using the subSeries method.
+     *
+     * @param series The StringTimeSeries to split.
+     * @param splitIndices The list of indices where the series should be split.
+     * @return A list of StringTimeSeries, one for each split section.
+     */
+    public List<StringTimeSeries> splitStringSeriesByIndices(StringTimeSeries series, List<Integer> splitIndices) throws SQLException {
+        List<StringTimeSeries> flightSeries = new ArrayList<>();
+        int fromIndex = 0;
+
+        for (int i = 0; i < splitIndices.size(); i++) {
+            int toIndex = splitIndices.get(i);
+
+            if (i == splitIndices.size() - 1) {
+                toIndex = series.size();
+            }
+
+            StringTimeSeries subSeries = series.subSeries(fromIndex, toIndex);
+            flightSeries.add(subSeries);
+            fromIndex = toIndex;
+        }
+
+        return flightSeries;
     }
 
     /**
@@ -375,7 +684,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 }
 
                 if (lastTimestamp != null) {
-                    // Check if the time difference between consecutive rows exceeds 5 minutes
                     Duration duration = Duration.between(currentTimestamp.toInstant(ZoneOffset.UTC), lastTimestamp.toInstant(ZoneOffset.UTC));
                     long timeDifferenceInMillis = Math.abs(duration.toMillis());
                     if (timeDifferenceInMillis > 5 * 60 * 1000) { // More than 5 minutes
@@ -385,25 +693,16 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         currentFlight.clear(); // Reset for a new flight
                     }
                 }
-
-                // Add the current row to the current flight
                 currentFlight.add(row);
-
-                // Update lastTimestamp to the current row's timestamp
                 lastTimestamp = currentTimestamp;
 
             } catch (IllegalArgumentException e) {
-                // Log detailed error
                 LOG.warning("Skipping row due to unparseable date/time: " + Arrays.toString(row));
             }
         }
-
-        // Add the last flight to the list if not empty
         if (!currentFlight.isEmpty()) {
             flights.add(currentFlight);
         }
-
-        LOG.info("CSVFileProcessor - returning number of flights: " + flights.size());
         return flights;
     }
 
