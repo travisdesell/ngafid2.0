@@ -174,34 +174,36 @@ class Upload extends React.Component {
                     </div>
         
                     {/* RIGHT ELEMENTS */}
-                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>                       
-                    <Button
-                        type="button"
-                        className={"btn btn-danger btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
-                        >
-                        <i
-                            className="fa fa-times"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
+                    <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
+                    <div style={{marginTop: "auto", marginBottom: "auto"}}>                  
+                        <Button
+                            type="button"
+                            className={"btn btn-danger btn-sm"}
+                            style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"30px", height: "30px", marginLeft:"4px", padding:"2 4 4 4"}}
+                            onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
                             >
-                        </i>
-                    </Button>
-                    <Button
-                        type="button"
-                        className={"btn btn btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
-                        >
-                        <i
-                            className="fa fa-download"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
+                            <i
+                                className="fa fa-times"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                >
+                            </i>
+                        </Button>
+                        <Button
+                            type="button"
+                            className={"btn btn btn-sm"}
+                            style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"30px",height: "30px", marginLeft:"4px", padding:"2 4 4 4"}}
+                            onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
                             >
-                        </i>
-                    </Button>
-        
+                            <i
+                                className="fa fa-download"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                >
+                            </i>
+                        </Button>
+                    </div>
+            
                 </div>
             </div>
         );
