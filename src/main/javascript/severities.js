@@ -191,13 +191,16 @@ class SeveritiesPage extends React.Component {
 
             for (let [airframe, counts] of Object.entries(countsMap)) {
 
-                if (airframe === "Garmin Flight Display") continue;
-                if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
+                if (airframe === "Garmin Flight Display")
+                    continue;
+
+                if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes")
+                    continue;
 
                 //Map airframe names to a consistent marker symbol
-                const markerSymbolList = ["circle", "diamond", "square", "triangle", "pentagon", "hexagon", "octagon"];
+                const markerSymbolList = ["circle", "diamond", "square", "x", "pentagon", "hexagon", "octagon"];
 
-                airframeNames[airframe]= (airframeNames[airframe] ?? Object.keys(airframeNames).length);
+                airframeNames[airframe] ??= Object.keys(airframeNames).length;
                 let markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
                 let markerSymbolAny = (markerSymbol + "-open-dot");
 
@@ -455,8 +458,24 @@ class SeveritiesPage extends React.Component {
                         severitiesPage.state.eventsEmpty[eventName] = true;
                         eventSeverities[eventName] = {};
                     } else {
+
+                        //Mark severities for event
                         severitiesPage.state.eventsEmpty[eventName] = false;
                         eventSeverities[eventName] = eventSeverityCounts;
+
+                        //Concatenate the counts for the "ANY Event" event
+                        if (eventSeverities["ANY Event"] == null)
+                            eventSeverities["ANY Event"] = {};                        
+                        console.log("Merging counts for event: '" + eventName + "'");
+                        for(let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+
+                            if (eventSeverities["ANY Event"][airframe] == null)
+                                eventSeverities["ANY Event"][airframe] = eventSeverityCounts[airframe];
+                            else
+                                eventSeverities["ANY Event"][airframe] = eventSeverities["ANY Event"][airframe].concat(eventSeverityCounts[airframe]);
+                            
+                        }
+
                     }
                     
                 }
@@ -665,7 +684,7 @@ class SeveritiesPage extends React.Component {
                                                 //Don't show a description for the "ANY Event" event
                                                 if (eventName === "ANY Event") return (
                                                     <div key={index} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)} style={{border:"1px solid red;"}}/>
+                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)} style={{border:"1px solid red"}}/>
                                                         <label className="form-check-label">
                                                             {eventName}
                                                         </label>
