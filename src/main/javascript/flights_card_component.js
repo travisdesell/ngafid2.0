@@ -88,8 +88,7 @@ class FlightsCard extends React.Component {
 
         } else {
             return (
-                <div className="card-body">
-                </div>
+                <div/>
             );
         }
     }

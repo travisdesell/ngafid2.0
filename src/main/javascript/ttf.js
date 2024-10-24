@@ -111,106 +111,6 @@ class RollSlider extends React.Component {
 
 let rollPalette = paletteGenerator([[0, 255, 0], [255, 255, 0], [255, 0, 0]], [0, 26, 30]);
 
-// Default chart layout, used for empty charts
-const plotlyDefaultLayout = {
-    title: 'Chart',
-    showlegend: true,
-    autosize: true,
-    margin: {
-        pad: 2
-    },
-    xaxis: {
-        title: {
-            text: 'Time (Seconds)',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            }
-        },
-    },
-    yaxis: {
-        title: {
-            text: 'Self Defined Glide Angle',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            }
-        }
-    }
-};
-const glideAngleHistLayout = {
-    title: 'Histogram of Glide Path Angles',
-    bargap: 0.05,
-    showlegend: true,
-    autosize: true,
-    margin: {
-        pad: 10
-    },
-    xaxis: {title: 'Frequency'},
-    yaxis: {title: 'Glide Path Angle'}
-};
-const deviationsPlotlyLayout = {
-    title: 'Glide Path Deviations',
-    showlegend: true,
-    autosize: true,
-    margin: {
-        pad: 2
-    },
-    xaxis: {
-        title: {
-            text: 'Distance from Runway (ft.)',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            }
-        },
-        autorange: "reversed"
-    },
-    yaxis: {
-        title: {
-            text: 'Distance above Glidepath (ft.)',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            },
-            range: [-100, 100]
-        }
-    }
-};
-const altitudePlotlyLayout = {
-    title: 'Altitude vs. Distance to Runway',
-    showlegend: true,
-    autosize: true,
-    margin: {
-        pad: 2
-    },
-    xaxis: {
-        title: {
-            text: 'Distance from Runway (ft.)',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            }
-        },
-        autorange: "reversed"
-    },
-    yaxis: {
-        title: {
-            text: 'Alitude (AGL) (ft.)',
-            font: {
-                family: 'sans serif',
-                size: 18,
-                color: '#000000'
-            }
-        }
-    }
-};
-const plotlyConfig = {responsive: true};
 
 class TTFCard extends React.Component {
     constructor(props) {
@@ -273,22 +173,25 @@ class TTFCard extends React.Component {
 
         var navbar = ReactDOM.render(
             <SignedInNavbar
-                                 filterVisible={false}
-                                 plotVisible={this.state.plotVisible}
-                                 mapVisible={this.state.mapVisible}
-                                 activePage="ttf"
-                                 filterSelected={false}
-                                 plotSelected={false}
-                                 mapSelected={false}
-                                 mapStyle={this.state.mapStyle}
-                                 togglePlot={() => this.togglePlot()}
-                                 toggleFilter={() => this.toggleFilter()}
-                                 toggleMap={() => this.toggleMap()}
-                                 mapSelectChanged={(style) => this.mapSelectChanged(style)}
-                                 waitingUserCount={waitingUserCount}
-                                 fleetManager={fleetManager}
-                                 unconfirmedTailsCount={unconfirmedTailsCount}
-                                 modifyTailsAccess={modifyTailsAccess}/>,
+                filterVisible={false}
+                showPlotButton={false}
+                disableMapButton={true}
+                mapVisible={this.state.mapVisible}
+                activePage="ttf"
+                filterSelected={false}
+                plotSelected={false}
+                mapSelected={false}
+                mapStyle={this.state.mapStyle}
+                togglePlot={() => this.togglePlot()}
+                toggleFilter={() => this.toggleFilter()}
+                toggleMap={() => this.toggleMap()}
+                mapSelectChanged={(style) => this.mapSelectChanged(style)}
+                waitingUserCount={waitingUserCount}
+                fleetManager={fleetManager}
+                unconfirmedTailsCount={unconfirmedTailsCount}
+                modifyTailsAccess={modifyTailsAccess}
+                darkModeOnClickAlt={()=>{this.displayPlots();}}
+            />,
             document.querySelector('#navbar')
         );
         
@@ -297,9 +200,6 @@ class TTFCard extends React.Component {
         map.on('click', (event => this.openMapPopup(event)));
         map.on('moveend', (() => this.zoomChanged()));
 
-        Plotly.newPlot('deviations-plot', [], deviationsPlotlyLayout, plotlyConfig);
-        Plotly.newPlot('alt-plot', [], altitudePlotlyLayout, plotlyConfig);
-        Plotly.newPlot('glide-angle-hist', [], glideAngleHistLayout, plotlyConfig);
     }
 
     openMapPopup(event) {
@@ -582,7 +482,7 @@ class TTFCard extends React.Component {
         let deviationsCurves = curves.map(x => x.deviations);
         
         let devPlot = document.getElementById('deviations-plot');
-        Plotly.newPlot('deviations-plot', deviationsCurves, deviationsPlotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('deviations-plot', deviationsCurves, this.deviationsPlotlyLayout, this.state.plotlyConfig);
         console.log(devPlot);
 
         let maxGlideAngles = curves.map(x => x.maxGlideAngle);
@@ -597,7 +497,7 @@ class TTFCard extends React.Component {
             }
         };
 
-        Plotly.newPlot('glide-angle-hist', [glideAngleTrace], glideAngleHistLayout);
+        Plotly.newPlot('glide-angle-hist', [glideAngleTrace], this.glideAngleHistLayout);
         let this_ = this;
         function onLegendClick(data) {
             // Disable this single item and re-draw map and charts.
@@ -619,7 +519,7 @@ class TTFCard extends React.Component {
         // devPlot.on('plotly_legendclick', onLegendClick);
 
         let altCurves = curves.map(x => x.alt);
-        Plotly.newPlot('alt-plot', altCurves, altitudePlotlyLayout, this.state.plotlyConfig);
+        Plotly.newPlot('alt-plot', altCurves, this.altitudePlotlyLayout, this.state.plotlyConfig);
 
         let airport = this.state.selectedAirport;
         let lat = runways[airport][0]['lat1'];
@@ -751,8 +651,8 @@ class TTFCard extends React.Component {
                 url: '/protected/ttf',
                 data : submissionData,
                 dataType : 'json',
-                success : function(response) {
-                    console.log("Fetched response " + response);
+                success : (response) => {
+                    console.log("Fetched response: ", response);
 
                     // store the dates we have fetched data for
                     thisTTF.state.dataAirport = submissionData.airport;
@@ -879,10 +779,96 @@ class TTFCard extends React.Component {
         }
     }
 
-    
+    displayPlots() {
+
+        let docStyles = getComputedStyle(document.documentElement);
+        let plotBgColor = docStyles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = docStyles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = docStyles.getPropertyValue("--c_plotly_grid").trim();
+        
+        this.glideAngleHistLayout = {
+            title: 'Histogram of Glide Path Angles',
+            bargap: 0.05,
+            showlegend: true,
+            autosize: true,
+            margin: {
+                pad: 10
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis: {
+                title: 'Frequency',
+                gridcolor : plotGridColor
+            },
+            yaxis: {
+                title: 'Glide Path Angle',
+                gridcolor : plotGridColor
+            }
+        };
+        this.deviationsPlotlyLayout = {
+            title: 'Glide Path Deviations',
+            showlegend: true,
+            autosize: true,
+            margin: {
+                pad: 2
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis: {
+                title: 'Distance from Runway (ft.)',
+                gridcolor : plotGridColor,
+                autorange: "reversed"
+            },
+            yaxis: {
+                title: 'Distance above Glidepath (ft.)',
+                gridcolor : plotGridColor,
+                range: [-100, 100]
+            }
+        };
+        this.altitudePlotlyLayout = {
+            title: 'Altitude vs. Distance to Runway',
+            showlegend: true,
+            autosize: true,
+            margin: {
+                pad: 2
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis: {
+                title: 'Distance from Runway (ft.)',
+                gridcolor : plotGridColor,
+                autorange: "reversed"
+            },
+            yaxis: {
+                title: 'Alitude (AGL) (ft.)',
+                gridcolor : plotGridColor,
+            }
+        };
+        const plotlyConfig = {responsive: true};
+
+
+        Plotly.newPlot('deviations-plot', [], this.deviationsPlotlyLayout, plotlyConfig);
+        Plotly.newPlot('alt-plot', [], this.altitudePlotlyLayout, plotlyConfig);
+        Plotly.newPlot('glide-angle-hist', [], this.glideAngleHistLayout, plotlyConfig);
+
+    }
 
     render() {
         let runwaySelect;
+
+        /*
+        console.log("TTF STATE: ", this.state);
+        console.log("TTF PROPS: ", this.props);
+        */
 
         if (this.state.data == null) {
             runwaySelect = ( <div> </div> );
@@ -935,8 +921,8 @@ class TTFCard extends React.Component {
                     updateStartYear={(newStartYear) => this.onUpdateStartYear(newStartYear)}
                     updateStartMonth={(newStartMonth) => this.onUpdateStartMonth(newStartMonth)}
                     updateEndYear={(newEndYear) => this.onUpdateEndYear(newEndYear)}
-                    updateEndMonth={(newEndMonth) => this.onUpdateEndMonth(newEndMonth)}/>
-                <br/>
+                    updateEndMonth={(newEndMonth) => this.onUpdateEndMonth(newEndMonth)}
+                />
             </div>
         );
 
@@ -952,7 +938,8 @@ ttfCard = ReactDOM.render(
     <TTFCard />,
     document.querySelector('#ttf-card')
 );
+ttfCard.displayPlots();
 
 console.log("rendered ttfCard!");
 
-export { ttfCard };
+export { TTFCard };

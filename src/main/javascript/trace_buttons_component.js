@@ -83,7 +83,8 @@ class TraceButtons extends React.Component {
         let parentFlight = this.state.parentFlight;
 
         return (
-            <div>
+            //<div className="m-1" style={{overflowX:"auto", maxWidth:"58vw"}}>
+            <div className="m-1" style={{overflowX:"auto", width:"99%"}}>
                 <b className={"p-1"} style={{marginBottom:"0"}}>Flight Parameters:</b>
                 <div className={cellClasses} style={cellStyle}>
                     {

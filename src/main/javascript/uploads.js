@@ -101,7 +101,7 @@ class Upload extends React.Component {
         let statusText = "";
 
         let progressBarClasses = "progress-bar";
-        let statusClasses = "p-1 pl-2 pr-2 ml-1 card bg-light";
+        let statusClasses = "p-1 pl-2 pr-2 ml-1 card";
         let status = uploadInfo.status;
         if (status == "HASHING") {
             statusText = "Hashing";
@@ -155,46 +155,55 @@ class Upload extends React.Component {
         console.log(uploadInfo);
 
         //Disable Download/Delete buttons while Hashing/Uploading or if not a Fleet Manager
-        let doButtonDisplay = (this.isFleetManager && status!="HASHING" && status!="UPLOADING");
+        const BUTTON_DISPLAY_DISALLOW_LIST = ["HASHING", "UPLOADING"];
+        let doButtonDisplay = !(BUTTON_DISPLAY_DISALLOW_LIST.includes(status));
 
         return (
-            <div className="m-1">
-                <div className="d-flex flex-row">
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.filename}</div>
-                    <div className="p-1 mr-1 card border-light bg-light" style={{flex:"0 0 15em"}}>{uploadInfo.startTime}</div>
-                    <div className="flex-fill card progress" style={{height:"34px", padding: "0 0 0 0"}}>
+            <div className="m-2">
+                <div className="d-flex align-items-start" style={{backgroundColor: "var(--c_entry_bg)", padding: '10px', borderRadius: "10px", position:"relative", border:"1px solid var(--c_border_alt)" }}>
+        
+                    {/* LEFT ELEMENTS */}
+                    <div className="d-flex flex-row" style={{ flex: '0 0 15em', minWidth:"35%", maxWidth:"35%", position:"relative" }}>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch' }}>{uploadInfo.filename}</div>
+                        <div className="p-1 mr-1 card" style={{ flex: '1 1 0', alignSelf: 'stretch', minWidth:"35%", maxWidth:"35%" }}>{uploadInfo.startTime}</div>
+                    </div>
+
+                    {/* CENTER ELEMENTS */}
+                    <div className="flex-fill card progress" style={{height:"34px"}}>
                         <div className={progressBarClasses} role="progressbar" style={progressSizeStyle} aria-valuenow={width} aria-valuemin="0" aria-valuemax="100">&nbsp; {sizeText}</div>
                     </div>
+        
+                    {/* RIGHT ELEMENTS */}
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
-
-                    <Button
-                        type="button"
-                        className={"btn btn-danger btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-times"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
+                    <div style={{marginTop: "auto", marginBottom: "auto"}}>                  
+                        <Button
+                            type="button"
+                            className={"btn btn-danger btn-sm"}
+                            style={{backgroundColor:(doButtonDisplay ? '#DC3545' : '#444444'), width:"30px", height: "30px", marginLeft:"4px", padding:"2 4 4 4"}}
                             onClick={ () => (doButtonDisplay ? this.confirmRemoveUpload() : undefined) }
                             >
-                        </i>
-                    </Button>
-
-                    <Button
-                        type="button"
-                        className={"btn btn btn-sm"}
-                        style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
-                        >
-                        <i
-                            className="fa fa-download"
-                            aria-hidden="true"
-                            style={{padding: "4 4 3 4"}}
+                            <i
+                                className="fa fa-times"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                >
+                            </i>
+                        </Button>
+                        <Button
+                            type="button"
+                            className={"btn btn btn-sm"}
+                            style={{backgroundColor:(doButtonDisplay ? '#007BFF' : '#444444'), width:"30px",height: "30px", marginLeft:"4px", padding:"2 4 4 4"}}
                             onClick={ () => (doButtonDisplay ? this.downloadUpload() : undefined) }
                             >
-                        </i>
-                    </Button>
-
+                            <i
+                                className="fa fa-download"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                >
+                            </i>
+                        </Button>
+                    </div>
+            
                 </div>
             </div>
         );
@@ -432,7 +441,7 @@ class UploadsPage extends React.Component {
         this.setState(this.state);
         this.startUpload(file);
     
-        }
+    }
 
     removePendingUpload(file) {
 
@@ -615,36 +624,7 @@ class UploadsPage extends React.Component {
             async: true
         });
     }
-
-    triggerInput() {
-        console.log("input triggered!");
-
-        var uploadsPage = this;
-
-        $('#upload-file-input').trigger('click');
-
-        $('#upload-file-input:not(.bound)').addClass('bound').change(function() {
-            console.log("number files selected: " + this.files.length);
-            console.log( this.files );
-
-            if (this.files.length > 0) {
-                var file = this.files[0];
-                var filename = file.webkitRelativePath || file.fileName || file.name;
-
-                const isZip = file['type'].includes("zip");
-                console.log("isZip: " + isZip);
-
-                if (!filename.match(/^[a-zA-Z0-9_.-]*$/)) {
-                    errorModal.show("Malformed Filename", "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
-                } else if (!isZip) {
-                    errorModal.show("Malformed Filename", "Uploaded files must be zip files. The zip file should contain directories which contain flight logs (csv files). The directories should be named for the tail number of the airfraft that generated the flight logs within them.");
-                } else {
-                    uploadsPage.addUpload(file);
-                }
-            }
-        });
-    }
-
+    
     render() {
         console.log("rendering uploads!");
 
@@ -657,90 +637,59 @@ class UploadsPage extends React.Component {
         
         return (
 
-            <div>
-                <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
+                <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
+                    
+                    <div style={{flex:"0 0 auto"}}>
+                        <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                    </div>
 
-                <div className="p-1">
-                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
-
-                    <div className="card mb-1 border-secondary">
-                        <div className="p-2">
+                    <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
+                        <div className="m-1">
                             {
-                                this.state.pending_uploads.length > 0
-                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
-                                    : ""
+                                this.state.pending_uploads.map((uploadInfo, index) => {
+                                    return (
+                                        <Upload
+                                            isFleetManager={fleetManager}
+                                    uploadInfo={ uploadInfo }
+                                            key={ uploadInfo.identifier }
+                                            removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
+                                            />
+                                    );
+                                })
                             }
-                            <button
-                                id="upload-flights-button"
-                                className="btn btn-primary btn-sm float-right"
-                                onClick={() => (doButtonDisplay ? this.triggerInput() : undefined)}
-                                style={{backgroundColor: doButtonDisplay ? '#007BFF' : '#444444'}}
-                                >
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
+                            
+                            {
+                                this.state.uploads.map((uploadInfo, index) => {
+                                    uploadInfo.position = index;
+                                    return (
+                                        <Upload isFleetManager={fleetManager} uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                    );
+                                })
+                            }
+                        </div>
+
+                        <input id ="upload-file-input" type="file" style={hiddenStyle} />   {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
+                        <div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
+                            <Paginator
+                                submitFilter={() => {this.submitFilter();}}
+                                items={this.state.uploads}
+                                itemName="uploads"
+                                uploadsPage={this}
+                                currentPage={this.state.currentPage}
+                                numberPages={this.state.numberPages}
+                                pageSize={this.state.pageSize}
+                                updateCurrentPage={(currentPage) => {
+                                    this.state.currentPage = currentPage;
+                                }}
+                                updateItemsPerPage={(pageSize) => {
+                                    this.state.pageSize = pageSize;
+                                }}
+                            />
                         </div>
                     </div>
 
-                    {
-                        this.state.pending_uploads.map((uploadInfo, index) => {
-
-                            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-                            // console.log(`[EX] Previewing all Pending Uploads: ${uploadStringMap}`);
-                            // console.log(`[EX] Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
-
-                            //uploadInfo.position = index;
-                            return (
-                                <Upload
-                                    isFleetManager={fleetManager}
-                                    uploadInfo={ uploadInfo }
-                                    key={ uploadInfo.identifier }
-                                    removeUpload={ (uploadInfo) => { this.removePendingUpload(uploadInfo); } }
-                                    />
-                            );
-                        })
-                    }
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
-
-                    {
-                        this.state.uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
-                            return (
-                                <Upload isFleetManager={fleetManager} uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
-                            );
-                        })
-                    }
-
-                    <Paginator
-                        submitFilter={() => {this.submitFilter();}}
-                        items={this.state.uploads}
-                        itemName="uploads"
-                        currentPage={this.state.currentPage}
-                        numberPages={this.state.numberPages}
-                        pageSize={this.state.pageSize}
-                        updateCurrentPage={(currentPage) => {
-                            this.state.currentPage = currentPage;
-                        }}
-                        updateItemsPerPage={(pageSize) => {
-                            this.state.pageSize = pageSize;
-                        }}
-                    />
-
                 </div>
-
             </div>
         );
     }

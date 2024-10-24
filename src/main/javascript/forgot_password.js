@@ -48,8 +48,7 @@ class ForgotPassword extends React.Component {
                     forgotPasswordObj.state.registeredEmail = true;
                     forgotPasswordObj.setState(forgotPasswordObj.state);
                     return true;
-                }
-                else {
+                } else {
                     forgotPasswordObj.state.registeredEmail = false;
                     forgotPasswordObj.state.validEmail = false;
                     forgotPasswordObj.state.error = true;
@@ -96,12 +95,10 @@ class ForgotPassword extends React.Component {
         if (this.state.error) {
             validationMessage = "Please enter a registered email address.";
             validationHidden = false;
-        }
-        else if (this.state.emailEmpty) {
+        } else if (this.state.emailEmpty) {
             validationMessage = "Please enter your email.";
             validationHidden = false;
-        }
-        else if (!this.state.validEmail) {
+        } else if (!this.state.validEmail) {
             validationMessage = "Email was not valid.";
             validationHidden = false;
         }
@@ -115,7 +112,7 @@ class ForgotPassword extends React.Component {
                     <div className="form-group" style={formGroupStyle}>
                         <div className="d-flex">
                             <div className="p-2" style={formHeaderStyle}>
-                                <label htmlFor="email" style={labelStyle}>Email address</label>
+                                <label htmlFor="email" style={labelStyle}>Email Address</label>
                             </div>
                             <div className="p-2 flex-fill">
                                 <input type="email" className="form-control" id="email" aria-describedby="emailHelp" placeholder="Enter email (required)" required={true} onChange={() => {this.validateEmail();}}/>

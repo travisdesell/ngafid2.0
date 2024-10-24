@@ -198,7 +198,7 @@ class MetricViewerSettings extends React.Component {
               return (
                 <div className="card-body">
                     <div className="col" style={{padding:"0 0 0 0"}}>
-                        <div className="card" style={{background : "rgba(248,259,250,0.8)"}}>
+                        <div className="card card-alt">
                             <h6 className="card-header">
                                 Your Flight Metric Viewer Preferences:
                             </h6>
