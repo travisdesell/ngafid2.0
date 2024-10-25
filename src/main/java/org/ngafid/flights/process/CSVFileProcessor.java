@@ -135,7 +135,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 }
 
                 // Populate doubleTimeSeries and stringTimeSeries
-                int startIndex = isG5FlightRecorder ? 2 : 0;
+                int startIndex = isG5FlightRecorder ? 2 : 0; // Skip first two columns (UTC date/time) if it is G5 flight recorder
                 for (int j = startIndex; j < columns.size(); j++) {
                     var column = columns.get(j);
                     var name = headers.get(j);
