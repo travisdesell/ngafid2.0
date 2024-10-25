@@ -76,6 +76,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
             List<String> headerLines = extractHeaderLines(bufferedReader);
             String fileInformation = getFlightInfo(headerLines.get(0));
 
+
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
@@ -331,7 +332,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     }
 
     /**
-     * Extracts three header lines from a csv file, removes # from the beginning of the second line (if # is present)
+     * Extracts three header lines from a csv file.
      * @param bufferedReader
      * @return List of header lines (3 lines expected)
      * @throws IOException
@@ -340,10 +341,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         String flightInformationLine = bufferedReader.readLine();
         String secondLine = bufferedReader.readLine();
         String thirdLine = bufferedReader.readLine();
-
-        if (secondLine.startsWith("#")) {
-            secondLine = secondLine.substring(1);  // Remove the first character (if it's '#')
-        }
 
         List<String> headerLines = new ArrayList<>();
         headerLines.add(flightInformationLine);
@@ -406,6 +403,19 @@ public class CSVFileProcessor extends FlightFileProcessor {
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
+
+        // Determine the correct formatter based on the first row
+        if (rows.isEmpty() || rows.get(0).length < 2) {
+            throw new IllegalArgumentException("Rows are empty or do not contain sufficient columns for date and time.");
+        }
+
+        String firstDateTimeString = rows.get(0)[0] + " " + rows.get(0)[1];
+        DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(firstDateTimeString.replaceAll("\\s+", " "));
+
+        if (correctFormatter == null) {
+            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + firstDateTimeString, firstDateTimeString, 0);
+        }
+
         for (int i = 0; i < rows.size(); i++) {
             String[] row = rows.get(i);
 
@@ -414,13 +424,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");
 
                 LocalDateTime currentTimestamp;
-
                 try {
-                    DateTimeFormatter correctFormatter = TimeUtils.findCorrectFormatter(normalizedDateTime);
-
-                    if (correctFormatter == null) {
-                        throw new DateTimeParseException("Unable to find correct formatter for date/time: " + dateTimeString, dateTimeString, 0);
-                    }
                     currentTimestamp = LocalDateTime.parse(normalizedDateTime, correctFormatter);
 
                 } catch (DateTimeParseException e) {
