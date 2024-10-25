@@ -577,10 +577,6 @@ public class Upload {
         }
     }
 
-
-    public String getDerivedDirectory() {
-        return WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/derived";
-    }
     public Path getArchivePath() {
         return Paths.get(getArchiveDirectory(), getArchiveFilename());
     }
