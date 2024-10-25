@@ -37,7 +37,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
     private final List<String> dataTypes;
     private final FlightMeta meta = new FlightMeta();
     private static final Pattern PARENTHESIS_PATTERN = Pattern.compile("\\(([^)]+)\\)");
-    private static final int splitTimeInMinutes = 5; // Time difference indicates a separate flight.
+    private static final int SPLIT_TIME_IN_MINUTES = 5; // Time difference indicates a separate flight.
 
     public CSVFileProcessor(Connection connection, InputStream stream, String filename, Pipeline pipeline)
             throws IOException {
@@ -98,7 +98,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 rows = filterValidRowsG5(rows);
             }
 
-            List<Integer> splitIndices = splitCSVIntoFlightIndices(rows, 5);
+            List<Integer> splitIndices = splitCSVIntoFlightIndices(rows, SPLIT_TIME_IN_MINUTES);
             addDerivedFileToUploadFolder(splitIndices, rows, headerLines, filename);
 
             // Process each flight by splitting the series based on the indices
