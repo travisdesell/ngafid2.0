@@ -261,27 +261,23 @@ public class CSVFileProcessor extends FlightFileProcessor {
      */
     private boolean isG5FlightRecorder(List<String> headerLines, String[] firstRow) {
         String fileName = pipeline.getUpload().filename.toLowerCase();
-
         //G5 recorder has date in the format below
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("M/d/yyyy");
-
         if (fileName.contains("g5")) {
             return true;
         }
-
         if (headerLines.get(0).contains("serial_number") &&
                 !headerLines.get(0).contains("system_id") &&
                 !headerLines.get(0).contains("airframe_name")) {
-            // Check if the date in the expected format.
-                try {
-                    LocalDate.parse(firstRow[0], formatter);
-                    return true; // If the date is valid, we return true
-                } catch (DateTimeParseException e) {
-                    // If the date is not valid, we return false or handle the logic accordingly
-                    return false;
-                }
+                // Check if the date in the expected format.
+            try {
+                LocalDate.parse(firstRow[0], formatter);
+                return true;
+            } catch (DateTimeParseException e) {
+                 return false;
             }
-            return false;
+        }
+        return false;
     }
 
     /**
