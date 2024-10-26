@@ -81,15 +81,34 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
                 processFileInformation(fileInformation);
-                processHeaders(headerLines);
+                if (!headerLines.isEmpty()) {
+                    String[] dataTypesArray = headerLines.get(1).split(",", -1); // Second line as data types
+                    String[] headersArray = headerLines.get(2).split(",", -1);    // Third line as headers
+
+                    Arrays.stream(dataTypesArray)
+                            .map(String::strip)
+                            .map(CSVFileProcessor::extractContentInsideParentheses)
+                            .forEachOrdered(dataTypes::add);
+
+                    Arrays.stream(headersArray)
+                            .map(String::strip)
+                            .forEachOrdered(headers::add);
+                }
             }
 
+            // Buffered Reader doesn't have headers at this point, so csvReader only has time series.
             CSVReader csvReader = new CSVReader(bufferedReader);
             String[] firstRow = csvReader.peek();
             List<String[]> rows = csvReader.readAll();
             rows = filterValidRows(rows, headers);
 
             boolean isG5FlightRecorder = isG5FlightRecorder(headerLines, firstRow);
+
+            // Header indices to be used for G5 Local Date/Time calculation
+            Map<String, Integer> g5headerIndices = null;
+            if (isG5FlightRecorder) {
+                g5headerIndices = initializeAndValidateG5HeaderIndices(headerLines.get(2));
+            }
 
             // Library for mapping lat/long to timezones. Time zone for the US including Alaska and Hawaii.
             TimeZoneMap timeZoneMap = null;
@@ -124,10 +143,15 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 // G5 doesn't have local date time and utcOffset column, we calculate them here
                 TimeUtils.LocalDateTimeResult localDateTimeResult = null;
                 if(isG5FlightRecorder) {
-                    StringTimeSeries utcDateSeries = new StringTimeSeries(headers.get(0), dataTypes.get(0), columns.get(0));
-                    StringTimeSeries utcTimeSeries = new StringTimeSeries(headers.get(1), dataTypes.get(1), columns.get(1));
-                    DoubleTimeSeries latitudeTimeSeries = new DoubleTimeSeries(headers.get(4), dataTypes.get(4), columns.get(4));
-                    DoubleTimeSeries longitudeTimeSeries = new DoubleTimeSeries(headers.get(5), dataTypes.get(5), columns.get(5));
+                    Integer utcDateIndex = g5headerIndices.get("UTC Date");
+                    Integer utcTimeIndex = g5headerIndices.get("UTC Time");
+                    Integer latitudeIndex = g5headerIndices.get("Latitude");
+                    Integer longitudeIndex = g5headerIndices.get("Longitude");
+
+                    StringTimeSeries utcDateSeries = new StringTimeSeries(headers.get(utcDateIndex), dataTypes.get(utcDateIndex), columns.get(utcDateIndex));
+                    StringTimeSeries utcTimeSeries = new StringTimeSeries(headers.get(utcTimeIndex), dataTypes.get(utcTimeIndex), columns.get(utcTimeIndex));
+                    DoubleTimeSeries latitudeTimeSeries = new DoubleTimeSeries(headers.get(latitudeIndex), dataTypes.get(latitudeIndex), columns.get(latitudeIndex));
+                    DoubleTimeSeries longitudeTimeSeries = new DoubleTimeSeries(headers.get(longitudeIndex), dataTypes.get(longitudeIndex), columns.get(longitudeIndex));
                     localDateTimeResult = TimeUtils.calculateLocalDateTimeFromTimeSeries(timeZoneMap, utcDateSeries,utcTimeSeries,latitudeTimeSeries,longitudeTimeSeries);
 
                     stringTimeSeries.put("Lcl Date", new StringTimeSeries("Lcl Date", "yyyy-MM-dd", localDateTimeResult.getLocalDates()));
@@ -178,6 +202,36 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
         LOG.info("Parse method end. Returning " + flightBuilders.size() + " flight builders.");
         return flightBuilders.stream();
+    }
+
+    /**
+     * Creates a map of header indices by header name and retrieves required G5 column indices.
+     * @param headerLine a coma separated string with header values.
+     * @return Map of required G5 column names to their indices
+     * @throws Exception if any required G5 headers are missing
+     */
+    private Map<String, Integer> initializeAndValidateG5HeaderIndices(String headerLine) throws Exception {
+        String[] headers = headerLine.split(",");
+        Map<String, Integer> headerIndices = new HashMap<>();
+
+        // Populate header indices
+        for (int i = 0; i < headers.length; i++) {
+            headerIndices.put(headers[i].trim(), i);
+        }
+
+        // Define and validate required G5 headers
+        List<String> requiredG5Headers = Arrays.asList("UTC Date", "UTC Time", "Latitude", "Longitude");
+        Map<String, Integer> g5Indices = new HashMap<>();
+
+        for (String g5Header : requiredG5Headers) {
+            Integer index = headerIndices.get(g5Header);
+            if (index == null) {
+                throw new Exception("Required G5 header '" + g5Header + "' not found in CSV file.");
+            }
+            g5Indices.put(g5Header, index);
+        }
+
+        return g5Indices;
     }
 
     /**
@@ -278,27 +332,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             }
         }
         return false;
-    }
-
-    /**
-     * Processes header lines from the csv flight, populates dataTypes and headers with
-     * the flight information.
-     * @param headerLines
-     * @throws FatalFlightFileException
-     */
-    private void processHeaders(List<String> headerLines) throws FatalFlightFileException {
-        if (headerLines.get(1) != null) {
-
-            String[] secondLineArray = headerLines.get(1).split(",", -1);  // Use -1 to preserve empty values
-            String[] thirdLineArray = headerLines.get(2).split(",", -1);    // Use -1 to preserve empty values
-
-            for (int i = 0; i < secondLineArray.length; i++) {
-                String processedDataType = CSVFileProcessor.extractContentInsideParentheses(secondLineArray[i].strip());
-                dataTypes.add(processedDataType);  // Add the processed result to dataTypes
-                String processedHeader = thirdLineArray[i].strip();
-                headers.add(processedHeader.isEmpty() ? "<Empty>" : processedHeader);  // Add header or "<Empty>" if it's blank
-            }
-        }
     }
 
     /**
