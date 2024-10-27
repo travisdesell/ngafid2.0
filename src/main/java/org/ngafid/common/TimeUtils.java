@@ -117,30 +117,21 @@ public class TimeUtils {
 
     }
 
-    /**
-     * Helper method to parse the date and time using the declared formatters
-     * @param dateTimeString
-     * @return
-     */
-    public static LocalDateTime parseDateTime(String dateTimeString) {
-        String normalizedDateTime = dateTimeString.replaceAll("\\s+", " ");  // Replaces multiple spaces with a single space
-        for (DateTimeFormatter formatter : DATE_FORMATTERS) {
-            try {
-                return LocalDateTime.parse(normalizedDateTime, formatter);
-            } catch (Exception e) {
-                // Continue trying other formats
-            }
-        }
-        // If none of the formats work, throw an exception or handle it appropriately
-        throw new IllegalArgumentException("Date format not supported: " + normalizedDateTime);
-    }
 
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
             String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
 
+
+
         // create a LocalDateTime using the date time passed as parameter
-        LocalDateTime ldt = parseDateTime(originalDate + " " + originalTime);
+        String originalDateTime = originalDate.trim() + " " + originalTime.trim();
+        DateTimeFormatter formatter = findCorrectFormatter(originalDateTime);
+        if (formatter == null) {
+            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + originalDateTime, originalDateTime, 0);
+        }
+
+        LocalDateTime ldt = LocalDateTime.parse(originalDateTime, formatter);
 
         // fix bad offset values
         originalOffset = updateBadOffset(ldt, originalOffset);
@@ -297,41 +288,29 @@ public class TimeUtils {
             StringTimeSeries utcDates,
             StringTimeSeries utcTimes,
             DoubleTimeSeries latitudes,
-            DoubleTimeSeries longitudes) throws Exception {
-
-        // Validate that all time series are of the same size.
-        if (utcDates.size() != utcTimes.size() || utcDates.size() != latitudes.size() || utcDates.size() != longitudes.size()) {
-            throw new IllegalArgumentException("All input time series must have the same size.");
-        }
+            DoubleTimeSeries longitudes) {
 
         // Prepare lists for the results.
         ArrayList<String> localDates = new ArrayList<>(utcDates.size());
         ArrayList<String> localTimes = new ArrayList<>(utcDates.size());
         ArrayList<String> utcOffsets = new ArrayList<>(utcDates.size());
 
+        String dateTimeString = utcDates.get(0).trim() + " " + utcTimes.get(0).trim();
+        DateTimeFormatter formatter = findCorrectFormatter(dateTimeString);
+        if (formatter == null) {
+            throw new DateTimeParseException("Unable to determine a valid date/time format for: " + dateTimeString, dateTimeString, 0);
+        }
+
         // Iterate over each index and calculate the corresponding local date, time, and offset.
         for (int i = 0; i < utcDates.size(); i++) {
-            String dateTimeString = utcDates.get(i) + " " + utcTimes.get(i);
-            LocalDateTime utcDateTime = null;
 
-            // Try parsing using a formatter.
-            for (DateTimeFormatter formatter : DATE_FORMATTERS) {
-                try {
-                    utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
-                    break;
-                } catch (DateTimeParseException e) {
-                    // Continue trying other formats
-                }
-            }
-
-            if (utcDateTime == null) {
-                throw new IllegalArgumentException("Failed to parse date/time string: " + dateTimeString);
-            }
+            LocalDateTime utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
 
             double latitude = latitudes.get(i);
             double longitude = longitudes.get(i);
 
             String zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
+
             ZoneId zoneId = ZoneId.of(zoneIdStr);
 
             // Convert the UTC datetime to the local time in the specified zone.
@@ -360,7 +339,6 @@ public class TimeUtils {
         }
         return null;
     }
-
 
     /**
      * Helper class to store the results of the date-time calculation.

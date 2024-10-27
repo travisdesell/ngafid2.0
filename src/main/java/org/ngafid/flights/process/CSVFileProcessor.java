@@ -76,7 +76,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
             List<String> headerLines = extractHeaderLines(bufferedReader);
             String fileInformation = getFlightInfo(headerLines.get(0));
 
-
             if (meta.airframe != null && meta.airframe.getName().equals("ScanEagle")) {
                 scanEagleParsing(fileInformation); // TODO: Handle ScanEagle data
             } else {
@@ -191,15 +190,9 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 doubleTimeSeries.clear();
                 stringTimeSeries.clear();
             }
-        } catch (IOException | FatalFlightFileException | CsvException e) {
+        } catch (IOException | FatalFlightFileException | CsvException | FlightFileFormatException e) {
             throw new FlightProcessingException(e);
-        } catch (SQLException e) {
-            String errorMessage = "SQL error occurred while processing the flight data for file: " + filename;
-            throw new FlightProcessingException(errorMessage, e);
-        } catch (Exception e) {
-            throw new IllegalArgumentException(e);
         }
-
         LOG.info("Parse method end. Returning " + flightBuilders.size() + " flight builders.");
         return flightBuilders.stream();
     }
@@ -210,7 +203,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @return Map of required G5 column names to their indices
      * @throws Exception if any required G5 headers are missing
      */
-    private Map<String, Integer> initializeAndValidateG5HeaderIndices(String headerLine) throws Exception {
+    private Map<String, Integer> initializeAndValidateG5HeaderIndices(String headerLine) throws FlightFileFormatException {
         String[] headers = headerLine.split(",");
         Map<String, Integer> headerIndices = new HashMap<>();
 
@@ -226,7 +219,7 @@ public class CSVFileProcessor extends FlightFileProcessor {
         for (String g5Header : requiredG5Headers) {
             Integer index = headerIndices.get(g5Header);
             if (index == null) {
-                throw new Exception("Required G5 header '" + g5Header + "' not found in CSV file.");
+                throw new FlightFileFormatException("Required G5 header '" + g5Header + "' not found in CSV file.");
             }
             g5Indices.put(g5Header, index);
         }
@@ -241,9 +234,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param headerLines
      * @param filename
      * @throws IOException
-     * @throws SQLException
      */
-    private void addDerivedFileToUploadFolder(List<Integer> splitIndices, List<String[]> rows, List<String> headerLines, String filename) throws IOException, SQLException {
+    private void addDerivedFileToUploadFolder(List<Integer> splitIndices, List<String[]> rows, List<String> headerLines, String filename) throws IOException{
         if (splitIndices.size() > 1) {
             for (int i = 0; i < splitIndices.size(); i++) {
                 int fromIndex = splitIndices.get(i);
@@ -252,7 +244,11 @@ public class CSVFileProcessor extends FlightFileProcessor {
 
                 String derivedFilename = filename.replace(".csv", "_flight_" + (i + 1) + ".csv");
                 byte[] csvData = writeFlightToCSV(flightRows, headerLines);
-                pipeline.addDerivedFile(derivedFilename, csvData);
+                try {
+                    pipeline.addDerivedFile(derivedFilename, csvData);
+                } catch (SQLException e) {
+                    LOG.severe(e.getMessage() + "Failed to add derived file : " + derivedFilename);
+                }
             }
         }
     }
@@ -428,14 +424,14 @@ public class CSVFileProcessor extends FlightFileProcessor {
      * @param splitIntervalInMinutes - max time difference between rows.
      * @return
      */
-    public List<Integer> splitCSVIntoFlightIndices(List<String[]> rows, int splitIntervalInMinutes) {
+    public List<Integer> splitCSVIntoFlightIndices(List<String[]> rows, int splitIntervalInMinutes) throws FlightFileFormatException {
         List<Integer> splitIndices = new ArrayList<>();
         LocalDateTime lastTimestamp = null;
 
 
         // Determine the correct formatter based on the first row
         if (rows.isEmpty() || rows.get(0).length < 2) {
-            throw new IllegalArgumentException("Rows are empty or do not contain sufficient columns for date and time.");
+            throw new FlightFileFormatException("Rows are empty or do not contain sufficient columns for date and time.");
         }
 
         String firstDateTimeString = rows.get(0)[0] + " " + rows.get(0)[1];
@@ -472,10 +468,8 @@ public class CSVFileProcessor extends FlightFileProcessor {
                 } else {
                     splitIndices.add(i); // First flight always starts at index 0
                 }
-
                 lastTimestamp = currentTimestamp;
-
-            } catch (IllegalArgumentException e) {
+            } catch (Exception e) {
                 LOG.warning("Skipping row due to unparseable date/time: " + Arrays.toString(row));
             }
         }
@@ -505,7 +499,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                         "First line of the flight file should begin with a '#' and contain flight recorder information.");
             }
         }
-
         return fileInformation;
     }
 
@@ -591,7 +584,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
                     "Please add this to the the `airframe_type` table in the database and update this method.");
             throw new FatalFlightFileException("Unsupported airframe type '" + name + "'");
         }
-
     }
 
     /**
@@ -605,7 +597,6 @@ public class CSVFileProcessor extends FlightFileProcessor {
         scanEagleSetTailAndID();
         scanEagleHeaders(fileInformation);
     }
-
 
     /**
      * Handles setting the tail number and system id for ScanEagle data
