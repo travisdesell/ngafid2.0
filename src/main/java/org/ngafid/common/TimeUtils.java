@@ -7,25 +7,19 @@ import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.ChronoUnit;
 import java.util.*;
-
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.flights.StringTimeSeries;
 import us.dustinj.timezonemap.TimeZoneMap;
 import java.time.ZoneId;
-import java.util.Optional;
 import org.ngafid.flights.FatalFlightFileException;
 
-import static org.ngafid.FindLowEndingFuelEvents.LOG;
-
 public class TimeUtils {
-
     /**
      * Fixes bad offsets that Java cant handle by default (outside -18 and +18). Will do nothing
      * if the offset is okay.
-     *
-     * @param the LocalDateTime value which will be updated
-     * @param the bad offset
-     * @return the fixed offset
+     * @param ldt
+     * @param offset
+     * @return Specific offset
      */
     public static String updateBadOffset(LocalDateTime ldt, String offset) {
         // weird input data
@@ -117,13 +111,9 @@ public class TimeUtils {
 
     }
 
-
     public static OffsetDateTime convertToOffset(String originalDate, String originalTime, String originalOffset,
             String newOffset) {
         // System.out.println("original: \t" + originalTime + " " + originalOffset + " new offset: "+ newOffset);
-
-
-
         // create a LocalDateTime using the date time passed as parameter
         String originalDateTime = originalDate.trim() + " " + originalTime.trim();
         DateTimeFormatter formatter = findCorrectFormatter(originalDateTime);
@@ -193,6 +183,7 @@ public class TimeUtils {
             DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"),
             DateTimeFormatter.ofPattern("M/d/yyyy H:mm:ss"),
             DateTimeFormatter.ofPattern("M/d/yyyy HH:mm:ss"));
+
 
     public static double calculateDurationInSeconds(String startDateTime, String endDateTime)
             throws FatalFlightFileException {
@@ -303,36 +294,39 @@ public class TimeUtils {
 
         // Iterate over each index and calculate the corresponding local date, time, and offset.
         for (int i = 0; i < utcDates.size(); i++) {
-
-            LocalDateTime utcDateTime = LocalDateTime.parse(dateTimeString, formatter);
+            String dateTime = utcDates.get(i).trim() + " " + utcTimes.get(i).trim();
+            LocalDateTime utcDateTime = LocalDateTime.parse(dateTime, formatter);
 
             double latitude = latitudes.get(i);
             double longitude = longitudes.get(i);
 
-            String zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
+            String zoneIdStr = null;
+            try {
+                zoneIdStr = map.getOverlappingTimeZone(latitude, longitude).getZoneId();
+            } catch (Exception e) {
+                throw new DateTimeParseException("Coordinate out of bounds: " + latitude + ", " + longitude, dateTimeString, 0);
+            }
 
             ZoneId zoneId = ZoneId.of(zoneIdStr);
-
-            // Convert the UTC datetime to the local time in the specified zone.
             ZonedDateTime localZonedDateTime = utcDateTime.atZone(ZoneOffset.UTC).withZoneSameInstant(zoneId);
 
-            // Format the local date, local time, and UTC offset.
             localDates.add(localZonedDateTime.toLocalDate().format(DateTimeFormatter.ofPattern("yyyy-MM-dd")));
             localTimes.add(localZonedDateTime.toLocalTime().format(DateTimeFormatter.ofPattern("HH:mm:ss")));
             utcOffsets.add(localZonedDateTime.getOffset().getId());
         }
-
         return new LocalDateTimeResult(localDates, localTimes, utcOffsets);
     }
 
     /**
-     * Helper method to find the correct DateTimeFormatter by trying to parse the first date string.
+     * Finds the correct DateTimeFormatter by trying to parse a date/time string.
+     * @param dateTimeString
+     * @return specific DateTimeFormatter
      */
     public static DateTimeFormatter findCorrectFormatter(String dateTimeString) {
         for (DateTimeFormatter formatter : DATE_FORMATTERS) {
             try {
                 LocalDateTime.parse(dateTimeString, formatter);
-                return formatter;  // Return the formatter if parsing succeeds
+                return formatter;
             } catch (DateTimeParseException e) {
                 // Continue trying other formatters
             }
@@ -341,7 +335,7 @@ public class TimeUtils {
     }
 
     /**
-     * Helper class to store the results of the date-time calculation.
+     * Store the results of the date-time calculation.
      */
     public static class LocalDateTimeResult {
         private final ArrayList<String> localDates;
