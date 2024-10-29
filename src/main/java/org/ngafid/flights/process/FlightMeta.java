@@ -1,24 +1,27 @@
 package org.ngafid.flights.process;
 
+import org.ngafid.flights.Airframes;
+
 /**
  * Utility class used by FlightBuilder to call the Flight constructor.
  **/
 public final class FlightMeta {
 
-    public int  fleetId = -1,
-                uploaderId = -1,
-                uploadId = -1,
-                processingStatus = 0;
+    public int fleetId = -1,
+            uploaderId = -1,
+            uploadId = -1,
+            processingStatus = 0;
 
-    public String startDateTime, 
-                  endDateTime,
-                  md5Hash,
-                  airframeType,
-                  systemId,
-                  filename,
-                  airframeName,
-                  calculated,
-                  suggestedTailNumber;
+    public String startDateTime,
+            endDateTime,
+            md5Hash,
+            systemId,
+            filename,
+            calculated,
+            suggestedTailNumber;
+
+    public Airframes.Airframe airframe = null;
+    public Airframes.AirframeType airframeType = null;
 
     public int getFleetId() {
         return fleetId;
@@ -76,12 +79,28 @@ public final class FlightMeta {
         this.md5Hash = md5Hash;
     }
 
-    public String getAirframeType() {
+    public Airframes.AirframeType getAirframeType() {
         return airframeType;
     }
 
     public void setAirframeType(String airframeType) {
+        this.airframeType = new Airframes.AirframeType(airframeType);
+    }
+
+    public void setAirframeType(Airframes.AirframeType airframeType) {
         this.airframeType = airframeType;
+    }
+
+    public Airframes.Airframe getAirframe() {
+        return airframe;
+    }
+
+    public void setAirframe(String airframe) {
+        this.airframe = new Airframes.Airframe(airframe);
+    }
+
+    public void setAirframe(Airframes.Airframe airframe) {
+        this.airframe = airframe;
     }
 
     public String getSystemId() {
@@ -98,14 +117,6 @@ public final class FlightMeta {
 
     public void setFilename(String filename) {
         this.filename = filename;
-    }
-
-    public String getAirframeName() {
-        return airframeName;
-    }
-
-    public void setAirframeName(String airframeName) {
-        this.airframeName = airframeName;
     }
 
     public String getCalculated() {

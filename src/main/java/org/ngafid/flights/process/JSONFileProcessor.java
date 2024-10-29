@@ -168,7 +168,7 @@ public class JSONFileProcessor extends FlightFileProcessor {
         flightMeta.setAirframeType("UAS Rotorcraft");
         flightMeta.setSystemId((String) jsonMap.get("serial_number"));
         flightMeta.setFilename(super.filename);
-        flightMeta.setAirframeName((String) jsonMap.get("controller_model"));
+        flightMeta.setAirframe((String) jsonMap.get("controller_model"));
         flightMeta.setCalculated(""); // TODO: Figure this out
         flightMeta.setSuggestedTailNumber((String) jsonMap.get("serial_number"));
     }

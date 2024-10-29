@@ -15,7 +15,6 @@ import ch.randelshofer.fastdoubleparser.JavaDoubleParser;
 
 import org.ngafid.common.MutableDouble;
 
-
 public class Airports {
     private static final Logger LOG = Logger.getLogger(Airports.class.getName());
 
@@ -31,7 +30,7 @@ public class Airports {
     public static final double FT_PER_KM = 3280.84;
 
     static {
-       //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
+        // AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
         if (System.getenv("AIRPORTS_FILE") == null) {
             System.err.println("ERROR: 'AIRPORTS_FILE' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -41,10 +40,10 @@ public class Airports {
         LOG.info("AIRPORTS_FILE: '" + System.getenv("AIRPORTS_FILE") + "'");
 
         AIRPORTS_FILE = System.getenv("AIRPORTS_FILE");
-        
-        //AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
 
-        //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
+        // AIRPORTS_FILE = "/Users/fa3019/Data/airports/airports_parsed.csv";
+
+        // RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
         if (System.getenv("RUNWAYS_FILE") == null) {
             System.err.println("ERROR: 'RUNWAYS_FILE' environment variable not specified at runtime.");
             System.err.println("Please add the following to your ~/.bash_rc or ~/.profile file:");
@@ -53,7 +52,7 @@ public class Airports {
         }
 
         RUNWAYS_FILE = System.getenv("RUNWAYS_FILE");
-        //RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
+        // RUNWAYS_FILE ="/Users/fa3019/Data/runways/runways_parsed.csv";
 
         geoHashToAirport = new HashMap<String, ArrayList<Airport>>();
         siteNumberToAirport = new HashMap<String, Airport>();
@@ -62,11 +61,11 @@ public class Airports {
         int maxHashSize = 0;
         int numberAirports = 0;
 
-        try {
-            BufferedReader br = new BufferedReader(new FileReader(AIRPORTS_FILE));
+        try (BufferedReader airportsReader = new BufferedReader(new FileReader(AIRPORTS_FILE));
+                BufferedReader runwaysReader = new BufferedReader(new FileReader(RUNWAYS_FILE))) {
 
             String line;
-            while ((line = br.readLine()) != null) {
+            while ((line = airportsReader.readLine()) != null) {
                 // process the line.
 
                 String[] values = line.split(",");
@@ -77,9 +76,6 @@ public class Airports {
                 double longitude = JavaDoubleParser.parseDouble(values[5]);
 
                 Airport airport = new Airport(iataCode, siteNumber, type, latitude, longitude);
-                String geoHash = airport.geoHash;
-
-                //System.err.println(airport);
 
                 ArrayList<Airport> hashedAirports = geoHashToAirport.get(airport.geoHash);
                 if (hashedAirports == null) {
@@ -89,29 +85,25 @@ public class Airports {
                 hashedAirports.add(airport);
 
                 if (siteNumberToAirport.get(siteNumber) != null) {
-                    System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as " + siteNumberToAirport.get(siteNumber));
+                    System.err.println("ERROR: Airport " + airport + " already existed in siteNumberToAirport hash as "
+                            + siteNumberToAirport.get(siteNumber));
                     System.exit(1);
 
                 }
                 siteNumberToAirport.put(airport.siteNumber, airport);
                 iataToAirport.put(airport.iataCode, airport);
 
-                if (hashedAirports.size() > maxHashSize) maxHashSize = hashedAirports.size();
-                //System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
+                if (hashedAirports.size() > maxHashSize)
+                    maxHashSize = hashedAirports.size();
+                // System.err.println("hashedAirports.size() now: " + hashedAirports.size() + ", max: " + maxHashSize);
                 numberAirports++;
             }
 
-            LOG.info("Creating buffered reader for '" + RUNWAYS_FILE + "'");
-            //now read the runways file and add runways to airports
-            br = new BufferedReader(new FileReader(RUNWAYS_FILE));
-            LOG.info("buffered reader is ready? " + br.ready());
-
-            while ((line = br.readLine()) != null) {
-                //LOG.info("read runways line: " + line);
+            while ((line = runwaysReader.readLine()) != null) {
+                // LOG.info("read runways line: " + line);
 
                 String[] values = line.split(",");
 
-                String id = values[0];
                 String siteNumber = values[1];
                 String name = values[2];
 
@@ -140,9 +132,8 @@ public class Airports {
                 }
 
                 airport.addRunway(runway);
-                //LOG.info("Adding " + runway + " to " + airport);
-             }
- 
+            }
+
         } catch (Exception e) {
             e.printStackTrace();
             System.exit(1);
@@ -155,9 +146,10 @@ public class Airports {
 
     /**
      * Grab a group of airports based on iataCodes
+     * 
      * @param iataCodes the list of airport iata codes for which the airport object should be fetched
      * @return a map which maps iata code to airport object for the specified. It will only contain airports
-     * specified in iataCodes
+     *         specified in iataCodes
      */
     public static Map<String, Airport> getAirports(List<String> iataCodes) {
         return iataCodes.stream().collect(Collectors.toMap(Function.identity(), Airports::getAirport));
@@ -168,12 +160,12 @@ public class Airports {
     }
 
     /**
-     *  Modified from:
-     *  https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
+     * Modified from:
+     * https://stackoverflow.com/questions/849211/shortest-distance-between-a-point-and-a-line-segment
      **/
     public final static double shortestDistanceBetweenLineAndPointFt(double plat, double plon,
-                                                                     double lat1, double lon1,
-                                                                     double lat2, double lon2) {
+            double lat1, double lon1,
+            double lat2, double lon2) {
         double A = plon - lon1;
         double B = plat - lat1;
         double C = lon2 - lon1;
@@ -209,8 +201,8 @@ public class Airports {
         double lngDistance = Math.toRadians(lon1 - lon2);
 
         double a = Math.sin(latDistance / 2) * Math.sin(latDistance / 2)
-            + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
-            * Math.sin(lngDistance / 2) * Math.sin(lngDistance / 2);
+                + Math.cos(Math.toRadians(lat1)) * Math.cos(Math.toRadians(lat2))
+                        * Math.sin(lngDistance / 2) * Math.sin(lngDistance / 2);
 
         double c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
@@ -225,8 +217,8 @@ public class Airports {
         return calculateDistanceInKilometer(lat1, lon1, lat2, lon2) * Airports.FT_PER_KM;
     }
 
-
-    public static Airport getNearestAirportWithin(double latitude, double longitude, double maxDistanceFt, MutableDouble airportDistance) {
+    public static Airport getNearestAirportWithin(double latitude, double longitude, double maxDistanceFt,
+            MutableDouble airportDistance) {
         String geoHashes[] = GeoHash.getNearbyGeoHashes(latitude, longitude);
 
         double minDistance = maxDistanceFt;
@@ -239,7 +231,8 @@ public class Airports {
                 // LOG.info("\t" + geoHashes[i] + " resulted in " + hashedAirports.size() + " airports.");
                 for (int j = 0; j < hashedAirports.size(); j++) {
                     Airport airport = hashedAirports.get(j);
-                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude, airport.longitude);
+                    double distanceFt = calculateDistanceInFeet(latitude, longitude, airport.latitude,
+                            airport.longitude);
                     // LOG.info("\t\t" + airport + ", distanceFt: " + distanceFt);
 
                     if (distanceFt < minDistance) {
@@ -252,17 +245,18 @@ public class Airports {
         }
 
         /*
-        if (nearestAirport != null) {
-            LOG.info("nearest airport: " + nearestAirport + ", " + minDistance);
-        } else {
-            LOG.info("nearest airport: NULL");
-        }
-        */
+         * if (nearestAirport != null) {
+         * LOG.info("nearest airport: " + nearestAirport + ", " + minDistance);
+         * } else {
+         * LOG.info("nearest airport: NULL");
+         * }
+         */
 
         return nearestAirport;
     }
 
     public static boolean hasRunwayInfo(String iataCode) {
+        System.out.println("checking to see if airport '" + iataCode + "' has runway info");
         Airport ap = iataToAirport.get(iataCode);
         return ap == null ? false : ap.hasRunways();
     }

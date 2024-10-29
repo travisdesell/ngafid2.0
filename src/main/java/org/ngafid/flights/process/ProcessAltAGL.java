@@ -22,19 +22,33 @@ public class ProcessAltAGL extends ProcessStep {
         super(connection, builder);
     }
 
-    public Set<String> getRequiredDoubleColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
-    
-    public boolean airframeIsValid(String airframe) { return true; }
+    public Set<String> getRequiredDoubleColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getRequiredStringColumns() {
+        return Collections.<String>emptySet();
+    }
+
+    public Set<String> getRequiredColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getOutputColumns() {
+        return OUTPUT_COLUMNS;
+    }
+
+    public boolean airframeIsValid(String airframe) {
+        return true;
+    }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        DoubleTimeSeries altitudeMSLTS = doubleTS.get(ALT_MSL);
-        DoubleTimeSeries latitudeTS = doubleTS.get(LATITUDE);
-        DoubleTimeSeries longitudeTS = doubleTS.get(LONGITUDE);
+        DoubleTimeSeries altitudeMSLTS = builder.getDoubleTimeSeries(ALT_MSL);
+        DoubleTimeSeries latitudeTS = builder.getDoubleTimeSeries(LATITUDE);
+        DoubleTimeSeries longitudeTS = builder.getDoubleTimeSeries(LONGITUDE);
 
-        DoubleTimeSeries altitudeAGLTS = withConnection(connection -> new DoubleTimeSeries(connection, ALT_AGL, UNIT_FT_AGL));
+        DoubleTimeSeries altitudeAGLTS = withConnection(
+                connection -> new DoubleTimeSeries(connection, ALT_AGL, Unit.FT_AGL));
 
         for (int i = 0; i < altitudeMSLTS.size(); i++) {
             double altitudeMSL = altitudeMSLTS.get(i);
@@ -50,11 +64,12 @@ public class ProcessAltAGL extends ProcessStep {
                 int altitudeAGL = TerrainCache.getAltitudeFt(altitudeMSL, latitude, longitude);
                 altitudeAGLTS.add(altitudeAGL);
             } catch (NoSuchFileException e) {
-                throw new MalformedFlightFileException("Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
+                throw new MalformedFlightFileException(
+                        "Could not calculate AGL for this flight as it had latitudes/longitudes outside of the United States.");
             }
         }
 
-        doubleTS.put(ALT_AGL, altitudeAGLTS);
+        builder.addTimeSeries(altitudeAGLTS);
     }
 
 }

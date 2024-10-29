@@ -6,8 +6,10 @@ import java.util.Map;
 import java.util.List;
 
 import org.ngafid.flights.*;
-import static org.ngafid.flights.process.ProcessStep.required;
 
+/**
+ * Flight builder for CSVFlightBuilder
+ */
 public class CSVFlightBuilder extends FlightBuilder {
 
     public CSVFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
@@ -15,8 +17,7 @@ public class CSVFlightBuilder extends FlightBuilder {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 
-    private static final List<ProcessStep.Factory> processSteps = List.of(
-            ProcessAltAGL::new);
+    private static final List<ProcessStep.Factory> processSteps = List.of();
 
     // This can be overridden.
     protected List<ProcessStep> gatherSteps(Connection connection) {

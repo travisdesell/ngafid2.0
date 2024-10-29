@@ -192,50 +192,41 @@ public class FlightTimeLocation {
     }
 
     public boolean alreadyProcessed(Connection connection) throws SQLException {
-        PreparedStatement stmt = connection.prepareStatement(
-                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?");
-        stmt.setInt(1, fleetId);
-        stmt.setInt(2, flightId);
-        stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "SELECT flight_id FROM flight_processed WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
+            stmt.setInt(1, fleetId);
+            stmt.setInt(2, flightId);
+            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
 
-        System.out.println(stmt.toString());
-
-        // if there was a flight processed entry for this flight it was already processed
-        ResultSet resultSet = stmt.executeQuery();
-        if (resultSet.next()) {
-            System.out.println("already processed!");
-            resultSet.close();
-            stmt.close();
-            return true;
-        } else {
-            System.out.println("not already processed!");
-            resultSet.close();
-            stmt.close();
-            return false;
+            // if there was a flight processed entry for this flight it was already processed
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (resultSet.next()) {
+                    return true;
+                } else {
+                    return false;
+                }
+            }
         }
+
     }
 
     public static boolean proximityAlreadyCalculated(Connection connection, FlightTimeLocation first,
             FlightTimeLocation second) throws SQLException {
-        PreparedStatement stmt = connection
-                .prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? AND other_flight_id = ?");
-        stmt.setInt(1, first.flightId);
-        stmt.setInt(2, second.flightId);
+        try (PreparedStatement stmt = connection
+                .prepareStatement("SELECT flight_id FROM events WHERE flight_id = ? AND other_flight_id = ?")) {
+            stmt.setInt(1, first.flightId);
+            stmt.setInt(2, second.flightId);
 
-        System.out.println(stmt.toString());
-
-        // if there was a flight processed entry for this flight it was already processed
-        ResultSet resultSet = stmt.executeQuery();
-        if (resultSet.next()) {
-            System.out.println("proximity event already exists!");
-            resultSet.close();
-            stmt.close();
-            return true;
-        } else {
-            System.out.println("proximity does not already exist!");
-            resultSet.close();
-            stmt.close();
-            return false;
+            // if there was a flight processed entry for this flight it was already processed
+            try (ResultSet resultSet = stmt.executeQuery()) {
+                if (resultSet.next()) {
+                    System.out.println("proximity event already exists!");
+                    return true;
+                } else {
+                    System.out.println("proximity does not already exist!");
+                    return false;
+                }
+            }
         }
     }
 
@@ -247,23 +238,21 @@ public class FlightTimeLocation {
         double severity = event.getSeverity();
         double duration = event.getDuration();
 
-        PreparedStatement stmt = connection.prepareStatement(
-                "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), max_severity = GREATEST(max_severity, ?) WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?");
-        stmt.setInt(1, fleetId);
-        stmt.setInt(2, flightId);
-        stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
-        stmt.setDouble(4, duration);
-        stmt.setDouble(5, duration);
-        stmt.setDouble(6, duration);
-        stmt.setDouble(7, severity);
-        stmt.setDouble(8, severity);
-        stmt.setDouble(9, severity);
-        System.out.println(stmt.toString());
-        stmt.executeUpdate();
-        stmt.close();
+        try (PreparedStatement stmt = connection.prepareStatement(
+                "UPDATE flight_processed SET count = count + 1, sum_duration = sum_duration + ?, min_duration = LEAST(min_duration, ?), max_duration = GREATEST(max_duration, ?), sum_severity = sum_severity + ?, min_severity = LEAST(min_severity, ?), max_severity = GREATEST(max_severity, ?) WHERE fleet_id = ? AND flight_id = ? AND event_definition_id = ?")) {
+            stmt.setInt(1, fleetId);
+            stmt.setInt(2, flightId);
+            stmt.setInt(3, CalculateProximity.adjacencyEventDefinitionId);
+            stmt.setDouble(4, duration);
+            stmt.setDouble(5, duration);
+            stmt.setDouble(6, duration);
+            stmt.setDouble(7, severity);
+            stmt.setDouble(8, severity);
+            stmt.setDouble(9, severity);
+            stmt.executeUpdate();
+        }
 
         EventStatistics.updateFlightsWithEvent(connection, fleetId, airframeNameId,
                 CalculateProximity.adjacencyEventDefinitionId, startDateTime);
-
     }
 }

@@ -5,9 +5,6 @@ import java.util.Collections;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-import java.nio.file.NoSuchFileException;
-
-import org.ngafid.flights.Flight;
 import org.ngafid.flights.DoubleTimeSeries;
 import static org.ngafid.flights.Parameters.*;
 import static org.ngafid.flights.Airframes.*;
@@ -24,29 +21,40 @@ public class ProcessLaggedAltMSL extends ProcessStep {
         super(connection, builder);
     }
 
-    public Set<String> getRequiredDoubleColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getRequiredStringColumns() { return Collections.<String>emptySet(); }
-    public Set<String> getRequiredColumns() { return REQUIRED_DOUBLE_COLUMNS; }
-    public Set<String> getOutputColumns() { return OUTPUT_COLUMNS; }
-    
+    public Set<String> getRequiredDoubleColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getRequiredStringColumns() {
+        return Collections.<String>emptySet();
+    }
+
+    public Set<String> getRequiredColumns() {
+        return REQUIRED_DOUBLE_COLUMNS;
+    }
+
+    public Set<String> getOutputColumns() {
+        return OUTPUT_COLUMNS;
+    }
+
     public boolean airframeIsValid(String airframe) {
         for (String blacklisted : AIRFRAME_BLACKLIST)
             if (airframe.contains(blacklisted))
                 return false;
-        
+
         return true;
     }
 
     public void compute() throws SQLException, MalformedFlightFileException, FatalFlightFileException {
-        DoubleTimeSeries altMSL = doubleTS.get(ALT_MSL);
-        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(ALT_MSL_LAG_DIFF, UNIT_FT_MSL, altMSL.size());
-        
+        DoubleTimeSeries altMSL = builder.getDoubleTimeSeries(ALT_MSL);
+        DoubleTimeSeries laggedAltMSL = new DoubleTimeSeries(ALT_MSL_LAG_DIFF, Unit.FT_AGL, altMSL.size());
+
         for (int i = 0; i < LAG; i++)
             laggedAltMSL.add(0.0);
         for (int i = LAG; i < altMSL.size(); i++)
             laggedAltMSL.add(altMSL.get(i) - altMSL.get(i - LAG));
 
-        doubleTS.put(ALT_MSL_LAG_DIFF, laggedAltMSL);
+        builder.addTimeSeries(laggedAltMSL);
     }
 
 }

@@ -558,7 +558,8 @@ public class User {
                     return null;
                 user = new User(resultSet);
 
-                String passwordToken = resultSet.getString(12);
+                String passwordToken = resultSet.getString(13);
+                System.out.println("TOKEN = '" + passwordToken + "'");
                 if (!new PasswordAuthentication().authenticate(password.toCharArray(), passwordToken)) {
                     LOG.info("User password was incorrect.");
                     throw new AccountException("Login Error", "Incorrect password.");

@@ -125,7 +125,7 @@ public class ProcessUpload {
                     }
 
                     PreparedStatement uploadsPreparedStatement = connection
-                            .prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ? LIMIT 1");
+                            .prepareStatement("SELECT id FROM uploads WHERE status = ? AND fleet_id = ?");
 
                     uploadsPreparedStatement.setString(1, "UPLOADED");
                     uploadsPreparedStatement.setInt(2, targetFleetId);
@@ -241,19 +241,7 @@ public class ProcessUpload {
             boolean success = ingestFlights(connection, upload, uploadProcessedEmail);
             // only progress if the upload ingestion was successful
             if (success) {
-
-                FindSpinEvents.findSpinEventsInUpload(connection, upload);
-                try {
-                    FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
-                } catch (FatalFlightFileException | MalformedFlightFileException | ParseException e) {
-                }
-
-                CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
-                CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
-
-                CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
                 String endTime = ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd hh:mm:ss z (O)"));
-
                 uploadProcessedEmail.setSubject("NGAFID import of '" + filename + "' email at " + endTime);
 
             } else {
@@ -268,7 +256,7 @@ public class ProcessUpload {
 
             uploadProcessedEmail.sendEmail(connection);
 
-        } catch (IOException | SQLException e) {
+        } catch (SQLException e) {
             LOG.severe("ERROR processing upload: " + e);
             e.printStackTrace();
         }
@@ -300,8 +288,7 @@ public class ProcessUpload {
         int uploaderId = upload.getUploaderId();
         int fleetId = upload.getFleetId();
 
-        String filename = upload.getFilename().toLowerCase();
-        filename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + uploadId + "__" + filename;
+        String filename = upload.getArchivePath().toString();
         LOG.info("processing: '" + filename + "'");
 
         String extension = filename.substring(filename.length() - 4);
@@ -360,8 +347,10 @@ public class ProcessUpload {
         }
 
         // update upload in database, add upload exceptions if there are any
-        try (PreparedStatement updateStatement = connection.prepareStatement(
-                "UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
+        try (
+
+                PreparedStatement updateStatement = connection.prepareStatement(
+                        "UPDATE uploads SET status = ?, n_valid_flights = ?, n_warning_flights = ?, n_error_flights = ? WHERE id = ?")) {
             updateStatement.setString(1, status);
             updateStatement.setInt(2, validFlights);
             updateStatement.setInt(3, warningFlights);
@@ -425,6 +414,22 @@ public class ProcessUpload {
                         uploadProcessedEmail.flightImportWarning(info.filename, exception.getMessage());
                     }
                 }
+            }
+        }
+
+        if (status.equals("IMPORTED")) {
+            try {
+                FindSpinEvents.findSpinEventsInUpload(connection, upload);
+                FindLowEndingFuelEvents.findLowEndFuelEventsInUpload(connection, upload);
+                CalculateExceedences.calculateExceedences(connection, upload.id, uploadProcessedEmail);
+                CalculateProximity.calculateProximity(connection, upload.id, uploadProcessedEmail);
+                CalculateTTF.calculateTTF(connection, upload.id, uploadProcessedEmail);
+            } catch (IOException | SQLException | FatalFlightFileException | MalformedFlightFileException
+                    | ParseException e) {
+                LOG.log(Level.SEVERE, "Got exception calculating events: {0}", e.toString());
+                status = ERROR_STATUS_STR;
+                uploadException = new Exception(
+                        e.toString() + "\nFailed computing events...");
             }
         }
 

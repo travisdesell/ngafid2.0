@@ -29,6 +29,7 @@ import org.ngafid.flights.AirSyncImport;
 import org.ngafid.flights.Upload;
 import org.ngafid.flights.MalformedFlightFileException;
 
+import com.google.common.collect.Lists;
 import com.google.gson.Gson;
 import com.google.gson.reflect.*;
 
@@ -457,6 +458,119 @@ public class AirSyncFleet extends Fleet {
         }
     }
 
+    class AirSyncFleetUpdater implements AutoCloseable {
+        private static final int DOWNLOAD_BATCH_SIZE = 32;
+        private static final int ARCHIVE_MAX_SIZE = 128;
+
+        Upload upload = null;
+        FileSystem zipFile = null;
+        private int filesAdded = 0;
+
+        List<AirSyncAircraft> aircraft;
+
+        AirSyncFleetUpdater() throws IOException {
+            aircraft = getAircraft();
+        }
+
+        Upload getUpload(Connection connection) throws SQLException {
+            if (upload == null) {
+                upload = Upload.createAirsyncUpload(connection, getId());
+            }
+
+            return upload;
+        }
+
+        FileSystem getZipFile() throws IOException {
+            if (zipFile == null) {
+                zipFile = upload.getZipFileSystem(Map.of("create", "true"));
+            }
+
+            return zipFile;
+        }
+
+        void addFileToUpload(Connection connection, AirSyncImport imp, byte[] data) throws IOException, SQLException {
+            var upload = getUpload(connection);
+            imp.setUploadId(upload.id);
+            Files.write(getZipFile().getPath("/" + imp.getFilename()), data);
+            filesAdded += 1;
+
+            if (filesAdded >= 128) {
+                upload.complete(connection);
+                upload = Upload.createAirsyncUpload(connection, getId());
+                zipFile.close();
+                zipFile = null;
+                getZipFile();
+                filesAdded = 0;
+            }
+        }
+
+        void run() throws IOException, SQLException {
+            for (var ac : aircraft) {
+                updateAircraft(ac);
+            }
+
+            try (Connection connection = Database.getConnection()) {
+                AirSyncFleet.this.setLastQueryTime(connection);
+            }
+        }
+
+        void updateAircraft(AirSyncAircraft aircraft) throws IOException, SQLException {
+            List<AirSyncImport> allImports;
+            try (Connection connection = Database.getConnection()) {
+                allImports = aircraft.getImportsForUpdate(connection, AirSyncFleet.this);
+                allImports.sort(new Comparator<AirSyncImport>() {
+                    public int compare(AirSyncImport left, AirSyncImport right) {
+                        return left.getUploadTime().compareTo(right.getUploadTime());
+                    }
+                });
+
+                if (allImports.size() == 0)
+                    return;
+            }
+
+            for (var chunk : Lists.partition(allImports, 32)) {
+                var errors = new ArrayList<IOException>();
+                var downloads = chunk.parallelStream()
+                        .map(imp -> {
+                            try {
+                                return imp.download();
+                            } catch (IOException e) {
+                                synchronized (errors) {
+                                    errors.add(e);
+                                }
+                                return null;
+                            }
+                        })
+                        .collect(Collectors.toList());
+
+                if (errors.size() != 0)
+                    throw errors.get(0);
+
+                try (Connection connection = Database.getConnection()) {
+                    for (int i = 0; i < chunk.size(); i++) {
+                        var imp = chunk.get(i);
+                        var data = downloads.get(i);
+
+                        addFileToUpload(connection, imp, data);
+                    }
+
+                    AirSyncImport.batchCreateImport(connection, chunk, null);
+                }
+            }
+        }
+
+        public void close() throws IOException, SQLException {
+            if (upload != null) {
+                try (Connection connection = Database.getConnection()) {
+                    upload.complete(connection);
+                }
+            }
+            if (zipFile != null)
+                zipFile.close();
+        }
+
+    }
+
     /**
      * Updates this fleet with the AirSync servers
      *
@@ -467,54 +581,10 @@ public class AirSyncFleet extends Fleet {
      * @throws SQLException if the DBMS has an issue
      */
     public String update(Connection connection) throws IOException, SQLException {
-        int nImports = 0;
-
-        Upload upload = Upload.createAirsyncUpload(connection, this.getId());
-        try (FileSystem zipFileSystem = upload.getZipFileSystem(Map.of("create", "true"))) {
-            List<AirSyncAircraft> aircraft = this.getAircraft();
-
-            for (AirSyncAircraft a : aircraft) {
-                Optional<LocalDateTime> aircraftLastImportTime = a.getLastImportTime(connection);
-
-                List<AirSyncImport> imports;
-
-                if (aircraftLastImportTime.isPresent()) {
-                    // We must make the interval exclusive when asking the server for flights
-                    LocalDateTime importTime = aircraftLastImportTime.get().plusSeconds(1);
-                    imports = a.getImportsAfterDate(connection, this, importTime);
-                    LOG.info(String.format("Getting imports for fleet %s after %s.", super.getName(),
-                            importTime.toString()));
-                } else {
-                    imports = a.getImports(connection, this);
-                    LOG.info(String.format(
-                            "Getting all imports for fleet %s, as there are no other uploads waiting for this fleet.",
-                            super.getName()));
-                }
-
-                if (imports != null && !imports.isEmpty()) {
-                    for (var imp : imports) {
-                        if (!imp.exists(connection)) {
-                            imp.setUploadId(upload.id);
-                            byte[] data = imp.download();
-                            Files.write(zipFileSystem.getPath("/" + imp.getFilename()), data);
-                            imp.createImport(connection, null);
-                        }
-                    }
-                } else {
-                    LOG.info("No imports found for aircraft: " + a.getTailNumber() + " in fleet " + super.getName()
-                            + ", continuing.");
-                }
-            }
-
-            this.setLastQueryTime(connection);
-
-            if (nImports > 0) {
-                return String.format("AirSync update complete! %d new flights imported.", nImports);
-            } else {
-                return "No new imports found from AirSync.";
-            }
-        } finally {
-            upload.complete(connection);
+        try (AirSyncFleetUpdater updater = new AirSyncFleetUpdater()) {
+            updater.run();
         }
+
+        return "OK";
     }
 }

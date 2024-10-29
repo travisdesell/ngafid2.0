@@ -91,6 +91,32 @@ public class AirSync {
         System.exit(1);
     }
 
+    static void cli(String[] args) throws IOException, SQLException {
+        switch (args[0]) {
+            case "reset-all":
+                System.out
+                        .println("Do you really want to delete all airsync uploads and associated flights? (y/n)");
+                int c = System.in.read();
+                if (c == 'y') {
+                    try (Connection connection = Database.getConnection();
+                            PreparedStatement query = connection.prepareStatement(
+                                    "SELECT " + Upload.DEFAULT_COLUMNS
+                                            + " FROM uploads WHERE kind = 'AIRSYNC'");
+                            ResultSet results = query.executeQuery()) {
+                        while (results.next()) {
+                            Upload upload = new Upload(results);
+                            upload.reset(connection);
+                        }
+                    }
+                }
+
+                return;
+
+            case "remove-all":
+                break;
+        }
+    }
+
     /**
      * This daemon's entry point.
      * This is where the logic for how the daemon operates will be defined.
@@ -100,12 +126,34 @@ public class AirSync {
     public static void main(String[] args) {
         LOG.info("AirSync daemon started");
 
-        try (Connection connection = Database.getConnection()) {
-            LocalDateTime now = LocalDateTime.now();
-            String timeStamp = new String() + now.getYear() + now.getMonthValue() + now.getDayOfMonth() + "-"
-                    + now.getHour() + now.getMinute() + now.getSecond();
+        if (args.length != 0) {
+            try {
+                cli(args);
+            } catch (IOException | SQLException e) {
+                e.printStackTrace();
+            }
+            return;
+        }
 
-            while (true) {
+        while (true) {
+            try (Connection connection = Database.getConnection()) {
+                // When an airsync upload is created in placed into the `uploads` table, it will have the 'UPLOADING'
+                // state.
+                // These uploads will never get processed if they're state is not set to 'UPLOADED'.
+                //
+                // If the airsync daemmon crashes for some reason, we may end up with such a scenario. So we set any
+                // airsync
+                // uploads with
+                // UPLOADING to have state UPLOADED.
+                try (PreparedStatement query = connection.prepareStatement(
+                        "SELECT " + Upload.DEFAULT_COLUMNS
+                                + " FROM uploads WHERE kind = 'AIRSYNC' AND status = 'UPLOADING'");
+                        ResultSet results = query.executeQuery()) {
+                    while (results.next()) {
+                        Upload upload = new Upload(results);
+                        upload.complete(connection);
+                    }
+                }
                 AirSyncFleet[] airSyncFleets = AirSyncFleet.getAll(connection);
 
                 if (airSyncFleets == null || airSyncFleets.length == 0) {
@@ -131,9 +179,11 @@ public class AirSync {
                 long waitTime = 30000;
                 LOG.info("Sleeping for " + waitTime / 1000 + "s.");
                 Thread.sleep(waitTime);
+            } catch (InterruptedException | SQLException | IOException e) {
+                LOG.severe("Encountered the following error: ");
+                e.printStackTrace();
+                continue;
             }
-        } catch (Exception e) {
-            crashGracefully(e);
         }
     }
 }

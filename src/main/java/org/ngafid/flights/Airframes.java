@@ -10,8 +10,11 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 import java.util.logging.Logger;
+
+import org.ngafid.common.NormalizedColumn;
 
 public class Airframes {
     private static final Logger LOG = Logger.getLogger(Airframes.class.getName());
@@ -80,6 +83,68 @@ public class Airframes {
             AIRFRAME_BEECHCRAFT_A36_G36,
             AIRFRAME_BEECHCRAFT_G58));
 
+    public static Set<String> ROTORCRAFT = Set.of("R44", "Robinson R44");
+
+    public record AliasKey(String name, int fleetId) {
+    }
+
+    public static AliasKey defaultAlias(String name) {
+        return new AliasKey(name, -1);
+    }
+
+    public static Map<AliasKey, String> AIRFRAME_ALIASES = Map.ofEntries(
+            Map.entry(defaultAlias("Unknown Aircraft"), ""),
+            Map.entry(defaultAlias("Garmin Flight Display"), ""),
+            Map.entry(defaultAlias("Diamond DA 40"), "Diamond DA40"),
+            Map.entry(new AliasKey("Garmin Flight Display", 1), "R44"),
+            Map.entry(new AliasKey("Robinson R44 Raven I", 1), "R44"),
+            Map.entry(defaultAlias("Robinson R44"), "R44"),
+            Map.entry(defaultAlias("Cirrus SR22 (3600 GW)"), "Cirrus SR22"));
+
+    public static class Airframe extends NormalizedColumn<Airframe> {
+
+        @Override
+        protected String getTableName() {
+            return "airframes";
+        }
+
+        @Override
+        protected String getNameColumn() {
+            return "airframe";
+        }
+
+        public Airframe(String name) {
+            super(name);
+        }
+
+        public Airframe(Connection connection, String name) throws SQLException {
+            super(connection, name);
+        }
+
+        public Airframe(Connection connection, int id) throws SQLException {
+            super(connection, id);
+        }
+    }
+
+    public static class AirframeType extends NormalizedColumn<Airframe> {
+        @Override
+        protected String getTableName() {
+            return "airframe_types";
+        }
+
+        public AirframeType(String name) {
+            super(name);
+        }
+
+        public AirframeType(Connection connection, String name) throws SQLException {
+            super(connection, name);
+        }
+
+        public AirframeType(Connection connection, int id) throws SQLException {
+            super(connection, id);
+        }
+    }
+
     public static void setAirframeFleet(Connection connection, int airframeId, int fleetId) throws SQLException {
         String key = airframeId + "-" + fleetId;
 
@@ -96,137 +161,6 @@ public class Airframes {
                 query.executeUpdate();
 
                 fleetAirframes.add(key);
-            }
-        }
-    }
-
-    public static int getNameId(Connection connection, String airframeName) throws SQLException {
-        Integer id = nameIdMap.get(airframeName);
-
-        if (id != null) {
-            return id;
-        } else {
-            // id wasn't in the hashmap, look it up
-            String queryString = "SELECT id FROM airframes WHERE airframe = ?";
-
-            try (PreparedStatement query = connection.prepareStatement(queryString)) {
-                query.setString(1, airframeName);
-
-                // LOG.info(query.toString());
-                try (ResultSet resultSet = query.executeQuery()) {
-                    if (resultSet.next()) {
-                        // airframe existed in the database, return the id
-                        int airframeNameId = resultSet.getInt(1);
-                        nameIdMap.put(airframeName, airframeNameId);
-
-                        return airframeNameId;
-                    }
-                }
-
-                // airframe did not exist in the database, insert it and return it's generated id
-                queryString = "INSERT IGNORE INTO airframes SET airframe = ?";
-                try (PreparedStatement airframeQuery = connection.prepareStatement(queryString)) {
-                    airframeQuery.setString(1, airframeName);
-
-                    // LOG.info(query.toString());
-                    airframeQuery.executeUpdate();
-
-                    // Recursive call, because if `INSERT IGNORE` ignores the raw, we can't use
-                    // `query.getGeneratedKeys()`
-                    // to get the newly generated airframe id.
-                    return getNameId(connection, airframeName);
-                }
-            }
-        }
-    }
-
-    public static String getAirframeName(Connection connection, int airframeNameId) throws SQLException {
-        String airframeName = airframeNameMap.get(airframeNameId);
-
-        if (airframeName != null) {
-            return airframeName;
-
-        } else {
-            // id wasn't in the hashmap, look it up
-            String queryString = "SELECT airframe FROM airframes WHERE id = " + airframeNameId;
-            try (PreparedStatement query = connection.prepareStatement(queryString);
-                    ResultSet resultSet = query.executeQuery()) {
-
-                if (resultSet.next()) {
-                    // airframeName existed in the database, return the id
-                    airframeName = resultSet.getString(1);
-                    airframeNameMap.put(airframeNameId, airframeName);
-
-                    resultSet.close();
-                    query.close();
-                    return airframeName;
-                } else {
-                    // airframeName id did not exist in the database, this should not happen -- return null
-                    return null;
-                }
-            }
-        }
-    }
-
-    public static int getTypeId(Connection connection, String airframeType) throws SQLException {
-        Integer id = typeIdMap.get(airframeType);
-
-        if (id != null) {
-            return id;
-
-        } else {
-            // id wasn't in the hashmap, look it up
-            String queryString = "SELECT id FROM airframe_types WHERE name = ?";
-            try (PreparedStatement query = connection.prepareStatement(queryString)) {
-                query.setString(1, airframeType);
-
-                // LOG.info(query.toString());
-                try (ResultSet resultSet = query.executeQuery()) {
-
-                    if (resultSet.next()) {
-                        // airframe existed in the database, return the id
-                        int airframeTypeId = resultSet.getInt(1);
-                        typeIdMap.put(airframeType, airframeTypeId);
-
-                        return airframeTypeId;
-                    } else {
-                        // TODO: We need a better way to throw non-recoverable errors e.g. FatalFlightFileException but
-                        // not for flight files in particular
-                        System.err.println(
-                                "ERROR: tried to look up airframe type '" + airframeType
-                                        + "' and it was not in the database.");
-                        System.err.println("Please update the airframe_types table with this new airframe type");
-                        System.exit(1);
-                        return -1;
-                    }
-                }
-            }
-        }
-    }
-
-    public static String getAirframeType(Connection connection, int airframeTypeId) throws SQLException {
-        String airframeType = airframeTypeMap.get(airframeTypeId);
-
-        if (airframeType != null) {
-            return airframeType;
-        } else {
-            // id wasn't in the hashmap, look it up
-            String queryString = "SELECT name FROM airframe_types WHERE id = ?";
-            try (PreparedStatement query = connection.prepareStatement(queryString)) {
-                query.setInt(1, airframeTypeId);
-
-                try (ResultSet resultSet = query.executeQuery()) {
-                    if (resultSet.next()) {
-                        // airframeType existed in the database, return the id
-                        airframeType = resultSet.getString(1);
-                        airframeTypeMap.put(airframeTypeId, airframeType);
-
-                        return airframeType;
-                    } else {
-                        // airframeType id did not exist in the database, this should not happen -- return null
-                        return null;
-                    }
-                }
             }
         }
     }

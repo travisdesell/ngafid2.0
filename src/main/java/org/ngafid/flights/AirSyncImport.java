@@ -203,25 +203,44 @@ public class AirSyncImport {
      * @throws SQLException if there is an issue with the DBMS
      */
     public void createImport(Connection connection, Flight flight) throws SQLException {
+        try (PreparedStatement query = createPreparedStatement(connection)) {
+            this.addBatch(query, flight);
+            query.executeUpdate();
+        }
+    }
+
+    public static PreparedStatement createPreparedStatement(Connection connection) throws SQLException {
         String sql = "INSERT INTO airsync_imports(id, tail, time_received, upload_id, fleet_id, flight_id) VALUES (?, ?, ?, ?, ?, ?)";
-        try (PreparedStatement query = connection.prepareStatement(sql)) {
-            query.setInt(1, this.id);
-            query.setString(2, this.aircraft.getTailNumber());
+        return connection.prepareStatement(sql);
+    }
 
-            // NOTE: this is the time that we recieve the CSV, not the time
-            // that AirSync recieves it.
-            query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
-            query.setInt(4, this.uploadId);
-            query.setInt(5, this.fleet.getId());
-
-            if (flight != null) {
-                query.setInt(6, flight.getId());
-            } else {
-                query.setNull(6, java.sql.Types.INTEGER);
-            }
+    public static void batchCreateImport(Connection connection, List<AirSyncImport> imports, Flight flight)
+            throws SQLException {
+        try (PreparedStatement query = createPreparedStatement(connection)) {
+            for (var imp : imports)
+                imp.addBatch(query, flight);
 
             query.executeUpdate();
         }
+    }
+
+    public void addBatch(PreparedStatement query, Flight flight) throws SQLException {
+        query.setInt(1, this.id);
+        query.setString(2, this.aircraft.getTailNumber());
+
+        // NOTE: this is the time that we recieve the CSV, not the time
+        // that AirSync recieves it.
+        query.setTimestamp(3, Timestamp.valueOf(LocalDateTime.now()));
+        query.setInt(4, this.uploadId);
+        query.setInt(5, this.fleet.getId());
+
+        if (flight != null) {
+            query.setInt(6, flight.getId());
+        } else {
+            query.setNull(6, java.sql.Types.INTEGER);
+        }
+
+        query.addBatch();
     }
 
     /**
@@ -254,7 +273,7 @@ public class AirSyncImport {
 
         try (PreparedStatement query = connection.prepareStatement(sql)) {
             query.setInt(1, fleetId);
-            query.setInt(2, getUploaderId());
+            query.setInt(2, -1);
 
             try (ResultSet resultSet = query.executeQuery()) {
                 List<Upload> uploads = new ArrayList<>();

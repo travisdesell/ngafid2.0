@@ -213,18 +213,16 @@ public class EventDefinition {
         List<EventDefinition> definitions = new ArrayList<>();
 
         String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE name = ?";
-        PreparedStatement statement = connection.prepareStatement(query);
-        statement.setString(1, eventName);
+        try (PreparedStatement statement = connection.prepareStatement(query)) {
+            statement.setString(1, eventName);
 
-        ResultSet resultSet = statement.executeQuery();
-
-        while (resultSet.next()) {
-            EventDefinition ed = new EventDefinition(resultSet);
-            definitions.add(ed);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    EventDefinition ed = new EventDefinition(resultSet);
+                    definitions.add(ed);
+                }
+            }
         }
-
-        statement.close();
-        resultSet.close();
 
         NAME_TO_EVENT_DEFINITIONS.put(eventName, definitions);
 
@@ -236,16 +234,15 @@ public class EventDefinition {
     public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
         if (EVENT_DEFINITION_ID_TO_NAME == null) {
             String query = "SELECT id, name FROM event_definitions";
-            PreparedStatement ps = connection.prepareStatement(query);
+            try (PreparedStatement ps = connection.prepareStatement(query); ResultSet resultSet = ps.executeQuery()) {
 
-            ResultSet resultSet = ps.executeQuery();
+                EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
 
-            EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
-
-            while (resultSet.next()) {
-                int id = resultSet.getInt("id");
-                String name = resultSet.getString("name");
-                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+                while (resultSet.next()) {
+                    int id = resultSet.getInt("id");
+                    String name = resultSet.getString("name");
+                    EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+                }
             }
         }
 
@@ -499,7 +496,7 @@ public class EventDefinition {
         int airframeNameID = 0;
 
         if (!airframe.equals("All Airframes")) {
-            airframeNameID = Airframes.getNameId(connection, airframe);
+            airframeNameID = new Airframes.Airframe(connection, airframe).getId();
         }
 
         update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson,
@@ -525,21 +522,21 @@ public class EventDefinition {
 
         String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
 
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, fleetId);
-        preparedStatement.setString(2, name);
-        preparedStatement.setInt(3, startBuffer);
-        preparedStatement.setInt(4, stopBuffer);
-        preparedStatement.setInt(5, airframeNameID);
-        preparedStatement.setString(6, filterJson);
-        preparedStatement.setString(7, columnNamesJson);
-        preparedStatement.setString(8, severityColumnNamesJson);
-        preparedStatement.setString(9, severityType);
-        preparedStatement.setInt(10, eventId);
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, fleetId);
+            preparedStatement.setString(2, name);
+            preparedStatement.setInt(3, startBuffer);
+            preparedStatement.setInt(4, stopBuffer);
+            preparedStatement.setInt(5, airframeNameID);
+            preparedStatement.setString(6, filterJson);
+            preparedStatement.setString(7, columnNamesJson);
+            preparedStatement.setString(8, severityColumnNamesJson);
+            preparedStatement.setString(9, severityType);
+            preparedStatement.setInt(10, eventId);
 
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
     }
 
     /**
@@ -583,7 +580,7 @@ public class EventDefinition {
                 preparedStatement.executeUpdate();
             }
         } else {
-            int airframeNameId = Airframes.getNameId(connection, airframe);
+            int airframeNameId = new Airframes.Airframe(connection, airframe).getId();
             String query = "INSERT INTO event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ?";
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {

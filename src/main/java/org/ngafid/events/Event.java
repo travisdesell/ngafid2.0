@@ -325,7 +325,7 @@ public class Event {
      */
     public static ArrayList<Event> getAll(Connection connection, int flightId) throws SQLException {
         String query = "SELECT id, fleet_id, flight_id, event_definition_id, start_line, end_line, start_time, end_time, severity, other_flight_id FROM events WHERE flight_id = "
-                + flightId + "ORDER BY start_time";
+                + flightId + " ORDER BY start_time";
 
         try (PreparedStatement preparedStatement = connection.prepareStatement(query);
                 ResultSet resultSet = preparedStatement.executeQuery()) {
@@ -363,7 +363,7 @@ public class Event {
 
         // get a map of the airframe ids to airframe names
         for (String airframe : fleetAirframes) {
-            airframeIds.put(Airframes.getNameId(connection, airframe), airframe);
+            airframeIds.put(new Airframes.Airframe(connection, airframe).getId(), airframe);
 
             eventsByAirframe.put(airframe, new ArrayList<Event>());
         }

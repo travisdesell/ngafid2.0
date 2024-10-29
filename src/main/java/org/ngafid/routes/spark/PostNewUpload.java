@@ -43,22 +43,6 @@ public class PostNewUpload implements Route {
         int uploaderId = user.getId();
         int fleetId = user.getFleetId();
 
-        /*
-         * String location = "image"; // the directory location where files will be
-         * stored
-         * long maxFileSize = 100000000; // the maximum size allowed for uploaded files
-         * long maxRequestSize = 100000000; // the maximum size allowed for
-         * multipart/form-data requests
-         * int fileSizeThreshold = 1024; // the size threshold after which files will be
-         * written to disk
-         * 
-         * MultipartConfigElement multipartConfigElement = new MultipartConfigElement(
-         * location, maxFileSize, maxRequestSize, fileSizeThreshold);
-         * 
-         * request.raw().setAttribute("org.eclipse.jetty.multipartConfig",
-         * multipartConfigElement);
-         */
-
         request.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/mnt/ngafid/temp"));
 
         String idToken = request.queryParams("idToken");
@@ -100,41 +84,38 @@ public class PostNewUpload implements Route {
 
         try (Connection connection = Database.getConnection()) {
 
-            PreparedStatement query = connection.prepareStatement(
-                    "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?");
-            query.setString(1, md5Hash);
-            query.setInt(2, uploaderId);
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?")) {
+                query.setString(1, md5Hash);
+                query.setInt(2, uploaderId);
 
-            ResultSet resultSet = query.executeQuery();
+                try (ResultSet resultSet = query.executeQuery()) {
 
-            if (!resultSet.next()) {
-                Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
-                        Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
+                    if (!resultSet.next()) {
+                        Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
+                                Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
 
-                return gson.toJson(upload);
+                        return gson.toJson(upload);
+                    } else {
+                        // a file with this md5 hash exists
+                        String dbStatus = resultSet.getString(5);
+                        String dbFilename = resultSet.getString(6);
 
-            } else {
-                // a file with this md5 hash exists
-                String dbMd5Hash = resultSet.getString(1);
-                int dbNumberChunks = resultSet.getInt(2);
-                int dbUploadedChunks = resultSet.getInt(3);
-                String dbChunkStatuts = resultSet.getString(4);
-                String dbStatus = resultSet.getString(5);
-                String dbFilename = resultSet.getString(6);
+                        if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
+                            // 3. file does exist and has finished uploading -- report finished
+                            // do the same thing, client will handle completion
+                            LOG.severe("ERROR! Final file has already been uploaded.");
 
-                if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
-                    // 3. file does exist and has finished uploading -- report finished
-                    // do the same thing, client will handle completion
-                    LOG.severe("ERROR! Final file has already been uploaded.");
+                            return gson.toJson(new ErrorResponse("File Already Exists",
+                                    "This file has already been uploaded to the server as '" + dbFilename
+                                            + "' and does not need to be uploaded again."));
 
-                    return gson.toJson(new ErrorResponse("File Already Exists",
-                            "This file has already been uploaded to the server as '" + dbFilename
-                                    + "' and does not need to be uploaded again."));
+                        } else {
+                            // 2. file does exist and has not finished uploading -- restart upload
 
-                } else {
-                    // 2. file does exist and has not finished uploading -- restart upload
-
-                    return gson.toJson(Upload.getUploadByUser(connection, uploaderId, md5Hash));
+                            return gson.toJson(Upload.getUploadByUser(connection, uploaderId, md5Hash));
+                        }
+                    }
                 }
             }
         } catch (SQLException e) {

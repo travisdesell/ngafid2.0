@@ -9,8 +9,9 @@ import org.ngafid.flights.*;
 import static org.ngafid.flights.Parameters.*;
 
 public class DATFlightBuilder extends FlightBuilder {
-    
-    public DATFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries, Map<String, StringTimeSeries> stringTimeSeries) {
+
+    public DATFlightBuilder(FlightMeta meta, Map<String, DoubleTimeSeries> doubleTimeSeries,
+            Map<String, StringTimeSeries> stringTimeSeries) {
         super(meta, doubleTimeSeries, stringTimeSeries);
     }
 
@@ -26,7 +27,7 @@ public class DATFlightBuilder extends FlightBuilder {
         processSteps.stream().map(factory -> factory.create(connection, this)).forEach(steps::add);
 
         // Not every DAT file has AGL.
-        if (!doubleTimeSeries.containsKey(ALT_AGL)) {
+        if (getDoubleTimeSeries(ALT_AGL) == null) {
             steps.add(new ProcessAltAGL(connection, this));
         }
 

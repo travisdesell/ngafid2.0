@@ -47,17 +47,19 @@ public class HeadingTrackDiff implements Calculation {
 
     public boolean existsInDB(Connection connection) throws SQLException {
         String sql = "SELECT EXISTS (SELECT id FROM double_series WHERE name_id IN (SELECT id FROM double_series_names WHERE name = ?) AND flight_id = ?)";
-        PreparedStatement query = connection.prepareStatement(sql);
+        try (PreparedStatement query = connection.prepareStatement(sql)) {
 
-        query.setString(1, HDG_TRK_DIFF);
-        query.setInt(2, this.flight.getId());
+            query.setString(1, HDG_TRK_DIFF);
+            query.setInt(2, this.flight.getId());
 
-        ResultSet resultSet = query.executeQuery();
-        if (resultSet.next()) {
-            return resultSet.getBoolean(1);
+            try (ResultSet resultSet = query.executeQuery()) {
+                if (resultSet.next()) {
+                    return resultSet.getBoolean(1);
+                }
+            }
+
+            return false;
         }
-
-        return false;
     }
 
     public static void main(String[] args) {

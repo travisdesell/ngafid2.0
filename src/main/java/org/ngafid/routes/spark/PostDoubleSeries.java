@@ -114,8 +114,6 @@ public class PostDoubleSeries implements Route {
             // need to convert NaNs to null so they can be parsed by JSON
             output = output.replaceAll("NaN", "null");
 
-            // LOG.info(output);
-
             return output;
         } catch (SQLException | IOException e) {
             e.printStackTrace();

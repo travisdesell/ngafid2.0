@@ -137,18 +137,18 @@ public class Upload {
      */
     public static void clearUpload(Connection connection, int uploadId) throws SQLException {
         String query = "DELETE FROM upload_errors WHERE upload_id = ?";
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, uploadId);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, uploadId);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
 
         query = "DELETE FROM flight_errors WHERE upload_id = ?";
-        preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, uploadId);
-        LOG.info(preparedStatement.toString());
-        preparedStatement.executeUpdate();
-        preparedStatement.close();
+        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+            preparedStatement.setInt(1, uploadId);
+            LOG.info(preparedStatement.toString());
+            preparedStatement.executeUpdate();
+        }
 
         ArrayList<Flight> flights = Flight.getFlightsFromUpload(connection, uploadId);
 
@@ -243,24 +243,21 @@ public class Upload {
     public void remove(Connection connection) throws SQLException {
         this.clearUpload(connection);
 
-        String query = "DELETE FROM uploads WHERE id = ?";
-        try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+        if (kind == Kind.AIRSYNC) {
+            try (PreparedStatement preparedStatement = connection
+                    .prepareStatement("DELETE FROM airsync_imports WHERE upload_id = " + this.id)) {
+                preparedStatement.executeUpdate();
+            }
+        }
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement("DELETE FROM uploads WHERE id = ?")) {
             preparedStatement.setInt(1, this.id);
             LOG.info(preparedStatement.toString());
             preparedStatement.executeUpdate();
         }
 
-        String archiveFilename = WebServer.NGAFID_ARCHIVE_DIR + "/" + fleetId + "/" + uploaderId + "/" + filename;
-
-        LOG.info("deleting archive file: '" + archiveFilename + "'");
-        File archiveFile = new File(archiveFilename);
+        File archiveFile = new File(this.getArchivePath().toUri());
         archiveFile.delete();
-
-        String uploadDirectory = WebServer.NGAFID_UPLOAD_DIR + "/" + fleetId + "/" + uploaderId + "/" + identifier;
-
-        LOG.info("deleting directory: '" + uploadDirectory + "'");
-
-        Upload.deleteDirectory(new File(uploadDirectory));
     }
 
     public static Upload getUploadByUser(Connection connection, int uploaderId, String md5Hash) throws SQLException {
@@ -346,48 +343,47 @@ public class Upload {
     public static Upload createUpload(Connection connection, int uploaderId, int fleetId, Integer parentId,
             String filename, String identifier, Kind kind, long size, int numberChunks, String md5hash,
             int uploadedChunks, String chunkStatus, String uploadStatus) throws SQLException {
-        PreparedStatement query = connection.prepareStatement(
-                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()");
-        query.setInt(1, uploaderId);
-        query.setInt(2, fleetId);
+        try (PreparedStatement query = connection.prepareStatement(
+                "INSERT INTO uploads SET uploader_id = ?, fleet_id = ?, parent_id = ?, filename = ?, identifier = ?, kind = ?, size_bytes = ?, number_chunks = ?, md5_hash=?, uploaded_chunks = ?, chunk_status = ?, status = ?, start_time = now()")) {
+            query.setInt(1, uploaderId);
+            query.setInt(2, fleetId);
 
-        if (parentId != null)
-            query.setInt(3, parentId);
-        else
-            query.setNull(3, java.sql.Types.INTEGER);
+            if (parentId != null)
+                query.setInt(3, parentId);
+            else
+                query.setNull(3, java.sql.Types.INTEGER);
 
-        query.setString(4, filename);
-        query.setString(5, identifier);
-        query.setString(6, kind.name());
-        query.setLong(7, size);
-        query.setInt(8, numberChunks);
-        query.setString(9, md5hash);
-        query.setInt(10, uploadedChunks);
-        query.setString(11, chunkStatus);
-        query.setString(12, uploadStatus);
-        LOG.info("QUERY: " + query.toString());
-        query.executeUpdate();
+            query.setString(4, filename);
+            query.setString(5, identifier);
+            query.setString(6, kind.name());
+            query.setLong(7, size);
+            query.setInt(8, numberChunks);
+            query.setString(9, md5hash);
+            query.setInt(10, uploadedChunks);
+            query.setString(11, chunkStatus);
+            query.setString(12, uploadStatus);
 
-        return Upload.getUploadByUser(connection, uploaderId, md5hash);
+            LOG.info("QUERY: " + query.toString());
+            query.executeUpdate();
+
+            return Upload.getUploadByUser(connection, uploaderId, md5hash);
+        }
     }
 
     public static Upload getUploadById(Connection connection, int uploadId, String md5Hash) throws SQLException {
-        PreparedStatement uploadQuery = connection
-                .prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ? AND md5_hash = ?");
-        uploadQuery.setInt(1, uploadId);
-        uploadQuery.setString(2, md5Hash);
-        ResultSet resultSet = uploadQuery.executeQuery();
-
-        if (resultSet.next()) {
-            Upload upload = new Upload(resultSet);
-            resultSet.close();
-            uploadQuery.close();
-            return upload;
-        } else {
-            // TODO: maybe need to throw an exception
-            resultSet.close();
-            uploadQuery.close();
-            return null;
+        try (PreparedStatement uploadQuery = connection
+                .prepareStatement("SELECT " + DEFAULT_COLUMNS + " FROM uploads WHERE id = ? AND md5_hash = ?")) {
+            uploadQuery.setInt(1, uploadId);
+            uploadQuery.setString(2, md5Hash);
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                if (resultSet.next()) {
+                    Upload upload = new Upload(resultSet);
+                    return upload;
+                } else {
+                    // TODO: maybe need to throw an exception
+                    return null;
+                }
+            }
         }
     }
 
@@ -401,7 +397,7 @@ public class Upload {
         // md5Hash, sizeBytes, bytesUploaded, status, startTime, endTime, validFlights,
         // warningFlights, errorFlights FROM uploads WHERE fleetId = ?");
         String query = "SELECT " + DEFAULT_COLUMNS
-                + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? ORDER BY start_time DESC";
+                + " FROM uploads WHERE fleet_id = ? AND uploader_id != ? ORDER BY start_time DESC ";
         if (condition != null)
             query += " " + condition;
 
@@ -431,19 +427,16 @@ public class Upload {
         if (condition != null)
             query += " " + condition;
 
-        PreparedStatement uploadQuery = connection.prepareStatement(query);
+        try (PreparedStatement uploadQuery = connection.prepareStatement(query)) {
+            uploadQuery.setInt(1, AirSyncImport.getUploaderId());
 
-        uploadQuery.setInt(1, AirSyncImport.getUploaderId());
+            try (ResultSet resultSet = uploadQuery.executeQuery()) {
+                resultSet.next();
+                int count = resultSet.getInt(1);
 
-        ResultSet resultSet = uploadQuery.executeQuery();
-
-        resultSet.next();
-        int count = resultSet.getInt(1);
-
-        resultSet.close();
-        uploadQuery.close();
-
-        return count;
+                return count;
+            }
+        }
     }
 
     public static List<Upload> getUploads(Connection connection, int fleetId, String[] types) throws SQLException {
@@ -628,12 +621,12 @@ public class Upload {
     public void complete(Connection connection) throws SQLException {
         status = "UPLOADED";
 
-        PreparedStatement query = connection
-                .prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?");
-        query.setString(1, status);
-        query.setInt(2, id);
-        query.executeUpdate();
-        query.close();
+        try (PreparedStatement query = connection
+                .prepareStatement("UPDATE uploads SET status = ?, end_time = now() WHERE id = ?")) {
+            query.setString(1, status);
+            query.setInt(2, id);
+            query.executeUpdate();
+        }
     }
 
     public void chunkUploaded(Connection connection, int chunkNumber, long chunkSize) throws SQLException {
@@ -645,14 +638,14 @@ public class Upload {
 
         chunkStatus = statusSB.toString();
 
-        PreparedStatement query = connection.prepareStatement(
-                "UPDATE uploads SET uploaded_chunks = ?, bytes_uploaded = ?, chunk_status = ? WHERE id = ?");
-        query.setInt(1, uploadedChunks);
-        query.setLong(2, bytesUploaded);
-        query.setString(3, chunkStatus);
-        query.setInt(4, id);
-        query.executeUpdate();
-        query.close();
+        try (PreparedStatement query = connection.prepareStatement(
+                "UPDATE uploads SET uploaded_chunks = ?, bytes_uploaded = ?, chunk_status = ? WHERE id = ?")) {
+            query.setInt(1, uploadedChunks);
+            query.setLong(2, bytesUploaded);
+            query.setString(3, chunkStatus);
+            query.setInt(4, id);
+            query.executeUpdate();
+        }
     }
 
     public void getAirSyncInfo(Connection connection) throws SQLException {
@@ -661,24 +654,21 @@ public class Upload {
 
         this.groupString = Month.of(month) + " " + dateInfo[2];
 
-        String sql = "SELECT DISTINCT tail FROM airsync_imports WHERE upload_id = ?";
-        PreparedStatement query = connection.prepareStatement(sql);
-
-        query.setInt(1, this.id);
-
-        ResultSet resultSet = query.executeQuery();
-
-        if (resultSet.next()) {
-            tail = resultSet.getString(1);
+        String sql = "SELECT DISTINCT tail FROM airsync_imports WHERE upload_id = " + id;
+        try (PreparedStatement query = connection.prepareStatement(sql); ResultSet resultSet = query.executeQuery()) {
 
             if (resultSet.next()) {
-                // This should not happen!
-                tail = null;
+                tail = resultSet.getString(1);
 
-                // It indicates that more than one aircraft is grouped into an
-                // AirSync upload, which is not intended!
-                LOG.severe("This should not be happening! Multiple tails in one AirSync upload! "
-                        + Thread.currentThread().getStackTrace().toString());
+                if (resultSet.next()) {
+                    // This should not happen!
+                    tail = null;
+
+                    // It indicates that more than one aircraft is grouped into an
+                    // AirSync upload, which is not intended!
+                    LOG.severe("This should not be happening! Multiple tails in one AirSync upload! "
+                            + Thread.currentThread().getStackTrace().toString());
+                }
             }
         }
     }

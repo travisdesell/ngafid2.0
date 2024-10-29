@@ -258,4 +258,16 @@ public class AirSyncAircraft {
         return imports;
     }
 
+    public List<AirSyncImport> getImportsForUpdate(Connection connection, AirSyncFleet fleet)
+            throws IOException, SQLException {
+        var lastImportTime = getLastImportTime(connection);
+        if (lastImportTime.isPresent()) {
+            // We must make the interval exclusive when asking the server for flights
+            LocalDateTime importTime = lastImportTime.get().plusSeconds(1);
+            return getImportsAfterDate(connection, fleet, importTime);
+        } else {
+            return getImports(connection, fleet);
+        }
+    }
+
 }
