@@ -1,20 +1,19 @@
-package org.ngafid.routes.spark;
+package org.ngafid.routes;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import io.javalin.http.Context;
 import org.ngafid.Database;
 
 import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
 
-import spark.Request;
-
 public class Navbar {
-    public static String getJavascript(Request request) {
-        User user = request.session().attribute("user");
+    public static String getJavascript(Context ctx) {
+        User user = ctx.sessionAttribute("user");
 
         boolean fleetManager = false;
         boolean airSyncEnabled = false;

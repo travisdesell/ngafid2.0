@@ -7,6 +7,7 @@ import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.MustacheHandler;
+import org.ngafid.routes.Navbar;
 
 import java.io.IOException;
 import java.sql.Connection;
@@ -159,5 +160,27 @@ public class AccountJavalinRoutes {
         ctx.result(MustacheHandler.handle(templateFile, scopes));
     }
 
+    public static void getResetPassword(Context ctx) throws IOException {
+        final String templateFile = "reset_password.html";
+        Map<String, Object> scopes = new HashMap<String, Object>();
 
+        LOG.info("template file: '" + templateFile + "'");
+
+        ctx.contentType("text/html");
+        ctx.result(MustacheHandler.handle(templateFile, scopes));
+    }
+
+    public static void getUpdatePassword(Context ctx) throws IOException {
+        final String templateFile = "update_password.html";
+        Map<String, Object> scopes = new HashMap<String, Object>();
+        User user = ctx.sessionAttribute("user");
+
+        LOG.info("template file: '" + templateFile + "'");
+
+        scopes.put("navbar_js", Navbar.getJavascript(ctx));
+        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user)  + "');");
+
+        ctx.contentType("text/html");
+        ctx.result(MustacheHandler.handle(templateFile, scopes));
+    }
 }

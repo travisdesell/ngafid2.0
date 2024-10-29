@@ -1,4 +1,3 @@
-package org.ngafid.routes.spark;
 
 import java.io.IOException;
 import java.io.PrintWriter;
