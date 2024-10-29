@@ -1,4 +1,4 @@
-package org.ngafid.routes.spark;
+package org.ngafid.routes;
 
 import java.util.List;
 
