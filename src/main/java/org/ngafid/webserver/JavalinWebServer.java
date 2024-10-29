@@ -1,6 +1,7 @@
 package org.ngafid.webserver;
 
 import io.javalin.Javalin;
+import io.javalin.http.staticfiles.Location;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
@@ -55,7 +56,7 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureStaticFilesLocation() {
-        app.unsafeConfig().staticFiles.add(staticFilesLocation);
+        app.unsafeConfig().staticFiles.add(staticFilesLocation, Location.EXTERNAL);
     }
 
     @Override
