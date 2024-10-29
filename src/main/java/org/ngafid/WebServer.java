@@ -9,7 +9,6 @@ import com.google.gson.stream.JsonWriter;
 import org.ngafid.accounts.EmailType;
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.webserver.JavalinWebServer;
-import org.ngafid.webserver.SparkWebServer;
 
 import java.io.IOException;
 import java.io.InputStream;

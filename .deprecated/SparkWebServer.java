@@ -11,7 +11,6 @@ import org.ngafid.accounts.User;
 import org.ngafid.routes.spark.event_def_mgmt.DeleteEventDefinitions;
 import org.ngafid.routes.spark.event_def_mgmt.GetAllEventDefinitions;
 import org.ngafid.routes.spark.event_def_mgmt.PutEventDefinitions;
-import org.ngafid.routes.spark.*;
 import spark.Service;
 import spark.Spark;
 
