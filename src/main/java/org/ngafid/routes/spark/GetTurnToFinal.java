@@ -10,6 +10,7 @@ import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.events.Event;
 import org.ngafid.flights.*;
+import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;

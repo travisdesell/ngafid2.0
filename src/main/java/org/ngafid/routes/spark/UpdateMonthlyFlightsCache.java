@@ -2,6 +2,7 @@ package org.ngafid.routes.spark;
 
 import com.google.gson.Gson;
 import org.ngafid.Database;
+import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;

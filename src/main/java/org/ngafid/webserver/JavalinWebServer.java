@@ -5,9 +5,6 @@ import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
 import org.ngafid.routes.javalin.HomeJavalinRoutes;
-import org.ngafid.routes.spark.GetHome;
-import org.ngafid.routes.spark.GetSandbox;
-import spark.Spark;
 
 import java.util.logging.Logger;
 
@@ -17,6 +14,7 @@ public class JavalinWebServer extends WebServer {
 
     public JavalinWebServer(int port, String staticFilesLocation) {
         super(port, staticFilesLocation);
+        LOG.info("Using static files location: " + staticFilesLocation);
         app.start();
     }
 

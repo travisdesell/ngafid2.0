@@ -53,11 +53,11 @@
 
 
         <!-- Spark Java library -->
-        <dependency>
-            <groupId>com.sparkjava</groupId>
-            <artifactId>spark-core</artifactId>
-            <version>${spark.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.sparkjava</groupId>-->
+<!--            <artifactId>spark-core</artifactId>-->
+<!--            <version>${spark.version}</version>-->
+<!--        </dependency>-->
 
 
         <!-- Javalin Webserver -->
@@ -66,7 +66,6 @@
             <artifactId>javalin-bundle</artifactId>
             <version>${javalin.version}</version>
         </dependency>
-
 
         <!-- JSON utils -->
         <dependency>
@@ -169,6 +168,11 @@
                             <arg>-Xmaxwarns</arg>
                             <arg>50000</arg>
                         </compilerArgs>
+<!--                        Exclude everything under org.ngafid.routes.spark-->
+                        <excludes>
+                            <exclude>org/ngafid/routes/spark/**</exclude>
+                            <exclude>org/ngafid/webserver</exclude>
+                        </excludes>
                     </configuration>
                     </plugin>
                 <plugin>

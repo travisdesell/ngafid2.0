@@ -20,6 +20,7 @@ import com.google.gson.Gson;
 import javax.servlet.MultipartConfigElement;
 import javax.servlet.http.Part;
 
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

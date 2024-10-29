@@ -20,6 +20,7 @@ import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 
 import org.ngafid.flights.StringTimeSeries;
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

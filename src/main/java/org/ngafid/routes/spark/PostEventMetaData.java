@@ -8,6 +8,7 @@ import org.ngafid.Database;
 import org.ngafid.events.EventMetaData;
 
 import com.google.gson.Gson;
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

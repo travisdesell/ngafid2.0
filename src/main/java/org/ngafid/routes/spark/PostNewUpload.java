@@ -11,6 +11,7 @@ import com.google.gson.Gson;
 
 import javax.servlet.MultipartConfigElement;
 
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

@@ -9,6 +9,7 @@ import java.sql.SQLException;
 
 import com.google.gson.Gson;
 
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

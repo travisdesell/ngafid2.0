@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.events.EventStatistics;
+import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;

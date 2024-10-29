@@ -6,6 +6,7 @@ import java.sql.Connection;
 
 import com.google.gson.Gson;
 
+import org.ngafid.routes.ErrorResponse;
 import spark.Route;
 import spark.Request;
 import spark.Response;

@@ -5,6 +5,7 @@ import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.filters.StoredFilter;
 
+import org.ngafid.routes.ErrorResponse;
 import spark.Request;
 import spark.Response;
 import spark.Route;

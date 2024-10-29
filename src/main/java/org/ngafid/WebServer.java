@@ -160,7 +160,7 @@ public abstract class WebServer {
      * @param args Command line arguments; none expected.
      */
     public static void main(String[] args) {
-        String staticFiles = getEnvironmentVariable("SPARK_STATIC_FILES");
+        String staticFiles = getEnvironmentVariable("JAVALIN_STATIC_FILES");
         int port = Integer.parseInt(getEnvironmentVariable("NGAFID_PORT"));
 
         // The application uses Gson to generate JSON representations of Java objects.
