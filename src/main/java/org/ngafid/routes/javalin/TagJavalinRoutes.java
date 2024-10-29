@@ -148,6 +148,34 @@ public class TagJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void postUnassociatedTags(Context ctx) {
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.json(new ErrorResponse("error", "User not logged in."));
+            return;
+        }
+
+        int fleetId = user.getFleetId();
+        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
+
+        try (Connection connection = Database.getConnection()) {
+
+            List<FlightTag> tags = Flight.getUnassociatedTags(connection, flightId, fleetId);
+
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                ctx.status(401);
+                ctx.result("User did not have access to this flight.");
+            }
+
+            ctx.json(tags);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            ctx.json(new ErrorResponse(e));
+        }
 
     }
 }
