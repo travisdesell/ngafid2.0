@@ -6,10 +6,17 @@ import org.ngafid.accounts.AccountException;
 import org.ngafid.accounts.FleetAccess;
 import org.ngafid.accounts.User;
 import org.ngafid.routes.ErrorResponse;
+import org.ngafid.routes.MustacheHandler;
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
@@ -52,8 +59,7 @@ public class AccountJavalinRoutes {
         }
     }
 
-    public static void postLogin(Context ctx) throws IOException {
-        LOG.info("handling " + AccountJavalinRoutes.class.getName());
+    public static void postLogin(Context ctx) {
         final String email = ctx.queryParam("email");
         final String password = ctx.queryParam("password");
 
@@ -92,8 +98,6 @@ public class AccountJavalinRoutes {
     }
 
     public static void postLogout(Context ctx) {
-        LOG.info("handling " + AccountJavalinRoutes.class.getName());
-
         User user = ctx.sessionAttribute("user");
 
         // Set the session attribute for this user so it will be considered logged in.
@@ -102,5 +106,58 @@ public class AccountJavalinRoutes {
 
         ctx.json(new LogoutResponse(true, false, false, "Successfully logged out.", null));
     }
+
+    public static void getCreateAccount(Context ctx) throws IOException {
+        final String templateFile = "create_account.html";
+        HashMap<String, Object> scopes = new HashMap<String, Object>();
+
+        LOG.severe("template file: '" + templateFile + "'");
+
+        try {
+            StringBuilder fleetnamesJavascript = new StringBuilder("var fleetNames = [");
+            try (Connection connection = Database.getConnection()) {
+                List<String> names = new ArrayList<String>();
+
+                try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
+                    ResultSet resultSet = query.executeQuery()) {
+                    boolean first = true;
+                    while (resultSet.next()) {
+                        if (first) {
+                            first = false;
+                            fleetnamesJavascript.append("\"");
+                        } else {
+                            fleetnamesJavascript.append(", \"");
+                        }
+                        fleetnamesJavascript.append(resultSet.getString(1));
+                        fleetnamesJavascript.append("\"");
+                    }
+                }
+            } catch (SQLException e) {
+                ctx.json(new ErrorResponse(e));
+            }
+
+            fleetnamesJavascript.append("];");
+
+            scopes.put("fleetnames_js", fleetnamesJavascript);
+            MustacheHandler.handle(templateFile, scopes);
+
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void getForgotPassword(Context ctx) throws IOException {
+        final String templateFile = "forgot_password.html";
+        Map<String, Object> scopes = new HashMap<String, Object>();
+
+        LOG.info("template file: '" + templateFile + "'");
+
+        ctx.contentType("text/html");
+        ctx.result(MustacheHandler.handle(templateFile, scopes));
+    }
+
 
 }
