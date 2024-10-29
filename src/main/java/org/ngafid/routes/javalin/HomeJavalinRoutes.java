@@ -21,7 +21,9 @@ public class HomeJavalinRoutes {
     }
 
     public static void getHome(Context ctx) throws IOException {
-        Map<String, Object> scopes = new HashMap<String, Object>();
+        Map<String, Object> scopes = new HashMap<>();
+        ctx.contentType("text/html");
+
         if (ctx.queryParam("access_denied") != null) {
             scopes.put("access_denied", new Message("danger",
                     "You attempted to load a page you did not have access to " +
