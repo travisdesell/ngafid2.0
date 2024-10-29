@@ -340,6 +340,9 @@ export default class SummaryPage extends React.Component {
                 t: 50,
                 pad: 4
             },
+            legend : {
+                traceorder: "normal"
+            },
             plot_bgcolor : "transparent",
             paper_bgcolor : plotBgColor,
             font : {
@@ -349,7 +352,8 @@ export default class SummaryPage extends React.Component {
                 gridcolor : plotGridColor
             },
             yaxis : {
-                gridcolor : plotGridColor
+                gridcolor : plotGridColor,
+                autorange: "reversed"
             }
         };
     
