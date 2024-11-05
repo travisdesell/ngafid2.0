@@ -348,7 +348,7 @@ public class EventJavalinRoutes {
             return;
         }
 
-        if (this.aggregate && !user.hasAggregateView()) {
+        if (aggregate && !user.hasAggregateView()) {
             LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
             ctx.status(401);
             ctx.result("User did not have aggregate access to view all event counts.");
