@@ -1993,7 +1993,8 @@ public class Flight {
                                 airframeName.equals("Cessna 400") ||
                                 airframeName.equals("Beechcraft A36/G36") ||
                                 airframeName.equals("Beechcraft G58") ||
-                                airframeName.equals("Beechcraft C90A King Air")) {
+                                airframeName.equals("Beechcraft C90A King Air") ||
+                                airframeName.equals("Cessna T206H")) {
                             airframeType = "Fixed Wing";
                         } else if (airframeName.equals("R44") || airframeName.equals("Robinson R44")) {
                             airframeName = "R44";

@@ -379,7 +379,6 @@ class TrendsPage extends React.Component {
                 console.log(value);
                 */
 
-
                 value.name = value.eventName + " - " + value.airframeName;
                 value.x = value.dates;
                 value.type = 'scatter';
