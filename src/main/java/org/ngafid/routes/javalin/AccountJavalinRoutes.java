@@ -2,12 +2,15 @@ package org.ngafid.routes.javalin;
 
 import io.javalin.http.Context;
 import org.ngafid.Database;
+import org.ngafid.SendEmail;
 import org.ngafid.accounts.*;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
 
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -71,6 +74,32 @@ public class AccountJavalinRoutes {
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
+            this.user = user;
+        }
+    }
+
+    private static class ResetSuccessResponse {
+        private final boolean loggedOut;
+        private final boolean waiting;
+        private final boolean denied;
+        private final boolean loggedIn;
+        private final String message;
+        private final User user;
+
+        public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
+            this.loggedOut = loggedOut;
+            this.waiting = waiting;
+            this.loggedIn = loggedIn;
+            this.denied = denied;
+            this.message = message;
+            this.user = user;
+        }
+    }
+
+    private static class Profile {
+        private final User user;
+
+        public Profile(User user) {
             this.user = user;
         }
     }
@@ -326,8 +355,7 @@ public class AccountJavalinRoutes {
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
             scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
-            scopes.put("user_prefs_json",
-                    "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+            scopes.put("user_prefs_json", "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
 
             if (fleet.hasAirsync(connection)) {
                 String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
@@ -375,5 +403,215 @@ public class AccountJavalinRoutes {
         } catch (Exception e) {
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void postResetPassword(Context ctx) {
+        final String emailAddress = Objects.requireNonNull(ctx.queryParam("emailAddress"));
+        final String passphrase = Objects.requireNonNull(ctx.queryParam("passphrase"));
+        final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
+        final String confirmPassword = Objects.requireNonNull(ctx.queryParam("confirmPassword"));
+
+        try (Connection connection = Database.getConnection()) {
+            // 1. make sure the new password and confirm password are the same
+            if (!newPassword.equals(confirmPassword)) {
+                ctx.json(new ErrorResponse("Could not reset password.", "The server received different new and confirmation passwords."));
+                return;
+            }
+
+            // 2. make sure the passphrase is valid
+            if (!User.validatePassphrase(connection, emailAddress, passphrase)) {
+                ctx.json(new ErrorResponse("Could not reset password.", "The passphrase provided was not correct."));
+                return;
+            }
+
+            User.updatePassword(connection, emailAddress, newPassword);
+            User user = User.get(connection, emailAddress, newPassword);
+
+            ctx.sessionAttribute("user", user);
+            ctx.json(new ResetSuccessResponse(false, false, false, true, "Success!", user));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        } catch (AccountException e) {
+            ctx.json(new ResetSuccessResponse(true, false, false, false, "Incorrect email or password.", null));
+        }
+
+    }
+
+    public static void postSendUserInvite(Context ctx) {
+        class InvitationSent {
+            final String message = "Invitation Sent.";
+        }
+
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId")));
+        final String fleetName = Objects.requireNonNull(ctx.queryParam("fleetName"));
+        final String inviteEmail = Objects.requireNonNull(ctx.queryParam("email"));
+
+        //check to see if the logged-in user can invite users to this fleet
+        if (!user.managesFleet(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to invite other users.");
+            ctx.status(401);
+            ctx.result("User did not have access to invite other users.");
+        } else {
+            List<String> recipient = new ArrayList<>();
+            recipient.add(inviteEmail);
+
+            final String encodedFleetName = URLEncoder.encode(fleetName, StandardCharsets.UTF_8);
+            final String formattedInviteLink = "https://ngafid.org/create_account?fleet_name=" + encodedFleetName + "&email=" + inviteEmail;
+            final String body = "<html><body>" +
+                    "<p>Hi,<p><br>" +
+                    "<p>A account creation invitation was sent to your account for fleet: " + fleetName + "<p>" +
+                    "<p>Please click the link below to create an account.<p>" +
+                    "<p> <a href=" + formattedInviteLink + ">Create Account</a></p><br>" +
+                    "</body></html>";
+
+            List<String> bccRecipients = new ArrayList<>();
+            try {
+                SendEmail.sendEmail(recipient, bccRecipients, "NGAFID Account Creation Invite", body, EmailType.ACCOUNT_CREATION_INVITE);
+            } catch (SQLException e) {
+                LOG.severe(e.toString());
+                ctx.json(new ErrorResponse(e));
+            }
+
+            ctx.json(new InvitationSent());
+        }
+    }
+
+    public static void postUpdatePassword(Context ctx) {
+        final String currentPassword = Objects.requireNonNull(ctx.queryParam("currentPassword"));
+        final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
+        final String confirmPassword = Objects.requireNonNull(ctx.queryParam("confirmPassword"));
+
+        User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        // 1. make sure currentPassword authenticates against what's in the database
+        try (Connection connection = Database.getConnection()) {
+            if (!user.validate(connection, currentPassword)) {
+                ctx.json(new ErrorResponse("Could not update password.", "The current password was not correct."));
+            }
+
+            // 2. make sure the new password and confirm password are the same
+            if (!newPassword.equals(confirmPassword)) {
+                ctx.json(new ErrorResponse("Could not update password.", "The server received different new and confirmation passwords."));
+            }
+
+            // 3. make sure the new password is different from the old password
+            if (currentPassword.equals(newPassword)) {
+                ctx.json(new ErrorResponse("Could not update password.", "The current password was the same as the new password."));
+            }
+
+            user.updatePassword(connection, newPassword);
+
+            ctx.json(new Profile(user));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+
+    }
+
+    public static void postUpdateProfile(Context ctx) {
+        final String firstName = Objects.requireNonNull(ctx.queryParam("firstName"));
+        final String lastName = Objects.requireNonNull(ctx.queryParam("lastName"));
+        final String country = Objects.requireNonNull(ctx.queryParam("country"));
+        final String state = Objects.requireNonNull(ctx.queryParam("state"));
+        final String city = Objects.requireNonNull(ctx.queryParam("city"));
+        final String address = Objects.requireNonNull(ctx.queryParam("address"));
+        final String phoneNumber = Objects.requireNonNull(ctx.queryParam("phoneNumber"));
+        final String zipCode = Objects.requireNonNull(ctx.queryParam("zipCode"));
+
+        try (Connection connection = Database.getConnection()) {
+            User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            user.updateProfile(connection, firstName, lastName, country, state, city, address, phoneNumber, zipCode);
+            ctx.json(new Profile(user));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postUpdateUserAccess(Context ctx) {
+        class UpdateUserAccess {
+            final String message = "Success.";
+        }
+
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetUserId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserId")));
+        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId")));
+        final String accessType = Objects.requireNonNull(ctx.queryParam("accessType"));
+
+        // check to see if the logged-in user can update access to this fleet
+        if (!user.managesFleet(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to modify user access rights on this fleet.");
+            ctx.status(401);
+            ctx.result("User did not have access to modify user access rights on this fleet.");
+        } else {
+            try (Connection connection = Database.getConnection()) {
+                FleetAccess.update(connection, fleetUserId, fleetId, accessType);
+                user.updateFleet(connection);
+                ctx.json(new UpdateUserAccess());
+            } catch (SQLException e) {
+                ctx.json(new ErrorResponse(e));
+            }
+        }
+
+    }
+
+    public static void postUpdateUserEmailPreferences(Context ctx) {
+        final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        // Log the raw handleUpdateType value
+        final String handleUpdateType = Objects.requireNonNull(ctx.queryParam("handleUpdateType"));
+
+        if (handleUpdateType.equals("HANDLE_UPDATE_USER")) { // User Update...
+            final int userID = sessionUser.getId();
+
+            Map<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
+            for (String emailKey : ctx.queryParamMap().keySet()) {
+                if (emailKey.equals("handleUpdateType")) {
+                    continue;
+                }
+
+                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.queryParam(emailKey)));
+            }
+
+            try (Connection connection = Database.getConnection()) {
+                ctx.json(User.updateUserEmailPreferences(connection, userID, emailTypesUser));
+            } catch (Exception e) {
+                ctx.json(new ErrorResponse(e));
+            }
+        } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) { // Manager Update...
+            // Unpack Submission Data
+            int fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserID")));
+            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetID")));
+
+            HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
+            for (String emailKey : ctx.queryParamMap().keySet()) {
+                if (emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType")) {
+                    continue;
+                }
+
+                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.queryParam(emailKey)));
+            }
+
+            // Check to see if the logged-in user can update access to this fleet
+            if (!sessionUser.managesFleet(fleetID)) {
+                LOG.severe("INVALID ACCESS: user did not have access to modify user email preferences on this fleet.");
+                ctx.status(401);
+                ctx.result("User did not have access to modify user email preferences on this fleet.");
+                return;
+            }
+
+            try (Connection connection = Database.getConnection()) {
+                ctx.json(User.updateUserEmailPreferences(connection, fleetUserID, emailTypesUser));
+            } catch (Exception e) {
+                ctx.json(new ErrorResponse(e));
+            }
+        }
+
+        // ERROR -- Unknown Update!
+        LOG.severe("INVALID ACCESS: handleUpdateType not specified.");
+        ctx.status(401);
+        ctx.result("handleUpdateType not specified.");
     }
 }
