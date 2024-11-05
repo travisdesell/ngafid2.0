@@ -3,7 +3,10 @@ package org.ngafid.routes.javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
+import org.ngafid.events.Event;
 import org.ngafid.events.EventDefinition;
+import org.ngafid.events.EventMetaData;
+import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.Airframes;
 import org.ngafid.flights.DoubleTimeSeries;
 import org.ngafid.routes.ErrorResponse;
@@ -15,10 +18,8 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.TreeMap;
+import java.time.LocalDate;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
@@ -213,6 +214,239 @@ public class EventJavalinRoutes {
             ctx.contentType("text/html");
             ctx.result(MustacheHandler.handle(templateFile, scopes));
         } catch (Exception e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postCreateEvent(Context ctx) {
+        final int fleetId = 0; // all events work on all fleets for now
+        final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
+        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("startBuffer")));
+        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("stopBuffer")));
+        final String airframe = Objects.requireNonNull(ctx.queryParam("airframe"));
+        final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
+        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.queryParam("severityColumnNames"));
+        final String severityType = Objects.requireNonNull(ctx.queryParam("severityType"));
+
+        try (Connection connection = Database.getConnection()) {
+            EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON,
+                    severityColumnNamesJSON, severityType);
+
+            ctx.contentType("application/json");
+            ctx.result("{}");
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postAllEventCounts(Context ctx) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        // check to see if the user has access to view aggregate information
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
+            ctx.status(401);
+            ctx.result("User did not have aggregate access to view all event counts.");
+            return;
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    LocalDate.parse(startDate), LocalDate.parse(endDate));
+            ctx.json(eventCountsMap);
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+
+    }
+
+    public static void postUpdateEvent(Context ctx) {
+        final int fleetId = 0; // all events work on all fleets for now
+        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
+        final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
+        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("startBuffer")));
+        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("stopBuffer")));
+        final String airframe = Objects.requireNonNull(ctx.queryParam("airframe"));
+        final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
+        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.queryParam("severityColumnNames"));
+        final String severityType = Objects.requireNonNull(ctx.queryParam("severityType"));
+
+        try (Connection connection = Database.getConnection()) {
+            EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe,
+                    filterJSON, severityColumnNamesJSON, severityType);
+
+            ctx.contentType("application/json");
+            ctx.result("{}");
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postMonthlyEventCounts(Context ctx) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("aggregatePage")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final String eventName = ctx.queryParam("eventName"); // Might be null intentionally
+
+        try (Connection connection = Database.getConnection()) {
+            Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
+            Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
+
+            if (aggregateTrendsPage) {
+                if (!user.hasAggregateView()) {
+                    LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
+                    ctx.status(401);
+                    ctx.result("User did not have aggregate access to view aggregate trends page.");
+                    return;
+                }
+
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
+            } else {
+
+                int fleetId = user.getFleetId();
+                // check to see if the user has upload access for this fleet.
+                if (!user.hasViewAccess(fleetId)) {
+                    LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
+                    ctx.status(401);
+                    ctx.result("User did not have access to view imports for this fleet.");
+                    return;
+                }
+
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
+            }
+
+            if (eventName == null) {
+                ctx.json(map);
+            } else {
+                ctx.json(map.get(eventName));
+            }
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+
+    }
+
+    private static void postEventCounts(Context ctx, boolean aggregate) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+
+        User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        int fleetId = user.getFleetId();
+
+        // check to see if the user has upload access for this fleet.
+        if (!user.hasViewAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
+            ctx.status(401);
+            ctx.result("User did not have access to view events for this fleet.");
+            return;
+        }
+
+        if (this.aggregate && !user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
+            ctx.status(401);
+            ctx.result("User did not have aggregate access to view all event counts.");
+            return;
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            if (aggregate) {
+                fleetId = -1;
+            }
+
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            ctx.json(eventCountsMap);
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postEventCounts(Context ctx) {
+        postEventCounts(ctx, false);
+    }
+
+    public static void postEventCountsAggregate(Context ctx) {
+        postEventCounts(ctx, true);
+    }
+
+
+    public static void postEventMetaData(Context ctx) {
+        LOG.info("handling rate of closure route");
+        int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
+        try (Connection connection = Database.getConnection()) {
+            List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
+            if (!metaDataList.isEmpty()) {
+                ctx.json(metaDataList);
+                return;
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            ctx.json(new ErrorResponse(e));
+        }
+        ctx.json(null);
+    }
+
+    public static void postEvents(Context ctx) {
+        class EventInfo {
+            private final List<Event> events;
+            private final List<EventDefinition> definitions;
+
+            public EventInfo(List<Event> events, List<EventDefinition> definitions) {
+                this.events = events;
+                this.definitions = definitions;
+            }
+        }
+        
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
+        final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("eventDefinitionsLoaded")));
+
+        try (Connection connection = Database.getConnection()) {
+            // check to see if the user has access to this data
+            if (!user.hasFlightAccess(connection, flightId)) {
+                LOG.severe("INVALID ACCESS: user did not have access to this flight.");
+                ctx.status(401);
+                ctx.result("User did not have access to this flight.");
+                return;
+            }
+
+            List<Event> events = Event.getAll(connection, flightId);
+            List<EventDefinition> definitions = null;
+
+            if (!eventDefinitionsLoaded) {
+                definitions = EventDefinition.getAll(connection);
+            }
+
+            EventInfo eventInfo = new EventInfo(events, definitions);
+
+            // System.out.println(gson.toJson(uploadDetails));
+            String output = gson.toJson(eventInfo);
+            // need to convert NaNs to null so they can be parsed by JSON
+            output = output.replaceAll("NaN", "null");
+            ctx.contentType("application/json");
+            ctx.result(output);
+        } catch (SQLException e) {
+            e.printStackTrace();
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postEventStatistics(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int fleetId = user.getFleetId();
+        final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("airframeNameId")));
+        final String airframeName = Objects.requireNonNull(ctx.queryParam("airframeName"));
+
+        try (Connection connection = Database.getConnection()) {
+            ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));
+        } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
