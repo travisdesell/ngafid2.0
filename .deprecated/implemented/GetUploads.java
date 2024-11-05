@@ -50,7 +50,7 @@ public class GetUploads implements Route {
         LOG.info("post " + this.getClass().getName() + " initalized");
     }
 
-    public GetUploads(Gson gson, String messageType, String messageText) {
+    public GetUploads(Gson gson, String messageType, String messageText) {gson
         this.gson = gson;
 
         LOG.info("post " + this.getClass().getName() + " initalized");
