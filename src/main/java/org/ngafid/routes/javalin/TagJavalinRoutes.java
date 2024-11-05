@@ -128,9 +128,13 @@ public class TagJavalinRoutes {
     }
 
     public static void postTags(Context ctx) {
-        User user = ctx.sessionAttribute("user");
+        final User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            ctx.json(new ErrorResponse("error", "User not logged in."));
+            return;
+        }
 
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
         System.out.println("TAGGED FLTID: " + flightId);
 
         try (Connection connection = Database.getConnection()) {
