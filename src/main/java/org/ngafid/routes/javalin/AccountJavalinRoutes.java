@@ -14,10 +14,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
@@ -56,6 +53,27 @@ public class AccountJavalinRoutes {
             this.waiting = waiting;
             this.loggedIn = loggedIn;
             this.message = message;
+            this.user = user;
+        }
+    }
+
+    private static class ForgotPasswordResponse {
+        String message;
+        boolean registeredEmail;
+
+        public ForgotPasswordResponse(String message, boolean registeredEmail) {
+            this.message = message;
+            this.registeredEmail = registeredEmail;
+
+        }
+    }
+
+    private static class CreatedAccount {
+        private String accountType;
+        private User user;
+
+        public CreatedAccount(String accountType, User user) {
+            this.accountType = accountType;
             this.user = user;
         }
     }
@@ -182,5 +200,90 @@ public class AccountJavalinRoutes {
 
         ctx.contentType("text/html");
         ctx.result(MustacheHandler.handle(templateFile, scopes));
+    }
+    
+    public static void getUpdateProfile(Context ctx) {
+        final String templateFile = "update_profile.html";
+        try  {
+            Map<String, Object> scopes = new HashMap<>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user)  + "');");
+            
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+        }
+    }
+    
+    public static void postForgotPassword(Context ctx) {
+        try (Connection connection = Database.getConnection()) {
+            final String email = ctx.queryParam("email");
+            if (User.exists(connection, email)) {
+                LOG.info("User exists. Sending reset password email.");
+                User.sendPasswordResetEmail(connection, email);
+                ctx.json(new ForgotPasswordResponse(
+                        "A password reset link has been sent to your registered email address. Please click on it to reset your password.",
+                        true));
+            } else {
+                LOG.info("User with email : " + email + " doesn't exist.");
+                ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false));
+            }
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ForgotPasswordResponse(e.toString(), false));
+        }
+    }
+
+
+    public static void postCreateAccount(Context ctx) {
+        final String email = ctx.queryParam("email");
+        final String password = ctx.queryParam("password");
+        final String firstName = ctx.queryParam("firstName");
+        final String lastName = ctx.queryParam("lastName");
+        final String country = ctx.queryParam("country");
+        final String state = ctx.queryParam("state");
+        final String city = ctx.queryParam("city");
+        final String address = ctx.queryParam("address");
+        final String phoneNumber = ctx.queryParam("phoneNumber");
+        final String zipCode = ctx.queryParam("zipCode");
+        final String accountType = ctx.queryParam("accountType");
+
+        try (Connection connection = Database.getConnection()) {
+            if (accountType != null) {
+                ctx.json(new ErrorResponse("Invalid Account Type",
+                        "A request was made to create an account with an unknown account type '" + accountType + "'."));
+            }
+
+            if (accountType != null && accountType.equals("gaard")) {
+                ctx.json(new ErrorResponse("Gaard Account Creation Disabled",
+                        "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."));
+            } else if (accountType.equals("newFleet")) {
+                final String fleetName = ctx.queryParam("fleetName");
+                User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state,
+                        city, address, phoneNumber, zipCode, fleetName);
+                ctx.sessionAttribute("user", user);
+
+                ctx.json(new CreatedAccount(accountType, user));
+            } else if (accountType.equals("existingFleet")) {
+                final String fleetName = ctx.queryParam("fleetName");
+                final User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country,
+                        state, city, address, phoneNumber, zipCode, fleetName);
+                ctx.sessionAttribute("user", user);
+
+                ctx.json(new CreatedAccount(accountType, user));
+            } else {
+                ctx.json(new ErrorResponse("Invalid Account Type",
+                        "A request was made to create an account with an unknown account type '" + accountType + "'."));
+            }
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        } catch (AccountException e) {
+            ctx.json(new ErrorResponse(e));
+        }
     }
 }
