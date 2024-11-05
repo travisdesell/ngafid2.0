@@ -2,9 +2,7 @@ package org.ngafid.routes.javalin;
 
 import io.javalin.http.Context;
 import org.ngafid.Database;
-import org.ngafid.accounts.AccountException;
-import org.ngafid.accounts.FleetAccess;
-import org.ngafid.accounts.User;
+import org.ngafid.accounts.*;
 import org.ngafid.routes.ErrorResponse;
 import org.ngafid.routes.MustacheHandler;
 import org.ngafid.routes.Navbar;
@@ -23,15 +21,14 @@ public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
     private static class LoginResponse {
-        private boolean loggedOut;
-        private boolean waiting;
-        private boolean denied;
-        private boolean loggedIn;
-        private String message;
-        private User user;
+        private final boolean loggedOut;
+        private final boolean waiting;
+        private final boolean denied;
+        private final boolean loggedIn;
+        private final String message;
+        private final User user;
 
-        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message,
-                             User user) {
+        public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
             this.waiting = waiting;
             this.loggedIn = loggedIn;
@@ -42,11 +39,11 @@ public class AccountJavalinRoutes {
     }
 
     private static class LogoutResponse {
-        private boolean loggedOut;
-        private boolean waiting;
-        private boolean loggedIn;
-        private String message;
-        private User user;
+        private final boolean loggedOut;
+        private final boolean waiting;
+        private final boolean loggedIn;
+        private final String message;
+        private final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -69,8 +66,8 @@ public class AccountJavalinRoutes {
     }
 
     private static class CreatedAccount {
-        private String accountType;
-        private User user;
+        private final String accountType;
+        private final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
@@ -137,8 +134,7 @@ public class AccountJavalinRoutes {
             try (Connection connection = Database.getConnection()) {
                 List<String> names = new ArrayList<String>();
 
-                try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name");
-                    ResultSet resultSet = query.executeQuery()) {
+                try (PreparedStatement query = connection.prepareStatement("SELECT fleet_name FROM fleet ORDER BY fleet_name"); ResultSet resultSet = query.executeQuery()) {
                     boolean first = true;
                     while (resultSet.next()) {
                         if (first) {
@@ -196,38 +192,36 @@ public class AccountJavalinRoutes {
         LOG.info("template file: '" + templateFile + "'");
 
         scopes.put("navbar_js", Navbar.getJavascript(ctx));
-        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user)  + "');");
+        scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
 
         ctx.contentType("text/html");
         ctx.result(MustacheHandler.handle(templateFile, scopes));
     }
-    
+
     public static void getUpdateProfile(Context ctx) {
         final String templateFile = "update_profile.html";
-        try  {
+        try {
             Map<String, Object> scopes = new HashMap<>();
 
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
 
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user)  + "');");
-            
+            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
+
             ctx.contentType("text/html");
             ctx.result(MustacheHandler.handle(templateFile, scopes));
         } catch (IOException e) {
             LOG.severe(e.toString());
         }
     }
-    
+
     public static void postForgotPassword(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final String email = ctx.queryParam("email");
             if (User.exists(connection, email)) {
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);
-                ctx.json(new ForgotPasswordResponse(
-                        "A password reset link has been sent to your registered email address. Please click on it to reset your password.",
-                        true));
+                ctx.json(new ForgotPasswordResponse("A password reset link has been sent to your registered email address. Please click on it to reset your password.", true));
             } else {
                 LOG.info("User with email : " + email + " doesn't exist.");
                 ctx.json(new ForgotPasswordResponse("User doesn't exist in database", false));
@@ -254,35 +248,131 @@ public class AccountJavalinRoutes {
 
         try (Connection connection = Database.getConnection()) {
             if (accountType != null) {
-                ctx.json(new ErrorResponse("Invalid Account Type",
-                        "A request was made to create an account with an unknown account type '" + accountType + "'."));
+                ctx.json(new ErrorResponse("Invalid Account Type", "A request was made to create an account with an unknown account type '" + accountType + "'."));
             }
 
             if (accountType != null && accountType.equals("gaard")) {
-                ctx.json(new ErrorResponse("Gaard Account Creation Disabled",
-                        "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."));
+                ctx.json(new ErrorResponse("Gaard Account Creation Disabled", "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."));
             } else if (accountType.equals("newFleet")) {
                 final String fleetName = ctx.queryParam("fleetName");
-                User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state,
-                        city, address, phoneNumber, zipCode, fleetName);
+                User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 ctx.sessionAttribute("user", user);
 
                 ctx.json(new CreatedAccount(accountType, user));
             } else if (accountType.equals("existingFleet")) {
                 final String fleetName = ctx.queryParam("fleetName");
-                final User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country,
-                        state, city, address, phoneNumber, zipCode, fleetName);
+                final User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 ctx.sessionAttribute("user", user);
 
                 ctx.json(new CreatedAccount(accountType, user));
             } else {
-                ctx.json(new ErrorResponse("Invalid Account Type",
-                        "A request was made to create an account with an unknown account type '" + accountType + "'."));
+                ctx.json(new ErrorResponse("Invalid Account Type", "A request was made to create an account with an unknown account type '" + accountType + "'."));
             }
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         } catch (AccountException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void getUserEmailPreferences(Context ctx) {
+        final String handleFetchType = Objects.requireNonNull(ctx.queryParam("handleFetchType"));
+        final User sessionUser = Objects.requireNonNull(ctx.attribute("user"));
+        int fleetUserID = -1;
+
+        if (handleFetchType.equals("HANDLE_FETCH_USER")) { // Fetching Session User...
+            fleetUserID = sessionUser.getId();
+        } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) { // Fetching a Manager's Fleet User...
+
+            fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserID")));
+            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetID")));
+
+            if (!sessionUser.managesFleet(fleetID)) {
+                ctx.status(401);
+                ctx.result("User did not have access to fetch user email preferences on this fleet.");
+                return;
+            }
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            ctx.json(User.getUserEmailPreferences(connection, fleetUserID));
+        } catch (Exception se) {
+            LOG.severe("Error in GetUserEmailPreferences.java");
+            ctx.status(500);
+            ctx.json(new ErrorResponse(se));
+        }
+    }
+
+    public static void getUserPreferences(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        try (Connection connection = Database.getConnection()) {
+            ctx.json(User.getUserPreferences(connection, user.getId()));
+        } catch (Exception se) {
+            ctx.json(new ErrorResponse(se));
+        }
+    }
+
+    public static void getUserPreferencesPage(Context ctx) {
+        final String templateFile = "preferences_page.html";
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+
+        try (Connection connection = Database.getConnection()) {
+            Fleet fleet = Objects.requireNonNull(Fleet.get(connection, user.getFleetId()));
+            UserPreferences userPreferences = User.getUserPreferences(connection, user.getId());
+            Map<String, Object> scopes = new HashMap<>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+            scopes.put("user_name", "var userName = JSON.parse('" + gson.toJson(user.getFullName()) + "');\n");
+            scopes.put("is_admin", "var isAdmin = JSON.parse('" + gson.toJson(user.isAdmin()) + "');\n");
+            scopes.put("user_prefs_json",
+                    "var userPreferences = JSON.parse('" + gson.toJson(userPreferences) + "');\n");
+
+            if (fleet.hasAirsync(connection)) {
+                String timeout = AirSyncFleet.getTimeout(connection, fleet.getId());
+                scopes.put("airsync", "var airsync_timeout = JSON.parse('" + gson.toJson(timeout) + "');\n");
+            } else {
+                scopes.put("airsync", "var airsync_timeout = -1;\n");
+            }
+
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (Exception se) {
+            se.printStackTrace();
+        }
+    }
+
+    public static void postUserPreferences(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int decimalPrecision = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("decimal_precision")));
+
+        try (Connection connection = Database.getConnection()) {
+            ctx.json(User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
+        } catch (Exception e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postUserPreferencesMetric(Context ctx) {
+        LOG.info("handling post user prefs route!");
+
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int userId = user.getId();
+        final String metric = Objects.requireNonNull(ctx.queryParam("metricName"));
+        final String type = Objects.requireNonNull(ctx.queryParam("modificationType"));
+
+        try (Connection connection = Database.getConnection()) {
+            LOG.info("Modifying " + metric + " (" + type + ") for user: " + user);
+
+            if (type.equals("addition")) {
+                User.addUserPreferenceMetric(connection, userId, metric);
+            } else {
+                User.removeUserPreferenceMetric(connection, userId, metric);
+            }
+
+            ctx.json(User.getUserPreferences(connection, userId).getFlightMetrics());
+        } catch (Exception e) {
             ctx.json(new ErrorResponse(e));
         }
     }
