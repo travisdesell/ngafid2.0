@@ -4,20 +4,23 @@ import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
 import org.ngafid.common.FlightTag;
+import org.ngafid.filters.StoredFilter;
 import org.ngafid.flights.Flight;
 import org.ngafid.routes.ErrorResponse;
 
 import java.sql.Connection;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.List;
 import java.util.Objects;
 import java.util.logging.Logger;
 
-public class TagJavalinRoutes {
-    private static Logger LOG = Logger.getLogger(TagJavalinRoutes.class.getName());
+public class TagFilterJavalinRoutes {
+    private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
+
     public static class RemoveTagResponse {
-        private boolean allTagsCleared;
-        private FlightTag tag;
+        private final boolean allTagsCleared;
+        private final FlightTag tag;
 
         public RemoveTagResponse() {
             this.tag = null;
@@ -29,14 +32,14 @@ public class TagJavalinRoutes {
             this.allTagsCleared = false;
         }
     }
-    
+
     public static void postCreateTag(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
             return;
         }
-        
+
         String name = ctx.queryParam("name");
         String description = ctx.queryParam("description");
         String color = ctx.queryParam("color");
@@ -51,7 +54,6 @@ public class TagJavalinRoutes {
 
             ctx.json(Flight.createTag(fleetId, flightId, name, description, color, connection));
         } catch (SQLException e) {
-            e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
     }
@@ -122,7 +124,7 @@ public class TagJavalinRoutes {
             ctx.json(new RemoveTagResponse(tag));
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
-            e.printStackTrace();
+
             ctx.json(new ErrorResponse(e));
         }
     }
@@ -149,7 +151,7 @@ public class TagJavalinRoutes {
             ctx.json(Objects.requireNonNullElseGet(tags, () -> new ErrorResponse("error", "No tags found for flight.")));
         } catch (SQLException e) {
             System.err.println("Error in SQL ");
-            e.printStackTrace();
+
             ctx.json(new ErrorResponse(e));
         }
     }
@@ -177,7 +179,7 @@ public class TagJavalinRoutes {
 
             ctx.json(tags);
         } catch (SQLException e) {
-            e.printStackTrace();
+
             ctx.json(new ErrorResponse(e));
         }
     }
@@ -195,7 +197,73 @@ public class TagJavalinRoutes {
 
             ctx.json(Objects.requireNonNull(Flight.getTag(connection, tagId)));
         } catch (SQLException e) {
-            e.printStackTrace();
+
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void getStoredFilters(Context ctx) {
+        try (Connection connection = Database.getConnection()) {
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, fleetId);
+            ctx.json(filters);
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postStoreFilter(Context ctx) {
+        try (Connection connection = Database.getConnection()) {
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final String name = Objects.requireNonNull(ctx.queryParam("name"));
+            final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterJSON"));
+            final String color = Objects.requireNonNull(ctx.queryParam("color"));
+            final int fleetId = user.getFleetId();
+
+            StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
+            ctx.json("SUCCESS");
+        } catch (SQLIntegrityConstraintViolationException se) {
+            LOG.info("DUPLICATE_PK detected: " + se);
+            ctx.json("DUPLICATE_PK");
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postModifyFilter(Context ctx) {
+        try (Connection connection = Database.getConnection()) {
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final int fleetId = user.getFleetId();
+            final String currentName = Objects.requireNonNull(ctx.queryParam("currentName"));
+            final String newName = Objects.requireNonNull(ctx.queryParam("newName"));
+            final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterJSON"));
+            final String color = Objects.requireNonNull(ctx.queryParam("color"));
+
+            StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
+            ctx.json("SUCCESS");
+        } catch (SQLIntegrityConstraintViolationException se) {
+            LOG.info("DUPLICATE_PK detected: " + se);
+            ctx.json("DUPLICATE_PK");
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+
+    public static void postRemoveFilter(Context ctx) {
+        try (Connection connection = Database.getConnection()) {
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final String name = Objects.requireNonNull(ctx.queryParam("name"));
+            final int fleetId = user.getFleetId();
+
+            StoredFilter.removeFilter(connection, fleetId, name);
+
+            ctx.json(StoredFilter.getStoredFilters(connection, fleetId));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
     }

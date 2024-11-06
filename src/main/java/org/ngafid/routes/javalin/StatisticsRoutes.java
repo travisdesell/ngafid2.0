@@ -27,25 +27,9 @@ public class StatisticsRoutes {
             T execute(StatFetcher f) throws SQLException;
         }
 
-        public static Map<String, StatFunction<Object>> function_map = Map.ofEntries(
-                Map.entry("flightTime", StatFetcher::flightTime),
-                Map.entry("yearFlightTime", StatFetcher::yearFlightTime),
-                Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+        public static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
 
-                Map.entry("numberFlights", StatFetcher::numberFlights),
-                Map.entry("numberAircraft", StatFetcher::numberAircraft),
-                Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights),
-                Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights),
-                Map.entry("totalEvents", StatFetcher::totalEvents),
-                Map.entry("yearEvents", StatFetcher::yearEvents),
-                Map.entry("monthEvents", StatFetcher::monthEvents),
-                Map.entry("numberFleets", StatFetcher::numberFleets),
-                Map.entry("numberUsers", StatFetcher::numberUsers),
-                Map.entry("uploads", StatFetcher::uploads),
-                Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported),
-                Map.entry("uploadsWithError", StatFetcher::uploadsWithError),
-                Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning),
-                Map.entry("flightsWithError", StatFetcher::flightsWithError));
+                Map.entry("numberFlights", StatFetcher::numberFlights), Map.entry("numberAircraft", StatFetcher::numberAircraft), Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights), Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights), Map.entry("totalEvents", StatFetcher::totalEvents), Map.entry("yearEvents", StatFetcher::yearEvents), Map.entry("monthEvents", StatFetcher::monthEvents), Map.entry("numberFleets", StatFetcher::numberFleets), Map.entry("numberUsers", StatFetcher::numberUsers), Map.entry("uploads", StatFetcher::uploads), Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported), Map.entry("uploadsWithError", StatFetcher::uploadsWithError), Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning), Map.entry("flightsWithError", StatFetcher::flightsWithError));
 
         final Connection connection;
         final User user;
@@ -158,31 +142,19 @@ public class StatisticsRoutes {
         }
     }
 
-    record SummaryStatistics(
-            boolean aggregate,
+    record SummaryStatistics(boolean aggregate,
 
-            int numberFlights,
-            int numberAircraft,
-            int yearNumberFlights,
-            int monthNumberFlights,
-            int totalEvents,
-            int yearEvents,
-            int monthEvents,
-            int numberUsers,
+                             int numberFlights, int numberAircraft, int yearNumberFlights, int monthNumberFlights,
+                             int totalEvents, int yearEvents, int monthEvents, int numberUsers,
 
-            // These should be null if `aggregate` is false.
-            Integer numberFleets,
+                             // These should be null if `aggregate` is false.
+                             Integer numberFleets,
 
-            // Null if aggregate is true
-            Integer uploads,
-            Integer uploadsNotImported,
-            Integer uploadsWithError,
-            Integer flightsWithWarning,
-            Integer flightsWithError,
+                             // Null if aggregate is true
+                             Integer uploads, Integer uploadsNotImported, Integer uploadsWithError,
+                             Integer flightsWithWarning, Integer flightsWithError,
 
-            long flightTime,
-            long yearFlightTime,
-            long monthFlightTime) {
+                             long flightTime, long yearFlightTime, long monthFlightTime) {
     }
 
     public static void postStatistic(Context ctx, boolean aggregate) {
@@ -236,8 +208,8 @@ public class StatisticsRoutes {
         LocalDate firstOfYear = LocalDate.now().with(TemporalAdjusters.firstDayOfYear());
         LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
-        String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
-        String yearQuery = "start_time >= '" + firstOfYear.toString() + "'";
+        String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays + "'";
+        String yearQuery = "start_time >= '" + firstOfYear + "'";
 
         try (Connection connection = Database.getConnection()) {
             final int numberFlights = Flight.getNumFlights(connection, fleetId);
@@ -261,28 +233,9 @@ public class StatisticsRoutes {
             final int flightsWithWarning = FlightWarning.getCount(connection, fleetId);
             final int flightsWithError = FlightError.getCount(connection, fleetId);
 
-            ctx.json(new SummaryStatistics(
-                    aggregate,
-                    numberFlights,
-                    numberAircraft,
-                    yearNumberFlights,
-                    monthNumberFlights,
-                    totalEvents,
-                    yearEvents,
-                    monthEvents,
-                    numberUsers,
-                    numberFleets,
-                    uploads,
-                    uploadsNotImported,
-                    uploadsWithError,
-                    flightsWithWarning,
-                    flightsWithError,
-                    flightTime,
-                    yearFlightTime,
-                    monthFlightTime));
+            ctx.json(new SummaryStatistics(aggregate, numberFlights, numberAircraft, yearNumberFlights, monthNumberFlights, totalEvents, yearEvents, monthEvents, numberUsers, numberFleets, uploads, uploadsNotImported, uploadsWithError, flightsWithWarning, flightsWithError, flightTime, yearFlightTime, monthFlightTime));
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e));
         }
     }
-
 }
