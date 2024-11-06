@@ -27,7 +27,7 @@ import static org.ngafid.WebServer.gson;
 public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
 
-    public static void getAllEventDefinitions(Context ctx) throws IOException {
+    public static void getAllEventDefinitions(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             ctx.json(EventDefinition.getAll(connection));
         } catch (SQLException e) {
