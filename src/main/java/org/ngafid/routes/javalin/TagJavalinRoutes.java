@@ -180,6 +180,23 @@ public class TagJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
+    }
 
+    public static void postAssociateTag(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("tag_id")));
+
+        try (Connection connection = Database.getConnection()) {
+            if (!user.hasFlightAccess(connection, flightId)) {
+                ctx.status(401);
+                ctx.result("User did not have access to this flight.");
+            }
+
+            ctx.json(Objects.requireNonNull(Flight.getTag(connection, tagId)));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            ctx.json(new ErrorResponse(e));
+        }
     }
 }

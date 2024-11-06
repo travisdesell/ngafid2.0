@@ -19,6 +19,8 @@ import java.nio.file.StandardCopyOption;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
@@ -407,6 +409,72 @@ public class ImportUploadRoutes {
 
             ctx.json(new ImportsResponse(imports, numberPages));
         } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    public static void postNewUpload(Context ctx) {
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final int uploaderId = user.getId();
+        final int fleetId = user.getFleetId();
+        final String filename = Objects.requireNonNull(ctx.queryParam("filename")).replaceAll(" ", "_");
+        final String identifier = Objects.requireNonNull(ctx.queryParam("identifier"));
+        final int numberChunks = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("numberChunks")));
+        final long sizeBytes = Long.parseLong(Objects.requireNonNull(ctx.queryParam("sizeBytes")));
+        final String md5Hash = Objects.requireNonNull(ctx.queryParam("md5Hash"));
+
+        ctx.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/mnt/ngafid/temp"));
+
+        if (!filename.matches("^[a-zA-Z0-9_.-]*$")) {
+            LOG.info("ERROR! malformed filename");
+
+            ErrorResponse errorResponse = new ErrorResponse("File Upload Failure",
+                    "The filename was malformed. Filenames must only contain letters, numbers, dashes ('-'), underscores ('_') and periods.");
+            ctx.json(errorResponse);
+            return;
+        }
+
+        // options:
+        // 1. file does not exist, insert into database -- start upload
+        // 2. file does exist and has not finished uploading -- restart upload
+        // 3. file does exist and has finished uploading -- report finished
+        // 4. file does exist but with different hash -- error message
+
+        try (Connection connection = Database.getConnection()) {
+            try (PreparedStatement query = connection.prepareStatement(
+                    "SELECT md5_hash, number_chunks, uploaded_chunks, chunk_status, status, filename FROM uploads WHERE md5_hash = ? AND uploader_id = ?")) {
+                query.setString(1, md5Hash);
+                query.setInt(2, uploaderId);
+
+                try (ResultSet resultSet = query.executeQuery()) {
+                    if (!resultSet.next()) {
+                        Upload upload = Upload.createNewUpload(connection, uploaderId, fleetId, filename, identifier,
+                                Upload.Kind.FILE, sizeBytes, numberChunks, md5Hash);
+
+                        ctx.json(upload);
+                    } else {
+                        // a file with this md5 hash exists
+                        String dbStatus = resultSet.getString(5);
+                        String dbFilename = resultSet.getString(6);
+
+                        if (dbStatus.equals("UPLOADED") || dbStatus.equals("IMPORTED")) {
+                            // 3. file does exist and has finished uploading -- report finished
+                            // do the same thing, client will handle completion
+                            LOG.severe("ERROR! Final file has already been uploaded.");
+
+                            ctx.json(new ErrorResponse("File Already Exists",
+                                    "This file has already been uploaded to the server as '" + dbFilename
+                                            + "' and does not need to be uploaded again."));
+
+                        } else {
+                            // 2. file does exist and has not finished uploading -- restart upload
+                            ctx.json(Objects.requireNonNull(Upload.getUploadByUser(connection, uploaderId, md5Hash)));
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            LOG.severe(gson.toJson(e));
             ctx.json(new ErrorResponse(e));
         }
     }
