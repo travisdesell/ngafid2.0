@@ -24,7 +24,7 @@ public class DataJavalinRoutes {
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final boolean generated = Boolean.parseBoolean(ctx.queryParam("generated"));
         final int flightId = Integer.parseInt(flightIdStr);
-        final User user = Objects.requireNonNull(ctx.sessionAttribute("user");)
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
         // check to see if the user has upload access for this fleet.
