@@ -103,7 +103,7 @@ public class TagFilterJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             FlightTag tag = Flight.getTag(connection, tagId);
             if (isPermanent) {
-                LOG.info("Permanently deleting tag: " + tag.toString());
+                LOG.info("Permanently deleting tag: " + tag);
                 Flight.deleteTag(tagId, connection);
             } else if (allTags) {
                 LOG.info("Clearing all tags from flight " + flightId);
@@ -205,7 +205,7 @@ public class TagFilterJavalinRoutes {
     public static void getStoredFilters(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, fleetId);
+            final List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, user.getFleetId());
             ctx.json(filters);
         } catch (SQLException e) {
             LOG.severe(e.toString());
