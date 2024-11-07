@@ -93,7 +93,7 @@ public class DataJavalinRoutes {
             LOG.info("Got file path for flight #" + flightId);
             LOG.info(csvWriter.toString());
 
-            ctx.result(csvWriter.getFileContents();
+            ctx.result(csvWriter.getFileContents());
         } catch (Exception e) {
             ctx.json(new ErrorResponse(e));
         }
