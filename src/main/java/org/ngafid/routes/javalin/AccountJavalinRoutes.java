@@ -614,4 +614,61 @@ public class AccountJavalinRoutes {
         ctx.status(401);
         ctx.result("handleUpdateType not specified.");
     }
+
+    public static void getEmailUnsubscribe(Context ctx) {
+        final int id = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
+        final String token = ctx.queryParam("token");
+
+        // Check if the token is valid
+        try (Connection connection = Database.getConnection()) {
+            try (PreparedStatement query = connection
+                    .prepareStatement("SELECT * FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+                query.setString(1, token);
+                query.setInt(2, id);
+                try (ResultSet resultSet = query.executeQuery()) {
+                    if (!resultSet.next()) {
+                        String exceptionMessage = "Provided token/id pairing was not found: (" + token + ", " + id
+                                + "), may have already expired or been used";
+                        LOG.severe(exceptionMessage);
+                        throw new Exception(exceptionMessage);
+                    }
+                }
+            }
+
+            // Remove the token from the database
+            try (PreparedStatement queryTokenRemoval = connection
+                    .prepareStatement("DELETE FROM email_unsubscribe_tokens WHERE token=? AND user_id=?")) {
+                queryTokenRemoval.setString(1, token);
+                queryTokenRemoval.setInt(2, id);
+                queryTokenRemoval.executeUpdate();
+            }
+
+            // Set all non-forced email preferences to 0 in the database
+            try (PreparedStatement queryClearPreferences = connection
+                    .prepareStatement("SELECT * FROM email_preferences WHERE user_id=?")) {
+                queryClearPreferences.setInt(1, id);
+                try (ResultSet resultSet = queryClearPreferences.executeQuery()) {
+                    while (resultSet.next()) {
+                        String emailType = resultSet.getString("email_type");
+                        if (EmailType.isForced(emailType)) {
+                            continue;
+                        }
+
+                        try (PreparedStatement update = connection
+                                .prepareStatement(
+                                        "UPDATE email_preferences SET enabled=0 WHERE user_id=? AND email_type=?")) {
+                            update.setInt(1, id);
+                            update.setString(2, emailType);
+                            update.executeUpdate();
+                        }
+                    }
+                }
+            }
+
+            ctx.result("Successfully unsubscribed from emails...");
+        } catch (Exception e) {
+            e.printStackTrace();
+            ctx.json(new ErrorResponse(e));
+        }
+    }
 }
