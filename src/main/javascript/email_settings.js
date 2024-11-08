@@ -487,11 +487,6 @@ class EmailSettingsTableManager extends React.Component {
     };
 
     render() {
-        const grayOutStyle = {
-            backgroundColor: '#d3d3d3',
-            opacity: 0.6,
-            filter: 'grayscale(100%)',
-        };
 
         return (
             <table style={{
@@ -577,4 +572,4 @@ class EmailSettingsTableManager extends React.Component {
             </table>
         );
     }
-};
+}

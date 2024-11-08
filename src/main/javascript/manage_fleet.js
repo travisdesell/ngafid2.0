@@ -96,12 +96,12 @@ class FleetUserRow extends React.Component {
                     fleetUserRow.props.decrementWaiting();
                 }
 
-                //update the fleetUser's new original access (so the update button will be disabled unless the access is changed again)
+                // Update the fleetUser's new original access level so that update button will be disabled unless the access is changed again.
                 fleetUser.fleetAccess.originalAccess = newAccess;
                 fleetUserRow.state.fleetUser = fleetUser;
                 fleetUserRow.setState(fleetUser);
 
-                //Callback to sort Users so that Denied users appear on the bottom.
+                // Callback to sort Users so that Denied users appear on the bottom.
                 fleetUserRow.props.onAccessChange();
             },   
             error : function(jqXHR, textStatus, errorThrown) {
@@ -165,7 +165,7 @@ class ManageFleetPage extends React.Component {
     }
 
     /**
-     * Initializes fleetUsers state from a correspondent props
+     * Initializes fleetUsers state from a correspondent prop
      * Sorts fleetUsers putting the ones with accessType "DENIED" to the bottom of the list
      */
     sortAndSetUsers() {
@@ -246,12 +246,11 @@ class ManageFleetPage extends React.Component {
         this.sendEmail(email);
     };
 
-
     render() {
         const hidden = this.props.hidden;
         const bgStyle = {opacity : 0.8};
         const fgStyle = {opacity : 1.0};
-        const grayOutStyle = {backgroundColor: '#d3d3d3'};
+        const grayoutStyle = {backgroundColor: '#d3d3d3'};
 
         let fleetName = "";
 
@@ -302,8 +301,7 @@ class ManageFleetPage extends React.Component {
                                     {
                                        this.state.fleetUsers.map((fleetUser, index) => {
 
-                                           // Determine row style based on access type
-                                           const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayOutStyle : {};
+                                           const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
                                             return (
                                                 <FleetUserRow
                                                     key={fleetUser.id}
@@ -314,12 +312,10 @@ class ManageFleetPage extends React.Component {
                                                     onAccessChange={() => this.sortAndSetUsers()}
                                                 />
                                             );
-
                                         })
                                     }
                                 </tbody>
                             </table>
-                            
 
                             <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
                                 Fleet Email Preferences
@@ -331,9 +327,7 @@ class ManageFleetPage extends React.Component {
                                     )}
                                 </div>
                             </div>
-
                         </div>
-
                     </div>
                 </div>
                 <style jsx="true">
