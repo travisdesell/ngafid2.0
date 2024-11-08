@@ -1,12 +1,9 @@
 import 'bootstrap';
 import React, { Component } from "react";
 import ReactDOM from "react-dom";
-
 import { errorModal } from "./error_modal.js";
 import SignedInNavbar from "./signed_in_navbar.js";
-
 import { EmailSettingsTableManager } from "./email_settings.js";
-
 
 class AccessCheck extends React.Component {
     constructor(props) {
@@ -103,6 +100,9 @@ class FleetUserRow extends React.Component {
                 fleetUser.fleetAccess.originalAccess = newAccess;
                 fleetUserRow.state.fleetUser = fleetUser;
                 fleetUserRow.setState(fleetUser);
+
+                //Callback to sort Users so that Denied users appear on the bottom.
+                fleetUserRow.props.onAccessChange();
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 $("#loading").hide();
@@ -116,6 +116,7 @@ class FleetUserRow extends React.Component {
     render() {
         let fleetUser = this.state.fleetUser;
         let accessType = fleetUser.fleetAccess.accessType;
+        const { rowStyle } = this.props;
 
         console.log("rendering " + fleetUser.email + " with access " + accessType);
 
@@ -123,7 +124,7 @@ class FleetUserRow extends React.Component {
         let buttonDisabled = fleetUser.fleetAccess.originalAccess == accessType;
 
         return (
-            <tr userid={fleetUser.id}>
+            <tr userid={fleetUser.id} style={rowStyle}>
                 <td scope="row" style={{padding: "15 12 15 12"}}>{fleetUser.email}</td>
                 <td style={{padding: "15 12 15 12"}}>{fleetUser.firstName} {this.state.fleetUser.lastName}</td>
 
@@ -151,11 +152,32 @@ class ManageFleetPage extends React.Component {
 
         this.state = {
             user : this.props.user,
+            fleetUsers: [],
             waitingUserCount : this.props.waitingUserCount,
             unconfirmedTailsCount : this.props.unconfirmedTailsCount
         };
 
         console.log("constructed ManageFleetPage");
+    }
+
+    componentDidMount() {
+        this.sortAndSetUsers();
+    }
+
+    /**
+     * Initializes fleetUsers state from a correspondent props
+     * Sorts fleetUsers putting the ones with accessType "DENIED" to the bottom of the list
+     */
+    sortAndSetUsers() {
+        const { user } = this.state;
+        if (user && user.fleet && Array.isArray(user.fleet.users)) {
+            const sortedUsers = [...user.fleet.users].sort((a, b) =>
+                a.fleetAccess.accessType === "DENIED" ? 1 : -1
+            );
+            this.setState({ fleetUsers: sortedUsers });
+        } else {
+            console.warn("User data or fleet users array is missing.");
+        }
     }
 
     setUser(user) {
@@ -229,18 +251,9 @@ class ManageFleetPage extends React.Component {
         const hidden = this.props.hidden;
         const bgStyle = {opacity : 0.8};
         const fgStyle = {opacity : 1.0};
+        const grayOutStyle = {backgroundColor: '#d3d3d3'};
 
-        let user = "";
         let fleetName = "";
-        let fleetUsers = []
-        if (typeof this.state.user != 'undefined') {
-            user = this.state.user;
-            fleetName = user.fleet.name;
-
-            if (typeof user.fleet.users != 'undefined') {
-                fleetUsers = user.fleet.users;
-            }
-        }
 
         return (
             <div>
@@ -287,13 +300,18 @@ class ManageFleetPage extends React.Component {
                                 </thead>
                                 <tbody>
                                     {
-                                        fleetUsers.map((fleetUser, index) => {
+                                       this.state.fleetUsers.map((fleetUser, index) => {
+
+                                           // Determine row style based on access type
+                                           const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayOutStyle : {};
                                             return (
                                                 <FleetUserRow
                                                     key={fleetUser.id}
                                                     fleetUser={fleetUser}
+                                                    rowStyle={rowStyle}
                                                     incrementWaiting={() => {this.incrementWaiting();}}
                                                     decrementWaiting={() => {this.decrementWaiting();}}
+                                                    onAccessChange={() => this.sortAndSetUsers()}
                                                 />
                                             );
 
@@ -308,7 +326,9 @@ class ManageFleetPage extends React.Component {
                             </h6>
                             <div className="form-group">
                                 <div className="d-flex">
-                                    <EmailSettingsTableManager fleetUsers={fleetUsers}></EmailSettingsTableManager>
+                                    {this.state.fleetUsers.length > 0 && (
+                                        <EmailSettingsTableManager fleetUsers={this.state.fleetUsers}></EmailSettingsTableManager>
+                                    )}
                                 </div>
                             </div>
 
