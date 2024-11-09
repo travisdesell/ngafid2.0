@@ -113,7 +113,7 @@ public class Event {
      */
     public Event(ResultSet resultSet) throws SQLException {
         this.id = resultSet.getInt(1);
-        this.fleetId = resultSet.getInt(2);
+        this.fleetId = resultSet.getInt(1);
         this.flightId = resultSet.getInt(3);
         this.eventDefinitionId = resultSet.getInt(4);
         this.startLine = resultSet.getInt(5);
@@ -125,13 +125,6 @@ public class Event {
         if (resultSet.wasNull()) {
             this.otherFlightId = null;
         }
-    }
-
-    public Event(int startLine, int endLine, int flightId, String eventName) {
-        this.startLine = startLine;
-        this.endLine = endLine;
-        this.flightId = flightId;
-        this.eventDefinitionName = eventName;
     }
 
     /**
@@ -351,23 +344,6 @@ public class Event {
         return allEvents;
     }
 
-    public static ArrayList<Event> getAllWithEventNames(Connection connection, int flightId) throws SQLException {
-        String query = "select events.id, events.start_line, events.end_line, name from events join event_definitions on event_definitions.id = events.id where flight_id = ?";
-        ArrayList<Event> events = new ArrayList<>();
-        PreparedStatement preparedStatement = connection.prepareStatement(query);
-        preparedStatement.setInt(1, flightId);
-        ResultSet resultSet = preparedStatement.executeQuery();
-
-        while (resultSet.next()) {
-            int id = resultSet.getInt(1);
-            int startLine = resultSet.getInt(2);
-            int endLine = resultSet.getInt(3);
-            String eventName = resultSet.getString(4);
-            events.add(new Event(id, startLine, endLine, eventName));
-        }
-
-        return events;
-    }
     /**
      * Gets all of the event from the database for a given flight.
      *
