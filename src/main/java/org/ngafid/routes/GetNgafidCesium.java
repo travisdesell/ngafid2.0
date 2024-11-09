@@ -277,7 +277,7 @@ public class GetNgafidCesium implements Route {
 
             // This is for webpage section
             String resultString = "";
-            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ngafid_cesium_new.html";
+            String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "ngafid_cesium.html";
             LOG.severe("template file: '" + templateFile + "'");
 
             MustacheFactory mf = new DefaultMustacheFactory();

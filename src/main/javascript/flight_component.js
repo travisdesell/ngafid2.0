@@ -24,7 +24,6 @@ import {generateLOCILayer, generateStallLayer} from './map_utils.js';
 
 import Plotly from 'plotly.js';
 import {cesiumFlightsSelected, updateCesiumButtonState} from "./cesium_buttons";
-import { watch } from 'fs';
 
 var moment = require('moment');
 
