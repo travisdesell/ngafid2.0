@@ -490,10 +490,6 @@ class FlightsPage extends React.Component {
         this.cesiumRef.current.zoomToEventEntity(eventId, flightId);
     }
 
-    removeCesiumEntity(flightId) {
-        this.cesiumRef.current.removeEntity(flightId);
-    }
-
     removeCesiumFlight(flightId) {
         this.cesiumRef.current.removeFlightEntities(flightId);
     }
@@ -562,9 +558,6 @@ class FlightsPage extends React.Component {
         this.cesiumRef.current.removeEntity(flightId);
     }
 
-    removeCesiumFlight(flightId) {
-        this.cesiumRef.current.removeFlightEntities(flightId);
-    }
     addCesiumFlight(flightId, color) {
         
         console.log("add cesium flight");
@@ -1281,6 +1274,7 @@ class FlightsPage extends React.Component {
             showMap={() => {
               this.showMap();
             }}
+            hideMap={()=> this.hideMap()}
             showPlot={() => {
               this.showPlot();
             }}

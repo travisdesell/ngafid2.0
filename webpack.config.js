@@ -56,7 +56,6 @@ module.exports = {
         manage_events: __dirname + "/src/main/javascript/manage_events.js",
         manage_fleet: __dirname + "/src/main/javascript/manage_fleet.js",
         ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
-        // ngafid_cesium: __dirname + "/src/main/javascript/ngafid_cesium.js",
         reset_password: __dirname + "/src/main/javascript/reset_password.js",
         severities: __dirname + "/src/main/javascript/severities.js",
         system_ids: __dirname + "/src/main/javascript/system_ids.js",
@@ -140,9 +139,11 @@ module.exports = {
             CESIUM_BASE_URL: JSON.stringify("/cesium"),
         }),
 
+        /*
         new HtmlWebPackPlugin({
             template: "./src/main/resources/public/js3/src/index.html",
             filename: "./index.html"
         })
+        */
     ]
 };
