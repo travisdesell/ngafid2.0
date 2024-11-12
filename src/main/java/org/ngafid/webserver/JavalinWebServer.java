@@ -5,7 +5,7 @@ import io.javalin.http.staticfiles.Location;
 import org.eclipse.jetty.util.thread.QueuedThreadPool;
 import org.ngafid.WebServer;
 import org.ngafid.accounts.User;
-import org.ngafid.routes.javalin.StartPageJavalinRoutes;
+import org.ngafid.routes.javalin.*;
 
 import java.util.logging.Logger;
 
@@ -47,6 +47,11 @@ public class JavalinWebServer extends WebServer {
         app.get("/", StartPageJavalinRoutes::getHome);
         app.get("/access_denied", StartPageJavalinRoutes::getHome);
         app.get("/logout_success", StartPageJavalinRoutes::getHome);
+
+        AccountJavalinRoutes.bindRoutes(app);
+        AircraftFleetTailsJavalinRoutes.bindRoutes(app);
+        EventJavalinRoutes.bindRoutes(app);
+        StatisticsJavalinRoutes.bindRoutes(app);
     }
 
     @Override

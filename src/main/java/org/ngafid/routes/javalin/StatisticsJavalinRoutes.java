@@ -24,15 +24,15 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class StatisticsJavalinRoutes implements JavalinRoutes {
+public class StatisticsJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
-    public static class StatFetcher {
+     static class StatFetcher {
         public interface StatFunction<T> {
             T execute(StatFetcher f) throws SQLException;
         }
 
-        public static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
+         static Map<String, StatFunction<Object>> function_map = Map.ofEntries(Map.entry("flightTime", StatFetcher::flightTime), Map.entry("yearFlightTime", StatFetcher::yearFlightTime), Map.entry("monthFlightTime", StatFetcher::monthFlightTime),
 
                 Map.entry("numberFlights", StatFetcher::numberFlights), Map.entry("numberAircraft", StatFetcher::numberAircraft), Map.entry("yearNumberFlights", StatFetcher::yearNumberFlights), Map.entry("monthNumberFlights", StatFetcher::monthNumberFlights), Map.entry("totalEvents", StatFetcher::totalEvents), Map.entry("yearEvents", StatFetcher::yearEvents), Map.entry("monthEvents", StatFetcher::monthEvents), Map.entry("numberFleets", StatFetcher::numberFleets), Map.entry("numberUsers", StatFetcher::numberUsers), Map.entry("uploads", StatFetcher::uploads), Map.entry("uploadsNotImported", StatFetcher::uploadsNotImported), Map.entry("uploadsWithError", StatFetcher::uploadsWithError), Map.entry("flightsWithWarning", StatFetcher::flightsWithWarning), Map.entry("flightsWithError", StatFetcher::flightsWithError));
 
@@ -162,7 +162,7 @@ public class StatisticsJavalinRoutes implements JavalinRoutes {
                              long flightTime, long yearFlightTime, long monthFlightTime) {
     }
 
-    public static void postStatistic(Context ctx, boolean aggregate) {
+     private static void postStatistic(Context ctx, boolean aggregate) {
         final User user = ctx.sessionAttribute("user");
 
         try (Connection connection = Database.getConnection()) {
@@ -189,7 +189,7 @@ public class StatisticsJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postSummaryStatistics(Context ctx, boolean aggregate) {
+     private static void postSummaryStatistics(Context ctx, boolean aggregate) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = aggregate ? -1 : user.getFleetId();
 
@@ -244,7 +244,7 @@ public class StatisticsJavalinRoutes implements JavalinRoutes {
     }
 
 
-    public static void getAggregate(Context ctx) throws IOException {
+    private static void getAggregate(Context ctx) throws IOException {
         final String templateFile = "aggregate.html";
 
         User user = ctx.sessionAttribute("user");
@@ -284,7 +284,7 @@ public class StatisticsJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void getAggregateTrends(Context ctx) throws IOException {
+    private static void getAggregateTrends(Context ctx) throws IOException {
         final String templateFile = "aggregate_trends.html";
 
         User user = ctx.sessionAttribute("user");
@@ -361,8 +361,7 @@ public class StatisticsJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    @Override
-    public void bindRoutes(Javalin app) {
+    public static void bindRoutes(Javalin app) {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
 

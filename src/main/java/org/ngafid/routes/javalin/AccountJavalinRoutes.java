@@ -21,7 +21,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class AccountJavalinRoutes implements JavalinRoutes {
+public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
     private static class LoginResponse {
@@ -105,7 +105,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postLogin(Context ctx) {
+    private static void postLogin(Context ctx) {
         final String email = ctx.queryParam("email");
         final String password = ctx.queryParam("password");
 
@@ -143,7 +143,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postLogout(Context ctx) {
+    private static void postLogout(Context ctx) {
         User user = ctx.sessionAttribute("user");
 
         // Set the session attribute for this user so it will be considered logged in.
@@ -153,7 +153,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         ctx.json(new LogoutResponse(true, false, false, "Successfully logged out.", null));
     }
 
-    public static void getCreateAccount(Context ctx) throws IOException {
+    private static void getCreateAccount(Context ctx) throws IOException {
         final String templateFile = "create_account.html";
         HashMap<String, Object> scopes = new HashMap<String, Object>();
 
@@ -194,7 +194,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void getForgotPassword(Context ctx) throws IOException {
+    private static void getForgotPassword(Context ctx) throws IOException {
         final String templateFile = "forgot_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
@@ -204,7 +204,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         ctx.result(MustacheHandler.handle(templateFile, scopes));
     }
 
-    public static void getResetPassword(Context ctx) throws IOException {
+    private static void getResetPassword(Context ctx) throws IOException {
         final String templateFile = "reset_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
 
@@ -214,7 +214,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         ctx.result(MustacheHandler.handle(templateFile, scopes));
     }
 
-    public static void getUpdatePassword(Context ctx) throws IOException {
+    private static void getUpdatePassword(Context ctx) throws IOException {
         final String templateFile = "update_password.html";
         Map<String, Object> scopes = new HashMap<String, Object>();
         User user = ctx.sessionAttribute("user");
@@ -228,7 +228,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         ctx.result(MustacheHandler.handle(templateFile, scopes));
     }
 
-    public static void getUpdateProfile(Context ctx) {
+    private static void getUpdateProfile(Context ctx) {
         final String templateFile = "update_profile.html";
         try {
             Map<String, Object> scopes = new HashMap<>();
@@ -245,7 +245,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postForgotPassword(Context ctx) {
+    private static void postForgotPassword(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final String email = ctx.queryParam("email");
             if (User.exists(connection, email)) {
@@ -263,7 +263,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
     }
 
 
-    public static void postCreateAccount(Context ctx) {
+    private static void postCreateAccount(Context ctx) {
         final String email = ctx.queryParam("email");
         final String password = ctx.queryParam("password");
         final String firstName = ctx.queryParam("firstName");
@@ -306,7 +306,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void getUserEmailPreferences(Context ctx) {
+    private static void getUserEmailPreferences(Context ctx) {
         final String handleFetchType = Objects.requireNonNull(ctx.queryParam("handleFetchType"));
         final User sessionUser = Objects.requireNonNull(ctx.attribute("user"));
         int fleetUserID = -1;
@@ -334,7 +334,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void getUserPreferences(Context ctx) {
+    private static void getUserPreferences(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         try (Connection connection = Database.getConnection()) {
@@ -344,7 +344,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void getUserPreferencesPage(Context ctx) {
+    private static void getUserPreferencesPage(Context ctx) {
         final String templateFile = "preferences_page.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -372,7 +372,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postUserPreferences(Context ctx) {
+    private static void postUserPreferences(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int decimalPrecision = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("decimal_precision")));
 
@@ -383,7 +383,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postUserPreferencesMetric(Context ctx) {
+    private static void postUserPreferencesMetric(Context ctx) {
         LOG.info("handling post user prefs route!");
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -406,7 +406,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postResetPassword(Context ctx) {
+    private static void postResetPassword(Context ctx) {
         final String emailAddress = Objects.requireNonNull(ctx.queryParam("emailAddress"));
         final String passphrase = Objects.requireNonNull(ctx.queryParam("passphrase"));
         final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
@@ -439,7 +439,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
 
     }
 
-    public static void postSendUserInvite(Context ctx) {
+    private static void postSendUserInvite(Context ctx) {
         class InvitationSent {
             final String message = "Invitation Sent.";
         }
@@ -479,7 +479,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postUpdatePassword(Context ctx) {
+    private static void postUpdatePassword(Context ctx) {
         final String currentPassword = Objects.requireNonNull(ctx.queryParam("currentPassword"));
         final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
         final String confirmPassword = Objects.requireNonNull(ctx.queryParam("confirmPassword"));
@@ -511,7 +511,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
 
     }
 
-    public static void postUpdateProfile(Context ctx) {
+    private static void postUpdateProfile(Context ctx) {
         final String firstName = Objects.requireNonNull(ctx.queryParam("firstName"));
         final String lastName = Objects.requireNonNull(ctx.queryParam("lastName"));
         final String country = Objects.requireNonNull(ctx.queryParam("country"));
@@ -531,7 +531,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    public static void postUpdateUserAccess(Context ctx) {
+    private static void postUpdateUserAccess(Context ctx) {
         class UpdateUserAccess {
             final String message = "Success.";
         }
@@ -558,7 +558,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
 
     }
 
-    public static void postUpdateUserEmailPreferences(Context ctx) {
+    private static void postUpdateUserEmailPreferences(Context ctx) {
         final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         // Log the raw handleUpdateType value
@@ -616,7 +616,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         ctx.result("handleUpdateType not specified.");
     }
 
-    public static void getEmailUnsubscribe(Context ctx) {
+    private static void getEmailUnsubscribe(Context ctx) {
         final int id = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
         final String token = ctx.queryParam("token");
 
@@ -673,8 +673,7 @@ public class AccountJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    @Override
-    public void bindRoutes(Javalin app) {
+    public static void bindRoutes(Javalin app) {
         app.post("/login", AccountJavalinRoutes::postLogin);
         app.post("/logout", AccountJavalinRoutes::postLogout);
 

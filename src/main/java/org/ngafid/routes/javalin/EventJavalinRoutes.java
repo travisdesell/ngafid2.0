@@ -420,8 +420,7 @@ public class EventJavalinRoutes implements JavalinRoutes {
         }
     }
 
-    @Override
-    public void bindRoutes(Javalin app) {
+    public static void bindRoutes(Javalin app) {
         app.get("/protected/event_definitions", EventJavalinRoutes::getAllEventDefinitions);
 
         app.get("/protected/manage_event_definitions", EventJavalinRoutes::getEventDefinition);

@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -37,7 +38,7 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
-    public static void getManageFleet(Context ctx) {
+    private static void getManageFleet(Context ctx) {
         final String templateFile = "manage_fleet.html";
 
         try {
@@ -54,7 +55,7 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
-    public static void postFleetNames(Context ctx) {
+    private static void postFleetNames(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             List<String> names = new ArrayList<String>();
 
@@ -69,7 +70,7 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
-    public static void getSystemIds(Context ctx) {
+    private static void getSystemIds(Context ctx) {
         final String templateFile = "system_ids.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -92,7 +93,7 @@ public class AircraftFleetTailsJavalinRoutes {
     }
 
 
-    public static void getSimAircraft(Context ctx) {
+    private static void getSimAircraft(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -110,7 +111,7 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
-    public static void postSimAircraft(Context ctx) {
+    private static void postSimAircraft(Context ctx) {
         final String CACHE = "cache";
         final String RMCACHE = "rmcache";
 
@@ -142,7 +143,7 @@ public class AircraftFleetTailsJavalinRoutes {
         }
     }
 
-    public static void postUpdateTail(Context ctx) {
+    private static void postUpdateTail(Context ctx) {
         final String systemId = Objects.requireNonNull(ctx.queryParam("systemId"));
         final String tail = Objects.requireNonNull(ctx.queryParam("tail"));
 
@@ -165,5 +166,15 @@ public class AircraftFleetTailsJavalinRoutes {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+
+    public static void bindRoutes(Javalin app) {
+        app.get("/protected/manage_fleet", AircraftFleetTailsJavalinRoutes::getManageFleet);
+//        app.post("/protected/fleet_names", AircraftFleetTailsJavalinRoutes::postFleetNames);
+        app.get("/protected/system_ids", AircraftFleetTailsJavalinRoutes::getSystemIds);
+        app.get("/sim_acft", AircraftFleetTailsJavalinRoutes::getSimAircraft);
+        app.post("/sim_acft", AircraftFleetTailsJavalinRoutes::postSimAircraft);
+        app.post("/update_tail", AircraftFleetTailsJavalinRoutes::postUpdateTail);
     }
 }
