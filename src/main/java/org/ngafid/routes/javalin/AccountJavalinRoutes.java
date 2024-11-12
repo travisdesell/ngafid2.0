@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
@@ -25,12 +26,12 @@ public class AccountJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
     private static class LoginResponse {
-        private final boolean loggedOut;
-        private final boolean waiting;
-        private final boolean denied;
-        private final boolean loggedIn;
-        private final String message;
-        private final User user;
+        @JsonProperty private final boolean loggedOut;
+        @JsonProperty private final boolean waiting;
+        @JsonProperty private final boolean denied;
+        @JsonProperty private final boolean loggedIn;
+        @JsonProperty private final String message;
+        @JsonProperty private final User user;
 
         public LoginResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -43,11 +44,11 @@ public class AccountJavalinRoutes {
     }
 
     private static class LogoutResponse {
-        private final boolean loggedOut;
-        private final boolean waiting;
-        private final boolean loggedIn;
-        private final String message;
-        private final User user;
+        @JsonProperty private final boolean loggedOut;
+        @JsonProperty private final boolean waiting;
+        @JsonProperty private final boolean loggedIn;
+        @JsonProperty private final String message;
+        @JsonProperty private final User user;
 
         public LogoutResponse(boolean loggedOut, boolean waiting, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -59,8 +60,8 @@ public class AccountJavalinRoutes {
     }
 
     private static class ForgotPasswordResponse {
-        String message;
-        boolean registeredEmail;
+        @JsonProperty String message;
+        @JsonProperty boolean registeredEmail;
 
         public ForgotPasswordResponse(String message, boolean registeredEmail) {
             this.message = message;
@@ -70,8 +71,8 @@ public class AccountJavalinRoutes {
     }
 
     private static class CreatedAccount {
-        private final String accountType;
-        private final User user;
+        @JsonProperty private final String accountType;
+        @JsonProperty private final User user;
 
         public CreatedAccount(String accountType, User user) {
             this.accountType = accountType;
@@ -80,12 +81,12 @@ public class AccountJavalinRoutes {
     }
 
     private static class ResetSuccessResponse {
-        private final boolean loggedOut;
-        private final boolean waiting;
-        private final boolean denied;
-        private final boolean loggedIn;
-        private final String message;
-        private final User user;
+        @JsonProperty private final boolean loggedOut;
+        @JsonProperty private final boolean waiting;
+        @JsonProperty private final boolean denied;
+        @JsonProperty private final boolean loggedIn;
+        @JsonProperty private final String message;
+        @JsonProperty private final User user;
 
         public ResetSuccessResponse(boolean loggedOut, boolean waiting, boolean denied, boolean loggedIn, String message, User user) {
             this.loggedOut = loggedOut;
@@ -98,7 +99,7 @@ public class AccountJavalinRoutes {
     }
 
     private static class Profile {
-        private final User user;
+        @JsonProperty private final User user;
 
         public Profile(User user) {
             this.user = user;

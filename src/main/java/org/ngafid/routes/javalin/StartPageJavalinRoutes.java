@@ -80,7 +80,7 @@ public class StartPageJavalinRoutes {
         app.get("/", ctx -> getHome(ctx, null));
         app.get("/logout_success", ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
         app.get("/access_denied", ctx -> getHome(ctx, new Message("danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
-        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
+//        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
 
         app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
         app.get("/protected/welcome", ctx -> getWelcome(ctx, null));
