@@ -260,8 +260,8 @@ public class FlightsJavalinRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
+        app.get("/protected/flight", FlightsJavalinRoutes::getFlight);
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);
-        app.get("/protected/flights", FlightsJavalinRoutes::getFlight);
         app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
         app.get("/protected/flights/flight_display", FlightsJavalinRoutes::getFlightDisplay);
     }
