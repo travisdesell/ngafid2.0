@@ -55,9 +55,9 @@ public final class SparkWebServer extends WebServer {
 
     @Override
     public void configureRoutes() {
-        Spark.get("/", new GetHome(gson));
-        Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
-        Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
+//        Spark.get("/", new GetHome(gson));
+//        Spark.get("/access_denied", new GetHome(gson, "danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in."));
+//        Spark.get("/logout_success", new GetHome(gson, "primary", "You have logged out successfully."));
         Spark.get("/sandbox", new GetSandbox(gson));
 
 
@@ -79,13 +79,13 @@ public final class SparkWebServer extends WebServer {
 //        Spark.post("/reset_password", new PostResetPassword(gson));
 
         //to unsubscribe from emails
-        Spark.get("/email_unsubscribe", new GetEmailUnsubscribe(gson));
-        Spark.after("/email_unsubscribe", (request, response) -> {
-            response.redirect("/");
-        });
+//        Spark.get("/email_unsubscribe", new GetEmailUnsubscribe(gson));
+//        Spark.after("/email_unsubscribe", (request, response) -> {
+//            response.redirect("/");
+//        });
 
 
-        Spark.get("/protected/welcome", new GetWelcome(gson));
+//        Spark.get("/protected/welcome", new GetWelcome(gson));
 //        Spark.get("/protected/aggregate", new GetAggregate(gson));
         Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
         Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
@@ -99,7 +99,7 @@ public final class SparkWebServer extends WebServer {
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
 
-        Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
+//        Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
 //        Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
@@ -168,12 +168,12 @@ public final class SparkWebServer extends WebServer {
         // Cesium related routes
         Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
 
-        Spark.get("/protected/create_event", new GetCreateEvent(gson));
-        Spark.post("/protected/create_event", new PostCreateEvent(gson));
+//        Spark.get("/protected/create_event", new GetCreateEvent(gson));
+//        Spark.post("/protected/create_event", new PostCreateEvent(gson));
         Spark.get("/protected/update_event", new GetUpdateEvent(gson));
         Spark.post("/protected/update_event", new PostUpdateEvent(gson));
 
-        Spark.get("/protected/manage_events", new GetEventManager(gson));
+//        Spark.get("/protected/manage_events", new GetEventManager(gson));
 
         //routes for uploading files
         Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
@@ -188,17 +188,17 @@ public final class SparkWebServer extends WebServer {
         Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
         Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
 
-        Spark.post("/protected/events", new PostEvents(gson));
-        Spark.post("/protected/event_metadata", new PostEventMetaData(gson));
-        Spark.post("/protected/event_stat", new PostEventStatistics(gson));
+//        Spark.post("/protected/events", new PostEvents(gson));
+//        Spark.post("/protected/event_metadata", new PostEventMetaData(gson));
+//        Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
 //        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
 //        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
 //        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
-        Spark.get("/protected/get_event_description", new GetEventDescription(gson));
-        Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));
+//        Spark.get("/protected/get_event_description", new GetEventDescription(gson));
+//        Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
 //        Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
@@ -206,9 +206,9 @@ public final class SparkWebServer extends WebServer {
 
 
         // Event Definition Management
-        Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
-        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
-        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
+//        Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
+//        Spark.put("/protected/manage_event_definitions", new PutEventDefinitions(gson));
+//        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
 
         // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
         Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));

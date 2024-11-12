@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -24,7 +25,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class EventJavalinRoutes {
+public class EventJavalinRoutes implements JavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
 
     public static void getAllEventDefinitions(Context ctx) {
@@ -38,18 +39,11 @@ public class EventJavalinRoutes {
     }
 
     public static void getEventDefinition(Context ctx) {
-        String templateFile = "event_definitions_display.html";
+        final String templateFile = "event_definitions_display.html";
 
         try (Connection connection = Database.getConnection()) {
-            User user = ctx.sessionAttribute("user");
-            if (user == null) {
-                LOG.severe("INVALID ACCESS: user was not logged in.");
-                ctx.status(401);
-                ctx.json(new ErrorResponse("Not Logged In", "No user logged in."));
-                return;
-            }
-
-            int fleetId = user.getFleetId();
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final int fleetId = user.getFleetId();
 
             Map<String, Object> scopes = new HashMap<>();
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
@@ -70,6 +64,24 @@ public class EventJavalinRoutes {
         } catch (IOException e) {
             LOG.severe(e.toString());
         }
+    }
+
+    public static void getEventDescription(Context ctx) {
+        final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
+        final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = "
+                + "\"" + expectedName + "\"";
+
+        try (Connection connection = Database.getConnection();
+             PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+
+            ResultSet resultSet = preparedStatement.executeQuery();
+            resultSet.next();
+
+            ctx.json(new EventDefinition(resultSet).toHumanReadable());
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+
     }
 
     public static void getAllEventDescriptions(Context ctx) {
@@ -406,5 +418,28 @@ public class EventJavalinRoutes {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    @Override
+    public void bindRoutes(Javalin app) {
+        app.get("/protected/event_definitions", EventJavalinRoutes::getAllEventDefinitions);
+
+        app.get("/protected/manage_event_definitions", EventJavalinRoutes::getEventDefinition);
+        app.put("/protected/manage_event_definitions", EventJavalinRoutes::putEventDefinitions);
+        app.delete("/protected/manage_event_definitions", EventJavalinRoutes::deleteEventDefinitions);
+
+        app.get("/protected/event_description", EventJavalinRoutes::getEventDescription);
+        app.get("/protected/event_descriptions", EventJavalinRoutes::getAllEventDescriptions);
+        app.get("/protected/event_counts", EventJavalinRoutes::getEventCounts);
+
+        app.get("/protected/create_event", EventJavalinRoutes::getEventCreator);
+        app.post("/protected/create_event", EventJavalinRoutes::postCreateEvent);
+
+        app.get("/protected/manage_events", EventJavalinRoutes::getEventManager);
+
+        app.post("/protected/events", EventJavalinRoutes::postEvents);
+        app.post("/protected/event_metadata", EventJavalinRoutes::postEventMetaData);
+        app.post("/protected/event_stat", EventJavalinRoutes::postEventStatistics);
+
     }
 }
