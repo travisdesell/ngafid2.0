@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -31,22 +32,18 @@ public class StartPageJavalinRoutes {
         }
     }
 
-    public static void getHome(Context ctx) throws IOException {
+    private static void getHome(Context ctx, Message message) throws IOException {
         Map<String, Object> scopes = new HashMap<>();
         ctx.contentType("text/html");
 
-        if (ctx.queryParam("access_denied") != null) {
-            scopes.put("access_denied", new Message("danger",
-                    "You attempted to load a page you did not have access to " +
-                            "or attempted to access a page while not logged in."));
-        } else if (ctx.queryParam("logout_success") != null) {
-            scopes.put("logout_success", new Message("success", "You have been successfully logged out."));
+        if (message != null) {
+            scopes.put("messages", new Message[]{message});
         }
 
         ctx.result(MustacheHandler.handle(homeTemplateFileName, scopes));
     }
 
-    public static void getWaiting(Context ctx) {
+    private static void getWaiting(Context ctx) {
         final String templateFile = "waiting.html";
 
         try  {
@@ -57,7 +54,7 @@ public class StartPageJavalinRoutes {
         }
     }
 
-    public static void getWelcome(Context ctx) {
+    private static void getWelcome(Context ctx, Message message) {
         final String templateFile = "welcome.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -66,6 +63,9 @@ public class StartPageJavalinRoutes {
             Map<String, Object> scopes = new HashMap<String, Object>();
             scopes.put("navbar_js", Navbar.getJavascript(ctx));
             scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection, fleetId)) + ";\n");
+            if (message != null) {
+                scopes.put("messages", new Message[]{message});
+            }
 
             ctx.contentType("text/html");
             ctx.result(MustacheHandler.handle(templateFile, scopes));
@@ -74,4 +74,17 @@ public class StartPageJavalinRoutes {
             ctx.json(new ErrorResponse(e));
         }
     }
+    
+    
+    public static void bindRoutes(Javalin app) {
+        app.get("/", ctx -> getHome(ctx, null));
+        app.get("/logout_success", ctx -> getHome(ctx, new Message("success", "You have been successfully logged out.")));
+        app.get("/access_denied", ctx -> getHome(ctx, new Message("danger", "You attempted to load a page you did not have access to or attempted to access a page while not logged in.")));
+        app.get("/*", ctx -> getHome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
+
+        app.get("/protected/waiting", StartPageJavalinRoutes::getWaiting);
+        app.get("/protected/welcome", ctx -> getWelcome(ctx, null));
+        app.get("/protected/*", ctx -> getWelcome(ctx, new Message("danger", "The page you attempted to access does not exist.")));
+    }
+    
 }

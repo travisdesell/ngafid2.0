@@ -97,7 +97,7 @@ public final class SparkWebServer extends WebServer {
 //        Spark.post("/protected/severities", new PostSeverities(gson));
 
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
-        Spark.get("/protected/waiting", new GetWaiting(gson));
+//        Spark.get("/protected/waiting", new GetWaiting(gson));
 
 //        Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
 
@@ -211,8 +211,8 @@ public final class SparkWebServer extends WebServer {
 //        Spark.delete("/protected/manage_event_definitions", new DeleteEventDefinitions(gson));
 
         // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
-        Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
-        Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
+//        Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
+//        Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
         Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
 
     }

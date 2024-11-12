@@ -33,8 +33,8 @@ import java.util.logging.Logger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.ngafid.WebServer.gson;
 
-public class ImportUploadRoutes {
-    private static final Logger LOG = Logger.getLogger(ImportUploadRoutes.class.getName());
+public class ImportUploadJavalinRoutes {
+    private static final Logger LOG = Logger.getLogger(ImportUploadJavalinRoutes.class.getName());
 
     private static class UploadsResponse {
         public List<Upload> uploads;
@@ -481,17 +481,17 @@ public class ImportUploadRoutes {
     }
 
     public static void bindRoutes(Javalin app) {
-        app.get("/protected/download_upload", ImportUploadRoutes::getUpload);
-        app.post("/uploads/new", ImportUploadRoutes::postNewUpload);
-        app.post("/protected/upload", ImportUploadRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
-        app.post("/protected/remove_upload", ImportUploadRoutes::postRemoveUpload);
+        app.get("/protected/download_upload", ImportUploadJavalinRoutes::getUpload);
+        app.post("/uploads/new", ImportUploadJavalinRoutes::postNewUpload);
+        app.post("/protected/upload", ImportUploadJavalinRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
+        app.post("/protected/remove_upload", ImportUploadJavalinRoutes::postRemoveUpload);
 
-        app.get("/protected/uploads", ImportUploadRoutes::getUploads);
-        app.post("/protected/uploads", ImportUploadRoutes::postUploads);
+        app.get("/protected/uploads", ImportUploadJavalinRoutes::getUploads);
+        app.post("/protected/uploads", ImportUploadJavalinRoutes::postUploads);
 
-        app.get("/protected/imports", ImportUploadRoutes::getImports);
-        app.post("/protected/get_imports", ImportUploadRoutes::postImports);
+        app.get("/protected/imports", ImportUploadJavalinRoutes::getImports);
+        app.post("/protected/get_imports", ImportUploadJavalinRoutes::postImports);
 
-        app.post("/protected/upload_details", ImportUploadRoutes::postUploadDetails);
+        app.post("/protected/upload_details", ImportUploadJavalinRoutes::postUploadDetails);
     }
 }

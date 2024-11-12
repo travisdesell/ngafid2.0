@@ -44,10 +44,6 @@ public class JavalinWebServer extends WebServer {
 
     @Override
     protected void configureRoutes() {
-        app.get("/", StartPageJavalinRoutes::getHome);
-        app.get("/access_denied", StartPageJavalinRoutes::getHome);
-        app.get("/logout_success", StartPageJavalinRoutes::getHome);
-
         AccountJavalinRoutes.bindRoutes(app);
         AircraftFleetTailsJavalinRoutes.bindRoutes(app);
         AirsyncJavalinRoutes.bindRoutes(app);
@@ -56,7 +52,7 @@ public class JavalinWebServer extends WebServer {
         DoubleSeriesJavalinRoutes.bindRoutes(app);
         EventJavalinRoutes.bindRoutes(app);
         FlightsJavalinRoutes.bindRoutes(app);
-        ImportUploadRoutes.bindRoutes(app);
+        ImportUploadJavalinRoutes.bindRoutes(app);
         StartPageJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
         TagFilterJavalinRoutes.bindRoutes(app);
