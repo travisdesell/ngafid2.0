@@ -150,20 +150,20 @@ public final class SparkWebServer extends WebServer {
 //        Spark.post("/protected/sim_acft", new PostSimAircraft(gson));
 
         //Flight-Tagging routes
-        Spark.post("/protected/flight_tags", new PostTags(gson));
-        Spark.post("/protected/create_tag", new PostCreateTag(gson));
-        Spark.post("/protected/get_unassociated_tags", new PostUnassociatedTags(gson));
-        Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
-        Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
-        Spark.post("/protected/edit_tag", new PostEditTag(gson));
+//        Spark.post("/protected/flight_tags", new PostTags(gson));
+//        Spark.post("/protected/create_tag", new PostCreateTag(gson));
+//        Spark.post("/protected/get_unassociated_tags", new PostUnassociatedTags(gson));
+//        Spark.post("/protected/associate_tag", new PostAssociateTag(gson));
+//        Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
+//        Spark.post("/protected/edit_tag", new PostEditTag(gson));
 
         Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
         // Saving filters routes
-        Spark.get("/protected/stored_filters", new GetStoredFilters(gson));
-        Spark.post("/protected/store_filter", new PostStoreFilter(gson));
-        Spark.post("/protected/remove_filter", new PostRemoveFilter(gson));
-        Spark.post("/protected/modify_filter", new PostModifyFilter(gson));
+//        Spark.get("/protected/stored_filters", new GetStoredFilters(gson));
+//        Spark.post("/protected/store_filter", new PostStoreFilter(gson));
+//        Spark.post("/protected/remove_filter", new PostRemoveFilter(gson));
+//        Spark.post("/protected/modify_filter", new PostModifyFilter(gson));
 
         // Cesium related routes
 //        Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));

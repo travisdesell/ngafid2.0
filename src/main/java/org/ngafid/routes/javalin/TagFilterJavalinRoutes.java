@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -18,7 +19,7 @@ import java.util.logging.Logger;
 public class TagFilterJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(TagFilterJavalinRoutes.class.getName());
 
-    public static class RemoveTagResponse {
+    private static class RemoveTagResponse {
         private final boolean allTagsCleared;
         private final FlightTag tag;
 
@@ -33,7 +34,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postCreateTag(Context ctx) {
+    private static void postCreateTag(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
@@ -58,7 +59,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postEditTag(Context ctx) {
+    private static void postEditTag(Context ctx) {
         String name = ctx.queryParam("name");
         String description = ctx.queryParam("description");
         String color = ctx.queryParam("color");
@@ -88,7 +89,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postRemoveTag(Context ctx) {
+    private static void postRemoveTag(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
@@ -129,7 +130,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postTags(Context ctx) {
+    private static void postTags(Context ctx) {
         final User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
@@ -156,7 +157,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postUnassociatedTags(Context ctx) {
+    private static void postUnassociatedTags(Context ctx) {
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
@@ -184,7 +185,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postAssociateTag(Context ctx) {
+    private static void postAssociateTag(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
         final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("tag_id")));
@@ -202,7 +203,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void getStoredFilters(Context ctx) {
+    private static void getStoredFilters(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final List<StoredFilter> filters = StoredFilter.getStoredFilters(connection, user.getFleetId());
@@ -213,7 +214,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postStoreFilter(Context ctx) {
+    private static void postStoreFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final String name = Objects.requireNonNull(ctx.queryParam("name"));
@@ -232,7 +233,7 @@ public class TagFilterJavalinRoutes {
         }
     }
 
-    public static void postModifyFilter(Context ctx) {
+    private static void postModifyFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
@@ -253,7 +254,7 @@ public class TagFilterJavalinRoutes {
     }
 
 
-    public static void postRemoveFilter(Context ctx) {
+    private static void postRemoveFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final String name = Objects.requireNonNull(ctx.queryParam("name"));
@@ -266,5 +267,19 @@ public class TagFilterJavalinRoutes {
             LOG.severe(e.toString());
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void bindRoutes(Javalin app) {
+        app.post("/protected/flight_tags", TagFilterJavalinRoutes::postTags);
+        app.post("/protected/create_tag", TagFilterJavalinRoutes::postCreateTag);
+        app.post("/protected/get_unassociated_tags", TagFilterJavalinRoutes::postUnassociatedTags);
+        app.post("/protected/associate_tag", TagFilterJavalinRoutes::postAssociateTag);
+        app.post("/protected/remove_tag", TagFilterJavalinRoutes::postRemoveTag);
+        app.post("/protected/edit_tag", TagFilterJavalinRoutes::postEditTag);
+
+        app.get("/protected/stored_filters", TagFilterJavalinRoutes::getStoredFilters);
+        app.post("/protected/store_filter", TagFilterJavalinRoutes::postStoreFilter);
+        app.post("/protected/remove_filter", TagFilterJavalinRoutes::postRemoveFilter);
+        app.post("/protected/modify_filter", TagFilterJavalinRoutes::postModifyFilter);
     }
 }
