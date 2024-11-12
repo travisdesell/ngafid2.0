@@ -213,8 +213,7 @@ public final class SparkWebServer extends WebServer {
         // NOTE: Do not put routes below this line. The below routes will catch these before the routes that go beneath it.
 //        Spark.get("/protected/*", new GetWelcome(gson, "danger", "The page you attempted to access does not exist."));
 //        Spark.get("/*", new GetHome(gson, "danger", "The page you attempted to access does not exist."));
-        Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
-
+//        Spark.put("/update_monthly_flights", new UpdateMonthlyFlightsCache(gson));
     }
 
     @Override

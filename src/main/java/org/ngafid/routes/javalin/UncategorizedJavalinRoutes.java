@@ -28,7 +28,7 @@ public class UncategorizedJavalinRoutes {
         }
     }
 
-    public static void putUpdateMonthlyFlightsCache(Context ctx) {
+    private static void putUpdateMonthlyFlightsCache(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             updateMonthlyTotalFlights(connection, Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId"))));
             ctx.status(200);
@@ -40,7 +40,7 @@ public class UncategorizedJavalinRoutes {
         }
     }
 
-    public static void postMainContent(Context ctx) {
+    private static void postMainContent(Context ctx) {
         final User user = ctx.sessionAttribute("user");
 
         try (Connection connection = Database.getConnection()) {
@@ -48,5 +48,9 @@ public class UncategorizedJavalinRoutes {
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static final void bindRoutes(io.javalin.Javalin app) {
+        app.get("/update_monthly_flights", UncategorizedJavalinRoutes::putUpdateMonthlyFlightsCache);
     }
 }
