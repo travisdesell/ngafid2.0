@@ -25,7 +25,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class EventJavalinRoutes implements JavalinRoutes {
+public class EventJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(EventJavalinRoutes.class.getName());
 
     public static void getAllEventDefinitions(Context ctx) {
@@ -439,6 +439,5 @@ public class EventJavalinRoutes implements JavalinRoutes {
         app.post("/protected/events", EventJavalinRoutes::postEvents);
         app.post("/protected/event_metadata", EventJavalinRoutes::postEventMetaData);
         app.post("/protected/event_stat", EventJavalinRoutes::postEventStatistics);
-
     }
 }

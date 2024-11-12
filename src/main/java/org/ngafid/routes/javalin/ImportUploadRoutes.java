@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import io.javalin.http.UploadedFile;
 import jakarta.servlet.MultipartConfigElement;
@@ -35,7 +36,7 @@ import static org.ngafid.WebServer.gson;
 public class ImportUploadRoutes {
     private static final Logger LOG = Logger.getLogger(ImportUploadRoutes.class.getName());
 
-    public static class UploadsResponse {
+    private static class UploadsResponse {
         public List<Upload> uploads;
         public int numberPages;
 
@@ -59,7 +60,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static class ImportsResponse {
+    private static class ImportsResponse {
         public List<Upload> imports;
         public int numberPages;
 
@@ -69,7 +70,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void getUpload(Context ctx) {
+    private static void getUpload(Context ctx) {
         LOG.info("Retrieving upload: " + ctx.queryParams("uploadId") + " " + ctx.queryParams("md5Hash"));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -121,7 +122,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postUpload(Context ctx) {
+    private static void postUpload(Context ctx) {
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int uploaderId = user.getId();
 
@@ -234,7 +235,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void getUploads(Context ctx) {
+    private static void getUploads(Context ctx) {
         final String templateFile = "uploads.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -279,7 +280,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postUploads(Context ctx) {
+    private static void postUploads(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -304,7 +305,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postUploadDetails(Context ctx) {
+    private static void postUploadDetails(Context ctx) {
         final int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("uploadId")));
         try {
             ctx.json(new UploadDetails(uploadId));
@@ -313,7 +314,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postRemoveUpload(Context ctx) {
+    private static void postRemoveUpload(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int uploadId = Integer.parseInt(ctx.queryParam("uploadId"));
@@ -353,7 +354,7 @@ public class ImportUploadRoutes {
 
     }
 
-    public static void getImports(Context ctx) {
+    private static void getImports(Context ctx) {
         final String templateFile = WebServer.MUSTACHE_TEMPLATE_DIR + "imports.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -387,7 +388,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postImports(Context ctx) {
+    private static void postImports(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -413,7 +414,7 @@ public class ImportUploadRoutes {
         }
     }
 
-    public static void postNewUpload(Context ctx) {
+    private static void postNewUpload(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int uploaderId = user.getId();
         final int fleetId = user.getFleetId();
@@ -477,5 +478,20 @@ public class ImportUploadRoutes {
             LOG.severe(gson.toJson(e));
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void bindRoutes(Javalin app) {
+        app.get("/protected/download_upload", ImportUploadRoutes::getUpload);
+        app.post("/uploads/new", ImportUploadRoutes::postNewUpload);
+        app.post("/protected/upload", ImportUploadRoutes::postUpload); // Might be weird. Spark has a "multipart/form-data" in args
+        app.post("/protected/remove_upload", ImportUploadRoutes::postRemoveUpload);
+
+        app.get("/protected/uploads", ImportUploadRoutes::getUploads);
+        app.post("/protected/uploads", ImportUploadRoutes::postUploads);
+
+        app.get("/protected/imports", ImportUploadRoutes::getImports);
+        app.post("/protected/get_imports", ImportUploadRoutes::postImports);
+
+        app.post("/protected/upload_details", ImportUploadRoutes::postUploadDetails);
     }
 }

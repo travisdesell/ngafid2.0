@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -22,7 +23,7 @@ import static org.ngafid.WebServer.gson;
 public class FlightsJavalinRoutes {
     private static Logger LOG = Logger.getLogger(FlightsJavalinRoutes.class.getName());
 
-    public static class FlightsResponse {
+    private static class FlightsResponse {
         public List<Flight> flights;
         public int numberPages;
 
@@ -32,7 +33,7 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    public static void getFlight(Context ctx) {
+    private static void getFlight(Context ctx) {
         final String templateFile = "flight.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -85,7 +86,7 @@ public class FlightsJavalinRoutes {
             ctx.json(new ErrorResponse(e));
         }
     }
-    public static void getFlights(Context ctx) {
+    private static void getFlights(Context ctx) {
         final String templateFile = "flights.html";
 
         try (Connection connection = Database.getConnection()) {
@@ -181,7 +182,7 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    public static void getFlightDisplay(Context ctx) {
+    private static void getFlightDisplay(Context ctx) {
         final String templateFile = "flight_display.html";
 
         try {
@@ -196,7 +197,7 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    public static void postFlights(Context ctx) {
+    private static void postFlights(Context ctx) {
         final String filterJSON = ctx.queryParam("filterQuery");
         final Filter filter = gson.fromJson(filterJSON, Filter.class);
         final User user = ctx.attribute("user");
@@ -258,7 +259,15 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    public static void postNumberFlights(Context ctx) {
+    private static void postNumberFlights(Context ctx) {
         return;
+    }
+
+    public static void bindRoutes(Javalin app) {
+        app.get("/protected/flights", FlightsJavalinRoutes::getFlights);
+        app.post("/protected/flights", FlightsJavalinRoutes::postFlights);
+        app.post("/protected/flights/number", FlightsJavalinRoutes::postNumberFlights);
+        app.get("/protected/flights/flight", FlightsJavalinRoutes::getFlight);
+        app.get("/protected/flights/flight_display", FlightsJavalinRoutes::getFlightDisplay);
     }
 }

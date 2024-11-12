@@ -111,20 +111,20 @@ public final class SparkWebServer extends WebServer {
 //        Spark.get("/protected/update_password", new GetUpdatePassword(gson));
 //        Spark.post("/protected/update_password", new PostUpdatePassword(gson));
 
-        Spark.get("/protected/uploads", new GetUploads(gson));
+//        Spark.get("/protected/uploads", new GetUploads(gson));
 //        Spark.get("/protected/airsync_uploads", new GetAirSyncUploads(gson));
 //        Spark.post("/protected/airsync_uploads", new PostAirSyncUploads(gson));
 //        Spark.post("/protected/remove_upload", new PostRemoveUpload(gson));
 
-        Spark.get("/protected/imports", new GetImports(gson));
+//        Spark.get("/protected/imports", new GetImports(gson));
 //        Spark.get("/protected/airsync_imports", new GetAirSyncImports(gson));
 //        Spark.post("/protected/airsync_update", new PostManualAirSyncUpdate(gson));
 //        Spark.post("/protected/airsync_imports", new PostAirSyncImports(gson));
 //        Spark.post("/protected/airsync_settings", new PostUpdateAirSyncTimeout(gson));
-        Spark.post("/protected/upload_details", new PostUploadDetails(gson));
+//        Spark.post("/protected/upload_details", new PostUploadDetails(gson));
 
-        Spark.post("/protected/uploads", new PostUploads(gson));
-        Spark.post("/protected/get_imports", new PostImports(gson));
+//        Spark.post("/protected/uploads", new PostUploads(gson));
+//        Spark.post("/protected/get_imports", new PostImports(gson));
         Spark.get("/protected/flights", new GetFlights(gson));
         Spark.post("/protected/get_flights", new PostFlights(gson));
 
@@ -176,11 +176,11 @@ public final class SparkWebServer extends WebServer {
 //        Spark.get("/protected/manage_events", new GetEventManager(gson));
 
         //routes for uploading files
-        Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
-        Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
+//        Spark.post("/protected/new_upload", "multipart/form-data", new PostNewUpload(gson));
+//        Spark.post("/protected/upload", "multipart/form-data", new PostUpload(gson));
 
         // Routes for downloading files
-        Spark.get("/protected/download_upload", new GetUpload(gson));
+//        Spark.get("/protected/download_upload", new GetUpload(gson));
 
 //        Spark.post("/protected/coordinates", new PostCoordinates(gson));
 //        Spark.post("/protected/double_series", new PostDoubleSeries(gson));
