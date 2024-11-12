@@ -90,11 +90,11 @@ public final class SparkWebServer extends WebServer {
         Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
         Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
 
-        Spark.get("/protected/trends", new GetTrends(gson));
+//        Spark.get("/protected/trends", new GetTrends(gson));
 //        Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
-        Spark.get("/protected/severities", new GetSeverities(gson));
-        Spark.post("/protected/severities", new PostSeverities(gson));
+//        Spark.get("/protected/severities", new GetSeverities(gson));
+//        Spark.post("/protected/severities", new PostSeverities(gson));
 
         Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
         Spark.get("/protected/waiting", new GetWaiting(gson));
@@ -130,8 +130,8 @@ public final class SparkWebServer extends WebServer {
 
         Spark.get("/protected/flight", new GetFlight(gson));
 
-        Spark.get("/protected/ttf", new GetTurnToFinal());
-        Spark.post("/protected/ttf", new PostTurnToFinal(gson));
+//        Spark.get("/protected/ttf", new GetTurnToFinal());
+//        Spark.post("/protected/ttf", new PostTurnToFinal(gson));
 
 //        Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
 //        Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
@@ -166,7 +166,7 @@ public final class SparkWebServer extends WebServer {
         Spark.post("/protected/modify_filter", new PostModifyFilter(gson));
 
         // Cesium related routes
-        Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
+//        Spark.get("/protected/ngafid_cesium", new GetNgafidCesium(gson));
 
 //        Spark.get("/protected/create_event", new GetCreateEvent(gson));
 //        Spark.post("/protected/create_event", new PostCreateEvent(gson));
@@ -182,11 +182,11 @@ public final class SparkWebServer extends WebServer {
         // Routes for downloading files
         Spark.get("/protected/download_upload", new GetUpload(gson));
 
-        Spark.post("/protected/coordinates", new PostCoordinates(gson));
+//        Spark.post("/protected/coordinates", new PostCoordinates(gson));
         Spark.post("/protected/double_series", new PostDoubleSeries(gson));
         Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
-        Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
-        Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
+//        Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
+//        Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
 
 //        Spark.post("/protected/events", new PostEvents(gson));
 //        Spark.post("/protected/event_metadata", new PostEventMetaData(gson));

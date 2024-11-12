@@ -1,6 +1,7 @@
 package org.ngafid.routes.javalin;
 
 import com.google.gson.JsonElement;
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -139,7 +140,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void getSeverities(Context ctx) {
+    private static void getSeverities(Context ctx) {
         final String templateFile = "severities.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -159,7 +160,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void postSeverities(Context ctx) {
+    private static void postSeverities(Context ctx) {
         final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
         final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
         final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
@@ -182,7 +183,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void getTurnToFinal(Context ctx) {
+    private static void getTurnToFinal(Context ctx) {
         final String templateFile = "ttf.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -204,7 +205,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void postTurnToFinal(Context ctx) {
+    private static void postTurnToFinal(Context ctx) {
         String startDate = ctx.queryParam("startDate");
         String endDate = ctx.queryParam("endDate");
         String airportIataCode = ctx.queryParam("airport");
@@ -246,7 +247,7 @@ public class AnalysisJavalinRoutes {
         ctx.json(Map.of("airports", airports, "ttfs", _ttfs));
     }
 
-    public static void getTrends(Context ctx) {
+    private static void getTrends(Context ctx) {
         final String templateFile = "trends.html";
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
@@ -267,7 +268,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void getCesium(Context ctx) {
+    private static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final String otherFlightId = Objects.requireNonNull(ctx.queryParam("other_flight_id"));
@@ -460,7 +461,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void postRateOfClosure(Context ctx) {
+    private static void postRateOfClosure(Context ctx) {
         final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
@@ -472,7 +473,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void postLociMetrics(Context ctx) {
+    private static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flight_id")));
         final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("time_index")));
@@ -507,7 +508,7 @@ public class AnalysisJavalinRoutes {
         }
     }
 
-    public static void postCoordinates(Context ctx) {
+    private static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final String name = Objects.requireNonNull(ctx.queryParam("seriesName"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
@@ -527,5 +528,21 @@ public class AnalysisJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void bindRoutes(Javalin app) {
+        app.get("/protected/severities", AnalysisJavalinRoutes::getSeverities);
+        app.post("/protected/severities", AnalysisJavalinRoutes::postSeverities);
+
+        app.get("/protected/ttf", AnalysisJavalinRoutes::getTurnToFinal);
+        app.post("/protected/ttf", AnalysisJavalinRoutes::postTurnToFinal);
+
+        app.get("/protected/trends", AnalysisJavalinRoutes::getTrends);
+
+        app.get("/protected/ngafid_cesium", AnalysisJavalinRoutes::getCesium);
+
+        app.post("/protected/rate_of_closure", AnalysisJavalinRoutes::postRateOfClosure);
+        app.post("/protected/loci_metrics", AnalysisJavalinRoutes::postLociMetrics);
+        app.post("/protected/coordinates", AnalysisJavalinRoutes::postCoordinates);
     }
 }
