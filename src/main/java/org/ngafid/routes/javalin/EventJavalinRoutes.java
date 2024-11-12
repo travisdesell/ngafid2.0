@@ -333,50 +333,6 @@ public class EventJavalinRoutes {
 
     }
 
-    private static void postEventCounts(Context ctx, boolean aggregate) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
-
-        User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        int fleetId = user.getFleetId();
-
-        // check to see if the user has upload access for this fleet.
-        if (!user.hasViewAccess(fleetId)) {
-            LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
-            ctx.status(401);
-            ctx.result("User did not have access to view events for this fleet.");
-            return;
-        }
-
-        if (aggregate && !user.hasAggregateView()) {
-            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
-            ctx.status(401);
-            ctx.result("User did not have aggregate access to view all event counts.");
-            return;
-        }
-
-        try (Connection connection = Database.getConnection()) {
-            if (aggregate) {
-                fleetId = -1;
-            }
-
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
-                    fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
-            ctx.json(eventCountsMap);
-        } catch (SQLException e) {
-            ctx.json(new ErrorResponse(e));
-        }
-    }
-
-    public static void postEventCounts(Context ctx) {
-        postEventCounts(ctx, false);
-    }
-
-    public static void postEventCountsAggregate(Context ctx) {
-        postEventCounts(ctx, true);
-    }
-
-
     public static void postEventMetaData(Context ctx) {
         LOG.info("handling rate of closure route");
         int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));

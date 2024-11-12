@@ -86,12 +86,12 @@ public final class SparkWebServer extends WebServer {
 
 
         Spark.get("/protected/welcome", new GetWelcome(gson));
-        Spark.get("/protected/aggregate", new GetAggregate(gson));
+//        Spark.get("/protected/aggregate", new GetAggregate(gson));
         Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
         Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
 
         Spark.get("/protected/trends", new GetTrends(gson));
-        Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
+//        Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
         Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
         Spark.get("/protected/severities", new GetSeverities(gson));
         Spark.post("/protected/severities", new PostSeverities(gson));
@@ -133,13 +133,13 @@ public final class SparkWebServer extends WebServer {
         Spark.get("/protected/ttf", new GetTurnToFinal());
         Spark.post("/protected/ttf", new PostTurnToFinal(gson));
 
-        Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
-        Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
-        Spark.post("/protected/statistics/aggregate/*", new PostStatistic(gson, true));
+//        Spark.post("/protected/statistics/aggregate/summary", new PostSummaryStatistics(gson, true));
+//        Spark.post("/protected/statistics/aggregate/event_counts", new PostEventCounts(gson, true));
+//        Spark.post("/protected/statistics/aggregate/*", new PostStatistic(gson, true));
 
-        Spark.post("/protected/statistics/summary", new PostSummaryStatistics(gson, false));
-        Spark.post("/protected/statistics/event_counts", new PostEventCounts(gson, false));
-        Spark.post("/protected/statistics/*", new PostStatistic(gson, false));
+//        Spark.post("/protected/statistics/summary", new PostSummaryStatistics(gson, false));
+//        Spark.post("/protected/statistics/event_counts", new PostEventCounts(gson, false));
+//        Spark.post("/protected/statistics/*", new PostStatistic(gson, false));
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));

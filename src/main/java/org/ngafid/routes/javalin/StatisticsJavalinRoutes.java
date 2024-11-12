@@ -1,13 +1,18 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.Fleet;
 import org.ngafid.accounts.User;
+import org.ngafid.events.EventDefinition;
 import org.ngafid.events.EventStatistics;
 import org.ngafid.flights.*;
 import org.ngafid.routes.ErrorResponse;
+import org.ngafid.routes.MustacheHandler;
+import org.ngafid.routes.Navbar;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.time.LocalDate;
@@ -19,8 +24,8 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class StatisticsRoutes {
-    private static final Logger LOG = Logger.getLogger(StatisticsRoutes.class.getName());
+public class StatisticsJavalinRoutes implements JavalinRoutes {
+    private static final Logger LOG = Logger.getLogger(StatisticsJavalinRoutes.class.getName());
 
     public static class StatFetcher {
         public interface StatFunction<T> {
@@ -159,7 +164,6 @@ public class StatisticsRoutes {
 
     public static void postStatistic(Context ctx, boolean aggregate) {
         final User user = ctx.sessionAttribute("user");
-        final int fleetId = user.getFleetId();
 
         try (Connection connection = Database.getConnection()) {
             Map<String, Object> statistics = new HashMap<>();
@@ -237,5 +241,138 @@ public class StatisticsRoutes {
         } catch (SQLException e) {
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+
+    public static void getAggregate(Context ctx) throws IOException {
+        final String templateFile = "aggregate.html";
+
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            LOG.severe("INVALID ACCESS: user was not logged in.");
+            ctx.status(401);
+            return;
+        }
+
+        // check to see if the user has access to view aggregate information
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate dashboard.");
+            ctx.status(401);
+            ctx.result("User did not have aggregate access to view aggregate dashboard.");
+            return;
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            Map<String, Object> scopes = new HashMap<String, Object>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+
+            long startTime = System.currentTimeMillis();
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n");
+            long endTime = System.currentTimeMillis();
+
+            LOG.info("getting fleet info took " + (endTime - startTime) + "ms.");
+
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+        }
+    }
+
+    public static void getAggregateTrends(Context ctx) throws IOException {
+        final String templateFile = "aggregate_trends.html";
+
+        User user = ctx.sessionAttribute("user");
+        if (user == null) {
+            LOG.severe("INVALID ACCESS: user was not logged in.");
+            ctx.status(401);
+            return;
+        }
+
+        // check to see if the user has access to view aggregate information
+        if (!user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate dashboard.");
+            ctx.status(401);
+            ctx.result("User did not have aggregate access to view aggregate dashboard.");
+            return;
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            Map<String, Object> scopes = new HashMap<String, Object>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+
+            long startTime = System.currentTimeMillis();
+            String fleetInfo = "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
+                    "var eventNames = " + gson.toJson(EventDefinition.getUniqueNames(connection)) + ";\n" +
+                    "var tagNames = " + gson.toJson(Flight.getAllTagNames(connection)) + ";\n";
+
+            scopes.put("fleet_info_js", fleetInfo);
+            long endTime = System.currentTimeMillis();
+            LOG.info("getting aggreagte data info took " + (endTime - startTime) + "ms.");
+
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+        }
+    }
+
+    private static void postEventCounts(Context ctx, boolean aggregate) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+
+        User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        int fleetId = user.getFleetId();
+
+        // check to see if the user has upload access for this fleet.
+        if (!user.hasViewAccess(fleetId)) {
+            LOG.severe("INVALID ACCESS: user did not have access to view events for this fleet.");
+            ctx.status(401);
+            ctx.result("User did not have access to view events for this fleet.");
+            return;
+        }
+
+        if (aggregate && !user.hasAggregateView()) {
+            LOG.severe("INVALID ACCESS: user did not have aggregate access to view all event counts.");
+            ctx.status(401);
+            ctx.result("User did not have aggregate access to view all event counts.");
+            return;
+        }
+
+        try (Connection connection = Database.getConnection()) {
+            if (aggregate) {
+                fleetId = -1;
+            }
+
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection,
+                    fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            ctx.json(eventCountsMap);
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    @Override
+    public void bindRoutes(Javalin app) {
+        app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
+        app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
+
+        app.post("/protected/statistics/summary", ctx -> postSummaryStatistics(ctx, false));
+        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
+        app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
+
+
+        app.post("/protected/statistics/aggregate/summary", ctx -> postSummaryStatistics(ctx, true));
+        app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
+        app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
     }
 }
