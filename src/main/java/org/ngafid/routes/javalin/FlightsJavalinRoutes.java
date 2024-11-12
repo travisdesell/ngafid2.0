@@ -259,15 +259,10 @@ public class FlightsJavalinRoutes {
         }
     }
 
-    private static void postNumberFlights(Context ctx) {
-        return;
-    }
-
     public static void bindRoutes(Javalin app) {
         app.get("/protected/flights", FlightsJavalinRoutes::getFlights);
-        app.post("/protected/flights", FlightsJavalinRoutes::postFlights);
-        app.post("/protected/flights/number", FlightsJavalinRoutes::postNumberFlights);
-        app.get("/protected/flights/flight", FlightsJavalinRoutes::getFlight);
+        app.get("/protected/flights", FlightsJavalinRoutes::getFlight);
+        app.post("/protected/get_flights", FlightsJavalinRoutes::postFlights);
         app.get("/protected/flights/flight_display", FlightsJavalinRoutes::getFlightDisplay);
     }
 }

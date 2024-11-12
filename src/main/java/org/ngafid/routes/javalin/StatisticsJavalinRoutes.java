@@ -361,17 +361,93 @@ public class StatisticsJavalinRoutes {
         }
     }
 
+    private static void postMonthlyEventCounts(Context ctx) {
+        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("aggregatePage")));
+        final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+        final String eventName = ctx.queryParam("eventName"); // Might be null intentionally
+
+        try (Connection connection = Database.getConnection()) {
+            Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
+            Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
+
+            if (aggregateTrendsPage) {
+                if (!user.hasAggregateView()) {
+                    LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
+                    ctx.status(401);
+                    ctx.result("User did not have aggregate access to view aggregate trends page.");
+                    return;
+                }
+
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
+            } else {
+
+                int fleetId = user.getFleetId();
+                // check to see if the user has upload access for this fleet.
+                if (!user.hasViewAccess(fleetId)) {
+                    LOG.severe("INVALID ACCESS: user did not have access view imports for this fleet.");
+                    ctx.status(401);
+                    ctx.result("User did not have access to view imports for this fleet.");
+                    return;
+                }
+
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate),
+                        LocalDate.parse(endDate));
+            }
+
+            if (eventName == null) {
+                ctx.json(map);
+            } else {
+                ctx.json(map.get(eventName));
+            }
+        } catch (SQLException e) {
+            ctx.json(new ErrorResponse(e));
+        }
+    }
+
+    private static void getEventStatistics(Context ctx) {
+        final String templateFile = "event_statistics.html";
+
+        try (Connection connection = Database.getConnection()) {
+            final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
+            final int fleetId = user.getFleetId();
+            Map<String, Object> scopes = new HashMap<>();
+
+            scopes.put("navbar_js", Navbar.getJavascript(ctx));
+
+            scopes.put("events_js",
+                    // "var eventStats = JSON.parse('" + gson.toJson(eventStatistics) + "');\n"
+                    "var eventDefinitions = JSON.parse('" + gson.toJson(EventDefinition.getAll(connection)) + "');\n" +
+                            "var airframeMap = JSON.parse('"
+                            + gson.toJson(Airframes.getIdToNameMap(connection, fleetId)) + "');\n");
+
+            ctx.contentType("text/html");
+            ctx.result(MustacheHandler.handle(templateFile, scopes));
+        } catch (SQLException e) {
+            LOG.severe(e.toString());
+            ctx.json(new ErrorResponse(e));
+        } catch (IOException e) {
+            LOG.severe(e.toString());
+        }
+    }
+
     public static void bindRoutes(Javalin app) {
         app.get("/protected/aggregate", StatisticsJavalinRoutes::getAggregate);
         app.get("/protected/aggregate_trends", StatisticsJavalinRoutes::getAggregateTrends);
 
         app.post("/protected/statistics/summary", ctx -> postSummaryStatistics(ctx, false));
-        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
         app.post("/protected/statistics/*", ctx -> postStatistic(ctx, false));
-
+        app.post("/protected/statistics/event_counts", ctx -> postEventCounts(ctx, false));
+        app.post("/protected/event_counts", ctx -> postEventCounts(ctx, false));
 
         app.post("/protected/statistics/aggregate/summary", ctx -> postSummaryStatistics(ctx, true));
-        app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
         app.post("/protected/statistics/aggregate/*", ctx -> postStatistic(ctx, true));
+        app.post("/protected/statistics/aggregate/event_counts", ctx -> postEventCounts(ctx, true));
+        app.post("/protected/statistics/all_event_counts", ctx -> postEventCounts(ctx, true));
+
+        app.get("/protected/event_statistics", StatisticsJavalinRoutes::getEventStatistics);
+        app.post("/protected/monthly_event_counts", StatisticsJavalinRoutes::postMonthlyEventCounts);
     }
 }

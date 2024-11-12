@@ -87,16 +87,16 @@ public final class SparkWebServer extends WebServer {
 
 //        Spark.get("/protected/welcome", new GetWelcome(gson));
 //        Spark.get("/protected/aggregate", new GetAggregate(gson));
-        Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
-        Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
+//        Spark.post("/protected/event_counts", new PostEventCounts(gson, false));
+//        Spark.post("/protected/all_event_counts", new PostEventCounts(gson, true));
 
 //        Spark.get("/protected/trends", new GetTrends(gson));
 //        Spark.get("/protected/aggregate_trends", new GetAggregateTrends(gson));
-        Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
+//        Spark.post("/protected/monthly_event_counts", new PostMonthlyEventCounts(gson));
 //        Spark.get("/protected/severities", new GetSeverities(gson));
 //        Spark.post("/protected/severities", new PostSeverities(gson));
 
-        Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
+//        Spark.get("/protected/event_statistics", new GetEventStatistics(gson));
 //        Spark.get("/protected/waiting", new GetWaiting(gson));
 
 //        Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
@@ -125,10 +125,10 @@ public final class SparkWebServer extends WebServer {
 
 //        Spark.post("/protected/uploads", new PostUploads(gson));
 //        Spark.post("/protected/get_imports", new PostImports(gson));
-        Spark.get("/protected/flights", new GetFlights(gson));
-        Spark.post("/protected/get_flights", new PostFlights(gson));
+//        Spark.get("/protected/flights", new GetFlights(gson));
+//        Spark.post("/protected/get_flights", new PostFlights(gson));
 
-        Spark.get("/protected/flight", new GetFlight(gson));
+//        Spark.get("/protected/flight", new GetFlight(gson));
 
 //        Spark.get("/protected/ttf", new GetTurnToFinal());
 //        Spark.post("/protected/ttf", new PostTurnToFinal(gson));
@@ -157,7 +157,7 @@ public final class SparkWebServer extends WebServer {
 //        Spark.post("/protected/remove_tag", new PostRemoveTag(gson));
 //        Spark.post("/protected/edit_tag", new PostEditTag(gson));
 
-        Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
+//        Spark.get("/protected/flight_display", new GetFlightDisplay(gson));
 
         // Saving filters routes
 //        Spark.get("/protected/stored_filters", new GetStoredFilters(gson));
@@ -170,8 +170,8 @@ public final class SparkWebServer extends WebServer {
 
 //        Spark.get("/protected/create_event", new GetCreateEvent(gson));
 //        Spark.post("/protected/create_event", new PostCreateEvent(gson));
-        Spark.get("/protected/update_event", new GetUpdateEvent(gson));
-        Spark.post("/protected/update_event", new PostUpdateEvent(gson));
+//        Spark.get("/protected/update_event", new GetUpdateEvent(gson));
+//        Spark.post("/protected/update_event", new PostUpdateEvent(gson));
 
 //        Spark.get("/protected/manage_events", new GetEventManager(gson));
 
@@ -199,7 +199,7 @@ public final class SparkWebServer extends WebServer {
 //        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
 //        Spark.get("/protected/get_event_description", new GetEventDescription(gson));
 //        Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));
-        Spark.post("/protected/preferences", new PostUserPreferences(gson));
+//        Spark.post("/protected/preferences", new PostUserPreferences(gson));
 //        Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
 //        Spark.post("/protected/update_tail", new PostUpdateTail(gson));
 //        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));

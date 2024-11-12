@@ -50,7 +50,7 @@ public class UncategorizedJavalinRoutes {
         }
     }
 
-    public static final void bindRoutes(io.javalin.Javalin app) {
+    public static void bindRoutes(io.javalin.Javalin app) {
         app.get("/update_monthly_flights", UncategorizedJavalinRoutes::putUpdateMonthlyFlightsCache);
     }
 }
