@@ -143,9 +143,9 @@ public final class SparkWebServer extends WebServer {
 
         //add the pagination route
         //Spark.post("/protected/get_page", new PostFlightPage(gson));
-        Spark.get("/protected/get_kml", new GetKML(gson));
-        Spark.get("/protected/get_xplane", new GetXPlane(gson));
-        Spark.get("/protected/get_csv", new GetCSV(gson));
+//        Spark.get("/protected/get_kml", new GetKML(gson));
+//        Spark.get("/protected/get_xplane", new GetXPlane(gson));
+//        Spark.get("/protected/get_csv", new GetCSV(gson));
 //        Spark.get("/protected/sim_acft", new GetSimAircraft(gson));
 //        Spark.post("/protected/sim_acft", new PostSimAircraft(gson));
 
@@ -183,8 +183,8 @@ public final class SparkWebServer extends WebServer {
         Spark.get("/protected/download_upload", new GetUpload(gson));
 
 //        Spark.post("/protected/coordinates", new PostCoordinates(gson));
-        Spark.post("/protected/double_series", new PostDoubleSeries(gson));
-        Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
+//        Spark.post("/protected/double_series", new PostDoubleSeries(gson));
+//        Spark.post("/protected/double_series_names", new PostDoubleSeriesNames(gson));
 //        Spark.post("/protected/loci_metrics", new PostLOCIMetrics(gson));
 //        Spark.post("/protected/rate_of_closure", new PostRateOfClosure(gson));
 
@@ -195,7 +195,7 @@ public final class SparkWebServer extends WebServer {
 //        Spark.get("/protected/system_ids", new GetSystemIds(gson));
 //        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
 //        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
-        Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
+//        Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
 //        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
 //        Spark.get("/protected/get_event_description", new GetEventDescription(gson));
 //        Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));

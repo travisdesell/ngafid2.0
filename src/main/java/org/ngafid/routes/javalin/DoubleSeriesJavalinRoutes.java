@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.accounts.User;
@@ -75,7 +76,7 @@ public class DoubleSeriesJavalinRoutes {
     }
 
 
-    public static void getAllDoubleSeriesNames(Context ctx) throws IOException {
+    private static void getAllDoubleSeriesNames(Context ctx) throws IOException {
         try (Connection connection = Database.getConnection()) {
             ctx.json(new AllDoubleSeriesNames(connection));
         } catch (SQLException e) {
@@ -84,7 +85,7 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
-    public static void postDoubleSeries(Context ctx) {
+    private static void postDoubleSeries(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
         final String name = Objects.requireNonNull(ctx.queryParam("seriesName"));
@@ -113,7 +114,7 @@ public class DoubleSeriesJavalinRoutes {
         }
     }
 
-    public static void postDoubleSeriesNames(Context ctx) {
+    private static void postDoubleSeriesNames(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
 
@@ -131,5 +132,12 @@ public class DoubleSeriesJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    public static void bindRoutes(Javalin app) {
+        app.get("/protected/all_double_series_names", DoubleSeriesJavalinRoutes::getAllDoubleSeriesNames);
+        app.post("/protected/double_series", DoubleSeriesJavalinRoutes::postDoubleSeries);
+        app.post("/protected/double_series_names", DoubleSeriesJavalinRoutes::postDoubleSeriesNames);
+
     }
 }

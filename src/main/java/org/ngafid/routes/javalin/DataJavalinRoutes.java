@@ -20,7 +20,7 @@ import static org.ngafid.flights.XPlaneParameters.FDR_FILE_EXTENSION;
 public class DataJavalinRoutes {
     private static final Logger LOG = Logger.getLogger(DataJavalinRoutes.class.getName());
 
-    public static void getCSV(Context ctx) {
+    private static void getCSV(Context ctx) {
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final boolean generated = Boolean.parseBoolean(ctx.queryParam("generated"));
         final int flightId = Integer.parseInt(flightIdStr);
@@ -99,7 +99,7 @@ public class DataJavalinRoutes {
         }
     }
 
-    public static void getKML(Context ctx) {
+    private static void getKML(Context ctx) {
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final int flightId = Integer.parseInt(flightIdStr);
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -147,7 +147,7 @@ public class DataJavalinRoutes {
         }
     }
 
-    public static void getXPlane(Context ctx) {
+    private static void getXPlane(Context ctx) {
         final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
         final String aircraftPath = Objects.requireNonNull(ctx.queryParam("acft_path"));
         int version = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("version")));
@@ -174,5 +174,11 @@ public class DataJavalinRoutes {
         ctx.contentType("application/force-download");
         ctx.header("Content-Disposition", "attachment; filename=flight_" + flightId + "_xp" + version + FDR_FILE_EXTENSION);
         ctx.result(export.toFdrFile());
+    }
+
+    public static void bindRoutes(io.javalin.Javalin app) {
+        app.get("/protected/get_csv", DataJavalinRoutes::getCSV);
+        app.get("/protected/get_kml", DataJavalinRoutes::getKML);
+        app.get("/protected/get_xplane", DataJavalinRoutes::getXPlane);
     }
 }

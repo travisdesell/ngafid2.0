@@ -52,6 +52,9 @@ public class JavalinWebServer extends WebServer {
         AircraftFleetTailsJavalinRoutes.bindRoutes(app);
         AirsyncJavalinRoutes.bindRoutes(app);
         AnalysisJavalinRoutes.bindRoutes(app);
+        DataJavalinRoutes.bindRoutes(app);
+        DoubleSeriesJavalinRoutes.bindRoutes(app);
+
         EventJavalinRoutes.bindRoutes(app);
         StatisticsJavalinRoutes.bindRoutes(app);
     }
