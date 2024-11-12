@@ -63,20 +63,20 @@ public final class SparkWebServer extends WebServer {
 
         //the following need to be accessible for non-logged in users, and
         //logout doesn't need to be protected
-        Spark.post("/login", new PostLogin(gson));
-        Spark.post("/logout", new PostLogout(gson));
+//        Spark.post("/login", new PostLogin(gson));
+//        Spark.post("/logout", new PostLogout(gson));
 
         //for account creation
-        Spark.get("/create_account", new GetCreateAccount(gson));
-        Spark.post("/create_account", new PostCreateAccount(gson));
+//        Spark.get("/create_account", new GetCreateAccount(gson));
+//        Spark.post("/create_account", new PostCreateAccount(gson));
 
         //for submitting forgot password request
-        Spark.get("/forgot_password", new GetForgotPassword(gson));
-        Spark.post("/forgot_password", new PostForgotPassword(gson));
+//        Spark.get("/forgot_password", new GetForgotPassword(gson));
+//        Spark.post("/forgot_password", new PostForgotPassword(gson));
 
         //to reset a password
-        Spark.get("/reset_password", new GetResetPassword(gson));
-        Spark.post("/reset_password", new PostResetPassword(gson));
+//        Spark.get("/reset_password", new GetResetPassword(gson));
+//        Spark.post("/reset_password", new PostResetPassword(gson));
 
         //to unsubscribe from emails
         Spark.get("/email_unsubscribe", new GetEmailUnsubscribe(gson));
@@ -102,14 +102,14 @@ public final class SparkWebServer extends WebServer {
         Spark.get("/protected/event_definitions", new GetEventDefinitions(gson));
 
         Spark.get("/protected/manage_fleet", new GetManageFleet(gson));
-        Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
-        Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
+//        Spark.post("/protected/send_user_invite", new PostSendUserInvite(gson));
+//        Spark.post("/protected/update_user_access", new PostUpdateUserAccess(gson));
 
-        Spark.get("/protected/update_profile", new GetUpdateProfile(gson));
-        Spark.post("/protected/update_profile", new PostUpdateProfile(gson));
+//        Spark.get("/protected/update_profile", new GetUpdateProfile(gson));
+//        Spark.post("/protected/update_profile", new PostUpdateProfile(gson));
 
-        Spark.get("/protected/update_password", new GetUpdatePassword(gson));
-        Spark.post("/protected/update_password", new PostUpdatePassword(gson));
+//        Spark.get("/protected/update_password", new GetUpdatePassword(gson));
+//        Spark.post("/protected/update_password", new PostUpdatePassword(gson));
 
         Spark.get("/protected/uploads", new GetUploads(gson));
         Spark.get("/protected/airsync_uploads", new GetAirSyncUploads(gson));
@@ -193,16 +193,16 @@ public final class SparkWebServer extends WebServer {
         Spark.post("/protected/event_stat", new PostEventStatistics(gson));
 
         Spark.get("/protected/system_ids", new GetSystemIds(gson));
-        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
-        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
+//        Spark.get("/protected/user_preference", new GetUserPreferences(gson));
+//        Spark.get("/protected/email_preferences", new GetUserEmailPreferences(gson));
         Spark.get("/protected/all_double_series_names", new GetAllDoubleSeriesNames(gson));
-        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
+//        Spark.get("/protected/preferences", new GetUserPreferencesPage(gson));
         Spark.get("/protected/get_event_description", new GetEventDescription(gson));
         Spark.get("/protected/get_all_event_descriptions", new GetAllEventDescriptions(gson));
         Spark.post("/protected/preferences", new PostUserPreferences(gson));
-        Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
+//        Spark.post("/protected/preferences_metric", new PostUserPreferencesMetric(gson));
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
-        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
+//        Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
 
 
         // Event Definition Management

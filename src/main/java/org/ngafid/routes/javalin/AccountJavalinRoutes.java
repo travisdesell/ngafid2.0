@@ -1,5 +1,6 @@
 package org.ngafid.routes.javalin;
 
+import io.javalin.Javalin;
 import io.javalin.http.Context;
 import org.ngafid.Database;
 import org.ngafid.SendEmail;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 
 import static org.ngafid.WebServer.gson;
 
-public class AccountJavalinRoutes {
+public class AccountJavalinRoutes implements JavalinRoutes {
     private static final Logger LOG = Logger.getLogger(AccountJavalinRoutes.class.getName());
 
     private static class LoginResponse {
@@ -670,5 +671,39 @@ public class AccountJavalinRoutes {
             e.printStackTrace();
             ctx.json(new ErrorResponse(e));
         }
+    }
+
+    @Override
+    public void bindRoutes(Javalin app) {
+        app.post("/login", AccountJavalinRoutes::postLogin);
+        app.post("/logout", AccountJavalinRoutes::postLogout);
+
+        app.get("/create_account", AccountJavalinRoutes::getCreateAccount);
+        app.post("/create_account", AccountJavalinRoutes::postCreateAccount);
+
+        app.get("/forgot_password", AccountJavalinRoutes::getForgotPassword);
+        app.post("/forgot_password", AccountJavalinRoutes::postForgotPassword);
+
+        app.get("/reset_password", AccountJavalinRoutes::getResetPassword);
+        app.post("/reset_password", AccountJavalinRoutes::postResetPassword);
+
+        app.get("/protected/update_password", AccountJavalinRoutes::getUpdatePassword);
+        app.post("/protected/update_password", AccountJavalinRoutes::postUpdatePassword);
+
+        app.get("/protected/update_profile", AccountJavalinRoutes::getUpdateProfile);
+        app.post("/protected/update_profile", AccountJavalinRoutes::postUpdateProfile);
+
+        app.post("/protected/send_user_invite", AccountJavalinRoutes::postSendUserInvite);
+        app.post("/protected/update_user_access", AccountJavalinRoutes::postUpdateUserAccess);
+        app.get("/protected/user_preference", AccountJavalinRoutes::getUserPreferences);
+
+        app.get("/protected/email_preferences", AccountJavalinRoutes::getUserEmailPreferences);
+        app.get("/email_unsubscribe", AccountJavalinRoutes::getEmailUnsubscribe);
+        app.after("/email_unsubscribe", ctx -> ctx.redirect("/"));
+
+        app.get("/protected/preferences", AccountJavalinRoutes::getUserPreferencesPage);
+        app.post("/protected/preferences", AccountJavalinRoutes::postUserPreferences);
+        app.post("/protected/preferences_metric", AccountJavalinRoutes::postUserPreferencesMetric);
+        app.post("/protected/update_email_preferences", AccountJavalinRoutes::postUpdateUserEmailPreferences);
     }
 }
