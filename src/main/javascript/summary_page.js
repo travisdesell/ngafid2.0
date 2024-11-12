@@ -507,7 +507,7 @@ export default class SummaryPage extends React.Component {
 
     EventSummary() {
         return (
-                <div className="card mb-2 m-2">
+                <div className="card mb-2 m-2" style={{display:"flex", flexFlow:"column nowrap", height:"50%"}}>
                     <h4 className="card-header">Events</h4>
                     <div className="card-body">
                         <div className="row">
@@ -553,7 +553,7 @@ export default class SummaryPage extends React.Component {
         let totalFlights = (this.state.statistics.numberFlights + this.state.statistics.flightsWithWarning + this.state.statistics.flightsWithError);
 
         return (
-                <div className="card mb-2 m-2">
+                <div className="card mb-2 m-2" style={{display:"flex", flexFlow:"column nowrap", height:"50%"}}>
                     <h4 className="card-header">Uploads</h4>
                     <div className="card-body">
                         <table className="row">
@@ -653,7 +653,7 @@ export default class SummaryPage extends React.Component {
                     <div className="container-fluid">
                         <div className="row">
                             <div className="col-6">{this.FlightSummary()}</div>
-                            <div className="col-6">
+                            <div className="col-6" style={{display:"flex", flexDirection:"column"}}>
                                 {this.EventSummary()}
                                 {!this.props.aggregate && this.UploadsSummary()}
                                 {this.props.aggregate && this.ParticipationSummary()}
