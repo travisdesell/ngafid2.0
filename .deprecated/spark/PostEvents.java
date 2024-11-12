@@ -48,10 +48,10 @@ public class PostEvents implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("flightId"));
-        String name = request.queryParams("seriesName");
+        int flightId = Integer.parseInt(request.formParams("flightId"));
+        String name = request.formParams("seriesName");
 
-        boolean eventDefinitionsLoaded = Boolean.parseBoolean(request.queryParams("eventDefinitionsLoaded"));
+        boolean eventDefinitionsLoaded = Boolean.parseBoolean(request.formParams("eventDefinitionsLoaded"));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

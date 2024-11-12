@@ -31,7 +31,7 @@ public class PostUpdateAirSyncTimeout implements Route {
 
         int fleetId = user.getFleetId();
 
-        String newTimeout = request.queryParams("timeout");
+        String newTimeout = request.formParams("timeout");
 
         try (Connection connection = Database.getConnection()) {
             LOG.info("User set new timeout: " + newTimeout + ", requesting user: " + user.getFullName());

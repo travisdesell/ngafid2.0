@@ -67,7 +67,7 @@ public class EventJavalinRoutes {
     }
 
     private static void getEventDescription(Context ctx) {
-        final String expectedName = Objects.requireNonNull(ctx.queryParam("eventName"));
+        final String expectedName = Objects.requireNonNull(ctx.formParam("eventName"));
         final String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE event_definitions.name = "
                 + "\"" + expectedName + "\"";
 
@@ -147,7 +147,7 @@ public class EventJavalinRoutes {
 
         String query = "DELETE FROM event_definitions WHERE id=?";
         try (Connection connection = Database.getConnection(); PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventDefinitionID"))));
+            statement.setInt(1, Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventDefinitionID"))));
             statement.executeUpdate();
             ctx.json("Successfully deleted event definition.");
         } catch (SQLException e) {
@@ -233,13 +233,13 @@ public class EventJavalinRoutes {
 
     private static void postCreateEvent(Context ctx) {
         final int fleetId = 0; // all events work on all fleets for now
-        final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("startBuffer")));
-        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("stopBuffer")));
-        final String airframe = Objects.requireNonNull(ctx.queryParam("airframe"));
-        final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
-        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.queryParam("severityColumnNames"));
-        final String severityType = Objects.requireNonNull(ctx.queryParam("severityType"));
+        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
+        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("startBuffer")));
+        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("stopBuffer")));
+        final String airframe = Objects.requireNonNull(ctx.formParam("airframe"));
+        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
+        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.formParam("severityColumnNames"));
+        final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
             EventDefinition.insert(connection, fleetId, eventName, startBuffer, stopBuffer, airframe, filterJSON,
@@ -253,8 +253,8 @@ public class EventJavalinRoutes {
     }
 
     private static void postAllEventCounts(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
@@ -313,14 +313,14 @@ public class EventJavalinRoutes {
 
     private static void postUpdateEvent(Context ctx) {
         final int fleetId = 0; // all events work on all fleets for now
-        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
-        final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("startBuffer")));
-        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("stopBuffer")));
-        final String airframe = Objects.requireNonNull(ctx.queryParam("airframe"));
-        final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterQuery"));
-        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.queryParam("severityColumnNames"));
-        final String severityType = Objects.requireNonNull(ctx.queryParam("severityType"));
+        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
+        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
+        final int startBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("startBuffer")));
+        final int stopBuffer = Integer.parseInt(Objects.requireNonNull(ctx.formParam("stopBuffer")));
+        final String airframe = Objects.requireNonNull(ctx.formParam("airframe"));
+        final String filterJSON = Objects.requireNonNull(ctx.formParam("filterQuery"));
+        final String severityColumnNamesJSON = Objects.requireNonNull(ctx.formParam("severityColumnNames"));
+        final String severityType = Objects.requireNonNull(ctx.formParam("severityType"));
 
         try (Connection connection = Database.getConnection()) {
             EventDefinition.update(connection, fleetId, eventId, eventName, startBuffer, stopBuffer, airframe,
@@ -335,7 +335,7 @@ public class EventJavalinRoutes {
 
     private static void postEventMetaData(Context ctx) {
         LOG.info("handling rate of closure route");
-        int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
+        int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
         try (Connection connection = Database.getConnection()) {
             List<EventMetaData> metaDataList = EventMetaData.getEventMetaData(connection, eventId);
             if (!metaDataList.isEmpty()) {
@@ -361,8 +361,8 @@ public class EventJavalinRoutes {
         }
         
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
-        final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("eventDefinitionsLoaded")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final boolean eventDefinitionsLoaded = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("eventDefinitionsLoaded")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -397,8 +397,8 @@ public class EventJavalinRoutes {
     private static void postEventStatistics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
-        final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("airframeNameId")));
-        final String airframeName = Objects.requireNonNull(ctx.queryParam("airframeName"));
+        final int airframeNameId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("airframeNameId")));
+        final String airframeName = Objects.requireNonNull(ctx.formParam("airframeName"));
 
         try (Connection connection = Database.getConnection()) {
             ctx.json(new EventStatistics(connection, airframeNameId, airframeName, fleetId));

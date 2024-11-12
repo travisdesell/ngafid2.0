@@ -28,13 +28,13 @@ public class GetEventCounts implements Route {
         // User user = session.attribute("user");
         // int fleetId = user.getFleetId();
 
-        // String airframe = request.queryParams("airframe_id");
+        // String airframe = request.formParams("airframe_id");
         // int airframeId = airframe == null ? -1 : Integer.parseInt(airframe);
 
-        // boolean aggregate = Boolean.parseBoolean(request.queryParams("aggregate"));
+        // boolean aggregate = Boolean.parseBoolean(request.formParams("aggregate"));
 
-        // String startDate = request.queryParams("start_date");
-        // String endDate = request.queryParams("end_date");
+        // String startDate = request.formParams("start_date");
+        // String endDate = request.formParams("end_date");
 
         // // Map<Integer, EventStatistics.EventCount> eventCounts =
         // EventStatistics.getEventCountsFast(connection, aggregate ? -1 : fleetId,

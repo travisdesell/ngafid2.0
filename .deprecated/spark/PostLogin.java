@@ -50,8 +50,8 @@ public class PostLogin implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String email = request.queryParams("email");
-        String password = request.queryParams("password");
+        String email = request.formParams("email");
+        String password = request.formParams("password");
 
         LOG.info("email: '" + email + "'");
         // don't print the password to the log!

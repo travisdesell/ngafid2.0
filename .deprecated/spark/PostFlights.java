@@ -44,14 +44,14 @@ public class PostFlights implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        LOG.info("test: " + request.queryParams("test"));
+        LOG.info("test: " + request.formParams("test"));
 
         LOG.info("filter JSON:");
 
-        String filterJSON = request.queryParams("filterQuery");
+        String filterJSON = request.formParams("filterQuery");
 
-        System.err.println(request.queryParams("currentPage"));
-        System.err.println(request.queryParams("numPerPage"));
+        System.err.println(request.formParams("currentPage"));
+        System.err.println(request.formParams("numPerPage"));
 
         LOG.info(filterJSON);
 
@@ -72,11 +72,11 @@ public class PostFlights implements Route {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(request.queryParams("currentPage"));
-            int pageSize = Integer.parseInt(request.queryParams("pageSize"));
-            String orderingColumnn = request.queryParams("sortingColumn");
+            int currentPage = Integer.parseInt(request.formParams("currentPage"));
+            int pageSize = Integer.parseInt(request.formParams("pageSize"));
+            String orderingColumnn = request.formParams("sortingColumn");
 
-            boolean isAscending = (request.queryParams("sortingOrder").equals("Ascending") ? true : false);
+            boolean isAscending = (request.formParams("sortingOrder").equals("Ascending") ? true : false);
 
             int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             int numberPages = (int) Math.ceil((double) totalFlights / pageSize);

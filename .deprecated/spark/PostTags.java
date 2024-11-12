@@ -37,7 +37,7 @@ public class PostTags implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("flightId"));
+        int flightId = Integer.parseInt(request.formParams("flightId"));
         System.out.println("TAGGED FLTID: " + flightId);
 
         try (Connection connection = Database.getConnection()) {

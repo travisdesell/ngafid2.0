@@ -24,9 +24,9 @@ public class UpdateMonthlyFlightsCache implements Route {
     @Override
     public Object handle(Request request, Response response) {
         try (Connection connection = Database.getConnection()) {
-            updateMonthlyTotalFlights(connection, Integer.parseInt(request.queryParams("fleetId")));
+            updateMonthlyTotalFlights(connection, Integer.parseInt(request.formParams("fleetId")));
             response.status(200);
-            return gson.toJson(request.queryParams("fleetId"));
+            return gson.toJson(request.formParams("fleetId"));
         } catch (Exception e) {
             e.printStackTrace();
             response.status(500);

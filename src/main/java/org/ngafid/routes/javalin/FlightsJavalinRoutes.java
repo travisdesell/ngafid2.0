@@ -48,7 +48,7 @@ public class FlightsJavalinRoutes {
             }
             int fleetId = user.getFleetId();
 
-            List<String> flightIds = ctx.queryParams("flight_id");
+            List<String> flightIds = ctx.formParams("flight_id");
             List<Flight> flights = new ArrayList<>();
 
             for (String flightId : flightIds) {
@@ -198,7 +198,7 @@ public class FlightsJavalinRoutes {
     }
 
     private static void postFlights(Context ctx) {
-        final String filterJSON = ctx.queryParam("filterQuery");
+        final String filterJSON = ctx.formParam("filterQuery");
         final Filter filter = gson.fromJson(filterJSON, Filter.class);
         final User user = ctx.attribute("user");
         if (user == null) {
@@ -217,11 +217,11 @@ public class FlightsJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
-            final String orderingColumnn = Objects.requireNonNull(ctx.queryParam("sortingColumn"));
+            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
+            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
+            final String orderingColumnn = Objects.requireNonNull(ctx.formParam("sortingColumn"));
 
-            final boolean isAscending = Objects.equals(ctx.queryParam("sortingOrder"), "Ascending");
+            final boolean isAscending = Objects.equals(ctx.formParam("sortingOrder"), "Ascending");
 
             final int totalFlights = Flight.getNumFlights(connection, fleetId, filter);
             final int numberPages = (int) Math.ceil((double) totalFlights / pageSize);

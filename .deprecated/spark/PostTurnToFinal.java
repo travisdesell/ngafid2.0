@@ -30,9 +30,9 @@ public class PostTurnToFinal implements Route {
 
     @Override
     public Object handle(Request request, Response response) throws Exception {
-        String startDate = request.queryParams("startDate");
-        String endDate = request.queryParams("endDate");
-        String airportIataCode = request.queryParams("airport");
+        String startDate = request.formParams("startDate");
+        String endDate = request.formParams("endDate");
+        String airportIataCode = request.formParams("airport");
         System.out.println(startDate);
         System.out.println(endDate);
 

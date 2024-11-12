@@ -35,10 +35,10 @@ public class PostModifyFilter implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            String currentName = request.queryParams("currentName");
-            String newName = request.queryParams("newName");
-            String filterJSON = request.queryParams("filterJSON");
-            String color = request.queryParams("color");
+            String currentName = request.formParams("currentName");
+            String newName = request.formParams("newName");
+            String filterJSON = request.formParams("filterJSON");
+            String color = request.formParams("color");
 
             LOG.info("Modifying filter: " + currentName + " to: " + newName);
             LOG.info(filterJSON);

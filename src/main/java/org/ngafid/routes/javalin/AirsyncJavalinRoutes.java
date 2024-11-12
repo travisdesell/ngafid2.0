@@ -123,8 +123,8 @@ public class AirsyncJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
+            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
             int totalImports = AirSyncImport.getNumImports(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
 
@@ -155,8 +155,8 @@ public class AirsyncJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
+            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
             int totalUploads = AirSyncImport.getNumUploads(connection, fleetId, null);
             int numberPages = totalUploads / pageSize;
 
@@ -217,7 +217,7 @@ public class AirsyncJavalinRoutes {
         }
 
         int fleetId = user.getFleetId();
-        String newTimeout = ctx.queryParam("timeout");
+        String newTimeout = ctx.formParam("timeout");
         if (newTimeout == null) {
             LOG.severe("INVALID ACCESS: user did not provide a new timeout.");
             ctx.status(401);

@@ -35,12 +35,12 @@ public class DeleteEventDefinitions implements Route {
 
         String query = "DELETE FROM event_definitions WHERE id=?";
         System.out.println("query: " + request.body());
-        for (String params : request.queryParams()) {
-            LOG.info("PARAM: " + params + " = " + request.queryParams(params));
+        for (String params : request.formParams()) {
+            LOG.info("PARAM: " + params + " = " + request.formParams(params));
         }
         try (Connection connection = Database.getConnection();
                 PreparedStatement statement = connection.prepareStatement(query)) {
-            statement.setInt(1, Integer.parseInt(request.queryParams("eventDefinitionID")));
+            statement.setInt(1, Integer.parseInt(request.formParams("eventDefinitionID")));
             LOG.info(statement.toString());
 
             statement.executeUpdate();

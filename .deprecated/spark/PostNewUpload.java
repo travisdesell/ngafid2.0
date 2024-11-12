@@ -45,25 +45,25 @@ public class PostNewUpload implements Route {
 
         request.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/mnt/ngafid/temp"));
 
-        String idToken = request.queryParams("idToken");
+        String idToken = request.formParams("idToken");
         LOG.info("idToken: " + idToken);
 
-        String paramRequest = request.queryParams("request");
+        String paramRequest = request.formParams("request");
         LOG.info("request: " + paramRequest);
 
-        String filename = request.queryParams("filename");
+        String filename = request.formParams("filename");
         LOG.info("filename: " + filename);
 
-        String identifier = request.queryParams("identifier");
+        String identifier = request.formParams("identifier");
         LOG.info("identifier: " + identifier);
 
-        int numberChunks = Integer.parseInt(request.queryParams("numberChunks"));
+        int numberChunks = Integer.parseInt(request.formParams("numberChunks"));
         LOG.info("numberChunks: " + numberChunks);
 
-        long sizeBytes = Long.parseLong(request.queryParams("sizeBytes"));
+        long sizeBytes = Long.parseLong(request.formParams("sizeBytes"));
         LOG.info("sizeBytes: " + sizeBytes);
 
-        String md5Hash = request.queryParams("md5Hash");
+        String md5Hash = request.formParams("md5Hash");
         LOG.info("md5Hash: " + md5Hash);
 
         filename = filename.replaceAll(" ", "_");

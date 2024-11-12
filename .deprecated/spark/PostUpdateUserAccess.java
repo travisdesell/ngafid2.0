@@ -39,9 +39,9 @@ public class PostUpdateUserAccess implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int fleetUserId = Integer.parseInt(request.queryParams("fleetUserId"));
-        int fleetId = Integer.parseInt(request.queryParams("fleetId"));
-        String accessType = request.queryParams("accessType");
+        int fleetUserId = Integer.parseInt(request.formParams("fleetUserId"));
+        int fleetId = Integer.parseInt(request.formParams("fleetId"));
+        String accessType = request.formParams("accessType");
 
         // check to see if the logged in user can update access to this fleet
         if (!user.managesFleet(fleetId)) {

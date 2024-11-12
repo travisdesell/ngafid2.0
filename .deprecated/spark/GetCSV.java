@@ -41,8 +41,8 @@ public class GetCSV implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String flightIdStr = request.queryParams("flight_id");
-        boolean generated = Boolean.parseBoolean(request.queryParams("generated"));
+        String flightIdStr = request.formParams("flight_id");
+        boolean generated = Boolean.parseBoolean(request.formParams("generated"));
 
         LOG.info("getting csv for flight id: " + flightIdStr + ", generating: " + generated);
 

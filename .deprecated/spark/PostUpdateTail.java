@@ -46,8 +46,8 @@ public class PostUpdateTail implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String systemId = request.queryParams("systemId");
-        String tail = request.queryParams("tail");
+        String systemId = request.formParams("systemId");
+        String tail = request.formParams("tail");
 
         LOG.info("systemId: '" + systemId + "', tail: '" + tail + "'");
 

@@ -36,10 +36,10 @@ public class PostSeverities implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String startDate = request.queryParams("startDate");
-        String endDate = request.queryParams("endDate");
-        String eventName = request.queryParams("eventName");
-        String tagName = request.queryParams("tagName");
+        String startDate = request.formParams("startDate");
+        String endDate = request.formParams("endDate");
+        String eventName = request.formParams("eventName");
+        String tagName = request.formParams("tagName");
         final Session session = request.session();
         User user = session.attribute("user");
         int fleetId = user.getFleetId();

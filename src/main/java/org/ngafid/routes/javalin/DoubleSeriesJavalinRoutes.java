@@ -87,8 +87,8 @@ public class DoubleSeriesJavalinRoutes {
 
     private static void postDoubleSeries(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
-        final String name = Objects.requireNonNull(ctx.queryParam("seriesName"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
+        final String name = Objects.requireNonNull(ctx.formParam("seriesName"));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -116,7 +116,7 @@ public class DoubleSeriesJavalinRoutes {
 
     private static void postDoubleSeriesNames(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

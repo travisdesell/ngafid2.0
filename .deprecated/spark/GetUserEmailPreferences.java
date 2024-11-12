@@ -43,7 +43,7 @@ public class GetUserEmailPreferences implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         // Unpack Fetching Data
-        String handleFetchType = request.queryParams("handleFetchType");
+        String handleFetchType = request.formParams("handleFetchType");
 
         final Session session = request.session();
         User sessionUser = session.attribute("user");
@@ -54,8 +54,8 @@ public class GetUserEmailPreferences implements Route {
             fleetUserID = sessionUser.getId();
         } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) { // Fetching a Manager's Fleet User...
 
-            fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
-            int fleetID = Integer.parseInt(request.queryParams("fleetID"));
+            fleetUserID = Integer.parseInt(request.formParams("fleetUserID"));
+            int fleetID = Integer.parseInt(request.formParams("fleetID"));
 
             // Check to see if the logged in user can update access to this fleet
             if (!sessionUser.managesFleet(fleetID)) {

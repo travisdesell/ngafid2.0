@@ -81,19 +81,19 @@ public class PostUpload implements Route {
 
         request.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/mnt/ngafid/temp"));
 
-        String identifier = request.queryParams("identifier");
+        String identifier = request.formParams("identifier");
         if (identifier == null) {
             LOG.severe("ERROR! Missing upload identifier");
             return gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing."));
         }
 
-        String md5Hash = request.queryParams("md5Hash");
+        String md5Hash = request.formParams("md5Hash");
         if (md5Hash == null) {
             LOG.severe("ERROR! Missing upload md5Hash");
             return gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing."));
         }
 
-        String sChunkNumber = request.queryParams("chunkNumber");
+        String sChunkNumber = request.formParams("chunkNumber");
         if (sChunkNumber == null) {
             LOG.severe("ERROR! Missing upload chunk number");
             return gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing."));

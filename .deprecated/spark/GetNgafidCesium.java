@@ -91,11 +91,11 @@ public class GetNgafidCesium implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String flightIdStr = request.queryParams("flight_id");
+        String flightIdStr = request.formParams("flight_id");
         LOG.info("getting information for flight id: " + flightIdStr);
         int flightId = Integer.parseInt(flightIdStr);
 
-        String otherFlightId = request.queryParams("other_flight_id");
+        String otherFlightId = request.formParams("other_flight_id");
         LOG.info("URL flight id is: " + flightId);
         LOG.info("URL other flight id is: " + otherFlightId);
 
@@ -113,7 +113,7 @@ public class GetNgafidCesium implements Route {
         try (Connection connection = Database.getConnection()) {
             Flight flight = Flight.getFlight(connection, flightId);
 
-            String[] flightIdsAll = request.queryParamsValues("flight_id");
+            String[] flightIdsAll = request.formParamsValues("flight_id");
             LOG.info("Flight id(s) are: " + Arrays.toString(flightIdsAll));
 
             Flight otherFlight = null;

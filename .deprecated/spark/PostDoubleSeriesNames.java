@@ -55,7 +55,7 @@ public class PostDoubleSeriesNames implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("flightId"));
+        int flightId = Integer.parseInt(request.formParams("flightId"));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

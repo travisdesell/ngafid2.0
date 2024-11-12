@@ -40,9 +40,9 @@ public class PostStoreFilter implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            String name = request.queryParams("name");
-            String filterJSON = request.queryParams("filterJSON");
-            String color = request.queryParams("color");
+            String name = request.formParams("name");
+            String filterJSON = request.formParams("filterJSON");
+            String color = request.formParams("color");
 
             LOG.info("Storing filter: " + name);
             LOG.info(filterJSON);

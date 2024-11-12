@@ -161,10 +161,10 @@ public class AnalysisJavalinRoutes {
     }
 
     private static void postSeverities(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
-        final String eventName = Objects.requireNonNull(ctx.queryParam("eventName"));
-        final String tagName = Objects.requireNonNull(ctx.queryParam("tagName"));
+        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
+        final String eventName = Objects.requireNonNull(ctx.formParam("eventName"));
+        final String tagName = Objects.requireNonNull(ctx.formParam("tagName"));
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int fleetId = user.getFleetId();
 
@@ -206,9 +206,9 @@ public class AnalysisJavalinRoutes {
     }
 
     private static void postTurnToFinal(Context ctx) {
-        String startDate = ctx.queryParam("startDate");
-        String endDate = ctx.queryParam("endDate");
-        String airportIataCode = ctx.queryParam("airport");
+        String startDate = ctx.formParam("startDate");
+        String endDate = ctx.formParam("endDate");
+        String airportIataCode = ctx.formParam("airport");
         System.out.println(startDate);
         System.out.println(endDate);
 
@@ -270,8 +270,8 @@ public class AnalysisJavalinRoutes {
 
     private static void getCesium(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String flightIdStr = Objects.requireNonNull(ctx.queryParam("flight_id"));
-        final String otherFlightId = Objects.requireNonNull(ctx.queryParam("other_flight_id"));
+        final String flightIdStr = Objects.requireNonNull(ctx.formParam("flight_id"));
+        final String otherFlightId = Objects.requireNonNull(ctx.formParam("other_flight_id"));
         final int flightId = Integer.parseInt(flightIdStr);
         final int fleetId = user.getFleetId();
 
@@ -283,7 +283,7 @@ public class AnalysisJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            final List<String> flightIdsAll = Objects.requireNonNull(ctx.queryParams("flight_id"));
+            final List<String> flightIdsAll = Objects.requireNonNull(ctx.formParams("flight_id"));
             final Flight flight = Objects.requireNonNull(Flight.getFlight(connection, flightId));
             final Flight otherFlight = Objects.requireNonNull(Flight.getFlight(connection, Integer.parseInt(otherFlightId)));
 
@@ -462,7 +462,7 @@ public class AnalysisJavalinRoutes {
     }
 
     private static void postRateOfClosure(Context ctx) {
-        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("eventId")));
+        final int eventId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("eventId")));
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
             if (rateOfClosure != null) {
@@ -475,8 +475,8 @@ public class AnalysisJavalinRoutes {
 
     private static void postLociMetrics(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flight_id")));
-        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("time_index")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
+        final int timeIndex = Integer.parseInt(Objects.requireNonNull(ctx.formParam("time_index")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data
@@ -510,8 +510,8 @@ public class AnalysisJavalinRoutes {
 
     private static void postCoordinates(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String name = Objects.requireNonNull(ctx.queryParam("seriesName"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
+        final String name = Objects.requireNonNull(ctx.formParam("seriesName"));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

@@ -38,9 +38,9 @@ public class PostSendUserInvite implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int fleetId = Integer.parseInt(request.queryParams("fleetId"));
-        String fleetName = request.queryParams("fleetName");
-        String inviteEmail = request.queryParams("email");
+        int fleetId = Integer.parseInt(request.formParams("fleetId"));
+        String fleetName = request.formParams("fleetName");
+        String inviteEmail = request.formParams("email");
 
         //check to see if the logged-in user can invite users to this fleet
         if (!user.managesFleet(fleetId)) {

@@ -29,8 +29,8 @@ public class GetEmailUnsubscribe implements Route {
     @Override
     public Object handle(Request request, Response response) throws SQLException {
 
-        int id = Integer.parseInt(request.queryParams("id"));
-        String token = request.queryParams("token");
+        int id = Integer.parseInt(request.formParams("id"));
+        String token = request.formParams("token");
 
         LOG.info("Attempting to unsubscribe from emails... (id: " + id + ", token: " + token + ")");
 

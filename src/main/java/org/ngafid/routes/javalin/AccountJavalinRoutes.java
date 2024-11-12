@@ -107,8 +107,8 @@ public class AccountJavalinRoutes {
     }
 
     private static void postLogin(Context ctx) {
-        final String email = ctx.queryParam("email");
-        final String password = ctx.queryParam("password");
+        final String email = ctx.formParam("email");
+        final String password = ctx.formParam("password");
 
         LOG.info("email: '" + email + "'");
         // don't print the password to the log!
@@ -248,7 +248,7 @@ public class AccountJavalinRoutes {
 
     private static void postForgotPassword(Context ctx) {
         try (Connection connection = Database.getConnection()) {
-            final String email = ctx.queryParam("email");
+            final String email = ctx.formParam("email");
             if (User.exists(connection, email)) {
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);
@@ -265,17 +265,17 @@ public class AccountJavalinRoutes {
 
 
     private static void postCreateAccount(Context ctx) {
-        final String email = ctx.queryParam("email");
-        final String password = ctx.queryParam("password");
-        final String firstName = ctx.queryParam("firstName");
-        final String lastName = ctx.queryParam("lastName");
-        final String country = ctx.queryParam("country");
-        final String state = ctx.queryParam("state");
-        final String city = ctx.queryParam("city");
-        final String address = ctx.queryParam("address");
-        final String phoneNumber = ctx.queryParam("phoneNumber");
-        final String zipCode = ctx.queryParam("zipCode");
-        final String accountType = ctx.queryParam("accountType");
+        final String email = ctx.formParam("email");
+        final String password = ctx.formParam("password");
+        final String firstName = ctx.formParam("firstName");
+        final String lastName = ctx.formParam("lastName");
+        final String country = ctx.formParam("country");
+        final String state = ctx.formParam("state");
+        final String city = ctx.formParam("city");
+        final String address = ctx.formParam("address");
+        final String phoneNumber = ctx.formParam("phoneNumber");
+        final String zipCode = ctx.formParam("zipCode");
+        final String accountType = ctx.formParam("accountType");
 
         try (Connection connection = Database.getConnection()) {
             if (accountType != null) {
@@ -285,13 +285,13 @@ public class AccountJavalinRoutes {
             if (accountType != null && accountType.equals("gaard")) {
                 ctx.json(new ErrorResponse("Gaard Account Creation Disabled", "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."));
             } else if (accountType.equals("newFleet")) {
-                final String fleetName = ctx.queryParam("fleetName");
+                final String fleetName = ctx.formParam("fleetName");
                 User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 ctx.sessionAttribute("user", user);
 
                 ctx.json(new CreatedAccount(accountType, user));
             } else if (accountType.equals("existingFleet")) {
-                final String fleetName = ctx.queryParam("fleetName");
+                final String fleetName = ctx.formParam("fleetName");
                 final User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country, state, city, address, phoneNumber, zipCode, fleetName);
                 ctx.sessionAttribute("user", user);
 
@@ -308,7 +308,7 @@ public class AccountJavalinRoutes {
     }
 
     private static void getUserEmailPreferences(Context ctx) {
-        final String handleFetchType = Objects.requireNonNull(ctx.queryParam("handleFetchType"));
+        final String handleFetchType = Objects.requireNonNull(ctx.formParam("handleFetchType"));
         final User sessionUser = Objects.requireNonNull(ctx.attribute("user"));
         int fleetUserID = -1;
 
@@ -316,8 +316,8 @@ public class AccountJavalinRoutes {
             fleetUserID = sessionUser.getId();
         } else if (handleFetchType.equals("HANDLE_FETCH_MANAGER")) { // Fetching a Manager's Fleet User...
 
-            fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserID")));
-            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetID")));
+            fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetUserID")));
+            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetID")));
 
             if (!sessionUser.managesFleet(fleetID)) {
                 ctx.status(401);
@@ -375,7 +375,7 @@ public class AccountJavalinRoutes {
 
     private static void postUserPreferences(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int decimalPrecision = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("decimal_precision")));
+        final int decimalPrecision = Integer.parseInt(Objects.requireNonNull(ctx.formParam("decimal_precision")));
 
         try (Connection connection = Database.getConnection()) {
             ctx.json(User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));
@@ -389,8 +389,8 @@ public class AccountJavalinRoutes {
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int userId = user.getId();
-        final String metric = Objects.requireNonNull(ctx.queryParam("metricName"));
-        final String type = Objects.requireNonNull(ctx.queryParam("modificationType"));
+        final String metric = Objects.requireNonNull(ctx.formParam("metricName"));
+        final String type = Objects.requireNonNull(ctx.formParam("modificationType"));
 
         try (Connection connection = Database.getConnection()) {
             LOG.info("Modifying " + metric + " (" + type + ") for user: " + user);
@@ -408,10 +408,10 @@ public class AccountJavalinRoutes {
     }
 
     private static void postResetPassword(Context ctx) {
-        final String emailAddress = Objects.requireNonNull(ctx.queryParam("emailAddress"));
-        final String passphrase = Objects.requireNonNull(ctx.queryParam("passphrase"));
-        final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
-        final String confirmPassword = Objects.requireNonNull(ctx.queryParam("confirmPassword"));
+        final String emailAddress = Objects.requireNonNull(ctx.formParam("emailAddress"));
+        final String passphrase = Objects.requireNonNull(ctx.formParam("passphrase"));
+        final String newPassword = Objects.requireNonNull(ctx.formParam("newPassword"));
+        final String confirmPassword = Objects.requireNonNull(ctx.formParam("confirmPassword"));
 
         try (Connection connection = Database.getConnection()) {
             // 1. make sure the new password and confirm password are the same
@@ -446,9 +446,9 @@ public class AccountJavalinRoutes {
         }
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId")));
-        final String fleetName = Objects.requireNonNull(ctx.queryParam("fleetName"));
-        final String inviteEmail = Objects.requireNonNull(ctx.queryParam("email"));
+        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetId")));
+        final String fleetName = Objects.requireNonNull(ctx.formParam("fleetName"));
+        final String inviteEmail = Objects.requireNonNull(ctx.formParam("email"));
 
         //check to see if the logged-in user can invite users to this fleet
         if (!user.managesFleet(fleetId)) {
@@ -481,9 +481,9 @@ public class AccountJavalinRoutes {
     }
 
     private static void postUpdatePassword(Context ctx) {
-        final String currentPassword = Objects.requireNonNull(ctx.queryParam("currentPassword"));
-        final String newPassword = Objects.requireNonNull(ctx.queryParam("newPassword"));
-        final String confirmPassword = Objects.requireNonNull(ctx.queryParam("confirmPassword"));
+        final String currentPassword = Objects.requireNonNull(ctx.formParam("currentPassword"));
+        final String newPassword = Objects.requireNonNull(ctx.formParam("newPassword"));
+        final String confirmPassword = Objects.requireNonNull(ctx.formParam("confirmPassword"));
 
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         // 1. make sure currentPassword authenticates against what's in the database
@@ -513,14 +513,14 @@ public class AccountJavalinRoutes {
     }
 
     private static void postUpdateProfile(Context ctx) {
-        final String firstName = Objects.requireNonNull(ctx.queryParam("firstName"));
-        final String lastName = Objects.requireNonNull(ctx.queryParam("lastName"));
-        final String country = Objects.requireNonNull(ctx.queryParam("country"));
-        final String state = Objects.requireNonNull(ctx.queryParam("state"));
-        final String city = Objects.requireNonNull(ctx.queryParam("city"));
-        final String address = Objects.requireNonNull(ctx.queryParam("address"));
-        final String phoneNumber = Objects.requireNonNull(ctx.queryParam("phoneNumber"));
-        final String zipCode = Objects.requireNonNull(ctx.queryParam("zipCode"));
+        final String firstName = Objects.requireNonNull(ctx.formParam("firstName"));
+        final String lastName = Objects.requireNonNull(ctx.formParam("lastName"));
+        final String country = Objects.requireNonNull(ctx.formParam("country"));
+        final String state = Objects.requireNonNull(ctx.formParam("state"));
+        final String city = Objects.requireNonNull(ctx.formParam("city"));
+        final String address = Objects.requireNonNull(ctx.formParam("address"));
+        final String phoneNumber = Objects.requireNonNull(ctx.formParam("phoneNumber"));
+        final String zipCode = Objects.requireNonNull(ctx.formParam("zipCode"));
 
         try (Connection connection = Database.getConnection()) {
             User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
@@ -538,9 +538,9 @@ public class AccountJavalinRoutes {
         }
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int fleetUserId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserId")));
-        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId")));
-        final String accessType = Objects.requireNonNull(ctx.queryParam("accessType"));
+        final int fleetUserId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetUserId")));
+        final int fleetId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetId")));
+        final String accessType = Objects.requireNonNull(ctx.formParam("accessType"));
 
         // check to see if the logged-in user can update access to this fleet
         if (!user.managesFleet(fleetId)) {
@@ -563,18 +563,18 @@ public class AccountJavalinRoutes {
         final User sessionUser = Objects.requireNonNull(ctx.sessionAttribute("user"));
 
         // Log the raw handleUpdateType value
-        final String handleUpdateType = Objects.requireNonNull(ctx.queryParam("handleUpdateType"));
+        final String handleUpdateType = Objects.requireNonNull(ctx.formParam("handleUpdateType"));
 
         if (handleUpdateType.equals("HANDLE_UPDATE_USER")) { // User Update...
             final int userID = sessionUser.getId();
 
             Map<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-            for (String emailKey : ctx.queryParamMap().keySet()) {
+            for (String emailKey : ctx.formParamMap().keySet()) {
                 if (emailKey.equals("handleUpdateType")) {
                     continue;
                 }
 
-                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.queryParam(emailKey)));
+                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.formParam(emailKey)));
             }
 
             try (Connection connection = Database.getConnection()) {
@@ -584,16 +584,16 @@ public class AccountJavalinRoutes {
             }
         } else if (handleUpdateType.equals("HANDLE_UPDATE_MANAGER")) { // Manager Update...
             // Unpack Submission Data
-            int fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetUserID")));
-            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetID")));
+            int fleetUserID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetUserID")));
+            int fleetID = Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetID")));
 
             HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-            for (String emailKey : ctx.queryParamMap().keySet()) {
+            for (String emailKey : ctx.formParamMap().keySet()) {
                 if (emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType")) {
                     continue;
                 }
 
-                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.queryParam(emailKey)));
+                emailTypesUser.put(emailKey, Boolean.parseBoolean(ctx.formParam(emailKey)));
             }
 
             // Check to see if the logged-in user can update access to this fleet
@@ -618,8 +618,8 @@ public class AccountJavalinRoutes {
     }
 
     private static void getEmailUnsubscribe(Context ctx) {
-        final int id = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
-        final String token = ctx.queryParam("token");
+        final int id = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
+        final String token = ctx.formParam("token");
 
         // Check if the token is valid
         try (Connection connection = Database.getConnection()) {

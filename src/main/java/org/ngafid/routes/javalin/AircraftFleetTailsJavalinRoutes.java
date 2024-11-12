@@ -116,8 +116,8 @@ public class AircraftFleetTailsJavalinRoutes {
         final String RMCACHE = "rmcache";
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String type = Objects.requireNonNull(ctx.queryParam("type"));
-        final String path = Objects.requireNonNull(ctx.queryParam("path"));
+        final String type = Objects.requireNonNull(ctx.formParam("type"));
+        final String path = Objects.requireNonNull(ctx.formParam("path"));
         final int fleetId = user.getFleetId();
 
         try (Connection connection = Database.getConnection()) {
@@ -144,8 +144,8 @@ public class AircraftFleetTailsJavalinRoutes {
     }
 
     private static void postUpdateTail(Context ctx) {
-        final String systemId = Objects.requireNonNull(ctx.queryParam("systemId"));
-        final String tail = Objects.requireNonNull(ctx.queryParam("tail"));
+        final String systemId = Objects.requireNonNull(ctx.formParam("systemId"));
+        final String tail = Objects.requireNonNull(ctx.formParam("tail"));
 
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));

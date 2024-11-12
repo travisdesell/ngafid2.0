@@ -30,12 +30,12 @@ public class GetUpload implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        LOG.info("Retrieving upload: " + request.queryParams("uploadId") + " " + request.queryParams("md5Hash"));
+        LOG.info("Retrieving upload: " + request.formParams("uploadId") + " " + request.formParams("md5Hash"));
         Upload upload;
 
         try (Connection connection = Database.getConnection()) {
-            upload = Upload.getUploadById(connection, Integer.parseInt(request.queryParams("uploadId")),
-                    request.queryParams("md5Hash"));
+            upload = Upload.getUploadById(connection, Integer.parseInt(request.formParams("uploadId")),
+                    request.formParams("md5Hash"));
         }
 
         if (upload == null) {

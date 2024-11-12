@@ -37,9 +37,9 @@ public class PostUpdatePassword implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String currentPassword = request.queryParams("currentPassword");
-        String newPassword = request.queryParams("newPassword");
-        String confirmPassword = request.queryParams("confirmPassword");
+        String currentPassword = request.formParams("currentPassword");
+        String newPassword = request.formParams("newPassword");
+        String confirmPassword = request.formParams("confirmPassword");
 
         LOG.info("currentPassword: '" + currentPassword + "'");
         LOG.info("newPassword: '" + newPassword + "'");

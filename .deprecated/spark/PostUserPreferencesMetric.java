@@ -32,8 +32,8 @@ public class PostUserPreferencesMetric implements Route {
         User user = session.attribute("user");
         int userId = user.getId();
 
-        String metric = request.queryParams("metricName");
-        String type = request.queryParams("modificationType");
+        String metric = request.formParams("metricName");
+        String type = request.formParams("modificationType");
 
         try (Connection connection = Database.getConnection()) {
             LOG.info("Modifiying " + metric + " (" + type + ") for user: " + user.toString());

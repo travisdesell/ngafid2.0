@@ -86,7 +86,7 @@ public class GetFlight implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            String[] flightIds = request.queryParamsValues("flight_id");
+            String[] flightIds = request.formParamsValues("flight_id");
             LOG.info("Flight id(s) are: " + Arrays.toString(flightIds));
 
             long startTime, endTime;

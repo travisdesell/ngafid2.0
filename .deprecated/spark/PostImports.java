@@ -56,8 +56,8 @@ public class PostImports implements Route {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(request.queryParams("currentPage"));
-            int pageSize = Integer.parseInt(request.queryParams("pageSize"));
+            int currentPage = Integer.parseInt(request.formParams("currentPage"));
+            int pageSize = Integer.parseInt(request.formParams("pageSize"));
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;

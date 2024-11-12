@@ -35,7 +35,7 @@ public class PostRemoveFilter implements Route {
             User user = session.attribute("user");
             int fleetId = user.getFleetId();
 
-            String name = request.queryParams("name");
+            String name = request.formParams("name");
 
             LOG.info("Removing filter: " + name);
             StoredFilter.removeFilter(connection, fleetId, name);

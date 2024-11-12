@@ -42,10 +42,10 @@ public class GetXPlane implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String flightIdStr = request.queryParams("flight_id");
-        String aircraftPath = request.queryParams("acft_path");
-        int version = Integer.parseInt(request.queryParams("version"));
-        boolean useMSL = Boolean.parseBoolean(request.queryParams("use_msl"));
+        String flightIdStr = request.formParams("flight_id");
+        String aircraftPath = request.formParams("acft_path");
+        int version = Integer.parseInt(request.formParams("version"));
+        boolean useMSL = Boolean.parseBoolean(request.formParams("use_msl"));
 
         LOG.info("MSL will be used: "+useMSL);
 

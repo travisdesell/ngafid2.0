@@ -31,7 +31,7 @@ public class GetAllEventDescriptions implements Route {
 
     @Override
     public Object handle(Request request, Response response) throws Exception {
-        String expectedName = request.queryParams("eventName");
+        String expectedName = request.formParams("eventName");
         LOG.info("expectedName: " + expectedName);
 
         String query = "SELECT event_definitions.id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type, airframe "

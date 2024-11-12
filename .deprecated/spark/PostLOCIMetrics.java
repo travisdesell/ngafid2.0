@@ -76,8 +76,8 @@ public class PostLOCIMetrics implements Route {
 
         final Session session = request.session();
         User user = session.attribute("user");
-        int flightId = Integer.parseInt(request.queryParams("flight_id"));
-        int timeIndex = Integer.parseInt(request.queryParams("time_index"));
+        int flightId = Integer.parseInt(request.formParams("flight_id"));
+        int timeIndex = Integer.parseInt(request.formParams("time_index"));
 
         try (Connection connection = Database.getConnection()) {
             // check to see if the user has access to this data

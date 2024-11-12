@@ -327,8 +327,8 @@ public class StatisticsJavalinRoutes {
     }
 
     private static void postEventCounts(Context ctx, boolean aggregate) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
+        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
 
         User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         int fleetId = user.getFleetId();
@@ -362,11 +362,11 @@ public class StatisticsJavalinRoutes {
     }
 
     private static void postMonthlyEventCounts(Context ctx) {
-        final String startDate = Objects.requireNonNull(ctx.queryParam("startDate"));
-        final String endDate = Objects.requireNonNull(ctx.queryParam("endDate"));
-        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.queryParam("aggregatePage")));
+        final String startDate = Objects.requireNonNull(ctx.formParam("startDate"));
+        final String endDate = Objects.requireNonNull(ctx.formParam("endDate"));
+        final boolean aggregateTrendsPage = Boolean.parseBoolean(Objects.requireNonNull(ctx.formParam("aggregatePage")));
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final String eventName = ctx.queryParam("eventName"); // Might be null intentionally
+        final String eventName = ctx.formParam("eventName"); // Might be null intentionally
 
         try (Connection connection = Database.getConnection()) {
             Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;

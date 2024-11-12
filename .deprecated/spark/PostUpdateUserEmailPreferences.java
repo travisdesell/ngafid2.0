@@ -43,7 +43,7 @@ public class PostUpdateUserEmailPreferences implements Route {
         User sessionUser = session.attribute("user");
 
         // Log the raw handleUpdateType value
-        String handleUpdateType = request.queryParams("handleUpdateType");
+        String handleUpdateType = request.formParams("handleUpdateType");
 
         if (handleUpdateType.equals("HANDLE_UPDATE_USER")) { // User Update...
             return handleUserUpdate(request, response, sessionUser);
@@ -65,13 +65,13 @@ public class PostUpdateUserEmailPreferences implements Route {
         int userID = sessionUser.getId();
 
         HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-        for (String emailKey : request.queryParams()) {
+        for (String emailKey : request.formParams()) {
 
             if (emailKey.equals("handleUpdateType")) {
                 continue;
             }
 
-            emailTypesUser.put(emailKey, Boolean.parseBoolean(request.queryParams(emailKey)));
+            emailTypesUser.put(emailKey, Boolean.parseBoolean(request.formParams(emailKey)));
 
         }
 
@@ -88,17 +88,17 @@ public class PostUpdateUserEmailPreferences implements Route {
     public Object handleManagerUpdate(Request request, Response response, User sessionUser) {
 
         // Unpack Submission Data
-        int fleetUserID = Integer.parseInt(request.queryParams("fleetUserID"));
-        int fleetID = Integer.parseInt(request.queryParams("fleetID"));
+        int fleetUserID = Integer.parseInt(request.formParams("fleetUserID"));
+        int fleetID = Integer.parseInt(request.formParams("fleetID"));
 
         HashMap<String, Boolean> emailTypesUser = new HashMap<String, Boolean>();
-        for (String emailKey : request.queryParams()) {
+        for (String emailKey : request.formParams()) {
 
             if (emailKey.equals("fleetUserID") || emailKey.equals("fleetID") || emailKey.equals("handleUpdateType")) {
                 continue;
             }
 
-            emailTypesUser.put(emailKey, Boolean.parseBoolean(request.queryParams(emailKey)));
+            emailTypesUser.put(emailKey, Boolean.parseBoolean(request.formParams(emailKey)));
 
         }
 

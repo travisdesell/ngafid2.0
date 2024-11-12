@@ -46,7 +46,7 @@ public class PostUploadDetails implements Route {
     @Override
     public Object handle(Request request, Response response) {
         LOG.info("handling upload details route!");
-        int uploadId = Integer.parseInt(request.queryParams("uploadId"));
+        int uploadId = Integer.parseInt(request.formParams("uploadId"));
 
         try {
             UploadDetails uploadDetails = new UploadDetails(uploadId);

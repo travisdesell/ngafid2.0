@@ -36,8 +36,8 @@ public class PostAssociateTag implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("id"));
-        int tagId = Integer.parseInt(request.queryParams("tag_id"));
+        int flightId = Integer.parseInt(request.formParams("id"));
+        int tagId = Integer.parseInt(request.formParams("tag_id"));
 
         try (Connection connection = Database.getConnection()) {
             if (!user.hasFlightAccess(connection, flightId)) {

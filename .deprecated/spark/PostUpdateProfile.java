@@ -37,14 +37,14 @@ public class PostUpdateProfile implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String firstName = request.queryParams("firstName");
-        String lastName = request.queryParams("lastName");
-        String country = request.queryParams("country");
-        String state = request.queryParams("state");
-        String city = request.queryParams("city");
-        String address = request.queryParams("address");
-        String phoneNumber = request.queryParams("phoneNumber");
-        String zipCode = request.queryParams("zipCode");
+        String firstName = request.formParams("firstName");
+        String lastName = request.formParams("lastName");
+        String country = request.formParams("country");
+        String state = request.formParams("state");
+        String city = request.formParams("city");
+        String address = request.formParams("address");
+        String phoneNumber = request.formParams("phoneNumber");
+        String zipCode = request.formParams("zipCode");
 
         LOG.info("new firstName: '" + firstName + "'");
         LOG.info("new lastName: '" + lastName + "'");

@@ -31,7 +31,7 @@ public class PostUserPreferences implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int decimalPrecision = Integer.parseInt(request.queryParams("decimal_precision"));
+        int decimalPrecision = Integer.parseInt(request.formParams("decimal_precision"));
         try (Connection connection = Database.getConnection()) {
             return gson.toJson(
                     User.updateUserPreferencesPrecision(connection, user.getId(), decimalPrecision));

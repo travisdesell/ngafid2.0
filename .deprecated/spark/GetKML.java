@@ -44,7 +44,7 @@ public class GetKML implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String flightIdStr = request.queryParams("flight_id");
+        String flightIdStr = request.formParams("flight_id");
 
         LOG.info("getting kml for flight id: " + flightIdStr);
 

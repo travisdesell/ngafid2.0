@@ -40,17 +40,17 @@ public class PostCreateAccount implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String email = request.queryParams("email");
-        String password = request.queryParams("password");
-        String firstName = request.queryParams("firstName");
-        String lastName = request.queryParams("lastName");
-        String country = request.queryParams("country");
-        String state = request.queryParams("state");
-        String city = request.queryParams("city");
-        String address = request.queryParams("address");
-        String phoneNumber = request.queryParams("phoneNumber");
-        String zipCode = request.queryParams("zipCode");
-        String accountType = request.queryParams("accountType");
+        String email = request.formParams("email");
+        String password = request.formParams("password");
+        String firstName = request.formParams("firstName");
+        String lastName = request.formParams("lastName");
+        String country = request.formParams("country");
+        String state = request.formParams("state");
+        String city = request.formParams("city");
+        String address = request.formParams("address");
+        String phoneNumber = request.formParams("phoneNumber");
+        String zipCode = request.formParams("zipCode");
+        String accountType = request.formParams("accountType");
 
         LOG.info("email: '" + email + "'");
         // We should probably not show this for privacy reasons :)
@@ -77,7 +77,7 @@ public class PostCreateAccount implements Route {
                         "We apologize but Gaard account creation is currently disabled as we transition to the beta version of the NGAFID 2.0."));
 
             } else if (accountType.equals("newFleet")) {
-                String fleetName = request.queryParams("fleetName");
+                String fleetName = request.formParams("fleetName");
                 User user = User.createNewFleetUser(connection, email, password, firstName, lastName, country, state,
                         city, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);
@@ -85,7 +85,7 @@ public class PostCreateAccount implements Route {
                 return gson.toJson(new CreatedAccount(accountType, user));
 
             } else if (accountType.equals("existingFleet")) {
-                String fleetName = request.queryParams("fleetName");
+                String fleetName = request.formParams("fleetName");
                 User user = User.createExistingFleetUser(connection, email, password, firstName, lastName, country,
                         state, city, address, phoneNumber, zipCode, fleetName);
                 request.session().attribute("user", user);

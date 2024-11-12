@@ -39,10 +39,10 @@ public class PostEditTag implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int tagId = Integer.parseInt(request.queryParams("tag_id"));
-        String name = request.queryParams("name");
-        String description = request.queryParams("description");
-        String color = request.queryParams("color");
+        int tagId = Integer.parseInt(request.formParams("tag_id"));
+        String name = request.formParams("name");
+        String description = request.formParams("description");
+        String color = request.formParams("color");
 
         try (Connection connection = Database.getConnection()) {
             FlightTag flightTag = new FlightTag(tagId, user.getFleetId(), name, description, color);

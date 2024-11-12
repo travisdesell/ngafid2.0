@@ -41,10 +41,10 @@ public class TagFilterJavalinRoutes {
             return;
         }
 
-        String name = ctx.queryParam("name");
-        String description = ctx.queryParam("description");
-        String color = ctx.queryParam("color");
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
+        String name = ctx.formParam("name");
+        String description = ctx.formParam("description");
+        String color = ctx.formParam("color");
+        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
         int fleetId = user.getFleetId();
 
         try (Connection connection = Database.getConnection()) {
@@ -60,10 +60,10 @@ public class TagFilterJavalinRoutes {
     }
 
     private static void postEditTag(Context ctx) {
-        String name = ctx.queryParam("name");
-        String description = ctx.queryParam("description");
-        String color = ctx.queryParam("color");
-        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("tag_id")));
+        String name = ctx.formParam("name");
+        String description = ctx.formParam("description");
+        String color = ctx.formParam("color");
+        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
         User user = ctx.sessionAttribute("user");
         if (user == null) {
             ctx.json(new ErrorResponse("error", "User not logged in."));
@@ -96,10 +96,10 @@ public class TagFilterJavalinRoutes {
             return;
         }
 
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flight_id")));
-        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("tag_id")));
-        boolean isPermanent = Boolean.parseBoolean(ctx.queryParam("permanent"));
-        boolean allTags = Boolean.parseBoolean(ctx.queryParam("all"));
+        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flight_id")));
+        int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
+        boolean isPermanent = Boolean.parseBoolean(ctx.formParam("permanent"));
+        boolean allTags = Boolean.parseBoolean(ctx.formParam("all"));
 
         try (Connection connection = Database.getConnection()) {
             FlightTag tag = Flight.getTag(connection, tagId);
@@ -137,7 +137,7 @@ public class TagFilterJavalinRoutes {
             return;
         }
 
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("flightId")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("flightId")));
         System.out.println("TAGGED FLTID: " + flightId);
 
         try (Connection connection = Database.getConnection()) {
@@ -165,7 +165,7 @@ public class TagFilterJavalinRoutes {
         }
 
         int fleetId = user.getFleetId();
-        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
+        int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
 
         try (Connection connection = Database.getConnection()) {
 
@@ -187,8 +187,8 @@ public class TagFilterJavalinRoutes {
 
     private static void postAssociateTag(Context ctx) {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("id")));
-        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("tag_id")));
+        final int flightId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("id")));
+        final int tagId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("tag_id")));
 
         try (Connection connection = Database.getConnection()) {
             if (!user.hasFlightAccess(connection, flightId)) {
@@ -217,9 +217,9 @@ public class TagFilterJavalinRoutes {
     private static void postStoreFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final String name = Objects.requireNonNull(ctx.queryParam("name"));
-            final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterJSON"));
-            final String color = Objects.requireNonNull(ctx.queryParam("color"));
+            final String name = Objects.requireNonNull(ctx.formParam("name"));
+            final String filterJSON = Objects.requireNonNull(ctx.formParam("filterJSON"));
+            final String color = Objects.requireNonNull(ctx.formParam("color"));
             final int fleetId = user.getFleetId();
 
             StoredFilter.storeFilter(connection, fleetId, filterJSON, name, color);
@@ -237,10 +237,10 @@ public class TagFilterJavalinRoutes {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
             final int fleetId = user.getFleetId();
-            final String currentName = Objects.requireNonNull(ctx.queryParam("currentName"));
-            final String newName = Objects.requireNonNull(ctx.queryParam("newName"));
-            final String filterJSON = Objects.requireNonNull(ctx.queryParam("filterJSON"));
-            final String color = Objects.requireNonNull(ctx.queryParam("color"));
+            final String currentName = Objects.requireNonNull(ctx.formParam("currentName"));
+            final String newName = Objects.requireNonNull(ctx.formParam("newName"));
+            final String filterJSON = Objects.requireNonNull(ctx.formParam("filterJSON"));
+            final String color = Objects.requireNonNull(ctx.formParam("color"));
 
             StoredFilter.modifyFilter(connection, fleetId, filterJSON, currentName, newName, color);
             ctx.json("SUCCESS");
@@ -257,7 +257,7 @@ public class TagFilterJavalinRoutes {
     private static void postRemoveFilter(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final String name = Objects.requireNonNull(ctx.queryParam("name"));
+            final String name = Objects.requireNonNull(ctx.formParam("name"));
             final int fleetId = user.getFleetId();
 
             StoredFilter.removeFilter(connection, fleetId, name);

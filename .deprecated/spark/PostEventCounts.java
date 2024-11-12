@@ -37,8 +37,8 @@ public class PostEventCounts implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName() + " route");
 
-        String startDate = request.queryParams("startDate");
-        String endDate = request.queryParams("endDate");
+        String startDate = request.formParams("startDate");
+        String endDate = request.formParams("endDate");
 
         final Session session = request.session();
         User user = session.attribute("user");

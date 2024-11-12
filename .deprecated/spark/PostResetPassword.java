@@ -49,10 +49,10 @@ public class PostResetPassword implements Route {
     public Object handle(Request request, Response response) {
         LOG.info("handling " + this.getClass().getName());
 
-        String emailAddress = request.queryParams("emailAddress");
-        String passphrase = request.queryParams("passphrase");
-        String newPassword = request.queryParams("newPassword");
-        String confirmPassword = request.queryParams("confirmPassword");
+        String emailAddress = request.formParams("emailAddress");
+        String passphrase = request.formParams("passphrase");
+        String newPassword = request.formParams("newPassword");
+        String confirmPassword = request.formParams("confirmPassword");
 
         LOG.info("emailAddress: '" + emailAddress + "'");
         // don't print the password to the log!

@@ -37,7 +37,7 @@ public class PostForgotPassword implements Route {
 
         try (Connection connection = Database.getConnection()) {
             LOG.info("handling " + this.getClass().getName() + " route");
-            String email = request.queryParams("email");
+            String email = request.formParams("email");
             if (User.exists(connection, email)) {
                 LOG.info("User exists. Sending reset password email.");
                 User.sendPasswordResetEmail(connection, email);

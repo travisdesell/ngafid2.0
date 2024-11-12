@@ -39,8 +39,8 @@ public class PostRemoveUpload implements Route {
 
             int uploaderId = user.getId();
 
-            int uploadId = Integer.parseInt(request.queryParams("uploadId"));
-            String md5Hash = request.queryParams("md5Hash");
+            int uploadId = Integer.parseInt(request.formParams("uploadId"));
+            String md5Hash = request.formParams("md5Hash");
 
             Upload upload = Upload.getUploadById(connection, uploadId, md5Hash);
 

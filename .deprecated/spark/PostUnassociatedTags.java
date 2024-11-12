@@ -38,7 +38,7 @@ public class PostUnassociatedTags implements Route {
         User user = session.attribute("user");
         int fleetId = user.getFleetId();
 
-        int flightId = Integer.parseInt(request.queryParams("id"));
+        int flightId = Integer.parseInt(request.formParams("id"));
 
         try (Connection connection = Database.getConnection()) {
 

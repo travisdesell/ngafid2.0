@@ -25,8 +25,8 @@ public class PostNumberFlights implements Route {
         // final Session session = request.session();
         // User user = session.attribute("user");
 
-        // int airframeId = Integer.parseInt(request.queryParams("airframe_id"));
-        // int tagId = Integer.parseInt(request.queryParams("tag_id"));
+        // int airframeId = Integer.parseInt(request.formParams("airframe_id"));
+        // int tagId = Integer.parseInt(request.formParams("tag_id"));
 
         // try {
         // Connection connection = Database.getConnection();

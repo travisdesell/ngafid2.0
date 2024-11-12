@@ -71,13 +71,13 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static void getUpload(Context ctx) {
-        LOG.info("Retrieving upload: " + ctx.queryParams("uploadId") + " " + ctx.queryParams("md5Hash"));
+        LOG.info("Retrieving upload: " + ctx.formParams("uploadId") + " " + ctx.formParams("md5Hash"));
 
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         Upload upload;
 
         try (Connection connection = Database.getConnection()) {
-            upload = Upload.getUploadById(connection, Integer.parseInt(Objects.requireNonNull(ctx.queryParam("uploadId"))), ctx.queryParam("md5Hash"));
+            upload = Upload.getUploadById(connection, Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId"))), ctx.formParam("md5Hash"));
         } catch (SQLException e) {
             LOG.severe(e.toString());
             ctx.status(500);
@@ -127,21 +127,21 @@ public class ImportUploadJavalinRoutes {
         int uploaderId = user.getId();
 
         // Extract parameters from query string
-        String identifier = ctx.queryParam("identifier");
+        String identifier = ctx.formParam("identifier");
         if (identifier == null) {
             LOG.severe("ERROR! Missing upload identifier");
             ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File identifier was missing.")));
             return;
         }
 
-        String md5Hash = ctx.queryParam("md5Hash");
+        String md5Hash = ctx.formParam("md5Hash");
         if (md5Hash == null) {
             LOG.severe("ERROR! Missing upload md5Hash");
             ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File md5Hash was missing.")));
             return;
         }
 
-        String sChunkNumber = ctx.queryParam("chunkNumber");
+        String sChunkNumber = ctx.formParam("chunkNumber");
         if (sChunkNumber == null) {
             LOG.severe("ERROR! Missing upload chunk number");
             ctx.result(gson.toJson(new ErrorResponse("File Chunk Upload Failure", "File chunk was missing.")));
@@ -292,8 +292,8 @@ public class ImportUploadJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+            final int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
+            final int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
             final int totalUploads = Upload.getNumUploads(connection, fleetId, null);
             final int numberPages = totalUploads / pageSize;
 
@@ -306,7 +306,7 @@ public class ImportUploadJavalinRoutes {
     }
 
     private static void postUploadDetails(Context ctx) {
-        final int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("uploadId")));
+        final int uploadId = Integer.parseInt(Objects.requireNonNull(ctx.formParam("uploadId")));
         try {
             ctx.json(new UploadDetails(uploadId));
         } catch (SQLException e) {
@@ -317,8 +317,8 @@ public class ImportUploadJavalinRoutes {
     private static void postRemoveUpload(Context ctx) {
         try (Connection connection = Database.getConnection()) {
             final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
-            final int uploadId = Integer.parseInt(ctx.queryParam("uploadId"));
-            String md5Hash = ctx.queryParam("md5Hash");
+            final int uploadId = Integer.parseInt(ctx.formParam("uploadId"));
+            String md5Hash = ctx.formParam("md5Hash");
             Upload upload = Objects.requireNonNull(Upload.getUploadById(connection, uploadId, md5Hash));
 
             // check to see if the user has upload access for this fleet.
@@ -401,8 +401,8 @@ public class ImportUploadJavalinRoutes {
         }
 
         try (Connection connection = Database.getConnection()) {
-            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("currentPage")));
-            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("pageSize")));
+            int currentPage = Integer.parseInt(Objects.requireNonNull(ctx.formParam("currentPage")));
+            int pageSize = Integer.parseInt(Objects.requireNonNull(ctx.formParam("pageSize")));
 
             int totalImports = Upload.getNumUploads(connection, fleetId, null);
             int numberPages = totalImports / pageSize;
@@ -418,11 +418,11 @@ public class ImportUploadJavalinRoutes {
         final User user = Objects.requireNonNull(ctx.sessionAttribute("user"));
         final int uploaderId = user.getId();
         final int fleetId = user.getFleetId();
-        final String filename = Objects.requireNonNull(ctx.queryParam("filename")).replaceAll(" ", "_");
-        final String identifier = Objects.requireNonNull(ctx.queryParam("identifier"));
-        final int numberChunks = Integer.parseInt(Objects.requireNonNull(ctx.queryParam("numberChunks")));
-        final long sizeBytes = Long.parseLong(Objects.requireNonNull(ctx.queryParam("sizeBytes")));
-        final String md5Hash = Objects.requireNonNull(ctx.queryParam("md5Hash"));
+        final String filename = Objects.requireNonNull(ctx.formParam("filename")).replaceAll(" ", "_");
+        final String identifier = Objects.requireNonNull(ctx.formParam("identifier"));
+        final int numberChunks = Integer.parseInt(Objects.requireNonNull(ctx.formParam("numberChunks")));
+        final long sizeBytes = Long.parseLong(Objects.requireNonNull(ctx.formParam("sizeBytes")));
+        final String md5Hash = Objects.requireNonNull(ctx.formParam("md5Hash"));
 
         ctx.attribute("org.eclipse.jetty.multipartConfig", new MultipartConfigElement("/mnt/ngafid/temp"));
 

@@ -37,10 +37,10 @@ public class PostCreateTag implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        String name = request.queryParams("name");
-        String description = request.queryParams("description");
-        String color = request.queryParams("color");
-        int flightId = Integer.parseInt(request.queryParams("id"));
+        String name = request.formParams("name");
+        String description = request.formParams("description");
+        String color = request.formParams("color");
+        int flightId = Integer.parseInt(request.formParams("id"));
 
         int fleetId = user.getFleetId();
 

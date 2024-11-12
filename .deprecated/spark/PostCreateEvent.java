@@ -31,13 +31,13 @@ public class PostCreateEvent implements Route {
         LOG.info("handling " + this.getClass().getName() + " route");
 
         int fleetId = 0; // all events work on all fleets for now
-        String eventName = request.queryParams("eventName");
-        int startBuffer = Integer.parseInt(request.queryParams("startBuffer"));
-        int stopBuffer = Integer.parseInt(request.queryParams("stopBuffer"));
-        String airframe = request.queryParams("airframe");
-        String filterJSON = request.queryParams("filterQuery");
-        String severityColumnNamesJSON = request.queryParams("severityColumnNames");
-        String severityType = request.queryParams("severityType");
+        String eventName = request.formParams("eventName");
+        int startBuffer = Integer.parseInt(request.formParams("startBuffer"));
+        int stopBuffer = Integer.parseInt(request.formParams("stopBuffer"));
+        String airframe = request.formParams("airframe");
+        String filterJSON = request.formParams("filterQuery");
+        String severityColumnNamesJSON = request.formParams("severityColumnNames");
+        String severityType = request.formParams("severityType");
 
         LOG.info("eventName: " + eventName);
         LOG.info("startBuffer: " + startBuffer);

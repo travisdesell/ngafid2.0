@@ -30,9 +30,9 @@ public class UncategorizedJavalinRoutes {
 
     private static void putUpdateMonthlyFlightsCache(Context ctx) {
         try (Connection connection = Database.getConnection()) {
-            updateMonthlyTotalFlights(connection, Integer.parseInt(Objects.requireNonNull(ctx.queryParam("fleetId"))));
+            updateMonthlyTotalFlights(connection, Integer.parseInt(Objects.requireNonNull(ctx.formParam("fleetId"))));
             ctx.status(200);
-            ctx.json(Objects.requireNonNull(ctx.queryParam("fleetId")));
+            ctx.json(Objects.requireNonNull(ctx.formParam("fleetId")));
         } catch (Exception e) {
             e.printStackTrace();
             ctx.status(500);

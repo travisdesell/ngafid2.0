@@ -37,7 +37,7 @@ public class PostRateOfClosure implements Route {
     public Object handle(Request request, Response response) {
 
         LOG.info("handling rate of closure route");
-        int eventId = Integer.parseInt(request.queryParams("eventId"));
+        int eventId = Integer.parseInt(request.formParams("eventId"));
         try (Connection connection = Database.getConnection()) {
             RateOfClosure rateOfClosure = RateOfClosure.getRateOfClosureOfEvent(connection, eventId);
             if (rateOfClosure != null) {

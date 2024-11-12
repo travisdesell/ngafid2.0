@@ -40,8 +40,8 @@ public class PostSimAircraft implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        String type = request.queryParams("type");
-        String path = request.queryParams("path");
+        String type = request.formParams("type");
+        String path = request.formParams("path");
 
         LOG.info("performing " + type + " on " + path);
 

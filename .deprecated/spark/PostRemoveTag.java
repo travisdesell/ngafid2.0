@@ -50,10 +50,10 @@ public class PostRemoveTag implements Route {
         final Session session = request.session();
         User user = session.attribute("user");
 
-        int flightId = Integer.parseInt(request.queryParams("flight_id"));
-        int tagId = Integer.parseInt(request.queryParams("tag_id"));
-        boolean isPermanent = Boolean.parseBoolean(request.queryParams("permanent"));
-        boolean allTags = Boolean.parseBoolean(request.queryParams("all"));
+        int flightId = Integer.parseInt(request.formParams("flight_id"));
+        int tagId = Integer.parseInt(request.formParams("tag_id"));
+        boolean isPermanent = Boolean.parseBoolean(request.formParams("permanent"));
+        boolean allTags = Boolean.parseBoolean(request.formParams("all"));
 
         try (Connection connection = Database.getConnection()) {
 
