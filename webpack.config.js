@@ -9,6 +9,7 @@ module.exports = {
         fallback: {
             fs: false,
             path: false,
+            "stream": require.resolve("stream-browserify")
         }
     },
 
@@ -65,8 +66,10 @@ module.exports = {
         welcome: __dirname + "/src/main/javascript/welcome.js"
     },
 
+
     devtool: "source-map",
 
+    
     output: {
         // Farhad: for webpackCesium
         sourcePrefix: "",

@@ -1,6 +1,6 @@
 import 'bootstrap';
 
-import React, { Component } from "react";
+import React, { Component, useEffect } from "react";
 import ReactDOM from "react-dom";
 
 import { errorModal } from "./error_modal.js";
@@ -12,6 +12,7 @@ import GetDescription from "./get_description.js";
 import Plotly from 'plotly.js';
 import {OverlayTrigger} from "react-bootstrap";
 import Tooltip from "react-bootstrap/Tooltip";
+import { set } from 'ol/transform.js';
 
 
 airframes.unshift("All Airframes");
@@ -51,12 +52,20 @@ var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
 
 class SeveritiesPage extends React.Component {
+
     constructor(props) {
+
         super(props);
 
         let eventChecked = {};
+        let eventsEmpty = {};
+
+        eventNames.unshift("ANY Event");
         for (let i = 0; i < eventNames.length; i++) {
-            eventChecked[eventNames[i]] = false;
+
+            let eventNameCur = eventNames[i];
+            eventChecked[eventNameCur] = false;
+            eventsEmpty[eventNameCur] = false;
         }
 
         var date = new Date();
@@ -70,9 +79,14 @@ class SeveritiesPage extends React.Component {
             datesChanged : false,
             eventMetaData : {},
             eventChecked : eventChecked,
+            eventsEmpty : eventsEmpty,
             metaDataChecked: false,
             // severityTraces: [],
         };
+
+        //Fetch all event severities
+        this.fetchAllEventSeverities();
+
     }
 
     exportCSV() {
@@ -164,6 +178,7 @@ class SeveritiesPage extends React.Component {
         console.log("displaying plots with airframe: '" + selectedAirframe + "'");
 
         let severityTraces = [];
+        var airframeNames = {};
 
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
@@ -173,6 +188,13 @@ class SeveritiesPage extends React.Component {
 
                 if (airframe === "Garmin Flight Display") continue;
                 if (selectedAirframe !== airframe && selectedAirframe !== "All Airframes") continue;
+
+                //Map airframe names to a consistent marker symbol
+                const markerSymbolList = ["circle", "diamond", "square", "triangle", "pentagon", "hexagon", "octagon"];
+
+                airframeNames[airframe]= (airframeNames[airframe] ?? Object.keys(airframeNames).length);
+                let markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
+                let markerSymbolAny = (markerSymbol + "-open-dot");
 
                 let severityTrace = {
                     name : eventName + ' - ' + airframe,
@@ -191,6 +213,36 @@ class SeveritiesPage extends React.Component {
                     tagName: []
                 };
 
+                //Use a hollow circle for the "ANY Event" event
+                if (eventName === "ANY Event") {
+
+                    severityTrace.marker = {
+                        color: 'gray',
+                        size: 14,
+                        symbol: markerSymbolAny,
+                        opacity: 0.65
+                    };
+
+                } else {
+
+                    let eventNameIndex = eventNames.indexOf(eventName);
+                    severityTrace.marker = {
+                        
+                        //Consistent rainbow colors for each event
+                        color:
+                            'hsl('
+                            + parseInt(360.0 * eventNameIndex / eventNames.length)
+                            + ',100%'
+                            + ',75%)',
+                        symbol: markerSymbol,
+                        size: 8,
+                        line: {
+                            color:'black',
+                            width:1
+                        }
+                    };
+                }
+
                 for (let i = 0; i < counts.length; i++) {
                     severityTrace.id.push( counts[i].id );
                     severityTrace.y.push( counts[i].severity );
@@ -207,7 +259,7 @@ class SeveritiesPage extends React.Component {
                         severityTrace.flightIds.push( counts[i].flightId);
                     }
 
-                  let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
+                  let hovertext = "Flight #" + counts[i].flightId +  ", System ID: " + counts[i].systemId +  ", Tail: " + counts[i].tail + ", severity: " + (Math.round(counts[i].severity * 100) / 100).toFixed(2) + ", event name: " + eventName + ", event start time: " + counts[i].startTime + ", event end time: " + counts[i].endTime;
                     if(counts[i].tagName !== ""){
                         hovertext += ", Tag: " + counts[i].tagName;
                     }
@@ -219,7 +271,13 @@ class SeveritiesPage extends React.Component {
                     severityTrace.hovertext.push(hovertext);
                     //+ ", severity: " + counts[i].severity);
                 }
-                severityTraces.push(severityTrace);
+                
+                //Display the "ANY Event" markers under the other ones
+                if (eventName === "ANY Event") {
+                    severityTraces.unshift(severityTrace);
+                } else {
+                    severityTraces.push(severityTrace);
+                }
                 this.setState(this.state);
             }
         }
@@ -322,11 +380,11 @@ class SeveritiesPage extends React.Component {
 
     }
 
+    fetchAllEventSeverities() {
 
-    checkEvent(eventName) {
-        console.log("checking event: '" + eventName + "'");
-        this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
-        this.setState(this.state);
+        $('#loading').show();
+        console.log("showing loading spinner!");
+
 
         let startDate = this.state.startYear + "-";
         let endDate = this.state.endYear + "-";
@@ -337,6 +395,85 @@ class SeveritiesPage extends React.Component {
         if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
         else endDate += this.state.endMonth;
 
+        let severitiesPage = this;
+
+        var submission_data = {
+            startDate : startDate + "-01",
+            endDate : endDate + "-28",
+            eventNames : JSON.stringify(eventNames),
+            tagName: this.state.tagName
+        };
+
+        $.ajax({
+            type: 'POST',
+            url: '/protected/all_severities',
+            data : submission_data,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ", this.data, response);
+
+                $('#loading').hide();
+
+                if (response.err_msg) {
+                    errorModal.show(response.err_title, response.err_msg);
+                    return;
+                }
+
+                //Check if the response is empty for each event
+                for (let [eventName, countsMap] of Object.entries(response)) {
+
+                    let eventSeverityCounts = response[eventName];
+                    
+                    let isEmpty = true;
+                    for(let [airframe, counts] of Object.entries(eventSeverityCounts)) {
+
+                        if (counts.length > 0) {
+                            isEmpty = false;
+                            break;
+                        }
+                    }
+                    if (isEmpty) {
+                        severitiesPage.state.eventsEmpty[eventName] = true;
+                        eventSeverities[eventName] = {};
+                        }
+                    else {
+                        severitiesPage.state.eventsEmpty[eventName] = false;
+                        eventSeverities[eventName] = eventSeverityCounts;
+                    }
+                    
+                }
+
+                // severitiesPage.displayPlot(severitiesPage.state.airframe);
+                severitiesPage.setState(severitiesPage.state);
+            },
+
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            }
+
+        });
+
+    }
+
+    fetchEventSeverities(eventName) {
+
+        $('#loading').show();
+        console.log("showing loading spinner!");
+
+
+        let startDate = this.state.startYear + "-";
+        let endDate = this.state.endYear + "-";
+
+        //0 pad the months on the front
+        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        else startDate += this.state.startMonth;
+        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        else endDate += this.state.endMonth;
+
+
+        let severitiesPage = this;
+
+
         var submission_data = {
             startDate : startDate + "-01",
             endDate : endDate + "-28",
@@ -344,40 +481,57 @@ class SeveritiesPage extends React.Component {
             tagName: this.state.tagName
         };
 
+        $.ajax({
+            type: 'POST',
+            url: '/protected/severities',
+            data : submission_data,
+            dataType : 'json',
+            success : function(response) {
+                console.log("received response: ", this.data, response);
+
+                $('#loading').hide();
+
+                if (response.err_msg) {
+                    errorModal.show(response.err_title, response.err_msg);
+                    return;
+                }   
+
+                //Check if the response is empty
+                for(let [airframe, counts] of Object.entries(response)) {
+                    
+                    if (counts.length != 0)
+                        continue;
+                
+                    severitiesPage.state.eventsEmpty[eventName] = true;
+                    eventSeverities[eventName] = {};
+                    severitiesPage.setState(severitiesPage.state);
+                    return;
+                }
+
+                eventSeverities[eventName] = response;
+                severitiesPage.displayPlot(severitiesPage.state.airframe);
+
+                severitiesPage.setState(severitiesPage.state);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },   
+            async: true 
+        });
+
+    }
+
+    checkEvent(eventName) {
+
+        console.log("checking event: '" + eventName + "'");
+        this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
+        this.setState(this.state);
+
         if (eventName in eventSeverities) {
             console.log("already loaded counts for event: '" + eventName + "'");
             severitiesPage.displayPlot(severitiesPage.state.airframe);
-
         } else {
-            $('#loading').show();
-            console.log("showing loading spinner!");
-
-            let severitiesPage = this;
-
-            $.ajax({
-                type: 'POST',
-                url: '/protected/severities',
-                data : submission_data,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-
-                    $('#loading').hide();
-
-                    if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
-                        return;
-                    }   
-
-                    eventSeverities[eventName] = response;
-                    severitiesPage.displayPlot(severitiesPage.state.airframe);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Uploads", errorThrown);
-                },   
-                async: true 
-            });
+            this.fetchEventSeverities(eventName);
         }
     }
 
@@ -416,6 +570,8 @@ class SeveritiesPage extends React.Component {
 
         eventSeverities = {};
         this.displayPlot(this.state.airframe);
+
+        this.fetchAllEventSeverities();
     }
 
     airframeChange(airframe) {
@@ -484,9 +640,20 @@ class SeveritiesPage extends React.Component {
 
                                         {
                                             eventNames.map((eventName, index) => {
-                                                return (
+
+                                                //Don't show a description for the "ANY Event" event
+                                                if (eventName === "ANY Event") return (
                                                     <div key={index} className="form-check">
                                                         <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <label className="form-check-label">
+                                                            {eventName}
+                                                        </label>
+                                                    </div>
+                                                );
+
+                                                return (
+                                                    <div key={index} className="form-check">
+                                                        <input disabled={this.state.eventsEmpty[eventName]} className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
                                                             <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}

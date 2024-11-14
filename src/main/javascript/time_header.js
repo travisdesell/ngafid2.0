@@ -85,6 +85,8 @@ export default class TimeHeader extends React.Component {
         return (
             <div className="form-row" style={{textAlign: 'center', verticalAlign: 'center'}}>
 
+                { exportButton }
+
                 <div className="col-auto">
                     { tags }
                 </div>
@@ -120,8 +122,6 @@ export default class TimeHeader extends React.Component {
                         </div>
                     </div>
                 </div>
-
-                { exportButton }
 
                 <div className="col-auto">
                     <div className="input-group">
