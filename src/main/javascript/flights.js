@@ -583,7 +583,7 @@ class FlightsPage extends React.Component {
         }
         this.state.cesiumVisible = true;
         this.setState(this.state);
-        $("#cesium-div").css("height", "50%");
+        $("#cesium-div").css("height", "80%");
         $("#cesium-div").show();
 
     }

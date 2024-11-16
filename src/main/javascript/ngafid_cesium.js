@@ -398,19 +398,19 @@ class CesiumPage extends React.Component {
         console.log(flightStartTime);
         if (JulianDate.compare(flightStartTime, clockStartTime) < 0) {
             // console.log("Earlier time detected. Setting start time to " + startTime)
-            clockStartTime = flightStartTime.clone();
+            this.viewer.clock.startTime = flightStartTime.clone();
+            this.viewer.clock.currentTime = flightStartTime.clone();
         }
 
         if (JulianDate.compare(clockEndTime, flightEndTime) > 0) {
             // console.log("Later time detected. Setting end time to " + endTime);
-            clockEndTime = flightEndTime.clone();
+            this.viewer.clock.stopTime = flightEndTime.clone();
+
         }
 
-        this.viewer.clock.startTime = flightStartTime.clone();
-        this.viewer.clock.stopTime = flightEndTime.clone();
-        this.viewer.clock.currentTime = flightStartTime.clone();
-        this.viewer.clock.multiplier = 25;
         this.viewer.clock.shouldAnimate = true;
+        this.viewer.clock.multiplier = 10;
+        this.viewer.timeline.zoomTo(flightStartTime.clone(), flightStartTime.clone());
         var pathColor = Color.fromCssColorString(color).withAlpha(0.8);
         var positionProperty = this.getPositionProperty(flightData);
 
@@ -470,7 +470,7 @@ class CesiumPage extends React.Component {
     render() {
 
            return (
-                <div>
+                <div style={{width:'100%', height: '100%' }}>
                     <div id="cesiumContainer"> 
 
                         <Viewer full
@@ -482,6 +482,9 @@ class CesiumPage extends React.Component {
                                 selectionIndicator={true}
                                 baseLayerPicker={false}
                                 orderIndependentTranslucency={false}
+                                style={{
+                                    position: "relative",
+                                }}
                         >
                         <Clock/>
                            <Scene
