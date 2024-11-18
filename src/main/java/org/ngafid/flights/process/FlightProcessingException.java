@@ -1,49 +1,82 @@
 package org.ngafid.flights.process;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.Collections;
 
 /**
  * An exception that contains all of the FATAL exceptions that occurred during flight processing.
- * Namely SQLException, FatalFlightFileException, IOException, and FlightAlreadyExistsException.
+ * This includes SQLException, FatalFlightFileException, IOException, and FlightAlreadyExistsException.
  *
- * If flight processing steps are done in parallel multiple exceptions could be thrown, which is
- * where this class comes in: it will contain all of the exceptions that occurred.
- *
- **/
+ * If flight processing steps are done in parallel, multiple exceptions could be thrown,
+ * which is where this class comes in: it will contain all of the exceptions that occurred.
+ */
 public class FlightProcessingException extends Exception {
-    private static final long serialVersionUID = 1235003;
+    private static final long serialVersionUID = 1235003L;
     private static final String DEFAULT_MESSAGE = "(exception message was empty / null)";
 
     private List<Exception> exceptions;
 
     public FlightProcessingException(Exception e) {
-        exceptions = List.<Exception>of(e);
+        super(e);
+        this.exceptions = List.of(e);
+    }
+
+    public FlightProcessingException(String message, Exception e) {
+        super(message, e);
+        this.exceptions = List.of(e);
     }
 
     public FlightProcessingException(List<Exception> exceptions) {
-        this.exceptions = Collections.<Exception>unmodifiableList(exceptions);
+        super(exceptions.isEmpty() ? DEFAULT_MESSAGE : exceptions.get(0).getMessage());
+        this.exceptions = Collections.unmodifiableList(exceptions);
     }
 
+    @Override
     public String getMessage() {
-        String message;
-
         if (exceptions.size() == 1) {
-
-            message = exceptions.get(0).getMessage();
-            if (message == null)
-                return DEFAULT_MESSAGE;
-
-        } else {
-            message = "Encountered the following " + exceptions.size() + " errors when processing a flight:\n";
-            for (var e : exceptions) {
-                String eMessage = e.getMessage();
-                if (eMessage == null)
-                    eMessage = DEFAULT_MESSAGE;
-                message += eMessage + "\n\n";
+            Exception e = exceptions.get(0);
+            if (e instanceof SQLException) {
+                return getSQLExceptionMessage((SQLException) e);
+            } else {
+                String message = e.getMessage();
+                return message != null ? message : DEFAULT_MESSAGE;
             }
         }
 
-        return message;
+        StringBuilder messageBuilder = new StringBuilder("Encountered the following ")
+                .append(exceptions.size())
+                .append(" errors when processing a flight:\n");
+
+        for (Exception e : exceptions) {
+            if (e instanceof SQLException) {
+                messageBuilder.append(getSQLExceptionMessage((SQLException) e));
+            } else {
+                String eMessage = e.getMessage();
+                messageBuilder.append(eMessage != null ? eMessage : DEFAULT_MESSAGE).append("\n\n");
+            }
+        }
+
+        return messageBuilder.toString();
+    }
+
+    // Helper method to extract detailed information from SQLException
+    private String getSQLExceptionMessage(SQLException sqlException) {
+        StringBuilder sqlMessage = new StringBuilder("SQL Exception Details:\n");
+
+        sqlMessage.append("Message: ").append(sqlException.getMessage()).append("\n");
+        sqlMessage.append("SQLState: ").append(sqlException.getSQLState()).append("\n");
+        sqlMessage.append("Error Code: ").append(sqlException.getErrorCode()).append("\n");
+        SQLException nextException = sqlException.getNextException();
+        while (nextException != null) {
+            sqlMessage.append("\nNext SQLException in chain:\n")
+                    .append("Message: ").append(nextException.getMessage()).append("\n")
+                    .append("SQLState: ").append(nextException.getSQLState()).append("\n")
+                    .append("Error Code: ").append(nextException.getErrorCode()).append("\n");
+
+            nextException = nextException.getNextException();
+        }
+
+        return sqlMessage.toString();
     }
 }

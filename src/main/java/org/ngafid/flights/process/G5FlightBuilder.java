@@ -7,6 +7,7 @@ import org.ngafid.flights.*;
 
 /**
  * Flight builder for G5FlightBuilder
+ *
  */
 public class G5FlightBuilder extends FlightBuilder {
 
