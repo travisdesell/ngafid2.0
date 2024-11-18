@@ -154,7 +154,8 @@ class ManageFleetPage extends React.Component {
             user : this.props.user,
             fleetUsers: [],
             waitingUserCount : this.props.waitingUserCount,
-            unconfirmedTailsCount : this.props.unconfirmedTailsCount
+            unconfirmedTailsCount : this.props.unconfirmedTailsCount,
+            showDeniedUsers: false
         };
 
         console.log("constructed ManageFleetPage");
@@ -248,9 +249,9 @@ class ManageFleetPage extends React.Component {
 
     render() {
         const hidden = this.props.hidden;
-        const bgStyle = {opacity : 0.8};
-        const fgStyle = {opacity : 1.0};
-        const grayoutStyle = {backgroundColor: '#d3d3d3'};
+        const bgStyle = { opacity: 0.8 };
+        const fgStyle = { opacity: 1.0 };
+        const grayoutStyle = { backgroundColor: '#d3d3d3' };
 
         let fleetName = "";
 
@@ -266,11 +267,14 @@ class ManageFleetPage extends React.Component {
                 />
 
                 <div className="card-body" hidden={hidden}>
-                    <div className="row ml-1 mb-2 invite" style={bgStyle}>
-                        <p style={fgStyle}>
+                    <div className="row ml-1 mb-2 invite" style={{ ...bgStyle, display: "flex", alignItems: "center" }}>
+                        <p style={{ ...fgStyle, marginBottom: "0", marginRight: "10px" }}>
                             Invite user to {fleetName}:
                         </p>
-                        <form onSubmit={this.handleSubmit}>
+                        <form
+                            onSubmit={this.handleSubmit}
+                            style={{ display: "flex", alignItems: "center", marginRight: "10px" }}
+                        >
                             <input
                                 id="inviteEmail"
                                 type="email"
@@ -279,10 +283,30 @@ class ManageFleetPage extends React.Component {
                                 pattern="[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}"
                                 title="Please enter a valid email address"
                                 required
+                                style={{
+                                    marginRight: "10px",
+                                    border: "1px solid grey",
+                                    borderRadius: "5px",
+                                    padding: "5px",
+                                    backgroundColor: "transparent",
+                                    outline: "none",
+                                    transition: "border-color 0.2s ease",
+                                }}
                             />
-                            <button className="btn btn-primary ml-1" type="submit">Invite</button>
+                            <button className="btn btn-primary" type="submit">
+                                Invite
+                            </button>
                         </form>
+                        <button
+                            className="btn btn-outline-primary"
+                            onClick={() => this.setState({showDeniedUsers: !this.state.showDeniedUsers})}
+                            style={{alignSelf: "center"}}
+                        >
+                            {this.state.showDeniedUsers ? "Hide Denied Users" : "Show Denied Users"}
+                        </button>
                     </div>
+
+
                     <div className="card mb-1" style={bgStyle}>
                         <h5 className="card-header" style={fgStyle}>
                             Manage {fleetName} Users
@@ -291,33 +315,35 @@ class ManageFleetPage extends React.Component {
                         <div className="card-body" style={fgStyle}>
                             <table className="table">
                                 <thead>
-                                    <tr>
-                                        <th scope="col">Email</th>
-                                        <th scope="col">Name</th>
-                                        <th scope="col">Access Level</th>
-                                    </tr>
+                                <tr>
+                                    <th scope="col">Email</th>
+                                    <th scope="col">Name</th>
+                                    <th scope="col">Access Level</th>
+                                </tr>
                                 </thead>
                                 <tbody>
-                                    {
-                                       this.state.fleetUsers.map((fleetUser, index) => {
-
-                                           const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
-                                            return (
-                                                <FleetUserRow
-                                                    key={fleetUser.id}
-                                                    fleetUser={fleetUser}
-                                                    rowStyle={rowStyle}
-                                                    incrementWaiting={() => {this.incrementWaiting();}}
-                                                    decrementWaiting={() => {this.decrementWaiting();}}
-                                                    onAccessChange={() => this.sortAndSetUsers()}
-                                                />
-                                            );
-                                        })
-                                    }
+                                {this.state.fleetUsers
+                                    .filter(userCurrent =>
+                                        this.state.showDeniedUsers || userCurrent.fleetAccess.accessType !== "DENIED"
+                                    )
+                                    .map((fleetUser, index) => {
+                                        const rowStyle = fleetUser.fleetAccess.accessType === "DENIED" ? grayoutStyle : {};
+                                        return (
+                                            <FleetUserRow
+                                                key={fleetUser.id}
+                                                fleetUser={fleetUser}
+                                                rowStyle={rowStyle}
+                                                incrementWaiting={() => { this.incrementWaiting(); }}
+                                                decrementWaiting={() => { this.decrementWaiting(); }}
+                                                onAccessChange={() => this.sortAndSetUsers()}
+                                            />
+                                        );
+                                    })
+                                }
                                 </tbody>
                             </table>
 
-                            <h6 className="card-header" style={{padding:"16px 12px", margin:"0x 0px"}}>
+                            <h6 className="card-header" style={{ padding: "16px 12px", margin: "0px 0px" }}>
                                 Fleet Email Preferences
                             </h6>
                             <div className="form-group">
@@ -333,27 +359,28 @@ class ManageFleetPage extends React.Component {
                 <style jsx="true">
                     {`
                         .invite p {
-                          margin-right: 10px;
-                          margin-bottom: auto;
-                          margin-top: auto;
+                            margin-right: 10px;
+                            margin-bottom: auto;
+                            margin-top: auto;
                         }
                         .invite form {
-                          margin-bottom: auto !important;
-                          margin-top: auto !important;
+                            margin-bottom: auto !important;
+                            margin-top: auto !important;
                         }
                         .invite input {
-                          border: 1px solid grey;
-                          border-radius: 5px;
-                          padding: 5px;
-                          background-color: transparent;
-                          outline: none;
-                          transition: border-color 0.2s ease;
+                            border: 1px solid grey;
+                            border-radius: 5px;
+                            padding: 5px;
+                            background-color: transparent;
+                            outline: none;
+                            transition: border-color 0.2s ease;
                         }
                         .invite input:focus {
-                          border-color: #007bff;
+                            border-color: #007bff;
                         }
-                   `}
+                    `}
                 </style>
+
             </div>
         );
     }
