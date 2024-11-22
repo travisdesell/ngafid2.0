@@ -49,6 +49,7 @@ public class AircraftFleetTailsJavalinRoutes {
             final User user = ctx.sessionAttribute("user");
             scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user) + "');");
 
+            ctx.contentType("text/html");
             ctx.result(MustacheHandler.handle(templateFile, scopes));
         } catch (IOException e) {
             LOG.severe(e.toString());
