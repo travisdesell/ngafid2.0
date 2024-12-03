@@ -33,4 +33,7 @@ jobs:
       - name: Maven Test
         run: mvn test
 
+      - name: Maven Format
+        run: mvn spotless:apply
+
 
