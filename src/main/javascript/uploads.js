@@ -372,7 +372,7 @@ class UploadsPage extends React.Component {
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
-                    errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                    errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
                     uploadsPage.removePendingUpload(file);
 
                 } else {
@@ -574,7 +574,7 @@ class UploadsPage extends React.Component {
 
             var response = JSON.parse(xhr.responseText);
             if (response.errorTitle !== undefined) {
-                errorModal.show(response.errorTitle, response.errorMessage + "<br>On file: '" + filename + "'");
+                errorModal.show(response.errorTitle, response.errorMessage + "\n\nOn file: '" + filename + "'");
 
             } else {
                 var uploadInfo = response;
