@@ -179,15 +179,18 @@ class SeveritiesPage extends React.Component {
     }
 
     displayPlot(selectedAirframe) {
-        console.log("displaying plots with airframe: '" + selectedAirframe + "'");
+
+        console.log("Displaying plots with airframe: '" + selectedAirframe + "'");
+        // console.log("Event Severities: ", eventSeverities);
 
         let severityTraces = [];
         var airframeNames = {};
 
         
         for (let [eventName, countsMap] of Object.entries(eventSeverities)) {
-            //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
-            if (!this.state.eventChecked[eventName]) continue;
+            
+            if (!this.state.eventChecked[eventName])
+                continue;
 
             for (let [airframe, counts] of Object.entries(countsMap)) {
 
@@ -202,6 +205,7 @@ class SeveritiesPage extends React.Component {
 
                 airframeNames[airframe] ??= Object.keys(airframeNames).length;
                 let markerSymbol = markerSymbolList[airframeNames[airframe] % markerSymbolList.length];
+                // console.log("Marker Symbol: ", markerSymbol);
                 let markerSymbolAny = (markerSymbol + "-open-dot");
 
                 let severityTrace = {
@@ -432,7 +436,7 @@ class SeveritiesPage extends React.Component {
             data : submission_data,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ", this.data, response);
+                console.log("Received response <all_severities>: ", this.data, response);
 
                 $('#loading').hide();
 
@@ -482,6 +486,8 @@ class SeveritiesPage extends React.Component {
 
                 // severitiesPage.displayPlot(severitiesPage.state.airframe);
                 severitiesPage.setState(severitiesPage.state);
+                severitiesPage.displayPlot(severitiesPage.state.airframe);
+
             },
 
             error : function(jqXHR, textStatus, errorThrown) {
@@ -524,7 +530,7 @@ class SeveritiesPage extends React.Component {
             data : submission_data,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ", this.data, response);
+                console.log("Received response <severities>: ", this.data, response);
 
                 $('#loading').hide();
 
@@ -539,6 +545,8 @@ class SeveritiesPage extends React.Component {
                     if (counts.length != 0)
                         continue;
                 
+                    console.log("No counts for event: '" + eventName + "' and airframe: '" + airframe + "'");
+
                     severitiesPage.state.eventsEmpty[eventName] = true;
                     eventSeverities[eventName] = {};
                     severitiesPage.setState(severitiesPage.state);
@@ -546,9 +554,9 @@ class SeveritiesPage extends React.Component {
                 }
 
                 eventSeverities[eventName] = response;
+                severitiesPage.setState(severitiesPage.state);
                 severitiesPage.displayPlot(severitiesPage.state.airframe);
 
-                severitiesPage.setState(severitiesPage.state);
             },   
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Loading Uploads", errorThrown);
@@ -560,7 +568,7 @@ class SeveritiesPage extends React.Component {
 
     checkEvent(eventName) {
 
-        console.log("checking event: '" + eventName + "'");
+        console.log("Checking event: '" + eventName + "'");
         this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
         this.setState(this.state);
 
