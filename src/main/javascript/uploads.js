@@ -666,9 +666,7 @@ class UploadsPage extends React.Component {
         };
 
         //Disable Upload buttons with no Upload Access
-        let doUploadButtonDisable = (!isUploader);
         let doUploadButtonHide = (!isUploader);
-
 
         return (
 
