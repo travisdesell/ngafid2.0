@@ -17,8 +17,8 @@ class FlightWarning extends React.Component {
     render() {
         let warning = this.props.warning;
 
-        const styleName = { flex : "0 0 25em" };
-        let filenameClasses = "p-1 mr-1 card border-warning text-warning";
+        const styleName = { flex : "0 0 25em",  textShadow: "1px 1px 1px rgba(0,0,0,0.10)" };
+        let filenameClasses = "p-1 mr-1 card border-warning";
         let filenameText = warning.filename;
         if (warning.sameFilename) {
             filenameClasses = "p-1 mr-1";
@@ -26,11 +26,11 @@ class FlightWarning extends React.Component {
         }
 
         return (
-            <div className="d-flex flex-row p-0 mt-1">
+            <div className="d-flex flex-row p-0 mt-1 border-warning">
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-warning text-warning flex-fill">
+                <div className="p-1 card border-warning flex-fill" style={styleName}>
                     {warning.message}
                 </div>
             </div>
@@ -69,7 +69,7 @@ class FlightError extends React.Component {
     render() {
         let error = this.props.error;
 
-        const styleName = { flex : "0 0 25em" };
+        const styleName = { flex : "0 0 25em",  textShadow: "1px 1px 1px rgba(0,0,0,0.10)" };
         let filenameClasses = "p-1 mr-1 card border-danger text-danger";
         let filenameText = error.filename;
         if (error.sameFilename) {
@@ -82,7 +82,7 @@ class FlightError extends React.Component {
                 <div className={filenameClasses} style={styleName} >
                     {filenameText}
                 </div>
-                <div className="p-1 card border-danger text-danger flex-fill">
+                <div className="p-1 card border-danger text-danger flex-fill" style={styleName} >
                     {error.message}
                 </div>
             </div>
@@ -215,7 +215,7 @@ class Import extends React.Component {
                 error : function(jqXHR, textStatus, errorThrown) {
                     errorModal.show("Error Loading Uploads", errorThrown);
                 },   
-                async: true 
+                async: true
             });  
         }
 
@@ -268,12 +268,12 @@ class Import extends React.Component {
 
         const styleName = { };
         const styleTime = { flex : "0 0 11em" };
-        const styleCount = { flex : "0 0 8em" };
+        const styleCount = { marginRight: "5px", borderRadius: "8px", color: "white", textAlign: "center", alignContent: "center" };
         const styleStatus = { flex : "0 0 10em" };
         const styleButton = { };
 
         let statusText = "";
-        let expandButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
+        let expandButtonClasses = "p-1 btn btn-outline-secondary float-right";
         let expandIconClasses = "fa ";
 
         let expandDivClasses = "";
@@ -334,28 +334,80 @@ class Import extends React.Component {
             colorClasses += " border-danger text-danger";
         }
 
-        let textClasses = "p-1 mr-1 card bg-light";
-        let cardClasses = textClasses + colorClasses;
+        let textClasses = "p-1 mr-1 card";
+        let cardClasses = (textClasses + colorClasses);
+
+        console.log("Import Info: ", importInfo);
+        let totalFlights = (importInfo.validFlights + importInfo.warningFlights + importInfo.errorFlights);
 
         return (
-            <div className="m-1">
-                <div className="d-flex flex-row">
-                    <div className={textClasses + " flex-fill"} style={styleName}>{importInfo.filename}</div>
-                    <div className={textClasses} style={styleTime}>{importInfo.endTime}</div>
-                    <div className={textClasses + " text-success"} style={styleCount}>{importInfo.validFlights} valid</div>
-                    <div className={textClasses + " text-warning"} style={styleCount}>{importInfo.warningFlights} warnings</div>
-                    <div className={textClasses + " text-danger"} style={styleCount}>{importInfo.errorFlights} errors</div>
-                    <div className={cardClasses} style={styleStatus}>{statusText}</div>
-                    <button className={expandButtonClasses} style={styleButton} onClick={() => this.expandClicked()}><i className={expandIconClasses}></i></button>
+            <div className="m-2">
+                <div className="d-flex flex-row justify-content-between align-items-start" style={{ ...styleName, backgroundColor:"var(--c_entry_bg)", padding: '10px', borderRadius: "10px", border:"1px solid var(--c_border_alt)" }}>
+        
+                    {/* LEFT ELEMENTS */}
+                    <div className="d-flex justify-content-start flex-wrap" style={{ flexWrap: "wrap", minWidth:"35%", maxWidth:"35%" }}>
+                        <div className={textClasses} style={{ ...styleTime, minWidth:"60%", maxWidth:"60%" }}>{importInfo.filename}</div>
+                        <div className={textClasses} style={{...styleTime, minWidth:"35%", maxWidth:"35%"}}>{importInfo.endTime}</div>
+                    </div>
+        
+                    {/* RIGHT ELEMENTS */}
+                    <div className="d-flex justify-content-end flex-wrap" style={{ flexFlow:"row wrap", minWidth: "65%" }}>
 
+                        <div
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_valid)" }}
+                        >
+                            <i className="fa fa-check" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Valid:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.validFlights}&nbsp;</div>
+                        </div>
+
+                        <div
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 9.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_warning)" }}
+                        >
+                            <i className="fa fa-exclamation-triangle" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Warnings:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.warningFlights}&nbsp;</div>
+                        </div>
+
+                        <div
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.75em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_danger)" }}
+                        >
+                            <i className="fa fa-exclamation-circle" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Errors:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{importInfo.errorFlights}&nbsp;</div>
+                        </div>
+
+                        <div
+                            className="d-flex flex-row"
+                            style={{ ...styleCount, flex: "0 0 7.5em", padding:"5", paddingLeft:"10", backgroundColor: "var(--c_info)" }}
+                        >
+                            <i className="fa fa-upload" style={{alignContent:"center"}} aria-hidden="true" />
+                            <div>&nbsp;Total:</div>
+                            <div style={{textAlign:"end", width:"100%"}}>{totalFlights}&nbsp;</div>
+                        </div>
+                        
+                        <div
+                            className={cardClasses}
+                            style={{ ...styleStatus, flex: "0 0 18em", marginLeft: "10px", marginRight: "10px" }}
+                        >
+                            {statusText}
+                        </div>
+                        <button className={expandButtonClasses + "d-flex justify-content-end flex-wrap"} style={{...styleButton, marginLeft: "10px"}} onClick={() => this.expandClicked()}>
+                            <i className={expandIconClasses}/>
+                        </button>
+                    </div>
                 </div>
                 <div className={expandDivClasses} hidden={!expanded}>
-                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors}/>
-                    <FlightWarnings expanded={expanded} flightWarnings={flightWarnings}/>
-                    <FlightErrors expanded={expanded} flightErrors={flightErrors}/>
+                    <UploadErrors expanded={expanded} uploadErrors={uploadErrors} />
+                    <FlightWarnings expanded={expanded} flightWarnings={flightWarnings} />
+                    <FlightErrors expanded={expanded} flightErrors={flightErrors} />
                 </div>
             </div>
         );
+        
 
     }
 }
@@ -416,50 +468,44 @@ class ImportsPage extends React.Component {
 
     render() {
         return (
-            <div>
-                <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", maxHeight: "100vh"}}>
+                
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage="imports" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden} />
+                </div>
 
+                <div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
+                    <div className="m-1">
+                        {this.state.imports.map((importInfo, index) => {
+                            return (
+                                <Import importInfo={importInfo} key={importInfo.identifier} />
+                            );
+                        })}
+                    </div>
+        
+                    <div style={{ bottom:"0", width:"99%", paddingLeft: "0.75em", paddingBottom: "1.0em", paddingRight: "0.75em", position:"fixed", alignSelf:"center" }}>
+                        <Paginator
+                            submitFilter={() => { this.submitFilter(); }}
+                            items={this.state.imports}
+                            itemName="uploads"
+                            currentPage={this.state.currentPage}
+                            numberPages={this.state.numberPages}
+                            pageSize={this.state.pageSize}
+                            updateCurrentPage={(currentPage) => {
+                                this.setState({ currentPage: currentPage });
+                            }}
+                            updateItemsPerPage={(pageSize) => {
+                                this.setState({ pageSize: pageSize });
+                            }}
+                        />
+                    </div>
 
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.imports}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
+                </div>
 
-                {
-                    this.state.imports.map((importInfo, index) => {
-                        return (
-                            <Import importInfo={importInfo} key={importInfo.identifier} />
-                        );
-                    })
-                }
-
-
-                <Paginator
-                    submitFilter={() => {this.submitFilter();}}
-                    items={this.state.imports}
-                    itemName="uploads"
-                    currentPage={this.state.currentPage}
-                    numberPages={this.state.numberPages}
-                    pageSize={this.state.pageSize}
-                    updateCurrentPage={(currentPage) => {
-                        this.state.currentPage = currentPage;
-                    }}
-                    updateItemsPerPage={(pageSize) => {
-                        this.state.pageSize = pageSize;
-                    }}
-                />
             </div>
         );
+        
+        
     }
 }
 
@@ -467,3 +513,5 @@ var importsPage = ReactDOM.render(
     <ImportsPage imports={imports} numberPages={numberPages} currentPage={currentPage} />,
     document.querySelector('#imports-page')
 );
+
+

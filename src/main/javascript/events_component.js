@@ -253,8 +253,18 @@ class Events extends React.Component {
         })
 
         return (
-            <div>
+            <div className="m-1">
                 <b className={"p-1"} style={{marginBottom:"0"}}>Events:</b>
+
+                {
+                    (this.state.events.length == 0)
+                    &&
+                    <div className="row m-1">
+                        <div className="flex-basis m-1 p-3 card">
+                            No events were found for this flight.
+                        </div>
+                    </div>
+                }
 
                 <div className={"eventTypes"}>
                     {

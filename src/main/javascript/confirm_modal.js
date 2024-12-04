@@ -14,7 +14,8 @@ class ConfirmModal extends React.Component {
 
         this.state = {
             title : "",
-            message : ""
+            message : "",
+            submitMethod : null
         };
     }
 
@@ -29,7 +30,9 @@ class ConfirmModal extends React.Component {
 
     modalClicked() {
         console.log("modal submit clicked!");
-        this.state.submitMethod();
+        
+        if (this.state.submitMethod != null)
+            this.state.submitMethod();
     }
 
     render() {

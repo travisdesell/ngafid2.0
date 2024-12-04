@@ -12,6 +12,7 @@ import GetDescription from "./get_description";
 import Plotly from 'plotly.js';
 import Tooltip from "react-bootstrap/Tooltip";
 import {OverlayTrigger} from "react-bootstrap";
+import { DarkModeToggle } from './dark_mode_toggle.js';
 
 airframes.unshift("All Airframes");
 var index = airframes.indexOf("Garmin Flight Display");
@@ -47,9 +48,16 @@ class TrendsPage extends React.Component {
     constructor(props) {
         super(props);
         let eventChecked = {};
+        let eventsEmpty = {};
+
+        eventNames.unshift("ANY Event");
         for (let i = 0; i < eventNames.length; i++) {
-            eventChecked[eventNames[i]] = false;
+
+            let eventNameCur = eventNames[i];
+            eventChecked[eventNameCur] = false;
+            eventsEmpty[eventNameCur] = true;
         }
+        eventsEmpty["ANY Event"] = false;
 
         var date = new Date();
         this.state = {
@@ -60,7 +68,8 @@ class TrendsPage extends React.Component {
             endMonth : date.getMonth() + 1,
             datesChanged : false,
             aggregatePage : props.aggregate_page,
-            eventChecked : eventChecked
+            eventChecked : eventChecked,
+            eventsEmpty : eventsEmpty
         };
         
         this.fetchMonthlyEventCounts();
@@ -91,26 +100,84 @@ class TrendsPage extends React.Component {
         };
 
         let trendsPage = this;
-        $.ajax({
-            type: 'POST',
-            url: '/protected/monthly_event_counts',
-            data : submission_data,
-            dataType : 'json',
-            success : function(response) {
-                $('#loading').hide();
 
-                if (response.err_msg) {
-                    errorModal.show(response.err_title, response.err_msg);
-                    return;
-                }   
+        $('#loading').hide();
 
-                eventCounts = response;
-                trendsPage.displayPlots(trendsPage.state.airframe);
-            },   
-            error : function(jqXHR, textStatus, errorThrown) {
-                errorModal.show("Error Loading Uploads", errorThrown);
-            },   
-            async: true 
+        return new Promise((resolve, reject) => {
+            $.ajax({
+                type: 'POST',
+                url: '/protected/monthly_event_counts',
+                data : submission_data,
+                dataType : 'json',
+                success : function(response) {
+
+                    if (response.err_msg) {
+                        errorModal.show(response.err_title, response.err_msg);
+                        return;
+                    }   
+
+                    eventCounts = response;
+                    
+                    let countsMerged = {};
+                    for(let [eventName, countsObject] of Object.entries(eventCounts)) {
+
+                        for(let [airframeName] of Object.entries(countsObject)) {
+
+                            if (airframeName === "Garmin Flight Display") {
+                                continue;
+                            }
+
+                            let countsAirframe = countsObject[airframeName];
+
+                            //Airframe name is not in the merged counts object yet, add it
+                            if (!(airframeName in countsMerged)) {
+
+                                countsMerged[airframeName] = {
+                                    airframeName: airframeName,
+                                    eventName: "ANY Event",
+                                    dates: [...countsAirframe.dates],
+                                    aggregateFlightsWithEventCounts: [...countsAirframe.aggregateFlightsWithEventCounts],
+                                    aggregateTotalEventsCounts: [...countsAirframe.aggregateTotalEventsCounts],
+                                    aggregateTotalFlightsCounts: [...countsAirframe.aggregateTotalFlightsCounts],
+                                    flightsWithEventCounts: [...countsAirframe.flightsWithEventCounts],
+                                    totalEventsCounts: [...countsAirframe.totalEventsCounts],
+                                    totalFlightsCounts: [...countsAirframe.totalFlightsCounts]
+                                };
+
+                            //Airframe name is already in the merged counts object, add the counts
+                            } else {
+
+                                for (let i = 0 ; i < countsAirframe.dates.length ; i++) {
+                                    
+                                    if (countsAirframe.totalEventsCounts[i] === 0)
+                                        continue;
+    
+                                    countsMerged[airframeName].aggregateFlightsWithEventCounts[i] += countsAirframe.aggregateFlightsWithEventCounts[i];
+                                    countsMerged[airframeName].aggregateTotalEventsCounts[i] += countsAirframe.aggregateTotalEventsCounts[i];
+                                    countsMerged[airframeName].aggregateTotalFlightsCounts[i] += countsAirframe.aggregateTotalFlightsCounts[i];
+                                    countsMerged[airframeName].flightsWithEventCounts[i] += countsAirframe.flightsWithEventCounts[i];
+                                    countsMerged[airframeName].totalEventsCounts[i] += countsAirframe.totalEventsCounts[i];
+                                    countsMerged[airframeName].totalFlightsCounts[i] += countsAirframe.totalFlightsCounts[i];
+                                }
+
+                            }
+
+                        }
+
+                    }
+
+                    eventCounts["ANY Event"] = countsMerged;
+
+                    trendsPage.displayPlots(trendsPage.state.airframe);
+
+                    resolve(response);
+                },   
+                error : function(jqXHR, textStatus, errorThrown) {
+                    errorModal.show("Error Loading Uploads", errorThrown);
+                    reject(errorThrown);
+                },   
+                async: true 
+            });
         });
 
     }
@@ -157,8 +224,7 @@ class TrendsPage extends React.Component {
                     if (this.state.aggregatePage) {
                         flightsWithEventCount = value.aggregateFlightsWithEventCounts[i];
                         totalFlights = value.aggregateTotalFlightsCounts[i];
-                    }
-                    else {
+                    } else {
                         flightsWithEventCount = value.flightsWithEventCounts[i];
                         totalFlights = value.totalFlightsCounts[i];
                     }
@@ -311,14 +377,28 @@ class TrendsPage extends React.Component {
         countData = [];
         percentData = [];
 
+
+
         let counts = eventCounts == null ? {} : eventCounts;
+
+        let airframeNames = [];
+        for (let [eventName, countsObject] of Object.entries(counts)) {
+            for (let [airframe, value] of Object.entries(countsObject)) {
+                if (value.airframeName === "Garmin Flight Display") continue;
+                if (!airframeNames.includes(value.airframeName)) {
+                    airframeNames.push(value.airframeName);
+                }
+            }
+        }
 
         for (let [eventName, countsObject] of Object.entries(counts)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
             if (!this.state.eventChecked[eventName]) continue;
 
+
             let fleetPercents = null;
             let ngafidPercents = null;
+
 
             if (eventName in eventFleetPercents) {
                 console.log('getting existing fleetPercents!');
@@ -342,8 +422,7 @@ class TrendsPage extends React.Component {
                 let ngafidPercentsName = eventName + " - ";
                 if (this.state.aggregatePage) {
                     ngafidPercentsName += "All Fleets";
-                }
-                else {
+                } else {
                     ngafidPercentsName += "All Other Fleets";
                 }
                 ngafidPercents = {
@@ -384,12 +463,61 @@ class TrendsPage extends React.Component {
                 value.type = 'scatter';
                 value.hoverinfo = 'x+text';
 
+                    
+                let airframeIndex = airframes.indexOf(value.airframeName);
+                let eventNameIndex = eventNames.indexOf(eventName);
+
+                let indexCur = (airframeIndex + eventNameIndex);
+                let indicesMax = (airframes.length + eventNames.length);
+
+                //Event name is 'ANY Event'
+                if (eventName === "ANY Event") {
+
+                    value = {
+                        ...value,
+
+                        legendgroup: value.name,
+
+                        //Dashed lines for 'ANY Event'
+                        line : {
+                            dash: 'dot'
+                        }
+
+                    };
+
+                //Event is NOT 'ANY Event'
+                } else {
+
+                    value = {
+                        ...value,
+
+                        legendgroup: value.name,
+                        mode : 'lines',
+
+                        //Standard lines for non-'ANY Event'
+                        line : {
+                            width : 2,
+                        }
+
+                    };
+                    
+                }
+
                 //don't add airframes to the count plot that the fleet doesn't have
-                if (airframes.indexOf(value.airframeName) >= 0) countData.push(value);
+                if (airframes.indexOf(value.airframeName) >= 0) {
+                    
+                    //Display the "ANY Event" lines under the other ones
+                    if (eventName === "ANY Event") {
+                        countData.push(value);
+                    } else {
+                        countData.unshift(value);
+                    }
+                    
+                }
+
                 if (this.state.aggregatePage) {
                     value.y = value.aggregateTotalEventsCounts;
-                }
-                else {
+                } else {
                     value.y = value.totalEventsCounts;
                 }
                 value.hovertext = [];
@@ -432,15 +560,45 @@ class TrendsPage extends React.Component {
                     if (this.state.aggregatePage) {
                         flightsWithEventCount = value.aggregateFlightsWithEventCounts[i];
                         totalFlightsCount = value.aggregateTotalFlightsCounts[i];
-                    }
-                    else {
+                    } else {
                         flightsWithEventCount = value.flightsWithEventCounts[i];
                         totalFlightsCount = value.totalFlightsCounts[i];
                     }
                     value.hovertext.push(value.y[i] + " events in " + flightsWithEventCount + " of " + totalFlightsCount + " flights : " + value.eventName + " - " + value.airframeName);
                 }
-
+                
             }
+
+        }
+
+        for (const airframeName of airframeNames) {
+
+            let airframeIndex = airframeNames.indexOf(airframeName);
+            let airframeLegendHighlight = {
+                
+                name : airframeName,
+
+                x : [0],
+                y : [0],
+
+                //visible: 'legendonly',
+                visible: false,
+                showlegend: true,
+
+                mode : 'markers',
+                marker : {
+                    width : 2.0,
+                    opacity: 1.0,
+                    // color : 'hsl('
+                    //     + parseInt(360.0 * airframeIndex / airframeNames.length) + ','
+                    //     + parseInt(50.0) + '%,'
+                    //     + parseInt(50.0) + '%)'
+                }
+
+            };
+
+            countData.push(airframeLegendHighlight);
+
         }
 
         /*
@@ -451,6 +609,47 @@ class TrendsPage extends React.Component {
         */
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
+
+            console.log("[EX] EVENT NAME: ", eventName)
+
+
+            //FLEET VALUE -- Event name is 'ANY Event'
+            if (eventName === "ANY Event") {
+
+                //  console.log("[EX] NAME (AE): ", fleetValue.name);
+
+                fleetValue = {
+                    ...fleetValue,
+
+                    legendgroup: fleetValue.name,
+
+                    //Dashed lines for 'ANY Event'
+                    line : {
+                        dash: 'dot'
+                    }
+
+                };
+
+            //FLEET VALUE -- Event is NOT 'ANY Event'
+            } else {
+
+                //  console.log("[EX] NAME: ", fleetValue.name);
+
+                fleetValue = {
+                    ...fleetValue,
+
+                    legendgroup: fleetValue.name,
+                    mode : 'lines',
+
+                    //Standard lines for non-'ANY Event'
+                    line : {
+                        width : 2,
+                    }
+
+                };
+
+            }
+
 
             //Push fleet values...
             if (!this.state.aggregatePage) {
@@ -481,6 +680,54 @@ class TrendsPage extends React.Component {
 
             //Push NGAFID data...
             let ngafidValue = eventNGAFIDPercents[eventName];
+
+
+            //NGAFID VALUE -- Event name is 'ANY Event'
+            if (eventName === "ANY Event") {
+
+                //  console.log("[EX] NAME (AE): ", ngafidValue.name);
+
+                ngafidValue = {
+                    ...ngafidValue,
+
+                    legendgroup: ngafidValue.name,
+
+                    //Dashed lines for 'ANY Event'
+                    line : {
+                        dash: 'dot'
+                    }
+
+                };
+
+            //NGAFID VALUE -- Event is NOT 'ANY Event'
+            } else {
+
+                //  console.log("[EX] NAME: ", ngafidValue.name);
+
+                ngafidValue = {
+                    ...ngafidValue,
+
+                    legendgroup: ngafidValue.name,
+                    mode : 'lines',
+
+                    //Standard lines for non-'ANY Event'
+                    line : {
+                        width : 2,
+                    }
+
+                };
+
+            }
+
+
+            let airframeIndex = airframes.indexOf(ngafidValue.airframeName);
+            let eventNameIndex = eventNames.indexOf(eventName);
+
+            let indexCur = (airframeIndex + eventNameIndex);
+            let indicesMax = (airframes.length + eventNames.length);
+
+
+
             percentData.push(ngafidValue);
             ngafidValue.x = [];
             ngafidValue.y = [];
@@ -491,6 +738,7 @@ class TrendsPage extends React.Component {
                 if (isNaN(v)) v = 0.0;
 
                 ngafidValue.y.push(v);
+
 
                 //console.log(date + " :: " + ngafidValue.flightsWithEventCounts[date]  + " / " + ngafidValue.totalFlightsCounts[date] + " : " + v);
 
@@ -512,6 +760,11 @@ class TrendsPage extends React.Component {
         console.log(percentData);
         */
 
+        let styles = getComputedStyle(document.documentElement);
+        let plotBgColor = styles.getPropertyValue("--c_plotly_bg").trim();
+        let plotTextColor = styles.getPropertyValue("--c_plotly_text").trim();
+        let plotGridColor = styles.getPropertyValue("--c_plotly_grid").trim();
+
         var countLayout = {
             title : 'Event Counts Over Time',
             hovermode : "x unified",
@@ -524,6 +777,20 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -539,6 +806,20 @@ class TrendsPage extends React.Component {
                 b: 50,
                 t: 50,
                 pad: 4
+            },
+            legend: { 
+                traceorder: "normal"
+            },
+            plot_bgcolor : "transparent",
+            paper_bgcolor : plotBgColor,
+            font : {
+                color : plotTextColor
+            },
+            xaxis : {
+                gridcolor : plotGridColor
+            },
+            yaxis : {
+                gridcolor : plotGridColor
             }
         };
 
@@ -553,39 +834,20 @@ class TrendsPage extends React.Component {
         Plotly.newPlot('count-trends-plot', countData, countLayout, config);
         Plotly.newPlot('percent-trends-plot', percentData, percentLayout, config);
 
+        console.log("Hiding loading spinner");
+        $('#loading').hide();
 
     }
 
 
     checkEvent(eventName) {
+
         console.log("checking event: '" + eventName + "'");
-        console.log("Changing event state : " + eventName + " from " + this.state.eventChecked[eventName] + " to " + !this.state.eventChecked[eventName]);
         this.state.eventChecked[eventName] = !this.state.eventChecked[eventName];
         this.setState(this.state);
 
-        let startDate = this.state.startYear + "-";
-        let endDate = this.state.endYear + "-";
+        this.displayPlots(this.state.airframe);
 
-        //0 pad the months on the front
-        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
-        else startDate += this.state.startMonth;
-        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
-        else endDate += this.state.endMonth;
-
-        var submission_data = {
-            startDate : startDate + "-01",
-            endDate : endDate + "-28",
-            eventName : eventName,
-            aggregatePage : this.props.aggregate_page
-        };
-        console.log(eventCounts);
-        if (eventCounts != null) {
-            console.log("already loaded counts for event: '" + eventName + "'");
-            this.displayPlots(this.state.airframe);
-        } else {
-            $('#loading').show();
-            console.log("showing loading spinner!");
-        }
     }
 
     updateStartYear(newStartYear) {
@@ -619,11 +881,25 @@ class TrendsPage extends React.Component {
             this.state.eventChecked[eventName] = false;
         }
         this.state.datesChanged = false;
-        this.setState(this.state);
+        $('#loading').hide();
 
-        eventCounts = null;
-        this.fetchMonthlyEventCounts();
-        this.displayPlots(this.state.airframe);
+        this.fetchMonthlyEventCounts().then((data) => {
+
+            //Set all events to empty initially
+            for (let i = 0; i < eventNames.length; i++) {
+                let eventNameCur = eventNames[i];
+                this.state.eventsEmpty[eventNameCur] = true;
+            }
+
+            for (let [eventName, countsObject] of Object.entries(data)) {
+                this.state.eventsEmpty[eventName] = false;
+            }
+
+            this.setState(this.state);
+            this.displayPlots(this.state.airframe);
+
+        });
+
     }
 
     airframeChange(airframe) {
@@ -632,7 +908,6 @@ class TrendsPage extends React.Component {
     }
 
     render() {
-        //console.log(systemIds);
 
         const numberOptions = { 
             minimumFractionDigits: 2,
@@ -640,14 +915,17 @@ class TrendsPage extends React.Component {
         };
 
         return (
-            <div>
-                <SignedInNavbar activePage={"trends"} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+            <div style={{overflowX:"hidden", display:"flex", flexDirection:"column", height:"100vh"}}>
 
-                <div className="container-fluid">
+                <div style={{flex:"0 0 auto"}}>
+                    <SignedInNavbar activePage={"trends"} darkModeOnClickAlt={()=>{this.displayPlots(this.state.airframe);}} waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
+                </div>
+
+                <div className="container-fluid" style={{overflowY:"auto", flex:"1 1 auto"}}>
 
                     <div className="row">
                         <div className="col-lg-12">
-                            <div className="card mb-2 m-2" style={{background : "rgba(248,259,250,0.8)"}}>
+                            <div className="card mb-2 m-2">
                                 <TimeHeader
                                     name="Event Trends"
                                     airframes={airframes}
@@ -664,29 +942,38 @@ class TrendsPage extends React.Component {
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
-
-
                                 />
-
                             <div className="card-body" style={{padding:"0"}}>
                                 <div className="row" style={{margin:"0"}}>
                                     <div className="col-lg-2" style={{padding:"8 8 8 8"}}>
 
                                         {
                                             eventNames.map((eventName, index) => {
+
+                                                //Don't show a description for the "ANY Event" event
+                                                if (eventName === "ANY Event") return (
+                                                    <div key={index} className="form-check">
+                                                        <input className="form-check-input" disabled={this.state.eventsEmpty[eventName]} type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <label className="form-check-label">
+                                                            {eventName}
+                                                        </label>
+                                                    </div>
+                                                );
+
                                                 return (
                                                     <div key={index} className="form-check">
-                                                        <input  className="form-check-input" 
+                                                        <input  className="form-check-input"
+                                                                disabled={this.state.eventsEmpty[eventName]} 
                                                                 type="checkbox" 
                                                                 value="" 
                                                                 id={"event-check-" + index}
                                                                 checked={this.state.eventChecked[eventName]} 
-                                                                onChange={() => this.checkEvent(eventName)}></input>
-
+                                                                onChange={() => this.checkEvent(eventName)}>
+                                                        </input>
                                                         <OverlayTrigger overlay={(props) => (
                                                             <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
-                                                            <label className="form-check-label" onclick={() => this.checkEvent(eventName)}>
+                                                            <label className="form-check-label">
                                                                 {eventName}
                                                             </label>
                                                         </OverlayTrigger>
@@ -698,7 +985,7 @@ class TrendsPage extends React.Component {
 
                                     </div>
 
-                                    <div className="col-lg-10" style={{padding:"0 0 0 8"}}>
+                                    <div className="col-lg-10" style={{padding:"0 0 0 8", opacity:"0.80"}}>
                                         <div id="count-trends-plot"></div>
                                         <div id="percent-trends-plot"></div>
                                     </div>

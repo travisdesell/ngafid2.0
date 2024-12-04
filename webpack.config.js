@@ -2,8 +2,10 @@ const webpack = require('webpack');
 const HtmlWebPackPlugin = require("html-webpack-plugin");
 var path = require('path');
 
+
 module.exports = {
     watch: true,
+
 
     resolve: {
         fallback: {
@@ -12,11 +14,13 @@ module.exports = {
         }
     },
 
+
     /*
     node: {
         fs: 'empty'
     },
     */
+
 
     watchOptions: {
         aggregateTimeout: 300,
@@ -24,11 +28,13 @@ module.exports = {
         ignored: /node_modules/
     },
 
+
     optimization: {
         removeAvailableModules: false,
         removeEmptyChunks: false,
         splitChunks: false,
     },
+
 
     entry: {
         aggregate: __dirname + "/src/main/javascript/aggregate.js",
@@ -62,10 +68,13 @@ module.exports = {
         update_password: __dirname + "/src/main/javascript/update_password.js",
         update_profile: __dirname + "/src/main/javascript/update_profile.js",
         uploads: __dirname + "/src/main/javascript/uploads.js",
-        welcome: __dirname + "/src/main/javascript/welcome.js"
+        welcome: __dirname + "/src/main/javascript/welcome.js",
+        theme_preload: __dirname + "/src/main/javascript/theme_preload.js",
     },
 
+
     devtool: "source-map",
+
 
     output: {
         // Farhad: for webpackCesium
@@ -75,13 +84,14 @@ module.exports = {
         filename: "[name]-bundle.js"
     },
 
+
     module: {
         rules: [
             {
                 test: /\.(js|jsx)$/,
                 exclude: /node_modules/,
                 use: [
-                    'cache-loader', 
+                    'cache-loader',
                     {
                         loader: 'babel-loader',
                         options: {
@@ -91,6 +101,7 @@ module.exports = {
                 ],
                 include: path.resolve('src')
             },
+
 
             {
                 test: /\.html$/,
@@ -108,6 +119,7 @@ module.exports = {
         ]
     },
 
+
     plugins: [
         new webpack.ProvidePlugin({
             $: "jquery",
@@ -115,6 +127,7 @@ module.exports = {
             'window.jQuery': 'jquery',
             Popper: ['popper.js', 'default']
         })
+
 
         /*
         new HtmlWebPackPlugin({
