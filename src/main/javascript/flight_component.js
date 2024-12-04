@@ -64,6 +64,7 @@ class Flight extends React.Component {
             eventOutlines : [],
             eventOutlineLayer : null,
             replayToggled: cesiumFlightsSelected.includes(this.props.flightInfo.id),
+            cesiumMapVisible: false,
         }
 
         this.submitXPlanePath = this.submitXPlanePath.bind(this);
@@ -86,7 +87,7 @@ class Flight extends React.Component {
             data : submissionData,
             dataType : 'json',
             success : function(response) {
-                console.log("received response: ");
+                console.log("received response events data :");
                 console.log(response);
 
                 if (!global.eventDefinitionsLoaded) {
@@ -205,7 +206,7 @@ class Flight extends React.Component {
                 data : submissionData,
                 dataType : 'json',
                 success : function(response) {
-                    console.log("received response: ");
+                    console.log("received response double series name : ");
                     console.log(response);
 
                     var names = response.names;
@@ -469,25 +470,93 @@ class Flight extends React.Component {
         console.log(this.props);
         window.open("/protected/get_xplane?flight_id=" + this.props.flightInfo.id + "&version=" + type + "&acft_path=" + path + "&use_msl=" + useMSL);
     }
+    
+    getCesiumData(flightId) {
+
+        var cesiumData = null;
+        var submissionData = {
+            "flightId" : flightId
+        };
+
+        $.ajax({
+            type : 'POST',
+            url : '/protected/cesium_data',
+            traditional : true,
+            data : submissionData,
+            dataType : 'json',
+            success : function(response) {
+                console.log(response)
+                cesiumData = response;
+            },
+            error : function(jqXHR, textStatus, errorThrown) {
+                console.log(errorThrown);
+            },
+            async: false
+        });
+
+        return cesiumData;
+    }
 
     cesiumClicked() {
-        let flightStoreIndex = cesiumFlightsSelected.indexOf(this.props.flightInfo.id);
 
-        if (flightStoreIndex === -1) {
-            cesiumFlightsSelected.push(this.props.flightInfo.id)
-        } else {
-            cesiumFlightsSelected.splice(flightStoreIndex, 1);
+
+        if (this.state.mapLoaded) {
+            this.state.mapLoaded = !this.state.mapLoaded;
         }
+        var flightId = this.props.flightInfo.id;
+        this.state.cesiumMapVisible = !this.state.cesiumMapVisible;
+        this.state.replayToggled = !this.state.replayToggled;
+        this.setState(this.state);
+        this.props.showCesiumPage(flightId, this.state.color);
+        // var cesiumData = this.getCesiumData(flightId);
+        // this.fetchEvents();
+        // console.log(cesiumData);
 
-        updateCesiumButtonState();
+   }
 
-        console.log(cesiumFlightsSelected);
+    addCesiumFlight() {
+
+        console.log("Adding flight to cesium");
+
+        if (this.state.mapLoaded) {
+
+            this.state.mapLoaded = false;
+            var mapToggleId = "#mapToggle-" + this.props.flightInfo.id;
+
+            if ( $(mapToggleId).hasClass("active")) {
+                $(mapToggleId).removeClass("active");
+                $(mapToggleId).attr("aria-pressed", false);
+            }
+            this.props.hideMap();
+        }
+        this.state.cesiumMapVisible = true;
+
+        this.setState(this.state);
+        this.props.showCesiumPage(this.props.flightInfo.id, this.state.color);
+
+    }
+    removeCesiumFlight() {
+
+        console.log("Removing Cesium flights");
+        this.state.cesiumMapVisible = false;
+        this.props.removeCesiumFlight(this.props.flightInfo.id);
+        this.setState(this.state);
+
+    }
+
+    toggleCesiumFlight() {
+
+        if (!this.state.cesiumMapVisible) {
+            this.addCesiumFlight();
+        } else {
+            this.removeCesiumFlight();
+        }
     }
 
     replayClicked() {
-        let URL = "/protected/ngafid_cesium?flight_id=" + (this.props.flightInfo.id).toString();
 
-        window.open(URL);
+        let URL = "/protected/ngafid_cesium_old?flight_id=" + (this.props.flightInfo.id).toString();
+        window.open(URL); 
     }
 
     closeParamDisplay() {
@@ -638,6 +707,22 @@ class Flight extends React.Component {
     mapClicked() {
         if (this.props.flightInfo.has_coords === "0") return;
 
+        console.log("cesium map visible : " + this.state.cesiumMapVisible);
+        if (this.state.cesiumMapVisible) {
+            this.state.cesiumMapVisible = false;
+            var cesiumToggleId = "#cesiumToggle-" + this.props.flightInfo.id;
+
+            if ( $(cesiumToggleId).hasClass("active")) {
+                $(cesiumToggleId).removeClass("active");
+                $(cesiumToggleId).attr("aria-pressed", false);
+            }
+
+            this.removeCesiumFlight(this.props.flightInfo.id);
+
+        }
+        
+
+        
         if (!this.state.mapLoaded) {
             this.props.showMap();
             this.state.mapLoaded = true;
@@ -678,6 +763,7 @@ class Flight extends React.Component {
                     dataType : 'json',
                     success : function(response) {
                         console.log("got double_series response");
+                        console.log(response);
                         console.log(thisFlight.state.seriesData);
                         thisFlight.state.seriesData.set(name, response.y);
                     },
@@ -708,7 +794,8 @@ class Flight extends React.Component {
                     //console.log(response);
 
                     var coordinates = response.coordinates;
-
+                    console.log("coordinates");
+                    console.log(coordinates);
                     let points = thisFlight.state.points;
                     for (var i = 0; i < coordinates.length; i++) {
                         var point = fromLonLat(coordinates[i]);
@@ -971,6 +1058,20 @@ class Flight extends React.Component {
           }
     }
 
+    addCesiumFlightPhase(phase) {
+        this.props.addCesiumFlightPhase(phase);
+    }
+
+    addCesiumEventEntity(event) {
+        console.log("Adding event to Cesium");
+        console.log(event);
+        this.props.addCesiumEventEntity(event, this.props.flightInfo.id);
+    }
+
+    zoomToEventEntity(eventId, flightId) {
+        this.props.zoomToEventEntity(eventId, flightId);
+    }
+
     render() {
         let buttonClasses = "p-1 mr-1 expand-import-button btn btn-outline-secondary";
         let lastButtonClasses = "p-1 expand-import-button btn btn-outline-secondary";
@@ -1027,6 +1128,40 @@ class Flight extends React.Component {
                     <Tags flight={this.props.flightInfo} flightIndex={this.state.pageIndex} flightId={flightInfo.id} parent={this} addTag={this.props.addTag} removeTag={this.props.removeTag} 
                         deleteTag={this.props.deleteTag} getUnassociatedTags={this.props.getUnassociatedTags} associateTag={this.props.associateTag} clearTags={this.props.clearTags} editTag={this.props.editTag}/>
             );
+        }
+        var flightPhases = ["Show Taxiing", "Show Takeoff", "Show Climb", "Show Cruise to Final", "Show Full Flight"]
+        let flightPhasesCheckBox = "";
+        let toggleCameraButton = "";
+        var flightId = flightInfo.id;
+        console.log("flight id : " + flightId);
+        if (this.state.cesiumMapVisible) {
+            flightPhasesCheckBox = (
+                <div>
+                    <b className={"m-0 p-1"} style={{marginBottom: "0", overflowY:"auto"}}>Flight Phase : </b>
+                    <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
+                        {   
+                        flightPhases.map((phase, index) => {
+                            return (
+                                <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" key={index} onClick={() => this.props.addCesiumFlightPhase(phase, flightId)}>
+                                        {phase}
+                                </button>
+                            )
+                        }
+                    )
+                        }
+                    </div>
+                </div>
+        );
+            toggleCameraButton = (
+                <div>
+                    <div className={"d-flex flex-row p-1"} style={{"ovrflowX" : "auto"}}>
+                        <button className={buttonClasses} style={{flex : "0 0 10em",  "color" : "#000000"}} data-toggle="button" aria-pressed="false" onClick={() => this.props.toggleCamera(flightId)}>
+                            Toggle Camera
+                        </button>
+                    </div>
+                </div>
+
+            )
         }
 
         let tracesRow = "";
@@ -1121,7 +1256,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-tag p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"mapToggle-" + this.props.flightInfo.id} data-toggle="button" title={globeTooltip} aria-pressed="false" style={styleButton} onClick={() => this.mapClicked()}>
                                 <i className="fa fa-map-o p-1"></i>
                             </button>
 
@@ -1129,7 +1264,7 @@ class Flight extends React.Component {
                                 <i className="fa fa-area-chart p-1"></i>
                             </button>
 
-                            <button className={buttonClasses + globeClasses} id={"cesiumToggled" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.cesiumClicked()}>
+                            <button className={buttonClasses + globeClasses} id={"cesiumToggle-" + this.props.flightInfo.id} data-toggle="button" aria-pressed={this.state.replayToggled} style={styleButton} onClick={() => this.toggleCesiumFlight()}>
                                 <i className="fa fa-globe p-1"></i>
                             </button>
 
@@ -1165,6 +1300,10 @@ class Flight extends React.Component {
                     {eventsRow}
 
                     {tracesRow}
+
+                    {flightPhasesCheckBox}
+
+                    {toggleCameraButton}
                 </div>
             </div>
         );
