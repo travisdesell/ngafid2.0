@@ -36,26 +36,36 @@ class EventDefinitionsDisplayPage extends React.Component {
                             <div className="col-md-12">
                                 <Col>
                                     <Table striped bordered hover size="sm">
-                                        <table className="table table-striped table-hover" style={{backgroundColor:"var(--c_card_bg)", borderRadius:"8px", marginBottom: "0", borderCollapse:"collapse" }}>
-                                            <thead style={{color:"var(--c_text)", backgroundColor:"var(--c_bg)"}}>
-                                                <tr>
-                                                    <th>Event Name</th>
-                                                    <th style={{minWidth:"10%"}}>Aircraft Type</th>
-                                                    <th>Event Definition</th>
+                                        <thead style={{color: "var(--c_text)", backgroundColor: "var(--c_bg)"}}>
+                                            <tr>
+                                                <th>Event Name</th>
+                                                <th style={{minWidth: "10%"}}>Aircraft Type</th>
+                                                <th>Event Definition</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody style={{color: "var(--c_text_alt)"}}>
+                                            {rows.map((row, index) => (
+                                                <tr
+                                                    key={index}
+                                                    style={{
+                                                        backgroundColor:
+                                                            index % 2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid)",
+                                                    }}
+                                                >
+                                                    <th>{row[0]}</th>
+                                                    <th>{row[1]}</th>
+                                                    <th
+                                                        style={{
+                                                            fontStyle: "normal",
+                                                            fontWeight: "normal",
+                                                            color: "var(--c_text_alt)",
+                                                        }}
+                                                    >
+                                                        {row[2]}
+                                                    </th>
                                                 </tr>
-                                            </thead>
-                                            <tbody style={{color:"var(--c_text_alt)"}}>
-                                                {rows.map((row, index) => {
-                                                    return (
-                                                        <tr key={index} style={{backgroundColor:(index%2 ? "var(--c_row_bg_solid)" : "var(--c_row_bg_alt_solid")}}>
-                                                            <th>{row[0]}</th>
-                                                            <th>{row[1]}</th>
-                                                            <th style={{fontStyle:"normal", fontWeight:"normal", color:"var(--c_text_alt)"}}>{row[2]}</th>
-                                                        </tr>
-                                                    )
-                                                })}
-                                            </tbody>
-                                        </table>
+                                            ))}
+                                        </tbody>
                                     </Table>
                                 </Col>
                             </div>
