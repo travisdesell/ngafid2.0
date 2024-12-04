@@ -737,4 +737,5 @@ if ($create_event_metadata) {
     query_ngafid_db($query);
 
 }
+
 ?>

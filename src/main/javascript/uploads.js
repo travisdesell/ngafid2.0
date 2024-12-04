@@ -20,6 +20,7 @@ var chunkSize = 2 * 1024 * 1024; //2MB
 class Upload extends React.Component {
     constructor(props) {
         super(props);
+        this.isFleetManager = this.props.isFleetManager;
     }
 
     componentDidMount() {
