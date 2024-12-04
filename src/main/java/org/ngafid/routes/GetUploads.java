@@ -125,6 +125,8 @@ public class GetUploads implements Route {
 
             scopes.put("uploads_js", "var uploads = JSON.parse('" + gson.toJson(other_uploads) + "'); var pending_uploads = JSON.parse('" + gson.toJson(pending_uploads) + "');");
 
+            scopes.put("user_js", "var user = JSON.parse('" + gson.toJson(user)  + "');");
+
             StringWriter stringOut = new StringWriter();
             mustache.execute(new PrintWriter(stringOut), scopes).flush();
             resultString = stringOut.toString();

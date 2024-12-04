@@ -219,13 +219,8 @@ class AirSyncUploadsCard extends React.Component {
             //data : submissionData,
             dataType : 'json',
             success : function(response) {
-                if (response == "UNABLE_MUTEX") {
-                    console.log("displaying error modal!");
-                    errorModal.show("Unable to manually sync!", "This could be because your fleet is already being updated, or someone else has already requested an update!");
-                } else {
-                    theseUploads.state.lastUpdateTime = response;
-                    theseUploads.setState(theseUploads.state);
-                }
+                theseUploads.state.lastUpdateTime = "Pending";
+                theseUploads.setState(theseUploads.state);
             },
             error : function(jqXHR, textStatus, errorThrown) {
                 errorModal.show("Error Updating:", errorThrown);

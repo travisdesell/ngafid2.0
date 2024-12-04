@@ -19,8 +19,6 @@ if (index !== -1) airframes.splice(index, 1);
 
 eventNames.sort();
 
-console.log(eventNames);
-
 /*
 var trace1 = {
     name: 'test1',
@@ -40,7 +38,7 @@ var trace2 = {
 var countData = [];
 var percentData = [];
 
-var eventCounts = {};
+var eventCounts = null;
 
 var eventFleetPercents = {};
 var eventNGAFIDPercents = {};
@@ -64,14 +62,61 @@ class TrendsPage extends React.Component {
             aggregatePage : props.aggregate_page,
             eventChecked : eventChecked
         };
+        
+        this.fetchMonthlyEventCounts();
+    }
+    startDate() {
+        let startDate = this.state.startYear + "-";
+
+        if (parseInt(this.state.startMonth) < 10) startDate += "0" + parseInt(this.state.startMonth);
+        else startDate += this.state.startMonth;
+
+        return startDate;
+    }
+
+    endDate() {
+        let endDate = this.state.endYear + "-";
+
+        if (parseInt(this.state.endMonth) < 10) endDate += "0" + parseInt(this.state.endMonth);
+        else endDate += this.state.endMonth;
+
+        return endDate;
+    }
+
+    fetchMonthlyEventCounts() {
+        var submission_data = {
+            startDate : this.startDate() + "-01",
+            endDate : this.endDate() + "-28",
+            aggregatePage : this.props.aggregate_page
+        };
+
+        let trendsPage = this;
+        $.ajax({
+            type: 'POST',
+            url: '/protected/monthly_event_counts',
+            data : submission_data,
+            dataType : 'json',
+            success : function(response) {
+                $('#loading').hide();
+
+                if (response.err_msg) {
+                    errorModal.show(response.err_title, response.err_msg);
+                    return;
+                }   
+
+                eventCounts = response;
+                trendsPage.displayPlots(trendsPage.state.airframe);
+            },   
+            error : function(jqXHR, textStatus, errorThrown) {
+                errorModal.show("Error Loading Uploads", errorThrown);
+            },   
+            async: true 
+        });
+
     }
 
     exportCSV() {
         let selectedAirframe = this.state.airframe;
-
-        console.log("selected airframe: '" + selectedAirframe + "'");
-
-        console.log(eventCounts);
 
         let eventNames = [];
         let airframeNames = [];
@@ -102,7 +147,6 @@ class TrendsPage extends React.Component {
                 }
 
 
-                console.log(eventName + " - " + value.airframeName + " has dates: ");
                 console.log(value.dates);
 
                 for (let i = 0; i < value.dates.length; i++) {
@@ -143,15 +187,7 @@ class TrendsPage extends React.Component {
         airframeNames.sort();
         dates.sort();
 
-        console.log("eventNames:");
-        console.log(eventNames);
-        console.log("airframeNames:");
-        console.log(airframeNames);
-        console.log("dates:");
-        console.log(dates);
-
         for (let eventName of eventNames) {
-            console.log(eventName + " has " + Object.keys(csvValues[eventName]).length + " entries!");
             console.log(csvValues[eventName]);
 
             for (let airframeName of airframeNames) {
@@ -275,7 +311,9 @@ class TrendsPage extends React.Component {
         countData = [];
         percentData = [];
 
-        for (let [eventName, countsObject] of Object.entries(eventCounts)) {
+        let counts = eventCounts == null ? {} : eventCounts;
+
+        for (let [eventName, countsObject] of Object.entries(counts)) {
             //console.log("checking to plot event: '" + eventName + "', checked? '" + this.state.eventChecked[eventName] + "'");
             if (!this.state.eventChecked[eventName]) continue;
 
@@ -299,7 +337,7 @@ class TrendsPage extends React.Component {
                     y : [],
                     x : [],
                     flightsWithEventCounts : {},
-                    totalFlightsCounts : {}
+                    totalFlightsCounts : {},
                 }
                 let ngafidPercentsName = eventName + " - ";
                 if (this.state.aggregatePage) {
@@ -316,7 +354,7 @@ class TrendsPage extends React.Component {
                     y : [],
                     x : [],
                     flightsWithEventCounts : {},
-                    totalFlightsCounts :{}
+                    totalFlightsCounts :{},
                 }
 
                 eventFleetPercents[eventName] = fleetPercents;
@@ -325,16 +363,21 @@ class TrendsPage extends React.Component {
 
 
             for (let [airframe, value] of Object.entries(countsObject)) {
-                if (value.airframeName === "Garmin Flight Display") continue;
-                if (selectedAirframe !== value.airframeName && selectedAirframe !== "All Airframes") continue;
 
+                //Airframe name is 'Garmin Flight Display', skip
+                if (value.airframeName === "Garmin Flight Display")
+                    continue;
+
+                //Current airframe name is neither the selected airframe name or 'All Airframes', skip
+                if ((selectedAirframe !== value.airframeName) && (selectedAirframe !== "All Airframes"))
+                    continue;
+        
                 /*
                 console.log("airframes, airframeName, value:");
                 console.log(airframes);
                 console.log(airframe);
                 console.log(value);
                 */
-
 
                 value.name = value.eventName + " - " + value.airframeName;
                 value.x = value.dates;
@@ -408,8 +451,8 @@ class TrendsPage extends React.Component {
         */
 
         for (let [eventName, fleetValue] of Object.entries(eventFleetPercents)) {
-            let ngafidValue = eventNGAFIDPercents[eventName];
 
+            //Push fleet values...
             if (!this.state.aggregatePage) {
                 percentData.push(fleetValue);
                 fleetValue.x = [];
@@ -418,10 +461,11 @@ class TrendsPage extends React.Component {
                 for (let date of Object.keys(fleetValue.flightsWithEventCounts).sort()) {
                     fleetValue.x.push(date);
 
-                    let v = 100.0 * parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]);
+                    let v = 100.0 * (parseFloat(fleetValue.flightsWithEventCounts[date]) / parseFloat(fleetValue.totalFlightsCounts[date]));
+                    if (isNaN(v)) v = 0.0;
                     fleetValue.y.push(v);
 
-                    //console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
+                    // console.log(date + " :: " + fleetValue.flightsWithEventCounts[date]  + " / " + fleetValue.totalFlightsCounts[date] + " : " + v);
 
                     //this will give 2 significant figures (and leading 0s if it is quite small)
                     var fixedText = "";
@@ -434,6 +478,9 @@ class TrendsPage extends React.Component {
                     fleetValue.hovertext.push(fixedText  + " (" + fleetValue.flightsWithEventCounts[date] + " of " + fleetValue.totalFlightsCounts[date] + " flights) : " + fleetValue.name);
                 }
             }
+
+            //Push NGAFID data...
+            let ngafidValue = eventNGAFIDPercents[eventName];
             percentData.push(ngafidValue);
             ngafidValue.x = [];
             ngafidValue.y = [];
@@ -441,6 +488,8 @@ class TrendsPage extends React.Component {
                 ngafidValue.x.push(date);
 
                 let v = 100.0 * parseFloat(ngafidValue.flightsWithEventCounts[date]) / parseFloat(ngafidValue.totalFlightsCounts[date]);
+                if (isNaN(v)) v = 0.0;
+
                 ngafidValue.y.push(v);
 
                 //console.log(date + " :: " + ngafidValue.flightsWithEventCounts[date]  + " / " + ngafidValue.totalFlightsCounts[date] + " : " + v);
@@ -456,7 +505,6 @@ class TrendsPage extends React.Component {
                 ngafidValue.hovertext.push(fixedText + " (" + ngafidValue.flightsWithEventCounts[date] + " of " + ngafidValue.totalFlightsCounts[date] + " flights) : " + ngafidValue.name);
             }
 
-            //console.log(ngafidValue);
         }
 
         /*
@@ -530,38 +578,13 @@ class TrendsPage extends React.Component {
             eventName : eventName,
             aggregatePage : this.props.aggregate_page
         };
-        let trendsPage = this;
-        if (eventName in eventCounts) {
+        console.log(eventCounts);
+        if (eventCounts != null) {
             console.log("already loaded counts for event: '" + eventName + "'");
-            trendsPage.displayPlots(trendsPage.state.airframe);
-
+            this.displayPlots(this.state.airframe);
         } else {
             $('#loading').show();
             console.log("showing loading spinner!");
-            $.ajax({
-                type: 'POST',
-                url: '/protected/monthly_event_counts',
-                data : submission_data,
-                dataType : 'json',
-                success : function(response) {
-                    console.log("received response: ");
-                    console.log(response);
-
-                    $('#loading').hide();
-
-                    if (response.err_msg) {
-                        errorModal.show(response.err_title, response.err_msg);
-                        return;
-                    }   
-
-                    eventCounts[eventName] = response;
-                    trendsPage.displayPlots(trendsPage.state.airframe);
-                },   
-                error : function(jqXHR, textStatus, errorThrown) {
-                    errorModal.show("Error Loading Uploads", errorThrown);
-                },   
-                async: true 
-            });
         }
     }
 
@@ -598,7 +621,8 @@ class TrendsPage extends React.Component {
         this.state.datesChanged = false;
         this.setState(this.state);
 
-        eventCounts = {};
+        eventCounts = null;
+        this.fetchMonthlyEventCounts();
         this.displayPlots(this.state.airframe);
     }
 
@@ -606,7 +630,6 @@ class TrendsPage extends React.Component {
         this.setState({airframe});
         this.displayPlots(airframe);
     }
-
 
     render() {
         //console.log(systemIds);
@@ -641,6 +664,8 @@ class TrendsPage extends React.Component {
                                     updateEndYear={(newEndYear) => this.updateEndYear(newEndYear)}
                                     updateEndMonth={(newEndMonth) => this.updateEndMonth(newEndMonth)}
                                     exportCSV={() => this.exportCSV()}
+
+
                                 />
 
                             <div className="card-body" style={{padding:"0"}}>
@@ -651,12 +676,17 @@ class TrendsPage extends React.Component {
                                             eventNames.map((eventName, index) => {
                                                 return (
                                                     <div key={index} className="form-check">
-                                                        <input className="form-check-input" type="checkbox" value="" id={"event-check-" + index} checked={this.state.eventChecked[eventName]} onChange={() => this.checkEvent(eventName)}></input>
+                                                        <input  className="form-check-input" 
+                                                                type="checkbox" 
+                                                                value="" 
+                                                                id={"event-check-" + index}
+                                                                checked={this.state.eventChecked[eventName]} 
+                                                                onChange={() => this.checkEvent(eventName)}></input>
 
                                                         <OverlayTrigger overlay={(props) => (
                                                             <Tooltip {...props}>{GetDescription(eventName)}</Tooltip>)}
                                                                         placement="bottom">
-                                                            <label className="form-check-label">
+                                                            <label className="form-check-label" onclick={() => this.checkEvent(eventName)}>
                                                                 {eventName}
                                                             </label>
                                                         </OverlayTrigger>

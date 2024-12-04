@@ -5,10 +5,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.TreeSet;
 import java.util.logging.Logger;
+import java.util.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
@@ -23,6 +21,8 @@ import org.ngafid.flights.DoubleTimeSeries;
 public class EventDefinition {
     private static final Logger LOG = Logger.getLogger(EventDefinition.class.getName());
     public static final Gson gson = new GsonBuilder().serializeSpecialFloatingPointValues().create();
+    
+    private static final String SQL_FIELDS = "id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type";
 
     public static final int MIN_SEVERITY = 1;
     public static final int MAX_SEVERITY = 2;
@@ -87,7 +87,7 @@ public class EventDefinition {
                 LOG.severe("\t'" + columnName + "'");
             }
 
-            System.exit(1);
+            throw new RuntimeException("severityColumnNames did not match columnNames");
         }
     }
 
@@ -137,8 +137,6 @@ public class EventDefinition {
                 e.printStackTrace();
                 System.exit(1);
             }
-            this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
-            this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         } else {
             try {
                 if (id <= -1) {
@@ -147,11 +145,10 @@ public class EventDefinition {
             } catch (NullPointerException e) {
                 this.filter = null;
             }
-
-            this.columnNames = new TreeSet<String>();
-            this.severityColumnNames = new TreeSet<String>();
         }
 
+        this.columnNames = gson.fromJson(resultSet.getString(8), new TypeToken<TreeSet<String>>(){}.getType());
+        this.severityColumnNames = gson.fromJson(resultSet.getString(9), new TypeToken<TreeSet<String>>(){}.getType());
         this.severityType = resultSet.getString(10);
 
         initializeSeverity();
@@ -166,7 +163,8 @@ public class EventDefinition {
      */
     public static EventDefinition getEventDefinition(Connection connection, String eventName) {
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName;
+
 
         return getEventDefinitionFromDB(connection, query);
     }
@@ -184,7 +182,7 @@ public class EventDefinition {
         String airframeIDStr = "airframe_id = " + airframeID;
 
         eventName = "name = '" + eventName + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventName + " AND " + airframeIDStr;
 
         return getEventDefinitionFromDB(connection, query);
     }
@@ -193,9 +191,61 @@ public class EventDefinition {
         EventDefinition eventDef = null;
 
         String eventIDStr = "id = '" + eventID + "'";
-        String query = "SELECT id, fleet_id, name, start_buffer, stop_buffer, airframe_id, condition_json, column_names, severity_column_names, severity_type FROM event_definitions WHERE " + eventIDStr;
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE " + eventIDStr;
 
         return getEventDefinitionFromDB(connection, query);
+    }
+
+    /*
+     * Caches event definitions by name. Events are rarely added anyways...
+     */
+    private static final Map<String, List<EventDefinition>> NAME_TO_EVENT_DEFINITIONS = new HashMap<>();
+
+    public static List<EventDefinition> getEventDefinitions(Connection connection, String eventName) throws SQLException {
+        if (NAME_TO_EVENT_DEFINITIONS.containsKey(eventName))
+            return NAME_TO_EVENT_DEFINITIONS.get(eventName);
+
+        List<EventDefinition> definitions = new ArrayList<>();
+
+        String query = "SELECT " + SQL_FIELDS + " FROM event_definitions WHERE name = ?";
+        PreparedStatement statement = connection.prepareStatement(query);
+        statement.setString(1, eventName);
+
+        ResultSet resultSet = statement.executeQuery();
+
+        while (resultSet.next()) {
+            EventDefinition ed = new EventDefinition(resultSet);
+            definitions.add(ed);
+        }
+        
+        statement.close();
+        resultSet.close();
+
+        NAME_TO_EVENT_DEFINITIONS.put(eventName, definitions);
+
+        return definitions;
+    }
+
+    
+    private static Map<Integer, String> EVENT_DEFINITION_ID_TO_NAME = null;
+
+    public static Map<Integer, String> getEventDefinitionIdToNameMap(Connection connection) throws SQLException {
+        if (EVENT_DEFINITION_ID_TO_NAME == null) {
+            String query = "SELECT id, name FROM event_definitions";
+            PreparedStatement ps = connection.prepareStatement(query);
+            
+            ResultSet resultSet = ps.executeQuery();
+
+            EVENT_DEFINITION_ID_TO_NAME = new HashMap<>();
+
+            while (resultSet.next()) {
+                int id = resultSet.getInt("id");
+                String name = resultSet.getString("name");
+                EVENT_DEFINITION_ID_TO_NAME.put(id, name);
+            }
+        }
+
+        return EVENT_DEFINITION_ID_TO_NAME;
     }
 
     /**
@@ -448,49 +498,59 @@ public class EventDefinition {
      * @param connection is the connection to the database.
      */
     public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, String airframe, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
-        Filter filter = gson.fromJson(filterJson, Filter.class);
-        TreeSet<String> columnNames = filter.getColumnNames();
+        int airframeNameID = 0;
 
-        if (airframe.equals("All Airframes")) {
-            String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, fleetId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, startBuffer);
-            preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, 0);
-            preparedStatement.setString(6, filterJson);
-            preparedStatement.setString(7, gson.toJson(columnNames));
-            preparedStatement.setString(8, severityColumnNamesJson);
-            preparedStatement.setString(9, severityType);
-            preparedStatement.setInt(10, eventId);
-
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
-        } else {
-            int airframeNameId = Airframes.getNameId(connection, airframe);
-            String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
-
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            preparedStatement.setInt(1, fleetId);
-            preparedStatement.setString(2, name);
-            preparedStatement.setInt(3, startBuffer);
-            preparedStatement.setInt(4, stopBuffer);
-            preparedStatement.setInt(5, airframeNameId);
-            preparedStatement.setString(6, filterJson);
-            preparedStatement.setString(7, gson.toJson(columnNames));
-            preparedStatement.setString(8, severityColumnNamesJson);
-            preparedStatement.setString(9, severityType);
-            preparedStatement.setInt(10, eventId);
-
-            LOG.info(preparedStatement.toString());
-            preparedStatement.executeUpdate();
-            preparedStatement.close();
+        if (!airframe.equals("All Airframes")) {
+            airframeNameID = Airframes.getNameId(connection, airframe);
         }
+
+        update(connection, fleetId, eventId, name, startBuffer, stopBuffer, airframeNameID, filterJson, severityColumnNamesJson, severityType);
     }
 
+    /**
+     * Updates an existing event definition into the database.
+     *
+     * @param connection is the connection to the database.
+     */
+    public static void update(Connection connection, int fleetId, int eventId, String name, int startBuffer, int stopBuffer, int airframeNameID, String filterJson, String severityColumnNamesJson,  String severityType) throws SQLException {
+        Filter filter = gson.fromJson(filterJson, Filter.class);
+        String columnNamesJson;
+
+        if (eventId > 0) {
+            columnNamesJson = gson.toJson(filter.getColumnNames());
+        } else {
+            columnNamesJson = severityColumnNamesJson;
+        }
+
+        String query = "UPDATE event_definitions SET fleet_id = ?, name = ?, start_buffer = ?, stop_buffer = ?, airframe_id = ?, condition_json = ?, column_names = ?, severity_column_names = ?, severity_type = ? WHERE id = ?";
+
+        PreparedStatement preparedStatement = connection.prepareStatement(query);
+        preparedStatement.setInt(1, fleetId);
+        preparedStatement.setString(2, name);
+        preparedStatement.setInt(3, startBuffer);
+        preparedStatement.setInt(4, stopBuffer);
+        preparedStatement.setInt(5, airframeNameID);
+        preparedStatement.setString(6, filterJson);
+        preparedStatement.setString(7, columnNamesJson);
+        preparedStatement.setString(8, severityColumnNamesJson);
+        preparedStatement.setString(9, severityType);
+        preparedStatement.setInt(10, eventId);
+
+        LOG.info(preparedStatement.toString());
+        preparedStatement.executeUpdate();
+        preparedStatement.close();
+    }
+
+
+    /**
+     * Have an event definition update itself in the database.
+     * @param connection
+     * @throws SQLException
+     */
+    public void updateSelf(Connection connection) throws SQLException {
+        this.columnNames = new TreeSet<>(this.severityColumnNames);
+        update(connection, fleetId, id, name, startBuffer, stopBuffer, airframeNameId, gson.toJson(filter), gson.toJson(severityColumnNames), severityType);
+    }
 
     /**
      * Inserts this event definition into the database.

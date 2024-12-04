@@ -42,15 +42,18 @@ public class PostMonthlyEventCounts implements Route {
         try {
             Connection connection = Database.getConnection();
             Map<String, EventStatistics.MonthlyEventCounts> eventCountsMap;
+            Map<String, Map<String, EventStatistics.MonthlyEventCounts>> map;
+
             if (aggregateTrendsPage) {
                 if (!user.hasAggregateView()) {
                     LOG.severe("INVALID ACCESS: user did not have aggregate access to view aggregate trends page.");
                     Spark.halt(401, "User did not have aggregate access to view aggregate trends page.");
                     return null;
                 }
-                eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, null, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
-            }
-            else {
+
+                map = EventStatistics.getMonthlyEventCounts(connection, -1, LocalDate.parse(startDate), LocalDate.parse(endDate));
+            } else {
+
                 int fleetId = user.getFleetId();
                 //check to see if the user has upload access for this fleet.
                 if (!user.hasViewAccess(fleetId)) {
@@ -58,12 +61,20 @@ public class PostMonthlyEventCounts implements Route {
                     Spark.halt(401, "User did not have access to view imports for this fleet.");
                     return null;
                 }
-                eventCountsMap = EventStatistics.getMonthlyEventCounts(connection, fleetId, eventName, LocalDate.parse(startDate), LocalDate.parse(endDate));
+              
+                map = EventStatistics.getMonthlyEventCounts(connection, fleetId, LocalDate.parse(startDate), LocalDate.parse(endDate));
             }
 
-            return gson.toJson(eventCountsMap);
+            if (eventName == null) {
+                return gson.toJson(map);
+            } else {
+                return gson.toJson(map.get(eventName));
+            }
         } catch (SQLException e) {
+            LOG.severe(e.toString());
+            e.printStackTrace();
             return gson.toJson(new ErrorResponse(e));
         }
     }
 }
+

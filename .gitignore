@@ -9,3 +9,9 @@ node_modules
 target/*
 src/main/resources/public/js/*
 .cache-loader/*
+init_env.sh
+db/db_info.php
+db/db_info
+email_info.txt
+package-lock.json
+data/*

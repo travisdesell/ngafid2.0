@@ -20,8 +20,6 @@ class NavLink extends React.Component {
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
-        //console.log("rendering navlink '" + name + "', active: " + active);
-
         const classNames = active ? "nav-item active" : "nav-item";
         const isCurrent = active ? (<span className="sr-only">(current)</span>) : "";
 
@@ -45,8 +43,6 @@ class DropdownLink extends React.Component {
         //make unclick an empty function if its not defined
         if (typeof onClick == 'undefined') onClick = function(){};
 
-        console.log("rendering dropdownlink '" + name + "'");
-
         return (
             <a className="dropdown-item" href={href} hidden={hidden} onClick={() => onClick()}>{name}</a>
         );
@@ -63,12 +59,10 @@ class SignedInNavbar extends React.Component {
     }
 
     attemptLogIn() {
-        console.log("showing login modal!");
         loginModal.show();
     }
 
     attemptLogOut() {
-        console.log("attempting log out!");
 
         var submissionData = {};
 
@@ -153,8 +147,6 @@ class SignedInNavbar extends React.Component {
                 );
             }
 
-        console.log("[signed in navbar] this.props.filterVisible: " + this.props.filterVisible);
-
         let eventsActive = this.props.activePage === "trends" || this.props.activePage === "event statistics" || this.props.activePage === "create event" || this.props.activePage === "update event" || this.props.activePage === "severities";
         let analysisActive = this.props.activePage === "ttf";
 
@@ -236,11 +228,7 @@ class SignedInNavbar extends React.Component {
                                     : ""
                                 }
                                 {admin
-                                    ? <DropdownLink name={"Create Event"} hidden={false} href="/protected/create_event"/>
-                                    : ""
-                                }
-                                {admin
-                                    ? <DropdownLink name={"Update Event"} hidden={false} href="/protected/update_event"/>
+                                    ? <DropdownLink name={"Manage Events"} hidden={false} href="/protected/manage_events"/>
                                     : ""
                                 }
                             </div>

@@ -86,6 +86,7 @@ class Upload extends React.Component {
     }
 
     render() {
+
         let uploadInfo = this.props.uploadInfo;
 
         let progressSize = uploadInfo.progressSize;
@@ -153,6 +154,20 @@ class Upload extends React.Component {
         console.log("uploadInfo:");
         console.log(uploadInfo);
 
+        //Check if ALL buttons should be disabled
+        const buttonDisableStates = ["HASHING", "UPLOADING"];
+        let doButtonsDisable = buttonDisableStates.includes(status);
+
+        //Disable Delete buttons with no Upload Access
+        let hasDeleteAccess = (isUploader);
+        let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
+        let doDeleteButtonHide = (!hasDeleteAccess);
+
+        //Disable Delete buttons with no View Access
+        let hasDownloadAccess = true;
+        let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
+        let doDownloadButtonHide = (!hasDownloadAccess);
+
         return (
             <div className="m-1">
                 <div className="d-flex flex-row">
@@ -163,8 +178,39 @@ class Upload extends React.Component {
                     </div>
                     <div className={statusClasses} style={{flex:"0 0 18em"}}>{statusText}</div>
 
-                    <Button type="button" className={"btn btn btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-download" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.downloadUpload()}></i> </Button>
-                    <Button type="button" className={"btn btn-danger btn-sm"} style={{width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}> <i className="fa fa-times" aria-hidden="true" style={{padding: "4 4 3 4"}} onClick={() => this.confirmRemoveUpload()}></i> </Button>
+                    {
+                        (!doDeleteButtonHide) &&
+                        <Button
+                            type="button"
+                            className={"btn btn-danger btn-sm"}
+                            style={{backgroundColor:(doDeleteButtonDisable ? '#444444' : '#DC3545'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
+                            >
+                            <i
+                                className="fa fa-times"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                onClick={ () => (doDeleteButtonDisable ? undefined : this.confirmRemoveUpload()) }
+                                >
+                            </i>
+                        </Button>
+                    }
+
+                    {
+                        (!doDownloadButtonHide) &&
+                        <Button
+                            type="button"
+                            className={"btn btn btn-sm"}
+                            style={{backgroundColor:(doDownloadButtonDisable ? '#444444' : '#007BFF'), width:"34px", marginLeft:"4px", padding:"2 4 4 4"}}
+                            >
+                            <i
+                                className="fa fa-download"
+                                aria-hidden="true"
+                                style={{padding: "4 4 3 4"}}
+                                onClick={ () => (doDownloadButtonDisable ? undefined : this.downloadUpload()) }
+                                >
+                            </i>
+                        </Button>
+                    }
 
                 </div>
             </div>
@@ -194,6 +240,9 @@ class UploadsPage extends React.Component {
     }
 
     getMD5Hash(file, onFinish, uploadsPage) {
+
+        // console.log(`Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
+
         var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
             chunkSize = 2097152,                             // Read in chunks of 2MB
             chunks = Math.ceil(file.size / chunkSize),
@@ -202,12 +251,13 @@ class UploadsPage extends React.Component {
             fileReader = new FileReader();
 
         fileReader.onload = function (e) {
+            
             console.log('read chunk nr', currentChunk + 1, 'of', chunks);
             spark.append(e.target.result);                   // Append array buffer
             currentChunk++;
 
+
             if (currentChunk % 5 == 0) {
-                //var percent = (currentChunk / chunks) * 100.0;
 
                 let state = uploadsPage.state;
                 console.log("inside onload function!");
@@ -217,19 +267,29 @@ class UploadsPage extends React.Component {
 
                 uploadsPage.setState(state);
 
-                //set_progressbar_percent(file.identifier, percent);
-            }
+                }
 
             if (currentChunk < chunks) {
-                loadNext();
-            } else {
-                //reset progress bar for uploading
-                let state = uploadsPage.state;
-                state.pending_uploads[file.position].progressSize = 0;
-                state.pending_uploads[file.position].status = "UPLOADING";
-                uploadsPage.setState(state);
+                loadNext();        
+                }
+            
+            //Reset progress bar for uploading...
+            else {
 
-                onFinish(spark.end());
+                let state = uploadsPage.state;
+
+                var statusInitial = state.pending_uploads[file.position].status;
+                if (statusInitial != "UPLOADING") {
+
+                    state.pending_uploads[file.position].progressSize = 0;
+                    state.pending_uploads[file.position].status = "UPLOADING";
+
+                    // console.log(`File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
+                    uploadsPage.setState(state);
+
+                    onFinish(spark.end());
+
+                }
             }
         };
 
@@ -248,6 +308,9 @@ class UploadsPage extends React.Component {
     }
 
     startUpload(file) {
+
+        // console.log(`Starting upload of file: ${file}`);
+
         //different versions of firefox have different field names
         var filename = file.webkitRelativePath || file.fileName || file.name;
         var identifier = file.identifier;
@@ -269,16 +332,18 @@ class UploadsPage extends React.Component {
         var uploadsPage = this;
 
         function onFinish(md5Hash) {
+
             file.md5Hash = md5Hash;
             console.log("got md5Hash: '" + md5Hash + "'");
             var xhr = new XMLHttpRequest();
 
             xhr.open('POST', '/protected/new_upload');
             xhr.onload = function() {
-                console.log("New upload response: " + xhr.responseText);
+                
+                // console.log("New upload response: " + xhr.responseText);
                 var response = JSON.parse(xhr.responseText);
 
-                var filename = file.webkitRelativePath || file.fileName || file.name;
+                var filename = (file.webkitRelativePath || file.fileName || file.name);
 
                 //check and see if there was an error in the response!
                 if (response.errorTitle !== undefined) {
@@ -309,13 +374,14 @@ class UploadsPage extends React.Component {
 
 
     addUpload(file) {
-        const filename = file.webkitRelativePath || file.fileName || file.name;
+        
+        const filename = (file.webkitRelativePath || file.fileName || file.name);
         const progressSize = 0;
         const status = "HASHING";
         const totalSize = file.size;
         console.log("adding filename: '" + filename + "'");
 
-        let pending_uploads = this.state.pending_uploads;
+        let pendingUploads = this.state.pending_uploads;
 
         let identifier = getUploadeIdentifier(filename, totalSize);
         console.log("CREATED IDENTIFIER: " + identifier);
@@ -323,72 +389,124 @@ class UploadsPage extends React.Component {
         file.position = 0;
 
         let alreadyExists = false;
-        for (var i = 0; i < pending_uploads.length; i++) {
-            if (pending_uploads[i].identifier == identifier) {
+        for (var i = 0; i < pendingUploads.length; i++) {
 
-                if (pending_uploads[i].status == "UPLOAD INCOMPLETE") {
-                    //upload already exists in the list but is incomplete, so we need to restart it
+            // console.log(`Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
+
+            //Testing Matching Identifiers
+            if (pendingUploads[i].identifier == identifier) {
+
+                //Upload already exists in the list but is incomplete, so we need to restart it
+                if (pendingUploads[i].status == "UPLOAD INCOMPLETE") {
+                    
                     alreadyExists = true;
                     file.position = i;
-                } else {
+
+                    }
+
+                //The file already exists, don't bother adding it
+                else {
+
                     console.log("file already exists, not adding!");
                     return;
-                }
-            }
-        }
 
-        if (!alreadyExists) {
-            pending_uploads.unshift({
+                    }
+
+                }
+            
+            //Testing non-matching identifiers
+            else {
+                file.position++;
+                }
+
+            }
+
+        //No copy of the file exists already, proceed with adding it
+        if (alreadyExists == false) {
+
+            //pendingUploads.unshift({
+            pendingUploads.push({
+                position : file.position,
                 identifier : identifier,
                 filename : filename,
                 status : status,
                 totalSize : totalSize,
                 progressSize : progressSize
             });
+
         }
 
-        let state = this.state;
-        state.pending_uploads = pending_uploads;
+        this.state.pending_uploads = pendingUploads;
+
+        // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
 
         if (this.state.numberPages == 0) {
             this.state.numberPages = 1;
             this.state.currentPage = 0;
+            }
+
+        this.setState(this.state);
+        this.startUpload(file);
+    
         }
 
-        this.setState(state);
-        this.startUpload(file);
-    }
-
     removePendingUpload(file) {
+
         if (file.position < pending_uploads.length) {
+
             let pending_uploads = this.state.pending_uploads;
+
+            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
+
             pending_uploads.splice(file.position, 1);
             for (var i = 0; i < pending_uploads.length; i++) {
                 pending_uploads[i].position = i;
-            }
+                }
 
-            let state = this.state;
-            state.pending_uploads = pending_uploads;
-            this.setState(state);
+            this.state.pending_uploads = pending_uploads;
+
+            // uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
+            // console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
+
+            this.setState( this.state );
         }
     }
 
 
     removeUpload(file) {
+
         if (file.position < uploads.length) {
+
             let uploads = this.state.uploads;
+
+            // let uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a file upload! Original State: [${uploadStringMap}]`);
+
             uploads.splice(file.position, 1);
             for (var i = 0; i < uploads.length; i++) {
                 uploads[i].position = i;
             }
 
-            let state = this.state;
-            state.uploads = uploads;
-            this.setState(state);
+
+            this.state.uploads = uploads;
+
+            // uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a file upload! New State: [${uploadStringMap}]`);
+
+            this.setState( this.state );
         }
     }
 
     updateUpload(uploadInfo) {
+
+        // console.log(`Updating Upload Info: ${uploadInfo.identifier}`);
+
+        // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`Before... : ${uploadStringMap}`);
+
+
         var file = uploadInfo.file;
         var position = uploadInfo.position;
 
@@ -398,16 +516,18 @@ class UploadsPage extends React.Component {
 
         var chunkStatus = uploadInfo.chunkStatus;
         var chunkNumber = chunkStatus.indexOf("0");
-        //console.log("chunk status: '" + chunkStatus + "'");
         console.log("next chunk: " + chunkNumber + " of " + numberChunks);
 
         uploadInfo.progressSize = uploadInfo.bytesUploaded;
         uploadInfo.totalSize = uploadInfo.sizeBytes;
 
-        let pending_uploads = this.state.pending_uploads;
-        pending_uploads[uploadInfo.position] = uploadInfo;
-        let state = this.state;
-        this.setState(state);
+        this.state.pending_uploads[uploadInfo.position] = uploadInfo;
+
+        //uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`After... : ${uploadStringMap}`);
+
+        this.setState( this.state );
+
 
         var uploadsPage = this;
 
@@ -419,7 +539,6 @@ class UploadsPage extends React.Component {
 
         var func = (file.slice ? 'slice' : (file.mozSlice ? 'mozSlice' : (file.webkitSlice ? 'webkitSlice' : 'slice')));
         var bytes = file[func](startByte, endByte, void 0);
-
         //console.log(bytes);
 
         var xhr = new XMLHttpRequest();
@@ -456,10 +575,8 @@ class UploadsPage extends React.Component {
                 } else {
                     console.log("Should be finished upload!");
 
-                    let pending_uploads = uploadsPage.state.pending_uploads;
-                    pending_uploads[uploadInfo.position] = uploadInfo;
-                    let state = uploadsPage.state;
-                    uploadsPage.setState(state);
+                    uploadsPage.state.pending_uploads[uploadInfo.position] = uploadInfo;
+                    uploadsPage.setState( uploadsPage.state );
                 }
             }
         };
@@ -552,32 +669,56 @@ class UploadsPage extends React.Component {
             display : "none"
         };
 
+        //Disable Upload buttons with no Upload Access
+        let doUploadButtonDisable = (!isUploader);
+        let doUploadButtonHide = (!isUploader);
+
+
         return (
 
             <div>
                 <SignedInNavbar activePage="uploads" waitingUserCount={waitingUserCount} fleetManager={fleetManager} unconfirmedTailsCount={unconfirmedTailsCount} modifyTailsAccess={modifyTailsAccess} plotMapHidden={plotMapHidden}/>
 
                 <div className="p-1">
-                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
 
-                    <div className="card mb-1 border-secondary">
-                        <div className="p-2">
-                            {
-                                this.state.pending_uploads.length > 0
-                                    ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
-                                    : ""
-                            }
-                            <button id="upload-flights-button" className="btn btn-primary btn-sm float-right" onClick={() => this.triggerInput()}>
-                                <i className="fa fa-upload"></i> Upload Flights
-                            </button>
+                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                    {
+                        (!doUploadButtonHide) &&
+                        <div className="card mb-1 border-secondary">
+                            <div className="p-2">
+                                {
+                                    this.state.pending_uploads.length > 0
+                                        ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
+                                        : ""
+                                }
+
+                                <button
+                                    id="upload-flights-button"
+                                    className="btn btn-primary btn-sm float-right"
+                                    onClick={() => (doUploadButtonDisable ? undefined : this.triggerInput())}
+                                    style={{backgroundColor: doUploadButtonDisable ?  '#444444' : '#007BFF'}}
+                                    >
+                                    <i className="fa fa-upload"/>Upload Flights
+                                </button>
+                                
+                            </div>
                         </div>
-                    </div>
+                    }
 
                     {
                         this.state.pending_uploads.map((uploadInfo, index) => {
-                            uploadInfo.position = index;
+
+                            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+                            // console.log(`Previewing all Pending Uploads: ${uploadStringMap}`);
+                            // console.log(`Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
+
+                            //uploadInfo.position = index;
                             return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}} />
+                                <Upload
+                                    uploadInfo={uploadInfo}
+                                    key={uploadInfo.identifier}
+                                    removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
+                                />
                             );
                         })
                     }
@@ -601,7 +742,11 @@ class UploadsPage extends React.Component {
                         this.state.uploads.map((uploadInfo, index) => {
                             uploadInfo.position = index;
                             return (
-                                <Upload uploadInfo={uploadInfo} key={uploadInfo.identifier} removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}} />
+                                <Upload
+                                    uploadInfo={uploadInfo}
+                                    key={uploadInfo.identifier}
+                                    removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}}
+                                />
                             );
                         })
                     }

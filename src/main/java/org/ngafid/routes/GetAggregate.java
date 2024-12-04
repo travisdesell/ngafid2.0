@@ -118,7 +118,7 @@ public class GetAggregate implements Route {
             LocalDate firstOfYear = LocalDate.now().with( TemporalAdjusters.firstDayOfYear() );
             LocalDate lastThirtyDays = LocalDate.now().minusDays(30);
 
-            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null, null);
+            Map<String, EventStatistics.EventCounts> eventCountsMap = EventStatistics.getEventCounts(connection, null, null);
 
             //create a filter to grab things 
             String lastThirtyDaysQuery = "start_time >= '" + lastThirtyDays.toString() + "'";
@@ -127,26 +127,27 @@ public class GetAggregate implements Route {
             System.out.println("monthly flight query: " + lastThirtyDaysQuery);
 
             long startTime = System.currentTimeMillis();
-            String fleetInfo =
-                "var numberFlights = " + Flight.getNumFlights(connection) + ";\n" +
-                "var flightHours = " + Flight.getTotalFlightHours(connection) + ";\n" +
-                "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
+            // String fleetInfo =
+            //     // Move to async summary
+            //     "var numberFlights = " + Flight.getNumFlights(connection) + ";\n" +
+            //     "var flightHours = " + Flight.getTotalFlightHours(connection) + ";\n" +
+            //     "var numberAircraft = " + Tails.getNumberTails(connection) + ";\n" +
+            //     "var yearNumberFlights = " + Flight.getNumFlights(connection, yearQuery) + ";\n" +
+            //     "var yearFlightHours = " + Flight.getTotalFlightHours(connection, yearQuery) + ";\n" +
+            //     "var monthNumberFlights = " + Flight.getNumFlights(connection, lastThirtyDaysQuery) + ";\n" +
+            //     "var monthFlightHours = " + Flight.getTotalFlightHours(connection, lastThirtyDaysQuery) + ";\n" +
+            //     "var totalEvents = " + EventStatistics.getEventCount(connection, null, null) + ";\n" +
+            //     "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
+            //     "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +
+            //     "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
+            //     "var numberUsers = " + User.getNumberUsers(connection) + ";" +
+            //     
+            //     // async event_counts
+            //     "var eventCounts = " + gson.toJson(eventCountsMap) + ";";
 
-                "var yearNumberFlights = " + Flight.getNumFlights(connection, yearQuery) + ";\n" +
-                "var yearFlightHours = " + Flight.getTotalFlightHours(connection, yearQuery) + ";\n" +
+            // scopes.put("fleet_info_js", fleetInfo);
+            scopes.put("fleet_info_js", "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n");
 
-                "var monthNumberFlights = " + Flight.getNumFlights(connection, lastThirtyDaysQuery) + ";\n" +
-                "var monthFlightHours = " + Flight.getTotalFlightHours(connection, lastThirtyDaysQuery) + ";\n" +
-
-                "var totalEvents = " + EventStatistics.getEventCount(connection, null, null) + ";\n" +
-                "var yearEvents = " + EventStatistics.getEventCount(connection, firstOfYear, null) + ";\n" +
-                "var monthEvents = " + EventStatistics.getEventCount(connection, firstOfMonth, null) + ";\n" +
-                "var airframes = " + gson.toJson(Airframes.getAll(connection)) + ";\n" +
-                "var eventCounts = " + gson.toJson(eventCountsMap) + ";" +
-                "var numberFleets = " + Fleet.getNumberFleets(connection) + ";" +
-                "var numberUsers = " + User.getNumberUsers(connection) + ";";
-
-            scopes.put("fleet_info_js", fleetInfo);
             long endTime = System.currentTimeMillis();
             LOG.info("getting fleet info took " + (endTime-startTime) + "ms.");
 

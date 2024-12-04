@@ -1,10 +1,22 @@
 package org.ngafid;
 
+import java.sql.SQLException;
+import java.sql.Connection;
+
 import java.util.ArrayList;
 import java.util.TreeSet;
 import java.util.TreeMap;
 
+import org.ngafid.accounts.EmailType;
+
+import java.util.logging.Logger;
+
+
+
+
 public class UploadProcessedEmail {
+
+    private static Logger LOG = Logger.getLogger(ProcessUpload.class.getName());
 
     private static enum FlightStatus {
         OK, ERROR, WARNING
@@ -256,7 +268,8 @@ public class UploadProcessedEmail {
     }
 
 
-    public void sendEmail() {
+    public void sendEmail(Connection connection) throws SQLException {
+
         StringBuilder body = new StringBuilder();
 
         body.append("<body><html><br>");
@@ -303,6 +316,6 @@ public class UploadProcessedEmail {
 
         body.append("</body></html>");
 
-        SendEmail.sendEmail(recipients, bccRecipients, subject, body.toString());
+        SendEmail.sendEmail(recipients, bccRecipients, subject, body.toString(), EmailType.IMPORT_PROCESSED_RECEIPT, connection);
     }
 }
