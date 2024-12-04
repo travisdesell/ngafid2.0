@@ -18,9 +18,9 @@ var paused = [];
 var chunkSize = 2 * 1024 * 1024; //2MB
 
 class Upload extends React.Component {
-	constructor(props) {
-    	super(props);
-	}
+    constructor(props) {
+        super(props);
+    }
 
 	componentDidMount() {
     	//console.log("upload did mount for filename: '" + this.props.uploadInfo.filename + "'");
@@ -85,9 +85,9 @@ class Upload extends React.Component {
     	);
 	}
 
-	render() {
+    render() {
 
-    	let uploadInfo = this.props.uploadInfo;
+        let uploadInfo = this.props.uploadInfo;
 
     	let progressSize = uploadInfo.progressSize;
     	let totalSize = uploadInfo.totalSize;
@@ -154,19 +154,19 @@ class Upload extends React.Component {
     	console.log("uploadInfo:");
     	console.log(uploadInfo);
 
-    	//Check if ALL buttons should be disabled
-    	const buttonDisableStates = ["HASHING", "UPLOADING"];
-    	let doButtonsDisable = buttonDisableStates.includes(status);
+        //Check if ALL buttons should be disabled
+        const buttonDisableStates = ["HASHING", "UPLOADING"];
+        let doButtonsDisable = buttonDisableStates.includes(status);
 
-    	//Disable Delete buttons with no Upload Access
-    	let hasDeleteAccess = (isUploader);
-    	let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
-    	let doDeleteButtonHide = (!hasDeleteAccess);
+        //Disable Delete buttons with no Upload Access
+        let hasDeleteAccess = (isUploader);
+        let doDeleteButtonDisable = (doButtonsDisable || !hasDeleteAccess);
+        let doDeleteButtonHide = (!hasDeleteAccess);
 
-    	//Disable Delete buttons with no View Access
-    	let hasDownloadAccess = true;
-    	let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
-    	let doDownloadButtonHide = (!hasDownloadAccess);
+        //Disable Delete buttons with no View Access
+        let hasDownloadAccess = true;
+        let doDownloadButtonDisable = (doButtonsDisable || !hasDownloadAccess);
+        let doDownloadButtonHide = (!hasDownloadAccess);
 
     	return (
         	<div className="m-2">
@@ -264,7 +264,7 @@ class UploadsPage extends React.Component {
 
 	getMD5Hash(file, onFinish, uploadsPage) {
 
-    	// console.log(`Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
+        // console.log(`Processing MD5 Hash for File: "${file.name}" at position ${file.position}`);
 
     	var blobSlice = File.prototype.slice || File.prototype.mozSlice || File.prototype.webkitSlice,
         	chunkSize = 2097152,                         	// Read in chunks of 2MB
@@ -307,8 +307,8 @@ class UploadsPage extends React.Component {
                 	state.pending_uploads[file.position].progressSize = 0;
                 	state.pending_uploads[file.position].status = "UPLOADING";
 
-                	// console.log(`File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
-                	uploadsPage.setState(state);
+                    // console.log(`File with identifier "${file.identifier}" at position ${file.position} transitioning to new status... "${statusInitial}" -> "UPLOADING"`);
+                    uploadsPage.setState(state);
 
                 	onFinish(spark.end());
 
@@ -332,7 +332,7 @@ class UploadsPage extends React.Component {
 
 	startUpload(file) {
 
-    	// console.log(`Starting upload of file: ${file}`);
+        // console.log(`Starting upload of file: ${file}`);
 
     	//different versions of firefox have different field names
     	var filename = file.webkitRelativePath || file.fileName || file.name;
@@ -360,11 +360,11 @@ class UploadsPage extends React.Component {
         	console.log("got md5Hash: '" + md5Hash + "'");
         	var xhr = new XMLHttpRequest();
 
-        	xhr.open('POST', '/protected/new_upload');
-        	xhr.onload = function() {
-           	 
-            	// console.log("New upload response: " + xhr.responseText);
-            	var response = JSON.parse(xhr.responseText);
+            xhr.open('POST', '/protected/new_upload');
+            xhr.onload = function() {
+                
+                // console.log("New upload response: " + xhr.responseText);
+                var response = JSON.parse(xhr.responseText);
 
             	var filename = (file.webkitRelativePath || file.fileName || file.name);
 
@@ -414,7 +414,7 @@ class UploadsPage extends React.Component {
     	let alreadyExists = false;
     	for (var i = 0; i < pendingUploads.length; i++) {
 
-        	// console.log(`Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
+            // console.log(`Pending Upload Identifier (${i}): ${pendingUploads[i].identifier} /// Current Upload Identifier: ${identifier}`);
 
         	//Testing Matching Identifiers
         	if (pendingUploads[i].identifier == identifier) {
@@ -461,8 +461,8 @@ class UploadsPage extends React.Component {
 
     	this.state.pending_uploads = pendingUploads;
 
-    	// let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-    	// console.log(`Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
+        // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`Updated Pending Uploads after adding new file with identifier "${file.identifier}": [${uploadStringMap}]`);
 
     	if (this.state.numberPages == 0) {
         	this.state.numberPages = 1;
@@ -480,8 +480,8 @@ class UploadsPage extends React.Component {
 
         	let pending_uploads = this.state.pending_uploads;
 
-        	// let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier });
-        	// console.log(`Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
+            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a *pending* file upload! Original State: [${uploadStringMap}]`);
 
         	pending_uploads.splice(file.position, 1);
         	for (var i = 0; i < pending_uploads.length; i++) {
@@ -490,8 +490,8 @@ class UploadsPage extends React.Component {
 
         	this.state.pending_uploads = pending_uploads;
 
-        	// uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
-        	// console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
+            // uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return uploadItem.identifier; });
+            // console.log(`Removing a *pending* file upload! New State: [${uploadStringMap}]`);
 
         	this.setState( this.state );
     	}
@@ -504,8 +504,8 @@ class UploadsPage extends React.Component {
 
         	let uploads = this.state.uploads;
 
-        	// let uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
-        	// console.log(`Removing a file upload! Original State: [${uploadStringMap}]`);
+            // let uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a file upload! Original State: [${uploadStringMap}]`);
 
         	uploads.splice(file.position, 1);
         	for (var i = 0; i < uploads.length; i++) {
@@ -515,8 +515,8 @@ class UploadsPage extends React.Component {
 
         	this.state.uploads = uploads;
 
-        	// uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
-        	// console.log(`Removing a file upload! New State: [${uploadStringMap}]`);
+            // uploadStringMap = this.state.uploads.map(function(uploadItem) { return uploadItem.identifier });
+            // console.log(`Removing a file upload! New State: [${uploadStringMap}]`);
 
         	this.setState( this.state );
     	}
@@ -524,10 +524,10 @@ class UploadsPage extends React.Component {
 
 	updateUpload(uploadInfo) {
 
-    	// console.log(`Updating Upload Info: ${uploadInfo.identifier}`);
+        // console.log(`Updating Upload Info: ${uploadInfo.identifier}`);
 
-    	// let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-    	// console.log(`Before... : ${uploadStringMap}`);
+        // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`Before... : ${uploadStringMap}`);
 
 
     	var file = uploadInfo.file;
@@ -546,8 +546,8 @@ class UploadsPage extends React.Component {
 
     	this.state.pending_uploads[uploadInfo.position] = uploadInfo;
 
-    	//uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-    	// console.log(`After... : ${uploadStringMap}`);
+        //uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+        // console.log(`After... : ${uploadStringMap}`);
 
     	this.setState( this.state );
 
@@ -663,11 +663,12 @@ class UploadsPage extends React.Component {
         	display : "none"
     	};
 
-    	//Disable Upload buttons with no Upload Access
-    	let doUploadButtonDisable = (!isUploader);
-    	let doUploadButtonHide = (!isUploader);
+        //Disable Upload buttons with no Upload Access
+        let doUploadButtonDisable = (!isUploader);
+        let doUploadButtonHide = (!isUploader);
 
-    	return (
+
+        return (
 
         	<div style={{display:"flex", flexDirection:"column", height:"100vh"}}>
             	<div style={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
@@ -678,38 +679,77 @@ class UploadsPage extends React.Component {
 
                 	<div style={{overflowY:"scroll", flex:"1 1 auto", paddingBottom:"70px"}}>
 
-                    	<input id ="upload-file-input" type="file" style={hiddenStyle} />
+                <div className="p-1">
+
+                    <input id ="upload-file-input" type="file" style={hiddenStyle} />
+                    {
+                        (!doUploadButtonHide) &&
+                        <div className="card mb-1 border-secondary">
+                            <div className="p-2">
+                                {
+                                    this.state.pending_uploads.length > 0
+                                        ? ( <button className="btn btn-sm btn-info pr-2" disabled>Pending Uploads</button> )
+                                        : ""
+                                }
+
+                                <button
+                                    id="upload-flights-button"
+                                    className="btn btn-primary btn-sm float-right"
+                                    onClick={() => (doUploadButtonDisable ? undefined : this.triggerInput())}
+                                    style={{backgroundColor: doUploadButtonDisable ?  '#444444' : '#007BFF'}}
+                                    >
+                                    <i className="fa fa-upload"/>Upload Flights
+                                </button>
+                                
+                            </div>
+                        </div>
+                    }
 
                     	{
                         	this.state.pending_uploads.map((uploadInfo, index) => {
 
-                            	// let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
-                            	// console.log(`Previewing all Pending Uploads: ${uploadStringMap}`);
-                            	// console.log(`Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
+                            // let uploadStringMap = this.state.pending_uploads.map(function(uploadItem) { return `(${uploadItem.identifier},${uploadItem.position})` });
+                            // console.log(`Previewing all Pending Uploads: ${uploadStringMap}`);
+                            // console.log(`Delivering new Upload Info with identifier "${uploadInfo.identifier}" and position "${uploadInfo.position}" at index ${index}`);
 
-                            	//uploadInfo.position = index;
-                            	return (
-                                	<Upload
-                                    	uploadInfo={uploadInfo}
-                                    	key={uploadInfo.identifier}
-                                    	removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
-                                	/>
-                            	);
-                        	})
-                    	}
+                            //uploadInfo.position = index;
+                            return (
+                                <Upload
+                                    uploadInfo={uploadInfo}
+                                    key={uploadInfo.identifier}
+                                    removeUpload={(uploadInfo) => {this.removePendingUpload(uploadInfo);}}
+                                />
+                            );
+                        })
+                    }
 
-                    	{
-                        	this.state.uploads.map((uploadInfo, index) => {
-                            	uploadInfo.position = index;
-                            	return (
-                                	<Upload
-                                    	uploadInfo={uploadInfo}
-                                    	key={uploadInfo.identifier}
-                                    	removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}}
-                                	/>
-                            	);
-                        	})
-                    	}
+                    <Paginator
+                        submitFilter={() => {this.submitFilter();}}
+                        items={this.state.uploads}
+                        itemName="uploads"
+                        currentPage={this.state.currentPage}
+                        numberPages={this.state.numberPages}
+                        pageSize={this.state.pageSize}
+                        updateCurrentPage={(currentPage) => {
+                            this.state.currentPage = currentPage;
+                        }}
+                        updateItemsPerPage={(pageSize) => {
+                            this.state.pageSize = pageSize;
+                        }}
+                    />
+
+                    {
+                        this.state.uploads.map((uploadInfo, index) => {
+                            uploadInfo.position = index;
+                            return (
+                                <Upload
+                                    uploadInfo={uploadInfo}
+                                    key={uploadInfo.identifier}
+                                    removeUpload={(uploadInfo) => {this.removeUpload(uploadInfo);}}
+                                />
+                            );
+                        })
+                    }
 
                     	<input id ="upload-file-input" type="file" style={hiddenStyle} />   {/* <-- Keep this here so the Upload Flights button in the Paginator works */}
                     	<div style={{ bottom:"0", width:"99.5%", padding: "1em", position:"fixed", alignSelf:"center" }}>
