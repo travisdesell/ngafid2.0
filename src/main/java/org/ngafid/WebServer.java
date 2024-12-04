@@ -2,6 +2,7 @@ package org.ngafid;
 
 import org.ngafid.common.ConvertToHTML;
 import org.ngafid.routes.*;
+import org.ngafid.routes.v2.*;
 import org.ngafid.accounts.User;
 import org.ngafid.accounts.EmailType;
 
@@ -359,6 +360,14 @@ public final class WebServer {
         Spark.post("/protected/update_tail", new PostUpdateTail(gson));
         Spark.post("/protected/update_email_preferences", new PostUpdateUserEmailPreferences(gson));
         
+
+        Spark.get("/v2/getfleetid", new GetFleetId(gson));
+        Spark.get("/v2/getUser", new GetUser(gson));
+        Spark.get("/v2/getWelcome", new GetWelcomeV2(gson));
+        Spark.get("/v2/getAirframeInfos", new GetAirframeInfo(gson));
+        Spark.get("/v2/getSystemIds", new GetSystemIdsV2(gson));
+        Spark.get("/v2/getImports", new GetImportsV2(gson));
+        Spark.get("/v2/getAccount", new GetAccount(gson));
 
         // Event Definition Management
         Spark.get("/protected/manage_event_definitions", new GetAllEventDefinitions(gson));
