@@ -118,7 +118,7 @@ public class ProcessUpload {
 
     public static void operateAsDaemon() {
         while (true) {
-            connection = Database.resetConnection();
+            connection = Database.getConnection();
 
             Instant start = Instant.now();
 
@@ -129,7 +129,7 @@ public class ProcessUpload {
                 while (fleetSet.next()) {
                     int targetFleetId = fleetSet.getInt(1);
                     System.err.println("Importing an upload from fleet: " + targetFleetId);
-                    if (targetFleetId == 164 || targetFleetId == 105) {
+                    if (targetFleetId == 164) {
                         System.err.println("SKIPPING 164 because we do not support this fleet type yet.");
                         continue;
                     }
@@ -238,7 +238,7 @@ public class ProcessUpload {
 
             String subject = "NGAFID processing upload '" + filename + "' started at " + formattedStartDateTime;
             String body = subject;
-            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START);
+            SendEmail.sendEmail(recipients, bccRecipients, subject, body, EmailType.UPLOAD_PROCESS_START, connection);
 
             upload.reset(connection);
             System.out.println("upload was reset!\n\n");
@@ -269,7 +269,7 @@ public class ProcessUpload {
 
             //  sendMonthlyFlightsUpdate(fleetId);    [EX] Disabling ALL monthly flight update calls for now!
 
-            uploadProcessedEmail.sendEmail();
+            uploadProcessedEmail.sendEmail(connection);
 
         } catch (SQLException e) {
             System.err.println("ERROR processing upload: " + e);
